@@ -17,6 +17,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
     processBrevoWebhookEvent: vi.fn(),
     captureEmailOpen: vi.fn(),
+    recordBounce: vi.fn(),
     warn: vi.fn()
 }));
 
@@ -35,6 +36,10 @@ vi.mock('../../../src/lib/email-open-analytics', () => ({
     captureEmailOpen: mocks.captureEmailOpen
 }));
 vi.mock('@repo/db', () => ({ notificationLogModel: {} }));
+vi.mock('@repo/notifications', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@repo/notifications')>()),
+    recordProviderHardBounce: mocks.recordBounce
+}));
 vi.mock('@repo/service-core', async (importOriginal) => {
     const original = await importOriginal<typeof import('@repo/service-core')>();
     return {
@@ -187,6 +192,26 @@ describe('Brevo webhook: opened -> email-open (HOS-2583)', () => {
 
         expect(response.status).toBe(200);
         expect(mocks.captureEmailOpen).toHaveBeenCalledTimes(2);
+    });
+
+    it('emits nothing when a later event makes the batch answer 503, so Brevo redelivery cannot double count', async () => {
+        // Arrange: the hard_bounce suppression write fails after an open was processed
+        mocks.recordBounce.mockRejectedValue(new Error('db down'));
+
+        // Act
+        const response = await post([
+            openedEvent(),
+            {
+                event: 'hard_bounce',
+                email: 'gone@example.com',
+                'message-id': '<x@brevo>',
+                reason: 'mailbox does not exist'
+            }
+        ]);
+
+        // Assert
+        expect(response.status).toBe(503);
+        expect(mocks.captureEmailOpen).not.toHaveBeenCalled();
     });
 
     it('rejects a wrong token without reporting anything', async () => {

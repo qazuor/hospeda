@@ -7,7 +7,7 @@ import {
     buildEmailTemplateTag,
     EMAIL_TEMPLATE_TAG_PREFIX,
     parseEmailTemplateTag
-} from '../../src/transports/email/template-tag';
+} from '../src/template-tag.js';
 
 describe('template tag', () => {
     it('builds the tag from a catalog key', () => {

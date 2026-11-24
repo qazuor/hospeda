@@ -3,11 +3,11 @@
  * @description The Brevo tag that carries a transactional email's catalog key (HOS-2583).
  *
  * Brevo echoes the `tags` of a send back in the `tags` array of every transactional
- * webhook event (`opened`, `delivered`, ...). The transport adds one
+ * webhook event (`opened`, `delivered`, ...). Both Brevo send paths (`sendEmail` here and the notifications transport) add one
  * `template:<catalog key>` tag to every transactional send, and the webhook receiver
  * reads it back to know which template an open belongs to, with no `message-id` table.
  *
- * @module transports/email/template-tag
+ * @module template-tag
  */
 
 /** Prefix of the Brevo tag that names the template key. */
