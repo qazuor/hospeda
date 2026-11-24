@@ -127,7 +127,7 @@ const SAFE_OUTBOUND_HREFS: Readonly<Record<string, string>> = Object.freeze({
     'components/newsletter/WhatsAppCTA.astro#{channelUrl}':
         'PUBLIC_HOSPEDA_WHATSAPP_CHANNEL_URL — our own channel, set by us in the deployment env',
     'components/shared/SocialLinks.astro#profile.url':
-        "SOCIAL_PROFILES in `lib/constants` — Hospeda's own accounts, hardcoded",
+        "SOCIAL_PROFILES in `lib/constants` — Hospeda's own accounts, from BRAND_SOCIAL_PROFILES in @repo/config (HOS-2565) plus the brand WhatsApp link",
     'components/shared/SocialLinks.astro#{href}':
         'the same SOCIAL_PROFILES list, destructured one line later',
     'pages/[lang]/autores/[slug]/index.astro#{url}':
