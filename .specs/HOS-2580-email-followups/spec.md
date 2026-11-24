@@ -95,3 +95,16 @@ Suscripción". "Reactivate" is never used.
   `showAccountLinks` is false, the first help link of the user footer points at
   `EMAIL_PUBLIC_FAQ_URL` and now reads "Preguntas frecuentes". Account holders keep
   "Centro de ayuda". This amends HOS-2565 §8.3, whose text says "Centro de ayuda" for both.
+- **G, extended by the owner's smoke (2026-11-24).** The voseo sweep covers every
+  template, the auth mails included. The HOS-2565 AC-2.8 byte-identical constraint on
+  the reset and verify copy is lifted for wording only. A guard renders every Spanish
+  catalog scenario (subject, preview text, body and text part) and fails on a tú form.
+  Its allowlist holds only third-person and adjective homographs, each with a reason.
+- **Auth illustration.** The `auth` domain already declared the `account` illustration,
+  but the Better Auth send path never passed the layout. Real reset and verify mails
+  reached the inbox without it. Both sends now pass their catalog entry's layout.
+  Hospeda sends no email-change or password-changed mail.
+- **Callout tones** (owner decision, 2026-11-24). `danger` is kept for real failures and
+  losses only. Routine or precautionary notices use `warning`: the reset mail's "¿No
+  solicitaste esto?", the trial-ends-tomorrow notice and the trial-expired "No se borró
+  nada". A guard freezes the set of entries that render `danger`.
