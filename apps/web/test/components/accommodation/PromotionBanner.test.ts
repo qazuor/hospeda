@@ -213,15 +213,38 @@ describe('Detail page — PromotionBanner wiring (SPEC-285 T-007)', () => {
         expect(detailPageSrc).toMatch(/<PromotionBanner[^>]*locale=\{locale\}/);
     });
 
-    it('places PromotionBanner after AmenitiesGrid and before ReviewPreview', () => {
+    it('places the wide-layout copy after AmenitiesGrid and before ReviewPreview', () => {
         const amenitiesIdx = detailPageSrc.indexOf('<AmenitiesGrid');
-        const bannerIdx = detailPageSrc.indexOf('<PromotionBanner');
+        const bannerIdx = detailPageSrc.indexOf('acc-promos--content');
         const reviewIdx = detailPageSrc.indexOf('<ReviewPreview');
         expect(amenitiesIdx).toBeGreaterThan(-1);
         expect(bannerIdx).toBeGreaterThan(-1);
         expect(reviewIdx).toBeGreaterThan(-1);
         expect(bannerIdx).toBeGreaterThan(amenitiesIdx);
         expect(bannerIdx).toBeLessThan(reviewIdx);
+    });
+
+    it('moves promotions up to right after the price summary in the one-column layout (owner smoke, HOS-2520)', () => {
+        const summaryIdx = detailPageSrc.indexOf('<MobileBookingSummary');
+        const promosIdx = detailPageSrc.indexOf('acc-promos--summary');
+        const descriptionIdx = detailPageSrc.indexOf('{hasDescriptionSection && (');
+        expect(summaryIdx).toBeGreaterThan(-1);
+        expect(promosIdx).toBeGreaterThan(summaryIdx);
+        expect(promosIdx).toBeLessThan(descriptionIdx);
+        expect(
+            detailPageSrc.match(/<PromotionBanner promos=\{activePromos\} locale=\{locale\} \/>/g)
+        ).toHaveLength(2);
+    });
+
+    it('shows exactly one copy per width, switching at the same 1024px as the price summary', () => {
+        expect(detailPageSrc).toMatch(/\.acc-promos--summary\s*\{\s*display: none;\s*\}/);
+        expect(detailPageSrc).toMatch(
+            /@media \(max-width: 1024px\)\s*\{\s*\.acc-promos--summary\s*\{\s*display: block;\s*\}\s*\.acc-promos--content\s*\{\s*display: none;\s*\}/
+        );
+    });
+
+    it('renders no empty wrapper when there are no promotions', () => {
+        expect(detailPageSrc.match(/\{activePromos\.length > 0 && \(/g)).toHaveLength(2);
     });
 });
 

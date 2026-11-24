@@ -12,7 +12,8 @@ const ROOT = join(import.meta.dirname, '../../src/routes');
 // HOS-2348: +1 (ai-connection/protected/activity.ts, scope forced to the session user, no permission).
 // HOS-2261: +1 (venue/protected/stats.ts, owner-scoped READ_OWN advanced metrics).
 // HOS-2475/HOS-2476: +2 (venue|experience/protected/mineStats.ts, owner dashboard aggregate scoped to actor.id, VENUE_EDIT_OWN / EXPERIENCE_EDIT_OWN).
-const EXPECTED_GET_PROTECTED_COUNT = 110;
+// Mi cuenta decision 22: +1 (host-trade/protected/mine-tab-counts.ts, the caller's own listing counts, auth-only, no permission).
+const EXPECTED_GET_PROTECTED_COUNT = 111;
 // HOS-1703: empty on purpose; add a file only with a linked owner decision
 const PENDING_OWNER_DECISION: readonly string[] = [];
 

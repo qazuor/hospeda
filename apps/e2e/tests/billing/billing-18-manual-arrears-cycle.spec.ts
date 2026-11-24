@@ -6,6 +6,7 @@ import {
     decodeHtmlEntities,
     ensureDeadlineVersion,
     type FakeWorld,
+    mailBodyHtml,
     runCron,
     startFakeWorld,
     WEB_URL
@@ -154,7 +155,8 @@ test.describe('TEST:B7:20 AC:B7:32 manual payer arrears cycle @p0 @billing @cloc
             suspensionMailReceivedAt = captured.receivedAt;
             const html = decodeHtmlEntities(captured.html).toLowerCase();
             expect(html).toContain('registrá el pago de la cuota adeudada');
-            expect(html).not.toContain('tarjeta');
+            // The template's copy only: the user footer's security card says "tarjeta".
+            expect(mailBodyHtml(html)).not.toContain('tarjeta');
             await showStatus('Suspendida');
         });
 

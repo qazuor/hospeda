@@ -5,6 +5,7 @@ import {
     createSubscriber,
     ensureDeadlineVersion,
     type FakeWorld,
+    mailBodyHtml,
     runCron,
     startFakeWorld
 } from '../../fixtures/arrears-cycle.ts';
@@ -334,7 +335,8 @@ test.describe('TEST:HOS-2160 admin manual installments: previews, unpaid, reimpu
             expect(m.mailText(suspensionMail.html)).toContain(
                 'Para volver, registrá el pago de la cuota adeudada.'
             );
-            expect(m.mailText(suspensionMail.html)).not.toContain('tarjeta');
+            // The template's copy only: the user footer's security card says "tarjeta".
+            expect(m.mailText(mailBodyHtml(suspensionMail.html))).not.toContain('tarjeta');
 
             const repeated = await m.adminJson({
                 method: 'POST',

@@ -32,7 +32,10 @@ export function NewsletterVerifyEmail({
     const greetingName = firstName?.trim() ? firstName.trim() : 'Hola';
 
     return (
-        <EmailLayout previewText={previewText}>
+        <EmailLayout
+            footerLink="none"
+            previewText={previewText}
+        >
             {isTest && (
                 <Callout tone="warning">
                     <Text style={styles.testBannerText}>

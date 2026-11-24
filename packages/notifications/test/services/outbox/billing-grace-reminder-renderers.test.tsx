@@ -2,6 +2,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { createBillingGraceReminderRenderers } from '../../../src/services/outbox/billing-grace-reminder-renderers.js';
 import { GRACE_REMINDER_SUBJECT } from '../../../src/templates/billing/grace-reminder.js';
+import { mailBodyOf } from '../../templates/helpers/mail-body.js';
 import { row } from './outbox-batch.harness.js';
 
 const renderers = createBillingGraceReminderRenderers({ siteUrl: 'https://hospeda.test' });
@@ -34,7 +35,10 @@ describe('TEST:1707:5 AC:1707:5 grace reminder renderer', () => {
             })
         });
         const manualHtml = renderToStaticMarkup(manual.react);
-        expect(manualHtml).not.toMatch(/tarjeta|débito|cobro automático|Mercado Pago/i);
+        // The template's copy only: the user footer's security card says "tarjeta".
+        expect(mailBodyOf({ html: manualHtml })).not.toMatch(
+            /tarjeta|débito|cobro automático|Mercado Pago/i
+        );
         expect(manualHtml).toContain('transferencia');
     });
     it('uses singular wording and rejects incomplete payloads', () => {

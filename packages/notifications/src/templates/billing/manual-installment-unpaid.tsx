@@ -32,7 +32,10 @@ export function ManualInstallmentUnpaid(props: ManualInstallmentUnpaidProps) {
         subjectId: props.subscriptionId
     });
     return (
-        <EmailLayout previewText={MANUAL_INSTALLMENT_UNPAID_SUBJECT}>
+        <EmailLayout
+            variant="staff"
+            previewText={MANUAL_INSTALLMENT_UNPAID_SUBJECT}
+        >
             <Heading>{MANUAL_INSTALLMENT_UNPAID_SUBJECT}</Heading>
             <Text>Se abrió una cuota de pago manual y todavía no tiene un pago registrado.</Text>
             <StaffNoticeRows

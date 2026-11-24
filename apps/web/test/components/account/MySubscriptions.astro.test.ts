@@ -51,6 +51,19 @@ describe('MySubscriptions SSR block', () => {
         );
         expect(source).toContain('GRACE_PLAN_CHANGE_KEY[row.paymentMethod]');
     });
+    it('points the empty state «Ver planes» at the role-resolved plans page (owner decision 2)', () => {
+        expect(source).toContain('readonly plansPath: string;');
+        expect(source).toContain(
+            'href={buildUrl({ locale, path: plansPath })} data-testid="my-subscription-empty-plans"'
+        );
+        const page = readFileSync(
+            resolve(__dirname, '../../../src/pages/[lang]/mi-cuenta/suscripcion/index.astro'),
+            'utf8'
+        );
+        expect(page).toContain(
+            'plansPath={resolveEmptySubscriptionPlansPath({ roles: user.roles })}'
+        );
+    });
     it('offers cancellation only for allowed states and handles empty and failed reads', () => {
         expect(source).toContain('CANCELLATION_OFFERED[row.status]');
         expect(source).toContain('account.subscription.mine.loadError');

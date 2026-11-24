@@ -324,9 +324,9 @@
                 "saving": "Salvando…",
                 "saved": "Cardápio salvo.",
                 "saveError": "Não foi possível salvar o cardápio.",
-                "linkSave": "Salvar link",
-                "linkSaved": "Link salvo.",
                 "linkSaveError": "Não foi possível salvar o link.",
+                "savedMenuNotLink": "O cardápio foi salvo, mas o link do cardápio não. Tente salvar de novo.",
+                "savedLinkNotMenu": "O link do cardápio foi salvo, mas o cardápio não. Tente salvar de novo.",
                 "locked": "Seu cardápio completo está disponível a partir do plano {{plan}}.",
                 "lockedNoPlan": "Seu cardápio completo está disponível em um plano pago.",
                 "lockedPreTrial": "O cardápio é liberado quando você publicar sua ficha.",
@@ -363,7 +363,10 @@
                     "title": "Remover prato",
                     "message": "Remover este prato do cardápio?",
                     "confirm": "Remover prato"
-                }
+                },
+                "itemPriceHint": "Em pesos. Vazio é “sob consulta”.",
+                "newItem": "Novo prato",
+                "itemsOf": "Pratos de {{section}}"
             },
             "dailySpecials": {
                 "title": "Menu do dia",
@@ -435,7 +438,8 @@
                 "saveError": "Não foi possível salvar a agenda.",
                 "locked": "Manter uma agenda de eventos está disponível a partir do plano {{plan}}.",
                 "lockedNoPlan": "Manter uma agenda de eventos está disponível em um plano pago.",
-                "lockedPreTrial": "A agenda de eventos é liberada quando você publicar sua ficha."
+                "lockedPreTrial": "A agenda de eventos é liberada quando você publicar sua ficha.",
+                "recurrence": "Quando acontece"
             },
             "lockedSection": {
                 "vaciar": "Esvaziar",
@@ -491,7 +495,8 @@
                     "draft": "Rascunho"
                 },
                 "limitReached": "Você atingiu o limite. O plano {{plan}} permite mais promoções.",
-                "limitReachedNoPlan": "Você atingiu o limite de promoções do seu plano."
+                "limitReachedNoPlan": "Você atingiu o limite de promoções do seu plano.",
+                "lockedExisting": "Com seu plano atual você pode ver e pausar suas promoções, mas não criá-las nem editá-las."
             }
         }
     },

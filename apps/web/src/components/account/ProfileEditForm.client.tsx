@@ -35,7 +35,6 @@ import styles from './ProfileEditForm.module.css';
 import { ProfileEditIdentitySection } from './ProfileEditIdentitySection';
 import { ProfileEditSecuritySection } from './ProfileEditSecuritySection';
 import { ProfileEditSocialSection } from './ProfileEditSocialSection';
-import { Alert } from './ui/Alert';
 import { StickySaveBar } from './ui/StickySaveBar';
 import { useSaveBar } from './ui/use-save-bar';
 import { useProfileEditSubmit } from './useProfileEditSubmit';
@@ -414,17 +413,9 @@ export function ProfileEditForm({
                 hasPassword={hasPassword}
             />
 
-            {formError ? (
-                <Alert
-                    tone="danger"
-                    locale={locale}
-                >
-                    {formError}
-                </Alert>
-            ) : null}
-
             <StickySaveBar
                 status={saveBar.status}
+                errorMessage={formError}
                 locale={locale}
                 onSave={() => void saveBar.save()}
                 onDiscard={saveBar.discard}

@@ -4,24 +4,35 @@
  * @description Postal address block of the public venue page (HOS-2189).
  *
  * Shows the street line, the city (the destination's name, never stored on the
- * address) and, when the owner pinned coordinates, a plain link to the map.
- * Everything here is public data of the listing, so the page stays
- * session-blind. A venue with no address renders nothing.
+ * address) and, when the owner pinned coordinates, the inline map with the
+ * venue's exact pin plus a link to open it in a full map. A venue is a public
+ * business address, so the pin is exact (`mode="exact"`), unlike the
+ * privacy circle of an accommodation. The map is the same `LocationMap` the
+ * accommodation location section uses, with the same `--radius-card` tile
+ * (owner smoke, HOS-2520). Everything here is public data of the listing, so
+ * the page stays session-blind. A venue with no address renders nothing.
  */
+import { LocationMap } from '@/components/maps/LocationMap.client';
 
 import type { VenueDetailLocation } from '@/data/types';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
-import { buildVenueMapUrl, formatVenueStreetLine } from '@/lib/venue/venue-address';
+import {
+    buildVenueMapUrl,
+    formatVenueStreetLine,
+    resolveVenueCoordinates
+} from '@/lib/venue/venue-address';
 
 interface Props {
     readonly location: VenueDetailLocation | null;
+    /** Venue name, used as the map marker label. */
+    readonly venueName?: string;
     /** Name of the venue's destination: the address's city. */
     readonly cityName: string;
     readonly locale: SupportedLocale;
 }
 
-const { location, cityName, locale } = Astro.props;
+const { location, cityName, locale, venueName } = Astro.props;
 const { t } = createTranslations(locale);
 
 const streetLine = formatVenueStreetLine({
@@ -30,6 +41,8 @@ const streetLine = formatVenueStreetLine({
     apartmentLabel: t('venue.detail.address.apartment', 'depto.')
 });
 const mapUrl = buildVenueMapUrl({ location });
+const { coordinates } = resolveVenueCoordinates({ location });
+const markerLabel = venueName ?? t('maps.markerLabel');
 
 if (streetLine === '') {
     return;
@@ -42,6 +55,20 @@ if (streetLine === '') {
         <span class="venue-address__street">{streetLine}</span>
         {cityName && <span class="venue-address__city">{cityName}</span>}
     </address>
+    {coordinates && (
+        <div class="venue-address__map-frame">
+            <LocationMap
+                client:visible
+                mode="exact"
+                lat={coordinates.lat}
+                lng={coordinates.lng}
+                zoom={16}
+                markerLabel={markerLabel}
+                ariaLabel={t('maps.ariaLabelVenue')}
+                i18nStrings={{ attribution: t('maps.attribution'), markerLabel }}
+            />
+        </div>
+    )}
     {mapUrl && (
         <a
             class="venue-address__map"
@@ -77,6 +104,14 @@ if (streetLine === '') {
         font-size: 1rem;
         line-height: 1.6;
         color: var(--core-foreground);
+    }
+
+    /* Same tile shape as the accommodation location map (LocationSection). */
+    .venue-address__map-frame {
+        width: 100%;
+        margin-top: var(--space-4, 16px);
+        --location-map-tile-radius: var(--radius-card);
+        --location-map-tile-overflow: hidden;
     }
 
     .venue-address__city {

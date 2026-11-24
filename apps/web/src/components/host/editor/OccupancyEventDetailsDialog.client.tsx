@@ -37,7 +37,7 @@ import {
     DialogHeader
 } from '@/components/shared/ui/Dialog.client';
 import type { TranslationFn } from '@/lib/i18n';
-import styles from './CalendarSection.module.css';
+import styles from './OccupancyEventDialogs.module.css';
 
 /** The sync-sourced block being inspected. */
 export interface ViewableOccupancyEvent {

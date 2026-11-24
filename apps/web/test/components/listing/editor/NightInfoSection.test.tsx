@@ -140,7 +140,7 @@ describe('NightInfoSection', () => {
         });
         fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
 
-        expect(screen.getAllByRole('alert').length).toBeGreaterThan(0);
+        expect(document.querySelector('[aria-invalid="true"]')).not.toBeNull();
         expect(apiClient.patch).not.toHaveBeenCalled();
     });
 
@@ -174,10 +174,9 @@ describe('NightInfoSection — minimum-age scope (HOS-2098)', () => {
         renderSection('', { policies: { minAge: 18 } });
 
         const select = screen.getByLabelText('Alcance de la edad mínima');
-        expect(select.getAttribute('aria-describedby') ?? '').toContain(
-            'night-info-age-scope-hint'
-        );
-        expect(document.getElementById('night-info-age-scope-hint')).not.toBeNull();
+        const hintId = (select.getAttribute('aria-describedby') ?? '').split(' ')[0] ?? '';
+        expect(hintId).toContain('hint');
+        expect(document.getElementById(hintId)?.textContent).toContain('asistente');
         expect(screen.getByTestId('night-info-age-scope').className).not.toMatch(/priceField/);
     });
 
@@ -187,10 +186,8 @@ describe('NightInfoSection — minimum-age scope (HOS-2098)', () => {
         });
 
         const input = screen.getByLabelText('Rige desde las');
-        expect(input.getAttribute('aria-describedby') ?? '').toContain(
-            'night-info-age-scope-from-hint'
-        );
-        const hint = document.getElementById('night-info-age-scope-from-hint');
+        const hintId = (input.getAttribute('aria-describedby') ?? '').split(' ')[0] ?? '';
+        const hint = document.getElementById(hintId);
         expect(hint?.textContent).toContain('hasta el cierre');
         expect(hint?.textContent).toContain('después de la medianoche');
         expect(hint?.textContent).toContain('antes de esa hora quedan afuera');
@@ -229,7 +226,9 @@ describe('NightInfoSection — minimum-age scope (HOS-2098)', () => {
                 minAgeScope: { kind: 'area', area: { es: '', en: '', pt: '' } }
             }
         });
-        const es = within(screen.getByTestId('night-info-age-scope')).getByLabelText('Español');
+        const es = within(screen.getByTestId('night-info-age-scope')).getByRole('textbox', {
+            name: 'Español'
+        });
 
         fireEvent.change(es, { target: { value: 'la pista' } });
 
@@ -288,7 +287,55 @@ describe('NightInfoSection — minimum-age scope (HOS-2098)', () => {
         });
         fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
 
-        expect(screen.getAllByRole('alert').length).toBeGreaterThan(0);
+        expect(document.querySelector('[aria-invalid="true"]')).not.toBeNull();
         expect(apiClient.patch).not.toHaveBeenCalled();
+    });
+});
+
+describe('NightInfoSection — localized note tabs (HOS-2504)', () => {
+    function renderWithErrors(errors: Record<string, string | undefined>) {
+        return render(
+            <NightInfoSection
+                locale="es"
+                data={buildEditData({ entryKind: 'free' })}
+                errors={errors}
+                onFieldChange={vi.fn()}
+                onPolicyChange={vi.fn()}
+            />
+        );
+    }
+
+    it('mounts only the selected locale of a note, with the bare id on es', () => {
+        renderWithErrors({});
+
+        expect(document.getElementById('ce-entryNoteI18n')).not.toBeNull();
+        expect(document.getElementById('ce-entryNoteI18n-en')).toBeNull();
+    });
+
+    it('selects the first locale with an error so its control is focusable', () => {
+        renderWithErrors({ 'entryNoteI18n.pt': 'Demasiado largo' });
+
+        const control = document.getElementById('ce-entryNoteI18n-pt');
+        expect(control).not.toBeNull();
+        expect(screen.getByRole('tab', { name: 'Portugués (Con error)' })).toHaveAttribute(
+            'aria-selected',
+            'true'
+        );
+    });
+
+    it('moves to the errored tab when an error appears after mount', () => {
+        const { rerender } = renderWithErrors({});
+
+        rerender(
+            <NightInfoSection
+                locale="es"
+                data={buildEditData({ entryKind: 'free' })}
+                errors={{ 'entryNoteI18n.en': 'Demasiado largo' }}
+                onFieldChange={vi.fn()}
+                onPolicyChange={vi.fn()}
+            />
+        );
+
+        expect(document.getElementById('ce-entryNoteI18n-en')).not.toBeNull();
     });
 });

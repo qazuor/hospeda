@@ -25,10 +25,19 @@ export const SAVED_VISIBLE_MS = 3000;
 /** Status of a save bar. */
 export type SaveBarStatus = 'clean' | 'dirty' | 'saving' | 'saved' | 'error';
 
-/** What an `onSave` reports back. A rejection counts as `{ ok: false }`. */
+/**
+ * What an `onSave` reports back. A rejection counts as `{ ok: false }`.
+ * `message` is the failure's own reason; the bar shows it instead of the
+ * generic error line, and it is the only place a save failure is told (owner
+ * decision 7, Mi cuenta UI epic).
+ */
 export type SaveOutcome =
     | { readonly ok: true }
-    | { readonly ok: false; readonly invalidFields?: readonly string[] };
+    | {
+          readonly ok: false;
+          readonly invalidFields?: readonly string[];
+          readonly message?: string;
+      };
 
 /** Options of {@link useSaveBar}. */
 export interface UseSaveBarOptions {
@@ -56,6 +65,8 @@ export interface UseSaveBarResult {
     readonly discard: () => void;
     /** Focuses the first invalid field; `true` when one was found. */
     readonly goToFirstError: () => boolean;
+    /** The last failed save's `message`, while the bar is in `error`. */
+    readonly errorMessage: string | null;
 }
 
 /**
@@ -74,6 +85,7 @@ export function useSaveBar({
 }: UseSaveBarOptions): UseSaveBarResult {
     const [phase, setPhase] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
     const invalidFields = useRef<readonly string[]>([]);
+    const [failureMessage, setFailureMessage] = useState<string | null>(null);
     const t = createT(locale);
 
     const status: SaveBarStatus =
@@ -115,13 +127,16 @@ export function useSaveBar({
             const outcome = await onSave();
             if (outcome.ok) {
                 invalidFields.current = [];
+                setFailureMessage(null);
                 setPhase('saved');
             } else {
                 invalidFields.current = outcome.invalidFields ?? [];
+                setFailureMessage(outcome.message ?? null);
                 setPhase('error');
             }
         } catch {
             invalidFields.current = [];
+            setFailureMessage(null);
             setPhase('error');
         }
     }, [onSave, phase]);
@@ -167,5 +182,11 @@ export function useSaveBar({
         locale
     });
 
-    return { status, save, discard, goToFirstError };
+    return {
+        status,
+        save,
+        discard,
+        goToFirstError,
+        errorMessage: status === 'error' ? failureMessage : null
+    };
 }

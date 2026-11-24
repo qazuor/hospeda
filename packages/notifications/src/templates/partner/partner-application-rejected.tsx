@@ -16,7 +16,10 @@ export function PartnerApplicationRejected({
     paragraphs
 }: PartnerApplicationRejectedProps) {
     return (
-        <EmailLayout previewText={preview}>
+        <EmailLayout
+            footerLink="none"
+            previewText={preview}
+        >
             <Heading>{heading}</Heading>
             {paragraphs.map((paragraph) => (
                 <Text key={paragraph}>{paragraph}</Text>

@@ -103,4 +103,12 @@ describe('mi-cuenta/proveedor/index.astro (HOS-278 §8 provider self-service)', 
         expect(source).toContain('tabCounts.valoraciones = { count, countLabel:');
         expect(source).not.toContain('provider-tabs__link');
     });
+
+    it('owner decision 22: reads every count pill through ONE aggregated endpoint', () => {
+        expect(source).toContain('hostTradesApi.tabCounts(');
+        // The per-pill one-row list reads are gone.
+        expect(source).not.toMatch(/pageSize: 1\b/);
+        expect(source).toContain('counts.data.pendingUsages !== null');
+        expect(source).toContain('counts.data.reviews !== null');
+    });
 });

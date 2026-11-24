@@ -84,8 +84,16 @@ describe('accommodation hub wiring', () => {
         expect(HUB).toContain('applyLockedSectionStatuses');
     });
 
+    const CALENDAR_GATE = readFileSync(
+        resolve(__dirname, '../../../src/components/host/editor/CalendarSectionGate.client.tsx'),
+        'utf8'
+    );
+
     it('keeps the calendar page-level entitlement gate', () => {
-        expect(CALENDAR).toContain('PlanEntitlementGate');
-        expect(CALENDAR).toContain('entitlementKey="can_use_calendar"');
+        // HOS-2503: the page mounts CalendarSectionGate, which wraps the shared gate.
+        expect(CALENDAR).toContain('<CalendarSectionGate');
+        expect(CALENDAR_GATE).toContain('entitlementKey={CALENDAR_ENTITLEMENT}');
+        expect(CALENDAR_GATE).toContain("CALENDAR_ENTITLEMENT = 'can_use_calendar'");
+        expect(CALENDAR_GATE).toContain('<PlanEntitlementGate');
     });
 });

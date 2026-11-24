@@ -7,18 +7,23 @@
  * step) and the recurring add-ons withdrawal as a kit `Section`. Highlights its
  * own sidebar item («Complementos», under «Cuenta»).
  *
+ * Owner decision 3 (Mi cuenta UI epic): `AddonPurchaseGate` shows an account
+ * with no subscription «Antes tenés que suscribirte a un plan» and the plans
+ * CTA (decision 2) instead of the purchase flow. Its read is client-side too.
+ *
  * @route /{lang}/mi-cuenta/complementos/
  * @rendering SSR
  */
 import { PageHeader, Section } from '@/components/account/ui';
 import PageHelpLink from '@/components/account/help/PageHelpLink.astro';
 import SubscriptionTabs from '@/components/account/SubscriptionTabs.astro';
-import { AddonPurchase } from '@/components/billing/addon-purchase/AddonPurchase.client';
+import { AddonPurchaseGate } from '@/components/billing/addon-purchase/AddonPurchaseGate.client';
 import { RecurringAddonWithdrawal } from '@/components/billing/recurring-addons/RecurringAddonWithdrawal.client';
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import { parseReturnOrderRequestId } from '@/lib/billing/addon-purchase-return';
 import { createTranslations, type SupportedLocale } from '@/lib/i18n';
 import { buildLoginRedirect } from '@/lib/middleware-helpers';
+import { resolveEmptySubscriptionPlansPath } from '@/lib/account-roles';
 
 const locale = Astro.locals.locale as SupportedLocale;
 const user = Astro.locals.user;
@@ -37,7 +42,13 @@ const listingId = Astro.url.searchParams.get('listing');
         <PageHelpLink slot="help" locale={locale} />
         <SubscriptionTabs slot="tabs" locale={locale} current="addons" />
     </PageHeader>
-    <AddonPurchase client:load locale={locale} returnOrderRequestId={returnOrderRequestId} accountEmail={user.email} />
+    <AddonPurchaseGate
+        client:load
+        locale={locale}
+        returnOrderRequestId={returnOrderRequestId}
+        accountEmail={user.email}
+        plansPath={resolveEmptySubscriptionPlansPath({ roles: user.roles })}
+    />
     <Section
         id="recurring-addons"
         title={t('billing.addonPurchase.recurringAddons.title')}

@@ -15,7 +15,7 @@
  *
  * Two rules hold the card together:
  *
- * - **Badges and text come from ONE call.** `localeDisplaysFor` answers both. The
+ * - **Pill and text come from ONE call.** `localeDisplaysFor` answers both. The
  *   badge used to decide presence with its own inline `.trim()` while
  *   `missingLocalesFor` decided it in `translation-status.ts`, and the two
  *   disagreeing over a whitespace-only value is a bug this repo has shipped once
@@ -28,83 +28,30 @@
  * as plain text: this is a review surface, and rendering it would mean parsing and
  * sanitizing host content on the client for no gain in what the host has to check.
  *
+ * HOS-2492 — the panel shows one kit `Tabs` panel per language, so a row is one
+ * field IN one locale: its name, a `StatusPill` for the locale's role (original,
+ * AI-generated, missing), a second pill for the field's run outcome, and the
+ * text. The hand-drawn SVG badges went with the old per-field card.
+ *
  * @module components/host/editor/TranslationFieldRow
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { TranslatableFieldStatus } from '@/lib/api/types';
+import { StatusPill, type StatusTone } from '@/components/account/ui';
+import type { AccommodationTranslationData, TranslatableFieldStatus } from '@/lib/api/types';
 import type { SupportedLocale } from '@/lib/i18n';
 import styles from './TranslationPanel.module.css';
-import type { FieldOutcome, LocaleDisplay } from './translation-status';
+import type { FieldOutcome, LocaleDisplay, TranslatableField } from './translation-status';
 import { localeDisplaysFor } from './translation-status';
 
-/** Translator handed down from the panel, which owns the locale. */
 type Translate = (key: string, fallback?: string, params?: Record<string, unknown>) => string;
 
-/** Human-readable label for each locale. */
+/** Short locale codes shown on the tabs and in the failure notes. */
 export const LOCALE_LABELS: Record<SupportedLocale, string> = {
     es: 'ES',
     en: 'EN',
     pt: 'PT'
 };
-
-// ---------------------------------------------------------------------------
-// Icons
-// ---------------------------------------------------------------------------
-
-/** Pencil — the locale the content is authored in. */
-function SourceIcon() {
-    return (
-        <svg
-            className={styles.localeIcon}
-            viewBox="0 0 16 16"
-            fill="none"
-            aria-hidden="true"
-            focusable="false"
-        >
-            <path
-                d="M11.013 1.427a1.75 1.75 0 0 1 2.474 0l1.086 1.086a1.75 1.75 0 0 1 0 2.474l-8.61 8.61c-.21.21-.47.364-.756.445l-3.251.93a.75.75 0 0 1-.927-.928l.929-3.25c.081-.286.235-.547.445-.758l8.61-8.609Z"
-                fill="currentColor"
-            />
-        </svg>
-    );
-}
-
-/** Check — the locale holds a translation. */
-function PresentIcon() {
-    return (
-        <svg
-            className={styles.localeIcon}
-            viewBox="0 0 16 16"
-            fill="none"
-            aria-hidden="true"
-            focusable="false"
-        >
-            <path
-                d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"
-                fill="currentColor"
-            />
-        </svg>
-    );
-}
-
-/** Dash — the locale holds nothing. */
-function MissingIcon() {
-    return (
-        <svg
-            className={styles.localeIcon}
-            viewBox="0 0 16 16"
-            fill="none"
-            aria-hidden="true"
-            focusable="false"
-        >
-            <path
-                d="M2 8a.75.75 0 0 1 .75-.75h10.5a.75.75 0 0 1 0 1.5H2.75A.75.75 0 0 1 2 8Z"
-                fill="currentColor"
-            />
-        </svg>
-    );
-}
 
 // ---------------------------------------------------------------------------
 // Sub-component: ExpandableText
@@ -171,52 +118,31 @@ function ExpandableText({ text, t }: ExpandableTextProps) {
 }
 
 // ---------------------------------------------------------------------------
-// Sub-component: LocaleText
+// Sub-component: RolePill
 // ---------------------------------------------------------------------------
+
+/** Tone per locale role: the original is neutral, a gap is a warning. */
+const ROLE_TONE: Readonly<Record<LocaleDisplay['role'], StatusTone>> = {
+    source: 'neutral',
+    translated: 'success',
+    missing: 'warning'
+};
 
 interface LocaleTextProps {
     readonly display: LocaleDisplay;
     readonly t: Translate;
 }
 
-/**
- * One locale's block: which locale it is, where its content came from, and the
- * content itself.
- *
- * The role line is what AC-2 asks for — the source locale is what the host wrote,
- * the others are what a machine produced from it, and a host who cannot tell them
- * apart has no reason to read the second kind sceptically.
- */
-function LocaleText({ display, t }: LocaleTextProps) {
-    const roleLabel =
+function RolePill({ display, t }: LocaleTextProps) {
+    const label =
         display.role === 'source'
             ? t('host.properties.editor.translation.roleSource', 'Original')
             : display.role === 'translated'
               ? t('host.properties.editor.translation.roleTranslated', 'Generado con IA')
               : t('host.properties.editor.translation.roleMissing', 'Sin traducir');
-
-    return (
-        <li className={styles.localeText}>
-            <p className={styles.localeTextHead}>
-                <span className={styles.localeTextCode}>{LOCALE_LABELS[display.locale]}</span>
-                <span className={styles.localeTextRole}>{roleLabel}</span>
-            </p>
-            <LocaleTextBody
-                display={display}
-                t={t}
-            />
-        </li>
-    );
+    return <StatusPill tone={ROLE_TONE[display.role]}>{label}</StatusPill>;
 }
 
-/**
- * The body of one locale block.
- *
- * Every branch renders something. AC-3: an untranslated locale must read as
- * untranslated, and the two kinds of empty are not interchangeable — "you have
- * not written this in Spanish" is addressed to the host, "this was not translated
- * yet" is addressed to the button below.
- */
 function LocaleTextBody({ display, t }: LocaleTextProps) {
     if (display.text !== null) {
         return (
@@ -278,34 +204,29 @@ interface FieldNoteProps {
     readonly t: Translate;
 }
 
-/**
- * The per-field line under the badges: run state while a generation is in
- * flight or just finished, otherwise an explanation for a field that has no
- * source text to translate from.
- */
+/** The field's run outcome (HOS-317) as a pill, or the «no source» note. */
 function FieldNote({ sourced, outcome, t }: FieldNoteProps) {
     if (outcome) {
         if (outcome.status === 'pending') {
             return (
-                <p className={styles.fieldNote}>
+                <StatusPill tone="info">
                     {t('host.properties.editor.translation.fieldPending', 'Generando...')}
-                </p>
+                </StatusPill>
             );
         }
         if (outcome.status === 'translated') {
             return (
-                <p className={`${styles.fieldNote} ${styles.fieldNoteSuccess}`}>
+                <StatusPill tone="success">
                     {t('host.properties.editor.translation.fieldTranslated', 'Traducido')}
-                </p>
+                </StatusPill>
             );
         }
         if (outcome.status === 'failed') {
             // `failedLocales` can be empty even here: a locale the client cannot
             // name is dropped from the list but never cancels the failure itself.
-            // Naming no locale beats rendering "... a " with nothing after it.
             const named = outcome.failedLocales.map((locale) => LOCALE_LABELS[locale]).join(', ');
             return (
-                <p className={`${styles.fieldNote} ${styles.fieldNoteError}`}>
+                <StatusPill tone="danger">
                     {named
                         ? t(
                               'host.properties.editor.translation.fieldFailed',
@@ -316,24 +237,24 @@ function FieldNote({ sourced, outcome, t }: FieldNoteProps) {
                               'host.properties.editor.translation.fieldFailedUnknown',
                               'No se pudo traducir este campo'
                           )}
-                </p>
+                </StatusPill>
             );
         }
         return (
-            <p className={styles.fieldNote}>
+            <StatusPill tone="neutral">
                 {t('host.properties.editor.translation.fieldUntouched', 'Sin cambios')}
-            </p>
+            </StatusPill>
         );
     }
 
     if (!sourced) {
         return (
-            <p className={styles.fieldNote}>
+            <StatusPill tone="neutral">
                 {t(
                     'host.properties.editor.translation.fieldNoSource',
                     'Sin contenido para traducir'
                 )}
-            </p>
+            </StatusPill>
         );
     }
 
@@ -344,79 +265,139 @@ function FieldNote({ sourced, outcome, t }: FieldNoteProps) {
 // Component: TranslationFieldRow
 // ---------------------------------------------------------------------------
 
+/** Props of {@link TranslationFieldRow}. */
 export interface TranslationFieldRowProps {
     readonly status: TranslatableFieldStatus;
     readonly sourceLocale: SupportedLocale;
+    /** The locale whose tab this row renders in. */
+    readonly displayLocale: SupportedLocale;
     readonly fieldLabel: string;
     readonly outcome?: FieldOutcome;
     readonly t: Translate;
 }
 
 /**
- * Renders a single field card: locale presence badges, this field's state during
- * and after a generation run, and the text each locale holds.
+ * One field in one locale: name, role pill, run-outcome pill and the text.
  *
- * @param status - The field's i18n values plus its plain column.
- * @param sourceLocale - Locale the content is authored in.
- * @param fieldLabel - Already-translated label for the field.
- * @param outcome - This field's state in the run currently being reported.
- * @param t - The panel's translator.
+ * @param props - See {@link TranslationFieldRowProps}.
+ * @returns The `<li>` row.
  */
 export function TranslationFieldRow({
     status,
     sourceLocale,
+    displayLocale,
     fieldLabel,
     outcome,
     t
 }: TranslationFieldRowProps) {
     const displays = localeDisplaysFor({ status, sourceLocale });
-    // Read off the same answer the badges and the text use, so a card cannot
+    // Read off the same answer the pills and the text use, so a row cannot
     // offer to translate from a source it just rendered as empty.
     const sourced = displays.some((display) => display.role === 'source' && display.text !== null);
+    const display = displays.find((candidate) => candidate.locale === displayLocale);
 
     return (
-        <div className={styles.fieldCard}>
-            <div className={styles.fieldName}>{fieldLabel}</div>
-            <div className={styles.locales}>
-                {displays.map((display) => {
-                    let badgeClass = styles.localeBadgeMissing;
-                    if (display.role === 'source') {
-                        badgeClass = styles.localeBadgeSource;
-                    } else if (display.role === 'translated') {
-                        badgeClass = styles.localeBadgePresent;
-                    }
-
-                    return (
-                        <span
-                            key={display.locale}
-                            className={`${styles.localeBadge} ${badgeClass}`}
-                        >
-                            {display.role === 'source' ? (
-                                <SourceIcon />
-                            ) : display.role === 'translated' ? (
-                                <PresentIcon />
-                            ) : (
-                                <MissingIcon />
-                            )}
-                            {LOCALE_LABELS[display.locale]}
-                        </span>
-                    );
-                })}
-            </div>
-            <FieldNote
-                sourced={sourced}
-                outcome={outcome}
-                t={t}
-            />
-            <ul className={styles.localeTexts}>
-                {displays.map((display) => (
-                    <LocaleText
-                        key={display.locale}
+        <li
+            className={styles.fieldCard}
+            data-locale={displayLocale}
+            data-role={display?.role}
+        >
+            <div className={styles.fieldHead}>
+                <p className={styles.fieldName}>{fieldLabel}</p>
+                {display ? (
+                    <RolePill
                         display={display}
                         t={t}
                     />
-                ))}
-            </ul>
-        </div>
+                ) : null}
+                <FieldNote
+                    sourced={sourced}
+                    outcome={outcome}
+                    t={t}
+                />
+            </div>
+            {display ? (
+                <LocaleTextBody
+                    display={display}
+                    t={t}
+                />
+            ) : null}
+        </li>
     );
+}
+
+/**
+ * How many of the given rows are missing in a locale (for the tab count).
+ *
+ * @param params - The field statuses, the source locale and the locale.
+ * @returns The number of fields whose role in that locale is `missing`.
+ */
+export function countMissingInLocale({
+    statuses,
+    sourceLocale,
+    locale
+}: {
+    readonly statuses: readonly TranslatableFieldStatus[];
+    readonly sourceLocale: SupportedLocale;
+    readonly locale: SupportedLocale;
+}): number {
+    return statuses.filter((status) =>
+        localeDisplaysFor({ status, sourceLocale }).some(
+            (display) => display.locale === locale && display.role === 'missing'
+        )
+    ).length;
+}
+
+/** One field row of the panel, before it is placed in a locale tab. */
+export interface TranslationRowModel {
+    readonly field: TranslatableField;
+    readonly status: TranslatableFieldStatus;
+    readonly label: string;
+}
+
+/**
+ * The panel's field rows, in display order.
+ *
+ * BETA-199: the rich-description row is absent when the owner's plan has no
+ * rich description — the API omits the premium pair entirely, and a row that
+ * can never fill in is what kept the generate button alive forever.
+ *
+ * @param params - The (possibly run-folded) translations and the translator.
+ * @returns The rows.
+ */
+export function buildTranslationRows({
+    translations,
+    t
+}: {
+    readonly translations: AccommodationTranslationData;
+    readonly t: Translate;
+}): readonly TranslationRowModel[] {
+    const rows: TranslationRowModel[] = [
+        {
+            field: 'name',
+            status: translations.name,
+            label: t('host.properties.editor.field.name', 'Nombre')
+        },
+        {
+            field: 'summary',
+            status: translations.summary,
+            label: t('host.properties.editor.field.summary', 'Resumen')
+        },
+        {
+            field: 'description',
+            status: translations.description,
+            label: t('host.properties.editor.field.description', 'Descripción')
+        }
+    ];
+    if (translations.richDescription !== null) {
+        rows.push({
+            field: 'richDescription',
+            status: translations.richDescription,
+            label: t(
+                'host.properties.editor.translation.fieldRichDescription',
+                'Descripción enriquecida'
+            )
+        });
+    }
+    return rows;
 }

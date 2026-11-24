@@ -29,17 +29,25 @@
 
 import { DEFAULT_ENTITY_MAX_FILE_SIZE_MB, mbToBytes } from '@repo/media';
 import { getGalleryCap } from '@repo/schemas';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { showConfirmationDialog } from '@/lib/forms/show-confirmation-dialog';
+import {
+    __resetEditorAutoSave,
+    getEditorAutoSave
+} from '../../../../src/components/account/editor-shell/editor-auto-save-signal';
 import type { MediaSectionProps } from '../../../../src/components/listing/editor/MediaSection.client';
 import { MediaSection } from '../../../../src/components/listing/editor/MediaSection.client';
 
-// HOS-2429: removal now asks for confirmation. The dialog itself is covered by
-// `show-confirmation-dialog.test.tsx`; here the user always confirms.
-vi.mock('@/lib/forms/show-confirmation-dialog', () => ({
-    showConfirmationDialog: vi.fn().mockResolvedValue(true)
-}));
+/**
+ * HOS-2429 + HOS-2489: removal asks first through the kit confirm dialog.
+ * Clicks the remove control, then answers the real `alertdialog`.
+ */
+async function removeAndAnswer(control: HTMLElement, answer: 'Eliminar' | 'Cancelar') {
+    fireEvent.click(control);
+    const dialog = await screen.findByRole('alertdialog');
+    fireEvent.click(within(dialog).getByRole('button', { name: answer }));
+    await waitFor(() => expect(screen.queryByRole('alertdialog')).toBeNull());
+}
 
 // ---------------------------------------------------------------------------
 // Hoisted mocks (vi.hoisted executes before vi.mock factories)
@@ -88,7 +96,8 @@ vi.mock('../../../../src/store/toast-store', () => ({
     addToast: mockAddToast
 }));
 
-vi.mock('../../../../src/lib/i18n', () => ({
+vi.mock('../../../../src/lib/i18n', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('../../../../src/lib/i18n')>()),
     // Interpolating translator, matching the real `createTranslations().t`.
     createTranslations: () => ({
         t: (key: string, fallback?: string, params?: Record<string, string | number>): string => {
@@ -354,16 +363,17 @@ describe('MediaSection — per-operation persistence (HOS-372)', () => {
 
     describe('removing a photo asks first (HOS-2429)', () => {
         it('deletes nothing when the user cancels the confirmation', async () => {
-            vi.mocked(showConfirmationDialog).mockResolvedValueOnce(false);
             mockListMedia.mockReturnValue(makeListOk([GALLERY_ROW_1, GALLERY_ROW_2]));
             mockRemoveMedia.mockReturnValue(makeRemoveOk());
 
             render(<MediaSection {...defaultProps} />);
             await waitFor(() => expect(screen.getAllByRole('img')).toHaveLength(2));
 
-            fireEvent.click(screen.getAllByLabelText('Eliminar')[0] as HTMLElement);
+            await removeAndAnswer(
+                screen.getAllByRole('button', { name: 'Eliminar' })[0] as HTMLElement,
+                'Cancelar'
+            );
 
-            await waitFor(() => expect(showConfirmationDialog).toHaveBeenCalledTimes(1));
             expect(mockRemoveMedia).not.toHaveBeenCalled();
             expect(screen.getAllByRole('img')).toHaveLength(2);
         });
@@ -377,8 +387,8 @@ describe('MediaSection — per-operation persistence (HOS-372)', () => {
             render(<MediaSection {...defaultProps} />);
             await waitFor(() => expect(screen.getAllByRole('img')).toHaveLength(2));
 
-            const removeButtons = screen.getAllByLabelText('Eliminar');
-            fireEvent.click(removeButtons[0]);
+            const removeButtons = screen.getAllByRole('button', { name: 'Eliminar' });
+            await removeAndAnswer(removeButtons[0] as HTMLElement, 'Eliminar');
 
             await waitFor(() => {
                 expect(mockRemoveMedia).toHaveBeenCalledWith({
@@ -408,7 +418,7 @@ describe('MediaSection — per-operation persistence (HOS-372)', () => {
             render(<MediaSection {...defaultProps} />);
             await waitFor(() => expect(screen.getAllByRole('img')).toHaveLength(1));
 
-            fireEvent.click(screen.getByLabelText('Eliminar'));
+            await removeAndAnswer(screen.getByRole('button', { name: 'Eliminar' }), 'Eliminar');
 
             await waitFor(() => {
                 expect(screen.getByText('remove failed')).toBeInTheDocument();
@@ -530,7 +540,7 @@ describe('MediaSection — per-operation persistence (HOS-372)', () => {
                 expect(screen.getByAltText('Imagen principal')).toBeInTheDocument();
             });
 
-            fireEvent.click(screen.getByLabelText('Eliminar'));
+            await removeAndAnswer(screen.getByRole('button', { name: 'Eliminar' }), 'Eliminar');
 
             await waitFor(() => {
                 expect(mockRemoveMedia).toHaveBeenCalledWith({
@@ -565,7 +575,8 @@ describe('MediaSection — per-operation persistence (HOS-372)', () => {
             render(<MediaSection {...defaultProps} />);
 
             await waitFor(() => {
-                expect(screen.queryByText('+')).not.toBeInTheDocument();
+                // Only the featured slot's dropzone: no gallery add tile.
+                expect(screen.getAllByRole('button', { name: /Agregar foto/ })).toHaveLength(1);
                 expect(
                     screen.getByText(`Galería de fotos (${GALLERY_CAP}/${GALLERY_CAP})`)
                 ).toBeInTheDocument();
@@ -575,7 +586,8 @@ describe('MediaSection — per-operation persistence (HOS-372)', () => {
         it('shows the add (+) button when the gallery is below the cap', async () => {
             render(<MediaSection {...defaultProps} />);
             await waitFor(() => {
-                expect(screen.getByText('+')).toBeInTheDocument();
+                // The featured slot's dropzone plus the gallery's add tile.
+                expect(screen.getAllByRole('button', { name: /Agregar foto/ })).toHaveLength(2);
             });
         });
     });
@@ -873,6 +885,52 @@ describe('MediaSection — per-operation persistence (HOS-372)', () => {
             });
             expect(global.fetch).not.toHaveBeenCalled();
             expect(mockAddToast).toHaveBeenCalled();
+        });
+    });
+    // ── Shell auto-save chip (HOS-2489) ────────────────────────────────
+
+    describe('reports every photo action to the shell chip (HOS-2489)', () => {
+        beforeEach(() => {
+            __resetEditorAutoSave();
+        });
+
+        it('ends a successful upload on «saved»', async () => {
+            stubFetchUploadOk();
+            mockAddMedia.mockReturnValue(makeAddOk());
+            render(<MediaSection {...defaultProps} />);
+            await waitFor(() => expect(mockListMedia).toHaveBeenCalled());
+
+            const file = new File(['img'], 'photo.jpg', { type: 'image/jpeg' });
+            fireEvent.change(fileInputs().gallery, { target: { files: [file] } });
+
+            await waitFor(() => expect(getEditorAutoSave().status).toBe('saved'));
+        });
+
+        it('ends a refused upload on «error»', async () => {
+            stubFetchUploadOk();
+            mockAddMedia.mockReturnValue(makeError('quota exceeded'));
+            render(<MediaSection {...defaultProps} />);
+            await waitFor(() => expect(mockListMedia).toHaveBeenCalled());
+
+            const file = new File(['img'], 'photo.jpg', { type: 'image/jpeg' });
+            fireEvent.change(fileInputs().gallery, { target: { files: [file] } });
+
+            await waitFor(() => expect(getEditorAutoSave().status).toBe('error'));
+        });
+
+        it('offers a chip retry when a removal fails', async () => {
+            mockListMedia.mockReturnValue(makeListOk([GALLERY_ROW_1]));
+            mockRemoveMedia.mockReturnValue(makeError('remove failed'));
+            render(<MediaSection {...defaultProps} />);
+            await waitFor(() => expect(screen.getAllByRole('img')).toHaveLength(1));
+
+            await removeAndAnswer(screen.getByRole('button', { name: 'Eliminar' }), 'Eliminar');
+
+            await waitFor(() => {
+                const state = getEditorAutoSave();
+                expect(state.status).toBe('error');
+                expect(state.status === 'error' ? state.retry : undefined).toBeTypeOf('function');
+            });
         });
     });
 });

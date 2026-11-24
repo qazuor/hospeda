@@ -14,6 +14,15 @@ export {
     STAGING_AUTH_COOKIE_PREFIX
 } from './auth-session-cookie.js';
 export {
+    BRAND_CONTACT_EMAIL,
+    BRAND_PHONE_DISPLAY,
+    BRAND_SOCIAL_PROFILES,
+    BRAND_WHATSAPP_URL,
+    type BrandSocialPlatform,
+    buildBrandWhatsAppUrl,
+    toBrandWhatsAppDigits
+} from './brand-contact.js';
+export {
     commonEnvMappings,
     commonEnvSchemas,
     createStartupValidator,

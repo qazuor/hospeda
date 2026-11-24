@@ -114,6 +114,28 @@ export async function runEditorAutoSave({
     return ok;
 }
 
+/**
+ * Runs a save whose chip «Reintentar» simply runs the same save again
+ * (HOS-2489: photo deletes, reorders and text edits).
+ *
+ * @param params - `save` persists (and applies its own result to the island's
+ * state) and resolves `true` on success.
+ * @returns `{ ok }` — whether this attempt succeeded.
+ */
+export async function runRetryableEditorAutoSave({
+    save
+}: {
+    readonly save: () => Promise<boolean>;
+}): Promise<{ readonly ok: boolean }> {
+    const ok = await runEditorAutoSave({
+        save,
+        retry: () => {
+            void runRetryableEditorAutoSave({ save });
+        }
+    });
+    return { ok };
+}
+
 /** Test-only reset to idle with no listeners. */
 export function __resetEditorAutoSave(): void {
     state = IDLE;

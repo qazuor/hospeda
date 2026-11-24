@@ -13,10 +13,10 @@
  */
 
 import { useCallback } from 'react';
+import { runRetryableEditorAutoSave } from '@/components/account/editor-shell/editor-auto-save-signal';
 import { accommodationMediaApi } from '@/lib/api/endpoints-protected';
 import type { AccommodationMediaItem } from '@/lib/api/types';
 import { translateApiError } from '@/lib/api-errors';
-import { confirmPhotoRemoval } from '@/lib/forms/confirm-photo-removal';
 import { useSingleFlight } from '@/lib/forms/use-single-flight';
 import {
     buildReorderPayload,
@@ -40,6 +40,8 @@ export interface UsePhotoGalleryMutationsParams {
     readonly setError: (message: string | null) => void;
     readonly setOpLoading: (loading: boolean) => void;
     readonly reportUploadError: (message: string) => void;
+    /** Asks before a delete (HOS-2429); the section renders the kit `useConfirm` dialog. */
+    readonly confirmRemoval: () => Promise<boolean>;
 }
 
 export interface UsePhotoGalleryMutationsResult {
@@ -70,7 +72,8 @@ export function usePhotoGalleryMutations({
     setGalleryItems,
     setError,
     setOpLoading,
-    reportUploadError
+    reportUploadError,
+    confirmRemoval
 }: UsePhotoGalleryMutationsParams): UsePhotoGalleryMutationsResult {
     const runSingleFlight = useSingleFlight();
 
@@ -81,30 +84,35 @@ export function usePhotoGalleryMutations({
     const handleFeaturedRemove = useCallback(async () => {
         if (!featuredItem?.id) return;
         // HOS-2429: the delete is immediate and irreversible, so ask first.
-        if (!(await runSingleFlight(() => confirmPhotoRemoval({ t })))) return;
-        setError(null);
-        setOpLoading(true);
-
-        const result = await accommodationMediaApi.removeMedia({
-            id: accommodationId,
-            mediaId: featuredItem.id
+        if (!(await runSingleFlight(confirmRemoval))) return;
+        const mediaId = featuredItem.id;
+        // HOS-2489: every persisted photo action reports to the shell chip.
+        await runRetryableEditorAutoSave({
+            save: async () => {
+                setError(null);
+                setOpLoading(true);
+                const result = await accommodationMediaApi.removeMedia({
+                    id: accommodationId,
+                    mediaId
+                });
+                if (result.ok) {
+                    setFeaturedItem(null);
+                } else {
+                    setError(
+                        translateApiError({
+                            error: result.error,
+                            t,
+                            fallback: t(
+                                'host.properties.editor.photo.removeFailed',
+                                'No se pudo eliminar la imagen'
+                            )
+                        })
+                    );
+                }
+                setOpLoading(false);
+                return result.ok;
+            }
         });
-
-        if (result.ok) {
-            setFeaturedItem(null);
-        } else {
-            setError(
-                translateApiError({
-                    error: result.error,
-                    t,
-                    fallback: t(
-                        'host.properties.editor.photo.removeFailed',
-                        'No se pudo eliminar la imagen'
-                    )
-                })
-            );
-        }
-        setOpLoading(false);
     }, [
         featuredItem,
         accommodationId,
@@ -112,7 +120,8 @@ export function usePhotoGalleryMutations({
         setError,
         setOpLoading,
         setFeaturedItem,
-        runSingleFlight
+        runSingleFlight,
+        confirmRemoval
     ]);
 
     /**
@@ -123,32 +132,43 @@ export function usePhotoGalleryMutations({
         async (item: AccommodationMediaItem) => {
             if (!item.id) return;
             // HOS-2429: the delete is immediate and irreversible, so ask first.
-            if (!(await runSingleFlight(() => confirmPhotoRemoval({ t })))) return;
-            setError(null);
-            setOpLoading(true);
-
-            const result = await accommodationMediaApi.removeMedia({
-                id: accommodationId,
-                mediaId: item.id
+            if (!(await runSingleFlight(confirmRemoval))) return;
+            await runRetryableEditorAutoSave({
+                save: async () => {
+                    setError(null);
+                    setOpLoading(true);
+                    const result = await accommodationMediaApi.removeMedia({
+                        id: accommodationId,
+                        mediaId: item.id
+                    });
+                    if (result.ok) {
+                        setGalleryItems((prev) => prev.filter((g) => g.id !== item.id));
+                    } else {
+                        setError(
+                            translateApiError({
+                                error: result.error,
+                                t,
+                                fallback: t(
+                                    'host.properties.editor.photo.removeFailed',
+                                    'No se pudo eliminar la imagen'
+                                )
+                            })
+                        );
+                    }
+                    setOpLoading(false);
+                    return result.ok;
+                }
             });
-
-            if (result.ok) {
-                setGalleryItems((prev) => prev.filter((g) => g.id !== item.id));
-            } else {
-                setError(
-                    translateApiError({
-                        error: result.error,
-                        t,
-                        fallback: t(
-                            'host.properties.editor.photo.removeFailed',
-                            'No se pudo eliminar la imagen'
-                        )
-                    })
-                );
-            }
-            setOpLoading(false);
         },
-        [accommodationId, t, setError, setOpLoading, setGalleryItems, runSingleFlight]
+        [
+            accommodationId,
+            t,
+            setError,
+            setOpLoading,
+            setGalleryItems,
+            runSingleFlight,
+            confirmRemoval
+        ]
     );
 
     /**
@@ -166,9 +186,8 @@ export function usePhotoGalleryMutations({
      * list after the promotion and renders exactly what was saved. The local
      * composition survives only as a best-effort fallback for a failed re-read.
      */
-    const handlePromoteToFeatured = useCallback(
-        async (item: AccommodationMediaItem) => {
-            if (!item.id) return;
+    const promote = useCallback(
+        async (item: AccommodationMediaItem): Promise<boolean> => {
             setError(null);
             setOpLoading(true);
 
@@ -189,7 +208,7 @@ export function usePhotoGalleryMutations({
                     })
                 );
                 setOpLoading(false);
-                return;
+                return false;
             }
 
             const refreshed = await accommodationMediaApi
@@ -210,6 +229,7 @@ export function usePhotoGalleryMutations({
                 setFeaturedItem(mediaRowToItem(result.data.media));
             }
             setOpLoading(false);
+            return true;
         },
         [
             accommodationId,
@@ -221,6 +241,14 @@ export function usePhotoGalleryMutations({
             setGalleryItems,
             setFeaturedItem
         ]
+    );
+
+    const handlePromoteToFeatured = useCallback(
+        async (item: AccommodationMediaItem) => {
+            if (!item.id) return;
+            await runRetryableEditorAutoSave({ save: () => promote(item) });
+        },
+        [promote]
     );
 
     /**
@@ -241,38 +269,41 @@ export function usePhotoGalleryMutations({
             if (nextGalleryItems.some((g) => !g.id) || (featuredItem && !featuredItem.id)) return;
 
             const previousGalleryItems = galleryItems;
-            setError(null);
-            setOpLoading(true);
-            setGalleryItems(nextGalleryItems);
-
             const orderedIds = buildReorderPayload({
                 featuredId: featuredItem?.id ?? null,
                 galleryIds: nextGalleryItems.map((g) => g.id)
             });
 
-            const result = await accommodationMediaApi.reorderMedia({
-                id: accommodationId,
-                orderedIds
+            await runRetryableEditorAutoSave({
+                save: async () => {
+                    setError(null);
+                    setOpLoading(true);
+                    setGalleryItems(nextGalleryItems);
+                    const result = await accommodationMediaApi.reorderMedia({
+                        id: accommodationId,
+                        orderedIds
+                    });
+                    if (result.ok) {
+                        const { featured, gallery } = splitMediaRows(result.data.media);
+                        setFeaturedItem(featured);
+                        setGalleryItems(gallery);
+                    } else {
+                        setGalleryItems(previousGalleryItems);
+                        reportUploadError(
+                            translateApiError({
+                                error: result.error,
+                                t,
+                                fallback: t(
+                                    'host.properties.editor.photo.reorderFailed',
+                                    'No se pudo guardar el nuevo orden'
+                                )
+                            })
+                        );
+                    }
+                    setOpLoading(false);
+                    return result.ok;
+                }
             });
-
-            if (result.ok) {
-                const { featured, gallery } = splitMediaRows(result.data.media);
-                setFeaturedItem(featured);
-                setGalleryItems(gallery);
-            } else {
-                setGalleryItems(previousGalleryItems);
-                reportUploadError(
-                    translateApiError({
-                        error: result.error,
-                        t,
-                        fallback: t(
-                            'host.properties.editor.photo.reorderFailed',
-                            'No se pudo guardar el nuevo orden'
-                        )
-                    })
-                );
-            }
-            setOpLoading(false);
         },
         [
             accommodationId,
@@ -331,9 +362,8 @@ export function usePhotoGalleryMutations({
      * state. It never asks about other photos' missing alt text: the HOS-1018
      * warning fires only when the host leaves Fotos (HOS-2043).
      */
-    const handleUpdateMediaText = useCallback(
+    const updateText = useCallback(
         async (item: AccommodationMediaItem, body: PhotoMetadataUpdateBody): Promise<boolean> => {
-            if (!item.id) return false;
             setError(null);
             setOpLoading(true);
 
@@ -376,6 +406,17 @@ export function usePhotoGalleryMutations({
             setFeaturedItem,
             setGalleryItems
         ]
+    );
+
+    const handleUpdateMediaText = useCallback(
+        async (item: AccommodationMediaItem, body: PhotoMetadataUpdateBody): Promise<boolean> => {
+            if (!item.id) return false;
+            const { ok } = await runRetryableEditorAutoSave({
+                save: () => updateText(item, body)
+            });
+            return ok;
+        },
+        [updateText]
     );
 
     return {

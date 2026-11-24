@@ -60,47 +60,26 @@ describe('AccommodationContactBlock.astro (source-based)', () => {
         expect(src).not.toContain('href={socialNetworks.instagram}');
     });
 
-    it('renders the phone link as a tel: URI with no target/rel (internal-scheme link)', () => {
+    it('builds the phone link as a tel: URI and the email link as a mailto: URI', () => {
         // biome-ignore lint/suspicious/noTemplateCurlyInString: asserting literal source text, not interpolating.
-        expect(src).toContain('href={`tel:${contactInfo.phone}`}');
-    });
-
-    it('renders the email link as a mailto: URI with no target/rel (internal-scheme link)', () => {
+        expect(src).toContain('href: `tel:${contactInfo.phone}`');
         // biome-ignore lint/suspicious/noTemplateCurlyInString: asserting literal source text, not interpolating.
-        expect(src).toContain('href={`mailto:${contactInfo.email}`}');
+        expect(src).toContain('href: `mailto:${contactInfo.email}`');
     });
 
-    it('renders the website link with rel="noopener noreferrer", not sponsored/nofollow', () => {
-        const websiteBlock = src.slice(
-            src.indexOf('href={websiteHref}'),
-            src.indexOf('href={websiteHref}') + 300
-        );
-        expect(websiteBlock).toContain('target="_blank"');
-        expect(websiteBlock).toContain('rel="noopener noreferrer"');
-        expect(websiteBlock).not.toContain('sponsored');
-        expect(websiteBlock).not.toContain('nofollow');
+    it('hands the allow-listed website, Facebook and Instagram hrefs to the shared component', () => {
+        expect(src).toContain('href: websiteHref');
+        expect(src).toContain('href: facebookHref');
+        expect(src).toContain('href: instagramHref');
+        expect(src).toContain('Icon: FacebookIcon');
+        expect(src).toContain('Icon: InstagramIcon');
     });
 
-    it('renders the Facebook link with rel="noopener noreferrer", not sponsored/nofollow', () => {
-        const fbBlock = src.slice(
-            src.indexOf('href={facebookHref}'),
-            src.indexOf('href={facebookHref}') + 300
-        );
-        expect(fbBlock).toContain('target="_blank"');
-        expect(fbBlock).toContain('rel="noopener noreferrer"');
-        expect(fbBlock).not.toContain('sponsored');
-        expect(fbBlock).not.toContain('nofollow');
-    });
-
-    it('renders the Instagram link with rel="noopener noreferrer", not sponsored/nofollow', () => {
-        const igBlock = src.slice(
-            src.indexOf('href={instagramHref}'),
-            src.indexOf('href={instagramHref}') + 300
-        );
-        expect(igBlock).toContain('target="_blank"');
-        expect(igBlock).toContain('rel="noopener noreferrer"');
-        expect(igBlock).not.toContain('sponsored');
-        expect(igBlock).not.toContain('nofollow');
+    it('delegates all markup (target/rel, buttons) to ListingContactChannels', () => {
+        expect(src).toContain('<ListingContactChannels');
+        expect(src).not.toContain('<GradientButton');
+        expect(src).not.toContain('<IconButton');
+        expect(src).not.toContain('target=');
     });
 
     it('never imports the WhatsApp icon or the WhatsAppContact island — that channel stays separate', () => {

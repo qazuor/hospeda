@@ -119,6 +119,16 @@ export {
 export { ListRow, type ListRowActions, type ListRowProps } from './ListRow';
 export { LockedState, type LockedStateProps } from './LockedState';
 export type { LockReason, PlanRef } from './lock-reason';
+export {
+    MediaDropzone,
+    type MediaDropzoneProps,
+    MediaUploadStatus,
+    type MediaUploadStatusProps,
+    PhotoGrid,
+    type PhotoGridProps,
+    PhotoTile,
+    type PhotoTileProps
+} from './MediaManager';
 export { Menu, type MenuItem, type MenuProps } from './Menu';
 export {
     MessageBubble,
@@ -145,6 +155,12 @@ export { PlanSummary, type PlanSummaryProps } from './PlanSummary';
 export { buildPageRange, type PageSlot } from './pagination-range';
 export { Radio, RadioGroup, type RadioGroupProps, type RadioProps } from './Radio';
 export { RatingStars, type RatingStarsProps, starFill } from './RatingStars';
+export {
+    Repeater,
+    type RepeaterMoves,
+    type RepeaterProps,
+    type RepeaterRemoveConfirm
+} from './Repeater';
 export { Section, type SectionProps, type SectionVariant } from './Section';
 export { Select, type SelectProps } from './Select';
 export { Skeleton, type SkeletonProps, type SkeletonShape } from './Skeleton';

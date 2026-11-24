@@ -428,7 +428,9 @@
                 "altWarningMessage_other": "People browsing with a screen reader need that text to know what each photo shows, and search engines use it to understand and index your images. You have {{count}} photos without that text filled in.",
                 "altWarningGoBack": "Complete now",
                 "altWarningContinue": "Continue anyway",
-                "metadataSavedConfirmation": "Saved"
+                "metadataSavedConfirmation": "Saved",
+                "uploading": "Uploading photo…",
+                "altMissing": "Description missing"
             },
             "video": {
                 "sectionTitle": "Videos",
@@ -477,7 +479,8 @@
                     "body2": "Uncheck \"Visible on the listing page\" for information that's useful to know but that you don't want published: something temporary (\"the pool is under repair until November\"), a margin you'd rather not promise in writing (\"there's flexibility on late check-out if there's no next booking\"), or a tip that reads better in a conversation than on the storefront (\"at night it's best to call a taxi\").",
                     "body3": "Uncheck \"Usable by AI\" for content you want shown exactly as written, without the assistant rephrasing it — legal text or exact cancellation terms, for example.",
                     "body4": "Important: a question that isn't visible on the listing but is usable by AI is not private. The assistant can still say it to anyone who asks in chat; it just won't be published on the page."
-                }
+                },
+                "rowFallback": "Question {{n}}"
             },
             "action": {
                 "save": "Save",
@@ -598,7 +601,9 @@
                 "translationEmpty": "This translation has not been generated yet.",
                 "textUnavailable": "Just generated. Refresh the page to read it.",
                 "expandText": "Show full text",
-                "collapseText": "Show less"
+                "collapseText": "Show less",
+                "missingCount": "Untranslated fields: {{count}}",
+                "missingNotice": "Translations missing in {{locales}}."
             },
             "calendar": {
                 "title": "Occupancy calendar",
@@ -773,7 +778,10 @@
                 "aiDraftLoading": "Generating a suggestion…",
                 "aiDraftDisclaimer": "This is an editable draft. Check it against your listing before saving.",
                 "aiDraftError": "We could not generate a suggestion. Please try again.",
-                "aiDraftNotEligible": "The assistant has already answered this question."
+                "aiDraftNotEligible": "The assistant has already answered this question.",
+                "unansweredCountLabel": "{{count}} unanswered",
+                "dismissedCountLabel": "{{count}} dismissed",
+                "dismissedToggle": "Show dismissed questions"
             },
             "catalog": {
                 "searchLabel": "Search the whole catalog",
@@ -911,7 +919,8 @@
         "lifecycleStates": {
             "active": "Active",
             "draft": "Draft",
-            "archived": "Archived"
+            "archived": "Archived",
+            "inactive": "Paused"
         },
         "errors": {
             "loadFailed": "Could not load promotions. Please try again.",
@@ -926,7 +935,11 @@
             "entitlementRequired": "Your plan does not include promotions.",
             "entitlementRequiredHint": "Upgrade your plan to create promotions.",
             "notFound": "Promotion not found.",
-            "forbidden": "You do not have permission to access this promotion."
+            "forbidden": "You do not have permission to access this promotion.",
+            "pauseFailed": "We could not pause the promotion. Please try again.",
+            "lockedListHint": "With your current plan you can view and pause your promotions, but not create or edit them. Upgrade your plan to do so.",
+            "editLocked": "Your plan does not include editing promotions.",
+            "editLockedHint": "You can view and pause this promotion from the list. Upgrade your plan to edit it."
         },
         "success": {
             "created": "Promotion created",
@@ -939,7 +952,8 @@
             "saving": "Saving...",
             "cancel": "Cancel",
             "confirmDelete": "Delete this promotion? This action cannot be undone.",
-            "upgradePlan": "View plans"
+            "upgradePlan": "View plans",
+            "pause": "Pause"
         },
         "specialOffer": {
             "label": "Describe the benefit",
@@ -957,7 +971,8 @@
             "benefitSection": "The promotion",
             "conditionsSection": "Conditions",
             "loadFailedHint": "Go back to the list and try again.",
-            "backToList": "Back to my promotions"
+            "backToList": "Back to my promotions",
+            "pauseNamed": "Pause “{{title}}”"
         }
     },
     "dashboard": {

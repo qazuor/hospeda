@@ -34,8 +34,8 @@
  *     multilang one.
  *
  * The card itself was compacted: the section sits below the photos, the
- * description and the price, and must not compete with them. The double
- * box-shadow became a hairline border, the icon moved inline with the name,
+ * description and the price, and must not compete with them. The icon moved
+ * inline with the name,
  * the type pill became plain metadata text, and the padding shrank — so the
  * same information costs roughly half the vertical space it used to.
  *
@@ -164,10 +164,10 @@ const items = pointsOfInterest.map((poi) => ({
 	}
 
 	/*
-	 * HOS-327: a hairline border on the card surface instead of the previous
-	 * `--shadow-card` / `--shadow-card-hover` pair. Eight lifted, shadowed
-	 * cards read as a second gallery competing with the photos above; a flat
-	 * bordered tile reads as a list, which is what this is.
+	 * HOS-2533 (owner decision, HOS-2520 smoke): the card uses the page's card
+	 * shape, `--radius-card` + `--shadow-card`, like every other card on the
+	 * listing. This reverses HOS-327's hairline-border tile; the compact padding
+	 * and inline icon from that change stay, so the cards still cost little height.
 	 */
 	.nearby-poi-section__card {
 		display: flex;
@@ -175,13 +175,13 @@ const items = pointsOfInterest.map((poi) => ({
 		gap: 0.25rem;
 		padding: 0.75rem 0.875rem;
 		background-color: var(--core-card);
-		border: 1px solid var(--core-muted-foreground-a15);
-		border-radius: var(--radius-md);
-		transition: border-color var(--duration-fast) ease;
+		border-radius: var(--radius-card);
+		box-shadow: var(--shadow-card);
+		transition: box-shadow var(--duration-fast) ease;
 	}
 
 	.nearby-poi-section__card:hover {
-		border-color: var(--core-muted-foreground-a35);
+		box-shadow: var(--shadow-card-hover);
 	}
 
 	.nearby-poi-section__head {

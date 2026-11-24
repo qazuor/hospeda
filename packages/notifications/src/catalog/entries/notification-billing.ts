@@ -97,6 +97,44 @@ export const NOTIFICATION_BILLING_ENTRIES: readonly EmailCatalogEntry[] = [
                     currency: 'ARS',
                     planName: 'Plan Profesional'
                 }
+            },
+            // HOS-2565 D16: one scenario per footer account-link case. The values are
+            // `VerticalEnum` values; the label comes from VERTICAL_OWNS_PUBLICATIONS.
+            {
+                id: 'recipient-owns-publications',
+                label: 'Destinatario con publicaciones (pie: Gestioná tus publicaciones)',
+                recipientVerticals: ['accommodation'],
+                input: {
+                    ...SAMPLE_RECIPIENT,
+                    type: NotificationType.PAYMENT_SUCCESS,
+                    amount: 15000,
+                    currency: 'ARS',
+                    planName: 'Plan Profesional'
+                }
+            },
+            {
+                id: 'recipient-partner-only',
+                label: 'Destinatario sólo aliado (pie: Gestioná tu cuenta)',
+                recipientVerticals: ['partner'],
+                input: {
+                    ...SAMPLE_RECIPIENT,
+                    type: NotificationType.PAYMENT_SUCCESS,
+                    amount: 15000,
+                    currency: 'ARS',
+                    planName: 'Aliado Oro'
+                }
+            },
+            {
+                id: 'recipient-tourist',
+                label: 'Destinatario turista (pie: Gestioná tu cuenta)',
+                recipientVerticals: ['tourist'],
+                input: {
+                    ...SAMPLE_RECIPIENT,
+                    type: NotificationType.PAYMENT_SUCCESS,
+                    amount: 15000,
+                    currency: 'ARS',
+                    planName: 'Turista VIP'
+                }
             }
         ]
     }),

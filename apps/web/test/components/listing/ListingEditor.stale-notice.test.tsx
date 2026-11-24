@@ -136,21 +136,23 @@ function renderEditor() {
 }
 
 /**
- * The form-level banner, or `null`.
+ * The save failure's banner, or `null`.
  *
- * Selected by "a `role="alert"` paragraph with NO id": `FieldError` always
- * renders an `id` (`<field>-error`), the form banner never does. Matching every
- * alert instead would let a per-field message stand in for the banner and make
- * the "it is gone" assertion pass for the wrong reason.
+ * Owner decision 7 (Mi cuenta UI epic): a save failure is told by the save bar
+ * ALONE, so the banner this guard is about is the bar's `role="alert"` line,
+ * and the form itself must hold no other alert outside a field (`FieldError`
+ * always renders an `id`, a stray form-level notice would not).
  *
  * @param container - The rendered container.
  * @returns The banner's text, or `null` when no banner is on screen.
  */
 function bannerText(container: HTMLElement): string | null {
-    // The save bar's own failure line (HOS-2487) is a separate signal, not the
-    // form banner this guard is about.
-    const banners = Array.from(container.querySelectorAll('p[role="alert"]:not([id])')).filter(
+    const strays = Array.from(container.querySelectorAll('[role="alert"]:not([id])')).filter(
         (el) => !el.closest('[data-editor-save-signal]')
+    );
+    expect(strays).toHaveLength(0);
+    const banners = Array.from(
+        container.querySelectorAll('[data-editor-save-signal] [role="alert"]')
     );
     expect(banners.length).toBeLessThanOrEqual(1);
     return banners[0]?.textContent ?? null;

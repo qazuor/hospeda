@@ -20,18 +20,29 @@
  *
  * The pin itself is always {@link EditorMapPin}: Leaflet behind a touch
  * overlay, with the raw coordinates under «Coordenadas».
+ *
+ * Without a pin, ONE notice at the top of the section says what it costs and
+ * what to do, with a button that scrolls to the map and focuses it (owner
+ * decision 12, Mi cuenta UI epic). The map itself no longer repeats it.
  */
 
-import type { JSX, ReactNode } from 'react';
+import { type JSX, type ReactNode, useRef } from 'react';
+import { Alert } from '@/components/account/ui/Alert';
+import { Button } from '@/components/account/ui/Button';
 import { Field } from '@/components/account/ui/Field';
 import type { HelpAnchor } from '@/components/account/ui/help-anchor';
 import { Section } from '@/components/account/ui/Section';
 import { TextInput } from '@/components/account/ui/TextInput';
 import { buildFieldId } from '@/lib/forms/build-field-id';
-import type { SupportedLocale } from '@/lib/i18n';
+import { createT, type SupportedLocale } from '@/lib/i18n';
 import styles from './EditorFields.module.css';
 import { EditorLocationFinder, type FoundLocation } from './EditorLocationFinder';
-import { EditorMapPin, type MapPinCoordinate, parseMapCoordinate } from './EditorMapPin';
+import {
+    EditorMapPin,
+    focusEditorMap,
+    type MapPinCoordinate,
+    parseMapCoordinate
+} from './EditorMapPin';
 
 /** One postal-address input: its Zod key, label, value and constraints. */
 export interface AddressMember {
@@ -110,6 +121,8 @@ export function ListingLocationSection({
     lead,
     trail
 }: ListingLocationSectionProps): JSX.Element {
+    const t = createT(locale);
+    const mapFrameRef = useRef<HTMLDivElement>(null);
     const latNumber = parseMapCoordinate({ value: pin.lat.value });
     const longNumber = parseMapCoordinate({ value: pin.long.value });
     const current =
@@ -130,6 +143,24 @@ export function ListingLocationSection({
             helpId={helpId}
         >
             <div className={styles.stack}>
+                {current ? null : (
+                    <Alert
+                        tone="warning"
+                        locale={locale}
+                        title={t('account.editorFields.location.noPinNotice.title')}
+                        action={
+                            <Button
+                                variant="secondary"
+                                size="sm"
+                                onClick={() => focusEditorMap({ frame: mapFrameRef.current })}
+                            >
+                                {t('account.editorFields.location.noPinNotice.action')}
+                            </Button>
+                        }
+                    >
+                        {t('account.editorFields.location.noPinNotice.body')}
+                    </Alert>
+                )}
                 {lead}
                 {address && address.length > 0 ? (
                     <div className={styles.grid}>
@@ -167,6 +198,7 @@ export function ListingLocationSection({
                     lat={pin.lat}
                     long={pin.long}
                     onChange={pin.onChange}
+                    frameRef={mapFrameRef}
                 />
                 {trail}
             </div>

@@ -19,9 +19,11 @@
  */
 
 import { EditorSaveBar } from '@/components/account/editor-shell/EditorSaveBar';
+import { Section } from '@/components/account/ui/Section';
 import { PoliciesPanel } from '@/components/listing/editor/PoliciesPanel.client';
 import type { AccommodationEditData } from '@/lib/api/types';
-import type { SupportedLocale } from '@/lib/i18n';
+import { sectionHelpId } from '@/lib/help/section-help-id';
+import { createTranslations, type SupportedLocale } from '@/lib/i18n';
 import {
     buildListingPoliciesPatch,
     LISTING_BASE_POLICY_KEYS,
@@ -90,6 +92,7 @@ export function PoliciesForm({ locale, accommodationId, initialData }: PoliciesF
         schema: AccommodationPoliciesSchema,
         extendPayload: extendPolicies
     });
+    const { t } = createTranslations(locale);
 
     return (
         <form
@@ -97,7 +100,11 @@ export function PoliciesForm({ locale, accommodationId, initialData }: PoliciesF
             onSubmit={form.handleSubmit}
             noValidate
         >
-            <div className={styles.card}>
+            <Section
+                id="editor-policies"
+                title={t('listing.policies.panelTitle', 'Políticas')}
+                helpId={sectionHelpId({ vertical: 'accommodation', slug: 'politicas' })}
+            >
                 <PoliciesPanel
                     locale={locale}
                     idPrefix={ACCOMMODATION_FIELD_PREFIX}
@@ -111,19 +118,11 @@ export function PoliciesForm({ locale, accommodationId, initialData }: PoliciesF
                         )
                     }
                 />
-            </div>
-
-            {form.formError && (
-                <div
-                    className={styles.error}
-                    role="alert"
-                >
-                    {form.formError}
-                </div>
-            )}
+            </Section>
 
             <EditorSaveBar
                 locale={locale}
+                errorMessage={form.formError}
                 isDirty={form.isDirty}
                 onSave={form.save}
                 onDiscard={form.discard}

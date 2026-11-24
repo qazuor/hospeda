@@ -373,7 +373,7 @@ describe('PromotionForm — create mode', () => {
         );
         await screen.findByLabelText(/Título/i);
 
-        expect(screen.getByRole('checkbox', { name: /vip/i })).not.toBeChecked();
+        expect(await screen.findByRole('checkbox', { name: /vip/i })).not.toBeChecked();
     });
 
     it('sends touristAudience: "vip" when the VIP-only toggle is checked (HOS-21 T-013)', async () => {
@@ -729,7 +729,7 @@ describe('PromotionForm — edit mode', () => {
         updatedAt: '2026-06-01T00:00:00.000Z'
     };
 
-    it('pre-fills all fields from initialData', () => {
+    it('pre-fills all fields from initialData', async () => {
         // Arrange + Act
         render(
             <PromotionForm
@@ -740,8 +740,8 @@ describe('PromotionForm — edit mode', () => {
             />
         );
 
-        // Assert — text inputs
-        expect(screen.getByLabelText(/Título/i)).toHaveValue('Oferta de verano');
+        // Assert — text inputs (the plan gate reads first, decision 18)
+        expect(await screen.findByLabelText(/Título/i)).toHaveValue('Oferta de verano');
         expect(screen.getByLabelText(/Descripción/i)).toHaveValue(
             'Descuento especial para el verano'
         );
@@ -761,7 +761,7 @@ describe('PromotionForm — edit mode', () => {
         expect(screen.getByLabelText(/Válido hasta/i)).toHaveValue('2026-08-31');
     });
 
-    it('pre-fills the VIP-only toggle as unchecked when touristAudience is "plus" (HOS-21 T-013)', () => {
+    it('pre-fills the VIP-only toggle as unchecked when touristAudience is "plus" (HOS-21 T-013)', async () => {
         render(
             <PromotionForm
                 locale="es"
@@ -771,10 +771,10 @@ describe('PromotionForm — edit mode', () => {
             />
         );
 
-        expect(screen.getByRole('checkbox', { name: /vip/i })).not.toBeChecked();
+        expect(await screen.findByRole('checkbox', { name: /vip/i })).not.toBeChecked();
     });
 
-    it('pre-fills the VIP-only toggle as checked when touristAudience is "vip" (HOS-21 T-013)', () => {
+    it('pre-fills the VIP-only toggle as checked when touristAudience is "vip" (HOS-21 T-013)', async () => {
         render(
             <PromotionForm
                 locale="es"
@@ -784,7 +784,7 @@ describe('PromotionForm — edit mode', () => {
             />
         );
 
-        expect(screen.getByRole('checkbox', { name: /vip/i })).toBeChecked();
+        expect(await screen.findByRole('checkbox', { name: /vip/i })).toBeChecked();
     });
 
     it('calls ownerPromotionApi.update (not create) on submit', async () => {
@@ -801,7 +801,9 @@ describe('PromotionForm — edit mode', () => {
         );
 
         // Act — one change (the save bar shows only while dirty), then save
-        fireEvent.change(screen.getByLabelText(/Noches mínimas/i), { target: { value: '4' } });
+        fireEvent.change(await screen.findByLabelText(/Noches mínimas/i), {
+            target: { value: '4' }
+        });
         fireEvent.click(getSubmitButton());
 
         // Assert — update called, create NOT called
@@ -912,5 +914,28 @@ describe('PromotionForm — edit mode', () => {
         expect(screen.getByText('No se encontró la promoción.')).toBeInTheDocument();
         expect(screen.queryByText('Promotion not found')).not.toBeInTheDocument();
         expect(screen.queryByLabelText(/Título/i)).not.toBeInTheDocument();
+    });
+});
+
+describe('PromotionForm — edit mode without the plan key (owner decision 18)', () => {
+    it('replaces the form with a lock that points back to pausing', async () => {
+        mockEntitlements.mockResolvedValue({ entitlements: {}, limits: {}, failed: false });
+
+        render(
+            <PromotionForm
+                locale="es"
+                mode="edit"
+                promotionId="promo-uuid-1"
+                lockPlanNames={['Plan Catálogo']}
+            />
+        );
+
+        // The mocked `t` answers the key itself.
+        expect(
+            await screen.findByText(/^host\.promotions\.errors\.editLocked\b(?!Hint)/)
+        ).toBeInTheDocument();
+        expect(screen.getByText(/^host\.promotions\.errors\.editLockedHint/)).toBeInTheDocument();
+        expect(screen.queryByLabelText(/Título/i)).not.toBeInTheDocument();
+        expect(screen.getByText('Plan Catálogo')).toBeInTheDocument();
     });
 });

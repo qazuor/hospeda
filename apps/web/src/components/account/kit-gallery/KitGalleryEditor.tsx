@@ -1,25 +1,39 @@
 /**
  * KitGalleryEditor — the editor shell pieces in the kit gallery (HOS-2486,
- * HOS-2499): the section column, the switcher and the completeness meter.
+ * HOS-2499): the section column, the switcher, the completeness meter, the
+ * hours editor and the repeater (HOS-2490).
  *
  * Dev-only fixture copy: exempt from i18n (see `Visual.tsx`).
  *
  * @module components/account/kit-gallery/KitGalleryEditor
  */
 
+import { DeleteIcon } from '@repo/icons';
 import { useState } from 'react';
 import {
+    Button,
     CompletenessMeter,
     EditorSectionNav,
     EditorSwitcher,
+    Field,
     HoursEditor,
-    type HoursWeek
+    type HoursWeek,
+    MediaDropzone,
+    MediaUploadStatus,
+    PhotoGrid,
+    PhotoTile,
+    Repeater,
+    StatusPill,
+    TextInput
 } from '@/components/account/ui';
 import type { EditorNavGroup } from '@/lib/editor/editor-route-nav-model';
 import { buildEditorSwitcherModel } from '@/lib/editor/editor-switcher-model';
 import styles from './KitGallery.module.css';
 import type { GalleryGroupProps } from './KitGalleryActions';
 import { Visual } from './Visual';
+
+/** A static photo shipped with the web app, for the MediaManager entries. */
+const DEMO_PHOTO = '/og/hero-atardecer.jpg';
 
 /** A fixture editor nav: two groups, one active section, every status. */
 const GROUPS: readonly EditorNavGroup[] = [
@@ -112,6 +126,72 @@ export function KitGalleryEditor({ locale }: GalleryGroupProps) {
                         <GalleryHours locale={locale} />
                     </div>
                 </Visual>
+                <Visual name="Repeater/rows">
+                    <div className={styles.stack}>
+                        <GalleryRepeater locale={locale} />
+                    </div>
+                </Visual>
+                <Visual name="Repeater/empty">
+                    <div className={styles.stack}>
+                        <Repeater
+                            locale={locale}
+                            label="Platos"
+                            items={[]}
+                            getKey={(_item: string, index) => `empty-${index}`}
+                            getItemLabel={(item) => item}
+                            renderItem={(item) => item}
+                            onAdd={() => undefined}
+                            addLabel="Agregar plato"
+                            empty={{
+                                title: 'Todavía no hay platos',
+                                description: 'Agregá el primero para armar la carta.'
+                            }}
+                        />
+                    </div>
+                </Visual>
+                <Visual name="MediaDropzone/slot">
+                    <div className={styles.stack}>
+                        <MediaDropzone
+                            title="Arrastrá una imagen o hacé clic para seleccionar"
+                            hint="JPG, PNG o WebP — máx. 10MB"
+                            onPick={() => undefined}
+                        />
+                        <MediaUploadStatus
+                            label="Subiendo foto 2 de 3…"
+                            progress={60}
+                        />
+                    </div>
+                </Visual>
+                <Visual name="PhotoGrid/tiles">
+                    <div className={styles.stack}>
+                        <PhotoGrid ariaLabel="Galería">
+                            <PhotoTile
+                                src={DEMO_PHOTO}
+                                alt="Atardecer sobre el río"
+                                actions={
+                                    <Button
+                                        variant="secondary"
+                                        size="lg"
+                                        iconOnly
+                                        aria-label="Eliminar"
+                                    >
+                                        <DeleteIcon size="sm" />
+                                    </Button>
+                                }
+                            />
+                            <PhotoTile
+                                src={DEMO_PHOTO}
+                                alt=""
+                                badge={<StatusPill tone="warning">Falta descripción</StatusPill>}
+                            />
+                            <MediaDropzone
+                                variant="tile"
+                                title="Agregar fotos a la galería"
+                                onPick={() => undefined}
+                            />
+                        </PhotoGrid>
+                    </div>
+                </Visual>
             </div>
         </section>
     );
@@ -149,6 +229,53 @@ function GalleryHours({ locale }: GalleryGroupProps) {
             idBase="kit-hours"
             value={week}
             onChange={setWeek}
+        />
+    );
+}
+
+/** Live Repeater with three rows: add, remove (with confirmation) and move. */
+function GalleryRepeater({ locale }: GalleryGroupProps) {
+    const [dishes, setDishes] = useState<readonly string[]>([
+        'Milanesa napolitana',
+        'Surubí a la parrilla',
+        'Flan casero'
+    ]);
+    const move = (index: number, delta: -1 | 1): void => {
+        setDishes((current) => {
+            const next = [...current];
+            const [row] = next.splice(index, 1);
+            if (row === undefined) return current;
+            next.splice(index + delta, 0, row);
+            return next;
+        });
+    };
+    return (
+        <Repeater
+            locale={locale}
+            label="Platos"
+            items={dishes}
+            getKey={(_dish, index) => `kit-dish-${index}`}
+            getItemLabel={(dish, index) => dish || `Plato ${index + 1}`}
+            renderItem={(dish, index) => (
+                <Field
+                    label="Nombre"
+                    locale={locale}
+                >
+                    <TextInput
+                        value={dish}
+                        onChange={(event) => {
+                            const value = event.currentTarget.value;
+                            setDishes((current) =>
+                                current.map((d, i) => (i === index ? value : d))
+                            );
+                        }}
+                    />
+                </Field>
+            )}
+            onMove={move}
+            onRemove={(index) => setDishes((current) => current.filter((_d, i) => i !== index))}
+            onAdd={() => setDishes((current) => [...current, ''])}
+            addLabel="Agregar plato"
         />
     );
 }

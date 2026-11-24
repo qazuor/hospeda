@@ -46,26 +46,16 @@ export function SeoForm({ locale, accommodationId, initialData }: SeoFormProps) 
             onSubmit={form.handleSubmit}
             noValidate
         >
-            <div className={styles.card}>
-                <SeoSection
-                    locale={locale}
-                    data={form.values}
-                    errors={form.fieldErrors}
-                    onFieldChange={(field, value) => form.setValue(field, value)}
-                />
-            </div>
-
-            {form.formError && (
-                <div
-                    className={styles.error}
-                    role="alert"
-                >
-                    {form.formError}
-                </div>
-            )}
+            <SeoSection
+                locale={locale}
+                data={form.values}
+                errors={form.fieldErrors}
+                onFieldChange={(field, value) => form.setValue(field, value)}
+            />
 
             <EditorSaveBar
                 locale={locale}
+                errorMessage={form.formError}
                 isDirty={form.isDirty}
                 onSave={form.save}
                 onDiscard={form.discard}

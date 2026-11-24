@@ -57,7 +57,10 @@ export function ConversationVerify({
     const safeName = buildInquiryExcerpt({ message: guestName }).excerpt;
 
     return (
-        <EmailLayout previewText="Verificá tu email para continuar la conversación — Hospeda">
+        <EmailLayout
+            footerLink="none"
+            previewText="Verificá tu email para continuar la conversación — Hospeda"
+        >
             <Heading>Verificá tu dirección de email</Heading>
 
             <Text style={styles.greeting}>Hola {safeName},</Text>

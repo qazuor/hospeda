@@ -1,0 +1,71 @@
+/**
+ * @file VideoSection.module.css
+ * @description The video list on both «Fotos» pages (HOS-2489): flat rows
+ * separated by a rule inside the editor card (`editor-fields.module.css`
+ * `.section`), the two fields side by side on a wide container.
+ */
+
+/* Space from the photo block above. A wrapper, because the card's own rule
+   sets `margin: 0` and two classes on one element would race on it. */
+.root {
+    padding-block-start: var(--space-6);
+}
+
+.form {
+    container-type: inline-size;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.title {
+    margin: 0;
+    font: var(--app-card-title);
+    color: var(--core-foreground);
+}
+
+.description {
+    margin: 0;
+    font: var(--app-body);
+    color: var(--core-muted-foreground);
+}
+
+.list {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.row {
+    display: flex;
+    align-items: flex-end;
+    gap: var(--space-2);
+    padding-block: var(--space-3);
+    border-block-end: 1px solid var(--border);
+}
+
+.fields {
+    display: grid;
+    flex: 1;
+    gap: var(--space-3);
+    min-inline-size: 0;
+}
+
+.remove {
+    flex-shrink: 0;
+}
+
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+@container (width >= 36rem) {
+    .fields {
+        grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+        align-items: start;
+    }
+}

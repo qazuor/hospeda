@@ -21,6 +21,7 @@ import type { AiChatEntityType } from '@repo/schemas';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { DockPortal } from '@/components/shared/dock/DockPortal';
 import { Spinner } from '@/components/shared/feedback/Spinner';
+import { Dialog, DialogBody, DialogHeader } from '@/components/shared/ui/Dialog.client';
 import { useAccountPermissions } from '@/hooks/use-account-permissions';
 import { useAccommodationChat } from '@/hooks/useAccommodationChat';
 import { useDialogHistoryBack } from '@/hooks/useDialogHistoryBack';
@@ -44,6 +45,32 @@ import styles from './AiChatWidget.module.css';
  * toolbar), not a keyboard, and the panel should keep its normal spacing.
  */
 const KEYBOARD_INSET_THRESHOLD_PX = 120;
+
+/**
+ * Mobile breakpoint. Same value the shared `Dialog` sheet CSS and the rest of
+ * this widget's stylesheet use (`max-width: 767px`), so the JS switch and the
+ * CSS never disagree.
+ */
+const MOBILE_MEDIA_QUERY = '(max-width: 767px)';
+
+/**
+ * Tracks whether the viewport is below the mobile breakpoint. Starts `false`
+ * (server and first paint render the desktop panel, which only exists once the
+ * visitor opens the chat, so there is no hydration mismatch to speak of) and
+ * syncs after mount.
+ */
+function useIsMobileViewport(): boolean {
+    const [isMobile, setIsMobile] = useState(false);
+    useEffect(() => {
+        if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return;
+        const mq = window.matchMedia(MOBILE_MEDIA_QUERY);
+        setIsMobile(mq.matches);
+        const onChange = (event: MediaQueryListEvent): void => setIsMobile(event.matches);
+        mq.addEventListener?.('change', onChange);
+        return () => mq.removeEventListener?.('change', onChange);
+    }, []);
+    return isMobile;
+}
 
 export { aiChatCopyKey };
 
@@ -71,6 +98,7 @@ export function AiChatWidget({ entityType, entityId, locale, apiUrl }: AiChatWid
     const { user, isResolved } = useAccountPermissions();
     const isGuest = isResolved && !user;
     const [isOpen, setIsOpen] = useState(false);
+    const isMobile = useIsMobileViewport();
     const [isExpanded, setIsExpanded] = useState(false);
     const [draft, setDraft] = useState('');
     const chat = useAccommodationChat({ entityType, entityId, locale, apiUrl });
@@ -95,7 +123,12 @@ export function AiChatWidget({ entityType, entityId, locale, apiUrl }: AiChatWid
     // Back button closes the panel instead of leaving the accommodation page
     // (HOS-310). This widget builds its own `role="dialog"` rather than using
     // the shared `Dialog`, so it wires the same hook directly.
-    const { isTopmost } = useDialogHistoryBack({ isOpen, onClose: () => setIsOpen(false) });
+    // On mobile the shared `Dialog` sheet owns history-back, focus trap and
+    // ESC, so this hook is only active for the desktop panel.
+    const { isTopmost } = useDialogHistoryBack({
+        isOpen: isOpen && !isMobile,
+        onClose: () => setIsOpen(false)
+    });
 
     // Keep the panel inside the area the user can actually see. Without this
     // the mobile keyboard covers the composer: the panel is anchored with
@@ -109,6 +142,23 @@ export function AiChatWidget({ entityType, entityId, locale, apiUrl }: AiChatWid
         // Mark that the dialog has been opened at least once so the focus-return
         // effect below knows a real open→close transition can occur.
         hasBeenOpenedRef.current = true;
+
+        if (isMobile) {
+            // The sheet's `Dialog` queues its own default focus in the opening
+            // frame; wait two frames so the composer wins, as the contact
+            // panel does.
+            let inner = 0;
+            const outer = requestAnimationFrame(() => {
+                inner = requestAnimationFrame(() => {
+                    (composerTextareaRef.current ?? guestCtaRef.current)?.focus();
+                });
+            });
+            return () => {
+                cancelAnimationFrame(outer);
+                cancelAnimationFrame(inner);
+            };
+        }
+
         const panel = panelRef.current;
         if (!panel) return;
 
@@ -137,7 +187,7 @@ export function AiChatWidget({ entityType, entityId, locale, apiUrl }: AiChatWid
 
         document.addEventListener('keydown', handleKeyDown);
         return () => document.removeEventListener('keydown', handleKeyDown);
-    }, [isOpen, isTopmost]);
+    }, [isOpen, isTopmost, isMobile]);
 
     // Return focus to FAB when panel closes.
     // Guard: only fire after a real open→close transition, never on initial mount
@@ -172,6 +222,151 @@ export function AiChatWidget({ entityType, entityId, locale, apiUrl }: AiChatWid
             ? ''
             : `${window.location.pathname}${window.location.search}${window.location.hash}`;
 
+    const chatBody = (
+        <>
+            {isGuest ? (
+                <AiChatGuestUpsell
+                    entityType={entityType}
+                    locale={locale}
+                    returnUrl={returnUrl}
+                    primaryRef={guestCtaRef}
+                />
+            ) : (
+                <>
+                    <div className={styles.disclaimer}>{copy('headerDisclaimer')}</div>
+                    <div
+                        className={styles.disclaimer}
+                        data-testid="ai-chat-read-notice"
+                    >
+                        {copy('readNotice')}
+                    </div>
+
+                    <div
+                        className={styles.messages}
+                        aria-live="polite"
+                        aria-atomic="false"
+                    >
+                        {chat.state.messages.map((m, i) =>
+                            m.role === 'assistant' ? (
+                                <div
+                                    // biome-ignore lint/suspicious/noArrayIndexKey: messages are append-only (never reordered/removed except a full reset), and ChatMessage has no stable id
+                                    key={`${m.role}-${i}`}
+                                    className={`${styles.bubble} ${styles.assistantBubble}`}
+                                    // biome-ignore lint/security/noDangerouslySetInnerHtml: sanitized via renderChatMarkdown (DOMPurify) before rendering
+                                    dangerouslySetInnerHTML={{
+                                        // nosemgrep:typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml
+                                        __html: renderChatMarkdown({ raw: m.content })
+                                    }}
+                                />
+                            ) : (
+                                <div
+                                    // biome-ignore lint/suspicious/noArrayIndexKey: messages are append-only (never reordered/removed except a full reset), and ChatMessage has no stable id
+                                    key={`${m.role}-${i}`}
+                                    className={`${styles.bubble} ${styles.userBubble}`}
+                                >
+                                    {m.content}
+                                </div>
+                            )
+                        )}
+                        {chat.state.currentAssistantContent && (
+                            <div
+                                className={`${styles.bubble} ${styles.assistantBubble} ${styles.streaming}`}
+                                // biome-ignore lint/security/noDangerouslySetInnerHtml: sanitized via renderChatMarkdown (DOMPurify) before rendering
+                                dangerouslySetInnerHTML={{
+                                    // nosemgrep:typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml
+                                    __html: renderChatMarkdown({
+                                        raw: chat.state.currentAssistantContent
+                                    })
+                                }}
+                            />
+                        )}
+                        {showThinking && (
+                            <output
+                                className={styles.thinking}
+                                aria-label={copy('thinking')}
+                            >
+                                <span>{copy('thinking')}</span>
+                                <span
+                                    className={styles.thinkingDots}
+                                    aria-hidden="true"
+                                >
+                                    <span className={styles.thinkingDot} />
+                                    <span className={styles.thinkingDot} />
+                                    <span className={styles.thinkingDot} />
+                                </span>
+                            </output>
+                        )}
+                        {chat.state.showPriceDisclaimer && (
+                            <div className={styles.priceNotice}>{copy('priceDisclaimer')}</div>
+                        )}
+                        {chat.state.status === 'error' && (
+                            <div className={styles.errorBubble}>
+                                {resolveChatError({
+                                    t,
+                                    entityType,
+                                    code: chat.state.errorCode,
+                                    message: chat.state.errorMessage
+                                })}
+                            </div>
+                        )}
+                        {chat.state.status === 'at_cap' && (
+                            <div className={styles.capBanner}>
+                                {copy('atCapMessage')}
+                                <button
+                                    type="button"
+                                    className={styles.resetButton}
+                                    onClick={chat.reset}
+                                >
+                                    {copy('newConversation')}
+                                </button>
+                            </div>
+                        )}
+                    </div>
+
+                    <form
+                        className={styles.composer}
+                        onSubmit={(e) => {
+                            e.preventDefault();
+                            handleSend();
+                        }}
+                    >
+                        <textarea
+                            ref={composerTextareaRef}
+                            className={styles.textarea}
+                            placeholder={copy('placeholder')}
+                            value={draft}
+                            onChange={(e) => setDraft(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' && !e.shiftKey) {
+                                    e.preventDefault();
+                                    handleSend();
+                                }
+                            }}
+                            disabled={
+                                chat.state.status === 'streaming' || chat.state.status === 'at_cap'
+                            }
+                            rows={2}
+                        />
+                        <button
+                            type="submit"
+                            className={styles.sendButton}
+                            disabled={
+                                chat.state.status === 'streaming' ||
+                                chat.state.status === 'at_cap' ||
+                                !draft.trim()
+                            }
+                            aria-label={
+                                chat.state.status === 'streaming' ? copy('sending') : copy('send')
+                            }
+                        >
+                            {chat.state.status === 'streaming' ? <Spinner size="sm" /> : '↑'}
+                        </button>
+                    </form>
+                </>
+            )}
+        </>
+    );
+
     return (
         <>
             <DockPortal slot="ai-chat">
@@ -183,7 +378,37 @@ export function AiChatWidget({ entityType, entityId, locale, apiUrl }: AiChatWid
                     entityType={entityType}
                 />
             </DockPortal>
-            {isOpen && (
+            {isOpen && isMobile && (
+                <Dialog
+                    variant="sheet"
+                    isOpen
+                    onClose={() => setIsOpen(false)}
+                    ariaLabel={copy('panelLabel')}
+                >
+                    <DialogHeader
+                        onClose={() => setIsOpen(false)}
+                        closeLabel={copy('close')}
+                    >
+                        {copy('panelLabel')}
+                    </DialogHeader>
+                    <DialogBody bare>
+                        <div
+                            className={styles.sheetContent}
+                            data-keyboard-open={isKeyboardOpen ? 'true' : undefined}
+                            style={
+                                visibleHeight === null
+                                    ? undefined
+                                    : ({
+                                          '--chat-visible-height': `${visibleHeight}px`
+                                      } as React.CSSProperties)
+                            }
+                        >
+                            {chatBody}
+                        </div>
+                    </DialogBody>
+                </Dialog>
+            )}
+            {isOpen && !isMobile && (
                 <div
                     // biome-ignore lint/a11y/useSemanticElements: React dialog needs ref handling; div with role is acceptable per SPEC-200
                     ref={panelRef}
@@ -228,155 +453,7 @@ export function AiChatWidget({ entityType, entityId, locale, apiUrl }: AiChatWid
                         </div>
                     </div>
 
-                    {isGuest ? (
-                        <AiChatGuestUpsell
-                            entityType={entityType}
-                            locale={locale}
-                            returnUrl={returnUrl}
-                            primaryRef={guestCtaRef}
-                        />
-                    ) : (
-                        <>
-                            <div className={styles.disclaimer}>{copy('headerDisclaimer')}</div>
-                            <div
-                                className={styles.disclaimer}
-                                data-testid="ai-chat-read-notice"
-                            >
-                                {copy('readNotice')}
-                            </div>
-
-                            <div
-                                className={styles.messages}
-                                aria-live="polite"
-                                aria-atomic="false"
-                            >
-                                {chat.state.messages.map((m, i) =>
-                                    m.role === 'assistant' ? (
-                                        <div
-                                            // biome-ignore lint/suspicious/noArrayIndexKey: messages are append-only (never reordered/removed except a full reset), and ChatMessage has no stable id
-                                            key={`${m.role}-${i}`}
-                                            className={`${styles.bubble} ${styles.assistantBubble}`}
-                                            // biome-ignore lint/security/noDangerouslySetInnerHtml: sanitized via renderChatMarkdown (DOMPurify) before rendering
-                                            dangerouslySetInnerHTML={{
-                                                // nosemgrep:typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml
-                                                __html: renderChatMarkdown({ raw: m.content })
-                                            }}
-                                        />
-                                    ) : (
-                                        <div
-                                            // biome-ignore lint/suspicious/noArrayIndexKey: messages are append-only (never reordered/removed except a full reset), and ChatMessage has no stable id
-                                            key={`${m.role}-${i}`}
-                                            className={`${styles.bubble} ${styles.userBubble}`}
-                                        >
-                                            {m.content}
-                                        </div>
-                                    )
-                                )}
-                                {chat.state.currentAssistantContent && (
-                                    <div
-                                        className={`${styles.bubble} ${styles.assistantBubble} ${styles.streaming}`}
-                                        // biome-ignore lint/security/noDangerouslySetInnerHtml: sanitized via renderChatMarkdown (DOMPurify) before rendering
-                                        dangerouslySetInnerHTML={{
-                                            // nosemgrep:typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml
-                                            __html: renderChatMarkdown({
-                                                raw: chat.state.currentAssistantContent
-                                            })
-                                        }}
-                                    />
-                                )}
-                                {showThinking && (
-                                    <output
-                                        className={styles.thinking}
-                                        aria-label={copy('thinking')}
-                                    >
-                                        <span>{copy('thinking')}</span>
-                                        <span
-                                            className={styles.thinkingDots}
-                                            aria-hidden="true"
-                                        >
-                                            <span className={styles.thinkingDot} />
-                                            <span className={styles.thinkingDot} />
-                                            <span className={styles.thinkingDot} />
-                                        </span>
-                                    </output>
-                                )}
-                                {chat.state.showPriceDisclaimer && (
-                                    <div className={styles.priceNotice}>
-                                        {copy('priceDisclaimer')}
-                                    </div>
-                                )}
-                                {chat.state.status === 'error' && (
-                                    <div className={styles.errorBubble}>
-                                        {resolveChatError({
-                                            t,
-                                            entityType,
-                                            code: chat.state.errorCode,
-                                            message: chat.state.errorMessage
-                                        })}
-                                    </div>
-                                )}
-                                {chat.state.status === 'at_cap' && (
-                                    <div className={styles.capBanner}>
-                                        {copy('atCapMessage')}
-                                        <button
-                                            type="button"
-                                            className={styles.resetButton}
-                                            onClick={chat.reset}
-                                        >
-                                            {copy('newConversation')}
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
-
-                            <form
-                                className={styles.composer}
-                                onSubmit={(e) => {
-                                    e.preventDefault();
-                                    handleSend();
-                                }}
-                            >
-                                <textarea
-                                    ref={composerTextareaRef}
-                                    className={styles.textarea}
-                                    placeholder={copy('placeholder')}
-                                    value={draft}
-                                    onChange={(e) => setDraft(e.target.value)}
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter' && !e.shiftKey) {
-                                            e.preventDefault();
-                                            handleSend();
-                                        }
-                                    }}
-                                    disabled={
-                                        chat.state.status === 'streaming' ||
-                                        chat.state.status === 'at_cap'
-                                    }
-                                    rows={2}
-                                />
-                                <button
-                                    type="submit"
-                                    className={styles.sendButton}
-                                    disabled={
-                                        chat.state.status === 'streaming' ||
-                                        chat.state.status === 'at_cap' ||
-                                        !draft.trim()
-                                    }
-                                    aria-label={
-                                        chat.state.status === 'streaming'
-                                            ? copy('sending')
-                                            : copy('send')
-                                    }
-                                >
-                                    {chat.state.status === 'streaming' ? (
-                                        <Spinner size="sm" />
-                                    ) : (
-                                        '↑'
-                                    )}
-                                </button>
-                            </form>
-                        </>
-                    )}
+                    {chatBody}
                 </div>
             )}
         </>

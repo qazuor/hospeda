@@ -439,10 +439,11 @@ describe('HOS-1024 — sober upsell when the gallery is full at the plan cap', (
 
         // Sober: exactly one link in the cap-reached message, no second CTA,
         // no headline/banner copy beyond the existing cap-reached sentence.
-        const message = screen.getByText(
-            (_, el) => el?.textContent?.startsWith('Límite de galería alcanzado') ?? false
-        );
-        expect(message.querySelectorAll('a')).toHaveLength(1);
+        // HOS-2489: the message is a kit Alert, the link its action.
+        const message = screen
+            .getByText('Límite de galería alcanzado (máx 15 fotos)')
+            .closest('[role="status"]');
+        expect(message?.querySelectorAll('a')).toHaveLength(1);
     });
 
     it('hides the add (+) button once the plan cap is reached', async () => {

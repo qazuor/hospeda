@@ -11,7 +11,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { OccupancyEventEditDialog } from '@/components/host/editor/OccupancyEventEditDialog.client';
 
-vi.mock('@/components/host/editor/CalendarSection.module.css', () => ({
+vi.mock('@/components/host/editor/OccupancyEventDialogs.module.css', () => ({
     default: new Proxy({} as Record<string, string>, { get: (_t, prop) => String(prop) })
 }));
 

@@ -12,7 +12,13 @@
  * Hydrate with `client:visible` (caller's responsibility).
  */
 
-import { ChevronLeftIcon, ChevronRightIcon, FullscreenIcon } from '@repo/icons';
+import {
+    ArrowRightIcon,
+    ChevronLeftIcon,
+    ChevronRightIcon,
+    FullscreenIcon,
+    GridIcon
+} from '@repo/icons';
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { Spinner } from '@/components/shared/feedback/Spinner';
 import {
@@ -25,12 +31,14 @@ import { useSwipe } from '@/hooks/useSwipe';
 import type { PluralTranslationFn, SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import type { PhotoCreditParts } from '@/lib/photo-credit.types';
+import { GalleryCounter } from './gallery/GalleryCounter';
 import { GalleryHeroPreload } from './gallery/GalleryHeroPreload';
 import {
     buildCellSources,
     buildCellUrl,
     DESKTOP_GALLERY_MEDIA
 } from './gallery/gallery-image-sources';
+import { readSaveData, resolveLightboxPreloadIndices } from './gallery/gallery-preload';
 import styles from './ImageGallery.module.css';
 import type { MobileGalleryOptions } from './ImageGalleryMobileTrack.client';
 import { ImageGalleryMobileTrack } from './ImageGalleryMobileTrack.client';
@@ -201,7 +209,7 @@ interface LightboxProps {
     readonly images: ReadonlyArray<GalleryImage>;
     readonly initialIndex: number;
     readonly onClose: () => void;
-    readonly t: (key: string, fallback?: string) => string;
+    readonly t: (key: string, fallback?: string, params?: Record<string, unknown>) => string;
 }
 
 /** Description length above which the mobile "ver más" toggle is offered. */
@@ -332,15 +340,18 @@ function Lightbox({ images, initialIndex, onClose, t }: LightboxProps) {
 
     const current = images[index];
 
-    // Warm the browser cache for the adjacent images so sequential navigation
-    // usually resolves from cache, keeping spinner time minimal.
+    // Warm the browser cache so sequential navigation usually resolves from cache:
+    // the next two photos and the previous one (HOS-2520 smoke), the same URL the
+    // viewer's <img> requests. Nothing is preloaded with data saver on.
     useEffect(() => {
-        if (images.length < 2) return;
-        const neighbors = [
-            images[(index - 1 + images.length) % images.length],
-            images[(index + 1) % images.length]
-        ];
-        for (const img of neighbors) {
+        const { saveData } = readSaveData({ nav: navigator });
+        const { indices } = resolveLightboxPreloadIndices({
+            index,
+            count: images.length,
+            saveData
+        });
+        for (const position of indices) {
+            const img = images[position];
             if (!img) continue;
             const preloader = new Image();
             preloader.src = buildLightboxUrl(img.url);
@@ -361,13 +372,13 @@ function Lightbox({ images, initialIndex, onClose, t }: LightboxProps) {
             />
 
             {/* Counter */}
-            <div
+            <GalleryCounter
                 className={styles.lightboxCounter}
-                aria-live="polite"
-                aria-atomic="true"
-            >
-                {index + 1} / {images.length}
-            </div>
+                label={t('ui.accessibility.galleryCounter', '{{current}}/{{total}}', {
+                    current: index + 1,
+                    total: images.length
+                })}
+            />
 
             {/* Prev */}
             {images.length > 1 && (
@@ -702,13 +713,26 @@ function DetailVariant({
                 boundary. The ClientRouter head swap drops the island's injected
                 stylesheet and the module-cached island JS never re-injects it on
                 back navigation, leaving the gallery unstyled (T-018 smoke bug).
-                A hard navigation also guarantees GLightbox initialisation. */
+                A hard navigation also guarantees GLightbox initialisation.
+                Owner decision (HOS-2520 smoke): visible at every width. It reads
+                as a page link (grid icon + arrow, text link) so it is not
+                mistaken for the «Ver las N fotos» lightbox button. */
                 <a
                     href={viewAllHref}
                     className={styles.viewAllLink}
                     data-astro-reload
                 >
-                    {t('accommodations.detail.gallery.viewAll', 'Ver todas las fotos')}
+                    <GridIcon
+                        size={16}
+                        aria-hidden="true"
+                    />
+                    <span>
+                        {t('accommodations.detail.gallery.viewAll', 'Ver las fotos en una página')}
+                    </span>
+                    <ArrowRightIcon
+                        size={14}
+                        aria-hidden="true"
+                    />
                 </a>
             )}
         </>

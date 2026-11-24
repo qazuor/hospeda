@@ -30,7 +30,7 @@ describe('accommodation mobile title block (AC-1.19)', () => {
         'utf8'
     );
     const mobileStyles = src.match(/@media \(max-width: 767px\)[\s\S]*?(?=@media|<\/style>)/)?.[0];
-    const badges = src.match(/<div\s+class="detail-header__badges"[^>]*>/)?.[0];
+    const badges = src.match(/<div\s+class="detail-header__badges[^"]*"[^>]*>/)?.[0];
 
     it('hides the visual breadcrumb wrapper without moving the structured breadcrumbs', () => {
         expect(page).toMatch(
@@ -49,12 +49,10 @@ describe('accommodation mobile title block (AC-1.19)', () => {
         );
     });
 
-    it('gives the badges one horizontally scrollable line with 12px labels', () => {
+    it('gives the badges one horizontally scrollable line (size from the shared contract)', () => {
         expect(mobileStyles).toMatch(
             /\.detail-header__badges\s*\{[^}]*flex-wrap: nowrap;[^}]*overflow-x: auto;/
         );
-        expect(mobileStyles).toContain('--acc-type-font-size: 12px;');
-        expect(mobileStyles).toContain('font-size: 12px;');
     });
 
     it('shares one mobile title and Compare row between expanded and sticky compact states', () => {
@@ -118,6 +116,20 @@ describe('accommodation mobile title block (AC-1.19)', () => {
         expect(tabIndex()).toBe('-1');
     });
 
+    it('makes the mobile compact state clearly smaller than the expanded one (owner smoke, HOS-2520)', () => {
+        // The badges row collapses in compact below 768px, through the WaveHeader contract
+        // that also makes it inert.
+        expect(badges).toContain('wh-compact-hide-mobile');
+        // The title drops to body size on one ellipsised line.
+        expect(mobileStyles).toMatch(
+            /:global\(\.wave-header--compact\) \.detail-header--mobile-gallery \.detail-header__name\s*\{[^}]*font-size: var\(--text-body, 1rem\);[^}]*white-space: nowrap;[^}]*text-overflow: ellipsis;/
+        );
+        // And the band itself tightens its padding.
+        expect(mobileStyles).toMatch(
+            /:global\(\.wave-header\.wave-header--compact \.wave-header__content:has\(\.detail-header--mobile-gallery\)\)\s*\{[^}]*padding-top: var\(--space-3, 12px\);[^}]*padding-bottom: var\(--space-3, 12px\);/
+        );
+    });
+
     it.each([
         ['es', 'Distintivos del alojamiento'],
         ['en', 'Accommodation badges'],
@@ -169,7 +181,9 @@ describe('DetailHeader.astro — type badge unification', () => {
         });
 
         it('forwards class="detail-header__type-badge" so compact mode can target it', () => {
-            expect(src).toMatch(/<AccommodationTypeBadge[\s\S]*?class="detail-header__type-badge"/);
+            expect(src).toMatch(
+                /<AccommodationTypeBadge[\s\S]*?class="detail-header__type-badge listing-header-badge"/
+            );
         });
 
         it('renders status pills as inline spans sized to match the type badge', () => {
@@ -198,14 +212,11 @@ describe('DetailHeader.astro — type badge unification', () => {
             expect(src).toMatch(/wave-header--compact[\s\S]*?detail-header__status-pill/);
         });
 
-        it('compact mode overrides the type badge via custom properties (no !important)', () => {
-            expect(src).toMatch(
-                /wave-header--compact[\s\S]*?detail-header__type-badge[\s\S]*?--acc-type-font-size/
-            );
-            expect(src).toMatch(
-                /wave-header--compact[\s\S]*?detail-header__type-badge[\s\S]*?--acc-type-padding/
-            );
-            expect(src).not.toMatch(/--acc-type-font-size:[^;]*!important/);
+        it('leaves the type badge compact shrink to the shared contract (no !important)', () => {
+            // HOS-2520: components.css `.listing-header-badge` sets --acc-type-* for
+            // every vertical; the header no longer carries its own override.
+            expect(src).not.toMatch(/--acc-type-font-size/);
+            expect(src).not.toMatch(/!important/);
         });
     });
 });
@@ -395,6 +406,26 @@ describe('accommodation mobile header spacing regressions (F1)', () => {
         );
         expect(mobileStyles).toMatch(
             /\.detail-header--mobile-gallery \.detail-header__favorite\s*\{\s*align-self: start;/
+        );
+    });
+});
+
+describe('header badges share one height (owner smoke, HOS-2520)', () => {
+    it('puts every badge on the shared listing-header-badge contract', () => {
+        expect(src).toContain('class="detail-header__badges listing-header-badges');
+        expect(src).toContain('class="detail-header__type-badge listing-header-badge"');
+        expect(src).toContain('<span class="featured-badge listing-header-badge">');
+        expect(src).toContain(
+            '<span class="featured-badge detail-header__verified-badge listing-header-badge">'
+        );
+        expect(src).toContain(
+            '<span class="detail-header__status-pill listing-header-badge" style={newStyle}>'
+        );
+    });
+
+    it('keeps no local badge sizing that could drift from the other verticals', () => {
+        expect(src).not.toMatch(
+            /--detail-header-badge-height|--acc-type-font-size|--acc-type-padding/
         );
     });
 });

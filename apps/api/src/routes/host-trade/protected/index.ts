@@ -9,6 +9,7 @@ import { protectedListHostTradesRoute } from './list';
 import { protectedGetMyHostTradeRoute, protectedUpdateMyHostTradeRoute } from './mine';
 import { protectedGetMyQrRoute } from './mine-qr';
 import { protectedListOwnReviewsRoute } from './mine-reviews';
+import { protectedGetMyTabCountsRoute } from './mine-tab-counts';
 import {
     protectedDeclareUsageAsProviderRoute,
     protectedListLinkedHostsRoute,
@@ -79,6 +80,10 @@ protectedRouter.route('/', protectedGetMyQrRoute);
 // `test/routes/host-trade/mine-reviews.test.ts`. It is NOT the directory read:
 // this one returns the caller's own reply in whatever moderation state it is in.
 protectedRouter.route('/', protectedListOwnReviewsRoute);
+
+// The provider's tab count pills in one read (Mi cuenta decision 22).
+// `/mine/tab-counts` overlaps `/{slug}/...` like the `/mine/*` routes above.
+protectedRouter.route('/', protectedGetMyTabCountsRoute);
 
 // The shared transitions (HOS-376 T-033). Role-blind by design: `declaredBy`
 // on the row decides who may answer, so one pair of endpoints serves a host and

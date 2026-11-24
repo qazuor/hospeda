@@ -31,14 +31,9 @@
  * @module lib/brand-phone
  */
 
+import { toBrandWhatsAppDigits } from '@repo/config';
 import { getBrandPhoneRaw } from './env';
 import { buildWhatsAppLink } from './whatsapp';
-
-/**
- * Argentina's country calling code. The only prefix this module ever inserts
- * a mobile `9` after — {@link getBrandPhoneRaw} is always an AR number.
- */
-const AR_COUNTRY_CODE = '54';
 
 /**
  * Strips everything but digits and a leading `+` from a phone string.
@@ -108,12 +103,8 @@ export function getBrandPhoneTelHref(): string {
  * @returns The `wa.me` URL, or `null` when the configured number is unusable
  */
 export function getBrandPhoneWhatsAppUrl(message?: string): string | null {
-    const digits = toE164Digits(getBrandPhoneRaw()).replace(/^\+/, '');
-    const withMobilePrefix = digits.startsWith(`${AR_COUNTRY_CODE}9`)
-        ? digits
-        : digits.startsWith(AR_COUNTRY_CODE)
-          ? `${AR_COUNTRY_CODE}9${digits.slice(AR_COUNTRY_CODE.length)}`
-          : digits;
+    // The mobile `9` rule lives once, in `@repo/config` (HOS-2565 PR-4).
+    const withMobilePrefix = toBrandWhatsAppDigits({ phone: getBrandPhoneRaw() });
 
     return buildWhatsAppLink({ phone: withMobilePrefix, message }).url;
 }

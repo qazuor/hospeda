@@ -3,6 +3,7 @@
  * @description Application-wide constants for the Hospeda web app.
  */
 
+import { BRAND_CONTACT_EMAIL, BRAND_SOCIAL_PROFILES } from '@repo/config';
 import { getBrandPhoneE164, getBrandPhoneWhatsAppUrl } from './brand-phone';
 
 /** Brand name used in titles, meta tags, and UI */
@@ -74,12 +75,13 @@ if (!brandWhatsAppUrl) {
  *
  * `platform` keys the icon + accessible label in SocialLinks; `url` is the
  * canonical profile URL. Order here is the render order in the footer.
+ *
+ * The four env-independent profiles come from `BRAND_SOCIAL_PROFILES` in
+ * `@repo/config` (HOS-2565 D12), which the user email footer also renders.
+ * WhatsApp is appended here because its URL derives from `HOSPEDA_BRAND_PHONE`.
  */
 export const SOCIAL_PROFILES = [
-    { platform: 'facebook', url: 'https://www.facebook.com/hospeda.com.ar' },
-    { platform: 'instagram', url: 'https://www.instagram.com/hospeda.com.ar' },
-    { platform: 'x', url: 'https://x.com/HospedaLitoral' },
-    { platform: 'youtube', url: 'https://www.youtube.com/@hospeda.com.ar' },
+    ...BRAND_SOCIAL_PROFILES,
     { platform: 'whatsapp', url: brandWhatsAppUrl }
 ] as const;
 
@@ -120,7 +122,7 @@ export const ORGANIZATION_INFO = {
      */
     telephone: getBrandPhoneE164(),
     /** Public contact email. */
-    email: 'info@hospeda.com.ar',
+    email: BRAND_CONTACT_EMAIL,
     /** Postal address fields (schema.org PostalAddress). */
     address: {
         streetAddress: 'Ruta Provincial 39, km 142, lote 19',

@@ -11,14 +11,23 @@
  * `can_use_calendar`. A 404 would be worse: the host would not understand why a
  * section a peer has simply vanished, and would have no path to find out it is
  * a plan feature.
+ *
+ * HOS-2503: the gate (`PlanEntitlementGate`, keyed on `can_use_calendar`) is
+ * wrapped by `CalendarSectionGate`, which renders the kit `LockedState` naming
+ * the cheapest catalog plan that grants the calendar.
  */
 
-import { CalendarSection } from '@/components/host/editor/CalendarSection.client';
-import { PlanEntitlementGate } from '@/components/host/editor/PlanEntitlementGate.client';
+import {
+	CALENDAR_ENTITLEMENT,
+	CalendarSectionGate,
+} from '@/components/host/editor/CalendarSectionGate.client';
 import EditorSectionLayout from '@/layouts/EditorSectionLayout.astro';
+import { fetchAudiencePlans } from '@/lib/billing/audience-plans';
 import { resolveEditorPage } from '@/lib/editor/resolve-editor-page';
 import { createTranslations } from '@/lib/i18n';
 import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
+import { buildUrl } from '@/lib/urls';
+import { resolveUnlockingPlanName } from '@/lib/venue/section-upsell-plan';
 
 export const prerender = false;
 
@@ -32,6 +41,14 @@ if (resolution.redirect) return resolution.redirect;
 
 const { data, locale, accommodationId, sectionId } = resolution;
 const { t } = createTranslations(locale);
+// The plan name comes from the catalog, so the lock never hardcodes a
+// commercial value (`check:commercial-values`).
+const upsellPlanName = resolveUnlockingPlanName({
+	plans: await fetchAudiencePlans({ audience: 'host' }),
+	entitlementKey: CALENDAR_ENTITLEMENT,
+	t,
+});
+const plansHref = buildUrl({ locale, path: PRICING_PAGE_PATH_BY_AUDIENCE.owner });
 ---
 
 <EditorSectionLayout
@@ -43,12 +60,11 @@ const { t } = createTranslations(locale);
 	hasTranslations={data.translations !== null}
 	title={t('host.properties.editor.section.calendar', 'Calendario')}
 >
-	<PlanEntitlementGate
-		entitlementKey="can_use_calendar"
+	<CalendarSectionGate
 		locale={locale}
-		upgradeUrl={`/${PRICING_PAGE_PATH_BY_AUDIENCE.owner}/`}
+		accommodationId={accommodationId}
+		upsellPlanName={upsellPlanName}
+		plansHref={plansHref}
 		client:load
-	>
-		<CalendarSection locale={locale} accommodationId={accommodationId} client:load />
-	</PlanEntitlementGate>
+	/>
 </EditorSectionLayout>

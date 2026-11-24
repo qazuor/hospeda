@@ -1123,6 +1123,11 @@
                 "multipleSubscriptions_other": "{{count}} suscripciones activas",
                 "subscriptionsCount_one": "{{count}} suscripción",
                 "subscriptionsCount_other": "{{count}} suscripciones",
+                "activeSubscriptionsPart_one": "{{count}} activa",
+                "activeSubscriptionsPart_other": "{{count}} activas",
+                "pendingSubscriptionsPart_one": "{{count}} pendiente",
+                "pendingSubscriptionsPart_other": "{{count}} pendientes",
+                "subscriptionsSummary": "{{active}} · {{pending}}",
                 "properties": "Mis propiedades",
                 "propertiesDesc": "Alojamientos publicados",
                 "messages": "Mensajes sin leer",
@@ -1511,7 +1516,6 @@
         "item": {
             "vipBadge": "Solo VIP",
             "viewListing": "Ver alojamiento",
-            "viewListingError": "No pudimos abrir el alojamiento. Probá de nuevo.",
             "listingUnavailable": "Este alojamiento ya no está disponible.",
             "validUntil": "Válida hasta el {{date}}"
         }
@@ -2271,6 +2275,16 @@
             "backToHub": "Volver al editor",
             "backToList": "Volver a la lista"
         },
+        "repeater": {
+            "add": "Agregar",
+            "moveUp": "Subir {{item}}",
+            "moveDown": "Bajar {{item}}",
+            "remove": "Quitar {{item}}",
+            "removeShort": "Quitar",
+            "confirmTitle": "¿Quitar «{{item}}»?",
+            "confirmDescription": "La fila sale de la lista.",
+            "confirmLabel": "Quitar"
+        },
         "hoursEditor": {
             "title": "Horarios de atención",
             "hint": "Activá los días que abrís y cargá sus franjas. Con «Copiar a todos los días» repetís el horario de un día en toda la semana.",
@@ -2390,7 +2404,11 @@
             "mapLoading": "Cargando el mapa…",
             "touchToActivate": "Tocá para mover el pin",
             "pinHint": "Arrastrá el pin o tocá el mapa para ajustar el punto exacto.",
-            "noPinHint": "Todavía no hay pin. Tocá el mapa donde está el lugar para ubicarlo.",
+            "noPinNotice": {
+                "title": "Todavía no marcaste el lugar en el mapa",
+                "body": "Sin pin, tu ficha no muestra en el mapa dónde queda. Tocá el mapa o arrastrá el pin hasta el punto exacto.",
+                "action": "Ir al mapa"
+            },
             "coordinates": "Coordenadas",
             "latitude": "Latitud",
             "longitude": "Longitud"

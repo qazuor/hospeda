@@ -40,6 +40,7 @@ import {
     checkCanUpdate,
     checkCanView
 } from './partner.permissions';
+import { resolveDiscardedPartnerLogoUrls } from './partner-logo-orphans';
 
 /**
  * The column a partner listing is owned through.
@@ -727,7 +728,7 @@ export class PartnerService extends BaseCrudService<
         actor: Actor,
         input: PartnerOwnerUpdate,
         ctx?: ServiceContext
-    ): Promise<ServiceOutput<{ partner: Partner }>> {
+    ): Promise<ServiceOutput<{ partner: Partner; discardedLogoUrls: readonly string[] }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'updateOwn',
             input: { actor, ...input },
@@ -795,7 +796,12 @@ export class PartnerService extends BaseCrudService<
                     );
                 }
 
-                return { partner: updated };
+                // Decision 16: a replaced pending logo is named for deletion.
+                const discardedLogoUrls = resolveDiscardedPartnerLogoUrls({
+                    before: existing,
+                    after: updated
+                });
+                return { partner: updated, discardedLogoUrls };
             }
         });
     }
@@ -826,7 +832,7 @@ export class PartnerService extends BaseCrudService<
             readonly note?: string;
         },
         ctx?: ServiceContext
-    ): Promise<ServiceOutput<{ partner: Partner }>> {
+    ): Promise<ServiceOutput<{ partner: Partner; discardedLogoUrls: readonly string[] }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'reviewContent',
             input: { actor, ...input },
@@ -900,7 +906,12 @@ export class PartnerService extends BaseCrudService<
                     );
                 }
 
-                return { partner: updated };
+                // Decision 16: the replaced live logo, or the rejected one.
+                const discardedLogoUrls = resolveDiscardedPartnerLogoUrls({
+                    before: existing,
+                    after: updated
+                });
+                return { partner: updated, discardedLogoUrls };
             }
         });
     }

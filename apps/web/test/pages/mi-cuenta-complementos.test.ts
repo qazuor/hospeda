@@ -10,6 +10,7 @@ describe('AC:B10:11 account addon purchase page', () => {
         expect(frontmatter).toContain('Astro.locals.user');
         expect(frontmatter).toContain('const title = t(');
         expect(frontmatter.match(/billingAddonApi|billingSubscriptionApi/g) ?? []).toHaveLength(0);
-        expect(source).toContain('<AddonPurchase client:load');
+        expect(source).toMatch(/<AddonPurchaseGate\s+client:load/u);
+        expect(source).toContain('resolveEmptySubscriptionPlansPath({ roles: user.roles })');
     });
 });

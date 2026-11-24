@@ -205,7 +205,6 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     // resolved server-side by `qr-sheet-content.ts`): a prefix is two segments
     // by design, so those ride along. ~150 bytes for one panel's copy.
     'common.qrSheet',
-    'common.retry',
     // HOS-957 — the rich-text toolbar's link dialog, which replaced
     // `window.prompt('URL del enlace', …)`. Named by `LinkUrlDialog.client.tsx`
     // through `RichTextEditor.client.tsx`, so it is reachable from all four

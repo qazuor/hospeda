@@ -13,6 +13,8 @@ export * from './host-trade.owner.schema.js';
 // Query / filter schemas (public/host list)
 export * from './host-trade.query.schema.js';
 export * from './host-trade.schema.js';
+// The provider's own tab count pills in one read (Mi cuenta decision 22)
+export * from './host-trade.tab-counts.schema.js';
 // The server-managed fields no client may set, and the guard reads (HOS-376)
 export * from './host-trade-managed-fields.js';
 // Tuned constants for the benefit usage + review domain (HOS-376)

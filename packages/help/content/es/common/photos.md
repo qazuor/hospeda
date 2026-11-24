@@ -44,7 +44,7 @@ covers:
   - "limit:max_photos_per_accommodation"
 entryFor:
   - "section:accommodation.fotos"
-reviewedAt: "2026-11-22"
+reviewedAt: "2026-11-23"
 ---
 
 ## Qué podés hacer
@@ -56,7 +56,7 @@ En alojamientos también podés reordenar la galería y elegir la portada.
 
 ## Cómo se hace
 
-1. Abrí el editor de la publicación: desde «Mis propiedades» (alojamientos) o «Mi comercio» (comercios y experiencias), tocá «Editar» en su tarjeta.
+1. Abrí el editor de la publicación: desde «Mis propiedades» (alojamientos) o «Mi comercio» (comercios y experiencias), tocá «Editar» en su tarjeta. Si todavía no está publicada, «Editar» está en el menú «Más acciones».
 2. Entrá a la sección «Fotos».
 3. Cargá la imagen principal: arrastrá una imagen o hacé clic para elegirla. Es obligatoria para poder publicar.
 4. Sumá más fotos a la galería. Cada archivo puede ser JPG, PNG, WebP o HEIC y pesar hasta 10 MB.

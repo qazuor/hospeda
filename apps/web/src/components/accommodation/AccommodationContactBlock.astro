@@ -24,12 +24,21 @@
  * Matches the existing precedent for the same kind of link elsewhere on this
  * page family: `VenueContactBlock.astro` and
  * `EventDetailOrganizerCard.astro` both use plain `noopener noreferrer`.
+ *
+ * HOS-2533 (owner smoke, HOS-2520): the channels render as outline
+ * `GradientButton`s and the social profiles as `IconButton`s, the same CTA
+ * family as the rest of the page, instead of bespoke text links.
  */
-import { EmailIcon, FacebookIcon, GlobeIcon, InstagramIcon, PhoneIcon } from '@repo/icons';
+import { FacebookIcon, InstagramIcon } from '@repo/icons';
 import type { AccommodationContactInfo, AccommodationSocialNetworks } from '@/data/types';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { resolveSafeExternalUrl } from '@/lib/safe-external-url';
+import ListingContactChannels from '@/components/listing/contact/ListingContactChannels.astro';
+import type {
+    ListingContactChannel,
+    ListingContactSocialLink
+} from '@/components/listing/contact/listing-contact.types';
 
 import type { ContactOrigin } from '@/lib/listing-contact/listing-contact-events';
 
@@ -42,10 +51,11 @@ interface Props {
 
 const { contactInfo, socialNetworks, locale, listingId } = Astro.props;
 const contactOrigin: ContactOrigin = 'contact_block';
-const trackingAttributes = {
-    'data-listing-id': listingId,
-    'data-vertical': 'accommodation',
-    'data-contact-origin': contactOrigin
+/** `data-*` read by `initContactLinkTracking` (keys without the `data-` prefix). */
+const trackingData = {
+    'listing-id': listingId,
+    vertical: 'accommodation',
+    'contact-origin': contactOrigin
 };
 const { t } = createTranslations(locale);
 
@@ -66,165 +76,61 @@ const hasSocial = Boolean(facebookHref || instagramHref);
 if (!hasContact && !hasSocial) {
     return;
 }
+
+const channels: ListingContactChannel[] = [];
+if (contactInfo?.phone) {
+    channels.push({
+        kind: 'phone',
+        href: `tel:${contactInfo.phone}`,
+        label: contactInfo.phone,
+        srHint: `, ${t('accommodations.detail.contact.phoneAriaLabel', 'Llamar al alojamiento')}`
+    });
+}
+if (contactInfo?.landlinePhone) {
+    channels.push({
+        kind: 'phone',
+        href: `tel:${contactInfo.landlinePhone}`,
+        label: contactInfo.landlinePhone,
+        srHint: `, ${t('accommodations.detail.contact.landlineAriaLabel', 'Llamar al teléfono fijo del alojamiento')}`
+    });
+}
+if (contactInfo?.email) {
+    channels.push({
+        kind: 'email',
+        href: `mailto:${contactInfo.email}`,
+        label: contactInfo.email,
+        srHint: `, ${t('accommodations.detail.contact.emailAriaLabel', 'Enviar email al alojamiento')}`
+    });
+}
+if (websiteHref) {
+    channels.push({
+        kind: 'website',
+        href: websiteHref,
+        label: websiteHref.replace(/^https?:\/\//, ''),
+        srHint: `, ${t('accommodations.detail.contact.websiteAriaLabel', 'Visitar sitio web del alojamiento')}`
+    });
+}
+
+const socialLinks: ListingContactSocialLink[] = [];
+if (facebookHref) {
+    socialLinks.push({
+        href: facebookHref,
+        ariaLabel: t('accommodations.detail.contact.facebookAriaLabel', 'Facebook del alojamiento'),
+        Icon: FacebookIcon
+    });
+}
+if (instagramHref) {
+    socialLinks.push({
+        href: instagramHref,
+        ariaLabel: t('accommodations.detail.contact.instagramAriaLabel', 'Instagram del alojamiento'),
+        Icon: InstagramIcon
+    });
+}
 ---
 
-<section class="acc-contact" aria-label={t('accommodations.detail.contact.title', 'Contacto')}>
-    <h3 class="acc-contact__title">
-        {t('accommodations.detail.contact.title', 'Contacto')}
-    </h3>
-
-    {hasContact && (
-        <div class="acc-contact__channels">
-            {contactInfo?.phone && (
-                <a
-                    href={`tel:${contactInfo.phone}`}
-                    data-contact-channel="phone"
-                    {...trackingAttributes}
-                    class="acc-contact__link"
-                >
-                    <PhoneIcon size={16} aria-hidden="true" />
-                    <span>{contactInfo.phone}</span>
-                    <span class="sr-only">, {t('accommodations.detail.contact.phoneAriaLabel', 'Llamar al alojamiento')}</span>
-                </a>
-            )}
-            {contactInfo?.landlinePhone && (
-                <a
-                    href={`tel:${contactInfo.landlinePhone}`}
-                    data-contact-channel="phone"
-                    {...trackingAttributes}
-                    class="acc-contact__link"
-                >
-                    <PhoneIcon size={16} aria-hidden="true" />
-                    <span>{contactInfo.landlinePhone}</span>
-                    <span class="sr-only">, {t('accommodations.detail.contact.landlineAriaLabel', 'Llamar al teléfono fijo del alojamiento')}</span>
-                </a>
-            )}
-            {contactInfo?.email && (
-                <a
-                    href={`mailto:${contactInfo.email}`}
-                    data-contact-channel="email"
-                    {...trackingAttributes}
-                    class="acc-contact__link"
-                >
-                    <EmailIcon size={16} aria-hidden="true" />
-                    <span>{contactInfo.email}</span>
-                    <span class="sr-only">, {t('accommodations.detail.contact.emailAriaLabel', 'Enviar email al alojamiento')}</span>
-                </a>
-            )}
-            {websiteHref && (
-                <a
-                    href={websiteHref}
-                    data-contact-channel="website"
-                    {...trackingAttributes}
-                    class="acc-contact__link"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                >
-                    <GlobeIcon size={16} aria-hidden="true" />
-                    <span>{websiteHref.replace(/^https?:\/\//, '')}</span>
-                    <span class="sr-only">, {t('accommodations.detail.contact.websiteAriaLabel', 'Visitar sitio web del alojamiento')}</span>
-                </a>
-            )}
-        </div>
-    )}
-
-    {hasSocial && (
-        <div class="acc-contact__social">
-            {facebookHref && (
-                <a
-                    href={facebookHref}
-                    data-contact-channel="social"
-                    {...trackingAttributes}
-                    class="acc-contact__social-link"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={t('accommodations.detail.contact.facebookAriaLabel', 'Facebook del alojamiento')}
-                >
-                    <FacebookIcon size={18} aria-hidden="true" />
-                </a>
-            )}
-            {instagramHref && (
-                <a
-                    href={instagramHref}
-                    data-contact-channel="social"
-                    {...trackingAttributes}
-                    class="acc-contact__social-link"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={t('accommodations.detail.contact.instagramAriaLabel', 'Instagram del alojamiento')}
-                >
-                    <InstagramIcon size={18} aria-hidden="true" />
-                </a>
-            )}
-        </div>
-    )}
-</section>
-
-<style>
-    .acc-contact {
-        display: flex;
-        flex-direction: column;
-        gap: var(--space-4, 16px);
-        padding: var(--space-5, 20px);
-        background-color: var(--core-card);
-        border-radius: var(--radius-card);
-        box-shadow: var(--shadow-card);
-    }
-
-    .acc-contact__title {
-        font-family: var(--font-heading);
-        font-size: 1.1rem;
-        font-weight: 600;
-        color: var(--core-foreground);
-        margin: 0;
-    }
-
-    .acc-contact__channels {
-        display: flex;
-        flex-direction: column;
-        gap: 0.6rem;
-    }
-
-    .acc-contact__link {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        font-family: var(--font-sans);
-        font-size: 0.9rem;
-        color: var(--brand-primary);
-        text-decoration: none;
-        transition: color var(--duration-normal, 0.4s) ease;
-        overflow-wrap: anywhere;
-    }
-
-    .acc-contact__link:hover {
-        color: var(--brand-accent);
-    }
-
-    .acc-contact__social {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        flex-wrap: wrap;
-    }
-
-    .acc-contact__social-link {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 36px;
-        height: 36px;
-        border-radius: var(--radius-md);
-        background-color: var(--brand-primary-a10);
-        color: var(--brand-primary);
-        transition:
-            background-color var(--duration-normal, 0.4s) ease,
-            color var(--duration-normal, 0.4s) ease;
-        text-decoration: none;
-    }
-
-    .acc-contact__social-link:hover {
-        background-color: var(--brand-primary);
-        color: var(--primary-foreground);
-    }
-</style>
+<ListingContactChannels
+    heading={t('accommodations.detail.contact.title', 'Contacto')}
+    channels={channels}
+    socialLinks={socialLinks}
+    trackingData={trackingData}
+/>

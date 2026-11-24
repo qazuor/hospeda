@@ -185,18 +185,16 @@ describe('the nine trial-series email templates (HOS-1012)', () => {
         expect(report).toContain('No se borró nada');
     });
 
-    it('no mail of the series links to the preferences page yet (HOS-2519 OQ-2)', () => {
-        // The expiry mail is transactional. Its siblings are REMINDER, but the
-        // web preferences page does not drive REMINDER opt-outs today (it writes
-        // `notifications.allowEmails`, which PreferenceService never reads), so a
-        // "manage preferences" link would promise a control that does nothing.
-        // Flip these to `footerLink="preferences"` once that gap is closed.
+    it('every mail of the series links to the preferences page (HOS-2565 §8.3)', () => {
+        // HOS-2565 §8.3 makes "Elegí qué correos recibís" the default footer of
+        // every account holder's mail (owner decision, 2026-11-22). It replaces
+        // HOS-2519 OQ-2, which kept the link off until the page drove opt-outs.
         const report = renderToStaticMarkup(TrialExpired(props));
-        expect(report).not.toContain('Administrar preferencias de notificaciones');
+        expect(report).toContain('data-layout-link="preferences"');
 
         for (const send of SERIES) {
             const html = send.render();
-            expect(html, send.name).not.toContain('Administrar preferencias de notificaciones');
+            expect(html, send.name).toContain('data-layout-link="preferences"');
             expect(html, send.name).not.toContain('{{');
         }
     });

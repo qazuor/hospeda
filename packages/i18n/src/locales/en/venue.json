@@ -324,9 +324,9 @@
                 "saving": "Saving…",
                 "saved": "Menu saved.",
                 "saveError": "The menu could not be saved.",
-                "linkSave": "Save link",
-                "linkSaved": "Link saved.",
                 "linkSaveError": "The link could not be saved.",
+                "savedMenuNotLink": "The menu was saved, but not the menu link. Try saving again.",
+                "savedLinkNotMenu": "The menu link was saved, but not the menu. Try saving again.",
                 "locked": "Your full menu is available starting with the {{plan}} plan.",
                 "lockedNoPlan": "Your full menu is available on a paid plan.",
                 "lockedPreTrial": "The menu unlocks when you publish your listing.",
@@ -363,7 +363,10 @@
                     "title": "Remove dish",
                     "message": "Remove this dish from the menu?",
                     "confirm": "Remove dish"
-                }
+                },
+                "itemPriceHint": "In pesos. Leave it empty for “price on request”.",
+                "newItem": "New dish",
+                "itemsOf": "Dishes in {{section}}"
             },
             "dailySpecials": {
                 "title": "Today's menu",
@@ -435,7 +438,8 @@
                 "saveError": "The schedule could not be saved.",
                 "locked": "Keeping a venue schedule is available starting with the {{plan}} plan.",
                 "lockedNoPlan": "Keeping a venue schedule is available on a paid plan.",
-                "lockedPreTrial": "The venue schedule unlocks when you publish your listing."
+                "lockedPreTrial": "The venue schedule unlocks when you publish your listing.",
+                "recurrence": "When it happens"
             },
             "lockedSection": {
                 "vaciar": "Empty",
@@ -491,7 +495,8 @@
                     "draft": "Draft"
                 },
                 "limitReached": "You reached the limit. The {{plan}} plan allows more promotions.",
-                "limitReachedNoPlan": "You reached your plan’s promotion limit."
+                "limitReachedNoPlan": "You reached your plan’s promotion limit.",
+                "lockedExisting": "With your current plan you can view and pause your promotions, but not create or edit them."
             }
         }
     },

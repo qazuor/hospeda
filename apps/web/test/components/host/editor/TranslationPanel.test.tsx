@@ -47,7 +47,12 @@ vi.mock('../../../../src/lib/i18n', async (importActual) => ({
     ...(await importActual<typeof import('../../../../src/lib/i18n')>()),
     createTranslations: () => ({
         t: (key: string, fallback?: string, params?: Record<string, unknown>) => {
-            const raw = fallback ?? key;
+            // HOS-2492: the notice is called with no inline fallback (the key
+            // check forbids one for a catalog key), so its catalog text is here.
+            const raw =
+                key === 'host.properties.editor.translation.missingNotice'
+                    ? 'Faltan traducciones en {{locales}}.'
+                    : (fallback ?? key);
             if (!params) return raw;
             return Object.keys(params).reduce(
                 (acc, name) =>
@@ -111,6 +116,39 @@ function renderPanel(translations: AccommodationTranslationData) {
 }
 
 const GENERATE_BUTTON = /Generar traducciones faltantes/i;
+
+// ---------------------------------------------------------------------------
+// Tab helpers (HOS-2492)
+// ---------------------------------------------------------------------------
+
+/** The panel's locale tabs, source first. Only the selected panel renders. */
+const TAB_LABELS = ['ES', 'EN', 'PT'] as const;
+
+/** Selects a locale tab and returns the row of the field named `label` in it. */
+function fieldRowIn(tab: (typeof TAB_LABELS)[number], label: string): HTMLElement | undefined {
+    fireEvent.click(screen.getByRole('tab', { name: new RegExp(`^${tab}`) }));
+    return [...document.querySelectorAll<HTMLElement>('.fieldCard')].find((row) =>
+        row.querySelector('.fieldName')?.textContent?.includes(label)
+    );
+}
+
+/** The locales in which the field reads as translated (the old present badges). */
+function presentLocales(label: string): string[] {
+    return TAB_LABELS.filter((tab) => fieldRowIn(tab, label)?.dataset.role === 'translated');
+}
+
+/** The field's rows across every tab, as one string. */
+function fieldTextAcrossTabs(label: string): string {
+    return TAB_LABELS.map((tab) => fieldRowIn(tab, label)?.textContent ?? '').join(' | ');
+}
+
+/** The role pill of the field in each tab, source first. */
+function rolesAcrossTabs(label: string): (string | null | undefined)[] {
+    return TAB_LABELS.map(
+        (tab) => fieldRowIn(tab, label)?.querySelector('.fieldHead')?.children[1]?.textContent
+    );
+}
+
 const RICH_ROW = /Descripción enriquecida/i;
 
 // ---------------------------------------------------------------------------
@@ -199,16 +237,10 @@ describe('TranslationPanel — rich description row (BETA-199)', () => {
         );
 
         // Scope to the row under test — the other three fields are fully
-        // translated and would supply PT badges of their own. The CSS-module mock
-        // returns class names verbatim, so the badge variant is readable off the DOM.
-        const nameCard = [...container.querySelectorAll('.fieldCard')].find((card) =>
-            card.querySelector('.fieldName')?.textContent?.includes('Nombre')
-        );
-        expect(nameCard).toBeDefined();
-
-        const present = [...(nameCard as Element).querySelectorAll('.localeBadgePresent')].map(
-            (el) => el.textContent?.trim()
-        );
+        // translated and would read as present on PT themselves. The row carries
+        // its locale role as `data-role` (HOS-2492: one tab per locale).
+        expect(container.querySelector('fieldset')).not.toBeNull();
+        const present = presentLocales('Nombre');
         expect(present).not.toContain('PT');
         // Not vacuous: EN carries real content on this same row and IS present.
         expect(present).toContain('EN');
@@ -496,12 +528,8 @@ describe('TranslationPanel — per-field run reporting (HOS-317)', () => {
         expect(screen.queryByRole('button', { name: GENERATE_BUTTON })).not.toBeInTheDocument();
 
         // And the rows agree with the note: EN/PT are present on the name card now.
-        const nameCard = [...container.querySelectorAll('.fieldCard')].find((card) =>
-            card.querySelector('.fieldName')?.textContent?.includes('Nombre')
-        );
-        const present = [...(nameCard as Element).querySelectorAll('.localeBadgePresent')].map(
-            (el) => el.textContent?.trim()
-        );
+        expect(container.querySelector('fieldset')).not.toBeNull();
+        const present = presentLocales('Nombre');
         expect(present).toEqual(expect.arrayContaining(['EN', 'PT']));
     });
 
@@ -527,12 +555,8 @@ describe('TranslationPanel — per-field run reporting (HOS-317)', () => {
             expect(screen.getByText('No se pudo traducir a PT')).toBeInTheDocument();
         });
 
-        const nameCard = [...container.querySelectorAll('.fieldCard')].find((card) =>
-            card.querySelector('.fieldName')?.textContent?.includes('Nombre')
-        );
-        const present = [...(nameCard as Element).querySelectorAll('.localeBadgePresent')].map(
-            (el) => el.textContent?.trim()
-        );
+        expect(container.querySelector('fieldset')).not.toBeNull();
+        const present = presentLocales('Nombre');
         expect(present).toContain('EN');
         expect(present).not.toContain('PT');
         // PT is still a real gap, so the button stays available to retry it.
@@ -883,31 +907,27 @@ describe('TranslationPanel — the translated text itself (HOS-797)', () => {
         richDescription: null
     };
 
-    function nameCardOf(container: HTMLElement): HTMLElement {
-        const card = [...container.querySelectorAll('.fieldCard')].find((element) =>
-            element.querySelector('.fieldName')?.textContent?.includes('Nombre')
-        );
-        expect(card).toBeDefined();
-        return card as HTMLElement;
+    /** The name field's text across the three locale tabs (HOS-2492). */
+    function nameTextOf(container: HTMLElement): string {
+        expect(container.querySelector('fieldset')).not.toBeNull();
+        return fieldTextAcrossTabs('Nombre');
     }
 
     it('renders the text each locale holds', () => {
         const { container } = renderPanel(NAMED);
-        const card = nameCardOf(container);
+        const text = nameTextOf(container);
 
         // The Spanish source comes from the PLAIN column — `locales.es` is null
         // here, which is the state of every never-translated accommodation.
-        expect(card.textContent).toContain('Cabaña Cheroga');
+        expect(text).toContain('Cabaña Cheroga');
         // And the AI's answer, which is the whole point: the host can see that it
         // renamed the place instead of translating the name.
-        expect(card.textContent).toContain('Cheroga Country House');
+        expect(text).toContain('Cheroga Country House');
     });
 
     it('says which text the host wrote and which a machine produced', () => {
-        const { container } = renderPanel(NAMED);
-        const roles = [...nameCardOf(container).querySelectorAll('.localeTextRole')].map(
-            (element) => element.textContent
-        );
+        renderPanel(NAMED);
+        const roles = rolesAcrossTabs('Nombre');
 
         // AC-2. Three locales, three roles, and the source is not one of the
         // generated ones.
@@ -919,7 +939,7 @@ describe('TranslationPanel — the translated text itself (HOS-797)', () => {
         // whitespace the host has to interpret.
         const { container } = renderPanel(NAMED);
 
-        expect(nameCardOf(container).textContent).toContain('Todavía no se generó esta traducción');
+        expect(nameTextOf(container)).toContain('Todavía no se generó esta traducción');
     });
 
     it('distinguishes an unwritten source from an ungenerated translation', () => {
@@ -932,7 +952,7 @@ describe('TranslationPanel — the translated text itself (HOS-797)', () => {
             richDescription: null
         });
 
-        expect(nameCardOf(container).textContent).toContain('Todavía no escribiste este contenido');
+        expect(nameTextOf(container)).toContain('Todavía no escribiste este contenido');
     });
 
     it('shows what a run just generated without waiting for a reload', async () => {
@@ -957,7 +977,7 @@ describe('TranslationPanel — the translated text itself (HOS-797)', () => {
         fireEvent.click(screen.getByRole('button', { name: GENERATE_BUTTON }));
 
         await waitFor(() => {
-            expect(nameCardOf(container).textContent).toContain('Chácara Cheroga');
+            expect(nameTextOf(container)).toContain('Chácara Cheroga');
         });
         expect(reloadSpy).not.toHaveBeenCalled();
     });
@@ -992,10 +1012,10 @@ describe('TranslationPanel — the translated text itself (HOS-797)', () => {
         fireEvent.click(screen.getByRole('button', { name: GENERATE_BUTTON }));
 
         await waitFor(() => {
-            expect(nameCardOf(container).textContent).toContain('Chácara Cheroga');
+            expect(nameTextOf(container)).toContain('Chácara Cheroga');
         });
-        expect(nameCardOf(container).textContent).toContain('Cheroga Country House');
-        expect(nameCardOf(container).textContent).not.toContain('Something Else Entirely');
+        expect(nameTextOf(container)).toContain('Cheroga Country House');
+        expect(nameTextOf(container)).not.toContain('Something Else Entirely');
     });
 
     it('says a locale is unreadable rather than printing the presence marker', async () => {
@@ -1011,17 +1031,66 @@ describe('TranslationPanel — the translated text itself (HOS-797)', () => {
         fireEvent.click(screen.getByRole('button', { name: GENERATE_BUTTON }));
 
         await waitFor(() => {
-            expect(nameCardOf(container).textContent).toContain('Actualizá la página para leerlo');
+            expect(nameTextOf(container)).toContain('Actualizá la página para leerlo');
         });
 
-        const card = nameCardOf(container);
         // Present, so the row agrees with the fold — and the marker is not on
         // screen in any form.
-        const present = [...card.querySelectorAll('.localeBadgePresent')].map((element) =>
-            element.textContent?.trim()
-        );
-        expect(present).toContain('PT');
-        expect(card.textContent).not.toContain('\u0000');
-        expect(card.textContent).not.toContain('Todavía no se generó esta traducción');
+        expect(presentLocales('Nombre')).toContain('PT');
+        const text = nameTextOf(container);
+        expect(text).not.toContain('\u0000');
+        expect(text).not.toContain('Todavía no se generó esta traducción');
+    });
+});
+
+describe('TranslationPanel — shared kit look (HOS-2492)', () => {
+    const MIXED: AccommodationTranslationData = {
+        name: { locales: { es: 'Nombre', en: 'Name', pt: null }, plain: 'Nombre' },
+        summary: { locales: { es: 'Resumen', en: null, pt: null }, plain: 'Resumen' },
+        description: FULLY_TRANSLATED,
+        richDescription: null
+    };
+
+    it('renders one tab per locale, source selected first', () => {
+        // Arrange + Act
+        renderPanel(MIXED);
+
+        // Assert
+        const tabs = screen.getAllByRole('tab');
+        expect(tabs.map((tab) => tab.textContent?.slice(0, 2))).toEqual(['ES', 'EN', 'PT']);
+        expect(tabs[0]).toHaveAttribute('aria-selected', 'true');
+    });
+
+    it('counts the untranslated fields on each locale tab', () => {
+        // Arrange + Act
+        renderPanel(MIXED);
+
+        // Assert
+        expect(screen.getByRole('tab', { name: /^EN/ }).textContent).toContain('1');
+        expect(screen.getByRole('tab', { name: /^PT/ }).textContent).toContain('2');
+        expect(screen.getByRole('tab', { name: /^ES/ }).textContent).not.toMatch(/\d/);
+    });
+
+    it('names the locales with missing translations in one notice', () => {
+        // Arrange + Act
+        renderPanel(MIXED);
+
+        // Assert
+        const notice = screen
+            .getAllByRole('status')
+            .find((element) => element.textContent?.includes('Faltan traducciones'));
+        expect(notice?.textContent).toContain('EN, PT');
+    });
+
+    it('shows no missing-translations notice when every locale is filled', () => {
+        // Arrange + Act
+        renderPanel(NOT_ENTITLED);
+
+        // Assert
+        expect(
+            screen
+                .queryAllByRole('status')
+                .some((element) => element.textContent?.includes('Faltan traducciones'))
+        ).toBe(false);
     });
 });

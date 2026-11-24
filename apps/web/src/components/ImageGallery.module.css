@@ -472,38 +472,32 @@
 
 /*
  * .viewAllLink: the crawlable link to the `/fotos` sub-page (the only link to it
- * from the listing). HOS-2520 review: the mosaic already carries the visible
- * «Ver las N fotos» button (lightbox), so showing this link too gave two photo CTAs.
- * It stays in the DOM and in the tab order but is visually hidden until it takes
- * keyboard focus (skip-link pattern), shown when viewAllHref is provided AND the
- * total images exceed the inline count (count >= 5).
+ * from the listing), shown when viewAllHref is provided AND the total images exceed
+ * the inline count (count >= 5). Owner decision (HOS-2520 smoke): visible at every
+ * width. It is styled as a text link with a grid icon and an arrow, unlike the
+ * «Ver las N fotos» lightbox button (filled pill with a fullscreen icon), so the two
+ * read as "open the viewer here" vs "go to the photo page".
  */
 .viewAllLink {
-    position: absolute;
-    inline-size: 1px;
-    block-size: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2, 8px);
+    min-block-size: 44px;
+    margin-top: var(--space-2, 8px);
     font-family: var(--font-sans, sans-serif);
     font-size: 0.875rem;
-    font-weight: 500;
+    font-weight: 600;
     color: var(--brand-primary-link, oklch(0.55 0.17 264));
-    text-decoration: none;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.viewAllLink:hover {
+    text-decoration-thickness: 2px;
 }
 
 .viewAllLink:focus-visible {
-    position: static;
-    display: block;
-    inline-size: auto;
-    block-size: auto;
-    margin-top: var(--space-2, 8px);
-    overflow: visible;
-    clip-path: none;
-    white-space: normal;
-    text-align: right;
-    text-decoration: underline;
-    outline: 3px solid var(--primary, oklch(0.55 0.17 264));
+    outline: 3px solid var(--brand-primary);
     outline-offset: 2px;
     border-radius: 2px;
 }
@@ -518,10 +512,7 @@
     top: var(--space-4, 16px);
     left: 50%;
     transform: translateX(-50%);
-    color: oklch(1 0 0 / 0.8);
-    font-family: var(--font-sans, sans-serif);
-    font-size: 0.875rem;
-    user-select: none;
+    /* The pill itself is GalleryCounter (HOS-2520): same look as the swipe track. */
     z-index: 10;
 }
 

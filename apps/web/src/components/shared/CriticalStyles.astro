@@ -45,12 +45,16 @@
  *
  * ## Why `is:inline` + `set:html` (not a plain `<style>{globalCss}</style>`)
  *
- * `astro.config.mjs` sets `build.inlineStylesheets: 'never'` — without
- * `is:inline`, Astro would still try to treat this as a scoped/bundled style
- * block and extract it to its own asset, defeating the whole point. `set:html`
+ * Without `is:inline`, Astro would treat this as a scoped/bundled style block
+ * and extract it to its own asset (or, with `build.inlineStylesheets: 'auto'`,
+ * decide by size whether to inline it), defeating the whole point: this block
+ * must ALWAYS be inline, regardless of the `inlineStylesheets` mode. `set:html`
  * writes the string as raw text children, exactly as authored by Vite's CSS
- * transform, which is what `collectCspHashes` needs to hash consistently
- * (it hashes the element's raw text VERBATIM — no trimming).
+ * transform, so every layout emits a byte-identical block.
+ *
+ * Since HOS-2576 `style-src` is `'unsafe-inline'`, so the CSP no longer hashes
+ * this block; byte-identity is kept as a structural guarantee (one source, no
+ * drift between the four layouts).
  */
 import globalCss from '@/styles/global.css?inline';
 ---

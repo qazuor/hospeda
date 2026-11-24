@@ -32,10 +32,7 @@ export function TrialEndingReminder({
     const daysText = daysRemaining === 1 ? '1 día' : `${daysRemaining} días`;
 
     return (
-        <EmailLayout
-            previewText={`Tu período de prueba de ${planName} está por finalizar`}
-            footerLink="none"
-        >
+        <EmailLayout previewText={`Tu período de prueba de ${planName} está por finalizar`}>
             <Heading>Tu período de prueba está por finalizar</Heading>
 
             <Text style={styles.greeting}>Hola {recipientName},</Text>

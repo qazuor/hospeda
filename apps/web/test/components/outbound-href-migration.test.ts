@@ -85,7 +85,7 @@ const MIGRATED: readonly MigratedLink[] = [
             'const menuHref = resolveSafeExternalUrl(menuUrl)',
             'const href = resolveSafeExternalUrl(socialNetworks?.[key])',
             'href={menuHref}',
-            'href={href}'
+            'return [{ href, ariaLabel: label'
         ],
         neverRenders: ['href={menuUrl}', 'href={url}']
     },

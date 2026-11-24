@@ -22,7 +22,7 @@ keywords:
   - "comprar complemento"
 destinations:
   - kind: addons
-    label: "Comprar complementos"
+    label: "Complementos"
 faqKey: owners.featured
 public: false
 related:
@@ -38,11 +38,11 @@ reviewedAt: "2026-11-23"
 
 ## Qué podés hacer
 
-Comprar un complemento y dar de baja los recurrentes desde {{link:addons|Comprar complementos}}.
+Comprar un complemento y dar de baja los recurrentes desde {{link:addons|Complementos}}.
 
 ## Cómo se hace
 
-1. Entrá a «Comprar complementos».
+1. Entrá a «Suscripción» y abrí la pestaña «Complementos». Si todavía no tenés ninguna suscripción, la página te pide elegir un plan primero.
 2. Elegí un complemento de la lista.
 3. Elegí la ficha (o la suscripción) a la que se aplica.
 4. Revisá el resumen: muestra el importe y la frecuencia. Si tu beneficio lo incluye, aparece «Gratis por tu beneficio» y podés elegirlo sin pagar.

@@ -9,10 +9,8 @@
  *   island that renders `EditorSaveBar` (and no `ActionBar`), an `auto` page
  *   mounts one that does not.
  *
- * `PENDING_BAR` lists the `bar` sections whose managers still carry their own
- * save buttons until their move to the bar (spec PR-5): they are declared
- * `bar` and asserted NOT to render the bar yet, so the list must shrink when
- * that lands.
+ * Every `bar` section is on the bar, the venue managers included (carta, menú
+ * del día and eventos moved in HOS-2487): there is no exemption list.
  */
 
 import { readdirSync, readFileSync } from 'node:fs';
@@ -38,6 +36,7 @@ const ISLANDS: Readonly<Record<string, string>> = {
     SeoForm: 'src/components/host/editor/forms/SeoForm.client.tsx',
     ListingEditor: 'src/components/listing/ListingEditor.client.tsx',
     CalendarSection: 'src/components/host/editor/CalendarSection.client.tsx',
+    CalendarSectionGate: 'src/components/host/editor/CalendarSectionGate.client.tsx',
     PhotoSection: 'src/components/host/editor/PhotoSection.client.tsx',
     FaqSection: 'src/components/host/editor/FaqSection.client.tsx',
     AiQuestionsPanel: 'src/components/listing/ai-questions/AiQuestionsPanel.client.tsx',
@@ -50,9 +49,6 @@ const ISLANDS: Readonly<Record<string, string>> = {
     VenueDailySpecialsManager: 'src/components/venue/VenueDailySpecialsManager.client.tsx',
     VenueEventsManager: 'src/components/venue/VenueEventsManager.client.tsx'
 };
-
-/** Declared `bar`, managers not on the bar yet (spec PR-5). */
-const PENDING_BAR: ReadonlySet<string> = new Set(['carta', 'menu-del-dia', 'eventos']);
 
 const EDITORS: readonly {
     readonly dir: string;
@@ -120,7 +116,7 @@ describe('editor save signal per page (HOS-2487, AC-3)', () => {
         // Assert
         expect(islands.length, `${slug}: no section island found`).toBeGreaterThan(0);
         const withBar = islands.filter(rendersBar);
-        if (model === 'bar' && !PENDING_BAR.has(slug)) {
+        if (model === 'bar') {
             expect(withBar, `${slug} is bar but mounts no EditorSaveBar`).not.toHaveLength(0);
         } else {
             expect(withBar, `${slug} is ${model} but mounts the save bar`).toHaveLength(0);

@@ -1,6 +1,7 @@
 import { renderEmailBodies } from '@repo/email';
 import { createLogger } from '@repo/logger';
 import { findEmailCatalogEntry } from '../../catalog/catalog.js';
+import { buildEmailCatalogLayout } from '../../catalog/layout-declarations.js';
 import type { EmailClient } from '../../config/resend.config.js';
 import { EmailHardBounceError } from '../../services/outbox/email-outbox-delivery.service.js';
 import type {
@@ -11,6 +12,9 @@ import type {
 
 const attributionLogger = createLogger('email-attribution');
 const warnedTemplateKeys = new Set<string>();
+
+/** Catalog entry of every newsletter campaign send (it carries no template key). */
+const NEWSLETTER_CAMPAIGN_KEY = 'newsletter.campaign';
 
 /**
  * Logs one `warn` per process for a transactional template key that is not in the
@@ -105,9 +109,23 @@ export class BrevoEmailTransport implements EmailTransport {
             // HOS-1990: HTML-only mail scores worse with spam filters and is unreadable in
             // text clients; Brevo takes the plain part as `textContent`.
             warnOnUnknownTemplateKey(input);
+            // HOS-2565 PR-4: the catalog entry's illustration and help articles, plus the
+            // recipient's verticals when the caller resolved them, for the user layout.
+            const entry = findEmailCatalogEntry({
+                key:
+                    input.attribution.medium === 'transactional'
+                        ? input.attribution.templateKey
+                        : NEWSLETTER_CAMPAIGN_KEY
+            });
             const { html: htmlContent, text: textContent } = await renderEmailBodies({
                 react: input.react,
-                attribution: input.attribution
+                attribution: input.attribution,
+                layout: buildEmailCatalogLayout({
+                    ...(entry ? { entry } : {}),
+                    ...(input.recipientVerticals
+                        ? { recipientVerticals: input.recipientVerticals }
+                        : {})
+                })
             });
 
             const body: Record<string, unknown> = {

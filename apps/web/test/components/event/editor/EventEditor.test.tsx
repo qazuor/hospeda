@@ -163,7 +163,7 @@ describe('EventEditor — saving', () => {
         expect(body).toHaveProperty('endDate');
     });
 
-    it('refuses to save when the author cleared the start date', () => {
+    it('refuses to save when the author cleared the start date', async () => {
         renderEditor();
 
         fireEvent.change(screen.getByLabelText('Comienza *'), { target: { value: '' } });
@@ -172,10 +172,12 @@ describe('EventEditor — saving', () => {
         // Without this guard the cleared start drops out of the diff and the
         // rest of the form saves as if nothing were wrong, silently keeping
         // the old date.
+        // Owner decision 7: the save bar is the only place that says it.
+        const alert = await screen.findByRole('alert');
+        expect(alert).toHaveTextContent('El evento necesita una fecha de comienzo.');
+        expect(alert.closest('section')).toHaveAttribute('data-status', 'error');
+        expect(screen.getAllByRole('alert')).toHaveLength(1);
         expect(mockUpdate).not.toHaveBeenCalled();
-        expect(screen.getByRole('alert')).toHaveTextContent(
-            'El evento necesita una fecha de comienzo.'
-        );
     });
 
     it('never sends a field the server update drops', async () => {

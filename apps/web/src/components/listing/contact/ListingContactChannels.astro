@@ -1,0 +1,173 @@
+---
+/**
+ * @file ListingContactChannels.astro
+ * @description Single presentation of a listing's public contact block, shared
+ * by `AccommodationContactBlock`, `VenueContactBlock` and
+ * `ExperienceContactBlock` (HOS-2520, owner smoke items 18 and 19).
+ *
+ * Renders the channels (phone, email, website) as outline `GradientButton`s and
+ * the social profiles as outline `IconButton`s carrying the network's brand
+ * logo from `@repo/icons`. A default slot sits between the two groups (the
+ * venue's "Ver menú" button).
+ *
+ * This component only PRESENTS. It never decides which channels a vertical
+ * shows, never reads a raw URL, and has no WhatsApp channel: each wrapper
+ * computes its own allow-listed data and passes it in. Every `href` it receives
+ * must already have gone through `resolveSafeExternalUrl` (or be a `tel:` /
+ * `mailto:` URI). Tracking attributes are the wrapper's `trackingData` plus a
+ * per-link `contact-channel`.
+ */
+import { EmailIcon, GlobeIcon, PhoneIcon } from '@repo/icons';
+import GradientButton from '@/components/shared/ui/GradientButton.astro';
+import IconButton from '@/components/shared/ui/IconButton.astro';
+import type {
+    ListingContactChannel,
+    ListingContactShell,
+    ListingContactSocialLink
+} from './listing-contact.types';
+
+interface Props {
+    /** Visible title of the block. Omitted, no title and no section label. */
+    readonly heading?: string;
+    /** Title above the social row. Omitted, the row has no title. */
+    readonly socialHeading?: string;
+    readonly channels: readonly ListingContactChannel[];
+    readonly socialLinks: readonly ListingContactSocialLink[];
+    /** `data-*` read by `initContactLinkTracking` (keys without the `data-` prefix). */
+    readonly trackingData: Readonly<Record<string, string>>;
+    /** `card` (default) draws the accommodation card; `plain` has no chrome. */
+    readonly shell?: ListingContactShell;
+    /** Stable anchor id of the root `<section>` (in-page CTAs point at it). */
+    readonly id?: string;
+    /** Extra attributes for the root element (the Umami block marker). */
+    readonly blockProps?: Readonly<Record<string, string>>;
+}
+
+const {
+    heading,
+    socialHeading,
+    channels,
+    socialLinks,
+    trackingData,
+    shell = 'card',
+    id,
+    blockProps = {}
+} = Astro.props;
+
+const CHANNEL_ICONS = { phone: PhoneIcon, email: EmailIcon, website: GlobeIcon } as const;
+---
+
+<section
+    class:list={['listing-contact', `listing-contact--${shell}`]}
+    id={id}
+    aria-label={heading}
+    {...blockProps}
+>
+    {heading && <h3 class="listing-contact__title">{heading}</h3>}
+
+    {channels.length > 0 && (
+        <div class="listing-contact__channels">
+            {channels.map(({ kind, href, label, srHint, interactionKind }) => {
+                const ChannelIcon = CHANNEL_ICONS[kind];
+                return (
+                    <GradientButton
+                        href={href}
+                        {...(kind === 'website'
+                            ? { target: '_blank', rel: 'noopener noreferrer' }
+                            : {})}
+                        label={label}
+                        srHint={srHint}
+                        variant="outline-primary"
+                        size="sm"
+                        class="listing-contact__channel"
+                        data={{
+                            ...trackingData,
+                            'contact-channel': kind,
+                            ...(interactionKind ? { 'interaction-kind': interactionKind } : {})
+                        }}
+                    >
+                        <ChannelIcon slot="leading" size={16} />
+                    </GradientButton>
+                );
+            })}
+        </div>
+    )}
+
+    <slot />
+
+    {socialLinks.length > 0 && (
+        <div class="listing-contact__social">
+            {socialHeading && <h3 class="listing-contact__title">{socialHeading}</h3>}
+            <div class="listing-contact__social-list">
+                {socialLinks.map(({ href, ariaLabel, Icon, interactionKind }) => (
+                    <IconButton
+                        as="a"
+                        href={href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        variant="outline"
+                        size="md"
+                        ariaLabel={ariaLabel}
+                        data={{
+                            ...trackingData,
+                            'contact-channel': 'social',
+                            ...(interactionKind ? { 'interaction-kind': interactionKind } : {})
+                        }}
+                    >
+                        <Icon size={18} aria-hidden="true" />
+                    </IconButton>
+                ))}
+            </div>
+        </div>
+    )}
+</section>
+
+<style>
+    .listing-contact {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-4, 16px);
+    }
+    .listing-contact--card {
+        padding: var(--space-5, 20px);
+        background-color: var(--core-card);
+        border-radius: var(--radius-card);
+        box-shadow: var(--shadow-card);
+    }
+    .listing-contact--plain {
+        margin-bottom: var(--space-6, 24px);
+    }
+    .listing-contact__title {
+        font-family: var(--font-heading);
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--core-foreground);
+        margin: 0;
+    }
+    .listing-contact__channels {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-2, 8px);
+    }
+    /* A long email or URL wraps inside its pill instead of being clipped by the
+       button's nowrap + overflow. */
+    .listing-contact__channels :global(.listing-contact__channel) {
+        max-inline-size: 100%;
+        white-space: normal;
+    }
+    .listing-contact__channels :global(.listing-contact__channel .gradient-btn__label) {
+        min-inline-size: 0;
+        overflow-wrap: anywhere;
+    }
+    .listing-contact__social {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-3, 12px);
+    }
+    .listing-contact__social-list {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--space-2, 8px);
+    }
+</style>

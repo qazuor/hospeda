@@ -1389,12 +1389,21 @@ importers:
       '@repo/analytics':
         specifier: workspace:*
         version: link:../analytics
+      '@repo/config':
+        specifier: workspace:*
+        version: link:../config
       '@repo/design-tokens':
         specifier: workspace:*
         version: link:../design-tokens
+      '@repo/help':
+        specifier: workspace:*
+        version: link:../help
       '@repo/logger':
         specifier: workspace:*
         version: link:../logger
+      '@repo/schemas':
+        specifier: workspace:*
+        version: link:../schemas
       zod:
         specifier: 4.6.6
         version: 4.6.6

@@ -129,17 +129,9 @@ export function ServicesForm({
                 />
             </Section>
 
-            {form.formError && (
-                <div
-                    className={styles.error}
-                    role="alert"
-                >
-                    {form.formError}
-                </div>
-            )}
-
             <EditorSaveBar
                 locale={locale}
+                errorMessage={form.formError}
                 isDirty={form.isDirty}
                 onSave={form.save}
                 onDiscard={form.discard}

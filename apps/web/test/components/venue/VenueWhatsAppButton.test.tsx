@@ -54,6 +54,7 @@ describe('VenueWhatsAppButton', () => {
         const link = screen.getByRole('link', { name: /Escribir por WhatsApp/ });
         expect(link).toHaveAttribute('href', expect.stringContaining('https://wa.me/549343'));
         expect(link).toHaveAttribute('data-interaction-kind', 'WHATSAPP_CLICK');
+        expect(link).toHaveClass('btn-gradient', 'btn-gradient--md');
         expect(getWhatsApp).not.toHaveBeenCalled();
     });
 
@@ -80,7 +81,10 @@ describe('VenueWhatsAppButton', () => {
         );
 
         expect(getWhatsApp).not.toHaveBeenCalled();
-        expect(screen.getByRole('link')).toHaveAttribute('href', SIGN_IN);
+        const link = screen.getByRole('link');
+        expect(link).toHaveAttribute('href', SIGN_IN);
+        expect(link).toHaveClass('btn-gradient', 'btn-gradient--outline-primary');
+        expect(link).not.toHaveAttribute('data-interaction-kind');
     });
 
     it('AC-18 resolves the number for a signed-in visitor and tracks the tap', async () => {

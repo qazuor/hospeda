@@ -63,7 +63,10 @@ describe('EditorMapPin', () => {
         expect(mapProps).toHaveBeenLastCalledWith(
             expect.objectContaining({ center: EDITOR_MAP_DEFAULT_CENTER, markerPosition: null })
         );
-        expect(screen.getByText(/Todavía no hay pin/)).toBeInTheDocument();
+        // Owner decision 12: the «no pin» notice lives at the top of the
+        // section, never beside the map.
+        expect(screen.queryByText(/Todavía no hay pin/)).toBeNull();
+        expect(screen.queryByText(/Arrastrá el pin/)).toBeNull();
     });
 
     it('places the pin on stored coordinates', async () => {

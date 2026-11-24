@@ -29,6 +29,12 @@ export interface SendEmailInput {
      * Umami open pixel (HOS-2359). Required so every sender names its catalog key.
      */
     attribution: NotificationEmailAttribution;
+    /**
+     * The recipient's verticals (`VerticalEnum` values), when the sender resolved them.
+     * Only picks the user footer account link (HOS-2565 D16); absent falls back to
+     * "Gestioná tu cuenta" and never blocks the send.
+     */
+    recipientVerticals?: readonly string[];
     /** Sender email (overrides default) */
     from?: string;
     /** Reply-to address */

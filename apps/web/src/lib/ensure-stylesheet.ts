@@ -26,7 +26,7 @@
  * ## CSP
  *
  * The injected element is a same-origin `<link rel="stylesheet">`, allowed by
- * `style-src 'self'`. It is NOT an inline `<style>`, so it needs no hash — see
+ * `style-src 'self'`. It is NOT an inline `<style>`, so it needs no special source — see
  * `buildCspHeader` in `lib/middleware-helpers.ts`.
  *
  * @param href - The hashed asset URL, obtained via `import '...css?url'`.

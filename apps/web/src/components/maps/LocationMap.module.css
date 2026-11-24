@@ -19,7 +19,7 @@
     position: relative;
     width: 100%;
     height: 100%;
-    /* Callers may shape just the tile area (HOS-2531 passes --radius-organic);
+    /* Callers may shape just the tile area (LocationSection passes --radius-card);
      * the disclaimer below stays unclipped. Default keeps the square tiles. */
     border-radius: var(--location-map-tile-radius, 0);
     overflow: var(--location-map-tile-overflow, visible);

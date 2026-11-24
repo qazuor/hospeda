@@ -1,5 +1,5 @@
 import { Section, Text } from '@react-email/components';
-import { Button, EmailLayout, emailPalette } from '@repo/email';
+import { Button, EMAIL_TINTED_BOX_CLASS, EmailLayout, emailPalette } from '@repo/email';
 import type { Major } from '../../types/money.js';
 import { Heading } from '../components/heading.js';
 import { InfoRow } from '../components/info-row.js';
@@ -52,7 +52,10 @@ export function PaymentSuccess({
                 Tu pago ha sido procesado exitosamente. Gracias por mantener tu suscripción activa.
             </Text>
 
-            <Section style={styles.receiptBox}>
+            <Section
+                className={EMAIL_TINTED_BOX_CLASS}
+                style={styles.receiptBox}
+            >
                 <InfoRow
                     label="Concepto"
                     value={planName}
