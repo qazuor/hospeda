@@ -121,7 +121,8 @@
         },
         "sectionTitle": "Conversas",
         "guestListLabel": "Suas consultas",
-        "ownerListLabel": "Conversas com hóspedes"
+        "ownerListLabel": "Conversas com hóspedes",
+        "noActivity": "Sem mensagens ainda"
     },
     "notifications": {
         "conversationArchived": "Conversa arquivada.",
@@ -169,6 +170,10 @@
         "loadError": {
             "title": "Não conseguimos carregar a conversa",
             "body": "Houve um problema ao ler as mensagens. Tente novamente em instantes."
+        },
+        "empty": {
+            "title": "Ainda não há mensagens",
+            "body": "Quando houver mensagens nesta conversa, você vai vê-las aqui."
         }
     },
     "ownerLocked": {

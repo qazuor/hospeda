@@ -121,7 +121,8 @@
         },
         "sectionTitle": "Conversations",
         "guestListLabel": "Your inquiries",
-        "ownerListLabel": "Conversations with guests"
+        "ownerListLabel": "Conversations with guests",
+        "noActivity": "No messages yet"
     },
     "notifications": {
         "conversationArchived": "Conversation archived.",
@@ -169,6 +170,10 @@
         "loadError": {
             "title": "We couldn't load the conversation",
             "body": "There was a problem reading the messages. Please try again in a moment."
+        },
+        "empty": {
+            "title": "No messages yet",
+            "body": "When this conversation has messages, you will see them here."
         }
     },
     "ownerLocked": {

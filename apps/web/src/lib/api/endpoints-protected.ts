@@ -703,7 +703,12 @@ export interface ConversationInboxItem {
     readonly accommodationName: string;
     readonly lastMessageExcerpt: string | null;
     readonly unreadCount: number;
-    readonly lastActivityAt: string;
+    /**
+     * Last activity instant. `null` while the conversation has no message yet
+     * (an anonymous inquiry awaiting email verification, HOS-2568): the
+     * column is nullable and the API sends it as is (HOS-2600).
+     */
+    readonly lastActivityAt: string | null;
     readonly status: string;
     readonly archivedByGuest: boolean;
 }
@@ -877,7 +882,12 @@ export interface OwnerConversationInboxItem {
     readonly guestId: string | null;
     readonly lastMessageExcerpt: string | null;
     readonly unreadCount: number;
-    readonly lastActivityAt: string;
+    /**
+     * Last activity instant. `null` while the conversation has no message yet
+     * (an anonymous inquiry awaiting email verification, HOS-2568): the
+     * column is nullable and the API sends it as is (HOS-2600).
+     */
+    readonly lastActivityAt: string | null;
     readonly status: string;
 }
 
