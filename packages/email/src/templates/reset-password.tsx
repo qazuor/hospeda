@@ -60,7 +60,7 @@ export function ResetPasswordTemplate({ name, resetUrl }: ResetPasswordTemplateP
                 Hacé clic en el botón de abajo para crear una nueva contraseña:
             </Text>
 
-            {/* Keeps the pre-HOS-2565 attribution slot, so the text part stays byte-identical (AC-2.8). */}
+            {/* Keeps the pre-HOS-2565 `body-link` attribution slot, so the link UTMs do not change. */}
             <Button
                 href={resetUrl}
                 utmContent="body-link"

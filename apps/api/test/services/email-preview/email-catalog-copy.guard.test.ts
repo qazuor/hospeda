@@ -2,10 +2,12 @@
  * HOS-2580 §G: copy guards over every Spanish scenario of the email catalog, rendered
  * through the production pipeline (subject, preview text, HTML body and text part).
  *
- * 1. **Voseo.** No tú form from {@link TUTEO_FORMS} may appear. Some of those words are
- *    also valid third-person verbs or adjectives ("Este correo confirma el pago", "tu
- *    ficha completa"); each such phrase is listed in {@link ALLOWED_PHRASES} with its
- *    reason and removed before matching. A new phrase needs a new, justified entry.
+ * 1. **Voseo.** Fails when a word from the closed list {@link TUTEO_FORMS} appears. It
+ *    does not detect every tú form: only the listed ones, so a form missing from the list
+ *    passes. Some listed words are also valid third-person verbs or adjectives ("Este
+ *    correo confirma el pago", "tu ficha completa"); each such phrase is listed in
+ *    {@link ALLOWED_PHRASES} with its reason and removed before matching. A new phrase
+ *    needs a new, justified entry.
  * 2. **Danger callouts.** `tone="danger"` is for real failures and losses only (owner
  *    decision, 2026-11-24). The set of entries that render one is frozen in
  *    {@link DANGER_ENTRIES}; a routine notice ("if you didn't request this", "your link
@@ -20,7 +22,7 @@ const deps = buildEmailPreviewDeps({
     adminUrl: 'https://admin.example.com'
 });
 
-/** tú imperatives and second-person forms voseo replaces. Word-bounded, case-insensitive. */
+/** The forbidden tú forms: a closed list, matched as whole words, case-insensitive. */
 const TUTEO_FORMS = [
     'tienes',
     'puedes',
@@ -116,7 +118,7 @@ describe('HOS-2580 email catalog copy guards', () => {
         expect(tuteoHits('Elegí un plan')).toEqual([]);
     });
 
-    it.each(SPANISH_CASES)('%s / %s speaks in voseo', async (key, scenarioId) => {
+    it.each(SPANISH_CASES)('%s / %s has none of the listed tú forms', async (key, scenarioId) => {
         // Act
         const { parts } = await renderParts({ key, scenarioId });
 

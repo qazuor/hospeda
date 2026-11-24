@@ -61,7 +61,7 @@ export function VerifyEmailTemplate({ name, verificationUrl }: VerifyEmailTempla
                 Hacé clic en el botón de abajo para verificar tu correo electrónico:
             </Text>
 
-            {/* Keeps the pre-HOS-2565 attribution slot, so the text part stays byte-identical (AC-2.8). */}
+            {/* Keeps the pre-HOS-2565 `body-link` attribution slot, so the link UTMs do not change. */}
             <Button
                 href={verificationUrl}
                 utmContent="body-link"

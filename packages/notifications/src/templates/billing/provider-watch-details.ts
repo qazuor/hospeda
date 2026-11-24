@@ -40,7 +40,7 @@ const PREFIXES: Readonly<Record<string, string>> = {
  * ```
  */
 export function translateProviderWatchDetail(input: { readonly line: string }): string {
-    const fixed = FIXED_LINES[input.line];
+    const fixed = Object.hasOwn(FIXED_LINES, input.line) ? FIXED_LINES[input.line] : undefined;
     if (fixed) return fixed;
     const separator = input.line.indexOf(': ');
     if (separator <= 0) return input.line;

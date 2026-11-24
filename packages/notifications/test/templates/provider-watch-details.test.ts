@@ -28,6 +28,9 @@ describe('HOS-2580 §F translateProviderWatchDetail', () => {
         'bad paging.total',
         'WATCH_TIMEOUT: the provider did not answer',
         'constructor: x',
+        'constructor',
+        'toString',
+        '__proto__',
         ': leading separator'
     ])('falls back to the raw line for %j', (line) => {
         expect(translateProviderWatchDetail({ line })).toBe(line);
