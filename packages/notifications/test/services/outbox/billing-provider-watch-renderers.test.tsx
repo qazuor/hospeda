@@ -46,7 +46,10 @@ describe('HOS-1512 provider watch alert mail', () => {
         expect(html).toMatch(/data-raw-value="true"[^>]*>\{&quot;results&quot;:5\}</);
         expect(html).toContain('RP7');
         expect(html).toContain('Cambió la forma de la respuesta (get)');
-        expect(html).toContain('removed: payer_email (string)');
+        // HOS-2580 §F: the payments prefix goes in Spanish, the path and type stay verbatim.
+        expect(html).toContain('Campo eliminado: payer_email (string)');
+        expect(html).toContain('Campo nuevo: payer_mail (string)');
+        expect(html).not.toContain('removed: payer_email');
         expect(html).toContain('No ajustó nada');
     });
 

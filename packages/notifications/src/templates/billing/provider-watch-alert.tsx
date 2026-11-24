@@ -3,6 +3,7 @@ import { Button, EmailLayout, emailPalette } from '@repo/email';
 import { Heading } from '../components/heading.js';
 import { InfoRow } from '../components/info-row.js';
 import { formatDateTime } from '../utils/format-helpers.js';
+import { translateProviderWatchDetail } from './provider-watch-details.js';
 import { adminPanelHref } from './staff-notice.js';
 
 /** One change the watch battery found, as the mail shows it. */
@@ -145,7 +146,8 @@ export function ProviderWatchAlert(props: ProviderWatchAlertProps) {
                         <InfoRow
                             key={detail}
                             label="Detalle"
-                            value={detail}
+                            // The prefix is ours and goes in Spanish; the path and types stay raw.
+                            value={translateProviderWatchDetail({ line: detail })}
                             raw
                         />
                     ))}
