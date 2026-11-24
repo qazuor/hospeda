@@ -45,7 +45,7 @@ covers:
   - "page:planes/experiencias"
   - "file:apps/web/src/components/account/PlanChangeOffer.client.tsx"
 entryFor: []
-reviewedAt: "2026-11-23"
+reviewedAt: "2026-11-24"
 ---
 
 ## Qué podés hacer
@@ -80,6 +80,10 @@ Comparar los planes en {{link:plans:accommodation|planes para alojamientos}}, {{
 ### No aparece el botón para cambiar {#no-aparece}
 
 El sitio te explica el motivo. Si lo que querés es sumar algo puntual, quizás te sirva {{article:addons|un complemento}}.
+
+### Me rechazaron el primer pago {#pago-rechazado}
+
+Durante los 7 días siguientes al rechazo, «Suscripción» te muestra el aviso y el botón para volver a intentarlo. Pasado ese plazo, si en esa categoría no tenés otra suscripción activa, aparece «Empezar de nuevo» para elegir el plan otra vez.
 
 ### Mi plan no incluye el calendario {#sin-calendario}
 
