@@ -5,6 +5,8 @@ import ListingEditorSectionLayout from '@/layouts/ListingEditorSectionLayout.ast
 import { resolveListingEditorPage } from '@/lib/editor/resolve-listing-editor-page';
 import { createTranslations } from '@/lib/i18n';
 import { fetchAudiencePlans } from '@/lib/billing/audience-plans';
+import { fetchPublicPlans } from '@/lib/billing/fetch-plans';
+import { readPromotionPolicy } from '@/lib/promotions/promotion-policy';
 import {
     getVenuePromotionLimitPlanOptions,
     resolveVenueUpsellPlans
@@ -16,7 +18,12 @@ if (resolution.redirect) return resolution.redirect;
 if (resolution.error) return resolution.error;
 const { detail, locale, listingId, sectionId, registry, sectionStates } = resolution;
 const { t } = createTranslations(locale);
-const plans = await fetchAudiencePlans({ audience: 'venue' });
+const [plans, touristPlans] = await Promise.all([
+    fetchAudiencePlans({ audience: 'venue' }),
+    fetchPublicPlans({ vertical: 'tourist' })
+]);
+// HOS-2589: the audience texts read X and the VIP plan name from the tourist catalog.
+const { freeQuota, vipPlanName } = readPromotionPolicy({ result: touristPlans });
 const upsellPlans = resolveVenueUpsellPlans({ plans, t });
 const promotionLimitPlans = getVenuePromotionLimitPlanOptions({ plans, t });
 const sectionState = sectionId ? sectionStates[sectionId]?.state ?? 'available' : 'available';
@@ -38,5 +45,7 @@ const sectionState = sectionId ? sectionStates[sectionId]?.state ?? 'available' 
         sectionState={sectionState === 'locked' ? 'locked' : 'available'}
         upsellPlanName={upsellPlans.promotions}
         limitPlanOptions={promotionLimitPlans}
+        freeQuota={freeQuota}
+        vipPlanName={vipPlanName}
     />
 </ListingEditorSectionLayout>

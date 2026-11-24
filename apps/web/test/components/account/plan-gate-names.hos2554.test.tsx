@@ -1,14 +1,13 @@
 /**
  * @file plan-gate-names.hos2554.test.tsx
- * @description HOS-2554: the plan gates of exclusive deals, recommendations and search
- * history (the last two a kit LockedState since HOS-2501) name the plans the SSR page read from the catalog, never a hardcoded "Plus y VIP".
+ * @description HOS-2554: the plan gates of recommendations and search history (a kit
+ * LockedState since HOS-2501; the exclusive-deals list was removed by HOS-2589) name the plans the SSR page read from the catalog, never a hardcoded "Plus y VIP".
  * Each surface is fed a DIFFERENT plan name so a regression to a literal fails all three,
  * and an empty catalog read must name no plan at all.
  */
 
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ExclusiveDealsList } from '../../../src/components/account/ExclusiveDealsList.client';
 import { RecommendationsFeed } from '../../../src/components/account/RecommendationsFeed.client';
 import { SearchHistoryList } from '../../../src/components/account/SearchHistoryList.client';
 
@@ -47,32 +46,6 @@ function mockEntitlementRequired(): void {
         json: async () => ({ success: false, error: { code: 'ENTITLEMENT_REQUIRED' } })
     } as Response);
 }
-
-type Surface = {
-    readonly label: string;
-    readonly planName: string;
-    readonly keyBase: string;
-    readonly noPlans: RegExp;
-    readonly renderIt: (names?: readonly string[]) => void;
-};
-
-const SURFACES: readonly Surface[] = [
-    {
-        label: 'exclusive deals',
-        planName: 'Explorador',
-        keyBase: 'account.exclusiveDeals.upgrade.message',
-        noPlans: /ofertas exclusivas no están incluidas en tu plan actual/,
-        renderIt: (names) =>
-            render(
-                <ExclusiveDealsList
-                    locale="es"
-                    apiUrl={API_URL}
-                    userId="u1"
-                    gatePlanNames={names}
-                />
-            )
-    }
-];
 
 /** Surfaces that became a kit LockedState (HOS-2501): the catalog plan names are its pills. */
 const LOCKED_SURFACES = [
@@ -126,38 +99,6 @@ describe('LockedState plan gates (HOS-2554, HOS-2501)', () => {
                 expect((feature.closest('[data-reason]') as HTMLElement).textContent).not.toMatch(
                     /Plus|VIP/
                 );
-            });
-        });
-    }
-});
-
-describe('plan gates name the catalog plans (HOS-2554)', () => {
-    beforeEach(() => {
-        mockEntitlementRequired();
-    });
-
-    for (const surface of SURFACES) {
-        describe(surface.label, () => {
-            it('names a single catalog plan with the singular key', async () => {
-                surface.renderIt([surface.planName]);
-                const node = await screen.findByText(new RegExp(surface.planName));
-                expect(node.textContent).toContain(`${surface.keyBase}_one`);
-                expect(node.textContent).not.toMatch(/Plus|VIP/);
-            });
-
-            it('names several catalog plans as a list with the plural key', async () => {
-                surface.renderIt([surface.planName, 'Premium']);
-                const node = await screen.findByText(new RegExp(surface.planName));
-                expect(node.textContent).toContain(`${surface.keyBase}_other`);
-                expect(node.textContent).toContain(`${surface.planName} y Premium`);
-            });
-
-            it('names no plan when the catalog could not be read', async () => {
-                surface.renderIt([]);
-                await waitFor(() => {
-                    expect(screen.getByText(surface.noPlans)).toBeInTheDocument();
-                });
-                expect(document.body.textContent).not.toMatch(/Plus|VIP/);
             });
         });
     }
