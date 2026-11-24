@@ -45,12 +45,21 @@ afterAll(async () => {
 });
 
 async function readDeclined(ownerId: string) {
+    return (await readBody(ownerId)).declinedSignups;
+}
+
+async function readExpired(ownerId: string) {
+    return (await readBody(ownerId)).expiredDeclinedSignups;
+}
+
+async function readBody(ownerId: string) {
     const response = await app.request(path, { headers: headers(ownerId) });
     expect(response.status).toBe(200);
     const body: unknown = await response.json();
     const parsed = z.object({ data: OwnSubscriptionsResponseSchema }).safeParse(body);
     expect(parsed.success).toBe(true);
-    return parsed.success ? parsed.data.data.declinedSignups : [];
+    if (!parsed.success) throw new Error('Own subscriptions response did not parse');
+    return parsed.data.data;
 }
 
 async function seedDeclined(
@@ -142,5 +151,47 @@ describe('HOS-2064 own declined signup list', () => {
         const notices = await readDeclined(ownerB);
         // Assert
         expect(notices).toEqual([]);
+    });
+
+    it('HOS-2193 lists an expired declined signup in expiredDeclinedSignups only', async () => {
+        // Arrange
+        const ownerId = await seedUser('declined-expired-restart-owner');
+        const seeded = await seedDeclined(ownerId, {
+            updatedAt: new Date(NOW.getTime() - 7 * 86_400_000)
+        });
+        // Act
+        const expired = await readExpired(ownerId);
+        const retry = await readDeclined(ownerId);
+        // Assert
+        expect(retry).toEqual([]);
+        expect(expired).toEqual([
+            {
+                subscriptionId: seeded.subscriptionId,
+                vertical: 'accommodation',
+                declinedAt: seeded.declinedAt.toISOString(),
+                plan: { slug: expect.any(String), name: expect.any(String) }
+            }
+        ]);
+    });
+
+    it('HOS-2193 does not list an expired declined signup over a live title in its vertical', async () => {
+        // Arrange
+        const ownerId = await seedUser('declined-expired-live-owner');
+        await seedDeclined(ownerId, { updatedAt: new Date(NOW.getTime() - 9 * 86_400_000) });
+        await seedPrincipal({ ownerId, status: 'ACTIVE' });
+        // Act
+        const expired = await readExpired(ownerId);
+        // Assert
+        expect(expired).toEqual([]);
+    });
+
+    it('HOS-2193 does not list a recent declined signup as expired', async () => {
+        // Arrange
+        const ownerId = await seedUser('declined-recent-not-expired-owner');
+        await seedDeclined(ownerId);
+        // Act
+        const expired = await readExpired(ownerId);
+        // Assert
+        expect(expired).toEqual([]);
     });
 });

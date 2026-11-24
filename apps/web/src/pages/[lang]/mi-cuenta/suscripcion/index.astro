@@ -33,6 +33,7 @@ import PageHelpLink from '@/components/account/help/PageHelpLink.astro';
 import SubscriptionTabs from '@/components/account/SubscriptionTabs.astro';
 import TrialSummary from '@/components/account/TrialSummary.astro';
 import MySubscriptions from '@/components/account/MySubscriptions.astro';
+import { ExpiredDeclinedSignupNotice } from '@/components/account/ExpiredDeclinedSignupNotice';
 import { PromoCodeRedeem } from '@/components/account/PromoCodeRedeem.client';
 import StripMercadoPagoReturnParams from '@/components/billing/StripMercadoPagoReturnParams.astro';
 import { SubscriptionReturn } from '@/components/billing/SubscriptionReturn.client';
@@ -41,6 +42,9 @@ import { billingSubscriptionApi, publishApi, type PublishVerticalSlug } from '@/
 import { parseOwnSubscriptions } from '@/lib/billing/self-cancel';
 import { parseReturnSubscriptionId, selectDeclinedNoticesToShow } from '@/lib/billing/subscription-return';
 import { getPlanName } from '@/lib/billing-i18n';
+import { plansPathForVertical } from '@/lib/billing/addon-purchase';
+import { resolveMySubscriptionVerticalLabelKey } from '@/lib/billing/my-subscription-summary';
+import { buildUrl } from '@/lib/urls';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildLoginRedirect } from '@/lib/middleware-helpers';
@@ -126,6 +130,19 @@ if (returnSubscriptionId) {
 			accountEmail={user.email}
 			declaredPayerEmail={notice.declaredPayerEmail}
 			attemptPlanName={getPlanName({ plan: { slug: notice.plan.slug, name: notice.plan.name, description: '' }, t })}
+		/>
+	))}
+	{(ownSubscriptions?.expiredDeclinedSignups ?? []).map((notice) => (
+		<ExpiredDeclinedSignupNotice
+			locale={locale}
+			vertical={notice.vertical}
+			title={t('account.subscription.mine.expiredDeclined.title')}
+			body={t('account.subscription.mine.expiredDeclined.body', undefined, {
+				plan: getPlanName({ plan: { slug: notice.plan.slug, name: notice.plan.name, description: '' }, t }),
+				vertical: t(resolveMySubscriptionVerticalLabelKey({ vertical: notice.vertical }))
+			})}
+			ctaLabel={t('account.subscription.mine.expiredDeclined.cta')}
+			href={buildUrl({ locale, path: plansPathForVertical({ vertical: notice.vertical }) })}
 		/>
 	))}
 	<div data-subscription-sections class="sub-page__sections">

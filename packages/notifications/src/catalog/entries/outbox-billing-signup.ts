@@ -28,6 +28,7 @@ export const OUTBOX_BILLING_SIGNUP_ENTRIES: readonly EmailCatalogEntry[] = [
                     payload: {
                         subscriptionId: SUBSCRIPTION_ID,
                         vertical: 'accommodation',
+                        planName: 'Básico',
                         declineReason: 'cc_rejected_high_risk',
                         successionPredecessor: false
                     }
@@ -40,6 +41,7 @@ export const OUTBOX_BILLING_SIGNUP_ENTRIES: readonly EmailCatalogEntry[] = [
                     payload: {
                         subscriptionId: SUBSCRIPTION_ID,
                         vertical: 'accommodation',
+                        planName: 'Básico',
                         declineReason: 'cc_rejected_insufficient_amount',
                         successionPredecessor: false
                     }
@@ -52,6 +54,7 @@ export const OUTBOX_BILLING_SIGNUP_ENTRIES: readonly EmailCatalogEntry[] = [
                     payload: {
                         subscriptionId: SUBSCRIPTION_ID,
                         vertical: 'venue',
+                        planName: 'Básico',
                         declineReason: null,
                         successionPredecessor: false
                     }
@@ -64,6 +67,7 @@ export const OUTBOX_BILLING_SIGNUP_ENTRIES: readonly EmailCatalogEntry[] = [
                     payload: {
                         subscriptionId: SUBSCRIPTION_ID,
                         vertical: 'accommodation',
+                        planName: 'Básico',
                         declineReason: 'payment_method_not_ready',
                         successionPredecessor: true
                     }
