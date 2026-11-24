@@ -137,7 +137,7 @@ describe('buildVenueContactBlock (HOS-2042, HOS-2256)', () => {
             'Sitio web',
             'Instagram',
             'Facebook',
-            'Twitter / X',
+            'X (Twitter)',
             'YouTube',
             'TikTok'
         ]);
