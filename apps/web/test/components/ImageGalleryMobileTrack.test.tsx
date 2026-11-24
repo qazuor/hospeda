@@ -93,10 +93,11 @@ function slideLoading(): (string | null)[] {
 }
 
 it('keeps every slide but the first lazy until the page is idle, then preloads the next two', async () => {
-    let fireIdle: (() => void) | undefined;
+    // The track and the lightbox warm-up (HOS-2520) both wait for idle.
+    const idleCallbacks: Array<() => void> = [];
     vi.stubGlobal('requestIdleCallback', (callback: () => void) => {
-        fireIdle = callback;
-        return 1;
+        idleCallbacks.push(callback);
+        return idleCallbacks.length;
     });
     render(
         <ImageGallery
@@ -107,7 +108,9 @@ it('keeps every slide but the first lazy until the page is idle, then preloads t
     );
 
     expect(slideLoading()).toEqual(['eager', 'lazy', 'lazy', 'lazy', 'lazy']);
-    await act(async () => fireIdle?.());
+    await act(async () => {
+        for (const callback of idleCallbacks) callback();
+    });
     expect(slideLoading()).toEqual(['eager', 'eager', 'eager', 'lazy', 'lazy']);
 });
 

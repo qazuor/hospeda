@@ -343,20 +343,21 @@ describe('ImageGallery', () => {
             expect(screen.getByText('1/4')).toBeInTheDocument();
         });
 
-        it('renders a thumbnail strip in the lightbox', () => {
+        it('renders a thumbnail strip in the lightbox', async () => {
             openLightbox();
             const dialog = screen.getByRole('dialog');
-            // Thumbnail buttons are the ones in the strip (role=listitem)
-            const thumbItems = within(dialog).getAllByRole('listitem');
+            // Thumbnail buttons are the ones in the strip (role=listitem). The strip
+            // mounts after the dialog's first paint (HOS-2520), hence `findAll`.
+            const thumbItems = await within(dialog).findAllByRole('listitem');
             expect(thumbItems.length).toBe(IMAGES.length);
         });
 
-        it('navigates to a specific image via thumbnail click', () => {
+        it('navigates to a specific image via thumbnail click', async () => {
             openLightbox();
             expect(screen.getByText('1/4')).toBeInTheDocument();
 
             const dialog = screen.getByRole('dialog');
-            const thumbItems = within(dialog).getAllByRole('listitem');
+            const thumbItems = await within(dialog).findAllByRole('listitem');
             // Click the button inside the 3rd thumbnail (index 2)
             const thirdThumbBtn = thumbItems[2]?.querySelector('button');
             expect(thirdThumbBtn).toBeDefined();

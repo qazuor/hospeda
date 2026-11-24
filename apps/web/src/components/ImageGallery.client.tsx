@@ -12,37 +12,26 @@
  * Hydrate with `client:visible` (caller's responsibility).
  */
 
-import {
-    ArrowRightIcon,
-    ChevronLeftIcon,
-    ChevronRightIcon,
-    FullscreenIcon,
-    GridIcon
-} from '@repo/icons';
-import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
-import { Spinner } from '@/components/shared/feedback/Spinner';
-import {
-    Dialog,
-    DialogBody,
-    DialogFloatingCloseButton
-} from '@/components/shared/ui/Dialog.client';
+import { ArrowRightIcon, FullscreenIcon, GridIcon } from '@repo/icons';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { GradientButton } from '@/components/ui/GradientButtonReact';
-import { useSwipe } from '@/hooks/useSwipe';
 import type { PluralTranslationFn, SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import type { PhotoCreditParts } from '@/lib/photo-credit.types';
-import { GalleryCounter } from './gallery/GalleryCounter';
+import { CoverPlusGridVariant } from './gallery/CoverPlusGridVariant';
+import { GalleryCellImage } from './gallery/GalleryCellImage';
 import { GalleryHeroPreload } from './gallery/GalleryHeroPreload';
-import {
-    buildCellSources,
-    buildCellUrl,
-    DESKTOP_GALLERY_MEDIA
-} from './gallery/gallery-image-sources';
-import { readSaveData, resolveLightboxPreloadIndices } from './gallery/gallery-preload';
+import { GalleryLightbox } from './gallery/GalleryLightbox';
+import { consumePendingGalleryTap, findLoadedCellSrc } from './gallery/gallery-hydration-bridge';
+import { buildCellSources, DESKTOP_GALLERY_MEDIA } from './gallery/gallery-image-sources';
+import { warmGalleryOnIdle } from './gallery/gallery-preload';
 import styles from './ImageGallery.module.css';
 import type { MobileGalleryOptions } from './ImageGalleryMobileTrack.client';
 import { ImageGalleryMobileTrack } from './ImageGalleryMobileTrack.client';
 import mobileStyles from './ImageGalleryMobileTrack.module.css';
+
+// Moved to ./gallery/CoverPlusGridVariant (HOS-2520); re-exported for existing callers.
+export { getCoverExtrasCountKey, getVisibleExtrasCount } from './gallery/CoverPlusGridVariant';
 
 /**
  * A single image entry for the gallery.
@@ -101,377 +90,6 @@ interface ImageGalleryProps {
      * viewAllHref={`/${locale}/alojamientos/${slug}/fotos/`}
      */
     readonly viewAllHref?: string;
-}
-
-/**
- * Builds a large, non-cropped URL for the lightbox viewer.
- *
- * The lightbox should display the full image without a forced aspect-ratio
- * crop so the subject is never clipped to a square or 4:3 frame. Uses the
- * `full` preset (`q_auto,f_auto,dpr_auto`) which applies quality / format
- * negotiation but no dimensional crop.
- *
- * Non-Cloudinary URLs pass through unchanged.
- *
- * @param url - Original image URL (may already carry a Cloudinary transform).
- * @returns URL optimized for full-size lightbox display.
- */
-function buildLightboxUrl(url: string): string {
-    return buildCellUrl({ url, preset: 'full' }).src;
-}
-
-// ─── Cell image with loading skeleton ─────────────────────────────────────────
-
-/**
- * Props for {@link GalleryCellImage} — the subset of native `<img>` attributes
- * the gallery grid/cover cells use.
- */
-interface GalleryCellImageProps {
-    readonly src: string;
-    readonly srcSet?: string;
-    readonly sizes?: string;
-    readonly media?: string;
-    readonly alt: string;
-    /** Base cell image class (`styles.cellImg` or `styles.coverImg`). */
-    readonly className: string;
-    readonly loading: 'eager' | 'lazy';
-    readonly fetchPriority?: 'high' | 'low' | 'auto';
-    readonly width?: number;
-    readonly height?: number;
-    /** Mirrors the native `aria-hidden` attribute for decorative overlay cells. */
-    readonly ariaHidden?: boolean;
-}
-
-/**
- * A gallery grid/cover `<img>` that renders an animated skeleton placeholder
- * while the image is still loading, then clears it once the image paints (or
- * fails to). Fixes the blank cells shown by the `detail` and `cover-plus-grid`
- * variants before their images arrive — previously only the lightbox surfaced a
- * loading indicator (BETA-147).
- *
- * The skeleton is a shimmer background applied to the `<img>` element itself.
- * Because every cell image is `object-fit: cover` and fills its fixed-ratio
- * cell, the loaded image paints over the background with zero layout shift.
- *
- * SSR/cache safety: the island markup is server-rendered, so an image may
- * already be decoded before React attaches `onLoad`. A layout effect checks
- * `img.complete` after mount and clears the skeleton synchronously in that case
- * (mirrors the lightbox's belt-and-suspenders load handling).
- */
-function GalleryCellImage({
-    className,
-    ariaHidden,
-    src,
-    srcSet,
-    sizes,
-    media,
-    ...imgProps
-}: GalleryCellImageProps) {
-    const [isLoaded, setIsLoaded] = useState(false);
-    const ref = useRef<HTMLImageElement>(null);
-
-    useLayoutEffect(() => {
-        if (ref.current?.complete) {
-            setIsLoaded(true);
-        }
-    }, []);
-
-    const image = (
-        <img
-            ref={ref}
-            src={media ? undefined : src}
-            srcSet={media ? undefined : srcSet}
-            sizes={media ? undefined : sizes}
-            {...imgProps}
-            aria-hidden={ariaHidden}
-            className={isLoaded ? className : `${className} ${styles.cellImgSkeleton}`}
-            onLoad={() => setIsLoaded(true)}
-            onError={() => setIsLoaded(true)}
-        />
-    );
-    // A CSS-hidden eager img can still fetch (or be preloaded during SSR).
-    if (!media) return image;
-    return (
-        <picture className={mobileStyles.desktopPicture}>
-            <source
-                media={media}
-                srcSet={srcSet ?? src}
-                sizes={sizes}
-            />
-            {image}
-        </picture>
-    );
-}
-
-// ─── Lightbox ────────────────────────────────────────────────────────────────
-
-interface LightboxProps {
-    readonly images: ReadonlyArray<GalleryImage>;
-    readonly initialIndex: number;
-    readonly onClose: () => void;
-    readonly t: (key: string, fallback?: string, params?: Record<string, unknown>) => string;
-}
-
-/** Description length above which the mobile "ver más" toggle is offered. */
-const DESCRIPTION_TOGGLE_THRESHOLD = 90;
-
-interface LightboxCaptionProps {
-    readonly image: GalleryImage;
-    readonly t: (key: string, fallback?: string) => string;
-}
-
-/**
- * Caption bar under the lightbox photo (HOS-2125): caption prominent,
- * description below it, credit small. The description is clamped on mobile
- * (CSS) and expanded through a real toggle button. Remounted per photo (via
- * `key`) so the expanded state never leaks between photos.
- */
-function LightboxCaption({ image, t }: LightboxCaptionProps) {
-    const [expanded, setExpanded] = useState(false);
-    const descriptionId = useId();
-    const { caption, description, credit } = image;
-    const isLongDescription = (description?.length ?? 0) > DESCRIPTION_TOGGLE_THRESHOLD;
-
-    return (
-        <figcaption className={styles.lightboxCaption}>
-            {caption && <span className={styles.lightboxCaptionTitle}>{caption}</span>}
-            {description && (
-                <>
-                    <p
-                        id={descriptionId}
-                        className={styles.lightboxDescription}
-                        data-expanded={expanded ? 'true' : 'false'}
-                    >
-                        {description}
-                    </p>
-                    {isLongDescription && (
-                        <button
-                            type="button"
-                            className={styles.lightboxDescriptionToggle}
-                            aria-expanded={expanded}
-                            aria-controls={descriptionId}
-                            onClick={() => setExpanded((v) => !v)}
-                        >
-                            {expanded
-                                ? t('ui.filter.showLess', 'Ver menos')
-                                : t('ui.filter.showMore', 'Ver más')}
-                        </button>
-                    )}
-                </>
-            )}
-            {credit && (
-                <span className={styles.lightboxCredit}>
-                    {credit.byline}{' '}
-                    {credit.url ? (
-                        <a
-                            href={credit.url}
-                            className={styles.lightboxCreditLink}
-                            target="_blank"
-                            rel="nofollow noopener noreferrer"
-                            aria-label={credit.ariaLabel}
-                        >
-                            {credit.photographer}
-                        </a>
-                    ) : (
-                        credit.photographer
-                    )}{' '}
-                    {credit.providerSuffix}
-                </span>
-            )}
-        </figcaption>
-    );
-}
-
-function noop() {}
-
-function Lightbox({ images, initialIndex, onClose, t }: LightboxProps) {
-    const [index, setIndex] = useState(initialIndex);
-    // Tracks whether the displayed image has finished loading, so a spinner can
-    // show while navigating between photos. Set true in the nav handlers (same
-    // update as the index change) rather than in an effect: `onLoad` then
-    // reliably clears it, including for cached images where an effect-based
-    // reset would race the load event and leave the spinner stuck.
-    const [isImgLoading, setIsImgLoading] = useState(true);
-    const imgRef = useRef<HTMLImageElement>(null);
-
-    // Belt-and-suspenders for the loading flag. `onLoad` can be missed when the
-    // image is already decoded: `img.complete` may be true before React attaches
-    // the handler (synchronous load in some WebKit cache paths), and `onLoad`
-    // never fires at all when navigating between two entries that share the same
-    // URL (the `key` is unchanged, so the <img> is not remounted). This layout
-    // effect runs synchronously after each commit and clears the flag if the
-    // image is already complete. Re-clearing via `onLoad` later is a no-op.
-    // biome-ignore lint/correctness/useExhaustiveDependencies: `index` is the re-run trigger — the effect must re-check the freshly-mounted image's `complete` flag after each navigation; it intentionally does not read `index` in its body.
-    useLayoutEffect(() => {
-        if (imgRef.current?.complete) {
-            setIsImgLoading(false);
-        }
-    }, [index]);
-
-    const prev = useCallback(() => {
-        setIsImgLoading(true);
-        setIndex((i) => (i - 1 + images.length) % images.length);
-    }, [images.length]);
-
-    const next = useCallback(() => {
-        setIsImgLoading(true);
-        setIndex((i) => (i + 1) % images.length);
-    }, [images.length]);
-    const swipe = useSwipe({
-        onLeft: images.length > 1 ? next : noop,
-        onRight: images.length > 1 ? prev : noop
-    });
-
-    // Arrow-key navigation. Esc + scroll-lock + focus-trap are owned by Dialog.
-    useEffect(() => {
-        function handleKeyDown(event: KeyboardEvent): void {
-            if (event.key === 'ArrowLeft') {
-                prev();
-                return;
-            }
-            if (event.key === 'ArrowRight') {
-                next();
-            }
-        }
-
-        document.addEventListener('keydown', handleKeyDown);
-        return () => document.removeEventListener('keydown', handleKeyDown);
-    }, [prev, next]);
-
-    const current = images[index];
-
-    // Warm the browser cache so sequential navigation usually resolves from cache:
-    // the next two photos and the previous one (HOS-2520 smoke), the same URL the
-    // viewer's <img> requests. Nothing is preloaded with data saver on.
-    useEffect(() => {
-        const { saveData } = readSaveData({ nav: navigator });
-        const { indices } = resolveLightboxPreloadIndices({
-            index,
-            count: images.length,
-            saveData
-        });
-        for (const position of indices) {
-            const img = images[position];
-            if (!img) continue;
-            const preloader = new Image();
-            preloader.src = buildLightboxUrl(img.url);
-        }
-    }, [index, images]);
-
-    return (
-        <Dialog
-            isOpen={true}
-            onClose={onClose}
-            size="full"
-            variant="transparent"
-            overlayClassName={styles.lightboxOverlay}
-            ariaLabel={t('ui.accessibility.openFullscreen', 'Visor de imágenes')}
-        >
-            <DialogFloatingCloseButton
-                onClose={onClose}
-                closeLabel={t('ui.accessibility.closeLightbox', 'Cerrar visor')}
-            />
-
-            {/* Counter */}
-            <GalleryCounter
-                className={styles.lightboxCounter}
-                label={t('ui.accessibility.galleryCounter', '{{current}}/{{total}}', {
-                    current: index + 1,
-                    total: images.length
-                })}
-            />
-
-            {/* Prev */}
-            {images.length > 1 && (
-                <button
-                    type="button"
-                    className={`${styles.lightboxNav} ${styles.lightboxNavPrev}`}
-                    aria-label={t('ui.accessibility.previousImage', 'Imagen anterior')}
-                    onClick={prev}
-                >
-                    <ChevronLeftIcon
-                        size={28}
-                        aria-hidden="true"
-                    />
-                </button>
-            )}
-
-            <DialogBody bare>
-                <figure className={styles.lightboxFigure}>
-                    {isImgLoading && (
-                        <Spinner
-                            size="lg"
-                            label={t('common.loading', 'Cargando…')}
-                            className={styles.lightboxSpinner}
-                        />
-                    )}
-                    <img
-                        key={current?.url}
-                        ref={imgRef}
-                        src={current ? buildLightboxUrl(current.url) : undefined}
-                        alt={current?.alt ?? ''}
-                        className={`${styles.lightboxImg} ${styles.lightboxImgFade} ${mobileStyles.swipeSurface}${isImgLoading ? ` ${styles.lightboxImgLoading}` : ''}`}
-                        {...swipe}
-                        onLoad={() => setIsImgLoading(false)}
-                        onError={() => setIsImgLoading(false)}
-                    />
-                    {current && (current.caption || current.description || current.credit) && (
-                        <LightboxCaption
-                            key={index}
-                            image={current}
-                            t={t}
-                        />
-                    )}
-                </figure>
-            </DialogBody>
-
-            {/* Next */}
-            {images.length > 1 && (
-                <button
-                    type="button"
-                    className={`${styles.lightboxNav} ${styles.lightboxNavNext}`}
-                    aria-label={t('ui.accessibility.nextImage', 'Imagen siguiente')}
-                    onClick={next}
-                >
-                    <ChevronRightIcon
-                        size={28}
-                        aria-hidden="true"
-                    />
-                </button>
-            )}
-
-            {/* Thumbnail strip */}
-            {images.length > 1 && (
-                <ul className={styles.lightboxThumbs}>
-                    {images.map((img, i) => (
-                        <li key={img.url}>
-                            <button
-                                type="button"
-                                aria-label={t(
-                                    'ui.accessibility.goToImage',
-                                    `Ir a imagen ${i + 1}`
-                                ).replace('{{number}}', String(i + 1))}
-                                aria-current={i === index ? 'true' : undefined}
-                                className={`${styles.lightboxThumb} ${i === index ? styles.lightboxThumbActive : ''}`}
-                                onClick={() => {
-                                    if (i === index) return;
-                                    setIsImgLoading(true);
-                                    setIndex(i);
-                                }}
-                            >
-                                <img
-                                    {...buildCellUrl({ url: img.url, preset: 'galleryThumb' })}
-                                    alt={img.alt}
-                                    className={styles.lightboxThumbImg}
-                                    loading="lazy"
-                                />
-                            </button>
-                        </li>
-                    ))}
-                </ul>
-            )}
-        </Dialog>
-    );
 }
 
 // ─── Detail variant ──────────────────────────────────────────────────────────
@@ -581,6 +199,8 @@ function DetailVariant({
                     type="button"
                     className={styles.cellFeatured}
                     aria-label={t('ui.accessibility.openFullscreen', 'Ver en pantalla completa')}
+                    data-gallery-index={0}
+                    suppressHydrationWarning
                     onClick={() => onOpen(0)}
                 >
                     {/* SPEC-157 REQ-3: this is the LCP candidate on the
@@ -653,6 +273,8 @@ function DetailVariant({
                                                 `+${moreCount} más`,
                                                 { count: moreCount }
                                             )}
+                                            data-gallery-index={lightboxIndex + 1}
+                                            suppressHydrationWarning
                                             onClick={() => onOpen(lightboxIndex + 1)}
                                         >
                                             {t(
@@ -674,6 +296,8 @@ function DetailVariant({
                                         'ui.accessibility.openFullscreen',
                                         'Ver en pantalla completa'
                                     )}
+                                    data-gallery-index={lightboxIndex}
+                                    suppressHydrationWarning
                                     onClick={() => onOpen(lightboxIndex)}
                                 >
                                     <GalleryCellImage
@@ -740,176 +364,6 @@ function DetailVariant({
     );
 }
 
-// ─── Cover-plus-grid variant ─────────────────────────────────────────────────
-
-/**
- * Derives the data-extras-count attribute value from the total image count in
- * the cover-plus-grid variant. The cover image is always rendered separately;
- * this key represents the number of "extras" slots to render in the inline grid.
- *
- * | Total | Extras shown | data-extras-count |
- * |-------|-------------|-------------------|
- * | 1     | 0 (no grid) | "0"               |
- * | 2     | 1 half cell | "1"               |
- * | 3     | 2 half cells | "2"              |
- * | 4     | 3 quarter cells | "3"           |
- * | 5+    | 3 quarter cells (last = overlay) | "3plus" |
- */
-export function getCoverExtrasCountKey(totalCount: number): string {
-    if (totalCount <= 1) return '0';
-    if (totalCount === 2) return '1';
-    if (totalCount === 3) return '2';
-    if (totalCount === 4) return '3';
-    return '3plus'; // 5+
-}
-
-/**
- * Returns the number of extras cells to render (excluding the cover) for a
- * given total image count in the cover-plus-grid variant, per the §5 matrix.
- *
- * | Total | Visible extras |
- * |-------|---------------|
- * | 1     | 0 (cover only) |
- * | 2     | 1 (1 half cell) |
- * | 3     | 2 (2 half cells) |
- * | 4     | 3 (3 quarter cells) |
- * | 5+    | 3 (3 quarter cells; last = overlay) |
- */
-export function getVisibleExtrasCount(totalCount: number): number {
-    if (totalCount <= 1) return 0;
-    if (totalCount === 2) return 1;
-    if (totalCount === 3) return 2;
-    return 3; // 4 and 5+
-}
-
-interface CoverPlusGridVariantProps {
-    readonly images: ReadonlyArray<GalleryImage>;
-    readonly onOpen: (index: number) => void;
-    readonly t: (key: string, fallback?: string, params?: Record<string, unknown>) => string;
-}
-
-function CoverPlusGridVariant({ images, onOpen, t }: CoverPlusGridVariantProps) {
-    const [cover, ...rest] = images;
-    const totalCount = images.length;
-    const visibleExtrasCount = getVisibleExtrasCount(totalCount);
-    const visibleExtras = rest.slice(0, visibleExtrasCount);
-    // N in "+N más" = total images minus the cover minus the visible extras.
-    const moreCount = totalCount >= 5 ? totalCount - 4 : 0;
-    const extrasCountKey = getCoverExtrasCountKey(totalCount);
-
-    if (!cover) return null;
-
-    return (
-        <div className={styles.coverPlusGrid}>
-            {/* Cover image — 16:9, eager load.
-                Uses galleryFeatured preset (w_1000, ar_16:10, c_fill, g_auto).
-                The spec §5 maps both the detail "featured" and cover-plus-grid "cover"
-                to the galleryFeatured preset family (closest available to 16:9 — §7
-                defines no dedicated 16:9 preset; 16:10 is the locked choice per §7).
-                srcset candidates: 640w / 1000w / 1400w (Cloudinary only).
-                sizes: 100vw at all viewports (cover spans full container width). */}
-            <button
-                type="button"
-                className={styles.coverBtn}
-                aria-label={t('ui.accessibility.openFullscreen', 'Ver en pantalla completa')}
-                onClick={() => onOpen(0)}
-            >
-                <GalleryCellImage
-                    {...buildCellSources({ url: cover.url, preset: 'galleryFeatured' })}
-                    alt={cover.alt}
-                    className={styles.coverImg}
-                    loading="eager"
-                />
-                <span
-                    className={styles.expandIcon}
-                    aria-hidden="true"
-                >
-                    <FullscreenIcon size={20} />
-                </span>
-            </button>
-
-            {/* Inline extras grid — count-aware columns, only when extras exist */}
-            {visibleExtras.length > 0 && (
-                <div
-                    className={styles.inlineGrid}
-                    data-extras-count={extrasCountKey}
-                >
-                    {visibleExtras.map((img, i) => {
-                        // Last extras cell at count >= 5 becomes the "+N más" overlay.
-                        const isOverlayCell = moreCount > 0 && i === visibleExtras.length - 1;
-                        // Lightbox opens at index i+1 (cover is index 0).
-                        // Overlay opens at the first hidden image = cover + visibleExtras = index 4.
-                        const lightboxIndex = i + 1;
-
-                        // counts 2-3: half cells (4:3). counts 4-5+: quarter cells (1:1).
-                        const cellClass = totalCount <= 3 ? styles.cellHalf : styles.cellQuarter;
-                        // Use the preset that matches the cell's fixed aspect-ratio (SPEC-186 FR-3 §7).
-                        const extrasPreset: 'galleryHalf' | 'galleryQuarter' =
-                            totalCount <= 3 ? 'galleryHalf' : 'galleryQuarter';
-
-                        if (isOverlayCell) {
-                            return (
-                                <div
-                                    key={img.url}
-                                    className={`${cellClass} ${styles.moreOverlay}`}
-                                >
-                                    <GalleryCellImage
-                                        {...buildCellSources({
-                                            url: img.url,
-                                            preset: extrasPreset
-                                        })}
-                                        alt={img.alt}
-                                        className={styles.cellImg}
-                                        loading="lazy"
-                                        ariaHidden
-                                    />
-                                    {/* Keyboard-accessible overlay — opens lightbox at first hidden image */}
-                                    <button
-                                        type="button"
-                                        className={styles.moreOverlayBtn}
-                                        aria-label={t(
-                                            'accommodations.detail.gallery.moreOverlay',
-                                            `+${moreCount} más`,
-                                            { count: moreCount }
-                                        )}
-                                        onClick={() => onOpen(lightboxIndex + 1)}
-                                    >
-                                        {t(
-                                            'accommodations.detail.gallery.moreOverlay',
-                                            `+${moreCount} más`,
-                                            { count: moreCount }
-                                        )}
-                                    </button>
-                                </div>
-                            );
-                        }
-
-                        return (
-                            <button
-                                key={img.url}
-                                type="button"
-                                className={`${cellClass} ${styles.inlineGridBtn}`}
-                                aria-label={t(
-                                    'ui.accessibility.openFullscreen',
-                                    'Ver en pantalla completa'
-                                )}
-                                onClick={() => onOpen(lightboxIndex)}
-                            >
-                                <GalleryCellImage
-                                    {...buildCellSources({ url: img.url, preset: extrasPreset })}
-                                    alt={img.alt}
-                                    className={styles.cellImg}
-                                    loading="lazy"
-                                />
-                            </button>
-                        );
-                    })}
-                </div>
-            )}
-        </div>
-    );
-}
-
 // ─── Main component ──────────────────────────────────────────────────────────
 
 /**
@@ -943,6 +397,7 @@ export function ImageGallery({
 }: ImageGalleryProps) {
     const { t, tPlural } = createTranslations(locale);
     const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+    const rootRef = useRef<HTMLDivElement>(null);
 
     const openLightbox = useCallback((index: number): void => {
         setLightboxIndex(index);
@@ -952,10 +407,37 @@ export function ImageGallery({
         setLightboxIndex(null);
     }, []);
 
+    // HOS-2520: a photo tapped before hydration opens now, once. See
+    // gallery/GalleryTapBridge.astro for the inline half of the bridge.
+    // biome-ignore lint/correctness/useExhaustiveDependencies: runs once per mount; a later change of `images` must not replay a tap that is already consumed.
+    useEffect(() => {
+        const root = rootRef.current;
+        if (!root) return;
+        const { index } = consumePendingGalleryTap({ root, count: images.length });
+        if (index !== null) setLightboxIndex(index);
+    }, []);
+
+    // HOS-2520: warm the lightbox once the page is idle (first photos + thumbnails).
+    useEffect(
+        () => warmGalleryOnIdle({ win: window, imageUrls: images.map((img) => img.url) }).cleanup,
+        [images]
+    );
+
+    const resolvePlaceholder = useCallback((index: number): string | undefined => {
+        const root = rootRef.current;
+        return root ? findLoadedCellSrc({ root, index }).src : undefined;
+    }, []);
+
     if (images.length === 0) return null;
 
     return (
-        <div className={`${styles.root}${className ? ` ${className}` : ''}`}>
+        <div
+            ref={rootRef}
+            data-gallery-root=""
+            className={`${styles.root}${className ? ` ${className}` : ''}`}
+            // The inline tap bridge may stamp `data-gallery-pending` before hydration.
+            suppressHydrationWarning
+        >
             {variant === 'detail' ? (
                 <DetailVariant
                     images={images}
@@ -975,11 +457,12 @@ export function ImageGallery({
             )}
 
             {lightboxIndex !== null && (
-                <Lightbox
+                <GalleryLightbox
                     images={images}
                     initialIndex={lightboxIndex}
                     onClose={closeLightbox}
                     t={t}
+                    resolvePlaceholder={resolvePlaceholder}
                 />
             )}
         </div>

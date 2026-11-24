@@ -1,0 +1,55 @@
+---
+/**
+ * @file GalleryTapBridge.astro
+ * @description Pre-hydration tap feedback for `ImageGallery` (owner smoke, HOS-2520).
+ *
+ * The gallery island takes 2s (desktop) to 12s (slow 4G) to hydrate, and a tap on a
+ * photo before that did nothing, with no feedback. This script runs at parse time and
+ * listens, in the capture phase on `document`, for clicks on an element carrying
+ * `data-gallery-index` inside a `data-gallery-root` the island has NOT marked
+ * `data-gallery-hydrated` yet. On such a click it:
+ *
+ * - marks the tapped button `data-gallery-loading` + `aria-busy` (a CSS spinner);
+ * - records the photo index on THAT gallery root as `data-gallery-pending`.
+ *
+ * The island consumes it on mount (`consumePendingGalleryTap`) and opens the lightbox
+ * at that photo once. State lives on each root, so several galleries never cross-talk.
+ * Once a root is hydrated the listener returns immediately for it; the `window` flag
+ * keeps a second copy of the script (soft navigation, two galleries) from adding a
+ * second listener. The no-op `touchstart` listener is what lets iOS Safari apply the
+ * CSS `:active` pressed state on touch.
+ *
+ * Attribute names mirror `gallery-hydration-bridge.ts`; a unit test holds them equal.
+ *
+ * CSP: a STATIC `is:inline` body (no expression inside), so `middleware.ts` hashes it
+ * per response and the `csp-soft-nav-hashes` build scan adds it to the soft-nav
+ * union with no registration. Never turn it into `set:html` without adding it to
+ * `DEPLOYMENT_CONSTANT_INLINE_SCRIPTS`. Render it once per page, next to the gallery.
+ */
+---
+
+<script is:inline>
+(function () {
+	if (window.__hospedaGalleryTapBridge) return;
+	window.__hospedaGalleryTapBridge = true;
+	document.addEventListener('touchstart', function () {}, { passive: true });
+	document.addEventListener('click', function (event) {
+		var target = event.target;
+		if (!target || typeof target.closest !== 'function') return;
+		var button = target.closest('[data-gallery-index]');
+		if (!button) return;
+		var root = button.closest('[data-gallery-root]');
+		if (!root || root.hasAttribute('data-gallery-hydrated')) return;
+		var index = button.getAttribute('data-gallery-index');
+		if (!/^\d+$/.test(index || '')) return;
+		var previous = root.querySelectorAll('[data-gallery-loading]');
+		for (var i = 0; i < previous.length; i++) {
+			previous[i].removeAttribute('data-gallery-loading');
+			previous[i].removeAttribute('aria-busy');
+		}
+		button.setAttribute('data-gallery-loading', '');
+		button.setAttribute('aria-busy', 'true');
+		root.setAttribute('data-gallery-pending', index);
+	}, true);
+})();
+</script>

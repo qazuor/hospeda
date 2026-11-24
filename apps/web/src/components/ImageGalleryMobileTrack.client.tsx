@@ -6,8 +6,17 @@ import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.clie
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { GalleryCounter } from './gallery/GalleryCounter';
-import { buildCellSources, MOBILE_GALLERY_MEDIA } from './gallery/gallery-image-sources';
-import { readSaveData, resolveEagerThrough, whenPageIdle } from './gallery/gallery-preload';
+import {
+    buildCellSources,
+    buildLightboxUrl,
+    MOBILE_GALLERY_MEDIA
+} from './gallery/gallery-image-sources';
+import {
+    readPreloadAllowed,
+    resolveEagerThrough,
+    warmImage,
+    whenPageIdle
+} from './gallery/gallery-preload';
 import type { GalleryImage } from './ImageGallery.client';
 import styles from './ImageGalleryMobileTrack.module.css';
 import { ShareButtons } from './ShareButtons.client';
@@ -58,13 +67,31 @@ export function ImageGalleryMobileTrack({
     useEffect(() => whenPageIdle({ win: window, onReady: () => setPageReady(true) }).cleanup, []);
 
     useEffect(() => {
-        const { saveData } = readSaveData({ nav: navigator });
+        const { allowed } = readPreloadAllowed({ nav: navigator });
         setEagerThrough(
             (previous) =>
-                resolveEagerThrough({ current, count, ready: pageReady, saveData, previous })
-                    .eagerThrough
+                resolveEagerThrough({
+                    current,
+                    count,
+                    ready: pageReady,
+                    saveData: !allowed,
+                    previous
+                }).eagerThrough
         );
     }, [current, count, pageReady]);
+
+    // Once the visitor swipes, keep the lightbox one step ahead too: the full-size
+    // URL of the slide on screen and the next one, so a tap opens from cache. The
+    // idle warm-up already covered the first photos before any interaction.
+    useEffect(() => {
+        if (!pageReady || current === 0) return;
+        if (!readPreloadAllowed({ nav: navigator }).allowed) return;
+        for (const position of [current, current + 1]) {
+            const image = images[position];
+            if (image)
+                warmImage({ url: buildLightboxUrl({ url: image.url }).src, priority: 'low' });
+        }
+    }, [current, images, pageReady]);
 
     // biome-ignore lint/correctness/useExhaustiveDependencies: replaced images can replace the observed nodes even when the count is unchanged.
     useEffect(() => {
@@ -141,6 +168,8 @@ export function ImageGalleryMobileTrack({
                             type="button"
                             tabIndex={-1}
                             aria-label={t('ui.accessibility.openGalleryImage', undefined, { alt })}
+                            data-gallery-index={slide}
+                            suppressHydrationWarning
                             onClick={() => onOpen(slide)}
                         >
                             <picture>

@@ -23,12 +23,13 @@ describe('GalleryCounter', () => {
     });
 
     it('is the only counter markup in both gallery surfaces', () => {
-        for (const file of [
-            'src/components/ImageGalleryMobileTrack.client.tsx',
-            'src/components/ImageGallery.client.tsx'
-        ]) {
+        // The lightbox lives in gallery/GalleryLightbox.tsx since HOS-2520.
+        for (const [file, specifier] of [
+            ['src/components/ImageGalleryMobileTrack.client.tsx', './gallery/GalleryCounter'],
+            ['src/components/gallery/GalleryLightbox.tsx', './GalleryCounter']
+        ] as const) {
             const src = readFileSync(file, 'utf8');
-            expect(src).toContain("import { GalleryCounter } from './gallery/GalleryCounter';");
+            expect(src).toContain(`import { GalleryCounter } from '${specifier}';`);
             expect(src).toMatch(/<GalleryCounter[\s\S]*?ui\.accessibility\.galleryCounter/);
         }
     });

@@ -16,8 +16,9 @@ const CSS = readFileSync(
     resolve(__dirname, '../../src/components/ImageGallery.module.css'),
     'utf8'
 );
+// The lightbox moved to gallery/GalleryLightbox.tsx (HOS-2520) to keep the island under 500 lines.
 const TSX = readFileSync(
-    resolve(__dirname, '../../src/components/ImageGallery.client.tsx'),
+    resolve(__dirname, '../../src/components/gallery/GalleryLightbox.tsx'),
     'utf8'
 );
 
