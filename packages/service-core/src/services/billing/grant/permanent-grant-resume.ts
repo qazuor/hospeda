@@ -22,6 +22,7 @@ import {
 import type { PermanentGrantPorts } from './permanent-grant-ports.js';
 import {
     cancelS13AtProvider,
+    emitS13CancelledFacts,
     emitS13CoverageNotices,
     runS13InTransaction,
     type S13CancelCall
@@ -192,6 +193,11 @@ export async function resumePermanentGrant(
             }
         });
     }
+    emitS13CancelledFacts({
+        rows: committed.local.cancelled,
+        now,
+        billingFacts: ports.billingFacts
+    });
     // HOS-1883: the S20 facts go last, after every provider call of the act.
     await emitS20GrantedFreeFacts({
         rows: committed.s20.rows,

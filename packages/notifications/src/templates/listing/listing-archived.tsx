@@ -1,5 +1,5 @@
 import { Text } from '@react-email/components';
-import { EmailLayout } from '@repo/email';
+import { Button, EmailLayout } from '@repo/email';
 import type { ReactNode } from 'react';
 import { Heading } from '../components/heading.js';
 
@@ -13,6 +13,8 @@ export interface ListingArchivedProps {
     readonly deletionDate: string;
     /** Listing-scoped addons on this listing. */
     readonly listingAddonCount: number;
+    /** Absolute URL of the owner's listing page in Mi Cuenta, built by the renderer. */
+    readonly actionUrl: string;
 }
 
 /** Only a PB4 listing comes back on its own (PB7); a PB5 draft does not. */
@@ -36,7 +38,8 @@ export function ListingArchived({
     verticalName,
     transition,
     deletionDate,
-    listingAddonCount
+    listingAddonCount,
+    actionUrl
 }: ListingArchivedProps) {
     return (
         <EmailLayout previewText={`Archivamos tu ficha de ${verticalName} por inactividad`}>
@@ -57,6 +60,7 @@ export function ListingArchived({
             <Text>
                 Si no hacés nada, el contenido de la ficha se borra a partir del {deletionDate}.
             </Text>
+            <Button href={actionUrl}>Ir a mi ficha</Button>
         </EmailLayout>
     );
 }

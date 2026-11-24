@@ -418,7 +418,10 @@ export async function processProviderNotice(
                         coverageNotices: ports.coverageNotices,
                         complements: ports.complements,
                         provider: ports.provider,
-                        beforeCancelNotice: ports.beforeCancelNotice
+                        beforeCancelNotice: ports.beforeCancelNotice,
+                        ...(ports.billingFacts === undefined
+                            ? {}
+                            : { billingFacts: ports.billingFacts })
                     }
                 );
                 if (ours.outcome === 'LOST_RACE') continue;

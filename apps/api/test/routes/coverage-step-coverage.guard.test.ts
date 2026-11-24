@@ -60,7 +60,7 @@ const EXPECTED: Readonly<Record<string, { operation: string } | { exempt: string
     'accommodation/protected/reorderFaqs.ts': { operation: 'EDIT' },
     'accommodation/protected/reorderMedia.ts': { operation: 'EDIT' },
     'accommodation/protected/setFeaturedMedia.ts': { operation: 'EDIT' },
-    'accommodation/protected/unpublish.ts': { operation: 'EDIT' },
+    'accommodation/protected/unpublish.ts': { operation: 'UNPUBLISH' },
     'accommodation/protected/update.ts': { operation: 'EDIT' },
     'accommodation/protected/updateFaq.ts': { operation: 'EDIT' },
     'accommodation/protected/updateMedia.ts': { operation: 'EDIT' },
@@ -121,7 +121,7 @@ const EXPECTED: Readonly<Record<string, { operation: string } | { exempt: string
         exempt: 'Aviso del dueño de que corrigió un pedido de arreglo (fila 30, V8a.1b): no es contenido, publicación ni borrado; se autoriza por propiedad.'
     },
     'experience/protected/patch.ts': { operation: 'EDIT' },
-    'experience/protected/unpublish.ts': { operation: 'EDIT' },
+    'experience/protected/unpublish.ts': { operation: 'UNPUBLISH' },
     'experience/protected/removeFaq.ts': { operation: 'EDIT' },
     'experience/protected/removeMedia.ts': { operation: 'EDIT' },
     'experience/protected/reorderFaqs.ts': { operation: 'EDIT' },
@@ -179,7 +179,7 @@ const EXPECTED: Readonly<Record<string, { operation: string } | { exempt: string
         exempt: 'Aviso del dueño de que corrigió un pedido de arreglo (fila 30, V8a.1b): no es contenido, publicación ni borrado; se autoriza por propiedad.'
     },
     'venue/protected/deleteMenuFile.ts': { operation: 'EDIT' },
-    'venue/protected/unpublish.ts': { operation: 'EDIT' },
+    'venue/protected/unpublish.ts': { operation: 'UNPUBLISH' },
     'venue/protected/patch.ts': { operation: 'EDIT' },
     'venue/protected/putDailySpecials.ts': { operation: 'EDIT' },
     'venue/protected/putEvents.ts': { operation: 'EDIT' },
@@ -215,7 +215,7 @@ function routeFiles(dir: string, prefix = ''): string[] {
 
 const hasWriteMethod = /method:\s*'(?:post|put|patch|delete)'/;
 const accessOperation =
-    /^\s*listingAccess:\s*\{[^}]*operation:\s*'(CREATE|EDIT|PUBLISH|DELETE|REACTIVATE)'/m;
+    /^\s*listingAccess:\s*\{[^}]*operation:\s*'(CREATE|EDIT|PUBLISH|UNPUBLISH|DELETE|REACTIVATE)'/m;
 
 describe('AC:V5:9 TEST:V5:10 coverage step on every vertical write route', () => {
     it('keeps section step 4b before coverage step 5', () => {

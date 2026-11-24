@@ -82,7 +82,7 @@ describe.each(verticals)('PB6 route — %s (TEST:V6:2)', (vertical) => {
         expect(answer.body.error?.code).toBe('UNAUTHORIZED');
     });
 
-    it('answers 403 ENTITLEMENT_REQUIRED when the owner lacks EDIT capability (V5 step 6)', async () => {
+    it('HOS-2244: an owner without a live plan unpublishes to DRAFT (201)', async () => {
         const { owner, listingId } = await listing(
             vertical,
             PublicationStatusEnum.PUBLISHED,
@@ -91,8 +91,8 @@ describe.each(verticals)('PB6 route — %s (TEST:V6:2)', (vertical) => {
         const answer = await readResponse(
             await unpublish(vertical, listingId, actorHeaders({ id: owner.id }))
         );
-        expect(answer.status).toBe(403);
-        expect(answer.body.error?.code).toBe('ENTITLEMENT_REQUIRED');
+        expect(answer.status).toBe(201);
+        expect(await readVerticalStatus(vertical, listingId)).toBe(PublicationStatusEnum.DRAFT);
     });
 
     it('answers 400 VALIDATION_ERROR to a malformed id', async () => {

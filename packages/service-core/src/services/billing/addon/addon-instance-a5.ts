@@ -35,6 +35,7 @@ import {
     emitAddonEndingFacts
 } from './addon-coverage-removed';
 import { compatibleVerticalsOf, coverageVerticalsOf } from './addon-coverage-verticals';
+import { failClosedOnDeletedListing } from './addon-listing-soft-deleted';
 import { findOrphanhoodCandidates, isAddonInstanceOrphaned } from './addon-orphanhood';
 import type { AddonOrphanhoodPorts } from './addon-orphanhood-ports';
 
@@ -127,11 +128,13 @@ function isA5Origin(status: string): status is A5Origin {
  * @param ports - `políticaDeAddon` and `ficha`, for the coverage verticals (notas I-7). Part of
  *   the contract (Coord-377): every caller (`runOrphanhood`; `S12` with `WITHDRAWN`, HOS-1569;
  *   HOS-1546, HOS-1547, HOS-1570) passes them. The production `ficha` answers for
- *   an existing listing, including `PURGED`. A missing or soft-deleted listing throws
- *   `ListingNotFoundError` and rolls back the caller's act. `revokePermanentGrant` turns it into
- *   the typed 409 `PERMANENT_GRANT_LISTING_SOFT_DELETED` (HOS-2069).
+ *   an existing listing, including `PURGED`. A missing or soft-deleted listing is
+ *   turned into the typed 409 `ADDON_LISTING_SOFT_DELETED` (HOS-2128) and rolls back the caller's
+ *   act; `ListingNotFoundError` never escapes. `revokePermanentGrant` re-maps it to its own
+ *   `PERMANENT_GRANT_LISTING_SOFT_DELETED` (HOS-2069).
  * @returns The cancelled addon, or `NOT_APPLICABLE`
- * @throws ServiceError when the instance does not exist or left its state under the lock
+ * @throws ServiceError when the instance does not exist or left its state under the lock, or with
+ *   reason `ADDON_LISTING_SOFT_DELETED` (409) when a LISTING addon targets a deleted listing
  */
 export async function applyA5(
     input: {
@@ -201,17 +204,22 @@ export async function applyA5(
           })
         : null;
 
+    // A deleted listing makes `ficha` refuse: fail closed with a typed rejection (HOS-2128).
     const coverageVerticals = EMITTED_SOURCE[from]
-        ? await coverageVerticalsOf({
-              tx,
-              scopeType: (await ports.addonPolicy({ addonVersionId: instance.addonVersionId }))
-                  .scopeType,
-              targetId: instance.targetId,
-              compatibleVerticals: await compatibleVerticalsOf({
-                  tx,
-                  productId: instance.productId
-              }),
-              ports
+        ? await failClosedOnDeletedListing({
+              run: async () =>
+                  coverageVerticalsOf({
+                      tx,
+                      scopeType: (
+                          await ports.addonPolicy({ addonVersionId: instance.addonVersionId })
+                      ).scopeType,
+                      targetId: instance.targetId,
+                      compatibleVerticals: await compatibleVerticalsOf({
+                          tx,
+                          productId: instance.productId
+                      }),
+                      ports
+                  })
           })
         : [];
 
@@ -303,6 +311,8 @@ async function closeComplement(input: {
  * @param input.now - The instant of the act
  * @param ports - Orphanhood ports
  * @returns `{ cancelled }`: the instances A5 cancelled as `ORPHANED`
+ * @throws ServiceError with reason `ADDON_LISTING_SOFT_DELETED` (409) when a LISTING addon
+ *   targets a deleted listing; the caller's transaction must roll back (HOS-2128)
  */
 export async function runOrphanhood(
     input: {
@@ -337,31 +347,43 @@ export async function runOrphanhood(
         );
     if (row.class !== 'PRINCIPAL' || isStillLive(row.status)) return { cancelled: [] };
 
-    const { candidates } = await findOrphanhoodCandidates(
-        {
-            tx,
-            leftRow: {
-                id: row.id,
-                userId: row.userId,
-                vertical: row.vertical,
-                predecessorId: row.predecessorId
+    // A deleted listing makes `ficha` refuse: fail closed with a typed rejection (HOS-2128).
+    const cancelled = await failClosedOnDeletedListing({
+        run: async () => {
+            const { candidates } = await findOrphanhoodCandidates(
+                {
+                    tx,
+                    leftRow: {
+                        id: row.id,
+                        userId: row.userId,
+                        vertical: row.vertical,
+                        predecessorId: row.predecessorId
+                    }
+                },
+                ports
+            );
+            const cancelled: CancelledAddon[] = [];
+            for (const candidate of candidates) {
+                const orphaned = await isAddonInstanceOrphaned(
+                    { tx, instance: candidate, scopeType: candidate.scopeType },
+                    ports
+                );
+                if (!orphaned) continue;
+                const result = await applyA5(
+                    {
+                        tx,
+                        instanceId: candidate.id,
+                        clause: 'ORPHANED',
+                        now,
+                        s21Cause: input.s21Cause
+                    },
+                    ports
+                );
+                if (result.outcome === 'CANCELLED') cancelled.push(result.addon);
             }
-        },
-        ports
-    );
-    const cancelled: CancelledAddon[] = [];
-    for (const candidate of candidates) {
-        const orphaned = await isAddonInstanceOrphaned(
-            { tx, instance: candidate, scopeType: candidate.scopeType },
-            ports
-        );
-        if (!orphaned) continue;
-        const result = await applyA5(
-            { tx, instanceId: candidate.id, clause: 'ORPHANED', now, s21Cause: input.s21Cause },
-            ports
-        );
-        if (result.outcome === 'CANCELLED') cancelled.push(result.addon);
-    }
+            return cancelled;
+        }
+    });
     return { cancelled };
 }
 

@@ -11,7 +11,7 @@
  *
  * | action | current state | runs | route's listing access |
  * |---|---|---|---|
- * | pause | `PUBLISHED` | `unpublish` (PB6 → `DRAFT`) | `EDIT` |
+ * | pause | `PUBLISHED` | `unpublish` (PB6 → `DRAFT`) | `UNPUBLISH` |
  * | pause | any other | nothing (already not public) | — |
  * | resume | `DRAFT`, `UNPUBLISHED_BY_BILLING` | `publish` (PB1 → `PUBLISHED`) | `PUBLISH` |
  * | resume | `ARCHIVED` | `reactivate` (PB8 → `DRAFT`) | `REACTIVATE` |
@@ -90,11 +90,11 @@ export type ListingPublicationStep = 'UNPUBLISH' | 'PUBLISH' | 'REACTIVATE';
 
 /**
  * Per step, the `listingAccess.operation` its three routes declare
- * (`unpublish.ts` → `EDIT`, `publish.ts` → `PUBLISH`, `reactivate.ts` →
+ * (`unpublish.ts` → `UNPUBLISH`, `publish.ts` → `PUBLISH`, `reactivate.ts` →
  * `REACTIVATE`; identical across verticals).
  */
 export const PUBLICATION_STEP_OPERATION = {
-    UNPUBLISH: 'EDIT',
+    UNPUBLISH: 'UNPUBLISH',
     PUBLISH: 'PUBLISH',
     REACTIVATE: 'REACTIVATE'
 } as const satisfies Record<ListingPublicationStep, ListingAccessWithSections['operation']>;

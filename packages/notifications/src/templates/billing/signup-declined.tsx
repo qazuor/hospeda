@@ -1,5 +1,5 @@
 import { Text } from '@react-email/components';
-import { EmailLayout } from '@repo/email';
+import { Button, EmailLayout } from '@repo/email';
 import type {
     SignupDeclinedCause,
     SignupDeclinedRetry
@@ -52,9 +52,8 @@ export function SignupDeclined({
                 Si estabas en tu período de prueba en esta vertical, lo seguís teniendo con los días
                 que te quedaban.
             </Text>
-            <Text>
-                En Mi Suscripción tenés los pasos para volver a intentarlo: {subscriptionUrl}
-            </Text>
+            <Text>En Mi Suscripción tenés los pasos para volver a intentarlo.</Text>
+            <Button href={subscriptionUrl}>Volver a intentarlo</Button>
             <Text>Puede llegarte un correo de Mercado Pago avisando el rechazo.</Text>
         </EmailLayout>
     );

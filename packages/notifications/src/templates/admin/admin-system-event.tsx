@@ -65,7 +65,13 @@ export function AdminSystemEvent({ recipientName, severity, eventDetails }: Admi
 
             <Section style={styles.detailsBox}>
                 <Text style={styles.sectionTitle}>Detalles Completos</Text>
-                <Text style={styles.jsonBlock}>{JSON.stringify(eventDetails, null, 2)}</Text>
+                {/* Raw event dump, verbatim: exempt from the Spanish-only check (HOS-2565 7.2). */}
+                <Text
+                    style={styles.jsonBlock}
+                    data-raw-value="true"
+                >
+                    {JSON.stringify(eventDetails, null, 2)}
+                </Text>
             </Section>
 
             <Text style={styles.footerNote}>

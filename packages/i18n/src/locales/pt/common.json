@@ -64,6 +64,7 @@
         "general": "Desculpe, algo deu errado."
     },
     "apiError": {
+        "ADDON_LISTING_SOFT_DELETED": "Não podemos cancelar este destaque porque o anúncio associado foi excluído. Fale conosco e resolvemos.",
         "GENERIC": "Algo deu errado. Tente novamente em instantes.",
         "RATE_LIMIT_EXCEEDED": "Muitas solicitações. Aguarde alguns segundos e tente novamente.",
         "VALIDATION_ERROR": "Os dados enviados não são válidos.",

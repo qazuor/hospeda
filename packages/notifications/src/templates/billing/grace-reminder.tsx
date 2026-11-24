@@ -1,5 +1,5 @@
 import { Text } from '@react-email/components';
-import { EmailLayout } from '@repo/email';
+import { Button, EmailLayout } from '@repo/email';
 import { formatTrialVerticals } from '../../utils/product-domain-copy.js';
 import { Heading } from '../components/heading.js';
 import { formatDate } from '../utils/index.js';
@@ -25,13 +25,13 @@ export function GraceReminder({
     readonly scheduledChange?: { readonly planName: string; readonly effectiveDate: string };
 }) {
     const verticalName = formatTrialVerticals({ verticals: [vertical] });
-    const remaining = daysBefore === 1 ? '1 día' : `${daysBefore} días`;
+    const remaining = daysBefore === 1 ? 'Falta 1 día' : `Faltan ${daysBefore} días`;
     return (
         <EmailLayout previewText={GRACE_REMINDER_SUBJECT}>
             <Heading>{GRACE_REMINDER_SUBJECT}</Heading>
             <Text>
-                Tu suscripción de {verticalName} sigue en período de gracia. Faltan {remaining} para
-                el {formatDate({ dateString: graceEndDate })}, cuando termina este período.
+                Tu suscripción de {verticalName} sigue en período de gracia. {remaining} para el{' '}
+                {formatDate({ dateString: graceEndDate })}, cuando termina este período.
             </Text>
             {paymentMethod === 'CARD' ? (
                 <Text>
@@ -46,7 +46,7 @@ export function GraceReminder({
             )}
             <Text>
                 Si el cobro no entra antes de esa fecha, tu suscripción se suspende y vas a tener
-                que volver a suscribirte. Mi Suscripción: {subscriptionUrl}
+                que volver a suscribirte.
             </Text>
             {scheduledChange ? (
                 <Text>
@@ -55,6 +55,7 @@ export function GraceReminder({
                 </Text>
             ) : null}
             {planChangePending ? <Text>Tu cambio de plan sigue pendiente.</Text> : null}
+            <Button href={subscriptionUrl}>Ir a Mi Suscripción</Button>
         </EmailLayout>
     );
 }

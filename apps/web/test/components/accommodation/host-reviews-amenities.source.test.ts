@@ -39,6 +39,14 @@ describe('AmenitiesGrid.astro (AC-2.3)', () => {
         expect(AMENITIES).toContain('index >= MOBILE_COUNT');
     });
 
+    it('collapses a breakpoint only when at least 5 items would be hidden (owner rule 2026-11-23)', () => {
+        expect(AMENITIES).toContain('summarizeItems(');
+        expect(AMENITIES).toContain('const hasOverflow = !showAllMobile');
+        expect(AMENITIES).toContain("'amenities-section__more--mobile-only': showAllDesktop");
+        expect(AMENITIES).toContain('!showAllMobile && index >= MOBILE_COUNT');
+        expect(AMENITIES).toContain('showAllDesktop ? entries : entries.slice(0, DESKTOP_COUNT)');
+    });
+
     it('opens the full list in the sheet island and no longer expands inline', () => {
         expect(AMENITIES).toContain('<ListingItemsSheet');
         expect(AMENITIES).toContain('client:idle');
@@ -63,9 +71,10 @@ describe('AmenitiesGrid.astro (AC-2.3)', () => {
 });
 
 describe('FeaturesGrid.astro (AC-2.3)', () => {
-    it('summarizes only when there are more than 6 features and keeps the full grouped list in the sheet', () => {
+    it('summarizes only when at least 5 features would be hidden and keeps the full grouped list in the sheet', () => {
         expect(FEATURES).toMatch(/SUMMARY_COUNT\s*=\s*6/);
-        expect(FEATURES).toContain('features.length > SUMMARY_COUNT');
+        expect(FEATURES).toContain('summarizeItems(');
+        expect(FEATURES).toContain('const hasOverflow = !showAllMobile');
         expect(FEATURES).toContain('<ListingItemsSheet');
         expect(FEATURES).toContain('features.slice(0, SUMMARY_COUNT)');
     });

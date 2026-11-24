@@ -47,22 +47,22 @@ export function SubscriptionAccessEndingSoon({
 
     return (
         <EmailLayout
-            previewText={`Your ${planName} access ends in ${daysRemaining} days — reactivate now`}
+            previewText={`Tu acceso al plan ${planName} termina en ${daysRemaining} ${daysRemaining === 1 ? 'día' : 'días'}: reactivá tu suscripción`}
         >
-            <Heading>Your access is ending soon</Heading>
+            <Heading>Tu acceso está por terminar</Heading>
 
-            <Text style={styles.greeting}>Hi {recipientName},</Text>
+            <Text style={styles.greeting}>Hola {recipientName},</Text>
 
             <Text style={styles.paragraph}>
-                This is a reminder that your <strong>{planName}</strong> access ends in{' '}
+                Te recordamos que tu acceso al plan <strong>{planName}</strong> termina en{' '}
                 <strong>
-                    {daysRemaining} {daysRemaining === 1 ? 'day' : 'days'}
+                    {daysRemaining} {daysRemaining === 1 ? 'día' : 'días'}
                 </strong>
-                . After this date your account will revert to the free plan.
+                . Después de esa fecha, tu cuenta vuelve al plan gratuito.
             </Text>
 
             <Text style={styles.accessBanner}>
-                Your access expires on <strong>{formattedAccessUntil}</strong>.
+                Tu acceso vence el <strong>{formattedAccessUntil}</strong>.
             </Text>
 
             <Callout tone="warning">
@@ -71,25 +71,25 @@ export function SubscriptionAccessEndingSoon({
                     value={planName}
                 />
                 <InfoRow
-                    label="Access until"
+                    label="Acceso hasta"
                     value={formattedAccessUntil}
                 />
                 <InfoRow
-                    label="Days remaining"
+                    label="Días restantes"
                     value={String(daysRemaining)}
                 />
             </Callout>
 
             <Text style={styles.paragraph}>
-                To keep your current features and limits, reactivate your subscription before{' '}
+                Para conservar tus funciones y límites actuales, reactivá tu suscripción antes del{' '}
                 {formattedAccessUntil}.
             </Text>
 
-            <Button href={`${baseUrl}/es/mi-cuenta/suscripcion/`}>Reactivate subscription</Button>
+            <Button href={`${baseUrl}/es/mi-cuenta/suscripcion/`}>Reactivar suscripción</Button>
 
             <Text style={styles.footer}>
-                If you meant to cancel, no action is needed. Your access ends automatically on{' '}
-                {formattedAccessUntil} and no further charges will be made.
+                Si querías cancelar, no tenés que hacer nada. Tu acceso termina automáticamente el{' '}
+                {formattedAccessUntil} y no se te van a hacer más cobros.
             </Text>
         </EmailLayout>
     );

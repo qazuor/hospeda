@@ -1,5 +1,5 @@
 import { Text } from '@react-email/components';
-import { EmailLayout } from '@repo/email';
+import { Button, EmailLayout } from '@repo/email';
 import { formatTrialVerticals } from '../../utils/product-domain-copy.js';
 import { Heading } from '../components/heading.js';
 
@@ -25,7 +25,7 @@ export function ChargebackSuspension(props: ChargebackSuspensionProps) {
         <EmailLayout previewText={CHARGEBACK_SUSPENSION_SUBJECT}>
             <Heading>{CHARGEBACK_SUSPENSION_SUBJECT}</Heading>
             <Text>{`Tu suscripción de ${verticalName} se suspendió.`}</Text>
-            <Text>{`Desconociste el cargo de ${props.amount} del día ${props.chargedOn} en tu banco. Mientras se resuelve, suspendimos el servicio. Si fue un error, podés volver a suscribirte desde acá: ${props.subscriptionUrl}`}</Text>
+            <Text>{`Desconociste el cargo de ${props.amount} del día ${props.chargedOn} en tu banco. Mientras se resuelve, suspendimos el servicio. Si fue un error, podés volver a suscribirte.`}</Text>
             {props.courtesyEnded ? <Text>La cortesía que tenías terminó hoy.</Text> : null}
             {props.touristVipLost ? (
                 <Text>También perdés los beneficios de Turista VIP que te daba tu plan.</Text>
@@ -38,6 +38,7 @@ export function ChargebackSuspension(props: ChargebackSuspensionProps) {
             {/* Proposed text (AC:B7:10, BS): owner approves or removes it in the PR */}
             <Text>Ya no se te va a cobrar: cancelamos la autorización de cobro.</Text>
             <Text>Una persona de nuestro equipo sigue el caso.</Text>
+            <Button href={props.subscriptionUrl}>Volver a suscribirme</Button>
         </EmailLayout>
     );
 }

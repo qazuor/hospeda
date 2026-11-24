@@ -64,13 +64,13 @@ describe('SubscriptionAccessEndingSoon email template (SPEC-147 T-010)', () => {
         it('should include "access ending" heading or similar urgency text', () => {
             const html = renderToStaticMarkup(SubscriptionAccessEndingSoon(validProps));
             // Heading or preview text should convey access is ending
-            expect(html).toMatch(/access.*end|ending.*soon|acceso.*termina/i);
+            expect(html).toMatch(/acceso.*termina|por terminar/i);
         });
 
         it('should inform about reactivation option', () => {
             const html = renderToStaticMarkup(SubscriptionAccessEndingSoon(validProps));
             // Must mention reactivation or renewal
-            expect(html).toMatch(/reactivat|renew|renovar/i);
+            expect(html).toMatch(/reactiv/i);
         });
 
         it('should use a different baseUrl in the CTA link', () => {
@@ -92,12 +92,12 @@ describe('SubscriptionAccessEndingSoon email template (SPEC-147 T-010)', () => {
 
         it('should show Access until label', () => {
             const html = renderToStaticMarkup(SubscriptionAccessEndingSoon(validProps));
-            expect(html).toContain('Access until');
+            expect(html).toContain('Acceso hasta');
         });
 
         it('should show Days remaining label', () => {
             const html = renderToStaticMarkup(SubscriptionAccessEndingSoon(validProps));
-            expect(html).toContain('Days remaining');
+            expect(html).toContain('Días restantes');
         });
     });
 
@@ -106,6 +106,20 @@ describe('SubscriptionAccessEndingSoon email template (SPEC-147 T-010)', () => {
             const html = renderToStaticMarkup(SubscriptionAccessEndingSoon(validProps));
             expect(html).not.toContain('Administrar preferencias de notificaciones');
             expect(html).not.toContain('unsubscribe_url');
+        });
+    });
+
+    describe('language (HOS-2565 §7.1)', () => {
+        it('should be Spanish only, with voseo and an "Hola" greeting', () => {
+            // Arrange & Act
+            const html = renderToStaticMarkup(SubscriptionAccessEndingSoon(validProps));
+            const text = html.replace(/<style[\s\S]*?<\/style>/g, ' ').replace(/<[^>]+>/g, ' ');
+
+            // Assert
+            expect(text).toMatch(/Hola\s+\S.*,/);
+            expect(text).not.toMatch(
+                /\b(the|your|you|and|will|access|cancellation|choose|reactivate|Hi)\b/i
+            );
         });
     });
 });
