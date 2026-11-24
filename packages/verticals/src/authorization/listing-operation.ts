@@ -8,6 +8,7 @@ export const LISTING_OPERATIONS = [
     'DELETE',
     'EDIT',
     'PUBLISH',
+    'UNPUBLISH',
     'READ_PUBLIC',
     'WRITE_ABOUT_LISTING',
     'READ_OWN_COMMERCIAL',
@@ -53,6 +54,14 @@ export const OWNER_ADMITTING_STATES: Readonly<
         PublicationStatusEnum.MODERATED
     ],
     PUBLISH: [PublicationStatusEnum.DRAFT, PublicationStatusEnum.UNPUBLISHED_BY_BILLING],
+    // Same states EDIT admitted when the unpublish routes declared EDIT (HOS-2244),
+    // so a state PB6 refuses still answers 409 and not 404.
+    UNPUBLISH: [
+        PublicationStatusEnum.DRAFT,
+        PublicationStatusEnum.PUBLISHED,
+        PublicationStatusEnum.UNPUBLISHED_BY_BILLING,
+        PublicationStatusEnum.MODERATED
+    ],
     READ_PUBLIC: [
         PublicationStatusEnum.DRAFT,
         PublicationStatusEnum.PUBLISHED,
@@ -81,6 +90,7 @@ export const FOREIGN_ADMITTING_STATES: Readonly<
     DELETE: [],
     EDIT: [],
     PUBLISH: [],
+    UNPUBLISH: [],
     READ_PUBLIC: [PublicationStatusEnum.PUBLISHED],
     WRITE_ABOUT_LISTING: [PublicationStatusEnum.PUBLISHED],
     READ_OWN_COMMERCIAL: [],
@@ -128,6 +138,10 @@ export const OPERATION_STEP6_KEY: Readonly<Record<ListingOperation, Step6Require
             [VerticalEnum.EXPERIENCE]: ['publish_experience', VERTICAL_ACTIVATION_KEY]
         }
     },
+    // Taking a listing down never needs a plan (HOS-2244): pausing costs nothing and
+    // gives the owner no benefit, and blocking it could leave online a listing whose
+    // owner wants it down (e.g. the plan expired). Step 4 still decides who may.
+    UNPUBLISH: { kind: 'NONE' },
     READ_PUBLIC: { kind: 'NONE' },
     WRITE_ABOUT_LISTING: { kind: 'NONE' },
     READ_OWN_COMMERCIAL: { kind: 'CALLER_KEY' },
@@ -142,6 +156,7 @@ export const OPERATION_PASSES_STEP5: Readonly<Record<ListingOperation, boolean>>
     DELETE: true,
     EDIT: true,
     PUBLISH: true,
+    UNPUBLISH: false,
     READ_PUBLIC: false,
     WRITE_ABOUT_LISTING: false,
     READ_OWN_COMMERCIAL: false,
