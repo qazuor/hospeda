@@ -333,14 +333,14 @@ interface VenueDetailBlock {
 const hasOpeningHours =
     venue.openingHours !== null && Object.keys(venue.openingHours).length > 0;
 const hasContactBlock = hasVenueContact;
+/** HOS-2579 §6.5: the street line, the exact pin and the counted map link; `null` without an address. */
+const venueLocation = buildVenueLocation({ venue, locale });
+
 /**
  * HOS-2579 §6.4: the shared contact block. Its builder renders on the same
  * `hasVenuePublicContact` predicate as `hasVenueContact`, so it is non-null
  * exactly when `hasContactBlock` is true.
  */
-/** HOS-2579 §6.5: the street line, the exact pin and the counted map link; `null` without an address. */
-const venueLocation = buildVenueLocation({ venue, locale });
-
 const venueContactBlock = buildVenueContactBlock({
     listingId: venue.id,
     contactInfo: venue.contactInfo,

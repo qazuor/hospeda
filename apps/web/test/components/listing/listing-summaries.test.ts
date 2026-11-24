@@ -21,11 +21,30 @@ const VENUE_SUMMARY = read('components/venue/VenueSummary.astro');
 const EXPERIENCE_SUMMARY = read('components/experience/ExperienceSummary.astro');
 const VENUE_PAGE = read('pages/[lang]/comer-y-salir/[slug].astro');
 const EXPERIENCE_PAGE = read('pages/[lang]/experiencias/[slug].astro');
+const SUMMARY_ACTIONS = read('components/listing/contact/ListingSummaryActions.client.tsx');
 const HEADER_FILES = [
     read('components/listing/header/ListingHeader.astro'),
     read('components/listing/header/ListingHeaderBadges.astro'),
     read('lib/listing-header/build-listing-header.ts')
 ].join('\n');
+
+describe('ListingSummaryActions', () => {
+    it('is a .client.tsx island, so the client-graph guards sweep it', () => {
+        for (const summary of [VENUE_SUMMARY, EXPERIENCE_SUMMARY]) {
+            expect(summary).toContain(
+                "from '@/components/listing/contact/ListingSummaryActions.client'"
+            );
+            expect(summary).not.toMatch(/import \{ ListingContactActions \}/);
+        }
+    });
+
+    it('pins the shared contact actions to origin summary', () => {
+        expect(SUMMARY_ACTIONS).toMatch(
+            /<ListingContactActions\s+\{\.\.\.props\}\s+origin="summary"\s*\/>/
+        );
+        expect(SUMMARY_ACTIONS).toContain("Omit<ListingContactActionsProps, 'origin'>");
+    });
+});
 
 describe('VenueSummary', () => {
     it('shows the price-range label (moved out of the header)', () => {
@@ -34,9 +53,8 @@ describe('VenueSummary', () => {
     });
 
     it('uses the shared contact actions with origin summary', () => {
-        const actions = VENUE_SUMMARY.match(/<ListingContactActions[\s\S]*?\/>/)?.[0] ?? '';
+        const actions = VENUE_SUMMARY.match(/<ListingSummaryActions[\s\S]*?\/>/)?.[0] ?? '';
         expect(actions).toContain('client:idle');
-        expect(actions).toContain('origin="summary"');
         expect(actions).toContain('vertical="venue"');
         expect(actions).toContain('fallbackHref={fallbackHref}');
     });
@@ -52,7 +70,7 @@ describe('VenueSummary', () => {
     it('renders no action without a channel, and nothing at all without price or action', () => {
         expect(VENUE_SUMMARY).toContain("const hasAction = contactMode.kind !== 'none';");
         expect(VENUE_SUMMARY).toMatch(/\{\(priceRangeLabel \|\| hasAction\) && \(/);
-        expect(VENUE_SUMMARY).toMatch(/\{hasAction && \(\s*<ListingContactActions/);
+        expect(VENUE_SUMMARY).toMatch(/\{hasAction && \(\s*<ListingSummaryActions/);
     });
 
     it('is mounted by the venue page with the page contact decision', () => {
@@ -77,9 +95,8 @@ describe('ExperienceSummary', () => {
     });
 
     it('offers «Consultar» only when a public channel exists (HOS-363)', () => {
-        expect(EXPERIENCE_SUMMARY).toMatch(/\{hasContactChannel && \(\s*<ListingContactActions/);
-        const actions = EXPERIENCE_SUMMARY.match(/<ListingContactActions[\s\S]*?\/>/)?.[0] ?? '';
-        expect(actions).toContain('origin="summary"');
+        expect(EXPERIENCE_SUMMARY).toMatch(/\{hasContactChannel && \(\s*<ListingSummaryActions/);
+        const actions = EXPERIENCE_SUMMARY.match(/<ListingSummaryActions[\s\S]*?\/>/)?.[0] ?? '';
         expect(actions).toContain('vertical="experience"');
         expect(actions).toContain('hasWhatsapp={false}');
     });

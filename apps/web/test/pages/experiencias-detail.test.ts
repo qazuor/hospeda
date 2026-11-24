@@ -31,10 +31,10 @@ describe('experiencias/[slug].astro', () => {
             expect(src).toContain('experiencesApi.getBySlug');
         });
 
-        it('uses Promise.allSettled for parallel reviews + faqs fetch', () => {
-            expect(src).toContain('Promise.allSettled');
-            expect(src).toContain('experiencesApi.getReviews');
-            expect(src).toContain('experiencesApi.getFaqs');
+        it('fetches reviews + faqs in parallel through fetchExperienceSecondaryData', () => {
+            // Promise.allSettled and both calls are unit-tested in
+            // test/lib/experience/experience-secondary-data.test.ts.
+            expect(src).toContain('fetchExperienceSecondaryData');
         });
     });
 
@@ -244,7 +244,8 @@ describe('experiencias/[slug].astro', () => {
 
     describe('FAQs', () => {
         it('prefers inline entity FAQs over standalone endpoint', () => {
-            expect(src).toContain('experience.faqs.length > 0');
+            // The precedence itself is unit-tested in test/lib/experience/experience-faqs.test.ts.
+            expect(src).toContain('inlineFaqs: experience.faqs');
         });
     });
 
