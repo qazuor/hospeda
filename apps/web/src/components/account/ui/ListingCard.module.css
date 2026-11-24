@@ -1,7 +1,11 @@
 /* ListingCard.module.css — one listing an owner manages (HOS-2483).
    The grid adapts to its own container: 1 column, 2 from 40rem, 3 from 64rem.
    A card with a photo stacks media over body; a card without one shows the
-   vertical's icon tile beside the title. */
+   vertical's icon tile beside the title.
+
+   HOS-2600: a card keeps its own height (a shorter card is not stretched into
+   empty bands), and the card does not clip its overflow, so the «more actions»
+   menu opens whole; the photo rounds its own top corners instead. */
 
 .gridWrap {
     container-type: inline-size;
@@ -10,6 +14,7 @@
 .grid {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
+    align-items: start;
     gap: var(--space-4);
     margin: 0;
     padding: 0;
@@ -38,7 +43,6 @@
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     min-inline-size: 0;
-    overflow: hidden;
     background-color: var(--core-card);
     border: 1px solid var(--border);
     border-radius: var(--radius-surface);
@@ -48,6 +52,8 @@
 .media {
     aspect-ratio: 16 / 9;
     overflow: hidden;
+    border-start-start-radius: inherit;
+    border-start-end-radius: inherit;
     background-color: var(--surface-warm);
 }
 
@@ -140,6 +146,18 @@
 .footer {
     padding: var(--space-3) var(--space-4);
     border-block-start: 1px solid var(--border);
+}
+
+/* An Astro page hands the island one element per declared slot even when the
+   slot's conditional rendered nothing (a deleted listing has no action and no
+   QR panel). Such a slot renders no node, so its wrapper is empty: hide it
+   rather than draw a padded band with a divider. */
+.footer:empty {
+    display: none;
+}
+
+.actions:has(> .primary:empty:only-child) {
+    display: none;
 }
 
 /* No photo: the icon tile sits beside the body; actions and footer span both. */
