@@ -7,6 +7,7 @@
 
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { appTypography } from '@repo/design-tokens';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -108,9 +109,16 @@ describe('ConversationReply — no reload (HOS-2439)', () => {
             'utf8'
         );
         const block = css.match(/\.textarea\s*\{([^}]*)\}/)?.[1] ?? '';
-        const size = block.match(/font-size:\s*([\d.]+)(rem|px)/);
-        expect(size).not.toBeNull();
-        const px = Number(size?.[1]) * (size?.[2] === 'rem' ? 16 : 1);
+        // HOS-2508: the size is an app typography token, resolved through the
+        // design-token catalog; a literal (if one ever comes back) still counts.
+        const token = block.match(/font-size:\s*var\(--app-([\w-]+)-size\)/)?.[1];
+        const literal = block.match(/font-size:\s*([\d.]+)(rem|px)/);
+        const px = token
+            ? appTypography[token as keyof typeof appTypography]?.sizePx
+            : literal
+              ? Number(literal[1]) * (literal[2] === 'rem' ? 16 : 1)
+              : undefined;
+        expect(px).toBeDefined();
         expect(px).toBeGreaterThanOrEqual(16);
     });
 });

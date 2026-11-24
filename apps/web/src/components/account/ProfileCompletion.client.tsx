@@ -19,8 +19,10 @@
  * On success, redirects to the set-password screen if `requiresSetPassword === true`,
  * otherwise to `/[lang]/mi-cuenta/`.
  *
- * Layout (HOS-2501): a kit `PageHeader`, a `Stepper` that follows the form's own
- * progress, and one flat kit `Section` per group, inside `FocusShell`.
+ * Layout (HOS-2501): a kit `PageHeader` and one flat kit `Section` per group,
+ * inside `FocusShell`. No `Stepper` (HOS-2601): the whole form is one page, so
+ * a «Step 3 of 3» line only told the person they were further along than they
+ * were (the names arrive prefilled from the session).
  *
  * Hydration: caller MUST use `client:load`.
  */
@@ -45,7 +47,7 @@ import { ProfileCompletionBasicFields } from './ProfileCompletionBasicFields';
 import { ProfileCompletionConsentFields } from './ProfileCompletionConsentFields';
 import { ProfileCompletionContactFields } from './ProfileCompletionContactFields';
 import { ProfileCompletionMoreDetails } from './ProfileCompletionMoreDetails';
-import { Alert, Button, PageHeader, Section, Stepper } from './ui';
+import { Alert, Button, PageHeader, Section } from './ui';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -330,22 +332,6 @@ export function ProfileCompletion({
         ? { ...fieldErrors, terms: fieldErrors.acceptedTerms }
         : fieldErrors;
 
-    // ── Progress ──────────────────────────────────────────────────────────────
-    //
-    // The stepper follows the form's own progress, not navigation: «Tus datos»
-    // is done once both names are filled, «Preferencias» is fully optional so it
-    // counts as done as soon as the names are, and «Confirmar» is done when the
-    // terms are accepted. The current step is the first one still open.
-    const basicsDone = firstName.trim() !== '' && lastName.trim() !== '';
-    const doneFlags = [basicsDone, basicsDone, basicsDone && acceptedTerms];
-    const stepIds = ['basics', 'preferences', 'confirm'] as const;
-    const firstOpen = doneFlags.indexOf(false);
-    const currentStep = firstOpen === -1 ? stepIds.length : firstOpen;
-    const steps = stepIds.map((id) => ({
-        id,
-        label: t(`account.profileCompletion.steps.${id}`)
-    }));
-
     return (
         <div className={styles.page}>
             <PageHeader
@@ -355,13 +341,6 @@ export function ProfileCompletion({
                     'Antes de continuar, completá tu perfil para que podamos personalizar tu experiencia.'
                 )}
                 locale={locale}
-            />
-
-            <Stepper
-                steps={steps}
-                current={currentStep}
-                locale={locale}
-                label={t('account.profileCompletion.stepsLabel')}
             />
 
             <form

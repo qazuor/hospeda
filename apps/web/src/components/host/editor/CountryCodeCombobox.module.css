@@ -17,10 +17,10 @@
     padding: 0.625rem 0.75rem;
     background-color: var(--core-card);
     border: 1px solid var(--border);
-    border-radius: var(--radius-md, 10px);
+    border-radius: var(--radius-md);
     color: var(--core-foreground);
     font-family: var(--font-sans);
-    font-size: 0.9375rem;
+    font-size: var(--app-control-size);
     line-height: 1.5;
     cursor: pointer;
     transition: border-color var(--duration-fast, 150ms) ease;
@@ -51,7 +51,7 @@
 
 .triggerFlag {
     flex-shrink: 0;
-    font-size: 1rem;
+    font-size: var(--app-body-size);
     line-height: 1;
 }
 
@@ -122,11 +122,11 @@
     width: 100%;
     padding: 0.5rem 0.625rem 0.5rem 2rem;
     border: 1px solid var(--border);
-    border-radius: var(--radius-md, 10px);
+    border-radius: var(--radius-md);
     background-color: var(--core-card);
     color: var(--core-foreground);
     font-family: var(--font-sans);
-    font-size: 0.875rem;
+    font-size: var(--app-ui-size);
     box-sizing: border-box;
 }
 
@@ -156,9 +156,9 @@
     background-color: transparent;
     background-image: none;
     border: none;
-    border-radius: var(--radius-button, 8px);
+    border-radius: var(--radius-button);
     font-family: var(--font-sans);
-    font-size: 0.875rem;
+    font-size: var(--app-ui-size);
     color: var(--core-foreground);
     text-align: left;
     cursor: pointer;
@@ -181,7 +181,7 @@
 
 .optionFlag {
     flex-shrink: 0;
-    font-size: 1rem;
+    font-size: var(--app-body-size);
     line-height: 1;
 }
 
@@ -211,7 +211,7 @@
 .emptyState {
     padding: 0.75rem;
     font-family: var(--font-sans);
-    font-size: 0.875rem;
+    font-size: var(--app-ui-size);
     color: var(--core-muted-foreground);
     text-align: center;
 }
