@@ -9,7 +9,7 @@
  * 4. Submitting the add form calls postProtected and adds the FAQ to the list.
  * 5. Clicking Edit opens the edit form with pre-filled values.
  * 6. Submitting the edit form calls PUT and updates the FAQ.
- * 7. Clicking Delete (confirmed) calls DELETE and removes the FAQ.
+ * 7. Removing asks for confirmation (kit Repeater); confirmed calls DELETE, Cancel keeps the row.
  * 8. Clicking ↑/↓ calls PUT /reorder and reorders FAQs in the list.
  *
  * REGRESSION ANCHOR (H-89): tests 4 and 6 assert the TRANSPORT, not just that
@@ -26,7 +26,7 @@
  * A test that mirrors the component's call instead of the server's contract
  * cannot catch either. Each now also asserts the WRONG verb was not used.
  */
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ListingFaq } from '../../../src/components/listing/ListingFaqManager.client';
 import { ListingFaqManager } from '../../../src/components/listing/ListingFaqManager.client';
@@ -49,7 +49,8 @@ vi.mock('../../../src/components/listing/ListingFaqManager.module.css', () => ({
     default: new Proxy({} as Record<string, string>, { get: (_t, prop) => String(prop) })
 }));
 
-vi.mock('../../../src/lib/i18n', () => ({
+vi.mock('../../../src/lib/i18n', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('../../../src/lib/i18n')>()),
     createTranslations: () => ({ t: (key: string, fallback?: string) => fallback ?? key })
 }));
 
@@ -282,23 +283,21 @@ describe('ListingFaqManager', () => {
         });
     });
 
-    it('calls DELETE and removes the FAQ when Delete is confirmed', async () => {
+    it('calls DELETE and removes the FAQ when the removal is confirmed', async () => {
         mockDelete.mockResolvedValueOnce({ ok: true, data: { success: true } });
 
         renderManager([FAQ_1, FAQ_2]);
-        // Click the first delete button (FAQ_1)
-        const deleteButtons = screen.getAllByRole('button', { name: 'Eliminar' });
-        fireEvent.click(deleteButtons[0]);
+        // The Repeater's «Quitar» button of the first row (FAQ_1)
+        fireEvent.click(screen.getByRole('button', { name: 'Quitar ¿Cuándo abren?' }));
 
-        // HOS-957: the row's Delete opens the shared ConfirmDeleteDialog — it no
-        // longer raises `window.confirm()`, so nothing is requested until the
-        // dialog's own CTA is pressed. The question appears twice from here:
-        // once in the row, once echoed in the dialog body.
+        // HOS-2490: the kit confirmation (an alertdialog) opens first; nothing
+        // is requested until its own CTA is pressed.
+        const dialog = await screen.findByRole('alertdialog');
         expect(mockDelete).not.toHaveBeenCalled();
-        expect(screen.getByText('¿Eliminás esta pregunta?')).toBeInTheDocument();
-        expect(screen.getAllByText('¿Cuándo abren?')).toHaveLength(2);
+        expect(within(dialog).getByText('¿Eliminás esta pregunta?')).toBeInTheDocument();
+        expect(within(dialog).getByText('¿Cuándo abren?')).toBeInTheDocument();
 
-        fireEvent.click(screen.getByRole('button', { name: 'Eliminar pregunta' }));
+        fireEvent.click(within(dialog).getByRole('button', { name: 'Eliminar pregunta' }));
 
         await waitFor(() => {
             expect(mockDelete).toHaveBeenCalledWith({
@@ -309,17 +308,37 @@ describe('ListingFaqManager', () => {
         await waitFor(() => {
             expect(screen.queryByText('¿Cuándo abren?')).not.toBeInTheDocument();
         });
+        expect(screen.getByText('¿Tienen estacionamiento?')).toBeInTheDocument();
     });
 
-    it('does NOT call DELETE when the delete dialog is cancelled', () => {
+    it('asks first and keeps the row when the removal is cancelled (AC-10)', async () => {
         renderManager([FAQ_1]);
-        fireEvent.click(screen.getByRole('button', { name: 'Eliminar' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Quitar ¿Cuándo abren?' }));
 
-        expect(screen.getByText('¿Eliminás esta pregunta?')).toBeInTheDocument();
-        fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
+        const dialog = await screen.findByRole('alertdialog');
+        expect(within(dialog).getByText('¿Eliminás esta pregunta?')).toBeInTheDocument();
+        fireEvent.click(within(dialog).getByRole('button', { name: 'Cancelar' }));
 
+        await waitFor(() => {
+            expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+        });
         expect(mockDelete).not.toHaveBeenCalled();
-        expect(screen.queryByText('¿Eliminás esta pregunta?')).not.toBeInTheDocument();
+        expect(screen.getByText('¿Cuándo abren?')).toBeInTheDocument();
+    });
+
+    it('surfaces an error and keeps the row when the DELETE request fails', async () => {
+        mockDelete.mockResolvedValueOnce({
+            ok: false,
+            error: { code: 'INTERNAL_ERROR', message: 'boom', status: 500 }
+        } as never);
+
+        renderManager([FAQ_1]);
+        fireEvent.click(screen.getByRole('button', { name: 'Quitar ¿Cuándo abren?' }));
+        const dialog = await screen.findByRole('alertdialog');
+        fireEvent.click(within(dialog).getByRole('button', { name: 'Eliminar pregunta' }));
+
+        expect(await screen.findByText('No se pudo eliminar la pregunta.')).toBeInTheDocument();
+        expect(screen.getByText('¿Cuándo abren?')).toBeInTheDocument();
     });
 
     it('calls PUT /reorder when the down arrow is clicked', async () => {
@@ -327,7 +346,7 @@ describe('ListingFaqManager', () => {
 
         renderManager([FAQ_1, FAQ_2]);
         // The "Bajar" button (aria-label) for FAQ_1 (first item, index 0)
-        const bajarButtons = screen.getAllByRole('button', { name: 'Bajar' });
+        const bajarButtons = screen.getAllByRole('button', { name: /^Bajar / });
         fireEvent.click(bajarButtons[0]);
 
         await waitFor(() => {
@@ -348,8 +367,8 @@ describe('ListingFaqManager', () => {
 
     it('disables the up button for the first FAQ and down button for the last FAQ', () => {
         renderManager([FAQ_1, FAQ_2]);
-        const subirButtons = screen.getAllByRole('button', { name: 'Subir' });
-        const bajarButtons = screen.getAllByRole('button', { name: 'Bajar' });
+        const subirButtons = screen.getAllByRole('button', { name: /^Subir / });
+        const bajarButtons = screen.getAllByRole('button', { name: /^Bajar / });
         // First FAQ: "Subir" disabled
         expect(subirButtons[0]).toBeDisabled();
         // Last FAQ: "Bajar" disabled

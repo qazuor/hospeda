@@ -1,5 +1,5 @@
 {
-  "contentHash": "9efbd5328b3fa52f172b0132cb7f4c6d31a278dbab059a449fb00ed204f9180d",
+  "contentHash": "fbbc2868478b7080ce6a5d1f27086e5d427abb344558243ea5c3d94860b3a0e2",
   "locales": {
     "es": [
       {
@@ -14,7 +14,7 @@
         "destinations": [
           {
             "kind": "addons",
-            "label": "Comprar complementos"
+            "label": "Complementos"
           }
         ],
         "entryFor": [
@@ -43,12 +43,12 @@
         ],
         "reviewedAt": "2026-11-23",
         "sections": {
-          "canDo": "Comprar un complemento y dar de baja los recurrentes desde {{link:addons|Comprar complementos}}.",
+          "canDo": "Comprar un complemento y dar de baja los recurrentes desde {{link:addons|Complementos}}.",
           "expect": "- El resumen muestra el importe y la frecuencia antes de confirmar.\n- Si tu beneficio incluye el complemento, aparece «Gratis por tu beneficio».\n- Dar de baja un destaque recurrente corta el cobro y lo apaga ese mismo día.",
           "howTo": {
             "after": "",
             "steps": [
-              "Entrá a «Comprar complementos».",
+              "Entrá a «Suscripción» y abrí la pestaña «Complementos». Si todavía no tenés ninguna suscripción, la página te pide elegir un plan primero.",
               "Elegí un complemento de la lista.",
               "Elegí la ficha (o la suscripción) a la que se aplica.",
               "Revisá el resumen: muestra el importe y la frecuencia. Si tu beneficio lo incluye, aparece «Gratis por tu beneficio» y podés elegirlo sin pagar.",
@@ -192,18 +192,18 @@
           "publish-requirements",
           "ai-assistants"
         ],
-        "reviewedAt": "2026-11-20",
+        "reviewedAt": "2026-11-23",
         "sections": {
           "canDo": "Tildar los servicios que ofrecés en {{link:section:accommodation:servicios|Servicios y comodidades}} (alojamientos) o en {{link:section:venue:servicios|Servicios del comercio}} y {{link:section:experience:servicios|Servicios de la experiencia}}.",
           "expect": "- En alojamientos el catálogo está agrupado por categorías y cada comodidad tiene su detalle.\n- Un asistente agrega o quita servicios de una categoría por vez (mirá {{article:ai-assistants|cómo conectarlo}}).",
           "howTo": {
             "after": "",
             "steps": [
-              "Abrí el editor de la publicación con «Editar» en su tarjeta.",
+              "Abrí el editor de la publicación con «Editar» en su tarjeta. Si todavía no está publicada, «Editar» está en el menú «Más acciones».",
               "Entrá a «Servicios y comodidades» (en comercios y experiencias, «Servicios»).",
               "Tildá los que ofrecés y destildá los que no. En alojamientos el catálogo está agrupado por categorías.",
               "En alojamientos podés abrir el detalle de cada comodidad para indicar si es de uso privado o compartido y si está disponible todo el año.",
-              "Tocá «Guardar».",
+              "Tocá «Guardar cambios» en la barra que aparece abajo cuando hay cambios. Con «Descartar» volvés a lo que estaba guardado.",
               "También podés pedirle a este asistente que agregue o quite servicios de una categoría."
             ]
           },
@@ -394,7 +394,7 @@
           "publish-requirements",
           "inquiries"
         ],
-        "reviewedAt": "2026-11-20",
+        "reviewedAt": "2026-11-23",
         "sections": {
           "canDo": "Bloquear y liberar fechas, y conectar calendarios externos, desde {{link:section:accommodation:calendario|Calendario}}.",
           "expect": "- Las fechas bloqueadas no aparecen disponibles en las búsquedas.\n- Un calendario conectado muestra su estado y se puede sincronizar a mano o desconectar.\n- El calendario y la sincronización dependen de tu plan: compará {{link:plans:accommodation|los planes para alojamientos}}.",
@@ -557,7 +557,7 @@
           "photos",
           "pause-resume"
         ],
-        "reviewedAt": "2026-11-20",
+        "reviewedAt": "2026-11-23",
         "sections": {
           "canDo": "Crear una publicación nueva del rubro que elijas: {{link:create:accommodation|publicar un alojamiento}}, {{link:create:venue|publicar un comercio}} o {{link:create:experience|publicar una experiencia}}.\n\nUn asistente de IA conectado también puede crear el borrador por vos.",
           "expect": "- La publicación nace como borrador y no se ve en el sitio hasta que la publiques.\n- Si ya tenés un borrador, el sitio te ofrece retomarlo antes de crear otro.\n- Después completás las secciones en el editor; las fotos se cargan como explica {{article:photos|la ayuda de fotos}}.",
@@ -567,7 +567,7 @@
               "Entrá a la página de publicar del rubro que querés: alojamiento, comer y salir o experiencias.",
               "Completá el formulario de alta con los datos básicos. Si ya tenés un borrador, el sitio te ofrece retomarlo antes de crear otro.",
               "La publicación se crea como borrador: todavía no se ve en el sitio.",
-              "Abrila desde «Mis propiedades» o «Mi comercio» con «Editar» y completá sus secciones. El editor marca lo que falta.",
+              "Abrila desde «Mis propiedades» o «Mi comercio»: en un borrador, «Editar» está en el menú «Más acciones» de la tarjeta. Completá sus secciones. El editor marca lo que falta.",
               "Cuando cumpla los requisitos, tocá «Publicar» en su tarjeta."
             ]
           },
@@ -639,7 +639,7 @@
             "after": "",
             "steps": [
               "Entrá a «Mis propiedades» y buscá la tarjeta de la propiedad.",
-              "Tocá «Eliminar». El sitio te pide confirmar y, si la publicación tiene complementos, te muestra cuáles se pierden con ella, sin devolución.",
+              "Abrí el menú «Más acciones» de la tarjeta (el botón de los tres puntos) y elegí «Eliminar». El sitio te pide confirmar y, si la publicación tiene complementos, te muestra cuáles se pierden con ella, sin devolución.",
               "Confirmá con «Sí, eliminar». El borrado es definitivo: el contenido se borra y la publicación no vuelve.",
               "Si lo que querés es sacarla del sitio por un tiempo, es mejor despublicarla (mirá «Pausar y volver a publicar»).",
               "En comercios y experiencias el portal no ofrece el botón «Eliminar»: contactanos y lo vemos."
@@ -936,7 +936,7 @@
             "after": "",
             "steps": [
               "Entrá a «Mis propiedades» y buscá la tarjeta de la propiedad publicada.",
-              "Tocá «Despublicar» y confirmá: la propiedad deja de aparecer en el sitio.",
+              "Abrí el menú «Más acciones» de la tarjeta (el botón de los tres puntos), elegí «Despublicar» y confirmá con «Sí, despublicar»: la propiedad deja de aparecer en el sitio.",
               "Despublicar no frena la prueba gratis si la tenés en curso, y los destaques recurrentes se siguen cobrando hasta que los des de baja en «Complementos».",
               "Para volver a publicarla, tocá «Publicar» en la misma tarjeta (queda como borrador) y confirmá. Tiene que cumplir los requisitos de publicación.",
               "Si el sitio la despublicó por tu plan, la tarjeta dice «Sin publicar por tu plan» y el botón es «Publicar de nuevo»; puede llevarte a elegir un plan.",
@@ -1009,14 +1009,14 @@
           "create-listing",
           "change-plan"
         ],
-        "reviewedAt": "2026-11-22",
+        "reviewedAt": "2026-11-23",
         "sections": {
           "canDo": "Cargar la foto principal y sumar fotos a la galería desde la sección «Fotos» del editor:\n{{link:section:accommodation:fotos|Fotos de tu alojamiento}}, {{link:section:venue:fotos|Fotos de tu comercio}} o {{link:section:experience:fotos|Fotos de tu experiencia}}.\n\nEn alojamientos también podés reordenar la galería y elegir la portada.",
           "expect": "- Cada cambio se guarda al instante, sin un botón de guardar.\n- La foto principal es obligatoria para publicar: sin ella, {{article:publish-requirements|los requisitos para publicar}} no se cumplen.\n- Fotos que entran en la galería de un alojamiento: {{limit:max_photos_per_accommodation:accommodation}}. El editor te avisa cuántas te quedan.",
           "howTo": {
             "after": "",
             "steps": [
-              "Abrí el editor de la publicación: desde «Mis propiedades» (alojamientos) o «Mi comercio» (comercios y experiencias), tocá «Editar» en su tarjeta.",
+              "Abrí el editor de la publicación: desde «Mis propiedades» (alojamientos) o «Mi comercio» (comercios y experiencias), tocá «Editar» en su tarjeta. Si todavía no está publicada, «Editar» está en el menú «Más acciones».",
               "Entrá a la sección «Fotos».",
               "Cargá la imagen principal: arrastrá una imagen o hacé clic para elegirla. Es obligatoria para poder publicar.",
               "Sumá más fotos a la galería. Cada archivo puede ser JPG, PNG, WebP o HEIC y pesar hasta 10 MB.",

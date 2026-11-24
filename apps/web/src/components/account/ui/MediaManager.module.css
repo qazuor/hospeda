@@ -1,0 +1,194 @@
+/* MediaManager.module.css — the photo editors' skin (HOS-2489).
+   Tokens only; the grid adapts to its container, never to the viewport. */
+
+.dropzone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    inline-size: 100%;
+    border: 2px dashed var(--control-border);
+    border-radius: var(--radius-surface);
+    background: var(--core-card);
+    color: var(--core-muted-foreground);
+    font: var(--app-ui);
+    text-align: center;
+    cursor: pointer;
+    transition:
+        border-color var(--duration-fast) ease-out,
+        background-color var(--duration-fast) ease-out,
+        color var(--duration-fast) ease-out;
+}
+
+.dropzone:hover:not(:disabled),
+.dropzoneOver {
+    border-color: var(--action-primary);
+    background: var(--muted);
+    color: var(--core-foreground);
+}
+
+.dropzone:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+}
+
+.dropzone:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+
+.dropzoneSlot {
+    min-block-size: calc(var(--control-h-lg) * 3);
+    padding: var(--space-6) var(--space-4);
+}
+
+.dropzoneTile {
+    aspect-ratio: 4 / 3;
+    min-block-size: var(--control-h-lg);
+    padding: var(--space-2);
+}
+
+.dropzoneIcon {
+    display: inline-flex;
+    color: var(--brand-primary-link);
+}
+
+.dropzoneTitle {
+    color: var(--core-foreground);
+    font-weight: var(--app-card-title-weight);
+}
+
+.dropzoneHint {
+    font: var(--app-meta);
+}
+
+.status {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    margin-block: var(--space-2);
+}
+
+.statusLabel {
+    font: var(--app-meta);
+    color: var(--core-muted-foreground);
+}
+
+.progress {
+    inline-size: 100%;
+    block-size: var(--space-1);
+    border: 0;
+    border-radius: var(--radius-pill);
+    background: var(--muted);
+    overflow: hidden;
+    appearance: none;
+}
+
+.progress::-webkit-progress-bar {
+    background: var(--muted);
+}
+
+.progress::-webkit-progress-value {
+    background: var(--action-primary);
+}
+
+.progress::-moz-progress-bar {
+    background: var(--action-primary);
+}
+
+.gridHost {
+    container-type: inline-size;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-3);
+}
+
+@container (width >= 30rem) {
+    .grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@container (width >= 44rem) {
+    .grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: var(--space-4);
+    }
+}
+
+.tile {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    min-inline-size: 0;
+}
+
+.tileFeatured {
+    max-inline-size: 28rem;
+}
+
+.tileDragging {
+    z-index: 2;
+    opacity: 0.85;
+    box-shadow: var(--shadow-overlay);
+    border-radius: var(--radius-surface);
+}
+
+.frame {
+    position: relative;
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-surface);
+    background: var(--muted);
+}
+
+.image {
+    display: block;
+    inline-size: 100%;
+    block-size: 100%;
+    object-fit: cover;
+}
+
+.actions {
+    position: absolute;
+    inset-block-start: var(--space-2);
+    inset-inline-end: var(--space-2);
+    display: flex;
+    gap: var(--space-1);
+}
+
+.badge {
+    position: absolute;
+    inset-block-end: var(--space-2);
+    inset-inline-start: var(--space-2);
+    max-inline-size: calc(100% - var(--space-4));
+}
+
+.toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .dropzone {
+        transition: none;
+    }
+}
+
+/* A tile whose body opens a panel (e.g. the photo text editor) takes the
+   whole grid row, so the panel gets real width instead of one column. The
+   body marks itself with `data-tile-expanded="true"`. */
+.tile:has([data-tile-expanded="true"]) {
+    grid-column: 1 / -1;
+}
+
+.tile:has([data-tile-expanded="true"]) > .frame {
+    max-inline-size: 16rem;
+}

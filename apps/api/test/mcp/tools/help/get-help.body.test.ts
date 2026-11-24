@@ -158,11 +158,11 @@ describe('get_help body (HOS-2410 PR-12)', () => {
         });
 
         it('turns a link token into its label and appends its page to the links', async () => {
-            // Act: addons writes {{link:addons|Comprar complementos}}.
+            // Act: addons writes {{link:addons|Complementos}}.
             const result = await answer({ topicId: 'addons' });
 
             // Assert
-            expect(result.topics[0]?.sections?.canDo).toContain('desde Comprar complementos.');
+            expect(result.topics[0]?.sections?.canDo).toContain('desde Complementos.');
             expect(result.topics[0]?.links.map((link) => link.url)).toContain(
                 `${site()}/es/mi-cuenta/complementos/`
             );

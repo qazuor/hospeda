@@ -25,26 +25,3 @@
     background-color: var(--core-background);
     color: var(--core-foreground);
 }
-
-.saveButton {
-    font-family: var(--font-sans);
-    font-size: 0.875rem;
-    border-radius: var(--radius-md, 0.5rem);
-    padding: 0.5rem 0.875rem;
-    cursor: pointer;
-    border: 1px solid var(--border);
-    background-color: var(--core-background);
-    color: var(--core-foreground);
-}
-
-.saveButton:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
-
-.message {
-    font-family: var(--font-sans);
-    font-size: 0.875rem;
-    color: var(--core-muted-foreground);
-    margin: 0;
-}

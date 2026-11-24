@@ -10,16 +10,17 @@
  *
  * Placed on the SAME page as the photo section rather than a new nav item: both
  * are "media that shows up on the photos page" from the owner's point of view.
- * It uses a DIFFERENT persistence model than the photo section on purpose, so
- * it renders its own small Save button rather than `ActionBar`, which would
- * misleadingly imply one shared save action for the whole page.
+ * Its persistence differs from the photos' (the list travels in the entity
+ * PATCH), but since HOS-2489 it follows the page's `auto` save model like the
+ * photos do: no Save button or action bar of its own, a save on blur / Enter /
+ * remove, reported to the shell's auto-save chip (see `use-video-section.ts`).
  */
 
+import { AddIcon, DeleteIcon } from '@repo/icons';
 import { useId } from 'react';
-import { TextField } from '@/components/ui/TextField';
+import { Alert, Button, Field, TextInput } from '@/components/account/ui';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import styles from '../../host/editor/PhotoSection.module.css';
 import fieldStyles from './editor-fields.module.css';
 import {
     useVideoSection,
@@ -28,6 +29,7 @@ import {
     type VideoRow,
     type VideoSaveResult
 } from './use-video-section';
+import styles from './VideoSection.module.css';
 import {
     getVideoSectionCopy,
     type VideoCopyScope,
@@ -61,6 +63,7 @@ function VideoRowField({
     row,
     disabled,
     onChange,
+    onCommit,
     onRemove
 }: {
     readonly locale: SupportedLocale;
@@ -70,61 +73,67 @@ function VideoRowField({
     readonly row: VideoRow;
     readonly disabled: boolean;
     readonly onChange: (field: 'url' | 'caption', value: string) => void;
+    readonly onCommit: () => void;
     readonly onRemove: () => void;
 }) {
     const { t } = createTranslations(locale);
 
     return (
-        <div className={styles.videoRow}>
-            <div className={styles.videoFieldGrid}>
-                <div className={styles.formGroup}>
-                    <TextField
-                        prefix={fieldPrefix}
-                        name={`video-${index}-url`}
-                        label={t(copy.urlLabel.key, copy.urlLabel.fallback)}
-                        labelClassName={styles.formLabel}
-                        className={styles.formInput}
+        <li className={styles.row}>
+            <div className={styles.fields}>
+                <Field
+                    locale={locale}
+                    label={t(copy.urlLabel.key, copy.urlLabel.fallback)}
+                    idParts={{ prefix: fieldPrefix, name: `video-${index}-url` }}
+                >
+                    <TextInput
                         type="url"
+                        inputMode="url"
                         value={row.url}
                         placeholder={t(copy.urlPlaceholder.key, copy.urlPlaceholder.fallback)}
                         disabled={disabled}
                         onChange={(e) => onChange('url', e.target.value)}
+                        onBlur={onCommit}
                     />
-                </div>
-                <div className={styles.formGroup}>
-                    <TextField
-                        prefix={fieldPrefix}
-                        name={`video-${index}-caption`}
-                        label={t(copy.captionLabel.key, copy.captionLabel.fallback)}
-                        labelClassName={styles.formLabel}
-                        className={styles.formInput}
+                </Field>
+                <Field
+                    locale={locale}
+                    label={t(copy.captionLabel.key, copy.captionLabel.fallback)}
+                    idParts={{ prefix: fieldPrefix, name: `video-${index}-caption` }}
+                >
+                    <TextInput
                         type="text"
                         value={row.caption}
                         disabled={disabled}
                         onChange={(e) => onChange('caption', e.target.value)}
+                        onBlur={onCommit}
                     />
-                </div>
+                </Field>
             </div>
-            <div className={styles.videoRowActions}>
-                <button
-                    type="button"
-                    className={styles.videoRemoveButton}
-                    onClick={onRemove}
-                    disabled={disabled}
-                    aria-label={t(copy.removeAria.key, copy.removeAria.fallback, {
-                        index: index + 1
-                    })}
-                >
-                    ✕
-                </button>
-            </div>
-        </div>
+            <Button
+                variant="danger-ghost"
+                size="lg"
+                iconOnly
+                className={styles.remove}
+                onClick={onRemove}
+                disabled={disabled}
+                aria-label={t(copy.removeAria.key, copy.removeAria.fallback, {
+                    index: index + 1
+                })}
+            >
+                <DeleteIcon
+                    size="sm"
+                    aria-hidden="true"
+                />
+            </Button>
+        </li>
     );
 }
 
 /**
- * Video widget: a list of embeddable video links, saved independently of the
- * photo gallery above it on the same page.
+ * Video widget: a list of embeddable video links on the «Fotos» page, saved
+ * on its own (no Save button: the page is an `auto` section, HOS-2489) and
+ * reported to the shell's auto-save chip.
  */
 export function VideoSection({
     locale,
@@ -135,82 +144,81 @@ export function VideoSection({
 }: VideoSectionProps) {
     const { t } = createTranslations(locale);
     const copy = getVideoSectionCopy({ scope: copyScope });
-    const { rows, isDirty, isSaving, formError, addRow, removeRow, setRowField, handleSubmit } =
+    const { rows, isSaving, formError, addRow, removeRow, setRowField, commit, handleSubmit } =
         useVideoSection({ locale, initialVideos, save, copyScope, maxVideos });
     const titleId = useId();
     const atCap = maxVideos !== undefined && rows.length >= maxVideos;
 
     return (
-        <section
-            className={fieldStyles.section}
-            aria-labelledby={titleId}
-            style={{ marginTop: '2rem' }}
-        >
-            <form
-                onSubmit={handleSubmit}
-                noValidate
+        <div className={styles.root}>
+            <section
+                className={fieldStyles.section}
+                aria-labelledby={titleId}
             >
-                <h3
-                    id={titleId}
-                    className={styles.sectionTitle}
+                <form
+                    onSubmit={handleSubmit}
+                    noValidate
+                    className={styles.form}
                 >
-                    {t(copy.sectionTitle.key, copy.sectionTitle.fallback)}
-                </h3>
-                <p className={styles.sectionDescription}>
-                    {t(copy.sectionDescription.key, copy.sectionDescription.fallback)}
-                </p>
-
-                {rows.length === 0 && (
-                    <p className={styles.sectionDescription}>
-                        {t(copy.empty.key, copy.empty.fallback)}
+                    <h3
+                        id={titleId}
+                        className={styles.title}
+                    >
+                        {t(copy.sectionTitle.key, copy.sectionTitle.fallback)}
+                    </h3>
+                    <p className={styles.description}>
+                        {t(copy.sectionDescription.key, copy.sectionDescription.fallback)}
                     </p>
-                )}
 
-                {rows.map((row, index) => (
-                    <VideoRowField
-                        // biome-ignore lint/suspicious/noArrayIndexKey: rows have no stable id until saved
-                        key={index}
-                        locale={locale}
-                        copy={copy}
-                        fieldPrefix={FIELD_PREFIX[copyScope]}
-                        index={index}
-                        row={row}
-                        disabled={isSaving}
-                        onChange={(field, value) => setRowField(index, field, value)}
-                        onRemove={() => removeRow(index)}
-                    />
-                ))}
+                    {rows.length === 0 ? (
+                        <p className={styles.description}>
+                            {t(copy.empty.key, copy.empty.fallback)}
+                        </p>
+                    ) : (
+                        <ul className={styles.list}>
+                            {rows.map((row, index) => (
+                                <VideoRowField
+                                    // biome-ignore lint/suspicious/noArrayIndexKey: rows have no stable id until saved
+                                    key={index}
+                                    locale={locale}
+                                    copy={copy}
+                                    fieldPrefix={FIELD_PREFIX[copyScope]}
+                                    index={index}
+                                    row={row}
+                                    disabled={isSaving}
+                                    onChange={(field, value) => setRowField(index, field, value)}
+                                    onCommit={commit}
+                                    onRemove={() => removeRow(index)}
+                                />
+                            ))}
+                        </ul>
+                    )}
 
-                {formError && (
-                    <div
-                        className={styles.error}
-                        role="alert"
-                    >
-                        {formError}
+                    {formError && (
+                        <Alert
+                            tone="danger"
+                            locale={locale}
+                        >
+                            {formError}
+                        </Alert>
+                    )}
+
+                    <div className={styles.actions}>
+                        <Button
+                            variant="secondary"
+                            size="lg"
+                            onClick={addRow}
+                            disabled={isSaving || atCap}
+                        >
+                            <AddIcon
+                                size="sm"
+                                aria-hidden="true"
+                            />
+                            {t(copy.addButton.key, copy.addButton.fallback)}
+                        </Button>
                     </div>
-                )}
-
-                <div className={styles.videoSectionActions}>
-                    <button
-                        type="button"
-                        className={styles.videoAddButton}
-                        onClick={addRow}
-                        disabled={isSaving || atCap}
-                    >
-                        {t(copy.addButton.key, copy.addButton.fallback)}
-                    </button>
-
-                    <button
-                        type="submit"
-                        className={styles.videoSaveButton}
-                        disabled={isSaving || !isDirty}
-                    >
-                        {isSaving
-                            ? t(copy.saving.key, copy.saving.fallback)
-                            : t(copy.saveButton.key, copy.saveButton.fallback)}
-                    </button>
-                </div>
-            </form>
-        </section>
+                </form>
+            </section>
+        </div>
     );
 }

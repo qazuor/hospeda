@@ -7,6 +7,7 @@
  * live in one place.
  */
 
+import type { ConfirmRequest } from '@/components/account/ui/use-confirm';
 import { showConfirmationDialog } from '@/lib/forms/show-confirmation-dialog';
 import type { TranslationFn } from '@/lib/i18n';
 
@@ -27,4 +28,26 @@ export async function confirmPhotoRemoval({ t }: { readonly t: TranslationFn }):
         confirmLabel: t('common.confirmations.removePhoto.confirm', 'Eliminar'),
         cancelLabel: t('common.cancel', 'Cancelar')
     });
+}
+
+/**
+ * The same photo-removal question as a kit `useConfirm` request (HOS-2489).
+ *
+ * The photo editors render the dialog through `useConfirm` inside their own
+ * island; this keeps their copy identical to {@link confirmPhotoRemoval}.
+ *
+ * @param params.t - The caller's translation function.
+ * @returns The request to pass to `useConfirm`'s `confirm`.
+ */
+export function photoRemovalConfirmRequest({ t }: { readonly t: TranslationFn }): ConfirmRequest {
+    return {
+        title: t('common.confirmations.removePhoto.title', 'Eliminar foto'),
+        description: t(
+            'common.confirmations.removePhoto.message',
+            '¿Eliminar esta foto? Esta acción no se puede deshacer.'
+        ),
+        confirmLabel: t('common.confirmations.removePhoto.confirm', 'Eliminar'),
+        cancelLabel: t('common.cancel', 'Cancelar'),
+        tone: 'destructive'
+    };
 }

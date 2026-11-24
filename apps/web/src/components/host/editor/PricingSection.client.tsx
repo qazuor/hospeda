@@ -1,16 +1,20 @@
 /**
  * @file PricingSection.client.tsx
  * @description Form section for accommodation pricing: basePrice (editable)
- * and currency (static ARS indicator — see BETA-137).
- * Uses native HTML form elements.
+ * with a fixed «ARS» addon (BETA-137: multi-currency is not implemented, so
+ * the currency is shown, never chosen). Kit `Section` + `Field` + `InputGroup`
+ * since HOS-2503; the field id is unchanged.
  */
 
-import { TextField } from '@/components/ui/TextField';
+import type { JSX } from 'react';
+import { Field } from '@/components/account/ui/Field';
+import { InputGroup } from '@/components/account/ui/InputGroup';
+import { Section } from '@/components/account/ui/Section';
 import type { AccommodationEditData } from '@/lib/api/types';
+import { sectionHelpId } from '@/lib/help/section-help-id';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { ACCOMMODATION_FIELD_PREFIX } from './field-ids';
-import styles from './PricingSection.module.css';
 
 /** Props for PricingSection. */
 export interface PricingSectionProps {
@@ -25,69 +29,54 @@ export interface PricingSectionProps {
 
 /**
  * Pricing form section.
- * Renders an editable basePrice (number) input and a static, read-only
- * currency indicator (BETA-137: multi-currency isn't implemented, so the
- * old ARS/USD select is hidden until it ships).
+ *
+ * The «ARS» addon is `aria-hidden` (kit rule), so the currency is also said in
+ * words, as the field hint.
+ *
+ * @param props - See {@link PricingSectionProps}.
+ * @returns One kit Section.
  */
-export function PricingSection({ locale, data, errors, onFieldChange }: PricingSectionProps) {
+export function PricingSection({
+    locale,
+    data,
+    errors,
+    onFieldChange
+}: PricingSectionProps): JSX.Element {
     const { t } = createTranslations(locale);
 
     return (
-        <fieldset className={styles.section}>
-            <legend className={styles.sectionTitle}>
-                {t('host.properties.editor.section.pricing', 'Precio')}
-            </legend>
-
-            <div className={styles.row}>
-                <div className={styles.field}>
-                    <TextField
-                        prefix={ACCOMMODATION_FIELD_PREFIX}
-                        name="basePrice"
-                        label={t('host.properties.editor.field.price', 'Precio por noche')}
-                        labelClassName={styles.fieldLabel}
-                        className={styles.fieldInput}
-                        error={errors.basePrice}
-                        type="number"
-                        value={data.basePrice ?? ''}
-                        min={0}
-                        // Prices are whole ARS integers — any positive integer must
-                        // save. `step={100}` made native browser validation reject
-                        // any current value that wasn't already a multiple of 100
-                        // (or had decimals), silently blocking "Guardar" (BETA-179).
-                        step={1}
-                        // H-111: whole pesos, no cents — `inputMode="numeric"` hints
-                        // mobile keyboards to skip the decimal-point key. `step={1}`
-                        // above is what actually blocks a decimal value (native
-                        // `stepMismatch`); this only steers input toward the same rule.
-                        inputMode="numeric"
-                        onChange={(e) =>
-                            onFieldChange(
-                                'basePrice',
-                                e.target.value === '' ? null : Number(e.target.value)
-                            )
-                        }
-                    />
-                </div>
-
-                <div className={styles.field}>
-                    <span className={styles.fieldLabel}>
-                        {t('host.properties.editor.field.currency', 'Moneda')}
-                    </span>
-                    {/*
-                     * BETA-137: multi-currency is NOT implemented yet, so the
-                     * currency SELECT (ARS/USD) is hidden — hosts cannot change
-                     * it. This is a static, read-only indicator instead, kept
-                     * so the two-column .row layout stays intact. Re-introduce
-                     * the interactive select once multi-currency ships.
-                     */}
-                    <p
-                        id="acc-currency-static"
-                        className={styles.currencyStatic}
-                    >
-                        {t('host.properties.editor.field.currencyFixedArs', 'ARS — Peso argentino')}
-                    </p>
-                </div>
-            </div>
-        </fieldset>
+        <Section
+            id="editor-pricing"
+            title={t('host.properties.editor.section.pricing', 'Precio')}
+            helpId={sectionHelpId({ vertical: 'accommodation', slug: 'capacidad-precio' })}
+        >
+            <Field
+                locale={locale}
+                idParts={{ prefix: ACCOMMODATION_FIELD_PREFIX, name: 'basePrice' }}
+                label={t('host.properties.editor.field.price', 'Precio por noche')}
+                hint={t('host.properties.editor.field.currencyFixedArs', 'ARS — Peso argentino')}
+                error={errors.basePrice}
+            >
+                <InputGroup
+                    suffix="ARS"
+                    type="number"
+                    value={data.basePrice ?? ''}
+                    min={0}
+                    // Prices are whole ARS integers — any positive integer must
+                    // save. `step={100}` made native browser validation reject
+                    // any value that was not a multiple of 100 (BETA-179).
+                    step={1}
+                    // H-111: whole pesos, no cents. `step={1}` is what blocks a
+                    // decimal value; this only steers mobile keyboards.
+                    inputMode="numeric"
+                    onChange={(e) =>
+                        onFieldChange(
+                            'basePrice',
+                            e.target.value === '' ? null : Number(e.target.value)
+                        )
+                    }
+                />
+            </Field>
+        </Section>
     );
 }

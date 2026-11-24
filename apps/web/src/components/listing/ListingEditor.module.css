@@ -40,18 +40,3 @@
    the way down — acceptable because the post and event editors have shipped it
    that way — and in exchange every button gains a `:focus-visible` outline the
    rules removed here never had. */
-
-/* Form-level error banner. Duplicated from `editor-fields.module.css` rather
-   than imported: this is the only rule the orchestrator shares with the
-   sections, and importing a second module here for one class would make the
-   form shell depend on the field layer it deliberately does not use. */
-.error {
-    margin: 0;
-    padding: var(--space-3) var(--space-4);
-    border-radius: var(--radius-md, 0.625rem);
-    border: 1px solid transparent;
-    font-size: var(--text-body-sm, 0.9375rem);
-    background: var(--destructive-a15, rgba(185, 28, 28, 0.12));
-    border-color: var(--destructive-a35, rgba(185, 28, 28, 0.28));
-    color: var(--destructive, #b91c1c);
-}

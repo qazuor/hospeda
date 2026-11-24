@@ -92,28 +92,22 @@ const TAB_FALLBACK: Record<string, string> = {
     qr: 'Mi QR'
 };
 
-// Count pills (HOS-2505): one-row reads on every tab, so the counts do not
-// appear and vanish as the provider moves between tabs. A failed count is
-// simply not shown — it never blocks the page.
+// Count pills (HOS-2505): read on every tab, so the counts do not appear and
+// vanish as the provider moves between tabs. Owner decision 22 (Mi cuenta UI
+// epic): ONE aggregated read instead of a one-row list read per pill. A failed
+// count (the whole read, or a `null` for one source) is simply not shown — it
+// never blocks the page.
 const tabCounts: Partial<Record<string, { count: number; countLabel: string }>> = {};
 if (canShowTabs) {
-    const countCookie = Astro.request.headers.get('cookie') ?? undefined;
-    const [pendingCount, reviewsCount] = await Promise.all([
-        hostTradesApi.listOwnUsages({
-            status: 'PENDING',
-            declaredBy: 'HOST',
-            page: 1,
-            pageSize: 1,
-            cookieHeader: countCookie
-        }),
-        hostTradesApi.listOwnReviews({ page: 1, pageSize: 1, cookieHeader: countCookie })
-    ]);
-    if (pendingCount.ok) {
-        const count = pendingCount.data.pagination.total;
+    const counts = await hostTradesApi.tabCounts({
+        cookieHeader: Astro.request.headers.get('cookie') ?? undefined
+    });
+    if (counts.ok && counts.data.pendingUsages !== null) {
+        const count = counts.data.pendingUsages;
         tabCounts.usos = { count, countLabel: t('account.provider.kit.pendingCount', undefined, { count }) };
     }
-    if (reviewsCount.ok) {
-        const count = reviewsCount.data.pagination.total;
+    if (counts.ok && counts.data.reviews !== null) {
+        const count = counts.data.reviews;
         tabCounts.valoraciones = { count, countLabel: t('account.provider.kit.reviewsCount', undefined, { count }) };
     }
 }

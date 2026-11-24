@@ -30,6 +30,7 @@ import {
 import { PartnerService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { deletePartnerLogoOrphans } from '../../../services/partner-presence/partner-logo-orphan-cleanup';
 import { readOwnerPartnerPresence } from '../../../services/partner-presence/partner-presence-read.service';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
@@ -99,7 +100,16 @@ export async function handleUpdateMyPartner(ctx: Context, body: unknown) {
         throw new ServiceError(result.error.code, result.error.message);
     }
 
-    return { partner: result.data?.partner ?? null };
+    const partner = result.data?.partner ?? null;
+    // Decision 16: a pending logo replaced by this submission.
+    if (partner && result.data) {
+        await deletePartnerLogoOrphans({
+            partnerId: partner.id,
+            urls: result.data.discardedLogoUrls
+        });
+    }
+
+    return { partner };
 }
 
 /**

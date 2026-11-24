@@ -22,10 +22,15 @@ import {
     TouristAudienceEnumSchema
 } from '@repo/schemas';
 import type { SQL } from 'drizzle-orm';
-import { and, gte, inArray, isNull, lte, or, sql } from 'drizzle-orm';
+import { and, gte, isNull, lte, or, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
 import type { Actor, ServiceConfig, ServiceContext, ServiceOutput } from '../../types';
+import {
+    buildTouristAudienceCondition,
+    type OwnerPromotionWithAccommodationSlug,
+    withAccommodationSlugs
+} from './ownerPromotion.exclusive-deals';
 import { generateOwnerPromotionSlug } from './ownerPromotion.helpers';
 import {
     emitOwnerPromotionLifecycleEvent,
@@ -139,15 +144,6 @@ export class OwnerPromotionService extends BaseCrudService<
                 or(isNull(ownerPromotions.validUntil), gte(ownerPromotions.validUntil, now))
             ) ?? sql`1=1`
         );
-    }
-
-    /**
-     * Builds the SQL condition that scopes results to the given tourist
-     * audience tiers (HOS-21 D1). `scope` is additive — pass `['plus', 'vip']`
-     * for a vip caller so they see both tiers, or `['plus']` alone for plus.
-     */
-    private buildTouristAudienceCondition(scope: TouristAudienceEnum[]): SQL {
-        return inArray(ownerPromotions.touristAudience, scope);
     }
 
     protected _canCreate(actor: Actor, data: OwnerPromotionCreateInput): void {
@@ -428,10 +424,9 @@ export class OwnerPromotionService extends BaseCrudService<
     /**
      * Returns the gated exclusive-deals listing for a tourist (HOS-21).
      *
-     * This is a NEW, separate read path — it does NOT modify `_executeSearch`
-     * / `_executeCount`, which remain exactly as-is for the existing ungated
-     * public `list.ts` route (the per-accommodation `PromotionBanner` use
-     * case, explicitly out of scope for this feature).
+     * A separate read path: `_executeSearch` / `_executeCount` stay as-is for
+     * the ungated public `list.ts` route (`PromotionBanner`). Each deal carries
+     * its public `accommodationSlug` (owner decision 17).
      *
      * `audienceScope` is a plain function parameter, never part of the
      * Zod-validated search `params`, because it MUST be computed by the
@@ -440,8 +435,7 @@ export class OwnerPromotionService extends BaseCrudService<
      * request VIP-tier deals by supplying a query parameter — passing an
      * untrusted scope here would be a broken-access-control bug.
      *
-     * Reuses the same active-window / deletedAt / ACTIVE
-     * filtering as the generic public search path, plus the audience scope.
+     * Same active-window / deletedAt / ACTIVE filtering as the public search.
      *
      * @param actor - The actor performing the read (public-view permission).
      * @param params - Pagination and optional `accommodationId` filter.
@@ -454,7 +448,7 @@ export class OwnerPromotionService extends BaseCrudService<
         params: Pick<OwnerPromotionSearchInput, 'page' | 'pageSize' | 'accommodationId'>,
         audienceScope: TouristAudienceEnum[],
         ctx?: ServiceContext
-    ): Promise<ServiceOutput<{ items: OwnerPromotion[]; total: number }>> {
+    ): Promise<ServiceOutput<{ items: OwnerPromotionWithAccommodationSlug[]; total: number }>> {
         const resolvedCtx: ServiceContext = { hookState: {}, ...ctx };
         return this.runWithLoggingAndValidation({
             methodName: 'findExclusiveDeals',
@@ -481,9 +475,9 @@ export class OwnerPromotionService extends BaseCrudService<
 
                 const now = new Date();
                 const windowCondition = this.buildActiveWindowCondition(now);
-                const audienceCondition = this.buildTouristAudienceCondition(
-                    validated.audienceScope
-                );
+                const audienceCondition = buildTouristAudienceCondition({
+                    scope: validated.audienceScope
+                });
                 const visibilityCondition = buildAccommodationVisibilityCondition();
                 const conditions = [windowCondition, audienceCondition, visibilityCondition];
                 if (validated.accommodationId) {
@@ -491,7 +485,9 @@ export class OwnerPromotionService extends BaseCrudService<
                     conditions.push(accommodationTargetCondition(validated.accommodationId));
                 }
 
-                return this.model.findAll(publicFilter, { page, pageSize }, conditions);
+                const found = this.model.findAll(publicFilter, { page, pageSize }, conditions);
+                const { accommodationModel } = this;
+                return withAccommodationSlugs({ found, accommodationModel });
             }
         });
     }

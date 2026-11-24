@@ -1,12 +1,13 @@
 /**
  * @file VenueEventEntryCard.client.tsx
- * @description One row of `VenueEventsManager` — a single agenda
- * entry's fields (HOS-1042).
+ * @description The fields of one agenda entry of `VenueEventsManager`
+ * (HOS-1042). Since HOS-2490 it is one row of the kit `Repeater`: the row
+ * chrome (label, move, remove) belongs to the Repeater, and every field here
+ * carries a visible kit `Field` label.
  *
- * Split out of the manager to keep that file under the repo's 500-line cap.
  * Purely controlled: every field reads from `entry` and reports changes
- * through `onPatch`/`onMove`/`onRemove`/`onSetRecurrence`; it holds no state
- * of its own and knows nothing about persistence.
+ * through `onPatch`/`onSetRecurrence`; it holds no state of its own and knows
+ * nothing about persistence.
  *
  * `onSetRecurrence` (rather than the card calling `onPatch` directly for the
  * radio buttons) is what keeps the "clear the field the new shape does not
@@ -15,7 +16,13 @@
  */
 
 import type { JSX } from 'react';
-import type { TranslationFn } from '@/lib/i18n';
+import { Checkbox } from '@/components/account/ui/Checkbox';
+import { Field } from '@/components/account/ui/Field';
+import { Radio, RadioGroup } from '@/components/account/ui/Radio';
+import { Select } from '@/components/account/ui/Select';
+import { Textarea } from '@/components/account/ui/Textarea';
+import { TextInput } from '@/components/account/ui/TextInput';
+import type { SupportedLocale, TranslationFn } from '@/lib/i18n';
 import {
     type EventDraft,
     isTicketUrlValid,
@@ -24,255 +31,201 @@ import {
 } from '@/lib/venue/venue-event-draft';
 import styles from './VenueEventsManager.module.css';
 
+/** Props of {@link VenueEventEntryCard}. */
 export interface VenueEventEntryCardProps {
     readonly entry: EventDraft;
+    /** Index of the entry in the WHOLE agenda (past entries included). */
     readonly index: number;
+    readonly locale: SupportedLocale;
     readonly t: TranslationFn;
     /**
      * The seven weekday names, already localised, indexed the way
      * {@link WEEKDAY_I18N_KEYS} is (`0` = Sunday … `6` = Saturday).
      *
-     * Resolved on the Astro page rather than looked up here — the same pattern,
-     * and the same stated reason, as `AccommodationsListingMap`'s `typeLabels`:
-     * it keeps the island i18n-agnostic for these strings.
-     *
-     * Here that is not only style. The names live under
-     * `venue.detail.openingHours.*`, and `venue.detail` does NOT ship
-     * to the browser: 25 of its 32 keys are named only by `.astro` files
-     * rendering server-side, so declaring the prefix in
-     * `CLIENT_I18N_KEY_PREFIXES` would push 1,205 B brotli of never-named
-     * strings into the client dictionary to deliver 303 B of useful ones —
-     * measured, and exactly the shape the two-segment prefix cut exists to
-     * remove. Passing the seven resolved strings costs nothing in the
-     * dictionary and creates no second copy of names the opening-hours section
-     * already owns.
+     * Resolved on the Astro page rather than looked up here: the names live
+     * under `venue.detail.openingHours.*`, and `venue.detail` does NOT ship to
+     * the browser (declaring the prefix client-side would push 1,205 B brotli
+     * of never-named strings into the dictionary to deliver 303 B of useful
+     * ones — measured).
      */
     readonly weekdayLabels: readonly string[];
     readonly onPatch: (index: number, patch: Partial<EventDraft>) => void;
-    readonly onMove: (index: number, delta: number) => void;
-    readonly onRemove: (index: number) => void;
     readonly onSetRecurrence: (index: number, recurrence: 'once' | 'weekly') => void;
 }
 
+/**
+ * One agenda entry's fields.
+ *
+ * @param props - See {@link VenueEventEntryCardProps}.
+ * @returns The fields.
+ */
 export function VenueEventEntryCard({
     entry,
     index,
+    locale,
     t,
     weekdayLabels,
     onPatch,
-    onMove,
-    onRemove,
     onSetRecurrence
 }: VenueEventEntryCardProps): JSX.Element {
     const ticketUrlInvalid = !isTicketUrlValid(entry.ticketUrl);
     return (
-        <fieldset className={styles.card}>
-            <legend className={styles.srOnly}>
-                {entry.title || t('venue.owner.editor.venueEventsManager.newEntry', 'Nuevo evento')}
-            </legend>
-
-            <div className={styles.row}>
-                <input
-                    className={styles.input}
-                    type="text"
+        <div className={styles.fields}>
+            <Field
+                locale={locale}
+                label={t('venue.owner.editor.venueEventsManager.entryTitle', 'Título')}
+            >
+                <TextInput
                     value={entry.title}
                     placeholder={t(
                         'venue.owner.editor.venueEventsManager.titlePlaceholder',
                         'Música en vivo, Happy hour…'
                     )}
-                    aria-label={t('venue.owner.editor.venueEventsManager.entryTitle', 'Título')}
-                    onChange={(event) => {
-                        onPatch(index, { title: event.target.value });
-                    }}
+                    onChange={(event) => onPatch(index, { title: event.target.value })}
                 />
-                <button
-                    type="button"
-                    className={styles.iconButton}
-                    aria-label={t(
-                        'venue.owner.editor.venueEventsManager.moveUp',
-                        'Subir el evento'
-                    )}
-                    onClick={() => {
-                        onMove(index, -1);
-                    }}
-                >
-                    ↑
-                </button>
-                <button
-                    type="button"
-                    className={styles.iconButton}
-                    aria-label={t(
-                        'venue.owner.editor.venueEventsManager.moveDown',
-                        'Bajar el evento'
-                    )}
-                    onClick={() => {
-                        onMove(index, 1);
-                    }}
-                >
-                    ↓
-                </button>
-                <button
-                    type="button"
-                    className={styles.dangerButton}
-                    onClick={() => {
-                        onRemove(index);
-                    }}
-                >
-                    {t('venue.owner.editor.venueEventsManager.removeEntry', 'Quitar')}
-                </button>
-            </div>
+            </Field>
 
-            <textarea
-                className={styles.textarea}
-                value={entry.description}
-                placeholder={t(
-                    'venue.owner.editor.venueEventsManager.descriptionPlaceholder',
-                    'Detalle opcional'
-                )}
-                aria-label={t(
-                    'venue.owner.editor.venueEventsManager.entryDescription',
-                    'Descripción'
-                )}
-                onChange={(event) => {
-                    onPatch(index, { description: event.target.value });
-                }}
-            />
+            <Field
+                locale={locale}
+                label={t('venue.owner.editor.venueEventsManager.entryDescription', 'Descripción')}
+            >
+                <Textarea
+                    value={entry.description}
+                    placeholder={t(
+                        'venue.owner.editor.venueEventsManager.descriptionPlaceholder',
+                        'Detalle opcional'
+                    )}
+                    onChange={(event) => onPatch(index, { description: event.target.value })}
+                />
+            </Field>
 
-            <div className={styles.row}>
-                <input
-                    className={styles.input}
+            <Field
+                locale={locale}
+                label={t(
+                    'venue.owner.editor.venueEventsManager.ticketUrl',
+                    'Link de entradas (opcional)'
+                )}
+                hint={
+                    ticketUrlInvalid
+                        ? undefined
+                        : t(
+                              'venue.owner.editor.venueEventsManager.ticketUrlHelp',
+                              'Si vendés entradas por Passline, Venti u otra, pegá el link acá.'
+                          )
+                }
+                error={
+                    ticketUrlInvalid
+                        ? t(
+                              'venue.owner.editor.venueEventsManager.ticketUrlInvalid',
+                              'El link de entradas tiene que empezar con https:// y no puede llevar usuario ni contraseña.'
+                          )
+                        : undefined
+                }
+            >
+                <TextInput
                     type="url"
                     inputMode="url"
                     value={entry.ticketUrl}
                     placeholder="https://"
-                    aria-label={t(
-                        'venue.owner.editor.venueEventsManager.ticketUrl',
-                        'Link de entradas (opcional)'
-                    )}
-                    aria-invalid={ticketUrlInvalid}
-                    onChange={(event) => {
-                        onPatch(index, { ticketUrl: event.target.value });
-                    }}
+                    onChange={(event) => onPatch(index, { ticketUrl: event.target.value })}
                 />
-            </div>
-            <p
-                className={ticketUrlInvalid ? styles.fieldError : styles.fieldHint}
-                role={ticketUrlInvalid ? 'alert' : undefined}
-            >
-                {ticketUrlInvalid
-                    ? t(
-                          'venue.owner.editor.venueEventsManager.ticketUrlInvalid',
-                          'El link de entradas tiene que empezar con https:// y no puede llevar usuario ni contraseña.'
-                      )
-                    : t(
-                          'venue.owner.editor.venueEventsManager.ticketUrlHelp',
-                          'Si vendés entradas por Passline, Venti u otra, pegá el link acá.'
-                      )}
-            </p>
+            </Field>
 
-            <div className={styles.row}>
-                <label className={styles.radioLabel}>
-                    <input
-                        type="radio"
-                        name={`recurrence-${index}`}
-                        checked={entry.recurrence === 'weekly'}
-                        onChange={() => {
-                            onSetRecurrence(index, 'weekly');
-                        }}
-                    />
-                    {t(
+            <RadioGroup
+                locale={locale}
+                legend={t('venue.owner.editor.venueEventsManager.recurrence', 'Cuándo pasa')}
+                name={`recurrence-${index}`}
+                value={entry.recurrence}
+                onValueChange={(value) =>
+                    onSetRecurrence(index, value === 'once' ? 'once' : 'weekly')
+                }
+            >
+                <Radio
+                    value="weekly"
+                    label={t(
                         'venue.owner.editor.venueEventsManager.recurrenceWeekly',
                         'Todas las semanas'
                     )}
-                </label>
-                <label className={styles.radioLabel}>
-                    <input
-                        type="radio"
-                        name={`recurrence-${index}`}
-                        checked={entry.recurrence === 'once'}
-                        onChange={() => {
-                            onSetRecurrence(index, 'once');
-                        }}
-                    />
-                    {t('venue.owner.editor.venueEventsManager.recurrenceOnce', 'Un solo día')}
-                </label>
-            </div>
+                />
+                <Radio
+                    value="once"
+                    label={t('venue.owner.editor.venueEventsManager.recurrenceOnce', 'Un solo día')}
+                />
+            </RadioGroup>
 
             <div className={styles.row}>
                 {entry.recurrence === 'weekly' ? (
-                    <select
-                        className={styles.input}
-                        value={entry.weekday}
-                        aria-label={t(
+                    <Field
+                        locale={locale}
+                        label={t(
                             'venue.owner.editor.venueEventsManager.weekday',
                             'Día de la semana'
                         )}
-                        onChange={(event) => {
-                            onPatch(index, { weekday: Number(event.target.value) });
-                        }}
                     >
-                        {WEEKDAY_I18N_KEYS.map((dayKey, dayIndex) => (
-                            <option
-                                key={dayKey}
-                                value={dayIndex}
-                            >
-                                {weekdayLabels[dayIndex] ?? dayKey}
-                            </option>
-                        ))}
-                    </select>
+                        <Select
+                            value={entry.weekday}
+                            onChange={(event) =>
+                                onPatch(index, { weekday: Number(event.target.value) })
+                            }
+                        >
+                            {WEEKDAY_I18N_KEYS.map((dayKey, dayIndex) => (
+                                <option
+                                    key={dayKey}
+                                    value={dayIndex}
+                                >
+                                    {weekdayLabels[dayIndex] ?? dayKey}
+                                </option>
+                            ))}
+                        </Select>
+                    </Field>
                 ) : (
-                    <input
-                        className={styles.input}
-                        type="date"
+                    <Field
+                        locale={locale}
                         // Lets the editor focus the date of a freshly duplicated event (HOS-2254).
                         id={`venue-event-date-${index}`}
-                        // A new event cannot be dated in the past (hint; the API enforces it).
-                        min={entry.id ? undefined : todayInVenueZone()}
-                        value={entry.date}
-                        aria-label={t('venue.owner.editor.venueEventsManager.date', 'Fecha')}
-                        onChange={(event) => {
-                            onPatch(index, { date: event.target.value });
-                        }}
-                    />
+                        label={t('venue.owner.editor.venueEventsManager.date', 'Fecha')}
+                    >
+                        <TextInput
+                            type="date"
+                            // A new event cannot be dated in the past (hint; the API enforces it).
+                            min={entry.id ? undefined : todayInVenueZone()}
+                            value={entry.date}
+                            onChange={(event) => onPatch(index, { date: event.target.value })}
+                        />
+                    </Field>
                 )}
 
-                <input
-                    className={styles.timeInput}
-                    type="time"
-                    value={entry.startTime}
-                    aria-label={t(
-                        'venue.owner.editor.venueEventsManager.startTime',
-                        'Hora de inicio'
-                    )}
-                    onChange={(event) => {
-                        onPatch(index, { startTime: event.target.value });
-                    }}
-                />
+                <Field
+                    locale={locale}
+                    label={t('venue.owner.editor.venueEventsManager.startTime', 'Hora de inicio')}
+                >
+                    <TextInput
+                        type="time"
+                        value={entry.startTime}
+                        onChange={(event) => onPatch(index, { startTime: event.target.value })}
+                    />
+                </Field>
 
-                <input
-                    className={styles.timeInput}
-                    type="time"
-                    value={entry.endTime}
-                    aria-label={t(
+                <Field
+                    locale={locale}
+                    label={t(
                         'venue.owner.editor.venueEventsManager.endTime',
                         'Hora de fin (opcional)'
                     )}
-                    onChange={(event) => {
-                        onPatch(index, { endTime: event.target.value });
-                    }}
-                />
-
-                <label className={styles.activeLabel}>
-                    <input
-                        type="checkbox"
-                        checked={entry.isActive}
-                        onChange={(event) => {
-                            onPatch(index, { isActive: event.target.checked });
-                        }}
+                >
+                    <TextInput
+                        type="time"
+                        value={entry.endTime}
+                        onChange={(event) => onPatch(index, { endTime: event.target.value })}
                     />
-                    {t('venue.owner.editor.venueEventsManager.active', 'Activo')}
-                </label>
+                </Field>
             </div>
-        </fieldset>
+
+            <Checkbox
+                label={t('venue.owner.editor.venueEventsManager.active', 'Activo')}
+                checked={entry.isActive}
+                onChange={(event) => onPatch(index, { isActive: event.target.checked })}
+            />
+        </div>
     );
 }

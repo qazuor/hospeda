@@ -5,13 +5,16 @@
  * Reached through `Astro.rewrite()` from threads and editors (see
  * `@/lib/account-not-found`), never linked to directly. The status is set to 404
  * here so crawlers and the browser still see a real "not found".
+ *
+ * HOS-2504: kit `PageHeader` (the page's one h1) and kit `EmptyState` with a
+ * `LinkButton` back to the section the visitor came from, inside the shell.
+ * Named Astro slots (`icon`, `action`) reach the React kit pieces as props.
  * @route /{lang}/mi-cuenta/no-encontrado/
  * @rendering SSR (on-demand, auth-protected)
  */
 
 import AccountLayout from '@/layouts/AccountLayout.astro';
-import AccountSectionCard from '@/components/account/AccountSectionCard.astro';
-import AccountEmptyState from '@/components/account/AccountEmptyState.astro';
+import { EmptyState, LinkButton, PageHeader } from '@/components/account/ui';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -39,14 +42,11 @@ const description = t(
 ---
 
 <AccountLayout locale={locale} title={title} description={description}>
-    <AccountSectionCard>
-        <AccountEmptyState
-            title={title}
-            description={description}
-            ctaHref={buildUrl({ locale, path: target.path })}
-            ctaLabel={t(target.labelKey)}
-        >
-            <AlertCircleIcon slot="icon" size={28} aria-hidden={true} />
-        </AccountEmptyState>
-    </AccountSectionCard>
+    <PageHeader title={title} locale={locale} />
+    <EmptyState title={description}>
+        <AlertCircleIcon slot="icon" size="md" aria-hidden="true" />
+        <LinkButton slot="action" href={buildUrl({ locale, path: target.path })} variant="secondary">
+            {t(target.labelKey)}
+        </LinkButton>
+    </EmptyState>
 </AccountLayout>

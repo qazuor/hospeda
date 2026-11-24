@@ -4,7 +4,7 @@
       "id": "photos",
       "title": "Subir o cambiar las fotos de una publicación",
       "steps": [
-        "Abrí el editor de la publicación: desde «Mis propiedades» (alojamientos) o «Mi comercio» (comercios y experiencias), tocá «Editar» en su tarjeta.",
+        "Abrí el editor de la publicación: desde «Mis propiedades» (alojamientos) o «Mi comercio» (comercios y experiencias), tocá «Editar» en su tarjeta. Si todavía no está publicada, «Editar» está en el menú «Más acciones».",
         "Entrá a la sección «Fotos».",
         "Cargá la imagen principal: arrastrá una imagen o hacé clic para elegirla. Es obligatoria para poder publicar.",
         "Sumá más fotos a la galería. Cada archivo puede ser JPG, PNG, WebP o HEIC y pesar hasta 10 MB.",
@@ -31,7 +31,7 @@
       "id": "photos",
       "title": "Subir o cambiar las fotos de una publicación",
       "steps": [
-        "Abrí el editor de la publicación: desde «Mis propiedades» (alojamientos) o «Mi comercio» (comercios y experiencias), tocá «Editar» en su tarjeta.",
+        "Abrí el editor de la publicación: desde «Mis propiedades» (alojamientos) o «Mi comercio» (comercios y experiencias), tocá «Editar» en su tarjeta. Si todavía no está publicada, «Editar» está en el menú «Más acciones».",
         "Entrá a la sección «Fotos».",
         "Cargá la imagen principal: arrastrá una imagen o hacé clic para elegirla. Es obligatoria para poder publicar.",
         "Sumá más fotos a la galería. Cada archivo puede ser JPG, PNG, WebP o HEIC y pesar hasta 10 MB.",
@@ -50,7 +50,7 @@
       "id": "photos",
       "title": "Subir o cambiar las fotos de una publicación",
       "steps": [
-        "Abrí el editor de la publicación: desde «Mis propiedades» (alojamientos) o «Mi comercio» (comercios y experiencias), tocá «Editar» en su tarjeta.",
+        "Abrí el editor de la publicación: desde «Mis propiedades» (alojamientos) o «Mi comercio» (comercios y experiencias), tocá «Editar» en su tarjeta. Si todavía no está publicada, «Editar» está en el menú «Más acciones».",
         "Entrá a la sección «Fotos».",
         "Cargá la imagen principal: arrastrá una imagen o hacé clic para elegirla. Es obligatoria para poder publicar.",
         "Sumá más fotos a la galería. Cada archivo puede ser JPG, PNG, WebP o HEIC y pesar hasta 10 MB.",
@@ -69,7 +69,7 @@
       "id": "photos",
       "title": "Subir o cambiar las fotos de una publicación",
       "steps": [
-        "Abrí el editor de la publicación: desde «Mis propiedades» (alojamientos) o «Mi comercio» (comercios y experiencias), tocá «Editar» en su tarjeta.",
+        "Abrí el editor de la publicación: desde «Mis propiedades» (alojamientos) o «Mi comercio» (comercios y experiencias), tocá «Editar» en su tarjeta. Si todavía no está publicada, «Editar» está en el menú «Más acciones».",
         "Entrá a la sección «Fotos».",
         "Cargá la imagen principal: arrastrá una imagen o hacé clic para elegirla. Es obligatoria para poder publicar.",
         "Sumá más fotos a la galería. Cada archivo puede ser JPG, PNG, WebP o HEIC y pesar hasta 10 MB.",
@@ -88,7 +88,7 @@
       "id": "photos",
       "title": "Subir o cambiar las fotos de una publicación",
       "steps": [
-        "Abrí el editor de la publicación: desde «Mis propiedades» (alojamientos) o «Mi comercio» (comercios y experiencias), tocá «Editar» en su tarjeta.",
+        "Abrí el editor de la publicación: desde «Mis propiedades» (alojamientos) o «Mi comercio» (comercios y experiencias), tocá «Editar» en su tarjeta. Si todavía no está publicada, «Editar» está en el menú «Más acciones».",
         "Entrá a la sección «Fotos».",
         "Cargá la imagen principal: arrastrá una imagen o hacé clic para elegirla. Es obligatoria para poder publicar.",
         "Sumá más fotos a la galería. Cada archivo puede ser JPG, PNG, WebP o HEIC y pesar hasta 10 MB.",
@@ -107,7 +107,7 @@
         "Entrá a la página de publicar del rubro que querés: alojamiento, comer y salir o experiencias.",
         "Completá el formulario de alta con los datos básicos. Si ya tenés un borrador, el sitio te ofrece retomarlo antes de crear otro.",
         "La publicación se crea como borrador: todavía no se ve en el sitio.",
-        "Abrila desde «Mis propiedades» o «Mi comercio» con «Editar» y completá sus secciones. El editor marca lo que falta.",
+        "Abrila desde «Mis propiedades» o «Mi comercio»: en un borrador, «Editar» está en el menú «Más acciones» de la tarjeta. Completá sus secciones. El editor marca lo que falta.",
         "Cuando cumpla los requisitos, tocá «Publicar» en su tarjeta."
       ],
       "links": [
@@ -136,7 +136,7 @@
         "Entrá a la página de publicar del rubro que querés: alojamiento, comer y salir o experiencias.",
         "Completá el formulario de alta con los datos básicos. Si ya tenés un borrador, el sitio te ofrece retomarlo antes de crear otro.",
         "La publicación se crea como borrador: todavía no se ve en el sitio.",
-        "Abrila desde «Mis propiedades» o «Mi comercio» con «Editar» y completá sus secciones. El editor marca lo que falta.",
+        "Abrila desde «Mis propiedades» o «Mi comercio»: en un borrador, «Editar» está en el menú «Más acciones» de la tarjeta. Completá sus secciones. El editor marca lo que falta.",
         "Cuando cumpla los requisitos, tocá «Publicar» en su tarjeta."
       ],
       "links": [
@@ -157,7 +157,7 @@
         "Entrá a la página de publicar del rubro que querés: alojamiento, comer y salir o experiencias.",
         "Completá el formulario de alta con los datos básicos. Si ya tenés un borrador, el sitio te ofrece retomarlo antes de crear otro.",
         "La publicación se crea como borrador: todavía no se ve en el sitio.",
-        "Abrila desde «Mis propiedades» o «Mi comercio» con «Editar» y completá sus secciones. El editor marca lo que falta.",
+        "Abrila desde «Mis propiedades» o «Mi comercio»: en un borrador, «Editar» está en el menú «Más acciones» de la tarjeta. Completá sus secciones. El editor marca lo que falta.",
         "Cuando cumpla los requisitos, tocá «Publicar» en su tarjeta."
       ],
       "links": [
@@ -178,7 +178,7 @@
         "Entrá a la página de publicar del rubro que querés: alojamiento, comer y salir o experiencias.",
         "Completá el formulario de alta con los datos básicos. Si ya tenés un borrador, el sitio te ofrece retomarlo antes de crear otro.",
         "La publicación se crea como borrador: todavía no se ve en el sitio.",
-        "Abrila desde «Mis propiedades» o «Mi comercio» con «Editar» y completá sus secciones. El editor marca lo que falta.",
+        "Abrila desde «Mis propiedades» o «Mi comercio»: en un borrador, «Editar» está en el menú «Más acciones» de la tarjeta. Completá sus secciones. El editor marca lo que falta.",
         "Cuando cumpla los requisitos, tocá «Publicar» en su tarjeta."
       ],
       "links": [
@@ -199,7 +199,7 @@
         "Entrá a la página de publicar del rubro que querés: alojamiento, comer y salir o experiencias.",
         "Completá el formulario de alta con los datos básicos. Si ya tenés un borrador, el sitio te ofrece retomarlo antes de crear otro.",
         "La publicación se crea como borrador: todavía no se ve en el sitio.",
-        "Abrila desde «Mis propiedades» o «Mi comercio» con «Editar» y completá sus secciones. El editor marca lo que falta.",
+        "Abrila desde «Mis propiedades» o «Mi comercio»: en un borrador, «Editar» está en el menú «Más acciones» de la tarjeta. Completá sus secciones. El editor marca lo que falta.",
         "Cuando cumpla los requisitos, tocá «Publicar» en su tarjeta."
       ],
       "links": [
@@ -348,7 +348,7 @@
       "title": "Pausar y volver a publicar una publicación",
       "steps": [
         "Entrá a «Mis propiedades» y buscá la tarjeta de la propiedad publicada.",
-        "Tocá «Despublicar» y confirmá: la propiedad deja de aparecer en el sitio.",
+        "Abrí el menú «Más acciones» de la tarjeta (el botón de los tres puntos), elegí «Despublicar» y confirmá con «Sí, despublicar»: la propiedad deja de aparecer en el sitio.",
         "Despublicar no frena la prueba gratis si la tenés en curso, y los destaques recurrentes se siguen cobrando hasta que los des de baja en «Complementos».",
         "Para volver a publicarla, tocá «Publicar» en la misma tarjeta (queda como borrador) y confirmá. Tiene que cumplir los requisitos de publicación.",
         "Si el sitio la despublicó por tu plan, la tarjeta dice «Sin publicar por tu plan» y el botón es «Publicar de nuevo»; puede llevarte a elegir un plan.",
@@ -378,7 +378,7 @@
       "title": "Pausar y volver a publicar una publicación",
       "steps": [
         "Entrá a «Mis propiedades» y buscá la tarjeta de la propiedad publicada.",
-        "Tocá «Despublicar» y confirmá: la propiedad deja de aparecer en el sitio.",
+        "Abrí el menú «Más acciones» de la tarjeta (el botón de los tres puntos), elegí «Despublicar» y confirmá con «Sí, despublicar»: la propiedad deja de aparecer en el sitio.",
         "Despublicar no frena la prueba gratis si la tenés en curso, y los destaques recurrentes se siguen cobrando hasta que los des de baja en «Complementos».",
         "Para volver a publicarla, tocá «Publicar» en la misma tarjeta (queda como borrador) y confirmá. Tiene que cumplir los requisitos de publicación.",
         "Si el sitio la despublicó por tu plan, la tarjeta dice «Sin publicar por tu plan» y el botón es «Publicar de nuevo»; puede llevarte a elegir un plan.",
@@ -404,7 +404,7 @@
       "title": "Pausar y volver a publicar una publicación",
       "steps": [
         "Entrá a «Mis propiedades» y buscá la tarjeta de la propiedad publicada.",
-        "Tocá «Despublicar» y confirmá: la propiedad deja de aparecer en el sitio.",
+        "Abrí el menú «Más acciones» de la tarjeta (el botón de los tres puntos), elegí «Despublicar» y confirmá con «Sí, despublicar»: la propiedad deja de aparecer en el sitio.",
         "Despublicar no frena la prueba gratis si la tenés en curso, y los destaques recurrentes se siguen cobrando hasta que los des de baja en «Complementos».",
         "Para volver a publicarla, tocá «Publicar» en la misma tarjeta (queda como borrador) y confirmá. Tiene que cumplir los requisitos de publicación.",
         "Si el sitio la despublicó por tu plan, la tarjeta dice «Sin publicar por tu plan» y el botón es «Publicar de nuevo»; puede llevarte a elegir un plan.",
@@ -430,7 +430,7 @@
       "title": "Pausar y volver a publicar una publicación",
       "steps": [
         "Entrá a «Mis propiedades» y buscá la tarjeta de la propiedad publicada.",
-        "Tocá «Despublicar» y confirmá: la propiedad deja de aparecer en el sitio.",
+        "Abrí el menú «Más acciones» de la tarjeta (el botón de los tres puntos), elegí «Despublicar» y confirmá con «Sí, despublicar»: la propiedad deja de aparecer en el sitio.",
         "Despublicar no frena la prueba gratis si la tenés en curso, y los destaques recurrentes se siguen cobrando hasta que los des de baja en «Complementos».",
         "Para volver a publicarla, tocá «Publicar» en la misma tarjeta (queda como borrador) y confirmá. Tiene que cumplir los requisitos de publicación.",
         "Si el sitio la despublicó por tu plan, la tarjeta dice «Sin publicar por tu plan» y el botón es «Publicar de nuevo»; puede llevarte a elegir un plan.",
@@ -456,7 +456,7 @@
       "title": "Pausar y volver a publicar una publicación",
       "steps": [
         "Entrá a «Mis propiedades» y buscá la tarjeta de la propiedad publicada.",
-        "Tocá «Despublicar» y confirmá: la propiedad deja de aparecer en el sitio.",
+        "Abrí el menú «Más acciones» de la tarjeta (el botón de los tres puntos), elegí «Despublicar» y confirmá con «Sí, despublicar»: la propiedad deja de aparecer en el sitio.",
         "Despublicar no frena la prueba gratis si la tenés en curso, y los destaques recurrentes se siguen cobrando hasta que los des de baja en «Complementos».",
         "Para volver a publicarla, tocá «Publicar» en la misma tarjeta (queda como borrador) y confirmá. Tiene que cumplir los requisitos de publicación.",
         "Si el sitio la despublicó por tu plan, la tarjeta dice «Sin publicar por tu plan» y el botón es «Publicar de nuevo»; puede llevarte a elegir un plan.",
@@ -480,7 +480,7 @@
       "title": "Eliminar una publicación",
       "steps": [
         "Entrá a «Mis propiedades» y buscá la tarjeta de la propiedad.",
-        "Tocá «Eliminar». El sitio te pide confirmar y, si la publicación tiene complementos, te muestra cuáles se pierden con ella, sin devolución.",
+        "Abrí el menú «Más acciones» de la tarjeta (el botón de los tres puntos) y elegí «Eliminar». El sitio te pide confirmar y, si la publicación tiene complementos, te muestra cuáles se pierden con ella, sin devolución.",
         "Confirmá con «Sí, eliminar». El borrado es definitivo: el contenido se borra y la publicación no vuelve.",
         "Si lo que querés es sacarla del sitio por un tiempo, es mejor despublicarla (mirá «Pausar y volver a publicar»).",
         "En comercios y experiencias el portal no ofrece el botón «Eliminar»: contactanos y lo vemos."
@@ -505,7 +505,7 @@
       "title": "Eliminar una publicación",
       "steps": [
         "Entrá a «Mis propiedades» y buscá la tarjeta de la propiedad.",
-        "Tocá «Eliminar». El sitio te pide confirmar y, si la publicación tiene complementos, te muestra cuáles se pierden con ella, sin devolución.",
+        "Abrí el menú «Más acciones» de la tarjeta (el botón de los tres puntos) y elegí «Eliminar». El sitio te pide confirmar y, si la publicación tiene complementos, te muestra cuáles se pierden con ella, sin devolución.",
         "Confirmá con «Sí, eliminar». El borrado es definitivo: el contenido se borra y la publicación no vuelve.",
         "Si lo que querés es sacarla del sitio por un tiempo, es mejor despublicarla (mirá «Pausar y volver a publicar»).",
         "En comercios y experiencias el portal no ofrece el botón «Eliminar»: contactanos y lo vemos."
@@ -526,7 +526,7 @@
       "title": "Eliminar una publicación",
       "steps": [
         "Entrá a «Mis propiedades» y buscá la tarjeta de la propiedad.",
-        "Tocá «Eliminar». El sitio te pide confirmar y, si la publicación tiene complementos, te muestra cuáles se pierden con ella, sin devolución.",
+        "Abrí el menú «Más acciones» de la tarjeta (el botón de los tres puntos) y elegí «Eliminar». El sitio te pide confirmar y, si la publicación tiene complementos, te muestra cuáles se pierden con ella, sin devolución.",
         "Confirmá con «Sí, eliminar». El borrado es definitivo: el contenido se borra y la publicación no vuelve.",
         "Si lo que querés es sacarla del sitio por un tiempo, es mejor despublicarla (mirá «Pausar y volver a publicar»).",
         "En comercios y experiencias el portal no ofrece el botón «Eliminar»: contactanos y lo vemos."
@@ -547,7 +547,7 @@
       "title": "Eliminar una publicación",
       "steps": [
         "Entrá a «Mis propiedades» y buscá la tarjeta de la propiedad.",
-        "Tocá «Eliminar». El sitio te pide confirmar y, si la publicación tiene complementos, te muestra cuáles se pierden con ella, sin devolución.",
+        "Abrí el menú «Más acciones» de la tarjeta (el botón de los tres puntos) y elegí «Eliminar». El sitio te pide confirmar y, si la publicación tiene complementos, te muestra cuáles se pierden con ella, sin devolución.",
         "Confirmá con «Sí, eliminar». El borrado es definitivo: el contenido se borra y la publicación no vuelve.",
         "Si lo que querés es sacarla del sitio por un tiempo, es mejor despublicarla (mirá «Pausar y volver a publicar»).",
         "En comercios y experiencias el portal no ofrece el botón «Eliminar»: contactanos y lo vemos."
@@ -568,7 +568,7 @@
       "title": "Eliminar una publicación",
       "steps": [
         "Entrá a «Mis propiedades» y buscá la tarjeta de la propiedad.",
-        "Tocá «Eliminar». El sitio te pide confirmar y, si la publicación tiene complementos, te muestra cuáles se pierden con ella, sin devolución.",
+        "Abrí el menú «Más acciones» de la tarjeta (el botón de los tres puntos) y elegí «Eliminar». El sitio te pide confirmar y, si la publicación tiene complementos, te muestra cuáles se pierden con ella, sin devolución.",
         "Confirmá con «Sí, eliminar». El borrado es definitivo: el contenido se borra y la publicación no vuelve.",
         "Si lo que querés es sacarla del sitio por un tiempo, es mejor despublicarla (mirá «Pausar y volver a publicar»).",
         "En comercios y experiencias el portal no ofrece el botón «Eliminar»: contactanos y lo vemos."
@@ -586,11 +586,11 @@
       "id": "amenities",
       "title": "Editar los servicios y comodidades",
       "steps": [
-        "Abrí el editor de la publicación con «Editar» en su tarjeta.",
+        "Abrí el editor de la publicación con «Editar» en su tarjeta. Si todavía no está publicada, «Editar» está en el menú «Más acciones».",
         "Entrá a «Servicios y comodidades» (en comercios y experiencias, «Servicios»).",
         "Tildá los que ofrecés y destildá los que no. En alojamientos el catálogo está agrupado por categorías.",
         "En alojamientos podés abrir el detalle de cada comodidad para indicar si es de uso privado o compartido y si está disponible todo el año.",
-        "Tocá «Guardar».",
+        "Tocá «Guardar cambios» en la barra que aparece abajo cuando hay cambios. Con «Descartar» volvés a lo que estaba guardado.",
         "También podés pedirle a este asistente que agregue o quite servicios de una categoría."
       ],
       "links": [
@@ -612,11 +612,11 @@
       "id": "amenities",
       "title": "Editar los servicios y comodidades",
       "steps": [
-        "Abrí el editor de la publicación con «Editar» en su tarjeta.",
+        "Abrí el editor de la publicación con «Editar» en su tarjeta. Si todavía no está publicada, «Editar» está en el menú «Más acciones».",
         "Entrá a «Servicios y comodidades» (en comercios y experiencias, «Servicios»).",
         "Tildá los que ofrecés y destildá los que no. En alojamientos el catálogo está agrupado por categorías.",
         "En alojamientos podés abrir el detalle de cada comodidad para indicar si es de uso privado o compartido y si está disponible todo el año.",
-        "Tocá «Guardar».",
+        "Tocá «Guardar cambios» en la barra que aparece abajo cuando hay cambios. Con «Descartar» volvés a lo que estaba guardado.",
         "También podés pedirle a este asistente que agregue o quite servicios de una categoría."
       ],
       "links": [
@@ -630,11 +630,11 @@
       "id": "amenities",
       "title": "Editar los servicios y comodidades",
       "steps": [
-        "Abrí el editor de la publicación con «Editar» en su tarjeta.",
+        "Abrí el editor de la publicación con «Editar» en su tarjeta. Si todavía no está publicada, «Editar» está en el menú «Más acciones».",
         "Entrá a «Servicios y comodidades» (en comercios y experiencias, «Servicios»).",
         "Tildá los que ofrecés y destildá los que no. En alojamientos el catálogo está agrupado por categorías.",
         "En alojamientos podés abrir el detalle de cada comodidad para indicar si es de uso privado o compartido y si está disponible todo el año.",
-        "Tocá «Guardar».",
+        "Tocá «Guardar cambios» en la barra que aparece abajo cuando hay cambios. Con «Descartar» volvés a lo que estaba guardado.",
         "También podés pedirle a este asistente que agregue o quite servicios de una categoría."
       ],
       "links": [
@@ -648,11 +648,11 @@
       "id": "amenities",
       "title": "Editar los servicios y comodidades",
       "steps": [
-        "Abrí el editor de la publicación con «Editar» en su tarjeta.",
+        "Abrí el editor de la publicación con «Editar» en su tarjeta. Si todavía no está publicada, «Editar» está en el menú «Más acciones».",
         "Entrá a «Servicios y comodidades» (en comercios y experiencias, «Servicios»).",
         "Tildá los que ofrecés y destildá los que no. En alojamientos el catálogo está agrupado por categorías.",
         "En alojamientos podés abrir el detalle de cada comodidad para indicar si es de uso privado o compartido y si está disponible todo el año.",
-        "Tocá «Guardar».",
+        "Tocá «Guardar cambios» en la barra que aparece abajo cuando hay cambios. Con «Descartar» volvés a lo que estaba guardado.",
         "También podés pedirle a este asistente que agregue o quite servicios de una categoría."
       ],
       "links": [
@@ -666,11 +666,11 @@
       "id": "amenities",
       "title": "Editar los servicios y comodidades",
       "steps": [
-        "Abrí el editor de la publicación con «Editar» en su tarjeta.",
+        "Abrí el editor de la publicación con «Editar» en su tarjeta. Si todavía no está publicada, «Editar» está en el menú «Más acciones».",
         "Entrá a «Servicios y comodidades» (en comercios y experiencias, «Servicios»).",
         "Tildá los que ofrecés y destildá los que no. En alojamientos el catálogo está agrupado por categorías.",
         "En alojamientos podés abrir el detalle de cada comodidad para indicar si es de uso privado o compartido y si está disponible todo el año.",
-        "Tocá «Guardar».",
+        "Tocá «Guardar cambios» en la barra que aparece abajo cuando hay cambios. Con «Descartar» volvés a lo que estaba guardado.",
         "También podés pedirle a este asistente que agregue o quite servicios de una categoría."
       ],
       "links": []
@@ -966,7 +966,7 @@
       "id": "addons",
       "title": "Comprar o dar de baja un complemento",
       "steps": [
-        "Entrá a «Comprar complementos».",
+        "Entrá a «Suscripción» y abrí la pestaña «Complementos». Si todavía no tenés ninguna suscripción, la página te pide elegir un plan primero.",
         "Elegí un complemento de la lista.",
         "Elegí la ficha (o la suscripción) a la que se aplica.",
         "Revisá el resumen: muestra el importe y la frecuencia. Si tu beneficio lo incluye, aparece «Gratis por tu beneficio» y podés elegirlo sin pagar.",
@@ -976,7 +976,7 @@
       ],
       "links": [
         {
-          "label": "Comprar complementos",
+          "label": "Complementos",
           "url": "{SITE}/es/mi-cuenta/complementos/"
         },
         {
@@ -989,7 +989,7 @@
       "id": "addons",
       "title": "Comprar o dar de baja un complemento",
       "steps": [
-        "Entrá a «Comprar complementos».",
+        "Entrá a «Suscripción» y abrí la pestaña «Complementos». Si todavía no tenés ninguna suscripción, la página te pide elegir un plan primero.",
         "Elegí un complemento de la lista.",
         "Elegí la ficha (o la suscripción) a la que se aplica.",
         "Revisá el resumen: muestra el importe y la frecuencia. Si tu beneficio lo incluye, aparece «Gratis por tu beneficio» y podés elegirlo sin pagar.",
@@ -999,7 +999,7 @@
       ],
       "links": [
         {
-          "label": "Comprar complementos",
+          "label": "Complementos",
           "url": "{SITE}/es/mi-cuenta/complementos/"
         },
         {
@@ -1012,7 +1012,7 @@
       "id": "addons",
       "title": "Comprar o dar de baja un complemento",
       "steps": [
-        "Entrá a «Comprar complementos».",
+        "Entrá a «Suscripción» y abrí la pestaña «Complementos». Si todavía no tenés ninguna suscripción, la página te pide elegir un plan primero.",
         "Elegí un complemento de la lista.",
         "Elegí la ficha (o la suscripción) a la que se aplica.",
         "Revisá el resumen: muestra el importe y la frecuencia. Si tu beneficio lo incluye, aparece «Gratis por tu beneficio» y podés elegirlo sin pagar.",
@@ -1022,7 +1022,7 @@
       ],
       "links": [
         {
-          "label": "Comprar complementos",
+          "label": "Complementos",
           "url": "{SITE}/es/mi-cuenta/complementos/"
         },
         {
@@ -1035,7 +1035,7 @@
       "id": "addons",
       "title": "Comprar o dar de baja un complemento",
       "steps": [
-        "Entrá a «Comprar complementos».",
+        "Entrá a «Suscripción» y abrí la pestaña «Complementos». Si todavía no tenés ninguna suscripción, la página te pide elegir un plan primero.",
         "Elegí un complemento de la lista.",
         "Elegí la ficha (o la suscripción) a la que se aplica.",
         "Revisá el resumen: muestra el importe y la frecuencia. Si tu beneficio lo incluye, aparece «Gratis por tu beneficio» y podés elegirlo sin pagar.",
@@ -1045,7 +1045,7 @@
       ],
       "links": [
         {
-          "label": "Comprar complementos",
+          "label": "Complementos",
           "url": "{SITE}/es/mi-cuenta/complementos/"
         },
         {
@@ -1058,7 +1058,7 @@
       "id": "addons",
       "title": "Comprar o dar de baja un complemento",
       "steps": [
-        "Entrá a «Comprar complementos».",
+        "Entrá a «Suscripción» y abrí la pestaña «Complementos». Si todavía no tenés ninguna suscripción, la página te pide elegir un plan primero.",
         "Elegí un complemento de la lista.",
         "Elegí la ficha (o la suscripción) a la que se aplica.",
         "Revisá el resumen: muestra el importe y la frecuencia. Si tu beneficio lo incluye, aparece «Gratis por tu beneficio» y podés elegirlo sin pagar.",
@@ -1068,7 +1068,7 @@
       ],
       "links": [
         {
-          "label": "Comprar complementos",
+          "label": "Complementos",
           "url": "{SITE}/es/mi-cuenta/complementos/"
         },
         {

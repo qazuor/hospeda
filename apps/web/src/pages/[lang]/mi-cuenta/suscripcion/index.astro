@@ -44,6 +44,7 @@ import { getPlanName } from '@/lib/billing-i18n';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildLoginRedirect } from '@/lib/middleware-helpers';
+import { resolveEmptySubscriptionPlansPath } from '@/lib/account-roles';
 
 const locale = Astro.locals.locale as SupportedLocale;
 const user = Astro.locals.user;
@@ -128,7 +129,7 @@ if (returnSubscriptionId) {
 		/>
 	))}
 	<div data-subscription-sections class="sub-page__sections">
-	<MySubscriptions locale={locale} result={ownSubscriptions} />
+	<MySubscriptions locale={locale} result={ownSubscriptions} plansPath={resolveEmptySubscriptionPlansPath({ roles: user.roles })} />
 	<TrialSummary locale={locale} entries={trialSummaries} liveSubscriptionVerticals={ownSubscriptions?.subscriptions.map((row) => row.vertical) ?? []} />
 	{trialSummaries.some(({ summary }) => summary.status === TrialStatusEnum.TRIAL_ACTIVE) && <div data-testid="trial-promo-redeem">
 		<Section title={t('account.subscription.promoRedeem.trialSectionTitle')} helpId="section:suscripcion.promo">

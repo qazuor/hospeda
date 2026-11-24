@@ -428,7 +428,9 @@
                 "altWarningMessage_other": "Quien navega con lector de pantalla necesita ese texto para saber qué muestra cada foto, y los buscadores lo usan para entender e indexar tus imágenes. Tenés {{count}} fotos sin ese texto completado.",
                 "altWarningGoBack": "Completar ahora",
                 "altWarningContinue": "Seguir igual",
-                "metadataSavedConfirmation": "Guardado"
+                "metadataSavedConfirmation": "Guardado",
+                "uploading": "Subiendo foto…",
+                "altMissing": "Falta la descripción"
             },
             "video": {
                 "sectionTitle": "Videos",
@@ -477,7 +479,8 @@
                     "body2": "Destildá \"Visible en la ficha pública\" para información útil pero que no querés publicar: algo temporal (\"la pileta está en refacción hasta noviembre\"), un margen que preferís no prometer por escrito (\"hay flexibilidad de late check-out si no hay reserva siguiente\"), o una recomendación que suena mejor en una conversación que en la vidriera (\"de noche conviene pedir remis\").",
                     "body3": "Destildá \"Usable por la IA\" para contenido que preferís que se muestre tal cual, sin que el asistente lo parafrasee — texto legal o condiciones exactas de cancelación, por ejemplo.",
                     "body4": "Importante: una pregunta no visible en la ficha pero usable por la IA no es privada. El asistente se la puede decir a cualquiera que pregunte por chat; solo no aparece publicada en la página."
-                }
+                },
+                "rowFallback": "Pregunta {{n}}"
             },
             "action": {
                 "save": "Guardar",
@@ -598,7 +601,9 @@
                 "translationEmpty": "Todavía no se generó esta traducción.",
                 "textUnavailable": "Se generó recién. Actualizá la página para leerlo.",
                 "expandText": "Ver completo",
-                "collapseText": "Ver menos"
+                "collapseText": "Ver menos",
+                "missingCount": "Campos sin traducir: {{count}}",
+                "missingNotice": "Faltan traducciones en {{locales}}."
             },
             "calendar": {
                 "title": "Calendario de ocupación",
@@ -773,7 +778,10 @@
                 "aiDraftLoading": "Generando una sugerencia…",
                 "aiDraftDisclaimer": "Es un borrador editable. Revisá que coincida con la información de tu ficha antes de guardarlo.",
                 "aiDraftError": "No se pudo generar la sugerencia. Intentá de nuevo.",
-                "aiDraftNotEligible": "Esta pregunta ya tiene una respuesta del asistente."
+                "aiDraftNotEligible": "Esta pregunta ya tiene una respuesta del asistente.",
+                "unansweredCountLabel": "{{count}} sin responder",
+                "dismissedCountLabel": "{{count}} descartadas",
+                "dismissedToggle": "Ver las descartadas"
             },
             "catalog": {
                 "searchLabel": "Buscar en todo el catálogo",
@@ -911,7 +919,8 @@
         "lifecycleStates": {
             "active": "Activa",
             "draft": "Borrador",
-            "archived": "Archivada"
+            "archived": "Archivada",
+            "inactive": "Pausada"
         },
         "errors": {
             "loadFailed": "No se pudieron cargar las promociones. Intentá de nuevo.",
@@ -926,7 +935,11 @@
             "entitlementRequired": "Tu plan no incluye promociones.",
             "entitlementRequiredHint": "Mejorá tu plan para crear promociones.",
             "notFound": "No se encontró la promoción.",
-            "forbidden": "No tenés permiso para acceder a esta promoción."
+            "forbidden": "No tenés permiso para acceder a esta promoción.",
+            "pauseFailed": "No pudimos pausar la promoción. Probá de nuevo.",
+            "lockedListHint": "Con tu plan actual podés ver y pausar tus promociones, pero no crearlas ni editarlas. Mejorá tu plan para hacerlo.",
+            "editLocked": "Tu plan no incluye editar promociones.",
+            "editLockedHint": "Podés ver y pausar esta promoción desde la lista. Mejorá tu plan para editarla."
         },
         "success": {
             "created": "Promoción creada",
@@ -939,7 +952,8 @@
             "saving": "Guardando...",
             "cancel": "Cancelar",
             "confirmDelete": "¿Eliminar esta promoción? Esta acción no se puede deshacer.",
-            "upgradePlan": "Ver planes"
+            "upgradePlan": "Ver planes",
+            "pause": "Pausar"
         },
         "specialOffer": {
             "label": "Describí el beneficio",
@@ -957,7 +971,8 @@
             "benefitSection": "La promoción",
             "conditionsSection": "Condiciones",
             "loadFailedHint": "Volvé a la lista e intentá de nuevo.",
-            "backToList": "Volver a mis promociones"
+            "backToList": "Volver a mis promociones",
+            "pauseNamed": "Pausar «{{title}}»"
         }
     },
     "dashboard": {

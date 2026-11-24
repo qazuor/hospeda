@@ -43,6 +43,7 @@
  * `validatePhotoMetadataFields`).
  */
 
+import { EditIcon } from '@repo/icons';
 import { type KeyboardEvent, useEffect, useRef, useState } from 'react';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -175,6 +176,8 @@ export function PhotoMetadataEditor<TItem extends PhotoMetadataEditableItem>({
             className={`${styles.metadataBlock} ${compactLayout ? styles.metadataBlockCompact : ''}`}
             data-photo-metadata-id={item.id}
             data-photo-metadata-missing={isPhotoAltIncomplete(item) ? 'true' : undefined}
+            // HOS-2489: an open panel widens its kit `PhotoTile` to the full row.
+            data-tile-expanded={isOpen ? 'true' : undefined}
         >
             <button
                 ref={toggleRef}
@@ -185,7 +188,11 @@ export function PhotoMetadataEditor<TItem extends PhotoMetadataEditableItem>({
                 aria-expanded={isOpen}
                 aria-label={isOpen ? closeAriaLabel : toggleAriaLabel}
             >
-                ✎ {t('host.properties.editor.photo.editDetailsLabel', 'Editar textos')}
+                <EditIcon
+                    size="sm"
+                    aria-hidden="true"
+                />
+                {t('host.properties.editor.photo.editDetailsLabel', 'Editar textos')}
             </button>
 
             {isOpen && (

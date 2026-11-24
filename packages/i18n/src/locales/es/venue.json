@@ -324,9 +324,9 @@
                 "saving": "Guardando…",
                 "saved": "Carta guardada.",
                 "saveError": "No se pudo guardar la carta.",
-                "linkSave": "Guardar enlace",
-                "linkSaved": "Enlace guardado.",
                 "linkSaveError": "No se pudo guardar el enlace.",
+                "savedMenuNotLink": "Se guardó la carta, pero no el enlace al menú. Probá guardar de nuevo.",
+                "savedLinkNotMenu": "Se guardó el enlace al menú, pero no la carta. Probá guardar de nuevo.",
                 "locked": "Tu carta completa está disponible desde el plan {{plan}}.",
                 "lockedNoPlan": "Tu carta completa está disponible en un plan pago.",
                 "lockedPreTrial": "La carta se habilita cuando publiques tu ficha.",
@@ -363,7 +363,10 @@
                     "title": "Quitar plato",
                     "message": "¿Quitar este plato de la carta?",
                     "confirm": "Quitar plato"
-                }
+                },
+                "itemPriceHint": "En pesos. Vacío es «a consultar».",
+                "newItem": "Nuevo plato",
+                "itemsOf": "Platos de {{section}}"
             },
             "dailySpecials": {
                 "title": "Menú del día",
@@ -435,7 +438,8 @@
                 "saveError": "No se pudo guardar la agenda.",
                 "locked": "Mantener una agenda de eventos está disponible desde el plan {{plan}}.",
                 "lockedNoPlan": "Mantener una agenda de eventos está disponible en un plan pago.",
-                "lockedPreTrial": "La agenda de eventos se habilita cuando publiques tu ficha."
+                "lockedPreTrial": "La agenda de eventos se habilita cuando publiques tu ficha.",
+                "recurrence": "Cuándo pasa"
             },
             "lockedSection": {
                 "vaciar": "Vaciar",
@@ -491,7 +495,8 @@
                     "draft": "Borrador"
                 },
                 "limitReached": "Alcanzaste el tope. El plan {{plan}} permite más promociones.",
-                "limitReachedNoPlan": "Alcanzaste el tope de promociones de tu plan."
+                "limitReachedNoPlan": "Alcanzaste el tope de promociones de tu plan.",
+                "lockedExisting": "Con tu plan actual podés ver y pausar tus promociones, pero no crearlas ni editarlas."
             }
         }
     },

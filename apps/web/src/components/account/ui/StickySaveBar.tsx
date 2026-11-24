@@ -36,6 +36,13 @@ export interface StickySaveBarProps {
     readonly onDiscard: () => void;
     /** Focuses the first invalid field (shown on error). */
     readonly onGoToFirstError?: () => void;
+    /**
+     * The failed save's own reason (an API refusal, a network failure), shown
+     * on error IN PLACE of the generic «No se pudieron guardar los cambios».
+     * The bar is the only place a save failure is told (owner decision 7, Mi
+     * cuenta UI epic): a section never repeats it in a form-level notice.
+     */
+    readonly errorMessage?: string | null;
     /** Locale for the copy. */
     readonly locale: SupportedLocale;
     /** Extra class from the caller (layout only). */
@@ -60,6 +67,7 @@ export function StickySaveBar({
     onSave,
     onDiscard,
     onGoToFirstError,
+    errorMessage,
     locale,
     className,
     helpId,
@@ -68,7 +76,8 @@ export function StickySaveBar({
     if (status === 'clean') return null;
     const t = createT(locale);
     const busy = status === 'saving';
-    const message = t(`account.ui.saveBar.${status}`);
+    const message =
+        status === 'error' && errorMessage ? errorMessage : t(`account.ui.saveBar.${status}`);
 
     return (
         <>

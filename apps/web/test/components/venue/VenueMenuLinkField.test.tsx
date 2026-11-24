@@ -9,7 +9,9 @@
  *    it as an editable input.
  * 2. Saving sends `PATCH /protected/venues/:id` with `{ menuUrl }` and NOTHING
  *    else — the link is its own one-key write, never the carta document and
- *    never the whole listing form.
+ *    never the whole listing form. Since owner decision 14 (superseding the
+ *    separate «Guardar enlace» of DEC-FAC-062) the carta's save bar sends it:
+ *    dirty tracking, «Descartar» and a partial failure told honestly.
  * 3. A `locked` carta shows the link read-only inside the upsell and mounts no
  *    editable control (HOS-1854 already owns that branch; this pins that the
  *    new field did not leak into it).
@@ -17,13 +19,13 @@
 
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { VenueMenuLinkField } from '@/components/venue/VenueMenuLinkField.client';
 import { VenueMenuManager } from '@/components/venue/VenueMenuManager.client';
 import { apiClient } from '@/lib/api/client';
 import type { EntitlementsData } from '@/lib/entitlements-cache';
 import { getEntitlementsCached } from '@/lib/entitlements-cache';
 
-vi.mock('@/lib/i18n', () => ({
+vi.mock('@/lib/i18n', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@/lib/i18n')>()),
     createTranslations: () => ({
         t: (key: string, fallback?: string) => fallback ?? key,
         tPlural: (key: string) => key
@@ -120,31 +122,45 @@ describe('menu link placement (TEST:5.3:1)', () => {
     });
 });
 
-describe('menu link save (TEST:5.3:1)', () => {
-    function renderField(menuUrl: string | null, onSaved = vi.fn()) {
+describe('menu link on the carta save bar (owner decision 14)', () => {
+    const mockPut = vi.mocked(apiClient.put);
+
+    async function renderManager(menuUrl: string | null) {
         render(
-            <VenueMenuLinkField
+            <VenueMenuManager
                 listingId={LISTING_ID}
                 locale="es"
                 menuUrl={menuUrl}
-                onSaved={onSaved}
             />
         );
-        return onSaved;
+        await waitFor(() => {
+            expect(screen.getByTestId('venue-menu-link-field')).toHaveAttribute(
+                'data-hydrated',
+                'true'
+            );
+        });
+        return document.getElementById('ce-menuUrl') as HTMLInputElement;
     }
 
-    it('sends a one-key PATCH with the new link', async () => {
-        const onSaved = renderField('https://old.example/carta');
+    it('offers no «Guardar enlace» button: the bar appears when the link changes', async () => {
+        const input = await renderManager('https://old.example/carta');
+        expect(screen.queryByRole('button', { name: 'Guardar enlace' })).toBeNull();
+        expect(screen.queryByRole('button', { name: 'Guardar cambios' })).toBeNull();
 
-        fireEvent.change(document.getElementById('ce-menuUrl') as HTMLElement, {
-            target: { value: 'https://new.example/carta' }
-        });
-        fireEvent.click(screen.getByTestId('venue-menu-link-save'));
+        fireEvent.change(input, { target: { value: 'https://new.example/carta' } });
+
+        expect(screen.getByRole('button', { name: 'Guardar cambios' })).toBeEnabled();
+    });
+
+    it('sends a one-key PATCH with the new link from «Guardar cambios», and no carta PUT', async () => {
+        const input = await renderManager('https://old.example/carta');
+        fireEvent.change(input, { target: { value: 'https://new.example/carta' } });
+
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
 
         await waitFor(() => {
             expect(mockPatch).toHaveBeenCalledTimes(1);
         });
-
         expect(mockPatch).toHaveBeenCalledWith({
             path: LISTING_PATH,
             body: { menuUrl: 'https://new.example/carta' }
@@ -152,24 +168,110 @@ describe('menu link save (TEST:5.3:1)', () => {
         expect(Object.keys(mockPatch.mock.calls[0]?.[0].body as Record<string, unknown>)).toEqual([
             'menuUrl'
         ]);
-        expect(onSaved).toHaveBeenCalledWith('https://new.example/carta');
+        expect(mockPut).not.toHaveBeenCalled();
+        await waitFor(() => {
+            expect(screen.getByText('Cambios guardados')).toBeInTheDocument();
+        });
     });
 
     it('clears the link with an explicit null', async () => {
-        renderField('https://old.example/carta');
+        const input = await renderManager('https://old.example/carta');
+        fireEvent.change(input, { target: { value: '' } });
 
-        fireEvent.change(document.getElementById('ce-menuUrl') as HTMLElement, {
-            target: { value: '' }
-        });
-        fireEvent.click(screen.getByTestId('venue-menu-link-save'));
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
 
         await waitFor(() => {
-            expect(mockPatch).toHaveBeenCalledTimes(1);
+            expect(mockPatch).toHaveBeenCalledWith({
+                path: LISTING_PATH,
+                body: { menuUrl: null }
+            });
         });
+    });
 
-        expect(mockPatch).toHaveBeenCalledWith({
-            path: LISTING_PATH,
-            body: { menuUrl: null }
+    it('restores the stored link on «Descartar»', async () => {
+        const input = await renderManager('https://old.example/carta');
+        fireEvent.change(input, { target: { value: 'https://typo.example' } });
+
+        fireEvent.click(screen.getByRole('button', { name: 'Descartar' }));
+
+        expect(input).toHaveValue('https://old.example/carta');
+        expect(screen.queryByRole('button', { name: 'Guardar cambios' })).toBeNull();
+        expect(mockPatch).not.toHaveBeenCalled();
+    });
+
+    it('says in the bar when the link failed and keeps it dirty', async () => {
+        mockPatch.mockResolvedValueOnce({ ok: false, error: { status: 500 } } as never);
+        const input = await renderManager('https://old.example/carta');
+        fireEvent.change(input, { target: { value: 'https://new.example/carta' } });
+
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+
+        expect(await screen.findByRole('alert')).toHaveTextContent('No se pudo guardar el enlace.');
+        expect(input).toHaveValue('https://new.example/carta');
+    });
+
+    const ONE_DISH_MENU = {
+        ok: true as const,
+        data: {
+            sections: [
+                {
+                    name: 'Entradas',
+                    description: null,
+                    items: [
+                        {
+                            name: 'Empanadas',
+                            description: null,
+                            priceCents: 250_000,
+                            isAvailable: true,
+                            photoUrl: null,
+                            photoPublicId: null,
+                            photoAlt: null
+                        }
+                    ]
+                }
+            ],
+            file: null
+        }
+    };
+
+    async function editBoth() {
+        mockGet.mockResolvedValue(ONE_DISH_MENU as never);
+        const input = await renderManager('https://old.example/carta');
+        fireEvent.change(await screen.findByDisplayValue('Empanadas'), {
+            target: { value: 'Empanadas de carne' }
         });
+        fireEvent.change(input, { target: { value: 'https://new.example/carta' } });
+        return input;
+    }
+
+    it('tells a stored carta with a failed link, and only the link stays dirty', async () => {
+        mockPut.mockResolvedValueOnce({ ok: true, data: ONE_DISH_MENU.data } as never);
+        mockPatch.mockResolvedValueOnce({ ok: false, error: { status: 500 } } as never);
+        const input = await editBoth();
+
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+
+        expect(await screen.findByRole('alert')).toHaveTextContent(
+            'Se guardó la carta, pero no el enlace al menú. Probá guardar de nuevo.'
+        );
+        // Discarding now keeps the stored dish and only restores the link.
+        fireEvent.click(screen.getByRole('button', { name: 'Descartar' }));
+        expect(screen.getByDisplayValue('Empanadas de carne')).toBeInTheDocument();
+        expect(input).toHaveValue('https://old.example/carta');
+    });
+
+    it('tells a stored link with a failed carta', async () => {
+        mockPut.mockResolvedValueOnce({ ok: false, error: { status: 500 } } as never);
+        mockPatch.mockResolvedValueOnce({ ok: true, data: {} } as never);
+        const input = await editBoth();
+
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+
+        expect(await screen.findByRole('alert')).toHaveTextContent(
+            'Se guardó el enlace al menú, pero no la carta. Probá guardar de nuevo.'
+        );
+        fireEvent.click(screen.getByRole('button', { name: 'Descartar' }));
+        expect(input).toHaveValue('https://new.example/carta');
+        expect(screen.getByDisplayValue('Empanadas')).toBeInTheDocument();
     });
 });

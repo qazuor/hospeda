@@ -142,6 +142,17 @@ export const OwnerPromotionListItemSchema = OwnerPromotionObjectSchema.pick({
 });
 
 /**
+ * One row of the tourist's exclusive-deals list (`GET
+ * /protected/owner-promotions/exclusive-deals`). Owner decision 17 (Mi cuenta
+ * UI epic): it carries the public slug of the accommodation the deal targets,
+ * so the list renders a real link instead of resolving the slug per click.
+ * `null` for an owner-wide deal or an accommodation that is no longer public.
+ */
+export const ExclusiveDealListItemSchema = OwnerPromotionListItemSchema.extend({
+    accommodationSlug: z.string().min(1).nullable()
+});
+
+/**
  * Owner promotion search result item - extends list item with search relevance score
  */
 export const OwnerPromotionSearchResultItemSchema = OwnerPromotionListItemSchema.extend({
@@ -219,6 +230,7 @@ export const OwnerPromotionStatsSchema = z.object({
 export type OwnerPromotionFilters = z.infer<typeof OwnerPromotionFiltersSchema>;
 export type OwnerPromotionQuerySearchInput = z.infer<typeof OwnerPromotionQuerySchema>;
 export type OwnerPromotionListItem = z.infer<typeof OwnerPromotionListItemSchema>;
+export type ExclusiveDealListItem = z.infer<typeof ExclusiveDealListItemSchema>;
 export type OwnerPromotionSearchResultItem = z.infer<typeof OwnerPromotionSearchResultItemSchema>;
 export type OwnerPromotionListResponse = z.infer<typeof OwnerPromotionListResponseSchema>;
 export type OwnerPromotionSearchResponse = z.infer<typeof OwnerPromotionSearchResponseSchema>;

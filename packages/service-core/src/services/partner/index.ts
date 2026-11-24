@@ -2,5 +2,6 @@
 
 export * from './partner.permissions';
 export * from './partner.service';
+export * from './partner-logo-orphans';
 export * from './partner-mention.permissions';
 export * from './partner-mention.service';

@@ -95,6 +95,8 @@ export const ACCOUNT_SCOPE_COMPONENT_FILES: readonly string[] = [
     'apps/web/src/components/listing/HiddenByBusinessLinesSummary.client.tsx',
     'apps/web/src/components/listing/ListingActions.client.tsx',
     'apps/web/src/components/listing/ListingEditor.client.tsx',
+    'apps/web/src/components/listing/ListingFaqAiDraft.client.tsx',
+    'apps/web/src/components/listing/ListingFaqEditorFields.client.tsx',
     'apps/web/src/components/listing/ListingFaqManager.client.tsx',
     'apps/web/src/components/listing/ListingNotices.astro',
     'apps/web/src/components/listing/ListingViewsWidget.client.tsx',

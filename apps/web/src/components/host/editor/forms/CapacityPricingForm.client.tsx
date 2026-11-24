@@ -149,41 +149,29 @@ export function CapacityPricingForm({
             onSubmit={form.handleSubmit}
             noValidate
         >
-            <div className={styles.card}>
-                <CapacitySection
-                    locale={locale}
-                    data={form.values}
-                    errors={form.fieldErrors}
-                    onFieldChange={(field, value) => form.setValue(field, value)}
-                    onPolicyChange={(key, value) =>
-                        form.setValue(
-                            'policies',
-                            setListingPolicy({ policies: form.values.policies, key, value })
-                        )
-                    }
-                />
-            </div>
+            <CapacitySection
+                locale={locale}
+                data={form.values}
+                errors={form.fieldErrors}
+                onFieldChange={(field, value) => form.setValue(field, value)}
+                onPolicyChange={(key, value) =>
+                    form.setValue(
+                        'policies',
+                        setListingPolicy({ policies: form.values.policies, key, value })
+                    )
+                }
+            />
 
-            <div className={styles.card}>
-                <PricingSection
-                    locale={locale}
-                    data={form.values}
-                    errors={form.fieldErrors}
-                    onFieldChange={(field, value) => form.setValue(field, value)}
-                />
-            </div>
-
-            {form.formError && (
-                <div
-                    className={styles.error}
-                    role="alert"
-                >
-                    {form.formError}
-                </div>
-            )}
+            <PricingSection
+                locale={locale}
+                data={form.values}
+                errors={form.fieldErrors}
+                onFieldChange={(field, value) => form.setValue(field, value)}
+            />
 
             <EditorSaveBar
                 locale={locale}
+                errorMessage={form.formError}
                 isDirty={form.isDirty}
                 onSave={form.save}
                 onDiscard={form.discard}

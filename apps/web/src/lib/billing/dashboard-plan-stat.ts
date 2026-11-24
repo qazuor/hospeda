@@ -1,5 +1,6 @@
 import {
     type OwnPlanStatus,
+    SETTLED_OWN_SUBSCRIPTION_STATUSES,
     TrialStatusEnum,
     type TrialSummaryResponse,
     type UserStatsResponse
@@ -79,6 +80,10 @@ export function resolveDashboardPlanStat(input: {
           readonly kind: 'list';
           readonly rows: readonly DashboardSubscriptionRow[];
           readonly total: number;
+          /** Listed subscriptions in a settled status (the API's "active" set). */
+          readonly activeCount: number;
+          /** Listed subscriptions waiting for the payer to authorize the checkout. */
+          readonly pendingCount: number;
           readonly hasMore: boolean;
       }
     | {
@@ -99,6 +104,11 @@ export function resolveDashboardPlanStat(input: {
                 statusKey: STATUS_KEY_BY_STATUS[item.status]
             })),
             total: subscriptions.length,
+            activeCount: subscriptions.filter((item) =>
+                SETTLED_OWN_SUBSCRIPTION_STATUSES.some((status) => status === item.status)
+            ).length,
+            pendingCount: subscriptions.filter((item) => item.status === 'PENDING_AUTHORIZATION')
+                .length,
             hasMore: subscriptions.length > MAX_CARD_SUBSCRIPTIONS
         };
     }

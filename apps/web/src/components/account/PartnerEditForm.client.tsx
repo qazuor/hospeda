@@ -363,17 +363,9 @@ export function PartnerEditForm({ locale, partner: initialPartner }: PartnerEdit
                 </div>
             </Section>
 
-            {formError && (
-                <Alert
-                    locale={locale}
-                    tone="danger"
-                >
-                    <p>{formError}</p>
-                </Alert>
-            )}
-
             <StickySaveBar
                 status={saveBar.status}
+                errorMessage={formError}
                 locale={locale}
                 onSave={() => {
                     void saveBar.save();

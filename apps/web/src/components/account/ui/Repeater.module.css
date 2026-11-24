@@ -1,0 +1,77 @@
+/* Repeater.module.css — a list of editable rows (HOS-2490).
+   Flat rows separated by a rule (D5: never a box inside a box). The head
+   stacks label over actions below 30rem of the list's own width. */
+
+.root {
+    container-type: inline-size;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+.list {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.row {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding-block: var(--space-4);
+    border-block-end: 1px solid var(--border);
+}
+
+.row:first-child {
+    padding-block-start: 0;
+}
+
+.head {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-2);
+}
+
+.rowLabel {
+    margin: 0;
+    min-inline-size: 0;
+    font: var(--app-ui);
+    font-weight: var(--app-card-title-weight);
+    color: var(--core-foreground);
+    overflow-wrap: anywhere;
+}
+
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-1);
+}
+
+.body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    min-inline-size: 0;
+}
+
+.footer {
+    display: flex;
+}
+
+@container (width >= 30rem) {
+    .head {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .actions {
+        flex-wrap: nowrap;
+        justify-content: flex-end;
+    }
+}
