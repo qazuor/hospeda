@@ -105,14 +105,15 @@ describe('comer-y-salir/[slug].astro — accepts-events CTA (HOS-1055)', () => {
         expect(VENUE_PAGE).not.toContain('href={');
     });
 
-    it('mounts the CTA after the amenity grids and before the contact block it anchors into', () => {
-        const amenitiesIdx = VENUE_PAGE.indexOf('Component: AmenitiesGrid');
-        const ctaIdx = VENUE_PAGE.indexOf('Component: VenueEventsCta');
-        const contactIdx = VENUE_PAGE.indexOf('Component: ListingContactBlock');
-
-        expect(amenitiesIdx).toBeGreaterThan(-1);
-        expect(ctaIdx).toBeGreaterThan(amenitiesIdx);
-        expect(contactIdx).toBeGreaterThan(ctaIdx);
+    it('mounts the CTA right after the agenda it promotes, in «Lo que ofrece» (HOS-2579 D-3)', () => {
+        // The CTA is a block of the `venueEvents` section, which VENUE_SECTION_SLOT
+        // puts in slot 4 (`offers`); slot 10 (contact, its anchor target) renders later.
+        expect(VENUE_PAGE).toMatch(
+            /venueEvents: \[\s*\{ Component: VenueEvents,[^\n]*\},[\s\S]*?\.\.\.\(showEventsCta \? \[\{ Component: VenueEventsCta, props: \{ locale \} \}\] : \[\]\)\s*\],/
+        );
+        expect(VENUE_PAGE.indexOf('<ListingDetailSlot name="offers"')).toBeLessThan(
+            VENUE_PAGE.indexOf('<ListingDetailSlot name="contact"')
+        );
     });
 });
 

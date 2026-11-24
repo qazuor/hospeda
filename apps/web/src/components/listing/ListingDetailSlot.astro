@@ -1,0 +1,81 @@
+---
+/**
+ * @file ListingDetailSlot.astro
+ * @description The wrapper of one canonical slot of a listing detail page
+ * (HOS-2579 §6.1.2). Every rendered slot is an anchored landmark whose `id` is
+ * `LISTING_DETAIL_SLOT_IDS[name]`, and carries `data-listing-slot` so tests and
+ * E2E can read the slot order off the DOM.
+ *
+ * A tab whose anchor id differs from the slot id (`details` on slot 3,
+ * `amenities` on slot 4) passes `anchorId`: the content is then wrapped in an
+ * inner element with that id, so `LISTING_SECTION_IDS` keeps its values.
+ *
+ * A wrapper whose blocks all self-hid (no element child) is not displayed, so
+ * an empty slot never adds a gap to the page's flex column. Its id still
+ * exists in that case, which is why the pages only add a TAB for a slot when
+ * they know the slot has content.
+ *
+ * The order of the wrappers in each page's source is guarded by
+ * `listing-detail-section-order.guard.test.ts` (AC-1).
+ */
+import {
+    LISTING_DETAIL_SLOT_IDS,
+    type ListingDetailSlot
+} from '@/lib/listing-detail/listing-detail-order';
+
+interface Props {
+    /** The canonical slot this wrapper paints. */
+    readonly name: ListingDetailSlot;
+    /** Tab anchor id when it differs from the slot id (inner element). */
+    readonly anchorId?: string;
+    /** Extra classes for the wrapper (page-specific width rules). */
+    readonly class?: string;
+    /**
+     * `section` (default) spaces the blocks like the page column does; `none`
+     * keeps blocks that carry their own spacing (the related carousels) as they
+     * were before the wrapper existed.
+     */
+    readonly gap?: 'section' | 'none';
+}
+
+const { name, anchorId, class: className, gap = 'section' } = Astro.props;
+const slotId = LISTING_DETAIL_SLOT_IDS[name];
+const innerId = anchorId && anchorId !== slotId ? anchorId : undefined;
+---
+
+<div
+    id={slotId}
+    class:list={['listing-slot', gap === 'none' && 'listing-slot--no-gap', className]}
+    data-listing-slot={name}
+>
+    {innerId ? (
+        <div
+            id={innerId}
+            class="listing-slot listing-slot__anchor"
+        >
+            <slot />
+        </div>
+    ) : (
+        <slot />
+    )}
+</div>
+
+<style>
+    .listing-slot {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-8, 32px);
+        min-inline-size: 0;
+        /* Anchors land below navbar + wave band (global scroll-padding) plus the
+           sticky section tabs. */
+        scroll-margin-top: calc(var(--listing-tabs-height, 48px) + 8px);
+    }
+
+    .listing-slot--no-gap {
+        gap: 0;
+    }
+
+    .listing-slot:not(:has(*)) {
+        display: none;
+    }
+</style>

@@ -68,6 +68,7 @@ import { buildListingPolicyStructuredData } from '@/lib/seo/listing-policies-jso
 import ClampedText from '@/components/listing/ClampedText.astro';
 import ListingHouseRules from '@/components/listing/ListingHouseRules.astro';
 import { ListingSectionTabs } from '@/components/listing/ListingSectionTabs.client';
+import ListingDetailSlot from '@/components/listing/ListingDetailSlot.astro';
 import { buildListingSectionTabs, LISTING_SECTION_IDS } from '@/lib/listing-section-tabs';
 import type { SupportedLocale } from '@/lib/i18n';
 import { translateAmenityName } from '@/lib/catalog-names';
@@ -554,16 +555,6 @@ const hasDescriptionSection = Boolean(
 const hasAmenitiesSection = accommodation.features.length > 0 || accommodation.amenities.length > 0;
 // AC-2.5: a host section needs a real owner. Without one neither the section nor its tab render.
 const hasHostSection = Boolean(accommodation.owner.id);
-const sectionTabs = buildListingSectionTabs({
-    present: {
-        photos: true,
-        details: hasDescriptionSection,
-        amenities: hasAmenitiesSection,
-        location: true,
-        reviews: true,
-        host: hasHostSection
-    }
-});
 
 // --- Header (HOS-2579): the shared frame, built from the detail data ---
 /** HOS-2579 §6.4: the shared contact block, `null` when nothing is publishable (H-118). */
@@ -575,6 +566,19 @@ const contactBlock = buildAccommodationContactBlock({
     contactInfo: accommodation.contactInfo,
     socialNetworks: accommodation.socialNetworks,
     locale
+});
+
+// --- Sticky section tabs (HOS-2527, slot order since HOS-2579) ---
+const sectionTabs = buildListingSectionTabs({
+    present: {
+        photos: true,
+        details: hasDescriptionSection,
+        amenities: hasAmenitiesSection,
+        location: true,
+        reviews: true,
+        host: hasHostSection,
+        contact: contactBlock !== null
+    }
 });
 
 const headerProps = buildAccommodationHeader({
@@ -647,22 +651,34 @@ const { sections: faqSections, inLanguage: faqInLanguage } = buildFaqJsonLdSecti
         <ListingHeader {...headerProps} />
     </Fragment>
 
-    <!-- Main content -->
+    <!-- Main content: the 13 canonical slots in LISTING_DETAIL_SLOTS order
+         (HOS-2579 §6.1). The source order of the ListingDetailSlot wrappers is
+         guarded by listing-detail-section-order.guard.test.ts. -->
     <div class="acc-detail">
-        <div id={LISTING_SECTION_IDS.photos} class="acc-anchor">
-        <ImageGallery
-            images={galleryImages}
-            variant="detail"
-            locale={locale}
-            viewAllHref={`/${locale}/alojamientos/${slug}/fotos/`}
-            mobile={{
-                share: { url: `${siteOrigin}${Astro.url.pathname}`, title: accommodation.name, campaign: 'accommodation' },
-                favorite: { entityId: accommodation.id, entityType: 'ACCOMMODATION', variant: 'standalone' }
-            }}
-            client:load
-        />
-        <GalleryTapBridge />
-        </div>
+        <!-- Slot 1: gallery + videos (the header is in the page-header slot). -->
+        <ListingDetailSlot name="galleryHeader">
+            <div id={LISTING_SECTION_IDS.photos} class="acc-anchor">
+            <ImageGallery
+                images={galleryImages}
+                variant="detail"
+                locale={locale}
+                viewAllHref={`/${locale}/alojamientos/${slug}/fotos/`}
+                mobile={{
+                    share: { url: `${siteOrigin}${Astro.url.pathname}`, title: accommodation.name, campaign: 'accommodation' },
+                    favorite: { entityId: accommodation.id, entityType: 'ACCOMMODATION', variant: 'standalone' }
+                }}
+                client:load
+            />
+            <GalleryTapBridge />
+            </div>
+            <!-- Videos (HOS-1022): its own section, deliberately separate from the
+                 photo mosaic above — mixing videos into ImageGallery/`/fotos` is
+                 exactly where they went unnoticed before this ticket. Renders
+                 nothing when there are no APPROVED, provider-recognized videos. -->
+            <ListingVideoSection videos={accommodation.media.videos} locale={locale} scope="accommodation" />
+        </ListingDetailSlot>
+        <!-- Outside every slot on purpose: a sticky element sticks inside its
+             parent, so the tabs must be a direct child of the body column. -->
         <ListingSectionTabs
             client:idle
             tabs={sectionTabs}
@@ -674,29 +690,33 @@ const { sections: faqSections, inLanguage: faqInLanguage } = buildFaqJsonLdSecti
             primaryLabelKey="accommodations.detail.listingContact.bar.inquire"
             galleryId={LISTING_SECTION_IDS.photos}
         />
-        <QuickFacts extraInfo={accommodation.extraInfo} lang={locale} />
-        <MobileBookingSummary
-            listingId={accommodation.id}
-            panelId={panelId}
-            locale={locale}
-            price={contactPrice}
-            minNights={accommodation.policies?.minNights}
-            maxNights={accommodation.policies?.maxNights}
-            hasWhatsapp={accommodation.hasWhatsapp}
-        />
-        <!-- Promotions sit right under the price summary in the single-column
-             layout (owner smoke, HOS-2520): a discount is a booking argument, so it
-             belongs next to the price, not after the description, amenities and
-             rules. Rendered twice on purpose: this copy shows up to 1024px (where
-             MobileBookingSummary shows), the one below the house rules above it,
-             so DOM order and visual order match at every width. -->
-        {activePromos.length > 0 && (
-            <div class="acc-promos acc-promos--summary">
-                <PromotionBanner promos={activePromos} locale={locale} />
-            </div>
-        )}
+        <!-- Slot 2: price summary and quick facts. -->
+        <ListingDetailSlot name="summary">
+            <QuickFacts extraInfo={accommodation.extraInfo} lang={locale} />
+            <MobileBookingSummary
+                listingId={accommodation.id}
+                panelId={panelId}
+                locale={locale}
+                price={contactPrice}
+                minNights={accommodation.policies?.minNights}
+                maxNights={accommodation.policies?.maxNights}
+                hasWhatsapp={accommodation.hasWhatsapp}
+            />
+            <!-- Promotions also sit right under the price summary in the
+                 single-column layout (owner smoke, HOS-2520): a discount is a
+                 booking argument, so it belongs next to the price. Rendered twice
+                 on purpose: this copy shows up to 1024px (where
+                 MobileBookingSummary shows), the slot-6 copy above it, so DOM
+                 order and visual order match at every width. -->
+            {activePromos.length > 0 && (
+                <div class="acc-promos acc-promos--summary">
+                    <PromotionBanner promos={activePromos} locale={locale} />
+                </div>
+            )}
+        </ListingDetailSlot>
+        <!-- Slot 3: description with «Leer más». -->
         {hasDescriptionSection && (
-        <div id={LISTING_SECTION_IDS.details} class="acc-anchor">
+        <ListingDetailSlot name="description" anchorId={LISTING_SECTION_IDS.details}>
         {accommodation.richDescription ? (
             <section class="description-rich">
                 {accommodation.summary && (
@@ -711,104 +731,111 @@ const { sections: faqSections, inLanguage: faqInLanguage } = buildFaqJsonLdSecti
         ) : (
             <Description lang={locale} summary={accommodation.summary} descriptionHtml={safeDescriptionHtml} />
         )}
-        </div>
+        </ListingDetailSlot>
         )}
-
-        <!-- Videos (HOS-1022): its own section, deliberately separate from the
-             photo mosaic above — mixing videos into ImageGallery/`/fotos` is
-             exactly where they went unnoticed before this ticket. Renders
-             nothing when there are no APPROVED, provider-recognized videos. -->
-        <ListingVideoSection videos={accommodation.media.videos} locale={locale} scope="accommodation" />
-
-        <!-- Contact + social block (H-118: phone/email/website/Facebook/Instagram
-             the host filled in via the editor's contact form, previously captured
-             but never shown on the public page). The existing WhatsApp button
-             (sidebar, ContactCard) is untouched — this block never carries that number. -->
-        {contactBlock && <ListingContactBlock {...contactBlock} />}
-
+        <!-- Slot 4: features and amenities. -->
         {hasAmenitiesSection && (
-            <div id={LISTING_SECTION_IDS.amenities} class="acc-anchor acc-anchor--stack">
+            <ListingDetailSlot name="offers" anchorId={LISTING_SECTION_IDS.amenities}>
                 <FeaturesGrid features={accommodation.features} lang={locale} />
                 <AmenitiesGrid amenities={accommodation.amenities} lang={locale} />
-            </div>
+            </ListingDetailSlot>
         )}
-        <ListingHouseRules policies={accommodation.policies} locale={locale} />
-
+        <!-- Slot 6: promotions (the wide-layout copy, see slot 2). -->
         {activePromos.length > 0 && (
-            <div class="acc-promos acc-promos--content">
+            <ListingDetailSlot name="promotions" class="acc-promos--content">
                 <PromotionBanner promos={activePromos} locale={locale} />
-            </div>
+            </ListingDetailSlot>
         )}
-
-        <div id={LISTING_SECTION_IDS.reviews} class="acc-anchor">
-        <ReviewPreview accommodation={accommodation} ratingBreakdown={ratingBreakdown} reviews={toReviewStripItems({ items: reviewItems })} lang={locale}>
-            <ReviewsModal
-                client:idle
-                accommodationId={accommodation.id}
-                reviewsCount={accommodation.reviewsCount}
-                locale={locale}
-            />
-        </ReviewPreview>
-        </div>
-
-        {/* AC-4.4: external reputation block is isolated — does NOT touch
-            averageRating / reviewsCount from internal reviews */}
-        {externalReputationData.items.length > 0 && (
-            <ExternalReputation
-                reputationData={externalReputationData as import('@repo/schemas').ExternalReputationBlock}
-                locale={locale}
-            />
-        )}
-
-        <FaqAccordion faqs={accommodation.faqs} lang={locale} />
+        <!-- Slot 7: location, then what's nearby. -->
+        <ListingDetailSlot name="location">
+            <LocationSection {...locationSection} />
+            <WhatsNearbySection pointsOfInterest={nearbyPois} locale={locale} />
+        </ListingDetailSlot>
+        <!-- Slot 8: reviews and external reputation. -->
+        <ListingDetailSlot name="reviews">
+            <ReviewPreview accommodation={accommodation} ratingBreakdown={ratingBreakdown} reviews={toReviewStripItems({ items: reviewItems })} lang={locale}>
+                <ReviewsModal
+                    client:idle
+                    accommodationId={accommodation.id}
+                    reviewsCount={accommodation.reviewsCount}
+                    locale={locale}
+                />
+            </ReviewPreview>
+            {/* AC-4.4: external reputation block is isolated — does NOT touch
+                averageRating / reviewsCount from internal reviews */}
+            {externalReputationData.items.length > 0 && (
+                <ExternalReputation
+                    reputationData={externalReputationData as import('@repo/schemas').ExternalReputationBlock}
+                    locale={locale}
+                />
+            )}
+        </ListingDetailSlot>
+        <!-- Slot 9: host. AC-2.5: only with a real owner. -->
         {hasHostSection && (
-        <div id={LISTING_SECTION_IDS.host} class="acc-anchor">
-        <HostSection owner={accommodation.owner} accommodationId={accommodation.id} panelId={panelId} spokenLanguages={accommodation.policies.spokenLanguages} lang={locale} />
-        </div>
+        <ListingDetailSlot name="host">
+            <HostSection owner={accommodation.owner} accommodationId={accommodation.id} panelId={panelId} spokenLanguages={accommodation.policies.spokenLanguages} lang={locale} />
+        </ListingDetailSlot>
         )}
-        <div id={LISTING_SECTION_IDS.location} class="acc-anchor acc-anchor--stack">
-        <LocationSection {...locationSection} />
-        <WhatsNearbySection pointsOfInterest={nearbyPois} locale={locale} />
-        </div>
+        <!-- Slot 10: contact + social block (H-118: phone/email/website/Facebook/
+             Instagram the host filled in via the editor's contact form). The
+             WhatsApp button (sidebar, ContactCard) is untouched — this block never
+             carries that number. -->
+        {contactBlock && (
+            <ListingDetailSlot name="contact">
+                <ListingContactBlock {...contactBlock} />
+            </ListingDetailSlot>
+        )}
+        <!-- Slot 11: house rules. -->
+        <ListingDetailSlot name="policies">
+            <ListingHouseRules policies={accommodation.policies} locale={locale} />
+        </ListingDetailSlot>
+        <!-- Slot 12: FAQ (self-hides with none). -->
+        <ListingDetailSlot name="faq">
+            <FaqAccordion faqs={accommodation.faqs} lang={locale} />
+        </ListingDetailSlot>
     </div>
 
     <Fragment slot="after-content">
-    <!-- Full-width related content after the main article and host sidebar. -->
+    <!-- Slot 13: full-width related content after the main article and host sidebar. -->
     {hasRelatedContent && <WaveDivider />}
-    {similarCards.length > 0 && (
-        <RelatedCarousel title={t('accommodations.detail.related.similar')} ariaLabel={t('accommodations.detail.related.similar')} lang={locale} count={similarCards.length}>
-            {similarCards.map((card) => <AccommodationCard data={card} locale={locale} />)}
-        </RelatedCarousel>
-    )}
+    {hasRelatedContent && (
+    <ListingDetailSlot name="related" gap="none">
+        {similarCards.length > 0 && (
+            <RelatedCarousel title={t('accommodations.detail.related.similar')} ariaLabel={t('accommodations.detail.related.similar')} lang={locale} count={similarCards.length}>
+                {similarCards.map((card) => <AccommodationCard data={card} locale={locale} />)}
+            </RelatedCarousel>
+        )}
 
-    {ownerCards.length > 0 && (
-        <RelatedCarousel title={t('accommodations.detail.owner.otherProperties', undefined, { name: accommodation.owner.name })} ariaLabel={t('accommodations.detail.owner.otherProperties', undefined, { name: accommodation.owner.name })} lang={locale} count={ownerCards.length}>
-            {ownerCards.map((card) => <AccommodationCard data={card} locale={locale} />)}
-        </RelatedCarousel>
-    )}
+        {ownerCards.length > 0 && (
+            <RelatedCarousel title={t('accommodations.detail.owner.otherProperties', undefined, { name: accommodation.owner.name })} ariaLabel={t('accommodations.detail.owner.otherProperties', undefined, { name: accommodation.owner.name })} lang={locale} count={ownerCards.length}>
+                {ownerCards.map((card) => <AccommodationCard data={card} locale={locale} />)}
+            </RelatedCarousel>
+        )}
 
-    {postItems.length > 0 && (
-        <RelatedCarousel title={t('accommodations.detail.related.posts')} ariaLabel={t('accommodations.detail.related.posts')} lang={locale} count={postItems.length}>
-            {postItems.map((item) => (
-                <RelatedPostCard
-                    id={String(item.id || '')}
-                    slug={String(item.slug || '')}
-                    title={String(item.title || '')}
-                    summary={String(item.summary || item.description || '')}
-                    featuredImage={item.featuredImage ? String(item.featuredImage) : null}
-                    category={item.category ? String(item.category) : null}
-                    destinationName={accommodation.destination.name}
-                    publishedAt={item.publishedAt ? String(item.publishedAt) : null}
-                    lang={locale}
-                />
-            ))}
-        </RelatedCarousel>
-    )}
+        {postItems.length > 0 && (
+            <RelatedCarousel title={t('accommodations.detail.related.posts')} ariaLabel={t('accommodations.detail.related.posts')} lang={locale} count={postItems.length}>
+                {postItems.map((item) => (
+                    <RelatedPostCard
+                        id={String(item.id || '')}
+                        slug={String(item.slug || '')}
+                        title={String(item.title || '')}
+                        summary={String(item.summary || item.description || '')}
+                        featuredImage={item.featuredImage ? String(item.featuredImage) : null}
+                        category={item.category ? String(item.category) : null}
+                        destinationName={accommodation.destination.name}
+                        publishedAt={item.publishedAt ? String(item.publishedAt) : null}
+                        lang={locale}
+                    />
+                ))}
+            </RelatedCarousel>
+        )}
 
-    {eventItems.length > 0 && (
-        <RelatedCarousel title={t('accommodations.detail.related.events', undefined, { destination: accommodation.destination.name })} ariaLabel={t('accommodations.detail.related.events', undefined, { destination: accommodation.destination.name })} lang={locale} count={eventItems.length}>
-            {eventItems.map((item) => <EventCardHorizontal data={toEventCardProps({ item, locale })} locale={locale} />)}
-        </RelatedCarousel>
+        {eventItems.length > 0 && (
+            <RelatedCarousel title={t('accommodations.detail.related.events', undefined, { destination: accommodation.destination.name })} ariaLabel={t('accommodations.detail.related.events', undefined, { destination: accommodation.destination.name })} lang={locale} count={eventItems.length}>
+                {eventItems.map((item) => <EventCardHorizontal data={toEventCardProps({ item, locale })} locale={locale} />)}
+            </RelatedCarousel>
+        )}
+    </ListingDetailSlot>
     )}
     </Fragment>
 
@@ -971,16 +998,12 @@ const { sections: faqSections, inLanguage: faqInLanguage } = buildFaqJsonLdSecti
         gap: var(--space-8, 32px);
     }
     /* Section anchors land below navbar + wave band (global scroll-padding)
-       plus the sticky tabs. */
+       plus the sticky tabs. Slot wrappers carry the same rule. */
     .acc-anchor {
         scroll-margin-top: calc(var(--listing-tabs-height) + 8px);
     }
-    .acc-anchor--stack {
-        display: flex;
-        flex-direction: column;
-        gap: var(--space-8, 32px);
-    }
-    /* See the comment on the summary copy: one promotions block per width. */
+    /* See the comment on the summary copy: one promotions block per width.
+       The slot-6 wrapper is another component's element, hence :global. */
     .acc-promos--summary {
         display: none;
     }
@@ -988,7 +1011,7 @@ const { sections: faqSections, inLanguage: faqInLanguage } = buildFaqJsonLdSecti
         .acc-promos--summary {
             display: block;
         }
-        .acc-promos--content {
+        .acc-detail :global(.acc-promos--content) {
             display: none;
         }
     }

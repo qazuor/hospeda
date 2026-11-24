@@ -74,8 +74,30 @@ describe('experiencias/[slug].astro', () => {
             expect(src).not.toContain('ExperienceHero');
         });
 
-        it('renders ExperienceInfo with description, hours, social', () => {
-            expect(src).toContain('ExperienceInfo');
+        it('renders the halves of the retired ExperienceInfo in their own slots (HOS-2579)', () => {
+            expect(src).not.toContain('<ExperienceInfo');
+            expect(src).not.toContain('ExperienceInfo.astro');
+            expect(src).toMatch(
+                /<ListingDetailSlot name="description" anchorId=\{LISTING_SECTION_IDS\.details\}>\s*<ExperienceDescription/
+            );
+            expect(src).toMatch(
+                /<ListingDetailSlot name="hours">\s*<OpeningHoursSection openingHours=\{openingHours\}/
+            );
+        });
+
+        it('opens slot 11 with one <h2> «Antes de ir» above the <h3> lists (HOS-2579 §6.8)', () => {
+            expect(src).toMatch(
+                /<ListingDetailSlot name="policies">\s*\{hasBeforeYouGo && \(\s*<h2 class="exp-detail__policies-title">\s*\{t\('experience\.detail\.policies\.title'/
+            );
+        });
+
+        it('mounts the section tabs for the experience, with its price (AC-7)', () => {
+            expect(src).toMatch(
+                /<ListingSectionTabs[\s\S]*?vertical="experience"[\s\S]*?price=\{contactPrice\}/
+            );
+            expect(src).toContain('hasContactAction={contactChannels.length > 0}');
+            expect(src).toContain('contact: contactBlock !== null');
+            expect(src).toContain('hours: openingHours !== null');
         });
 
         it('renders the shared ListingContactBlock with the provider channels (HOS-2579)', () => {
@@ -114,7 +136,9 @@ describe('experiencias/[slug].astro', () => {
         // under `packages/schemas`.
         it('wires the shared LocationSection to the meeting point builder (HOS-2579)', () => {
             expect(src).toContain('buildExperienceLocation({ experience, locale })');
-            expect(src).toContain('{locationSection && <LocationSection {...locationSection} />}');
+            expect(src).toMatch(
+                /\{locationSection && \(\s*<ListingDetailSlot name="location">\s*<LocationSection \{\.\.\.locationSection\} \/>/
+            );
         });
 
         // HOS-898 / HOS-1046 / HOS-1047 / HOS-1056. SOURCE reads, with the same
