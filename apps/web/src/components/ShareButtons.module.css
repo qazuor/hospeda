@@ -208,7 +208,18 @@
     left: auto;
 }
 
+/* Round 44px outline icon-only trigger for headers and action bars (HOS-2579 §6.3). */
+.icon .trigger {
+    display: grid;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    padding: 0;
+    border-radius: var(--radius-pill);
+}
+
 @media (prefers-reduced-motion: reduce) {
+    .icon .popover,
     .iconOverlay .popover {
         animation: none;
     }

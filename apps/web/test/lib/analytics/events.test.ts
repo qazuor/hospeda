@@ -21,6 +21,7 @@ describe('WebEvents catalog (SPEC-140 acceptance)', () => {
             SignupCompleted: 'sign_up_completed',
             BookingInitiated: 'contact_owner_started',
             ListingContactClicked: 'listing_contact_clicked',
+            ListingShared: 'listing_shared',
             BookingRequestSent: 'contact_owner_completed',
             NewsletterSubscribed: 'newsletter_subscribed',
             ContributionBannerClicked: 'contribution_banner_clicked',

@@ -59,13 +59,13 @@ const DETAIL_PAGES: ReadonlyArray<{
         name: 'venue detail',
         file: 'comer-y-salir/[slug].astro',
         typedComponent: 'VenueJsonLd',
-        extras: ['BreadcrumbJsonLd']
+        extras: ['BreadcrumbJsonLd', 'FAQPageJsonLd']
     },
     {
         name: 'experience detail',
         file: 'experiencias/[slug].astro',
         typedComponent: 'TouristAttractionJsonLd',
-        extras: ['BreadcrumbJsonLd']
+        extras: ['BreadcrumbJsonLd', 'FAQPageJsonLd']
     }
 ];
 
@@ -240,11 +240,18 @@ describe('JSON-LD coverage across pages (SPEC-096 REQ-096-37)', () => {
         });
 
         it('TouristAttractionJsonLd component references schema.org context', () => {
+            // Since HOS-2579 the component delegates its shape to the pure
+            // builder in lib/seo, which owns `@context` and the multi-type.
             const componentSrc = readFileSync(
                 resolve(__dirname, '../../src/components/seo/TouristAttractionJsonLd.astro'),
                 'utf8'
             );
-            expect(componentSrc).toContain("'@context': 'https://schema.org'");
+            const builderSrc = readFileSync(
+                resolve(__dirname, '../../src/lib/seo/tourist-attraction-jsonld.ts'),
+                'utf8'
+            );
+            expect(componentSrc).toContain('buildTouristAttractionJsonLd(Astro.props)');
+            expect(builderSrc).toContain("'@context': 'https://schema.org'");
         });
 
         it('event detail maps cancelled → EventCancelled', () => {

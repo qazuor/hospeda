@@ -12,6 +12,11 @@
  * share sheet and `copy` for the clipboard; `medium=share`; `campaign` is the entity
  * type the caller passes. The `url` prop itself stays canonical, so the page's
  * canonical, OG and JSON-LD URLs never carry UTMs.
+ *
+ * Listing detail pages pass `analytics` so each completed share emits
+ * `listing_shared` (HOS-2579 §6.10.4): `native` when the share sheet resolves,
+ * `copy` when the clipboard write succeeds and `network` when a network intent
+ * link is clicked. Without the prop (events, posts) nothing is emitted.
  */
 
 import { type ShareCampaign, type ShareUtmParams, withUtm } from '@repo/analytics';
@@ -25,11 +30,30 @@ import {
     XIcon
 } from '@repo/icons';
 import { useEffect, useRef, useState } from 'react';
+import { WebEvents } from '@/lib/analytics/events';
+import { trackEvent } from '@/lib/analytics/umami-client';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import type { ContactOrigin } from '@/lib/listing-contact/listing-contact-events';
 import { buildShareIntentUrl } from '@/lib/share-intents';
 import { addToast } from '@/store/toast-store';
 import styles from './ShareButtons.module.css';
+
+/**
+ * Listing context for the `listing_shared` event. Only listing detail pages
+ * pass it; its absence keeps the component analytics-free.
+ */
+export interface ShareButtonsAnalytics {
+    /** UUID of the shared listing. */
+    readonly listingId: string;
+    /** Vertical of the shared listing. */
+    readonly vertical: 'accommodation' | 'experience' | 'venue';
+    /** Surface the share trigger lives on. */
+    readonly origin: ContactOrigin;
+}
+
+/** How a share was completed, as reported on `listing_shared`. */
+type ShareMethod = 'native' | 'copy' | 'network';
 
 /**
  * Props for the ShareButtons component.
@@ -45,8 +69,14 @@ interface ShareButtonsProps {
     readonly locale: SupportedLocale;
     /** Optional CSS class override on the root element */
     readonly className?: string;
-    /** Compact icon-only trigger for placement over a gallery photo. */
-    readonly appearance?: 'icon-overlay';
+    /**
+     * Icon-only trigger variants:
+     * - `icon-overlay`: filled round trigger placed over a gallery photo.
+     * - `icon`: round 44px outline trigger for headers and action bars (HOS-2579).
+     */
+    readonly appearance?: 'icon-overlay' | 'icon';
+    /** When present, completed shares emit `listing_shared` (HOS-2579). */
+    readonly analytics?: ShareButtonsAnalytics;
 }
 
 /** A share action's `utm_source`. */
@@ -73,12 +103,28 @@ export function ShareButtons({
     locale,
     campaign,
     className,
-    appearance
+    appearance,
+    analytics
 }: ShareButtonsProps) {
     const { t } = createTranslations(locale);
     const sharedUrl = (source: ShareSource): string =>
         withUtm({ url, source, medium: 'share', campaign });
     const isOverlay = appearance === 'icon-overlay';
+    const isIcon = appearance === 'icon';
+    /** Both icon-only variants share the overlay's labelling and focus behaviour. */
+    const isCompact = isOverlay || isIcon;
+
+    /** Emits `listing_shared` for a completed share, only when `analytics` is passed. */
+    function trackShare(method: ShareMethod): void {
+        if (!analytics) return;
+        trackEvent(WebEvents.ListingShared, {
+            listing_id: analytics.listingId,
+            vertical: analytics.vertical,
+            origin: analytics.origin,
+            method,
+            locale
+        });
+    }
     const [isOpen, setIsOpen] = useState(false);
     const [copied, setCopied] = useState(false);
     const rootRef = useRef<HTMLDivElement>(null);
@@ -89,11 +135,11 @@ export function ShareButtons({
     useEffect(() => {
         if (!isOpen) return;
         const root = rootRef.current;
-        const keyTarget = isOverlay ? root : document;
+        const keyTarget = isCompact ? root : document;
 
         function handleKeyDown(event: KeyboardEvent): void {
             if (event.key === 'Escape') {
-                if (isOverlay) event.stopPropagation();
+                if (isCompact) event.stopPropagation();
                 setIsOpen(false);
                 triggerRef.current?.focus();
             }
@@ -116,15 +162,15 @@ export function ShareButtons({
         }
 
         keyTarget?.addEventListener('keydown', handleKeyDown as EventListener);
-        if (isOverlay) root?.addEventListener('focusout', handleFocusOut);
+        if (isCompact) root?.addEventListener('focusout', handleFocusOut);
         document.addEventListener('mousedown', handleClickOutside);
 
         return () => {
             keyTarget?.removeEventListener('keydown', handleKeyDown as EventListener);
-            if (isOverlay) root?.removeEventListener('focusout', handleFocusOut);
+            if (isCompact) root?.removeEventListener('focusout', handleFocusOut);
             document.removeEventListener('mousedown', handleClickOutside);
         };
-    }, [isOpen, isOverlay]);
+    }, [isOpen, isCompact]);
 
     // Focus first popover item when opened
     useEffect(() => {
@@ -136,14 +182,15 @@ export function ShareButtons({
 
     async function handleMainClick(): Promise<void> {
         if (hasWebShareApi() && isMobileViewport()) {
-            if (isOverlay && isOpen) {
+            if (isCompact && isOpen) {
                 dismissPopover();
                 return;
             }
             try {
                 await navigator.share({ url: sharedUrl('share'), title });
+                trackShare('native');
             } catch (error) {
-                if (isOverlay && !(error instanceof DOMException && error.name === 'AbortError')) {
+                if (isCompact && !(error instanceof DOMException && error.name === 'AbortError')) {
                     setIsOpen(true);
                 }
             }
@@ -154,7 +201,7 @@ export function ShareButtons({
 
     function dismissPopover(): void {
         setIsOpen(false);
-        if (isOverlay && rootRef.current?.contains(document.activeElement)) {
+        if (isCompact && rootRef.current?.contains(document.activeElement)) {
             triggerRef.current?.focus();
         }
     }
@@ -163,6 +210,7 @@ export function ShareButtons({
         try {
             await navigator.clipboard.writeText(sharedUrl('copy'));
             setCopied(true);
+            trackShare('copy');
             addToast({
                 type: 'success',
                 message: t('ui.accessibility.linkCopied', 'Link copiado')
@@ -203,7 +251,7 @@ export function ShareButtons({
         {
             label: 'X',
             href: buildShareIntentUrl({ network: 'x', url: sharedUrl('x'), title }),
-            icon: isOverlay ? (
+            icon: isCompact ? (
                 <XIcon
                     size={20}
                     aria-hidden="true"
@@ -227,14 +275,14 @@ export function ShareButtons({
                     aria-hidden="true"
                 />
             ),
-            ariaLabel: isOverlay ? t('ui.accessibility.shareOnTelegram') : 'Compartir en Telegram'
+            ariaLabel: isCompact ? t('ui.accessibility.shareOnTelegram') : 'Compartir en Telegram'
         }
     ] as const;
 
     return (
         <div
             ref={rootRef}
-            className={`${styles.root}${isOverlay ? ` ${styles.iconOverlay}` : ''}${className ? ` ${className}` : ''}`}
+            className={`${styles.root}${isOverlay ? ` ${styles.iconOverlay}` : ''}${isIcon ? ` ${styles.icon}` : ''}${className ? ` ${className}` : ''}`}
         >
             <button
                 ref={triggerRef}
@@ -242,14 +290,14 @@ export function ShareButtons({
                 className={styles.trigger}
                 aria-label={t('ui.accessibility.shareViaDevice', 'Compartir')}
                 aria-expanded={isOpen}
-                aria-haspopup={isOverlay ? undefined : 'menu'}
+                aria-haspopup={isCompact ? undefined : 'menu'}
                 onClick={() => void handleMainClick()}
             >
                 <ShareIcon
                     size={20}
                     aria-hidden="true"
                 />
-                {!isOverlay && (
+                {!isCompact && (
                     <span className={styles.triggerLabel}>
                         {t('ui.actions.share', 'Compartir')}
                     </span>
@@ -260,7 +308,7 @@ export function ShareButtons({
                 // biome-ignore lint/a11y/useAriaPropsSupportedByRole: both possible roles (group and menu) support an accessible name.
                 <div
                     ref={popoverRef}
-                    role={isOverlay ? 'group' : 'menu'}
+                    role={isCompact ? 'group' : 'menu'}
                     aria-label={t('ui.accessibility.shareViaDevice', 'Compartir')}
                     className={styles.popover}
                 >
@@ -283,31 +331,34 @@ export function ShareButtons({
 
                     <ul
                         className={styles.list}
-                        role={isOverlay ? undefined : 'presentation'}
+                        role={isCompact ? undefined : 'presentation'}
                     >
                         {shareLinks.map((link) => (
                             <li
                                 key={link.label}
-                                role={isOverlay ? undefined : 'presentation'}
+                                role={isCompact ? undefined : 'presentation'}
                             >
                                 <a
                                     href={link.href}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    role={isOverlay ? undefined : 'menuitem'}
+                                    role={isCompact ? undefined : 'menuitem'}
                                     className={styles.item}
                                     aria-label={link.ariaLabel}
-                                    onClick={dismissPopover}
+                                    onClick={() => {
+                                        trackShare('network');
+                                        dismissPopover();
+                                    }}
                                 >
                                     <span className={styles.itemIcon}>{link.icon}</span>
                                     <span className={styles.itemLabel}>{link.label}</span>
                                 </a>
                             </li>
                         ))}
-                        <li role={isOverlay ? undefined : 'presentation'}>
+                        <li role={isCompact ? undefined : 'presentation'}>
                             <button
                                 type="button"
-                                role={isOverlay ? undefined : 'menuitem'}
+                                role={isCompact ? undefined : 'menuitem'}
                                 className={`${styles.item} ${styles.copyBtn}`}
                                 aria-label={t('ui.accessibility.copyLink', 'Copiar enlace')}
                                 onClick={() => void handleCopyUrl()}
