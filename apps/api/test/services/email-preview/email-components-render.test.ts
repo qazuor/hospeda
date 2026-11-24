@@ -7,9 +7,9 @@
  * - AC-2.5: no element outside a `data-callout-tone` cell or an allowlisted list card
  *   (tagged `data-card="list"` in PriceDropItem, PromoOfferItem and the AI digest) has a
  *   `border-left` style. A hand-rolled callout reappearing in any template shows up here.
- * - AC-2.6: exactly one `<style>` element. Staff mails hold exactly the single
- *   `.hospeda-btn` media rule; user mails hold the user layout block, which starts with
- *   that same rule (HOS-2565 PR-4). Every `<a>` produced by `Button` has the
+ * - AC-2.6: staff mails hold exactly one `<style>`, the single `.hospeda-btn` media
+ *   rule; user mails hold two, the user layout block (which starts with that same
+ *   rule) and the dark block apart (HOS-2565 PR-4). Every `<a>` produced by `Button` has the
  *   `hospeda-btn` class and an inline `display:inline-block`.
  *
  * AC-2.9 (size, one `<html lang="es">`, no email-unsafe CSS) is covered by
@@ -19,6 +19,7 @@ import {
     EMAIL_BUTTON_CLASS,
     EMAIL_BUTTON_MEDIA_RULE,
     EMAIL_BUTTON_SECONDARY_CLASS,
+    EMAIL_USER_DARK_STYLE_BLOCK,
     EMAIL_USER_STYLE_BLOCK
 } from '@repo/email';
 import {
@@ -76,9 +77,12 @@ describe('email catalog: shared Callout and Button on every scenario (HOS-2565 P
             []) as string[];
 
         // Assert
-        expect(styleBlocks).toHaveLength(1);
-        expect(styleBlocks[0]?.[1]).toBe(
-            audienceOf.get(key) === 'user' ? EMAIL_USER_STYLE_BLOCK : EMAIL_BUTTON_MEDIA_RULE
+        // The user layout keeps the dark block in a second <style>, so a client that
+        // drops one block over a selector it dislikes keeps the button rule.
+        expect(styleBlocks.map((match) => match[1])).toEqual(
+            audienceOf.get(key) === 'user'
+                ? [EMAIL_USER_STYLE_BLOCK, EMAIL_USER_DARK_STYLE_BLOCK]
+                : [EMAIL_BUTTON_MEDIA_RULE]
         );
         expect(EMAIL_USER_STYLE_BLOCK.startsWith(EMAIL_BUTTON_MEDIA_RULE)).toBe(true);
         for (const anchor of buttonAnchors) {

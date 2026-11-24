@@ -9,16 +9,18 @@
  * - AC-1.2: one Spanish `<html>`, the hosted isotipo with explicit `width`, the live
  *   "hospeda" wordmark, and no email-unsafe CSS or SVG.
  * - AC-2.1: no unresolved `{{...}}` placeholder and no `unsubscribe_url`.
- * - The user variant: the dark-mode metas and media block, the footer FAQ, and the
- *   preferences link exactly when the reader has an account (frozen set below).
+ * - The user variant: the dark-mode metas and media block, one title row, and the
+ *   footer FAQ and preferences link exactly when the reader has an account (frozen
+ *   set below); without one, "Centro de ayuda" links the public FAQ page.
  * - The staff variant: the HOS-2519 footer brand line, light-only.
  * - AC-3.2: a non-empty text part without images or asset URLs.
  * - R-8: HTML under 90 KB (Gmail clips at 102 KB).
  */
 import {
     EMAIL_ISOTIPO_URL,
-    EMAIL_USER_PREFERENCES_LABEL,
-    EMAIL_USER_PREFERENCES_URL
+    EMAIL_PREFERENCES_URL,
+    EMAIL_PUBLIC_FAQ_URL,
+    EMAIL_USER_PREFERENCES_LABEL
 } from '@repo/email';
 import {
     EMAIL_CATALOG,
@@ -117,13 +119,25 @@ describe('email catalog: layout on every scenario (HOS-2519 PR-3, HOS-2565 PR-4)
         if (audience === 'user') {
             expect(html).toContain('<meta name="color-scheme" content="light dark"/>');
             expect(html.match(/prefers-color-scheme:dark/g)).toHaveLength(1);
-            expect(html).toContain('data-layout-faq="true"');
+            // The help articles sit behind the login wall: FAQ only with an account,
+            // and without one "Centro de ayuda" opens the public FAQ page (§8.3).
+            expect(html.includes('data-layout-faq="true"'), 'FAQ section').toBe(hasAccount);
+            expect(html.includes('/es/mi-cuenta/ayuda/'), 'logged-in help links').toBe(hasAccount);
+            if (!hasAccount) {
+                expect(html).toMatch(
+                    new RegExp(
+                        `href="${EMAIL_PUBLIC_FAQ_URL}\\?utm_source=[^"]*"[^>]*data-layout-link="help-center"|data-layout-link="help-center"[^>]*href="${EMAIL_PUBLIC_FAQ_URL}\\?`
+                    )
+                );
+            }
+            // Every user mail opens with ONE title row (bar + optional illustration).
+            expect(html.match(/data-email-title="true"/g), 'title row').toHaveLength(1);
             expect(html.includes('data-layout-link="preferences"'), 'preferences link').toBe(
                 hasAccount
             );
             expect(text.includes(EMAIL_USER_PREFERENCES_LABEL)).toBe(hasAccount);
             if (hasAccount) {
-                expect(html).toContain(`href="${EMAIL_USER_PREFERENCES_URL}?utm_source=email`);
+                expect(html).toContain(`href="${EMAIL_PREFERENCES_URL}?utm_source=email`);
             }
         } else {
             expect(html).toContain('<meta name="color-scheme" content="light"/>');
