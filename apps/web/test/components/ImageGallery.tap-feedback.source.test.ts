@@ -82,9 +82,23 @@ describe('gallery tap feedback CSS', () => {
 
 describe('lightbox open cost CSS', () => {
     it('gives the photo a fixed-size stage and lays the placeholder over it', () => {
-        expect(LIGHTBOX_CSS).toMatch(/\.lightboxStage \{[^}]*height:\s*70vh/);
+        expect(LIGHTBOX_CSS).toMatch(/\.lightboxStage \{[^}]*height:\s*70svh/);
         expect(LIGHTBOX_CSS).toMatch(/\.lightboxPlaceholder \{[^}]*position:\s*absolute/);
         expect(LIGHTBOX_CSS).toMatch(/\.lightboxPlaceholder \{[^}]*object-fit:\s*contain/);
+    });
+
+    it('caps the stage at a 4:3 box of the width on a phone, from the viewport only', () => {
+        // A fixed 70svh stage left a landscape photo in a tall empty box on a phone.
+        expect(LIGHTBOX_CSS).toMatch(
+            /@media \(max-width: 640px\) \{[^@]*\.lightboxStage \{\s*height:\s*min\(70svh, 75vw\);/
+        );
+    });
+
+    it('keeps the figure (and its caption) clear of the counter and the thumb strip', () => {
+        expect(LIGHTBOX_CSS).toMatch(
+            /\.lightboxFigure \{[^}]*max-height:\s*calc\(100svh - 2 \* var\(--lightbox-chrome-block\)\)/
+        );
+        expect(LIGHTBOX_CSS).toMatch(/--lightbox-chrome-block:\s*96px/);
     });
 
     it('skips rendering off-screen strip thumbnails', () => {

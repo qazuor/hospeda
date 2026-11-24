@@ -82,13 +82,20 @@
     flex-direction: column;
     align-items: center;
     max-width: min(90vw, 1200px);
-    max-height: 80vh;
+    /*
+     * The figure is centred in the viewport, so reserving the same block on both
+     * ends keeps its bottom (the caption) above the thumbnail strip, whose top sits
+     * 82px from the bottom (16px offset + 66px strip, measured), and its top
+     * below the counter. A long caption shrinks the stage instead (HOS-2520).
+     */
+    --lightbox-chrome-block: 96px;
+    max-height: calc(100svh - 2 * var(--lightbox-chrome-block));
     margin: 0;
 }
 
 .lightboxImg {
     max-width: 100%;
-    max-height: 70vh;
+    max-height: 70svh;
     min-height: 0;
     object-fit: contain;
     border-radius: var(--radius-card, 24px);
@@ -100,6 +107,11 @@
  * have different ratios (cells are cropped). The stage keeps that swap, and the
  * spinner-to-photo transition, from moving the caption or the controls. It is a
  * flex item, so a long caption shrinks it instead of overflowing the figure.
+ *
+ * Its size depends on the viewport only, never on the photo, so a swap never jumps.
+ * On a phone (see the 640px block below) it is capped at a 4:3 box of the width:
+ * a fixed 70svh there left a landscape photo floating in a tall empty box with the
+ * caption pushed toward the strip.
  */
 .lightboxStage {
     position: relative;
@@ -108,7 +120,7 @@
     align-items: center;
     justify-content: center;
     width: min(90vw, 1200px);
-    height: 70vh;
+    height: 70svh;
     min-height: 0;
 }
 
@@ -190,7 +202,7 @@
     max-width: 600px;
     /* Never push the photo off-screen: the bar scrolls instead (HOS-2125). */
     flex: 0 0 auto;
-    max-height: 28vh;
+    max-height: 28svh;
     overflow-y: auto;
 }
 
@@ -230,7 +242,7 @@
 
 @media (max-width: 640px) {
     .lightboxCaption {
-        max-height: 24vh;
+        max-height: 24svh;
     }
 
     .lightboxDescription[data-expanded="false"] {
@@ -330,6 +342,12 @@
 }
 
 @media (max-width: 640px) {
+    /* 4:3 of the viewport width, the shape of most listing photos: a landscape
+     * photo fills it, a portrait one is letterboxed inside it. */
+    .lightboxStage {
+        height: min(70svh, 75vw);
+    }
+
     .lightboxNavPrev {
         left: var(--space-2, 8px);
     }
