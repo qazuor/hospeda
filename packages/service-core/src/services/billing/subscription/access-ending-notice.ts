@@ -17,6 +17,8 @@ import type { DrizzleClient } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import { BillingDeadlineValuesSchema, ServiceErrorCode } from '@repo/schemas';
 import { getLocalDateString } from '@repo/utils';
+import { notExists } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/pg-core';
 import { z } from 'zod';
 import { ServiceError } from '../../../types';
 import { resolvePlanDisplayName } from '../plan-display-name';
@@ -134,6 +136,8 @@ export async function sendAccessEndingNotices(
         emailOutboxModel,
         eq,
         gt,
+        inArray,
+        LIVE_SUBSCRIPTION_STATUSES,
         lte,
         plans,
         planVersions,
@@ -145,6 +149,19 @@ export async function sendAccessEndingNotices(
     const windowDays = await readWindowDays(ports.readDeadlineValues);
     // One extra day covers the market-local offset; `resolveDueAccessEnding` decides exactly.
     const horizon = new Date(now.getTime() + (windowDays + 1) * DAY_MS);
+    // A predecessor whose live successor exists is not losing access: the holder signed
+    // up again and S17 cancels the old row only once the new one is ACTIVE (and may defer).
+    const successor = alias(subscriptions, 'access_ending_successor');
+    const liveSuccessor = db
+        .select({ id: successor.id })
+        .from(successor)
+        .where(
+            and(
+                eq(successor.succeedsId, subscriptions.id),
+                eq(successor.class, 'PRINCIPAL'),
+                inArray(successor.status, LIVE_SUBSCRIPTION_STATUSES)
+            )
+        );
     const selected = await db
         .select({
             subscriptionId: subscriptions.id,
@@ -164,7 +181,8 @@ export async function sendAccessEndingNotices(
                 eq(subscriptions.class, 'PRINCIPAL'),
                 eq(subscriptions.status, 'CANCEL_SCHEDULED'),
                 gt(subscriptions.serviceEndsAt, now),
-                lte(subscriptions.serviceEndsAt, horizon)
+                lte(subscriptions.serviceEndsAt, horizon),
+                notExists(liveSuccessor)
             )
         )
         .orderBy(asc(subscriptions.serviceEndsAt), asc(subscriptions.id))

@@ -46,6 +46,30 @@ async function noticesOf(tx: DrizzleClient, subscriptionId: string) {
         .orderBy(asc(emailOutbox.dedupKey));
 }
 
+/** Seeds a PRINCIPAL successor of the given row, for the same holder and plan (S1/S17). */
+async function seedSuccessor(
+    tx: DrizzleClient,
+    input: { readonly predecessorId: string; readonly status: string }
+) {
+    const [predecessor] = await tx
+        .select()
+        .from(subscriptions)
+        .where(eq(subscriptions.id, input.predecessorId));
+    if (!predecessor) throw new Error('predecessor not found');
+    await tx.insert(subscriptions).values({
+        userId: predecessor.userId,
+        vertical: predecessor.vertical,
+        planVersionId: predecessor.planVersionId,
+        billingOptionId: predecessor.billingOptionId,
+        paymentMethod: predecessor.paymentMethod,
+        status: input.status,
+        class: 'PRINCIPAL',
+        succeedsId: input.predecessorId,
+        createdAt: renewalNow('2001-06-20'),
+        updatedAt: renewalNow('2001-06-20')
+    });
+}
+
 function run(tx: DrizzleClient, day: string) {
     return sendAccessEndingNotices(
         { limit: 50, db: tx },
@@ -139,6 +163,46 @@ describe('HOS-2580 §C the access-ending reminder of a scheduled cancellation', 
             ).toBe('NOT_DUE');
             for (const { subscriptionId } of [active, ended, endsToday])
                 expect(await noticesOf(tx, subscriptionId)).toHaveLength(0);
+        });
+    });
+
+    it.each([
+        ['pending authorization', 'PENDING_AUTHORIZATION'],
+        ['active, predecessor not cancelled yet (S17 deferred)', 'ACTIVE']
+    ])('skips a predecessor whose successor is %s', async (_label, status) => {
+        await withServiceTestTransaction(async (tx) => {
+            // Arrange
+            const seeded = await seedWithEnd(tx, {
+                status: 'CANCEL_SCHEDULED',
+                serviceEndsAt: serviceEnd('2001-07-01')
+            });
+            await seedSuccessor(tx, { predecessorId: seeded.subscriptionId, status });
+
+            // Act
+            const result = await run(tx, '2001-06-26');
+
+            // Assert: the holder signed up again, so their access is not ending.
+            expect(result.rows.some((row) => row.subscriptionId === seeded.subscriptionId)).toBe(
+                false
+            );
+            expect(await noticesOf(tx, seeded.subscriptionId)).toHaveLength(0);
+        });
+    });
+
+    it('still notifies a predecessor whose successor ended without going live', async () => {
+        await withServiceTestTransaction(async (tx) => {
+            // Arrange: an abandoned successor is terminal, so the old access does end.
+            const seeded = await seedWithEnd(tx, {
+                status: 'CANCEL_SCHEDULED',
+                serviceEndsAt: serviceEnd('2001-07-01')
+            });
+            await seedSuccessor(tx, { predecessorId: seeded.subscriptionId, status: 'ABANDONED' });
+
+            // Act
+            await run(tx, '2001-06-26');
+
+            // Assert
+            expect(await noticesOf(tx, seeded.subscriptionId)).toHaveLength(1);
         });
     });
 });
