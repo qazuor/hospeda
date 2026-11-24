@@ -475,6 +475,7 @@ export { AlertTriangleIcon } from './icons/system/AlertTriangleIcon';
 export { ArrowLeftIcon } from './icons/system/ArrowLeftIcon';
 export { ArrowRightIcon } from './icons/system/ArrowRightIcon';
 export { AudioIcon } from './icons/system/AudioIcon';
+export { BackpackIcon } from './icons/system/BackpackIcon';
 export { BarChartIcon } from './icons/system/BarChartIcon';
 export { BedIcon } from './icons/system/BedIcon';
 export { BellIcon } from './icons/system/BellIcon';
