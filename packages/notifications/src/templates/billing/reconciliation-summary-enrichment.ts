@@ -28,6 +28,17 @@ export interface ReconciliationSubscriptionDetail {
     readonly status: string;
     /** Names of the listings the holder has in this vertical. */
     readonly listingNames: readonly string[];
+    /**
+     * The Partner the holder owns, for a `partner` subscription (HOS-2580 §E). Absent or
+     * null when the vertical is another one or the holder owns no live Partner.
+     */
+    readonly partner?: ReconciliationPartnerDetail | null;
+}
+
+/** The Partner behind a `partner` subscription: one per owner (`uq_partners_owner_user_id`). */
+export interface ReconciliationPartnerDetail {
+    readonly id: string;
+    readonly name: string;
 }
 
 /** Everything the mail can say about one add-on instance. */

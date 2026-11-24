@@ -67,6 +67,51 @@ describe('manual installment notice renderer', () => {
         expect(reader).toHaveBeenCalledTimes(1);
     });
 
+    it('HOS-2580 names the Partner and links it in the admin panel', async () => {
+        // Arrange
+        const reader = async () => ({
+            subscriptions: new Map([
+                [
+                    'subscription-1',
+                    {
+                        holderName: 'Ana Pérez',
+                        holderEmail: null,
+                        vertical: 'partner',
+                        planName: 'Plata',
+                        cycle: null,
+                        amountMinor: null,
+                        currency: null,
+                        status: 'ACTIVE',
+                        listingNames: [],
+                        partner: { id: 'partner-1', name: 'Bodega del Río' }
+                    }
+                ]
+            ]),
+            addonInstances: new Map(),
+            openMarks: new Map()
+        });
+        const render = (adminUrl?: string) =>
+            createBillingManualPaymentRenderers({
+                readSubjects: reader,
+                ...(adminUrl ? { adminUrl } : {})
+            })['billing.manual-installment-unpaid']!({
+                row: row({ template: 'billing.manual-installment-unpaid', payload })
+            });
+
+        // Act
+        const linked = renderToStaticMarkup((await render('https://admin.hospeda.test')).react);
+        const unlinked = renderToStaticMarkup((await render()).react);
+
+        // Assert
+        expect(linked).toContain('Aliado');
+        expect(linked).toContain('Bodega del Río');
+        expect(linked).toContain('href="https://admin.hospeda.test/partners/partner-1"');
+        // The installment id stays: E2E billing-35 filters the mail by it.
+        expect(linked).toContain('manual-1');
+        expect(unlinked).toContain('Bodega del Río');
+        expect(unlinked).not.toContain('/partners/partner-1');
+    });
+
     it('renders without the holder, and reports it, when the reader throws', async () => {
         const onEnrichmentError = vi.fn();
         const failing = createBillingManualPaymentRenderers({
@@ -81,6 +126,7 @@ describe('manual installment notice renderer', () => {
         });
         const html = renderToStaticMarkup(mail.react);
         expect(html).not.toContain('Titular');
+        expect(html).not.toContain('Aliado');
         expect(html).toContain('/billing/subscriptions/subscription-1');
         expect(onEnrichmentError).toHaveBeenCalledTimes(1);
     });

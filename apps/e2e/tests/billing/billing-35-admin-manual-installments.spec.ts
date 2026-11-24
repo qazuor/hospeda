@@ -132,6 +132,10 @@ test.describe('TEST:HOS-2160 admin manual installments: previews, unpaid, reimpu
                 expect(m.mailText(mail[0]?.html ?? '')).toContain(
                     'Registrá el pago o declarala impaga desde el panel de administración.'
                 );
+                // HOS-2580 §E: the notice names the Partner the holder owns.
+                expect(m.mailText(mail[0]?.html ?? '')).toContain(
+                    'Aliado HOS-2160 manual installments'
+                );
             }
 
             const beforePreview = await m.snapshotSubscription({
