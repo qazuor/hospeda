@@ -46,6 +46,25 @@ describe('TEST:B12:3 AC:B12:3 el aviso, sus correos y la fecha de cada cliente',
         expect(html).toContain('Mercado Pago también te va a avisar del cambio de monto');
     });
 
+    it('HOS-2580 shows the facts in a callout and closes with the contact link', () => {
+        const { html } = render('billing.plan-migration-announced', {
+            ...base,
+            variant: 'SCHEDULED'
+        });
+        for (const label of [
+            'Plan actual',
+            'Plan nuevo',
+            'Precio actual',
+            'Precio nuevo',
+            'Fecha del cambio'
+        ])
+            expect(html).toContain(label);
+        expect(html).toContain('Te escribimos para contarte un cambio en tu suscripción.');
+        expect(html).toContain('href="https://hospeda.test/es/contacto/"');
+        expect(html).toContain('escribinos');
+        expect(html).toContain('href="https://hospeda.test/es/mi-cuenta/suscripcion/"');
+    });
+
     it('announces the waiting plan without assigning a date yet', () => {
         const { subject, html } = render('billing.plan-migration-announced', {
             ...base,
@@ -110,6 +129,11 @@ describe('TEST:B12:6 AC:B12:6 la que no tiene su ciclo en el destino queda PARA_
         expect(subject).toBe('Tu plan deja de venderse');
         expect(html).toContain('Plan Inicial deja de venderse');
         expect(html).toContain('Te vamos a contactar para elegir con vos cómo seguir con tu plan.');
+        expect(html).toContain('Plan actual');
+        expect(html).not.toContain('Plan nuevo');
+        expect(html).not.toContain('Precio actual');
+        expect(html).not.toContain('Fecha del cambio');
+        expect(html).toContain('href="https://hospeda.test/es/contacto/"');
         expect((html.match(new RegExp(formattedDate, 'g')) ?? []).length).toBe(0);
         expect(html.split(newAmount).length - 1).toBe(0);
         expect((html.match(/precio nuevo/g) ?? []).length).toBe(0);
@@ -250,8 +274,12 @@ describe('AC:B12:9 el anuncio del aumento', () => {
         });
         expect(subject).toBe('Cambia el precio de tu plan');
         expect(html).toContain('El precio de tu plan Plan Inicial va a aumentar.');
-        expect(html).toContain(`Tu precio actual es ${currentAmount}.`);
-        expect(html).toContain(`El precio nuevo será ${newAmount}.`);
+        expect(html).toContain('Precio actual');
+        expect(html).toContain(currentAmount);
+        expect(html).toContain('Precio nuevo');
+        expect(html).toContain(newAmount);
+        expect(html).toContain('Fecha del cambio');
+        expect(html, 'an increase keeps the plan').not.toContain('Plan nuevo');
         expect(html).toContain('El nuevo precio se aplica desde tu cobro del');
         expect(html).toContain(formattedDate);
         expect(html).toContain('Hasta esa fecha seguís pagando tu precio actual.');
@@ -269,8 +297,9 @@ describe('AC:B12:9 el anuncio del aumento', () => {
             reason: 'PRICE_INCREASE'
         });
         expect(subject).toBe('Cambia el precio de tu plan');
-        expect(html).toContain(`Tu precio actual es ${currentAmount}.`);
-        expect(html).toContain(`El precio nuevo será ${newAmount}.`);
+        expect(html).toContain(currentAmount);
+        expect(html).toContain(newAmount);
+        expect(html).not.toContain('Fecha del cambio');
         expect(html).toContain('Te avisamos la fecha cuando tu suscripción vuelva a estar activa.');
         expect(html).toContain('Hasta esa fecha seguís pagando tu precio actual.');
         expect((html.match(new RegExp(formattedDate, 'g')) ?? []).length).toBe(0);
