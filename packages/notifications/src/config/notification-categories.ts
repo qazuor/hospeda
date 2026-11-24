@@ -84,15 +84,6 @@ export const NOTIFICATION_CATEGORY_MAP: Record<NotificationType, NotificationCat
     // AI cost threshold alert (SPEC-173 T-025) — sent to SUPER_ADMIN only
     [NotificationType.AI_COST_THRESHOLD_ALERT]: NotificationCategory.ADMIN,
 
-    // Soft-cancel confirmation (SPEC-147) — always sent, user-initiated
-    [NotificationType.SUBSCRIPTION_CANCEL_CONFIRMED]: NotificationCategory.TRANSACTIONAL,
-
-    // D3 access-ending reminder (SPEC-147 T-010) — REMINDER: user can opt out
-    [NotificationType.SUBSCRIPTION_ACCESS_ENDING_SOON]: NotificationCategory.REMINDER,
-
-    // Plan retirement notification (SPEC-148) — TRANSACTIONAL: admin-triggered, always sent
-    [NotificationType.PLAN_BEING_RETIRED]: NotificationCategory.TRANSACTIONAL,
-
     // Alliance claim invitation (HOS-278 §6.2) — TRANSACTIONAL: a
     // security-relevant confirmation about the recipient's OWN account, and the
     // only channel the claim token is ever delivered through. Opting out would

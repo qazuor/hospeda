@@ -240,12 +240,6 @@
         "pixelSlug": "email-notification-payment-success"
     },
     {
-        "key": "notification.plan_being_retired",
-        "name": "Email · Plan en retiro",
-        "utmCampaign": "notification-plan-being-retired",
-        "pixelSlug": "email-notification-plan-being-retired"
-    },
-    {
         "key": "notification.plan_change_confirmation",
         "name": "Email · Confirmación de cambio de plan",
         "utmCampaign": "notification-plan-change-confirmation",
@@ -268,18 +262,6 @@
         "name": "Email · Recordatorio de renovación",
         "utmCampaign": "notification-renewal-reminder",
         "pixelSlug": "email-notification-renewal-reminder"
-    },
-    {
-        "key": "notification.subscription_access_ending_soon",
-        "name": "Email · El acceso termina pronto",
-        "utmCampaign": "notification-subscription-access-ending-soon",
-        "pixelSlug": "email-notification-subscription-access-ending-soon"
-    },
-    {
-        "key": "notification.subscription_cancel_confirmed",
-        "name": "Email · Cancelación confirmada",
-        "utmCampaign": "notification-subscription-cancel-confirmed",
-        "pixelSlug": "email-notification-subscription-cancel-confirmed"
     },
     {
         "key": "notification.subscription_cancelled",
@@ -364,6 +346,12 @@
         "name": "Email · Reconquista: 60 días después",
         "utmCampaign": "notification-trial-win-back-60d",
         "pixelSlug": "email-notification-trial-win-back-60d"
+    },
+    {
+        "key": "outbox.billing.access-ending",
+        "name": "Email · Aviso de fin de acceso por baja programada",
+        "utmCampaign": "outbox-billing-access-ending",
+        "pixelSlug": "email-outbox-billing-access-ending"
     },
     {
         "key": "outbox.billing.addon-authorization-expired-cancel",

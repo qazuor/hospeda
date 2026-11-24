@@ -5,15 +5,12 @@
  *   • selectTemplate() branches for notification types not exercised in the
  *     base suite (lines ~477-587): subscription_cancelled, subscription_paused,
  *     subscription_reactivated, plan_downgrade_limit_warning, payment_retry_warning,
- *     ai_cost_threshold_alert, subscription_cancel_confirmed,
- *     subscription_access_ending_soon, plan_being_retired,
+ *     ai_cost_threshold_alert,
  *     payment_failure, plan_change_confirmation, and the default throw.
  *   • generateSubject() branches (lines 570-671): admin_payment_failure with
  *     affectedUserEmail, admin_system_event with eventType, feedback_report,
  *     contact_submission with both types, payment_retry_warning fields,
- *     ai_cost_threshold_alert with scope=feature, subscription_cancel_confirmed
- *     accessUntil formatting, subscription_access_ending_soon daysRemaining,
- *     plan_being_retired accessUntil formatting.
+ *     ai_cost_threshold_alert with scope=feature.
  *   • enqueueForRetry() error path (lines 768-775): when retryService.enqueue()
  *     itself throws, the error is logged but not re-thrown.
  *   • send() with skipDb + skipLogging options.
@@ -271,56 +268,6 @@ describe('NotificationService — extended coverage', () => {
             // Assert
             expect(result.success).toBe(true);
         });
-
-        it('should select template for subscription_cancel_confirmed', async () => {
-            // Arrange
-            const payload: NotificationPayload = {
-                type: NotificationType.SUBSCRIPTION_CANCEL_CONFIRMED,
-                ...basePayload,
-                planName: 'Standard',
-                accessUntil: '2026-07-15T23:59:59.000Z'
-            };
-
-            // Act
-            const result = await service.send(payload);
-
-            // Assert
-            expect(result.success).toBe(true);
-        });
-
-        it('should select template for subscription_access_ending_soon', async () => {
-            // Arrange
-            const payload: NotificationPayload = {
-                type: NotificationType.SUBSCRIPTION_ACCESS_ENDING_SOON,
-                ...basePayload,
-                planName: 'Standard',
-                accessUntil: '2026-07-18T23:59:59.000Z',
-                daysRemaining: 3
-            };
-
-            // Act
-            const result = await service.send(payload);
-
-            // Assert
-            expect(result.success).toBe(true);
-        });
-
-        it('should select template for plan_being_retired', async () => {
-            // Arrange
-            const payload: NotificationPayload = {
-                type: NotificationType.PLAN_BEING_RETIRED,
-                ...basePayload,
-                planName: 'Standard',
-                accessUntil: '2026-08-15T23:59:59.000Z',
-                migrationHint: 'Resubscribite a otro plan para mantener el acceso'
-            };
-
-            // Act
-            const result = await service.send(payload);
-
-            // Assert
-            expect(result.success).toBe(true);
-        });
     });
 
     // =========================================================================
@@ -481,65 +428,6 @@ describe('NotificationService — extended coverage', () => {
 
             // Assert
             expect(result.success).toBe(true);
-        });
-
-        it('should format accessUntil as locale date string in subscription_cancel_confirmed subject', async () => {
-            // Arrange
-            const payload: NotificationPayload = {
-                type: NotificationType.SUBSCRIPTION_CANCEL_CONFIRMED,
-                ...basePayload,
-                planName: 'Premium',
-                accessUntil: '2026-07-15T23:59:59.000Z'
-            };
-
-            // Act
-            const result = await service.send(payload);
-
-            // Assert
-            expect(result.success).toBe(true);
-            // Verify subject was generated (DB call means subject was included)
-            const insertCall = (mockDb.insert as Mock).mock.results[0]?.value;
-            expect(insertCall?.values).toHaveBeenCalledWith(
-                expect.objectContaining({ subject: expect.any(String) })
-            );
-        });
-
-        it('should include daysRemaining in subject for subscription_access_ending_soon', async () => {
-            // Arrange
-            const payload: NotificationPayload = {
-                type: NotificationType.SUBSCRIPTION_ACCESS_ENDING_SOON,
-                ...basePayload,
-                planName: 'Standard',
-                accessUntil: '2026-07-18T23:59:59.000Z',
-                daysRemaining: 3
-            };
-
-            // Act
-            const result = await service.send(payload);
-
-            // Assert
-            expect(result.success).toBe(true);
-        });
-
-        it('should format accessUntil as locale date string in plan_being_retired subject', async () => {
-            // Arrange
-            const payload: NotificationPayload = {
-                type: NotificationType.PLAN_BEING_RETIRED,
-                ...basePayload,
-                planName: 'Standard',
-                accessUntil: '2026-08-15T23:59:59.000Z',
-                migrationHint: 'Elegí otro plan'
-            };
-
-            // Act
-            const result = await service.send(payload);
-
-            // Assert
-            expect(result.success).toBe(true);
-            const insertCall = (mockDb.insert as Mock).mock.results[0]?.value;
-            expect(insertCall?.values).toHaveBeenCalledWith(
-                expect.objectContaining({ subject: expect.any(String) })
-            );
         });
     });
 

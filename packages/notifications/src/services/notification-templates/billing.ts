@@ -19,7 +19,6 @@ import {
     PaymentFailure,
     PaymentRetryWarning,
     PaymentSuccess,
-    PlanBeingRetired,
     PlanChangeConfirmation,
     PlanDowngradeLimitWarning,
     PlanPriceChangeNotice,
@@ -32,7 +31,6 @@ import type {
     CourtesyPayload,
     PaymentNotificationPayload,
     PaymentRetryWarningPayload,
-    PlanBeingRetiredPayload,
     PlanDowngradeLimitWarningPayload,
     PlanPriceChangeNoticePayload,
     PurchaseConfirmationPayload,
@@ -175,17 +173,6 @@ export const BILLING_NOTIFICATION_TEMPLATES: NotificationTemplateSelectors = {
             failureCount: p.failureCount,
             maxRetries: p.maxRetries,
             paymentMethodHint: p.paymentMethodHint,
-            baseUrl: siteUrl
-        });
-    },
-    plan_being_retired: ({ payload, siteUrl }) => {
-        const { recipientName } = payload;
-        const p = payload as PlanBeingRetiredPayload;
-        return PlanBeingRetired({
-            recipientName,
-            planName: p.planName,
-            accessUntil: p.accessUntil,
-            migrationHint: p.migrationHint,
             baseUrl: siteUrl
         });
     },

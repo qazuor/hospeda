@@ -7,8 +7,6 @@
 
 import {
     NotificationType,
-    type SubscriptionAccessEndingSoonPayload,
-    type SubscriptionCancelConfirmedPayload,
     type SubscriptionLifecyclePayload
 } from '../../types/notification.types.js';
 import { defineNotificationEntry } from '../define-entry.js';
@@ -84,43 +82,6 @@ export const NOTIFICATION_SUBSCRIPTION_ENTRIES: readonly EmailCatalogEntry[] = [
                     ...SAMPLE_RECIPIENT,
                     type: NotificationType.SUBSCRIPTION_REACTIVATED,
                     planName: 'Plan Profesional'
-                }
-            }
-        ]
-    }),
-    defineNotificationEntry<SubscriptionCancelConfirmedPayload>({
-        type: NotificationType.SUBSCRIPTION_CANCEL_CONFIRMED,
-        name: 'Cancelación confirmada',
-        domain: 'subscription',
-        audience: 'user',
-        scenarios: [
-            {
-                id: 'default',
-                label: 'Acceso hasta fin del período',
-                input: {
-                    ...SAMPLE_RECIPIENT,
-                    type: NotificationType.SUBSCRIPTION_CANCEL_CONFIRMED,
-                    planName: 'Plan Profesional',
-                    accessUntil: '2026-02-15'
-                }
-            }
-        ]
-    }),
-    defineNotificationEntry<SubscriptionAccessEndingSoonPayload>({
-        type: NotificationType.SUBSCRIPTION_ACCESS_ENDING_SOON,
-        name: 'El acceso termina pronto',
-        domain: 'subscription',
-        audience: 'user',
-        scenarios: [
-            {
-                id: 'three-days',
-                label: 'Faltan 3 días',
-                input: {
-                    ...SAMPLE_RECIPIENT,
-                    type: NotificationType.SUBSCRIPTION_ACCESS_ENDING_SOON,
-                    planName: 'Plan Profesional',
-                    accessUntil: '2026-02-15',
-                    daysRemaining: 3
                 }
             }
         ]

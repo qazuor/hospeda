@@ -189,27 +189,6 @@ describe('email catalog: Spanish renders are Spanish only (HOS-2565 AC-3.1)', ()
         expect(text).toContain('Obtuvo pending');
         expect(visibleText({ html, keepRaw: true })).toContain('authorized');
     });
-
-    it('catches the three subjects that used to be English', async () => {
-        // Arrange
-        const keys = [
-            'notification.subscription_cancel_confirmed',
-            'notification.subscription_access_ending_soon',
-            'notification.plan_being_retired'
-        ];
-
-        for (const key of keys) {
-            const entry = EMAIL_CATALOG.find((candidate) => candidate.key === key);
-            for (const scenario of entry?.scenarios ?? []) {
-                // Act
-                const { subject } = await render({ key, scenarioId: scenario.id });
-
-                // Assert
-                expect(subject).not.toMatch(ENGLISH_WORDS);
-                expect(subject).not.toContain('{');
-            }
-        }
-    });
 });
 
 describe('email catalog: billing cycle label (HOS-2565 AC-3.3)', () => {

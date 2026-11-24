@@ -70,7 +70,7 @@ describe('email pixel manifest (HOS-2359 OD-2)', () => {
     const derived = buildEmailPixelManifest();
 
     it('covers the whole catalog (non-vacuity)', () => {
-        expect(EMAIL_CATALOG.length).toBeGreaterThanOrEqual(125);
+        expect(EMAIL_CATALOG.length).toBeGreaterThanOrEqual(123);
         expect(derived).toHaveLength(EMAIL_CATALOG.length);
     });
 

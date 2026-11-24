@@ -84,7 +84,7 @@ describe('email catalog attribution: every entry, every send path (HOS-2359)', (
     });
 
     it('renders the whole catalog with an armed I/O guard (non-vacuity)', () => {
-        expect(cases.length).toBeGreaterThanOrEqual(125);
+        expect(cases.length).toBeGreaterThanOrEqual(123);
         expect(ioGuardsAreArmed()).toBe(true);
     });
 

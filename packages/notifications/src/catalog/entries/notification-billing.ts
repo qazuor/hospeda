@@ -12,7 +12,6 @@ import {
     NotificationType,
     type PaymentNotificationPayload,
     type PaymentRetryWarningPayload,
-    type PlanBeingRetiredPayload,
     type PlanDowngradeLimitWarningPayload,
     type PlanPriceChangeNoticePayload,
     type PurchaseConfirmationPayload,
@@ -387,25 +386,6 @@ export const NOTIFICATION_BILLING_ENTRIES: readonly EmailCatalogEntry[] = [
                     type: NotificationType.PAYMENT_RETRY_WARNING,
                     failureCount: 3,
                     maxRetries: 3
-                }
-            }
-        ]
-    }),
-    defineNotificationEntry<PlanBeingRetiredPayload>({
-        type: NotificationType.PLAN_BEING_RETIRED,
-        name: 'Plan en retiro',
-        domain: 'subscription',
-        audience: 'user',
-        scenarios: [
-            {
-                id: 'default',
-                label: 'Con fecha de acceso y sugerencia',
-                input: {
-                    ...SAMPLE_RECIPIENT,
-                    type: NotificationType.PLAN_BEING_RETIRED,
-                    planName: 'Plan Heredado',
-                    accessUntil: '2026-03-31T23:59:59.000Z',
-                    migrationHint: 'Suscribite a otro plan para conservar tus beneficios.'
                 }
             }
         ]
