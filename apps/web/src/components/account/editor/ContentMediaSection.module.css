@@ -49,8 +49,8 @@
     justify-content: center;
     border: none;
     border-radius: 50%;
-    background: rgba(0, 0, 0, 0.6);
-    color: #fff;
+    background: var(--overlay-bg-strong);
+    color: var(--palette-neutral-50);
     font-size: var(--app-body-size);
     line-height: 1;
     cursor: pointer;

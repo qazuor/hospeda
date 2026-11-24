@@ -180,14 +180,14 @@
 /* Invalid state (HOS-794) — same treatment as `.fieldInput[aria-invalid]`
  * in the rest of the editor (BasicInfoSection & co.). */
 .textarea[aria-invalid="true"] {
-    border-color: oklch(0.55 0.22 25);
+    border-color: var(--status-danger-solid);
 }
 
 /* Per-field validation message (HOS-794) */
 .fieldError {
     font-family: var(--font-sans);
     font-size: var(--app-caption-size);
-    color: oklch(0.45 0.2 25);
+    color: var(--status-danger-fg);
     margin: 0;
 }
 

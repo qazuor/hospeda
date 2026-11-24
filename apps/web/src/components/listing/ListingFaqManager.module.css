@@ -72,8 +72,8 @@
     margin: 0;
     padding: 0.5rem 0.75rem;
     border-radius: var(--radius-md);
-    background-color: oklch(0.96 0.02 25);
-    border: 1px solid oklch(0.88 0.06 25);
+    background-color: var(--status-danger-bg);
+    border: 1px solid var(--status-danger-border);
 }
 
 /* Per-row non-default channel-visibility marker (HOS-400) */

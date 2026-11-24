@@ -4,7 +4,7 @@
     z-index: 1000;
     display: flex;
     justify-content: flex-end;
-    background-color: rgba(0, 0, 0, 0.4);
+    background-color: var(--overlay);
     animation: fadeIn 0.2s ease;
 }
 
@@ -20,7 +20,7 @@
     flex-direction: column;
     border-radius: var(--radius-card);
     background-color: var(--core-card);
-    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.18);
+    box-shadow: var(--shadow-overlay);
     animation: fadeIn 0.2s ease;
 }
 
@@ -100,7 +100,7 @@
     max-width: 420px;
     height: 100%;
     background-color: var(--core-card);
-    box-shadow: -4px 0 12px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-overlay);
     animation: slideIn 0.25s ease;
     outline: none;
     display: flex;

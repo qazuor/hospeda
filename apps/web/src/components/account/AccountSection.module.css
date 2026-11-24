@@ -39,14 +39,14 @@
     border: 1px solid var(--core-foreground-a08);
     border-radius: var(--radius-card);
     padding: var(--space-6, 24px);
-    box-shadow: 0 1px 2px var(--core-foreground-a05);
+    box-shadow: var(--shadow-card);
     transition:
         box-shadow var(--duration-normal) ease,
         border-color var(--duration-normal) ease;
 }
 
 .card:hover {
-    box-shadow: 0 6px 16px var(--core-foreground-a05);
+    box-shadow: var(--shadow-card-hover);
     border-color: var(--brand-primary-a20);
 }
 
@@ -73,5 +73,5 @@
     border-radius: var(--radius-pill);
     background: linear-gradient(135deg, var(--brand-primary), var(--brand-accent));
     flex-shrink: 0;
-    box-shadow: 0 0 0 3px var(--brand-primary-a12);
+    outline: 3px solid var(--brand-primary-a12);
 }

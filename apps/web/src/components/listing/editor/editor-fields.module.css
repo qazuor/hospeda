@@ -90,7 +90,6 @@
     outline: 2px solid var(--brand-primary, var(--core-foreground));
     outline-offset: 2px;
     border-color: var(--brand-primary, var(--core-foreground));
-    box-shadow: 0 0 0 3px var(--brand-primary-a15);
 }
 
 /* Amenity / feature chips, the opening-hours "closed" toggle, and the

@@ -53,13 +53,13 @@
 }
 
 .primary {
-    background-color: oklch(0.55 0.18 145);
-    color: #ffffff;
-    border: 1px solid oklch(0.5 0.18 145);
+    background-color: var(--success);
+    color: var(--success-foreground);
+    border: 1px solid var(--success);
 }
 
 .primary:hover:not(:disabled) {
-    background-color: oklch(0.5 0.18 145);
+    background-color: var(--status-success-solid);
 }
 
 .secondary {

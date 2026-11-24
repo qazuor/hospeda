@@ -43,7 +43,6 @@
     outline: 2px solid var(--brand-primary);
     outline-offset: 2px;
     border-color: var(--brand-primary);
-    box-shadow: 0 0 0 2px var(--brand-primary-a15);
 }
 
 .textareaError {

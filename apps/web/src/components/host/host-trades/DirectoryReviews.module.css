@@ -197,9 +197,9 @@
     padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
     font-family: var(--font-sans);
     font-size: var(--app-control-size);
-    color: oklch(0.55 0.22 25);
-    background-color: oklch(0.55 0.22 25 / 0.08);
-    border: 1px solid oklch(0.85 0.05 25 / 0.4);
+    color: var(--status-danger-fg);
+    background-color: var(--status-danger-bg);
+    border: 1px solid var(--status-danger-border);
     border-radius: var(--radius-md);
 }
 
