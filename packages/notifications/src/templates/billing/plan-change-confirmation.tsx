@@ -67,14 +67,14 @@ export function PlanChangeConfirmation({
             </Callout>
 
             <Text style={styles.paragraph}>
-                Tu próximo cargo será por el nuevo plan. Puedes ver todos los detalles y beneficios
-                de tu plan actual desde tu cuenta.
+                Tu próximo cargo va a ser por el nuevo plan. Podés ver todos los detalles y
+                beneficios de tu plan actual desde tu cuenta.
             </Text>
 
             <Button href={`${baseUrl}/es/mi-cuenta/suscripcion/`}>Ver mi plan</Button>
 
             <Text style={styles.footerNote}>
-                Si tienes alguna pregunta sobre los cambios, estamos aquí para ayudarte.
+                Si tenés alguna pregunta sobre los cambios, estamos para ayudarte.
             </Text>
         </EmailLayout>
     );

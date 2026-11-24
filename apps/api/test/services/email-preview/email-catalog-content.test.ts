@@ -191,6 +191,30 @@ describe('email catalog: Spanish renders are Spanish only (HOS-2565 AC-3.1)', ()
     });
 });
 
+/**
+ * Second-person tú forms that rioplatense voseo replaces (HOS-2580 §G). Third-person
+ * homographs (`revisa`, `completa`) are left out on purpose: they are valid Spanish.
+ */
+const TUTEO = /\b(tienes|puedes|quieres|necesitas|deseas|haz clic|no dudes)\b/i;
+
+describe('email catalog: notifications speak in voseo (HOS-2580 §G)', () => {
+    // The auth mails keep their pre-HOS-2565 copy byte-identical (AC-2.8): out of scope.
+    const voseoCases = spanishCases.filter(([key]) => !key.startsWith('auth.'));
+
+    it('has scenarios to check', () => {
+        expect(voseoCases.length).toBeGreaterThanOrEqual(100);
+    });
+
+    it.each(voseoCases)('%s / %s has no tuteo', async (key, scenarioId) => {
+        // Act
+        const { subject, html } = await render({ key, scenarioId });
+
+        // Assert
+        expect(subject).not.toMatch(TUTEO);
+        expect(visibleText({ html })).not.toMatch(TUTEO);
+    });
+});
+
 describe('email catalog: billing cycle label (HOS-2565 AC-3.3)', () => {
     it.each([
         ['monthly', 'Mensual'],

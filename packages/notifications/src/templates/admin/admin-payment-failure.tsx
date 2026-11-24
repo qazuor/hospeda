@@ -94,7 +94,7 @@ export function AdminPaymentFailure({
             )}
 
             <Text style={styles.footerNote}>
-                Esta es una notificación automática del sistema. Revisa el panel de administración
+                Esta es una notificación automática del sistema. Revisá el panel de administración
                 para más detalles.
             </Text>
         </EmailLayout>

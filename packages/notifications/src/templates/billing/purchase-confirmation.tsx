@@ -44,10 +44,7 @@ export function PurchaseConfirmation({
 
             <Text style={styles.greeting}>Hola {recipientName},</Text>
 
-            <Text style={styles.paragraph}>
-                Tu compra ha sido confirmada exitosamente. A continuación encontrarás los detalles
-                de tu adquisición:
-            </Text>
+            <Text style={styles.paragraph}>Tu compra quedó confirmada. Acá tenés el detalle:</Text>
 
             <Section
                 className={EMAIL_TINTED_BOX_CLASS}
@@ -76,15 +73,12 @@ export function PurchaseConfirmation({
             </Section>
 
             <Text style={styles.paragraph}>
-                Puedes gestionar tu suscripción y ver tus facturas en cualquier momento desde tu
-                cuenta.
+                Podés gestionar tu suscripción y ver tus facturas cuando quieras desde tu cuenta.
             </Text>
 
             <Button href={`${baseUrl}/es/mi-cuenta/`}>Ver mi cuenta</Button>
 
-            <Text style={styles.footerNote}>
-                Si tienes alguna pregunta, no dudes en contactarnos.
-            </Text>
+            <Text style={styles.footerNote}>Si tenés alguna pregunta, escribinos.</Text>
         </EmailLayout>
     );
 }

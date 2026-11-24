@@ -444,7 +444,7 @@ describe('Billing Email Templates', () => {
             // Assert
             expect(html).toContain('Gracias por tu compra');
             expect(html).toContain('Hola');
-            expect(html).toContain('compra ha sido confirmada exitosamente');
+            expect(html).toContain('Tu compra quedó confirmada');
         });
 
         it('should handle missing optional billing period gracefully', () => {
@@ -485,5 +485,24 @@ describe('Billing Email Templates', () => {
             // Should contain Spanish month name or formatted date
             expect(html).toMatch(/\d{1,2}.*de.*(enero|febrero|marzo)/i);
         });
+    });
+});
+
+describe('HOS-2580 §G billing templates speak in voseo', () => {
+    const TUTEO = /\b(tienes|puedes|quieres|necesitas|deseas|haz|revisa|dudes)\b/i;
+
+    it('purchase confirmation has no tuteo', () => {
+        const html = renderToStaticMarkup(
+            PurchaseConfirmation({
+                recipientName: 'Ana',
+                planName: 'Plan Profesional',
+                amount: 15000,
+                currency: 'ARS',
+                baseUrl: 'https://hospeda.test'
+            })
+        );
+        expect(html).not.toMatch(TUTEO);
+        expect(html).toContain('Si tenés alguna pregunta, escribinos.');
+        expect(html).toContain('Podés gestionar tu suscripción');
     });
 });
