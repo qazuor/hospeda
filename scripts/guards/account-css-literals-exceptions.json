@@ -1,6 +1,6 @@
 {
     "apps/web/src/components/account/AccountButton.module.css": {
-        "font-size": 8
+        "font-size": 7
     },
     "apps/web/src/components/account/AccountSection.module.css": {
         "font-size": 1,
@@ -75,8 +75,8 @@
         "radius": 1
     },
     "apps/web/src/components/host/editor/CalendarSyncPanel.module.css": {
-        "color": 8,
-        "font-size": 11,
+        "color": 7,
+        "font-size": 10,
         "radius": 6
     },
     "apps/web/src/components/host/editor/CountryCodeCombobox.module.css": {
