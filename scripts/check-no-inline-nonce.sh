@@ -7,8 +7,9 @@
 # This is the inverse of the SPEC-047 guard it replaces
 # (`check-inline-nonce.sh`, which REQUIRED `nonce={cspNonce}` on every
 # `is:inline` block). The web app's CSP no longer uses a per-request nonce:
-# `middleware.ts` computes the sha256 of each inline `<script>`/`<style>` and
-# emits those as `script-src`/`style-src` sources.
+# `middleware.ts` computes the sha256 of each inline `<script>` and emits those
+# as `script-src` sources. (`style-src` is a plain `'unsafe-inline'` since
+# HOS-2576, with no hash and no nonce.)
 #
 # Why the reversal matters: Cloudflare caches response headers together with
 # the body, so a per-request nonce survives into the edge cache and becomes a

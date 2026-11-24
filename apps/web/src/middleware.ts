@@ -625,7 +625,6 @@ async function runMiddlewarePipeline(
         // body there would consume the static file's stream, and a build-time
         // hash could not describe a body served straight off disk anyway.
         let scriptHashes: readonly string[] = [];
-        let styleHashes: readonly string[] = [];
 
         if (!context.isPrerendered) {
             // SSR pages: read the rendered body, hash its inline blocks, and
@@ -636,7 +635,6 @@ async function runMiddlewarePipeline(
             const originalBody = await response.text();
             const collected = await collectCspHashes({ html: originalBody });
             scriptHashes = collected.scriptHashes;
-            styleHashes = collected.styleHashes;
 
             const newHeaders = new Headers(response.headers);
             newHeaders.delete('content-length');
@@ -648,7 +646,6 @@ async function runMiddlewarePipeline(
 
         const directives = buildCspHeader({
             scriptHashes,
-            styleHashes,
             apiUrl: (import.meta.env.PUBLIC_API_URL as string | undefined) ?? undefined,
             sentryReportUri,
             // Drop the external *.sentry.io connect-src when the first-party
@@ -657,10 +654,11 @@ async function runMiddlewarePipeline(
             // HOS-2119: Umami lives on its own subdomain; allow its origin.
             umamiScriptUrl:
                 (import.meta.env.PUBLIC_UMAMI_SCRIPT_URL as string | undefined) ?? undefined,
-            // Dev-only CSP relaxations, both caused by Astro's ClientRouter
-            // behaving differently under `astro dev` (see buildCspHeader JSDoc):
-            // HOS-91's style-src, plus frame-src 'self' for the hidden
-            // same-origin iframe it uses to prepare `client:only` islands.
+            // Dev-only CSP relaxations caused by Astro's ClientRouter behaving
+            // differently under `astro dev` (see buildCspHeader JSDoc):
+            // frame-src 'self' for the hidden same-origin iframe it uses to
+            // prepare `client:only` islands. (style-src is shared with prod
+            // since HOS-2576.)
             isDev: isDevelopment()
         });
 

@@ -92,8 +92,8 @@ describe('CSP hash emission (end-to-end pipeline)', () => {
     });
 
     it('every inline <script> the browser would execute is allowed by its own hash', async () => {
-        const { scriptHashes, styleHashes } = await collectCspHashes({ html: FIXTURE_HTML });
-        const header = buildCspHeader({ scriptHashes, styleHashes });
+        const { scriptHashes } = await collectCspHashes({ html: FIXTURE_HTML });
+        const header = buildCspHeader({ scriptHashes });
         const scriptSrc = findDirective(header, 'script-src');
 
         const inlineScripts = enumerateInlineBlocks(FIXTURE_HTML).filter(
@@ -105,17 +105,24 @@ describe('CSP hash emission (end-to-end pipeline)', () => {
         }
     });
 
-    it('every inline <style> is allowed by its own hash', async () => {
-        const { scriptHashes, styleHashes } = await collectCspHashes({ html: FIXTURE_HTML });
-        const header = buildCspHeader({ scriptHashes, styleHashes });
+    it("every inline <style> is allowed by 'unsafe-inline', and style-src carries no hash or nonce (HOS-2576)", async () => {
+        const { scriptHashes } = await collectCspHashes({ html: FIXTURE_HTML });
+        const header = buildCspHeader({ scriptHashes });
         const styleSrc = findDirective(header, 'style-src');
 
         const inlineStyles = enumerateInlineBlocks(FIXTURE_HTML).filter(
             (b) => b.kind === 'style' && b.source.length > 0
         );
 
+        // Without this the hash/nonce assertions below would hold on an empty page.
+        expect(inlineStyles.length).toBeGreaterThan(0);
+        // CSP3: a hash or nonce in this directive would make browsers ignore
+        // 'unsafe-inline', blocking every inline <style> the page carries.
+        expect(styleSrc).toContain("'unsafe-inline'");
+        expect(styleSrc).not.toContain("'sha256-");
+        expect(styleSrc).not.toContain("'nonce-");
         for (const block of inlineStyles) {
-            expect(styleSrc).toContain(`'${referenceHash(block.source)}'`);
+            expect(styleSrc).not.toContain(referenceHash(block.source));
         }
     });
 
@@ -130,11 +137,8 @@ describe('CSP hash emission (end-to-end pipeline)', () => {
     });
 
     it('external <script src> contributes no hash and relies on self', async () => {
-        const { scriptHashes, styleHashes } = await collectCspHashes({ html: FIXTURE_HTML });
-        const scriptSrc = findDirective(
-            buildCspHeader({ scriptHashes, styleHashes }),
-            'script-src'
-        );
+        const { scriptHashes } = await collectCspHashes({ html: FIXTURE_HTML });
+        const scriptSrc = findDirective(buildCspHeader({ scriptHashes }), 'script-src');
 
         // One hash per distinct inline script — the two module bundles add none.
         const inlineSources = new Set(
@@ -147,8 +151,8 @@ describe('CSP hash emission (end-to-end pipeline)', () => {
     });
 
     it("never emits 'strict-dynamic' — it would make 'self' inert and block every island bundle", async () => {
-        const { scriptHashes, styleHashes } = await collectCspHashes({ html: FIXTURE_HTML });
-        const header = buildCspHeader({ scriptHashes, styleHashes });
+        const { scriptHashes } = await collectCspHashes({ html: FIXTURE_HTML });
+        const header = buildCspHeader({ scriptHashes });
 
         // HOS-369 D-9: a hash cannot vouch for an external script (that needs
         // `integrity`, which Astro does not emit). Reintroducing
@@ -157,8 +161,8 @@ describe('CSP hash emission (end-to-end pipeline)', () => {
     });
 
     it('never emits a nonce source — the whole point of the migration', async () => {
-        const { scriptHashes, styleHashes } = await collectCspHashes({ html: FIXTURE_HTML });
-        const header = buildCspHeader({ scriptHashes, styleHashes });
+        const { scriptHashes } = await collectCspHashes({ html: FIXTURE_HTML });
+        const header = buildCspHeader({ scriptHashes });
 
         expect(header).not.toContain("'nonce-");
     });
@@ -185,12 +189,12 @@ describe('CSP hash emission (end-to-end pipeline)', () => {
         expect(occurrences).toHaveLength(1);
     });
 
-    it('keeps the strict posture: no unsafe-inline in script-src or style-src', async () => {
-        const { scriptHashes, styleHashes } = await collectCspHashes({ html: FIXTURE_HTML });
-        const header = buildCspHeader({ scriptHashes, styleHashes });
+    it('keeps scripts strict: no unsafe-inline in script-src; style-src has it (HOS-2576)', async () => {
+        const { scriptHashes } = await collectCspHashes({ html: FIXTURE_HTML });
+        const header = buildCspHeader({ scriptHashes });
 
         expect(findDirective(header, 'script-src')).not.toContain("'unsafe-inline'");
-        expect(findDirective(header, 'style-src')).not.toContain("'unsafe-inline'");
+        expect(findDirective(header, 'style-src')).toContain("'unsafe-inline'");
     });
 
     it('leaves the response body byte-identical (the collector only reads)', async () => {
@@ -204,10 +208,9 @@ describe('CSP hash emission (end-to-end pipeline)', () => {
     });
 
     it('emits no PostHog snippet hash and still allows the Umami origin (HOS-2119)', async () => {
-        const { scriptHashes, styleHashes } = await collectCspHashes({ html: FIXTURE_HTML });
+        const { scriptHashes } = await collectCspHashes({ html: FIXTURE_HTML });
         const header = buildCspHeader({
             scriptHashes,
-            styleHashes,
             umamiScriptUrl: 'https://pulso.hospeda.com.ar/app.js'
         });
         // The Umami tag is an external <script src> with no inline body, so the

@@ -26,9 +26,9 @@
  * A hash source authorises exactly one byte sequence, so publishing it on every
  * response widens the policy by precisely those five scripts and nothing else.
  * An attacker cannot forge a payload that matches a SHA-256 they do not control.
- * This mirrors the `style-src` entry for Astro's
- * `astro-island{display:contents}` block, hardcoded in `buildCspHeader()` for
- * the same reason: `collectCspHashes()` only walks the initial SSR HTML.
+ * The same problem used to exist for Astro's `astro-island{display:contents}`
+ * style, which was hash-allowed in `style-src`. Since HOS-2576 `style-src` is
+ * `'unsafe-inline'` and carries no hash at all, so that entry is gone.
  *
  * Do NOT "solve" this with a nonce. HOS-369 WB0-1 removed the per-request nonce
  * on purpose: Cloudflare caches the header alongside the body, so a nonce

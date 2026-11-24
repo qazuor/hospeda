@@ -417,37 +417,23 @@ describe('REQ-19 regression guard: buildLoginRedirect (auth redirect) must remai
  * per-response hashes — spelling out empty lists at every call site would bury
  * what each test is actually checking.
  */
-const NO_HASHES = { scriptHashes: [] as readonly string[], styleHashes: [] as readonly string[] };
+const NO_HASHES = { scriptHashes: [] as readonly string[] };
 
 describe('buildCspHeader', () => {
     it('should emit the supplied inline-script hashes as script-src sources', () => {
-        const header = buildCspHeader({
-            scriptHashes: ['sha256-SCRIPTHASH'],
-            styleHashes: []
-        });
+        const header = buildCspHeader({ scriptHashes: ['sha256-SCRIPTHASH'] });
         const scriptSrc = header.split('; ').find((d) => d.startsWith('script-src ')) ?? '';
         expect(scriptSrc).toContain("'sha256-SCRIPTHASH'");
     });
 
-    it('should emit the supplied inline-style hashes as style-src sources', () => {
-        const header = buildCspHeader({ scriptHashes: [], styleHashes: ['sha256-STYLEHASH'] });
+    it('should not put script hashes in style-src (HOS-2576)', () => {
+        const header = buildCspHeader({ scriptHashes: ['sha256-SCRIPTHASH'] });
         const styleSrc = header.split('; ').find((d) => d.startsWith('style-src ')) ?? '';
-        expect(styleSrc).toContain("'sha256-STYLEHASH'");
-    });
-
-    it('should not put script hashes in style-src, nor style hashes in script-src', () => {
-        const header = buildCspHeader({
-            scriptHashes: ['sha256-SCRIPTHASH'],
-            styleHashes: ['sha256-STYLEHASH']
-        });
-        const scriptSrc = header.split('; ').find((d) => d.startsWith('script-src ')) ?? '';
-        const styleSrc = header.split('; ').find((d) => d.startsWith('style-src ')) ?? '';
-        expect(scriptSrc).not.toContain('STYLEHASH');
         expect(styleSrc).not.toContain('SCRIPTHASH');
     });
 
     it('should leave no dangling separator when a hash list is empty', () => {
-        const header = buildCspHeader({ scriptHashes: [], styleHashes: [] });
+        const header = buildCspHeader({ scriptHashes: [] });
         expect(header).not.toContain('  ');
         expect(header).not.toContain(' ;');
     });
@@ -636,35 +622,34 @@ describe('buildCspHeader', () => {
         expect(imgSrc).toContain('blob:');
     });
 
-    it('should allow Astro client runtime inline style via SHA-256 hash', () => {
+    it("should allow Astro client runtime inline style via 'unsafe-inline', not a hash (HOS-2576)", () => {
         // The Astro client runtime injects an inline <style> at hydration with
         // the fixed content `astro-island,astro-slot,astro-static-slot{display:contents}`.
-        // Hash-allowed in style-src because the injection happens via JS after
-        // the response was sent, so the walker never sees it. The hash is
-        // stable (CSS is hardcoded
-        // in Astro's runtime), so a regression here would indicate Astro
-        // upstream changed the inlined CSS — bump the hash and update the
-        // comment in buildCspHeader.
+        // It used to be hash-allowed; since HOS-2576 `style-src` is
+        // 'unsafe-inline' and must carry NO hash (CSP3 would ignore
+        // 'unsafe-inline' next to one), so the fixed hash is gone.
         const header = buildCspHeader({ ...NO_HASHES });
         const styleSrc = header.split('; ').find((d) => d.startsWith('style-src ')) ?? '';
-        expect(styleSrc).toContain("'sha256-vv9IoKo7BSLbWcUHr3tNmfNVmm5L/9Cfn2H6LMk7/ow='");
+        expect(styleSrc).toContain("'unsafe-inline'");
+        expect(styleSrc).not.toContain("'sha256-");
     });
 
     it('should allow inline style attributes via style-src-attr', () => {
         // Inline style="..." attributes (used for tokenized colors on cards
         // and per-card transition-delay in the stagger pattern) cannot use a
-        // hash by CSP spec. We override only -attr with 'unsafe-inline' so
-        // <style> blocks remain hash-gated.
+        // hash by CSP spec, so -attr carries its own 'unsafe-inline'. Since
+        // HOS-2576 the main style-src carries one too (see below).
         const header = buildCspHeader({ ...NO_HASHES });
         const attrDirective = header.split('; ').find((d) => d.startsWith('style-src-attr ')) ?? '';
         expect(attrDirective).toContain("'unsafe-inline'");
     });
 
-    it('should not leak unsafe-inline into directives other than style-src-attr', () => {
-        // The lax override on -attr must NOT bleed into script-src, the main
-        // style-src (which gates <style> blocks), or any other directive.
+    it('should not leak unsafe-inline into directives other than style-src and style-src-attr', () => {
+        // The lax sources must NOT bleed into script-src or any other directive.
         const header = buildCspHeader({ ...NO_HASHES });
-        const directives = header.split('; ').filter((d) => !d.startsWith('style-src-attr '));
+        const directives = header
+            .split('; ')
+            .filter((d) => !d.startsWith('style-src-attr ') && !d.startsWith('style-src '));
         for (const d of directives) {
             expect(d).not.toContain("'unsafe-inline'");
         }
@@ -676,7 +661,7 @@ describe('buildCspHeader', () => {
     // exact-string equality which made any new https: host (e.g. an analytics
     // ingestion host) regress the test.
     it('script-src must have self + the response hashes and no unsafe-inline', () => {
-        const header = buildCspHeader({ scriptHashes: ['sha256-abc123'], styleHashes: [] });
+        const header = buildCspHeader({ scriptHashes: ['sha256-abc123'] });
         const scriptSrc = header.split('; ').find((d) => d.startsWith('script-src '));
         expect(scriptSrc).toBeDefined();
         expect(scriptSrc).toContain("'self'");
@@ -689,26 +674,25 @@ describe('buildCspHeader', () => {
         // allowing only nonce/hash-tagged scripts. A hash cannot vouch for an
         // external <script src> (that needs `integrity`, which Astro does not
         // emit), so every /_astro/*.js island bundle would be blocked.
-        const header = buildCspHeader({ scriptHashes: ['sha256-abc123'], styleHashes: [] });
+        const header = buildCspHeader({ scriptHashes: ['sha256-abc123'] });
         const scriptSrc = header.split('; ').find((d) => d.startsWith('script-src ')) ?? '';
         expect(scriptSrc).not.toContain("'strict-dynamic'");
     });
 
-    it('style-src must use hash-based policy without unsafe-inline', () => {
-        const header = buildCspHeader({ scriptHashes: [], styleHashes: ['sha256-abc123'] });
+    it("style-src must be 'unsafe-inline' with no hash and no nonce (HOS-2576)", () => {
+        // CSP3: any hash/nonce in this directive makes browsers ignore 'unsafe-inline'.
+        const header = buildCspHeader({ scriptHashes: ['sha256-abc123'] });
         const styleSrc = header.split('; ').find((d) => d.startsWith('style-src '));
         expect(styleSrc).toBeDefined();
-        expect(styleSrc).toContain("'sha256-abc123'");
-        expect(styleSrc).not.toContain('unsafe-inline');
+        expect(styleSrc).toContain("'unsafe-inline'");
+        expect(styleSrc).not.toContain("'sha256-");
+        expect(styleSrc).not.toContain("'nonce-");
     });
 
     it('no directive may carry a nonce source — the migration removed them (HOS-369 D-9)', () => {
         // A nonce cached at the edge is a static, publicly readable token for
         // the whole TTL. See spec §5.13.
-        const header = buildCspHeader({
-            scriptHashes: ['sha256-abc123'],
-            styleHashes: ['sha256-def456']
-        });
+        const header = buildCspHeader({ scriptHashes: ['sha256-abc123'] });
         expect(header).not.toContain("'nonce-");
     });
 

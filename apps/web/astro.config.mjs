@@ -99,16 +99,18 @@ export default defineConfig({
         host: process.env.HOST || undefined
     },
     build: {
-        // GAP-30-01 root cause: Astro's default 'auto' inlines small
-        // component stylesheets as <style nonce="..."> in the HTML. The
-        // nonce is generated per-request, but `<ClientRouter />` soft
-        // navigation swaps the DOM without a real top-level navigation, so
-        // the browser's already-active CSP (pinned to the nonce from the
-        // ORIGINAL page load) rejects every inlined <style> the swap-in
-        // page carries. Forcing all stylesheets to external hashed files
-        // routes them through `style-src 'self'` instead of the nonce
-        // source, which is unaffected by the frozen-nonce/soft-nav gap.
-        inlineStylesheets: 'never'
+        // GAP-30-01 history: Astro's 'auto' used to inline small stylesheets as
+        // <style nonce="...">, and `<ClientRouter />` soft navigation then hit
+        // a frozen nonce (the CSP stays pinned to the ORIGIN page). That
+        // problem no longer applies: the CSP has been hash-based since
+        // HOS-369 (no nonce anywhere), and `style-src` is `'unsafe-inline'`
+        // in every environment since HOS-2576, so inlined <style> blocks
+        // from a swapped-in page are always allowed.
+        // 'auto' (small sheets only) rather than 'always': measured under
+        // HOS-2576, 'always' made FCP about 100 ms worse and added 29 KB
+        // gzip to every page, while 'auto' cut render-blocking sheets on the
+        // home page from 13 to 6 (LCP -227 ms, FCP -102 ms, HTML +2 KB gzip).
+        inlineStylesheets: 'auto'
     },
     image: {
         // Decorator around the built-in sharp service. It changes NO encoding

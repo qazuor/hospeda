@@ -120,8 +120,7 @@ describe('Astro runtime CSP hashes — version pin', () => {
 
 describe('buildCspHeader — always publishes the Astro runtime hashes (HOS-798)', () => {
     /** A response whose body carried no inline script at all. */
-    const headerWithNoBodyHashes = (): string =>
-        buildCspHeader({ scriptHashes: [], styleHashes: [] });
+    const headerWithNoBodyHashes = (): string => buildCspHeader({ scriptHashes: [] });
 
     const scriptSrcOf = (header: string): string =>
         header.split('; ').find((directive) => directive.startsWith('script-src ')) ?? '';
@@ -146,18 +145,14 @@ describe('buildCspHeader — always publishes the Astro runtime hashes (HOS-798)
 
     it('does not duplicate a runtime hash the collector already found in the body', () => {
         const duplicated = ASTRO_RUNTIME_SCRIPT_HASHES[0] as string;
-        const scriptSrc = scriptSrcOf(
-            buildCspHeader({ scriptHashes: [duplicated], styleHashes: [] })
-        );
+        const scriptSrc = scriptSrcOf(buildCspHeader({ scriptHashes: [duplicated] }));
         const occurrences = scriptSrc.split(`'${duplicated}'`).length - 1;
         expect(occurrences).toBe(1);
     });
 
     it('still publishes the hashes the collector found in the body', () => {
         const bodyHash = 'sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=';
-        const scriptSrc = scriptSrcOf(
-            buildCspHeader({ scriptHashes: [bodyHash], styleHashes: [] })
-        );
+        const scriptSrc = scriptSrcOf(buildCspHeader({ scriptHashes: [bodyHash] }));
         expect(scriptSrc).toContain(`'${bodyHash}'`);
     });
 

@@ -190,7 +190,7 @@ describe('apps/web pages — no route re-introduces prerender except the allowli
 // ---------------------------------------------------------------------------
 
 /** A response with no inline blocks — most invariants below are hash-independent. */
-const NO_HASHES = { scriptHashes: [] as readonly string[], styleHashes: [] as readonly string[] };
+const NO_HASHES = { scriptHashes: [] as readonly string[] };
 
 describe('buildCspHeader — prerendered-page header-only invocation', () => {
     it('produces a non-empty CSP header string for a prerendered page request', () => {
@@ -199,13 +199,9 @@ describe('buildCspHeader — prerendered-page header-only invocation', () => {
         expect(header.length).toBeGreaterThan(0);
     });
 
-    it('emits the response hash sources in script-src and style-src', () => {
-        const header = buildCspHeader({
-            scriptHashes: ['sha256-scripthash'],
-            styleHashes: ['sha256-stylehash']
-        });
+    it('emits the response script hash sources in script-src', () => {
+        const header = buildCspHeader({ scriptHashes: ['sha256-scripthash'] });
         expect(header).toContain("'sha256-scripthash'");
-        expect(header).toContain("'sha256-stylehash'");
     });
 
     it('includes default-src self and upgrade-insecure-requests', () => {
@@ -230,7 +226,7 @@ describe('buildCspHeader — prerendered-page header-only invocation', () => {
 });
 
 // ---------------------------------------------------------------------------
-// buildCspHeader — HOS-91 dev-only style-src relaxation
+// buildCspHeader — HOS-2576 style-src is 'unsafe-inline' in every environment
 // ---------------------------------------------------------------------------
 
 /**
@@ -241,41 +237,88 @@ describe('buildCspHeader — prerendered-page header-only invocation', () => {
 const findStyleSrcDirective = (header: string): string =>
     header.split('; ').find((d) => /^style-src /.test(d)) ?? '';
 
-describe('buildCspHeader — HOS-91 dev-only style-src relaxation', () => {
-    it('keeps the strict hash-based style-src in prod (isDev: false)', () => {
-        const header = buildCspHeader({
-            scriptHashes: [],
-            styleHashes: ['sha256-prod-style'],
-            isDev: false
-        });
+describe('buildCspHeader — HOS-2576 shared style-src', () => {
+    it("allows 'unsafe-inline' in prod (isDev: false) with no hash and no nonce", () => {
+        // Arrange
+        const header = buildCspHeader({ scriptHashes: [], isDev: false });
 
+        // Act
         const styleSrc = findStyleSrcDirective(header);
-        expect(styleSrc).toContain("'sha256-prod-style'");
-        expect(styleSrc).not.toContain("'unsafe-inline'");
-    });
 
-    it('keeps the strict hash-based style-src by default (isDev omitted)', () => {
-        const header = buildCspHeader({ scriptHashes: [], styleHashes: ['sha256-default-style'] });
-
-        const styleSrc = findStyleSrcDirective(header);
-        expect(styleSrc).toContain("'sha256-default-style'");
-        expect(styleSrc).not.toContain("'unsafe-inline'");
-    });
-
-    it('relaxes style-src to unsafe-inline with no hash source in dev (isDev: true)', () => {
-        // CSP3: a hash source in the SAME directive makes 'unsafe-inline'
-        // inert, so the dev variant must drop the hashes entirely rather than
-        // append 'unsafe-inline' next to them.
-        const header = buildCspHeader({
-            scriptHashes: [],
-            styleHashes: ['sha256-dev-style'],
-            isDev: true
-        });
-
-        const styleSrc = findStyleSrcDirective(header);
+        // Assert
         expect(styleSrc).toContain("'unsafe-inline'");
+        expect(styleSrc).not.toContain("'sha256-");
         expect(styleSrc).not.toContain("'nonce-");
-        expect(styleSrc).not.toContain("'sha256-dev-style'");
+    });
+
+    it("allows 'unsafe-inline' by default (isDev omitted) with no hash and no nonce", () => {
+        // Arrange
+        const header = buildCspHeader({ scriptHashes: [] });
+
+        // Act
+        const styleSrc = findStyleSrcDirective(header);
+
+        // Assert
+        expect(styleSrc).toContain("'unsafe-inline'");
+        expect(styleSrc).not.toContain("'sha256-");
+        expect(styleSrc).not.toContain("'nonce-");
+    });
+
+    it("allows 'unsafe-inline' in dev (isDev: true) with no hash and no nonce", () => {
+        // Arrange
+        const header = buildCspHeader({ scriptHashes: [], isDev: true });
+
+        // Act
+        const styleSrc = findStyleSrcDirective(header);
+
+        // Assert
+        expect(styleSrc).toContain("'unsafe-inline'");
+        expect(styleSrc).not.toContain("'sha256-");
+        expect(styleSrc).not.toContain("'nonce-");
+    });
+
+    it('emits the same style-src in dev and prod', () => {
+        // Arrange / Act
+        const prod = findStyleSrcDirective(buildCspHeader({ scriptHashes: [], isDev: false }));
+        const dev = findStyleSrcDirective(buildCspHeader({ scriptHashes: [], isDev: true }));
+
+        // Assert
+        expect(dev).toBe(prod);
+    });
+
+    it("keeps script hashes out of style-src (CSP3 would ignore 'unsafe-inline')", () => {
+        // Arrange
+        const header = buildCspHeader({ scriptHashes: ['sha256-scripthash'] });
+
+        // Act
+        const styleSrc = findStyleSrcDirective(header);
+
+        // Assert
+        expect(styleSrc).not.toContain('scripthash');
+    });
+
+    it("never allows 'unsafe-inline' in script-src", () => {
+        // Arrange / Act
+        const header = buildCspHeader({ scriptHashes: ['sha256-scripthash'] });
+        const scriptSrc = header.split('; ').find((d) => d.startsWith('script-src ')) ?? '';
+
+        // Assert
+        expect(scriptSrc).not.toContain("'unsafe-inline'");
+    });
+
+    it("carries 'unsafe-inline' only in style-src and style-src-attr", () => {
+        // Arrange
+        const header = buildCspHeader({ scriptHashes: ['sha256-scripthash'] });
+
+        // Act
+        const withUnsafeInline = header
+            .split('; ')
+            .filter((d) => d.includes("'unsafe-inline'"))
+            .map((d) => d.split(' ')[0])
+            .sort();
+
+        // Assert
+        expect(withUnsafeInline).toEqual(['style-src', 'style-src-attr']);
     });
 });
 
