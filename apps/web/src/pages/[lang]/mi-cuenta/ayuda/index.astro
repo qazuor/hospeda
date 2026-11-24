@@ -14,7 +14,8 @@
  */
 
 import AccountLayout from '@/layouts/AccountLayout.astro';
-import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
+import { PageHeader } from '@/components/account/ui';
+import PageHelpLink from '@/components/account/help/PageHelpLink.astro';
 import { HelpAudiencePreselect } from '@/components/account/help/HelpAudiencePreselect.client';
 import { HelpSearch } from '@/components/account/help/HelpSearch.client';
 import { HELP_AUDIENCES } from '@repo/help';
@@ -66,7 +67,9 @@ const contactPath = helpDestinationPath({ destination: { kind: 'contact' }, loca
 ---
 
 <AccountLayout locale={locale} title={title} description={description} activeSection="ayuda">
-	<AccountPageHeader title={title} description={description} />
+	<PageHeader title={title} description={description} locale={locale}>
+		<PageHelpLink slot="help" locale={locale} />
+	</PageHeader>
 
 	<HelpSearch
 		client:idle

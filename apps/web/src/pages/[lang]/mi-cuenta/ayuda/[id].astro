@@ -16,7 +16,8 @@
  */
 
 import AccountLayout from '@/layouts/AccountLayout.astro';
-import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
+import { PageHeader } from '@/components/account/ui';
+import PageHelpLink from '@/components/account/help/PageHelpLink.astro';
 import { HelpLimitValues } from '@/components/account/help/HelpLimitValues.client';
 import type { VerticalEnum } from '@repo/schemas';
 import { getSiteUrl } from '@/lib/env';
@@ -105,7 +106,9 @@ const pageTitle = t('account.help.article.title', undefined, { title: article.ti
 	</search>
 
 	<article class="help-article" lang={contentLocale}>
-		<AccountPageHeader title={article.title} description={article.summary} />
+		<PageHeader title={article.title} description={article.summary} locale={locale}>
+			<PageHelpLink slot="help" locale={locale} />
+		</PageHeader>
 
 		<div class="help-article__meta">
 			<ul class="help-article__chips" aria-label={t('account.help.audiencesLabel')}>

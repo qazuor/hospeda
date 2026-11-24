@@ -15,6 +15,7 @@
  */
 
 import { type JSX, useId, useState } from 'react';
+import { Button } from '@/components/account/ui/Button';
 import {
     type AmenityAttributeChange,
     AmenityAttributeFields,
@@ -100,23 +101,23 @@ function AmenityDetailsContent({
                 </div>
             </DialogBody>
             <DialogFooter>
-                <button
+                <Button
                     type="button"
-                    className={styles.secondary}
+                    variant="secondary"
                     onClick={onClose}
                 >
                     {t(`${key}.cancel`, 'Cancelar')}
-                </button>
-                <button
+                </Button>
+                <Button
                     type="button"
-                    className={styles.primary}
+                    variant="primary"
                     onClick={() => {
                         onApply({ amenityId: target.id, value: draft });
                         onClose();
                     }}
                 >
                     {t(`${key}.apply`, 'Aplicar')}
-                </button>
+                </Button>
             </DialogFooter>
         </>
     );

@@ -21,6 +21,15 @@ import { getNavForSurface, type NavGroup } from '../../src/config/navigation';
 import { isVisibleByRoles } from '../../src/lib/nav-gating';
 
 const source = readFileSync(resolve(__dirname, '../../src/layouts/AccountLayout.astro'), 'utf8');
+// HOS-2508: the legacy frame is gone; the sidebar markup is the kit `AccountSidebar`.
+const sidebarSource = readFileSync(
+    resolve(__dirname, '../../src/components/account/ui/AccountSidebar.tsx'),
+    'utf8'
+);
+const sidebarViewSource = readFileSync(
+    resolve(__dirname, '../../src/components/account/ui/account-sidebar-view.ts'),
+    'utf8'
+);
 // HOS-2413 T-017: the nav DATA moved into the model; the layout only renders it.
 const modelSource = readFileSync(resolve(__dirname, '../../src/lib/account-nav-model.ts'), 'utf8');
 
@@ -52,7 +61,9 @@ describe('AccountLayout — sidebar wiring (HOS-131 T-007)', () => {
     });
 
     it('wires data-tour from the config item, not a local getTourTarget mapping', () => {
-        expect(source).toContain('item.tourTarget');
+        expect(sidebarViewSource).toContain('tourTarget: item.item.tourTarget');
+        expect(sidebarSource).toContain('data-tour={item.tourTarget}');
+        expect(sidebarSource).not.toContain('function getTourTarget');
         expect(source).not.toContain('function getTourTarget');
     });
 });

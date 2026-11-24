@@ -1,17 +1,6 @@
 {
     "apps/web/src/components/account/AccountButton.module.css": {
-        "font-size": 8
-    },
-    "apps/web/src/components/account/AccountEmptyState.astro": {
-        "font-size": 3,
-        "radius": 2
-    },
-    "apps/web/src/components/account/AccountEmptyState.module.css": {
-        "font-size": 3,
-        "radius": 2
-    },
-    "apps/web/src/components/account/AccountPageHeader.astro": {
-        "font-size": 2
+        "font-size": 7
     },
     "apps/web/src/components/account/AccountSection.module.css": {
         "font-size": 1,
@@ -26,11 +15,6 @@
         "font-size": 4,
         "radius": 3,
         "shadow": 1
-    },
-    "apps/web/src/components/account/EditableContentCard.astro": {
-        "color": 10,
-        "font-size": 3,
-        "radius": 2
     },
     "apps/web/src/components/account/HostTradeEditForm.module.css": {
         "color": 1,
@@ -80,11 +64,6 @@
         "font-size": 7,
         "radius": 4
     },
-    "apps/web/src/components/host/editor/ActionBar.module.css": {
-        "color": 2,
-        "font-size": 2,
-        "radius": 2
-    },
     "apps/web/src/components/host/editor/AiTextImprovePanel.module.css": {
         "color": 5,
         "font-size": 7,
@@ -96,8 +75,8 @@
         "radius": 1
     },
     "apps/web/src/components/host/editor/CalendarSyncPanel.module.css": {
-        "color": 8,
-        "font-size": 11,
+        "color": 7,
+        "font-size": 10,
         "radius": 6
     },
     "apps/web/src/components/host/editor/CountryCodeCombobox.module.css": {
@@ -221,10 +200,6 @@
         "font-size": 13,
         "radius": 7,
         "shadow": 1
-    },
-    "apps/web/src/layouts/AccountLayout.astro": {
-        "font-size": 4,
-        "shadow": 3
     },
     "apps/web/src/pages/[lang]/mi-cuenta/comercio/[vertical]/[id]/editar/datos.astro": {
         "font-size": 1

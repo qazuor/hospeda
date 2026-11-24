@@ -196,7 +196,7 @@ const SCHEME_PREDICATES: readonly RegExp[] = [
  * still sanitized on the read side before it is ever linked.
  */
 const SCHEME_PREDICATE_EXEMPTIONS: Readonly<Record<string, string>> = Object.freeze({
-    'components/host/editor/SocialNetworksSection.client.tsx':
+    'components/host/editor/forms/social-handle.ts':
         'composeSocialUrl — a write-side handle/URL discriminator, not a link gate'
 });
 

@@ -14,14 +14,6 @@
     gap: var(--space-2, 0.5rem);
 }
 
-.primary {
-    composes: actionsPrimary from "../ActionBar.module.css";
-}
-
-.secondary {
-    composes: actionsSecondary from "../ActionBar.module.css";
-}
-
 /* Present on both layouts so the media query below has a hook. */
 .overlay {
     box-sizing: border-box;

@@ -23,12 +23,6 @@
     gap: var(--space-3);
 }
 
-.stack {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-4);
-}
-
 /* Subscription StatCard rows (HOS-2553): one line per live subscription,
    drawn inside the card's hint paragraph, so they are block-level spans. */
 .subRow {

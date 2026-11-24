@@ -63,8 +63,8 @@ describe('kit gallery page', () => {
         expect(page).toContain("t('account.ui.gallery.title')");
     });
 
-    it('renders inside the new shell and reads only the locale', () => {
-        expect(page).toContain('shell="account"');
+    it('renders inside the account layout and reads only the locale', () => {
+        expect(page).toContain('<AccountLayout');
         expect(page).not.toContain('Astro.locals.user');
     });
 });

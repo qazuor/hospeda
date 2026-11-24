@@ -485,8 +485,7 @@
             "action": {
                 "save": "Save",
                 "saving": "Saving...",
-                "cancel": "Cancel",
-                "back": "Back"
+                "cancel": "Cancel"
             },
             "validation": {
                 "nameRequired": "Name is required",

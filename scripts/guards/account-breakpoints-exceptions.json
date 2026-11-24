@@ -13,8 +13,5 @@
     },
     "apps/web/src/components/newsletter/WhatsAppCTA.module.css": {
         "media": 1
-    },
-    "apps/web/src/layouts/AccountLayout.astro": {
-        "media": 1
     }
 }

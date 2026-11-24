@@ -20,10 +20,6 @@ const source = readFileSync(
     resolve(__dirname, '../../src/pages/[lang]/mi-cuenta/partner/index.astro'),
     'utf8'
 );
-const sectionCardSource = readFileSync(
-    resolve(__dirname, '../../src/components/account/AccountSectionCard.astro'),
-    'utf8'
-);
 
 /**
  * The markup rendered specifically for an approved-content partner —
@@ -90,8 +86,6 @@ describe('mi-cuenta/partner/index.astro (HOS-278 §8 partner self-service)', () 
         expect(source).toContain(
             "presence.moderated || (isContentApproved && presence.publicPage === 'hidden' && presence.carousel === 'hidden')"
         );
-        expect(sectionCardSource).toContain("interface Props extends HTMLAttributes<'section'>");
-        expect(sectionCardSource).toContain('<section {...attributes} class:list=');
         const moderation = source.slice(
             source.indexOf('data-testid="partner-presence-moderated"'),
             source.indexOf('</div>', source.indexOf('data-testid="partner-presence-moderated"'))

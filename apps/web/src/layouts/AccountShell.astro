@@ -6,8 +6,8 @@
  * 64px header and the two-row footer of HOS-2550, no dock, account toast region),
  * the `AccountBar` island below 64rem and the `AccountSidebar` from 64rem.
  *
- * It is LANDED OFF: `AccountLayout` only renders it for `shell="account"`, and
- * the default is still `legacy`, so no page changes until the flip PR.
+ * `AccountLayout` always renders it: the pre-kit frame it replaced was removed
+ * by HOS-2508.
  *
  * The session is read by `AccountLayout`, which hands this layout the already
  * built `navModel`; nothing here reads the request session, so every page that uses

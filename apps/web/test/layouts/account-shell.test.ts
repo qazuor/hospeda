@@ -85,14 +85,12 @@ describe('AccountShell.astro', () => {
     });
 });
 
-describe('AccountLayout shell switch (OD-1)', () => {
-    it('defaults to the new account shell, keeping legacy as a rollback (T-031)', () => {
-        expect(layout).toContain("shell = 'account',");
-        expect(layout).toContain("readonly shell?: 'legacy' | 'account';");
-    });
-
-    it('renders AccountShell only for shell="account"', () => {
-        expect(layout).toContain("{shell === 'account' ? (");
+describe('AccountLayout frame (OD-1, legacy retired by HOS-2508)', () => {
+    it('always renders AccountShell and has no legacy frame left', () => {
         expect(layout).toContain('<AccountShell');
+        expect(layout).not.toMatch(/\bshell\b\s*[=?:]/);
+        expect(layout).not.toContain("'legacy'");
+        expect(layout).not.toContain('<BaseLayout');
+        expect(layout).not.toContain('account-page__');
     });
 });
