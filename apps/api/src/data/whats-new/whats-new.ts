@@ -170,6 +170,23 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         },
         translations: { en: 'machine', pt: 'machine' }
     },
+    // origin: #4714, #4715, #4718, #4720, #4735, #4737, #4739, #4747
+    {
+        id: '2026-11-23-listing-pages-easier-to-browse',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'Las fichas de alojamientos, experiencias y comer y salir son más fáciles de recorrer',
+            en: 'Accommodation, experience and food and nightlife pages are easier to browse',
+            pt: 'As páginas de hospedagens, experiências e gastronomia e saídas ficaram mais fáceis de explorar'
+        },
+        body: {
+            es: 'Las pestañas de sección quedan fijas al bajar, las comodidades y la descripción larga se resumen con «Ver todas» y «Leer más», y cada alojamiento muestra a su anfitrión y sus reseñas destacadas. Las fotos se abren al instante en pantalla completa, sobre un fondo más oscuro.',
+            en: 'Section tabs stay fixed as you scroll, amenities and long descriptions are summarized with «See all» and «Read more», and each accommodation shows its host and featured reviews. Photos open instantly in full screen, over a darker background.',
+            pt: 'As abas de seção ficam fixas ao rolar, as comodidades e a descrição longa são resumidas com «Ver todas» e «Ler mais», e cada hospedagem mostra seu anfitrião e suas avaliações em destaque. As fotos abrem na hora em tela cheia, sobre um fundo mais escuro.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4732
     {
         id: '2026-11-23-unpublish-without-plan',
