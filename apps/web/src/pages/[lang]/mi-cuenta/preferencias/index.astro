@@ -19,6 +19,7 @@ import { buildLoginRedirect } from '@/lib/middleware-helpers';
 import { EntitlementKeyEnum } from '@repo/schemas';
 import { fetchPublicPlans, planNamesWithEntitlement } from '@/lib/billing/fetch-plans';
 import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
+import { hasListingAssistant } from '@/lib/account/listing-assistant';
 
 const locale = Astro.locals.locale as SupportedLocale;
 const user = Astro.locals.user;
@@ -38,6 +39,12 @@ const historyGatePlanNames = planNamesWithEntitlement({
 	entitlement: EntitlementKeyEnum.CAN_VIEW_SEARCH_HISTORY
 });
 const plansHref = buildUrl({ locale, path: PRICING_PAGE_PATH_BY_AUDIENCE.tourist });
+// HOS-2602: the weekly AI digest row speaks of «the assistant of your listings»,
+// so only an account with a listing vertical sees it — decided from the EFFECTIVE
+// permissions by the shared business-vertical rule, never from a role.
+const { hasAssistant: showAiQuestionsDigest } = hasListingAssistant({
+	permissions: user.permissions
+});
 ---
 
 <AccountLayout locale={locale} title={title} activeSection="preferencias">
@@ -52,6 +59,7 @@ const plansHref = buildUrl({ locale, path: PRICING_PAGE_PATH_BY_AUDIENCE.tourist
 		apiUrl={apiUrl}
 		historyGatePlanNames={historyGatePlanNames}
 		plansHref={plansHref}
+		showAiQuestionsDigest={showAiQuestionsDigest}
 	/>
 
 	<div class="preferencias-tour-gap">
