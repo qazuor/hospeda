@@ -6,7 +6,8 @@
  * every reader. The caller (the API route, which can read the actor's effective
  * set) resolves the scope and hands it over through the service context; the
  * service never decides it from a role. Absent or malformed, the scope is PLUS
- * only, so a caller that forgets it fails closed.
+ * only, so a caller that forgets it fails closed. The scope applies to
+ * `search()` only: `count()` is the owner's quota count and sees every audience.
  */
 import { TouristAudienceEnum, TouristAudienceEnumSchema } from '@repo/schemas';
 import type { SQL } from 'drizzle-orm';
@@ -19,6 +20,15 @@ const AUDIENCE_SCOPE_KEY = 'touristAudienceScope';
 
 /** The scope every reader gets: promotions for everybody. */
 const DEFAULT_SCOPE: readonly TouristAudienceEnum[] = [TouristAudienceEnum.PLUS];
+
+/**
+ * Every audience. For owner-side reads that must see VIP-only promotions too,
+ * such as the `max_active_promotions` quota count.
+ */
+export const ALL_TOURIST_AUDIENCES: readonly TouristAudienceEnum[] = [
+    TouristAudienceEnum.PLUS,
+    TouristAudienceEnum.VIP
+];
 
 const AudienceScopeSchema = z.array(TouristAudienceEnumSchema).min(1);
 

@@ -26,7 +26,10 @@ import { and, gte, isNull, lte, or, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
 import type { Actor, ServiceConfig, ServiceContext, ServiceOutput } from '../../types';
-import { resolvePublicAudienceFilter } from './ownerPromotion.audience-scope';
+import {
+    ALL_TOURIST_AUDIENCES,
+    resolvePublicAudienceFilter
+} from './ownerPromotion.audience-scope';
 import {
     buildTouristAudienceCondition,
     type OwnerPromotionWithAccommodationSlug,
@@ -288,11 +291,12 @@ export class OwnerPromotionService extends BaseCrudService<
     protected async _executeCount(
         params: OwnerPromotionSearchInput,
         _actor: Actor,
-        ctx: ServiceContext
+        _ctx: ServiceContext
     ) {
-        // Every filter below mirrors _executeSearch so `total` and items never diverge:
         // ACTIVE forced over any caller value (AC-005-01), deletedAt: null (SPEC-285 FIX 2),
-        // accommodation type only (HOS-2270), active window (G-3), audience (HOS-2590).
+        // accommodation type only (HOS-2270), active window (G-3). HOS-2590: NO audience
+        // scope here: `count()` feeds the owner's `max_active_promotions` quota
+        // (protected/create.ts), where VIP-only promotions must count too.
         const publicFilter = {
             ...params,
             lifecycleState: LifecycleStatusEnum.ACTIVE,
@@ -300,7 +304,6 @@ export class OwnerPromotionService extends BaseCrudService<
             entityType: OwnerPromotionEntityTypeEnum.ACCOMMODATION
         };
         const windowCondition = this.buildActiveWindowCondition(new Date());
-        const { touristAudiences, audienceCondition } = resolvePublicAudienceFilter({ ctx });
 
         // D-4: use a dedicated count query (SPEC-285 FIX 3) to avoid fetching and
         // discarding up to 20 rows just to read `.total`. The WHERE conditions in
@@ -313,13 +316,13 @@ export class OwnerPromotionService extends BaseCrudService<
             const count = await this.model.countActiveForAccommodation({
                 accommodationId: params.accommodationId,
                 ownerId: accommodation.ownerId,
-                touristAudiences
+                touristAudiences: ALL_TOURIST_AUDIENCES
             });
             return { count };
         }
 
         const count = await this.model.count(publicFilter, {
-            additionalConditions: [windowCondition, audienceCondition]
+            additionalConditions: [windowCondition]
         });
         return { count };
     }

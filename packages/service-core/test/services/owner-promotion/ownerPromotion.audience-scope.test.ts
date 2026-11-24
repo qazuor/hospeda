@@ -5,7 +5,8 @@
  * Before the fix, `_executeSearch` / `_executeCount` never looked at
  * `touristAudience`, so a VIP-only promotion reached every public reader. The
  * scope rides in `ctx.hookState` (built by `buildOwnerPromotionAudienceContext`)
- * and defaults to PLUS only when absent or malformed (fail closed).
+ * and defaults to PLUS only when absent or malformed (fail closed). `count()` is
+ * the owner's `max_active_promotions` quota count and must keep VIP promotions.
  */
 import type { AccommodationModel, OwnerPromotionModel } from '@repo/db';
 import { PermissionEnum, TouristAudienceEnum } from '@repo/schemas';
@@ -102,7 +103,6 @@ describe('OwnerPromotionService public search audience scope (HOS-2590)', () => 
     it('scopes the accommodation read to PLUS for a reader without a scope', async () => {
         // Act
         await hooks._executeSearch({ accommodationId: ACCOMMODATION_ID }, guestActor, {});
-        await hooks._executeCount({ accommodationId: ACCOMMODATION_ID }, guestActor, {});
 
         // Assert
         expect(model.findActiveForAccommodation).toHaveBeenCalledWith(
@@ -113,11 +113,6 @@ describe('OwnerPromotionService public search audience scope (HOS-2590)', () => 
             },
             expect.anything()
         );
-        expect(model.countActiveForAccommodation).toHaveBeenCalledWith({
-            accommodationId: ACCOMMODATION_ID,
-            ownerId: OWNER_ID,
-            touristAudiences: [TouristAudienceEnum.PLUS]
-        });
     });
 
     it('lets a VIP scope read VIP promotions of the accommodation', async () => {
@@ -132,10 +127,9 @@ describe('OwnerPromotionService public search audience scope (HOS-2590)', () => 
         expect(params).toMatchObject({ touristAudiences: [...VIP_SCOPE] });
     });
 
-    it('adds the audience condition to the generic search and count paths', async () => {
+    it('adds the audience condition to the generic search path', async () => {
         // Act
         await hooks._executeSearch({}, guestActor, {});
-        await hooks._executeCount({}, guestActor, {});
 
         // Assert
         const [, , searchConditions] = model.findAll.mock.calls[0] ?? [];
@@ -143,13 +137,28 @@ describe('OwnerPromotionService public search audience scope (HOS-2590)', () => 
         expect(search.sql).toMatch(/"owner_promotions"\."tourist_audience" in \(\$\d+\)/i);
         expect(search.params).toContain(TouristAudienceEnum.PLUS);
         expect(search.params).not.toContain(TouristAudienceEnum.VIP);
+    });
 
+    it('keeps VIP-only promotions in the max_active_promotions quota count', async () => {
+        // Arrange: the call protected/create.ts makes to fill the owner's quota.
+        const quotaParams = { lifecycleState: 'ACTIVE', ownerId: OWNER_ID };
+
+        // Act
+        const result = await service.count(guestActor, quotaParams as never);
+        await hooks._executeCount({ accommodationId: ACCOMMODATION_ID }, guestActor, {});
+
+        // Assert: no audience filter on the owner count, every audience on the D-4 count.
+        expect(result.error).toBeUndefined();
         const [, countOptions] = model.count.mock.calls[0] ?? [];
         const count = renderConditions(
             (countOptions as { additionalConditions?: SQL[] }).additionalConditions
         );
-        expect(count.params).toContain(TouristAudienceEnum.PLUS);
-        expect(count.params).not.toContain(TouristAudienceEnum.VIP);
+        expect(count.sql).not.toMatch(/tourist_audience/i);
+        expect(model.countActiveForAccommodation).toHaveBeenCalledWith({
+            accommodationId: ACCOMMODATION_ID,
+            ownerId: OWNER_ID,
+            touristAudiences: [TouristAudienceEnum.PLUS, TouristAudienceEnum.VIP]
+        });
     });
 
     it('carries the scope through the public search() pipeline', async () => {
