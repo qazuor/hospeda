@@ -46,7 +46,7 @@ export interface ResetPasswordTemplateProps {
  */
 export function ResetPasswordTemplate({ name, resetUrl }: ResetPasswordTemplateProps) {
     return (
-        <EmailLayout>
+        <EmailLayout footerLink="none">
             <Heading style={h1}>Restablece tu contraseña</Heading>
 
             <Text style={text}>{resolveGreeting({ name }).text}</Text>

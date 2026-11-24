@@ -8,6 +8,7 @@ export default defineConfig({
     sourcemap: true,
     clean: true,
     external: ['react'],
-    // `@repo/analytics` ships ESM only; bundling it keeps the CJS output loadable.
-    noExternal: ['@repo/analytics']
+    // `@repo/analytics` and `@repo/config` ship ESM only; bundling them keeps the CJS output
+    // loadable (only the brand-contact constants survive tree-shaking from config).
+    noExternal: ['@repo/analytics', '@repo/config']
 });

@@ -12,6 +12,12 @@ export type ButtonVariant = 'primary' | 'secondary';
 export const EMAIL_BUTTON_CLASS = 'hospeda-btn';
 
 /**
+ * Extra class of the secondary variant, targeted only by the user layout's dark-mode
+ * block (HOS-2565 PR-4).
+ */
+export const EMAIL_BUTTON_SECONDARY_CLASS = 'hd-btn2';
+
+/**
  * The ONE `<style>` rule the layout emits (HOS-2565 D4, AC-2.6): on screens up to 480px
  * the button becomes a full-width block. Clients that strip `<style>` keep the
  * inline content-width button, so nothing depends on this rule to be correct.
@@ -27,7 +33,8 @@ export interface ButtonProps {
     /** Button label. */
     readonly children: ReactNode;
     /**
-     * `'primary'` is a solid brand button, `'secondary'` an outlined one.
+     * `'primary'` is a solid green button, `'secondary'` a light-blue one with a cyan
+     * border (HOS-2565 PR-4).
      * @default 'primary'
      */
     readonly variant?: ButtonVariant;
@@ -80,7 +87,11 @@ export function Button({
                     >
                         <ReactEmailButton
                             href={href}
-                            className={EMAIL_BUTTON_CLASS}
+                            className={
+                                variant === 'primary'
+                                    ? EMAIL_BUTTON_CLASS
+                                    : `${EMAIL_BUTTON_CLASS} ${EMAIL_BUTTON_SECONDARY_CLASS}`
+                            }
                             style={variant === 'primary' ? primaryStyle : secondaryStyle}
                             data-utm-content={utmContent}
                         >
@@ -104,7 +115,7 @@ const baseStyle = {
     cursor: 'pointer',
     display: 'inline-block',
     fontSize: '16px',
-    fontWeight: '600',
+    fontWeight: '700',
     lineHeight: '24px',
     padding: '14px 28px',
     textAlign: 'center' as const,
@@ -120,7 +131,7 @@ const primaryStyle = {
 
 const secondaryStyle = {
     ...baseStyle,
-    backgroundColor: emailPalette.surface,
+    backgroundColor: emailPalette.buttonSecondaryBackground,
     border: `2px solid ${emailPalette.buttonSecondaryBorder}`,
-    color: emailPalette.buttonSecondaryBorder
+    color: emailPalette.buttonSecondaryText
 };

@@ -23,13 +23,23 @@ export type { CreateEmailClientInput, EmailClient } from './client.js';
 export { createEmailClient } from './client.js';
 export type { ButtonProps, ButtonVariant } from './components/button.js';
 // Shared components (HOS-2565)
-export { Button, EMAIL_BUTTON_CLASS, EMAIL_BUTTON_MEDIA_RULE } from './components/button.js';
+export {
+    Button,
+    EMAIL_BUTTON_CLASS,
+    EMAIL_BUTTON_MEDIA_RULE,
+    EMAIL_BUTTON_SECONDARY_CLASS
+} from './components/button.js';
 export type { CalloutProps, CalloutTone } from './components/callout.js';
 export { Callout } from './components/callout.js';
-export type { ConfigureEmailAssetsInput } from './email-assets.js';
+export type { OptionCardProps, OptionCardTone } from './components/option-card.js';
+export { OptionCard } from './components/option-card.js';
+export type { SectionBarProps, SectionBarTone } from './components/section-bar.js';
+export { SectionBar } from './components/section-bar.js';
+export type { ConfigureEmailAssetsInput, EmailAssetPath } from './email-assets.js';
 export {
     configureEmailAssets,
     resetEmailAssets,
+    resolveEmailAssetUrl,
     resolveEmailIsotipoUrl,
     resolveEmailPixelBaseUrl,
     resolveEmailSiteOrigin
@@ -42,7 +52,11 @@ export type { SendEmailInput, SendEmailResult } from './send.js';
 export { sendEmail } from './send.js';
 // Subjects
 export { RESET_PASSWORD_EMAIL_SUBJECT, VERIFY_EMAIL_SUBJECT } from './subjects.js';
-export type { EmailFooterLink, EmailLayoutProps } from './templates/email-layout.js';
+export type {
+    EmailFooterLink,
+    EmailLayoutProps,
+    EmailLayoutVariant
+} from './templates/email-layout.js';
 // Email templates
 export {
     EMAIL_ISOTIPO_HEIGHT,
@@ -52,7 +66,30 @@ export {
     EMAIL_PUBLIC_SITE_URL,
     EmailLayout
 } from './templates/email-layout.js';
+export type { EmailLayoutContextValue } from './templates/email-layout-context.js';
+// User layout (HOS-2565 PR-4)
+export { EmailLayoutContext } from './templates/email-layout-context.js';
 export type { ResetPasswordTemplateProps } from './templates/reset-password.js';
 export { ResetPasswordTemplate } from './templates/reset-password.js';
+export { EMAIL_ACCOUNT_LINK_TARGETS } from './templates/user-layout/account-link.js';
+export type { EmailHelpLink } from './templates/user-layout/help-links.js';
+export {
+    buildEmailHelpArticleUrl,
+    EMAIL_DEFAULT_HELP_ARTICLE_IDS,
+    EMAIL_MAX_HELP_LINKS,
+    resolveEmailHelpLinks
+} from './templates/user-layout/help-links.js';
+export type { EmailIllustration } from './templates/user-layout/user-assets.js';
+export {
+    EMAIL_ILLUSTRATION_PATHS,
+    EMAIL_ILLUSTRATIONS,
+    EMAIL_USER_ASSET_PATHS
+} from './templates/user-layout/user-assets.js';
+export {
+    EMAIL_SOCIAL_PLATFORMS,
+    EMAIL_USER_PREFERENCES_LABEL,
+    EMAIL_USER_PREFERENCES_URL
+} from './templates/user-layout/user-footer.js';
+export { EMAIL_USER_STYLE_BLOCK } from './templates/user-layout/user-styles.js';
 export type { VerifyEmailTemplateProps } from './templates/verify-email.js';
 export { VerifyEmailTemplate } from './templates/verify-email.js';

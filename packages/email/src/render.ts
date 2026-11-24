@@ -1,6 +1,10 @@
 import { render } from '@react-email/render';
-import type { ReactElement } from 'react';
+import { createElement, type ReactElement } from 'react';
 import { applyEmailAttribution, type EmailAttribution } from './attribution.js';
+import {
+    EmailLayoutContext,
+    type EmailLayoutContextValue
+} from './templates/email-layout-context.js';
 
 /**
  * Input of {@link renderEmailBodies}.
@@ -13,6 +17,11 @@ export interface RenderEmailBodiesInput {
      * must decide which template or campaign it is, and whether it counts an open.
      */
     readonly attribution: EmailAttribution;
+    /**
+     * Per-send data for the user layout (HOS-2565 PR-4): the declared illustration and
+     * help articles, and the recipient's verticals. Omitted: an empty context.
+     */
+    readonly layout?: EmailLayoutContextValue;
 }
 
 /**
@@ -54,8 +63,11 @@ export interface RenderedEmailBodies {
 export async function renderEmailBodies(
     input: RenderEmailBodiesInput
 ): Promise<RenderedEmailBodies> {
-    const rawHtml = await render(input.react);
-    const rawText = await render(input.react, { plainText: true });
+    const element = input.layout
+        ? createElement(EmailLayoutContext.Provider, { value: input.layout }, input.react)
+        : input.react;
+    const rawHtml = await render(element);
+    const rawText = await render(element, { plainText: true });
     const { html, text = rawText } = applyEmailAttribution({
         html: rawHtml,
         text: rawText,

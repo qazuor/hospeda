@@ -46,7 +46,7 @@ export interface VerifyEmailTemplateProps {
  */
 export function VerifyEmailTemplate({ name, verificationUrl }: VerifyEmailTemplateProps) {
     return (
-        <EmailLayout>
+        <EmailLayout footerLink="none">
             <Heading style={h1}>Verifica tu dirección de correo electrónico</Heading>
 
             <Text style={text}>{resolveGreeting({ name }).text}</Text>
