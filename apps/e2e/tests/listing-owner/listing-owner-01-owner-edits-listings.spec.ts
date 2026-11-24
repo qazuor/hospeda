@@ -374,7 +374,7 @@ test.describe('LISTING-OWNER-01: venue or experience owner edits listings — bo
 
         // ── Step 4 assertion: public experience ficha reflects new description ─
 
-        // ExperienceInfo.astro renders richDescription inside a div with class
+        // ExperienceDescription.astro (HOS-2579) renders richDescription inside a div with class
         // exp-info__body (plain text) or exp-info__body--rich (rendered markdown).
         // We assert by text content of the containing element, locale-agnostic.
         await page.goto(`${WEB_URL}/es/experiencias/${EXPERIENCE_SLUG}/`, {
