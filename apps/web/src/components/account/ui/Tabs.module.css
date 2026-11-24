@@ -23,15 +23,15 @@
     -webkit-mask-image: linear-gradient(
         to right,
         transparent,
-        #000 var(--tabs-fade-start),
-        #000 calc(100% - var(--tabs-fade-end)),
+        var(--core-foreground) var(--tabs-fade-start),
+        var(--core-foreground) calc(100% - var(--tabs-fade-end)),
         transparent
     );
     mask-image: linear-gradient(
         to right,
         transparent,
-        #000 var(--tabs-fade-start),
-        #000 calc(100% - var(--tabs-fade-end)),
+        var(--core-foreground) var(--tabs-fade-start),
+        var(--core-foreground) calc(100% - var(--tabs-fade-end)),
         transparent
     );
 }
