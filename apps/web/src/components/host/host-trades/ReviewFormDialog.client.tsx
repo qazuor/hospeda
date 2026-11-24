@@ -27,6 +27,7 @@
 
 import { HostTradeReviewCreateBodySchema } from '@repo/schemas';
 import { useEffect, useId, useRef, useState } from 'react';
+import { Button } from '@/components/account/ui/Button';
 import type { HostTradeReview, HostTradeReviewBreakdown } from '@/lib/api/endpoints-protected';
 import { hostTradesApi } from '@/lib/api/endpoints-protected';
 import { translateApiError } from '@/lib/api-errors';
@@ -359,13 +360,9 @@ export function ReviewFormDialog({
                                   'Listo, tu valoración ya está publicada en el directorio.'
                               )}
                     </p>
-                    <button
-                        className={styles.primaryAction}
-                        onClick={onClose}
-                        type="button"
-                    >
+                    <Button onClick={onClose}>
                         {t('host-trades.review.success.close', 'Cerrar')}
-                    </button>
+                    </Button>
                 </div>
             ) : (
                 <form
@@ -542,15 +539,13 @@ export function ReviewFormDialog({
                     ) : null}
 
                     <div className={styles.actions}>
-                        <button
-                            className={styles.secondaryAction}
+                        <Button
+                            variant="secondary"
                             onClick={onClose}
-                            type="button"
                         >
                             {t('host-trades.review.cancel', 'Cancelar')}
-                        </button>
-                        <button
-                            className={styles.primaryAction}
+                        </Button>
+                        <Button
                             disabled={submitting}
                             type="submit"
                         >
@@ -559,7 +554,7 @@ export function ReviewFormDialog({
                                 : existing
                                   ? t('host-trades.review.save', 'Guardar cambios')
                                   : t('host-trades.review.submit', 'Publicar valoración')}
-                        </button>
+                        </Button>
                     </div>
                 </form>
             )}

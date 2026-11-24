@@ -19,6 +19,7 @@
 import type { AccommodationImportResponse } from '@repo/schemas';
 import { AccommodationImportRequestSchema } from '@repo/schemas';
 import { useEffect, useId, useRef, useState } from 'react';
+import { Button } from '@/components/account/ui/Button';
 import { type ImportRunHandle, useImportStatus } from '@/hooks/use-import-status';
 import { resolveSubscriptionPlansPathForAudience } from '@/lib/account-roles';
 import { accommodationsImportApi, isAsyncImportStart } from '@/lib/api/endpoints-protected';
@@ -506,16 +507,16 @@ export function ImportFromUrl({ locale, onImported, onAttempt, onError }: Import
                     <output className={cn('form-error-banner', styles.notice)}>{notice}</output>
                 ) : null}
 
-                <button
-                    type="button"
-                    className="btn-gradient"
+                <Button
+                    variant="secondary"
                     onClick={() => void handleSubmit()}
                     disabled={submitDisabled}
+                    loading={isSubmitting}
                 >
                     {isSubmitting
                         ? t('host.importFromUrl.actions.submitting', 'Importando...')
                         : t('host.importFromUrl.actions.submit', 'Importar')}
-                </button>
+                </Button>
             </div>
         </section>
     );

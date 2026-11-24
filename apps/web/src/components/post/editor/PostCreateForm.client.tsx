@@ -43,6 +43,7 @@
 
 import { PostCategoryEnum, PostCreateHttpSchema } from '@repo/schemas';
 import { type FormEvent, type JSX, useState } from 'react';
+import { Button } from '@/components/account/ui/Button';
 import { FieldError, fieldErrorId } from '@/components/ui/FieldError';
 import { postEditApi } from '@/lib/api/endpoints-protected';
 import { getPostCategoryLabel } from '@/lib/colors';
@@ -272,17 +273,16 @@ export function PostCreateForm({ locale }: PostCreateFormProps): JSX.Element {
                 </p>
             )}
 
-            <button
+            <Button
                 type="submit"
                 className={styles.submit}
-                disabled={isSubmitting}
-                aria-busy={isSubmitting}
+                loading={isSubmitting}
                 data-testid="post-create-submit"
             >
                 {isSubmitting
                     ? t('account.myContent.posts.create.submitting', 'Creando...')
                     : t('account.myContent.posts.create.submit', 'Crear publicación')}
-            </button>
+            </Button>
         </form>
     );
 }

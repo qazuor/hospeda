@@ -34,6 +34,7 @@
  */
 
 import { useCallback, useEffect, useId, useState } from 'react';
+import { Button } from '@/components/account/ui/Button';
 import type { BenefitUsage, BenefitUsageStatus, LinkedHost } from '@/lib/api/endpoints-protected';
 import { hostTradesApi } from '@/lib/api/endpoints-protected';
 import { translateApiError } from '@/lib/api-errors';
@@ -356,25 +357,22 @@ export function ProviderUsagesPanel({
                                             <p className={styles.rowMeta}>“{usage.note}”</p>
                                         ) : null}
                                         <div className={styles.actions}>
-                                            <button
-                                                className={styles.primaryAction}
+                                            <Button
                                                 disabled={busyId === usage.id}
                                                 onClick={() => handleConfirm(usage)}
-                                                type="button"
                                             >
                                                 {t(
                                                     'host-trades.usages.actions.confirm',
                                                     'Confirmar'
                                                 )}
-                                            </button>
-                                            <button
-                                                className={styles.secondaryAction}
+                                            </Button>
+                                            <Button
+                                                variant="secondary"
                                                 disabled={busyId === usage.id}
                                                 onClick={() => setRejectTarget(usage)}
-                                                type="button"
                                             >
                                                 {t('host-trades.usages.actions.reject', 'Rechazar')}
-                                            </button>
+                                            </Button>
                                         </div>
                                     </div>
                                 </li>
@@ -563,15 +561,14 @@ export function ProviderUsagesPanel({
                         </p>
                     ) : null}
 
-                    <button
-                        className={styles.primaryAction}
-                        disabled={submitting}
+                    <Button
                         type="submit"
+                        loading={submitting}
                     >
                         {submitting
                             ? t('host-trades.provider.usages.form.submitting', 'Registrando…')
                             : t('host-trades.provider.usages.form.submit', 'Registrar el uso')}
-                    </button>
+                    </Button>
                 </form>
             )}
 
@@ -631,17 +628,16 @@ export function ProviderUsagesPanel({
                                             its request would 404. */}
                                         {canUndoRejectionFrom(usage, SIDE) ? (
                                             <div className={styles.actions}>
-                                                <button
-                                                    className={styles.secondaryAction}
+                                                <Button
+                                                    variant="secondary"
                                                     disabled={busyId === usage.id}
                                                     onClick={() => handleUndo(usage)}
-                                                    type="button"
                                                 >
                                                     {t(
                                                         'host-trades.usages.actions.undoRejection',
                                                         'Deshacer el rechazo'
                                                     )}
-                                                </button>
+                                                </Button>
                                             </div>
                                         ) : null}
                                     </div>
