@@ -14,7 +14,8 @@
  * (contract defined once in WaveHeader.astro): `wh-compact-row` collapses the
  * main stack to one line, `wh-compact-title` shrinks the H1, `wh-compact-hide`
  * drops the back-button row + pricing + rating, `wh-compact-demote` inlines the
- * location, `wh-compact-badge` shrinks the type/new badges. Only the badges gap
+ * location, and the shared `.listing-header-badge` contract (components.css)
+ * sizes and shrinks every badge. Only the badges gap
  * remains as a genuinely local override below.
  *
  * DIVERGENCES from the accommodation reference (`DetailHeader.astro`): the
@@ -87,16 +88,16 @@ const isNew = experience.createdAt
     <div class="exp-hero__body">
         <!-- Main column: badges, title, location, pricing, rating -->
         <div class="exp-hero__main wh-compact-row">
-            <div class="exp-hero__badges">
-                <span class="exp-hero__type-badge wh-compact-badge">{typeLabel}</span>
+            <div class="exp-hero__badges listing-header-badges">
+                <span class="exp-hero__type-badge listing-header-badge">{typeLabel}</span>
                 {experience.isFeatured && (
-                    <span class="featured-badge">
+                    <span class="featured-badge listing-header-badge">
                         <StarIcon size={12} weight="fill" aria-hidden="true" />
                         <span>{t('experience.card.featured', 'Destacada')}</span>
                     </span>
                 )}
                 {isNew && (
-                    <span class="exp-hero__new-badge wh-compact-badge">
+                    <span class="exp-hero__new-badge listing-header-badge">
                         {t('home.accommodations.badge.new', 'Nuevo')}
                     </span>
                 )}
@@ -229,32 +230,24 @@ const isNew = experience.createdAt
     .exp-hero__type-badge {
         display: inline-flex;
         align-items: center;
-        padding: 4px 14px;
         border-radius: var(--radius-pill, 9999px);
         background-color: var(--brand-primary-a12);
         color: var(--brand-primary-link);
         border: 1px solid var(--brand-primary-a25);
         font-family: var(--font-sans);
-        font-size: 13px;
         font-weight: 600;
-        line-height: 1.4;
-        transition: padding var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease), font-size var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease);
     }
 
     .exp-hero__new-badge {
         display: inline-flex;
         align-items: center;
-        padding: 4px 14px;
         border-radius: var(--radius-pill, 9999px);
         background-color: var(--hospeda-forest);
         /* SPEC-308: white ink on the saturated green badge (primary-foreground
            flips to dark in dark mode and fails AA on green). */
         color: white;
         font-family: var(--font-sans);
-        font-size: 13px;
         font-weight: 600;
-        line-height: 1.4;
-        transition: padding var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease), font-size var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease);
     }
 
     .exp-hero__name {
@@ -367,22 +360,12 @@ const isNew = experience.createdAt
             display: none;
         }
 
+        /* Owner smoke (HOS-2520): the badges WRAP; a horizontal scroller here
+           showed a scrollbar under the row. */
         .exp-hero--mobile-gallery .exp-hero__badges {
             min-width: 0;
             max-width: 100%;
-            flex-wrap: nowrap;
-            overflow-x: auto;
-        }
-
-        .exp-hero--mobile-gallery .exp-hero__badges > * {
-            flex: 0 0 auto;
-            white-space: nowrap;
-        }
-
-        .exp-hero--mobile-gallery .exp-hero__type-badge,
-        .exp-hero--mobile-gallery .exp-hero__new-badge,
-        .exp-hero--mobile-gallery .featured-badge {
-            font-size: 12px;
+            flex-wrap: wrap;
         }
 
         /* Long titles wrap to 5 lines at the desktop-derived size; use the h3 step. */

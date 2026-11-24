@@ -103,6 +103,10 @@ const { paddingTop = 'listing', class: className } = Astro.props;
       // would be focusable-but-invisible in compact. `inert` is toggled per
       // state in apply() to fix that (HOS-84 review High-1).
       const compactHideEls = bar.querySelectorAll<HTMLElement>('.wh-compact-hide');
+      // Same contract, mobile only (`wh-compact-hide-mobile`): collapsed — and
+      // therefore inert — only while compact AND below 768px.
+      const mobileHideEls = bar.querySelectorAll<HTMLElement>('.wh-compact-hide-mobile');
+      const mobileQuery = window.matchMedia('(max-width: 767px)');
 
       // Detail surfaces get the full 3-state model (expanded/compact/hidden).
       // Listing surfaces compact but never hide: the band condenses to a slim
@@ -113,6 +117,11 @@ const { paddingTop = 'listing', class: className } = Astro.props;
       let state: WaveHeaderState = 'expanded';
       let accumulator = 0;
       let prevScrollY = window.scrollY;
+
+      const syncMobileInert = (): void => {
+        const collapsed = state !== 'expanded' && mobileQuery.matches;
+        for (const el of mobileHideEls) el.inert = collapsed;
+      };
 
       const apply = (next: WaveHeaderState): void => {
         if (next === state) return;
@@ -128,6 +137,7 @@ const { paddingTop = 'listing', class: className } = Astro.props;
         // hidden; the whole bar does once it is slid out of view (hidden).
         const collapsed = next === 'compact' || next === 'hidden';
         for (const el of compactHideEls) el.inert = collapsed;
+        syncMobileInert();
         bar.inert = slidOut;
       };
 
@@ -180,12 +190,14 @@ const { paddingTop = 'listing', class: className } = Astro.props;
 
       window.addEventListener('scroll', onScroll, { passive: true });
       window.addEventListener('resize', onResize, { passive: true });
+      if (mobileHideEls.length > 0) mobileQuery.addEventListener('change', syncMobileInert);
       // Set the initial state (handles navigating in already scrolled down).
       evaluate('scroll');
 
       document.addEventListener('astro:before-swap', () => {
         window.removeEventListener('scroll', onScroll);
         window.removeEventListener('resize', onResize);
+        mobileQuery.removeEventListener('change', syncMobileInert);
         header.dataset.waveInitialized = '';
       }, { once: true });
     }
@@ -356,6 +368,18 @@ const { paddingTop = 'listing', class: className } = Astro.props;
     opacity: 0;
     pointer-events: none;
     overflow: hidden;
+  }
+
+  /* Same collapse as `wh-compact-hide`, below 768px only (the script makes it
+     inert only there too). For elements that fit the desktop compact row but
+     would make the mobile strip as tall as the expanded header. */
+  @media (max-width: 767px) {
+    :global(.wave-header.wave-header--compact) :global(.wh-compact-hide-mobile) {
+      max-height: 0;
+      opacity: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
   }
 
   /* Demote a secondary inline text (location / destination) and prefix it

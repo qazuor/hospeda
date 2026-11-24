@@ -17,9 +17,9 @@
  * (contract defined once in WaveHeader.astro): `wh-compact-row` collapses the
  * main stack to one line, `wh-compact-title` shrinks the H1, `wh-compact-hide`
  * drops the back-button row + rating, `wh-compact-demote` inlines the
- * destination, `wh-compact-badge` shrinks the status pill. Only genuinely
- * accommodation-specific overrides (such as the type badge's custom-prop
- * shrink) remain local below.
+ * destination, and the shared `.listing-header-badge` contract (components.css)
+ * sizes and shrinks every badge. Only genuinely accommodation-specific
+ * overrides remain local below.
  *
  * The status badges (featured/new) are rendered as plain spans here (instead
  * of going through the `Badge` primitive) so we can size them identically to
@@ -85,7 +85,7 @@ const newStyle =
   <div class="detail-header__body">
     <div class="detail-header__main wh-compact-row">
       <div
-        class="detail-header__badges"
+        class="detail-header__badges listing-header-badges wh-compact-hide-mobile"
         tabindex="-1"
         role="group"
         aria-label={t('accommodations.detail.badges.scrollLabel')}
@@ -94,22 +94,22 @@ const newStyle =
           type={accommodation.type}
           locale={locale}
           size="sm"
-          class="detail-header__type-badge"
+          class="detail-header__type-badge listing-header-badge"
         />
         {accommodation.isFeatured && (
-          <span class="featured-badge">
+          <span class="featured-badge listing-header-badge">
             <StarIcon size={12} weight="fill" aria-hidden="true" />
             <span>{t('accommodations.detail.badges.featured')}</span>
           </span>
         )}
         {accommodation.isVerified && (
-          <span class="featured-badge detail-header__verified-badge">
+          <span class="featured-badge detail-header__verified-badge listing-header-badge">
             <CheckCircleIcon size={12} weight="fill" aria-hidden="true" />
             <span>{t('accommodations.detail.badges.verified')}</span>
           </span>
         )}
         {isNew && (
-          <span class="detail-header__status-pill wh-compact-badge" style={newStyle}>
+          <span class="detail-header__status-pill listing-header-badge" style={newStyle}>
             {t('accommodations.detail.badges.new')}
           </span>
         )}
@@ -256,6 +256,10 @@ const newStyle =
     outline-offset: -2px;
   }
 
+  /* Badge SIZE (height, text, inline padding) comes from the shared
+   * `.listing-header-badges` / `.listing-header-badge` contract in
+   * components.css, identical across verticals (owner smoke, HOS-2520). */
+
   /* Verified badge — reuses the shared `.featured-badge` shape (padding,
    * font, radius, icon gap) from components.css but swaps to the semantic
    * "info" (trust) token so it reads apart from the accent-colored featured
@@ -265,8 +269,8 @@ const newStyle =
     color: var(--info-foreground);
   }
 
-  /* Status pills: rendered inline (not via the Badge primitive) so they share
-   * the exact padding / font-size / radius of the type badge. The colour
+  /* Status pills: rendered inline (not via the Badge primitive); size comes
+   * from the shared `.listing-header-badge` contract like every badge. The colour
    * palette comes from `getBadgeStatusColor`, applied via inline `style`. */
   .detail-header__status-pill {
     display: inline-flex;
@@ -274,14 +278,9 @@ const newStyle =
     border: 1px solid transparent;
     border-radius: var(--radius-pill, 9999px);
     font-family: var(--font-sans);
-    font-size: 0.7rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    padding: 4px 14px;
-    line-height: 1.4;
-    white-space: nowrap;
-    transition: padding var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease), font-size var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease);
   }
 
   /* Bookmark count pill (non-interactive, info only) */
@@ -362,15 +361,6 @@ const newStyle =
     gap: 4px;
   }
 
-  /* Type badge shrinks via the custom properties exposed by
-   * AccommodationTypeBadge — no `!important`, no fighting child styles. This
-   * cannot use `wh-compact-badge` because the primitive sizes itself from
-   * these custom props, not a direct font-size/padding. */
-  :global(.wave-header--compact .detail-header__type-badge) {
-    --acc-type-font-size: 0.6rem;
-    --acc-type-padding: 2px 10px;
-  }
-
   @media (min-width: 768px) {
     /* Metadata can wrap within its tracks; the action cluster never joins that flow. */
     :global(.wave-header.wave-header--compact) .detail-header__main {
@@ -433,15 +423,6 @@ const newStyle =
       white-space: nowrap;
     }
 
-    .detail-header__badges :global(.detail-header__type-badge) {
-      --acc-type-font-size: 12px;
-    }
-
-    .detail-header__badges .featured-badge,
-    .detail-header__badges .detail-header__status-pill {
-      font-size: 12px;
-    }
-
     .detail-header__name {
       overflow-wrap: anywhere;
     }
@@ -470,6 +451,36 @@ const newStyle =
       width: 32px;
       height: 32px;
       padding-inline: 0;
+    }
+
+    /* Compact state on mobile (owner smoke, HOS-2520): it used to keep the
+       badges row and the 20px title, so the band only went from 194px to 167px
+       and the change read as a glitch. Now the badges collapse
+       (`wh-compact-hide-mobile`, made inert by WaveHeader), the title drops a
+       step to one ellipsised line and the band padding tightens, so the
+       sticky strip is clearly a condensed version of the header. */
+    .detail-header__badges {
+      max-height: 3em;
+      opacity: 1;
+      transition:
+        max-height var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease),
+        opacity 0.2s ease;
+    }
+
+    :global(.wave-header--compact) .detail-header--mobile-gallery .detail-header__body {
+      row-gap: 2px;
+    }
+
+    :global(.wave-header--compact) .detail-header--mobile-gallery .detail-header__name {
+      font-size: var(--text-body, 1rem);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    :global(.wave-header.wave-header--compact .wave-header__content:has(.detail-header--mobile-gallery)) {
+      padding-top: var(--space-3, 12px);
+      padding-bottom: var(--space-3, 12px);
     }
   }
 

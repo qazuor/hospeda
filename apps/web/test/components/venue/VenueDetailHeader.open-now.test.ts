@@ -18,13 +18,13 @@ describe('VenueDetailHeader open-now badge', () => {
             /venue\.openingHours && Object\.keys\(venue\.openingHours\)\.length > 0 && \(\s*<span class="venue-detail-header__open-now" data-open-now-slot>\s*<VenueOpenNowBadge/
         );
         expect(src).toMatch(
-            /\.venue-detail-header__open-now \{[^}]*min-height: 26px;[^}]*min-width: 9\.5rem;/
+            /\.venue-detail-header__open-now \{[^}]*min-height: var\(--listing-badge-height, 1\.75rem\);[^}]*min-width: 9\.5rem;/
         );
     });
 
     it('places the slot after the other badges so no sibling shifts', () => {
         expect(src.indexOf('data-open-now-slot')).toBeGreaterThan(
-            src.indexOf('venue-detail-header__new-badge wh-compact-badge')
+            src.indexOf('venue-detail-header__new-badge listing-header-badge')
         );
     });
 
