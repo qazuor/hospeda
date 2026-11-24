@@ -564,11 +564,10 @@ const sectionTabs = buildListingSectionTabs({
     }
 });
 
-// --- Header (HOS-2579): the shared frame, built from the detail data ---
-/** HOS-2579 §6.4: the shared contact block, `null` when nothing is publishable (H-118). */
 /** HOS-2579 §6.5: slot 7, the approximate circle (SPEC-097). */
 const locationSection = buildAccommodationLocation({ accommodation, locale });
 
+/** HOS-2579 §6.4: the shared contact block, `null` when nothing is publishable (H-118). */
 const contactBlock = buildAccommodationContactBlock({
     listingId: accommodation.id,
     contactInfo: accommodation.contactInfo,
@@ -576,6 +575,7 @@ const contactBlock = buildAccommodationContactBlock({
     locale
 });
 
+// --- Header (HOS-2579): the shared frame, built from the detail data ---
 const headerProps = buildAccommodationHeader({
     accommodation,
     locale,

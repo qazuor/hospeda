@@ -37,7 +37,8 @@ import { EntityViewTracker } from '@/components/analytics/EntityViewTracker.clie
 import { InternalEntryTracker } from '@/components/analytics/InternalEntryTracker.client';
 import { experiencesApi, userBookmarksPublicApi } from '@/lib/api/endpoints';
 import { toExperienceDetailPageProps } from '@/lib/api/transforms';
-import { hasPublicContactChannel } from '@/lib/experience-contact';
+import { buildExperienceGalleryImages } from '@/lib/experience/experience-gallery-images';
+import { EXPERIENCE_CONTACT_ANCHOR_ID, hasPublicContactChannel } from '@/lib/experience-contact';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -49,7 +50,6 @@ import {
     buildExperienceChannels,
     buildExperienceContactPrice
 } from '@/lib/listing-contact/listing-channels';
-import { EXPERIENCE_CONTACT_ANCHOR_ID } from '@/lib/experience-contact';
 import type { ExperienceReviewPublicItem } from '@/lib/api/endpoints';
 import type { DetailFaq } from '@/data/types';
 
@@ -146,37 +146,12 @@ const faqs: readonly DetailFaq[] =
             }))
           : [];
 
-// --- Gallery images ---
-const galleryImages = (() => {
-    const mediaObj = raw.media as
-        | { gallery?: Array<{ url?: string; caption?: string; description?: string }> }
-        | undefined;
-    const gallery = mediaObj?.gallery ?? [];
-    if (gallery.length > 0) {
-        return gallery
-            .filter((g) => g.url)
-            .map((g) => ({
-                url: String(g.url),
-                alt: g.caption ?? experience.name,
-                caption: g.caption,
-                description: g.description
-            }));
-    }
-    if (
-        experience.featuredImage.url &&
-        !experience.featuredImage.url.includes('placeholder')
-    ) {
-        return [
-            {
-                url: experience.featuredImage.url,
-                alt: experience.featuredImage.caption ?? experience.name,
-                caption: experience.featuredImage.caption
-            }
-        ];
-    }
-    return [];
-})();
-
+// --- Gallery images (media.gallery on the raw payload, featured image fallback) ---
+const { images: galleryImages } = buildExperienceGalleryImages({
+    media: raw.media,
+    name: experience.name,
+    featuredImage: experience.featuredImage
+});
 
 // --- SSR bookmark status for hero ---
 let bookmarkCount: number | undefined;
@@ -192,7 +167,6 @@ try {
 } catch {
     // graceful degradation
 }
-
 
 const canonicalPath = buildUrl({ locale, path: `experiencias/${experience.slug}/` });
 
@@ -242,13 +216,6 @@ const breadcrumbItems = [
     { name: experience.name, url: `${siteOrigin}${Astro.url.pathname}` }
 ];
 
-// --- Header (HOS-2579): the shared frame, built from the detail data ---
-/**
- * HOS-2579 §6.4: the shared contact block, now also carrying the social
- * profiles that used to render as emoji pills inside `ExperienceInfo`. It
- * exists whenever `hasContactBlock` is true (and also for a socials-only
- * listing), so the private-groups anchor never points at a missing element.
- */
 /**
  * HOS-2579 §6.5: the meeting point (free) and, only with
  * `meetingPointDirectionsEnabled`, the exact map and the directions (HOS-1049).
@@ -256,6 +223,12 @@ const breadcrumbItems = [
  */
 const locationSection = buildExperienceLocation({ experience, locale });
 
+/**
+ * HOS-2579 §6.4: the shared contact block, now also carrying the social
+ * profiles that used to render as emoji pills inside `ExperienceInfo`. It
+ * exists whenever `hasContactBlock` is true (and also for a socials-only
+ * listing), so the private-groups anchor never points at a missing element.
+ */
 const contactBlock = buildExperienceContactBlock({
     listingId: experience.id,
     contactInfo: experience.contactInfo,
@@ -263,6 +236,7 @@ const contactBlock = buildExperienceContactBlock({
     locale
 });
 
+// --- Header (HOS-2579): the shared frame, built from the detail data ---
 const headerProps = buildExperienceHeader({
     experience,
     locale,
