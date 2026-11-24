@@ -100,6 +100,17 @@ function buildDefaults(campaign?: NewsletterCampaign): CampaignFormValues {
     };
 }
 
+/** Stable string snapshot of the persisted form fields, used to detect real changes. */
+function snapshotOf(v: CampaignFormValues): string {
+    return JSON.stringify([
+        v.title,
+        v.subject,
+        v.localeFilter,
+        v.contentType,
+        buildBodyJson(v.bodyJson)
+    ]);
+}
+
 /**
  * Builds the bodyJson payload for API calls, ensuring a valid TipTap doc structure.
  * Cast to satisfy the Zod-inferred schema type.
@@ -204,6 +215,8 @@ export function CampaignEditor({ mode, campaign }: CampaignEditorProps) {
     const autosaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     // Stores latest form values to avoid stale closure in autosave timer
     const latestFormValuesRef = useRef<CampaignFormValues>(buildDefaults(campaign));
+    // Snapshot of the content last persisted (or loaded); autosave skips when unchanged
+    const lastSavedSnapshotRef = useRef<string>(snapshotOf(buildDefaults(campaign)));
     // Track if first save has happened (for create mode showing Send button)
     const [savedOnce, setSavedOnce] = useState(!isCreate);
 
@@ -258,6 +271,9 @@ export function CampaignEditor({ mode, campaign }: CampaignEditorProps) {
 
                 if (!isValid) return;
 
+                const snapshot = snapshotOf(v);
+                if (snapshot === lastSavedSnapshotRef.current) return;
+
                 setAutosaveStatus('saving');
                 try {
                     await updateMutation.mutateAsync({
@@ -268,6 +284,7 @@ export function CampaignEditor({ mode, campaign }: CampaignEditorProps) {
                         // biome-ignore lint/suspicious/noExplicitAny: required for Zod schema compatibility
                         bodyJson: buildBodyJson(v.bodyJson) as any
                     });
+                    lastSavedSnapshotRef.current = snapshot;
                     setAutosaveStatus('saved');
                     setTimeout(() => setAutosaveStatus('idle'), 3000);
                 } catch {
@@ -332,6 +349,7 @@ export function CampaignEditor({ mode, campaign }: CampaignEditorProps) {
                 contentType,
                 bodyJson
             });
+            lastSavedSnapshotRef.current = snapshotOf(value);
             setSavedOnce(true);
             addToast({
                 message: t('admin-newsletter.campaigns.savedDraftToast'),
