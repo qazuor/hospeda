@@ -38,14 +38,16 @@ const REVIEW_PATH = resolve(
     __dirname,
     '../../src/components/host/host-trades/ReviewFormDialog.client.tsx'
 );
-const ACCOUNT_LAYOUT_PATH = resolve(__dirname, '../../src/layouts/AccountLayout.astro');
+const ACCOUNT_SHELL_PATH = resolve(__dirname, '../../src/layouts/AccountShell.astro');
+const SIDEBAR_PATH = resolve(__dirname, '../../src/components/account/ui/AccountSidebar.tsx');
 
 const pageSrc = readFileSync(PAGE_PATH, 'utf8');
 const islandSrc = readFileSync(ISLAND_PATH, 'utf8');
 const cardSrc = readFileSync(CARD_PATH, 'utf8');
 const pillSrc = readFileSync(PILL_PATH, 'utf8');
 const reviewSrc = readFileSync(REVIEW_PATH, 'utf8');
-const accountLayoutSrc = readFileSync(ACCOUNT_LAYOUT_PATH, 'utf8');
+const accountShellSrc = readFileSync(ACCOUNT_SHELL_PATH, 'utf8');
+const sidebarSrc = readFileSync(SIDEBAR_PATH, 'utf8');
 
 /** Resolves a dotted `host-trades.*` key against the Spanish catalog. */
 function resolveEsKey(dottedKey: string): unknown {
@@ -193,12 +195,13 @@ describe('usos-de-beneficio — reachability', () => {
     });
 
     it('mounts the count badge on that nav item (T-047)', () => {
-        expect(accountLayoutSrc).toContain(
-            "item.id === 'benefitUsages' && <BenefitUsagesCountPill locale={locale} client:idle />"
+        expect(accountShellSrc).toContain(
+            '<BenefitUsagesCountPill slot="benefitUsagesCount" locale={locale} client:idle />'
         );
-        expect(accountLayoutSrc).toContain(
+        expect(accountShellSrc).toContain(
             "import { BenefitUsagesCountPill } from '@/components/host/host-trades/BenefitUsagesCountPill.client';"
         );
+        expect(sidebarSrc).toContain("id === 'benefitUsages' ? benefitUsagesCount : undefined");
     });
 });
 

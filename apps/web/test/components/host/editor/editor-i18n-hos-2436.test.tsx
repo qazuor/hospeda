@@ -98,10 +98,10 @@ describe('hardcoded aria-labels are gone (HOS-2436)', () => {
     const read = (rel: string): string =>
         readFileSync(resolve(__dirname, '../../../..', rel), 'utf8');
 
-    it('AccountLayout navigation aria-label comes from i18n', () => {
-        const source = read('src/layouts/AccountLayout.astro');
+    it('the account sidebar navigation aria-label comes from i18n', () => {
+        const source = read('src/components/account/ui/AccountSidebar.tsx');
         expect(source).not.toContain('aria-label="Account navigation"');
-        expect(source).toContain("aria-label={t('account.navigation')}");
+        expect(source).toContain("aria-label={t('account.ui.sidebar.label')}");
     });
 
     it('LocationPickerMap takes its aria-label from a prop', () => {

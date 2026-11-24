@@ -238,6 +238,10 @@ describe('editor routes — navigation feel (T-025)', () => {
             resolve(__dirname, '../../src/layouts/AccountLayout.astro'),
             'utf8'
         );
+        const accountShell = readFileSync(
+            resolve(__dirname, '../../src/layouts/AccountShell.astro'),
+            'utf8'
+        );
         const adapter = readFileSync(
             resolve(__dirname, '../../src/layouts/EditorSectionLayout.astro'),
             'utf8'
@@ -248,7 +252,9 @@ describe('editor routes — navigation feel (T-025)', () => {
         );
 
         expect(base).toContain('<ClientRouter />');
-        expect(account).toContain('BaseLayout');
+        // AccountLayout → AccountShell → BaseLayout (HOS-2508 removed the legacy frame).
+        expect(account).toContain('AccountShell');
+        expect(accountShell).toContain('BaseLayout');
         expect(adapter).toContain('EditorShellLayout');
         expect(shell).toContain('AccountLayout');
     });

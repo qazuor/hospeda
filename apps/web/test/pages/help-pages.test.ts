@@ -170,8 +170,9 @@ describe('help article (web-ui §4)', () => {
         expect(base).toMatch(
             /\.help-article__h2,\s*\.help-article__prose :global\(h3\) \{\s*scroll-margin-top: var\(--help-account-bar-height\);/
         );
-        expect(LAYOUT).toMatch(
-            /@media \(max-width: 768px\)[\s\S]*\.account-page__nav \{\s*position: sticky;/
+        // The sticky bar is the kit `AccountBar` (HOS-2508 removed the legacy nav).
+        expect(read('components/account/ui/AccountBar.module.css')).toMatch(
+            /\.bar\s*\{[^}]*position: sticky;/
         );
     });
 

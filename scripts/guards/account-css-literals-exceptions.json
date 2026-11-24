@@ -201,10 +201,6 @@
         "radius": 7,
         "shadow": 1
     },
-    "apps/web/src/layouts/AccountLayout.astro": {
-        "font-size": 4,
-        "shadow": 3
-    },
     "apps/web/src/pages/[lang]/mi-cuenta/comercio/[vertical]/[id]/editar/datos.astro": {
         "font-size": 1
     },

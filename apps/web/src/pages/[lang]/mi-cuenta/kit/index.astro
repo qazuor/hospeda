@@ -6,8 +6,8 @@
  * visual-regression suite. It answers 404 unless `HOSPEDA_ACCOUNT_KIT_GALLERY`
  * is `'true'` (local development and the E2E environment only).
  *
- * It renders inside the NEW shell (`shell="account"`) and reads no session of
- * its own: only the locale.
+ * It renders inside the account shell (the only frame `AccountLayout` has) and
+ * reads no session of its own: only the locale.
  *
  * @route /{lang}/mi-cuenta/kit/
  * @rendering SSR
@@ -27,6 +27,6 @@ const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
 ---
 
-<AccountLayout locale={locale} title={t('account.ui.gallery.title')} activeSection="mi-cuenta" shell="account">
+<AccountLayout locale={locale} title={t('account.ui.gallery.title')} activeSection="mi-cuenta">
 	<KitGallery client:load locale={locale} />
 </AccountLayout>
