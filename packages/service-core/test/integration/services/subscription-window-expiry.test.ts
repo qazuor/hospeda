@@ -23,7 +23,7 @@ import {
 } from '../../../src/services/billing/subscription/start-subscription.service';
 import { closeServiceTestPool, getServiceTestDb, getServiceTestPool } from './helpers';
 import { namespaceFake } from './support/payment-provider';
-import { nextPlanVersionRank } from './support/plan-version-rank';
+import { nextPlanVersionRank } from './support/plan-version-rank.js';
 import {
     seededSubscriptionIds,
     withSeededInheritedTouristVipSweep,

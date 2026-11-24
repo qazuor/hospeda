@@ -9,7 +9,7 @@ import {
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { startSuccession } from '../../../src/services/billing/subscription/start-succession.service';
 import { closeServiceTestPool, getServiceTestDb, getServiceTestPool } from './helpers';
-import { nextPlanVersionRank } from './support/plan-version-rank';
+import { nextPlanVersionRank } from './support/plan-version-rank.js';
 import {
     ensureBillingDeadlineVersion1,
     seedPredecessor,

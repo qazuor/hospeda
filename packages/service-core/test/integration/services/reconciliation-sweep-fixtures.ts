@@ -18,7 +18,7 @@ import {
     recordProviderCancellationDecided
 } from '../../../src/services/billing/reconciliation/provider-cancellation-decision.js';
 import { getServiceTestDb, getServiceTestPool } from './helpers.js';
-import { nextPlanVersionRank } from './support/plan-version-rank';
+import { nextPlanVersionRank } from './support/plan-version-rank.js';
 
 const seededIds = new Set<string>();
 export function resetSeededReconciliationInventory(): void {

@@ -34,7 +34,7 @@ import {
 import { payingPrincipal } from './support/addon-a2-fixtures';
 import { purchaseFixture, retirePurchaseFixtures } from './support/addon-purchase-fixtures';
 import { billingDeadlineValues } from './support/payment-fixtures';
-import { nextPlanVersionRank } from './support/plan-version-rank';
+import { nextPlanVersionRank } from './support/plan-version-rank.js';
 import { noTouristVip } from './support/tourist-vip';
 
 afterEach(retirePurchaseFixtures);

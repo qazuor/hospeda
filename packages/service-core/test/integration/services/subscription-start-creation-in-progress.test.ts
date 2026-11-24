@@ -25,7 +25,7 @@ import {
     withSeededPendingCreations
 } from './reconciliation-sweep-fixtures.js';
 import { namespaceFake } from './support/payment-provider';
-import { nextPlanVersionRank } from './support/plan-version-rank';
+import { nextPlanVersionRank } from './support/plan-version-rank.js';
 import { noTouristVip } from './support/tourist-vip.ts';
 
 afterAll(closeServiceTestPool);

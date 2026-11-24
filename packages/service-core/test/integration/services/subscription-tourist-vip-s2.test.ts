@@ -10,7 +10,7 @@ import { FakePaymentProvider } from '@repo/payments/fake';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { cancelInheritedTouristVips } from '../../../src/services/billing/subscription/cancel-inherited-tourist-vip.service';
 import { closeServiceTestPool, getServiceTestDb } from './helpers';
-import { nextPlanVersionRank } from './support/plan-version-rank';
+import { nextPlanVersionRank } from './support/plan-version-rank.js';
 
 // HOS-1603: the close now opens a transaction, so the client must exist even when it is mocked.
 beforeAll(() => {

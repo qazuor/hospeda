@@ -20,7 +20,7 @@ import { lateRejectionDetail } from '../../../src/services/billing/subscription/
 import { closeServiceTestPool, getServiceTestDb, getServiceTestPool } from './helpers.js';
 import { seedLiftAdmin } from './support/admin-lift-fixtures.js';
 import { markPaymentClock } from './support/mark-payment-fixtures.js';
-import { nextPlanVersionRank } from './support/plan-version-rank';
+import { nextPlanVersionRank } from './support/plan-version-rank.js';
 
 type Fixture = {
     readonly userId: string;

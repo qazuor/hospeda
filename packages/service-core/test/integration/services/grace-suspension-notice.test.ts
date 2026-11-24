@@ -32,7 +32,7 @@ import {
 } from './support/coverage-fixtures.js';
 import { graceWithFailedCycle } from './support/grace-fixtures.js';
 import { outboxBeforeCancelNotice } from './support/outbox-before-cancel-notice.js';
-import { nextPlanVersionRank } from './support/plan-version-rank';
+import { nextPlanVersionRank } from './support/plan-version-rank.js';
 
 afterAll(closeServiceTestPool);
 

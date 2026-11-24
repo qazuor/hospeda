@@ -20,7 +20,7 @@ import { expireManualGraces } from '../../../src/services/billing/subscription/e
 import { registerLateManualPayment } from '../../../src/services/billing/subscription/register-late-manual-payment.service';
 import { registerManualPayment } from '../../../src/services/billing/subscription/register-manual-payment.service';
 import { closeServiceTestPool, getServiceTestDb, isServiceTestDbAvailable } from './helpers';
-import { nextPlanVersionRank } from './support/plan-version-rank';
+import { nextPlanVersionRank } from './support/plan-version-rank.js';
 
 const now = new Date('2026-10-20T12:00:00.000Z');
 const periodStart = new Date('2026-10-18T12:00:00.000Z');

@@ -13,7 +13,7 @@ import type { BillingDeadlineValues } from '@repo/schemas';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { expireAuthorizationWindows } from '../../../src/services/billing/subscription/expire-authorization-windows.service.ts';
 import { closeServiceTestPool, getServiceTestDb, getServiceTestPool } from './helpers';
-import { nextPlanVersionRank } from './support/plan-version-rank';
+import { nextPlanVersionRank } from './support/plan-version-rank.js';
 import {
     seededSubscriptionIds,
     withSeededSubscriptionSweep

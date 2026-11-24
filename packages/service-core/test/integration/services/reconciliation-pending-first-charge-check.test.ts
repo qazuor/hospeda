@@ -24,7 +24,7 @@ import {
     getServiceTestPool,
     isServiceTestDbAvailable
 } from './helpers.js';
-import { nextPlanVersionRank } from './support/plan-version-rank';
+import { nextPlanVersionRank } from './support/plan-version-rank.js';
 import { noTouristVip } from './support/tourist-vip.js';
 
 afterAll(closeServiceTestPool);

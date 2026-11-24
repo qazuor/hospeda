@@ -15,7 +15,7 @@ import { recordChargeFact } from '../../../src/services/billing/payment/record-c
 import { providerLinkCancellationSeen } from '../../../src/services/billing/subscription/provider-link-cancellation-seen';
 import { startSubscription } from '../../../src/services/billing/subscription/start-subscription.service';
 import { closeServiceTestPool, getServiceTestDb, getServiceTestPool } from './helpers';
-import { nextPlanVersionRank } from './support/plan-version-rank';
+import { nextPlanVersionRank } from './support/plan-version-rank.js';
 import { noTouristVip } from './support/tourist-vip';
 
 afterAll(closeServiceTestPool);

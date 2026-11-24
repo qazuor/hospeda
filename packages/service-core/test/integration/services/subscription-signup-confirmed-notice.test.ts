@@ -20,7 +20,7 @@ import { expireAuthorizationWindows } from '../../../src/services/billing/subscr
 import { enqueueSignupConfirmedNotice } from '../../../src/services/billing/subscription/signup-confirmed-notice.js';
 import { startSubscription } from '../../../src/services/billing/subscription/start-subscription.service.js';
 import { closeServiceTestPool, getServiceTestDb, getServiceTestPool } from './helpers.js';
-import { nextPlanVersionRank } from './support/plan-version-rank';
+import { nextPlanVersionRank } from './support/plan-version-rank.js';
 import { noTouristVip } from './support/tourist-vip.js';
 
 afterAll(closeServiceTestPool);

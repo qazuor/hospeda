@@ -13,7 +13,7 @@ import { afterAll, afterEach, describe, expect, it } from 'vitest';
 import { openReconciliationMark } from '../../../src/services/billing/reconciliation/open-reconciliation-mark.service';
 import { startSubscription } from '../../../src/services/billing/subscription/start-subscription.service';
 import { closeServiceTestPool, getServiceTestDb, getServiceTestPool } from './helpers';
-import { nextPlanVersionRank } from './support/plan-version-rank';
+import { nextPlanVersionRank } from './support/plan-version-rank.js';
 import { noTouristVip } from './support/tourist-vip.ts';
 
 afterAll(closeServiceTestPool);

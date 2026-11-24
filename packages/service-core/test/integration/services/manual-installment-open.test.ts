@@ -18,7 +18,7 @@ import { createPlanCatalogInverse } from '@repo/verticals';
 import { afterAll, describe, expect, it, vi } from 'vitest';
 import { openDueManualInstallments } from '../../../src/services/billing/subscription/open-manual-installment.service';
 import { closeServiceTestPool, getServiceTestDb } from './helpers';
-import { nextPlanVersionRank } from './support/plan-version-rank';
+import { nextPlanVersionRank } from './support/plan-version-rank.js';
 import { seedScheduledChange } from './support/scheduled-change-fixtures';
 
 const DAY_MS = 86_400_000;

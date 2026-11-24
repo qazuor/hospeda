@@ -22,7 +22,7 @@ import {
 } from '../../../src/services/billing/subscription/register-manual-payment.service';
 import { retainPaymentForSuccession } from '../../../src/services/billing/subscription/succession-retained-payment';
 import { closeServiceTestPool, getServiceTestDb } from './helpers';
-import { nextPlanVersionRank } from './support/plan-version-rank';
+import { nextPlanVersionRank } from './support/plan-version-rank.js';
 
 const now = new Date('2026-09-04T12:00:00.000Z');
 const periodStart = new Date('2026-09-03T12:00:00.000Z');

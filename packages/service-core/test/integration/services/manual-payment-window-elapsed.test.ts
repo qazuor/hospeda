@@ -27,7 +27,7 @@ import {
     getServiceTestPool,
     isServiceTestDbAvailable
 } from './helpers';
-import { nextPlanVersionRank } from './support/plan-version-rank';
+import { nextPlanVersionRank } from './support/plan-version-rank.js';
 
 const now = new Date('2026-10-20T12:00:00.000Z');
 const graceStartedAt = new Date('2026-10-18T12:00:00.000Z');

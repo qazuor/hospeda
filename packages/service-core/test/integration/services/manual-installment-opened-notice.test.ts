@@ -22,7 +22,7 @@ import { enqueueManualInstallmentOpenedNotice } from '../../../src/services/bill
 import { openDueManualInstallments } from '../../../src/services/billing/subscription/open-manual-installment.service';
 import { startManualSubscription } from '../../../src/services/billing/subscription/start-manual-subscription.service';
 import { closeServiceTestPool, getServiceTestDb } from './helpers';
-import { nextPlanVersionRank } from './support/plan-version-rank';
+import { nextPlanVersionRank } from './support/plan-version-rank.js';
 import { seedScheduledChange } from './support/scheduled-change-fixtures';
 import { noTouristVip } from './support/tourist-vip';
 

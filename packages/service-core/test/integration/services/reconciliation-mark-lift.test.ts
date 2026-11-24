@@ -9,7 +9,7 @@ import { afterAll, describe, expect, it } from 'vitest';
 import { liftReconciliationMark } from '../../../src/services/billing/reconciliation/lift-reconciliation-mark.service';
 import { openReconciliationMark } from '../../../src/services/billing/reconciliation/open-reconciliation-mark.service';
 import { closeServiceTestPool, getServiceTestDb, getServiceTestPool } from './helpers';
-import { nextPlanVersionRank } from './support/plan-version-rank';
+import { nextPlanVersionRank } from './support/plan-version-rank.js';
 
 afterAll(closeServiceTestPool);
 const clock = { now: () => new Date('2026-10-10T12:00:00.000Z') };

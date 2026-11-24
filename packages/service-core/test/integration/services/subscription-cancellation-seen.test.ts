@@ -10,7 +10,7 @@ import { declineFirstCharge } from '../../../src/services/billing/subscription/d
 import { startSubscription } from '../../../src/services/billing/subscription/start-subscription.service.js';
 import type { CancellationSeenAnnotator } from '../../../src/services/billing/subscription/subscription-billing-ports.js';
 import { closeServiceTestPool, getServiceTestDb, getServiceTestPool } from './helpers.js';
-import { nextPlanVersionRank } from './support/plan-version-rank';
+import { nextPlanVersionRank } from './support/plan-version-rank.js';
 import { noTouristVip } from './support/tourist-vip.js';
 
 afterAll(closeServiceTestPool);

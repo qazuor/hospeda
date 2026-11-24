@@ -27,7 +27,7 @@ import { suspendForArrears } from '../../../src/services/billing/subscription/su
 import { closeServiceTestPool, getServiceTestDb, isServiceTestDbAvailable } from './helpers.js';
 import { graceWithFailedCycle } from './support/grace-fixtures.js';
 import { outboxBeforeCancelNotice } from './support/outbox-before-cancel-notice.js';
-import { nextPlanVersionRank } from './support/plan-version-rank';
+import { nextPlanVersionRank } from './support/plan-version-rank.js';
 import { touristVipInheritanceFromDb } from './support/tourist-vip.js';
 
 afterAll(closeServiceTestPool);

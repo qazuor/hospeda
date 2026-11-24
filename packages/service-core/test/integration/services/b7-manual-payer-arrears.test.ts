@@ -16,7 +16,7 @@ import { afterAll, describe, expect, it, vi } from 'vitest';
 import { declareManualPaymentUnpaid } from '../../../src/services/billing/subscription/declare-manual-unpaid.service';
 import { openDueManualInstallments } from '../../../src/services/billing/subscription/open-manual-installment.service';
 import { closeServiceTestPool, getServiceTestDb } from './helpers';
-import { nextPlanVersionRank } from './support/plan-version-rank';
+import { nextPlanVersionRank } from './support/plan-version-rank.js';
 
 const now = new Date('2026-09-04T12:00:00.000Z');
 const previousPeriod = new Date('2026-07-03T12:00:00.000Z');

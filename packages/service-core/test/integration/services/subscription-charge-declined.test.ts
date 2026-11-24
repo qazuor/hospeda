@@ -7,7 +7,7 @@ import { afterAll, describe, expect, it, vi } from 'vitest';
 import { declineFirstCharge } from '../../../src/services/billing/subscription/decline-first-charge.service';
 import type { BeforeCancelNotice } from '../../../src/services/billing/subscription/start-subscription.service';
 import { closeServiceTestPool, getServiceTestDb, getServiceTestPool } from './helpers';
-import { nextPlanVersionRank } from './support/plan-version-rank';
+import { nextPlanVersionRank } from './support/plan-version-rank.js';
 import { noTouristVip } from './support/tourist-vip';
 
 afterAll(closeServiceTestPool);

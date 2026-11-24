@@ -14,7 +14,7 @@ import { receiveProviderDelivery } from '../../../src/services/billing/notice/re
 import type { BeforeCancelNotice } from '../../../src/services/billing/subscription/start-subscription.service.js';
 import { startSubscription } from '../../../src/services/billing/subscription/start-subscription.service.js';
 import { closeServiceTestPool, getServiceTestDb, getServiceTestPool } from './helpers.js';
-import { nextPlanVersionRank } from './support/plan-version-rank';
+import { nextPlanVersionRank } from './support/plan-version-rank.js';
 import { noTouristVip } from './support/tourist-vip.js';
 
 afterAll(closeServiceTestPool);

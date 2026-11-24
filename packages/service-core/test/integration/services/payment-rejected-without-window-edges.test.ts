@@ -16,7 +16,7 @@ import {
 } from './helpers.js';
 import { graceWithFailedCycle } from './support/grace-fixtures.js';
 import { paymentFixture } from './support/payment-fixtures.js';
-import { nextPlanVersionRank } from './support/plan-version-rank';
+import { nextPlanVersionRank } from './support/plan-version-rank.js';
 import { successorGraceFixture } from './support/successor-grace-fixtures.js';
 import { noTouristVip } from './support/tourist-vip.js';
 

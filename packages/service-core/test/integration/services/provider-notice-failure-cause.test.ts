@@ -8,7 +8,7 @@ import { afterAll, afterEach, describe, expect, it } from 'vitest';
 import { processProviderNotice } from '../../../src/services/billing/notice/process-provider-notice.service.js';
 import { startSubscription } from '../../../src/services/billing/subscription/start-subscription.service.js';
 import { closeServiceTestPool, getServiceTestDb, getServiceTestPool } from './helpers.js';
-import { nextPlanVersionRank } from './support/plan-version-rank';
+import { nextPlanVersionRank } from './support/plan-version-rank.js';
 import { noTouristVip } from './support/tourist-vip.js';
 
 const now = new Date('2026-10-01T03:00:00.000Z');

@@ -28,7 +28,7 @@ import {
     seedPlanChangePublications,
     seedPlanChangeTargetWithLimit
 } from './support/plan-change-fixtures.js';
-import { nextPlanVersionRank } from './support/plan-version-rank';
+import { nextPlanVersionRank } from './support/plan-version-rank.js';
 
 const now = new Date('2026-10-10T12:00:00.000Z');
 const extraSubscriptions: string[] = [];

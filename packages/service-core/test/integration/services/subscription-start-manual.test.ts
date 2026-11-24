@@ -22,7 +22,7 @@ import { expireAuthorizationWindows } from '../../../src/services/billing/subscr
 import { startManualSubscription } from '../../../src/services/billing/subscription/start-manual-subscription.service';
 import { startSubscription } from '../../../src/services/billing/subscription/start-subscription.service';
 import { closeServiceTestPool, getServiceTestDb } from './helpers';
-import { nextPlanVersionRank } from './support/plan-version-rank';
+import { nextPlanVersionRank } from './support/plan-version-rank.js';
 import { noTouristVip } from './support/tourist-vip';
 
 const openedAt = new Date('2026-10-08T20:00:00.000Z');

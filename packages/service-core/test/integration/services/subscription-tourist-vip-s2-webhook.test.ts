@@ -16,7 +16,7 @@ import { receiveProviderDelivery } from '../../../src/services/billing/notice/re
 import { sweepInheritedTouristVips } from '../../../src/services/billing/subscription/cancel-inherited-tourist-vip.service.js';
 import { closeServiceTestPool, getServiceTestDb } from './helpers.js';
 import { outboxBeforeCancelNotice } from './support/outbox-before-cancel-notice.js';
-import { nextPlanVersionRank } from './support/plan-version-rank';
+import { nextPlanVersionRank } from './support/plan-version-rank.js';
 
 afterAll(closeServiceTestPool);
 

@@ -20,7 +20,7 @@ import { cancelPendingAttempt } from '../../../src/services/billing/subscription
 import { startSubscription } from '../../../src/services/billing/subscription/start-subscription.service';
 import { closeServiceTestPool, getServiceTestDb, getServiceTestPool } from './helpers';
 import { namespaceFake } from './support/payment-provider';
-import { nextPlanVersionRank } from './support/plan-version-rank';
+import { nextPlanVersionRank } from './support/plan-version-rank.js';
 import { noTouristVip } from './support/tourist-vip.ts';
 
 const clock = { now: () => new Date('2026-10-08T20:00:00.000Z') };

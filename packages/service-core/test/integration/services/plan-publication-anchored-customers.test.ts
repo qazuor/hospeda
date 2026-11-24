@@ -2,7 +2,7 @@ import { billingOptions, LIVE_SUBSCRIPTION_STATUSES, subscriptions, users } from
 import { afterAll, describe, expect, it } from 'vitest';
 import { countAnchoredCustomersFromSubscriptions } from '../../../src/services/plan-catalog/plan-publication.service';
 import { closeServiceTestPool, getServiceTestDb, getServiceTestPool } from './helpers';
-import { nextPlanVersionRank } from './support/plan-version-rank';
+import { nextPlanVersionRank } from './support/plan-version-rank.js';
 
 afterAll(closeServiceTestPool);
 
