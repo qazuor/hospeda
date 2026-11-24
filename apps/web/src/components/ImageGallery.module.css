@@ -544,6 +544,13 @@
     box-shadow: var(--shadow-card);
 }
 
+/* HOS-2520: a tap before hydration gets an answer at once. The inline bridge marks
+ * the button `data-gallery-loading` (and `aria-busy`) until the island replays it. */
+.seeAllPhotos :global(.btn-gradient[data-gallery-loading]) {
+    cursor: progress;
+    filter: brightness(0.92);
+}
+
 /* ── "Ver todas las fotos" CTA (FIX-2, SPEC-186 browser smoke T-018) ───── */
 
 /*

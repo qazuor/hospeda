@@ -32,6 +32,15 @@ describe('gallery tap feedback CSS', () => {
         expect(ruleFor({ css: GALLERY_CSS, selector })).toMatch(/filter:\s*brightness/);
     });
 
+    it('marks the «see all photos» button busy while the bridge holds the tap', () => {
+        expect(
+            ruleFor({
+                css: GALLERY_CSS,
+                selector: '.seeAllPhotos :global(.btn-gradient[data-gallery-loading])'
+            })
+        ).toMatch(/cursor:\s*progress/);
+    });
+
     it('has a pressed state for the mobile track slides', () => {
         expect(ruleFor({ css: TRACK_CSS, selector: '.slide:active img' })).toMatch(
             /filter:\s*brightness/

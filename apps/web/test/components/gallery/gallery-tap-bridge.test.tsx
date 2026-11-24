@@ -121,6 +121,23 @@ describe('GalleryTapBridge.astro inline script', () => {
         expect(slides[2]).not.toHaveAttribute(GALLERY_LOADING_ATTR);
     });
 
+    it('treats the «see all photos» button as a tap on the first photo', () => {
+        // Arrange
+        const { container } = serverRender();
+        runBridgeScript();
+        const root = container.querySelector(`[${GALLERY_ROOT_ATTR}]`) as HTMLElement;
+        const seeAll = within(container).getByRole('button', { name: 'See all 5 photos' });
+
+        // Act
+        seeAll.click();
+
+        // Assert: the bridge answers the tap and the island will replay index 0
+        expect(seeAll).toHaveAttribute(GALLERY_INDEX_ATTR, '0');
+        expect(seeAll).toHaveAttribute(GALLERY_LOADING_ATTR);
+        expect(seeAll).toHaveAttribute('aria-busy', 'true');
+        expect(root.getAttribute(GALLERY_PENDING_ATTR)).toBe('0');
+    });
+
     it('adds its listeners once even when the script runs twice', () => {
         // Act
         runBridgeScript();

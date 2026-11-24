@@ -314,7 +314,8 @@ function DetailVariant({
                 )}
                 {/* HOS-2531: desktop "see all N photos" button. It lives inside the
                 mosaic so it disappears with it on mobile, where the swipe track
-                already carries its own counter. */}
+                already carries its own counter. `data-gallery-index` lets the inline
+                tap bridge answer and replay a tap made before hydration (HOS-2520). */}
                 {count >= 2 && (
                     <div className={styles.seeAllPhotos}>
                         <GradientButton
@@ -329,6 +330,7 @@ function DetailVariant({
                                 />
                             }
                             onClick={() => onOpen(0)}
+                            dataAttributes={{ 'data-gallery-index': '0' }}
                         />
                     </div>
                 )}

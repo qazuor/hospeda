@@ -50,6 +50,13 @@ export interface GradientButtonProps {
      * trigger that gets focus back when the dialog closes.
      */
     readonly buttonRef?: Ref<HTMLButtonElement>;
+    /**
+     * `data-*` attributes forwarded verbatim to the rendered element, e.g. a
+     * `data-gallery-index` that an inline pre-hydration script reads.
+     *
+     * @example { 'data-gallery-index': '0' }
+     */
+    readonly dataAttributes?: Readonly<Record<`data-${string}`, string>>;
 }
 
 export function GradientButton({
@@ -70,7 +77,8 @@ export function GradientButton({
     loading = false,
     loadingLabel,
     aria,
-    buttonRef
+    buttonRef,
+    dataAttributes
 }: GradientButtonProps) {
     const classes = [
         'btn-gradient',
@@ -129,6 +137,7 @@ export function GradientButton({
                 className={classes}
                 onClick={onClick}
                 disabled={disabled || loading}
+                {...dataAttributes}
                 {...ariaAttrs}
             >
                 {content}
@@ -146,6 +155,7 @@ export function GradientButton({
             target={target}
             rel={rel}
             aria-disabled={loading ? 'true' : undefined}
+            {...dataAttributes}
             {...ariaAttrs}
         >
             {content}
