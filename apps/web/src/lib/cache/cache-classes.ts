@@ -79,12 +79,11 @@ export const CACHE_CLASS_BUDGETS = {
      * the DEPLOY PURGE their entire invalidation story — at 300 s a missed purge
      * self-corrected within minutes and nobody noticed; at 86 400 s it does not.
      * Which is why this value is only defensible alongside HOS-428: the purge
-     * fires 45 s after the container's FIRST REQUEST, and until Coolify's
-     * healthcheck sends that request immediately, nothing bounds how long a
-     * quiet deploy waits (`purge-on-deploy.ts`, "WHAT THE DELAY DOES NOT
-     * GUARANTEE").
+     * fires 120 s after the container's FIRST REQUEST (plus a confirmation purge
+     * at 300 s), and Coolify's healthcheck sends that request immediately
+     * (`purge-on-deploy.ts`, "WHAT THE DELAY DOES NOT GUARANTEE").
      *
-     * If the healthcheck is ever turned back off, this number has to come back
+     * If the healthcheck is ever turned off, this number has to come back
      * down with it. They are one decision, not two.
      */
     static: { sMaxAge: 86_400, swr: 3_600 },
