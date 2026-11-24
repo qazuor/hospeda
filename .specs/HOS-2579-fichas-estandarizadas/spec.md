@@ -227,8 +227,9 @@ with `hasWhatsapp`, and no favorite, share, call or compare.
   offset on scroll-up.
 - **PR #4737** (`[HOS-2578]`, open): `no-store` on 404s of JS chunks.
 
-**Rule:** implementation starts only after the smoke-feedback PR merges to
-`staging`. Every file path below is the one on `staging` after that merge. If
+**Rule:** implementation of the visual parts (PRs 2–4, §13) starts only after
+the smoke-feedback PR merges to `staging`. PR 1 touches only `head-extra`,
+headless islands and additive props, so it may go first. Every file path below is the one on `staging` after that merge. If
 that PR renames something, the implementer follows the rename and records it
 in the child issue.
 
@@ -269,9 +270,9 @@ iterating `LISTING_DETAIL_SLOTS`. It never lists blocks in an ad-hoc order.
 | 1 galleryHeader | `ImageGallery`, `ListingVideoSection`, `ListingHeader` (page-header slot) | same | same |
 | 2 summary | `QuickFacts`, `MobileBookingSummary` | new `VenueSummary.astro`: price-range label + «Ver carta»/«Consultar» (`ListingContactActions` origin `summary`) | new `ExperienceSummary.astro`: `ExperiencePriceTag` + duration (moved out of `ExperienceHero`) + «Consultar» (origin `summary`) |
 | 3 description | summary + `ClampedText` (existing) | `VenueDescription` with its body wrapped in `ClampedText` | description half of `ExperienceInfo`, wrapped in `ClampedText` |
-| 4 offers | `FeaturesGrid`, `AmenitiesGrid` | `FeaturesGrid`, `AmenitiesGrid`, `VenueMenu`, `VenueDailySpecials`, `VenueNightInfo`, `VenueEventsCta` | `FeaturesGrid`, `AmenitiesGrid` (the amenities half of `ExperienceInfo`) |
+| 4 offers | `FeaturesGrid`, `AmenitiesGrid` | `FeaturesGrid`, `AmenitiesGrid`, `VenueMenu`, `VenueDailySpecials`, `VenueEvents` + `VenueEventsCta`, `VenueNightInfo` (in that order) | `FeaturesGrid`, `AmenitiesGrid` (the amenities half of `ExperienceInfo`) |
 | 5 hours | — | `OpeningHoursSection` | hours half of `ExperienceInfo` |
-| 6 promotions | `PromotionBanner` | `VenuePromotions`, `VenueEvents` | — |
+| 6 promotions | `PromotionBanner` | `VenuePromotions` | — |
 | 7 location | `LocationSection` + `WhatsNearbySection` | `LocationSection` | `LocationSection` (meeting point) |
 | 8 reviews | `ReviewPreview` (+ `ReviewsModal`), `ExternalReputation` | `VenueReviewsPreview` + `VenueReviewForm` | `ExperienceReviews` |
 | 9 host | `HostSection` | — | — |
@@ -287,8 +288,14 @@ Notes:
   `ListingContactBlock` owns socials. The file is deleted once empty.
 - `ExperiencePrivateGroups` keeps its `hasContactBlock` guard. It now renders
   right after the contact block, so its CTA anchor is adjacent to its target.
-- Venue `VenueEvents` sits in slot 6 because a venue event is a time-bound
-  offer, like a promotion. This is a judgment call, flagged in §15.
+- Venue events and agenda (`VenueEvents`, plus its `VenueEventsCta`) go in
+  slot 4 «Lo que ofrece», together with the menu, and **not** in slot 6. This
+  is owner decision D-3 (§15).
+  - `VenueEventsCta` moves out of the `amenities` block list and into the
+    `venueEvents` block list, so the CTA sits next to the agenda it promotes.
+  - Within venue slot 4, the blocks follow the catalog `order` of their
+    sections (the tie-break in §6.2.3): amenities, menu, dailySpecials,
+    venueEvents, nightInfo.
 
 #### 6.1.2 Every slot is an anchored landmark
 
@@ -326,6 +333,12 @@ inner id: `contact`, `venue-contact` (`VENUE_CONTACT_ANCHOR_ID`),
 4. Tab labels for `hours` and `contact` are new i18n keys under
    `accommodations.detail.sectionTabs.*` (the namespace the existing tab labels
    use), in es, en and pt.
+5. On the venue page the `amenities` tab (slot 4) holds the menu and the
+   agenda too (D-3), so its label is «Lo que ofrece». Use a new key
+   `accommodations.detail.sectionTabs.offers` in es, en and pt.
+   `ListingSectionTabs` picks the label per vertical: `offers` for venue, and
+   the existing `amenities` label for accommodation and experience. There is
+   no separate events tab.
 
 #### 6.2.3 Venue body order: page order, not catalog order
 
@@ -340,9 +353,10 @@ The page changes how it orders, not the catalog:
   in `venue-detail-sections.ts`, also typed with `satisfies`, so a new catalog
   section still breaks the build until it gets a slot:
   - `basicInfo` → `description`;
-  - `amenities`, `menu`, `dailySpecials` and `nightInfo` → `offers`;
+  - `amenities`, `menu`, `dailySpecials`, `venueEvents` and `nightInfo` →
+    `offers` (D-3);
   - `openingHours` → `hours`;
-  - `promotions` and `venueEvents` → `promotions`;
+  - `promotions` → `promotions`;
   - `location` → `location`;
   - `contact` → `contact`;
   - `faqs` → `faq`.
@@ -525,8 +539,7 @@ already the accommodation look the owner called canonical.
   `@type: ['TouristAttraction', 'TouristTrip']` with `offers: { '@type': 'Offer', price, priceCurrency: 'ARS' }`
   (`TouristTrip` → `Trip` has `offers`). `price` is
   `priceFrom / 100`, because the field is in centavos. With `isPriceOnRequest`,
-  no `offers` is emitted. This is flagged in §15 as the one non-obvious
-  choice.
+  no `offers` is emitted. The owner approved this multi-type (D-2, §15).
 - `geo` uses the coordinates whenever they exist. They are already in the
   public payload on every tier (HOS-1048 left them free). The paid part is the
   map widget, not the coordinates.
@@ -597,7 +610,7 @@ changes its layout. It does not change slot, portal or autohide.
 `menuUrl` exists. Position 1 therefore stays «Ver carta» for a venue with a
 menu: same primary styling, icon `ForkKnifeIcon` (add it to `@repo/icons` if
 missing), `aria-label` «Ver carta». A venue without a menu shows «Consultar».
-This keeps the previous owner decision. §15 flags it for confirmation.
+This keeps the previous owner decision, confirmed again as D-1 (§15).
 
 **Absent channels are not rendered.** No disabled or ghost button. The
 experience bar therefore shows 1, 3?, 4 and 5. The venue bar shows 1, 2?, 3?,
@@ -704,6 +717,11 @@ same place on each.
   in any order, then the output follows `VENUE_SECTION_SLOT` slot order, with
   ties broken by catalog `order`. And `VENUE_SECTION_SLOT` is exhaustive
   (type-level `satisfies` plus a runtime key-equality test).
+- **AC-2b** Given `VENUE_SECTION_SLOT`, then `venueEvents` and `menu` map to
+  `offers`, and `promotions` is the only id mapped to `promotions` (D-3). On a
+  rendered venue with a menu, events and a promotion, `VenueEvents` and
+  `VenueEventsCta` are descendants of `#listing-offers`, and none of them
+  is inside the slot-6 wrapper.
 - **AC-3** Given the venue catalog, then `LISTING_SECTIONS.venue[*].order` is
   unchanged by this spec (snapshot of the ids-and-order pairs).
 - **AC-4** Given a rendered accommodation, venue and experience at 390px, then
@@ -717,7 +735,8 @@ same place on each.
 - **AC-6** Given a venue with hours and a menu, then its page renders
   `ListingSectionTabs` with `vertical="venue"` and tabs only for present
   sections. Clicking «Horarios» scrolls `#listing-hours` below the sticky band.
-  (unit + E2E)
+  The slot-4 tab is labelled «Lo que ofrece» (`sectionTabs.offers`), and there
+  is no events tab. (unit + E2E)
 - **AC-7** Given an experience, then its page renders `ListingSectionTabs` with
   `vertical="experience"` and the experience price. A missing section produces
   no tab.
@@ -950,10 +969,11 @@ and the new `listing_shared` event. `packages/analytics` tests cover both.
   - Existing `guest-11-listing-detail-mobile.spec.ts` and
     `guest-12-experience-venue-contact-bar.spec.ts` are updated for the icon row
     (their «Consultar» text selectors become role+name selectors).
-- **Not testable automatically → staging smoke** (label
-  `status-needs-smoke-staging`): the bar over real browser chrome and safe
-  area on a 360px phone, tap comfort, the Web Share sheet, and WhatsApp direct
-  vs upsell with a VIP and a free account.
+- **Not testable automatically → staging smoke, one per PR** (§13.3). Each
+  child issue carries `status-needs-smoke-staging`. The checks that only a real
+  device or a real deploy can make (the bar over browser chrome and the safe
+  area on a 360px phone, tap comfort, the Web Share sheet, WhatsApp direct vs
+  upsell with a VIP and a free account) are in PR 4's smoke.
 - Coverage ≥90% on new files. No `.only`, no hard-coded `.skip`. Run suites per
   file or package filter, never the full web suite locally.
 
@@ -970,37 +990,89 @@ and the new `listing_shared` event. `packages/analytics` tests cover both.
 | `accommodation_viewed` payload drifts in the tracker migration | M | H | `toStrictEqual` payload test (AC-26) |
 | Double analytics events (direct + delegated) | M | M | Rule in §6.10.4, AC-35 counts exactly one |
 | Exact map for an unentitled experience leaks the paid trait | L | H | Gate stated in §6.11; AC-18 |
-| Multi-typed experience JSON-LD read badly by a crawler | L | L | Validated with the Schema Markup Validator in the PR; fallback is to drop `offers` (§15) |
-| Large PRs over the same three pages conflict | H | M | Umbrella branch and a strict PR order (§13) |
+| Multi-typed experience JSON-LD read badly by a crawler | L | L | Validated with the Schema Markup Validator in PR 1's smoke; fallback is to drop `offers` |
+| A PR lands on `staging` with one page migrated and the others not, mixing old and new components | M if split carelessly | H | §13.1 rule: every PR migrates the three pages together; the shared-components guard (AC-8) lands in the same PR as the components it guards |
+| PR 2 is large (four shared components across three pages) | H | M | Mostly moves and deletions; reviewed per component in the commit history (one commit per component, §13.2); the tests move with their component |
+| No umbrella branch: `staging` holds each intermediate state | H | M | Each intermediate state is a complete, consistent state by construction (§13.1), and each one gets its own staging smoke before the next PR merges |
+| PRs 3 and 4 conflict with other work on the same pages while they wait | M | M | Strict order 2 → 3 → 4, `staging` merged into each branch before review, `hops merge` blocks `BEHIND` |
 
 ## 13. Implementation phases and PR split
 
-**Tracking.** On approval, create one Linear sub-issue of HOS-2579 per row. Each
-gets one PR. The sub-issue titles carry `[HOS-NNNN]`, and the PRs never carry a
-magic word. Only the umbrella PR carries `Closes HOS-2579`.
+**Owner decision D-4 (2026-11-23):** no umbrella branch. Each PR goes to
+`staging` on its own, and the number of PRs is kept to a minimum. Four PRs.
 
-**Branches.** This follows the DEC-CI-001 umbrella convention, as HOS-2520 did
-(owner confirmation pending, §15). The umbrella is
-`epic/HOS-2579-fichas-estandarizadas`, cut from `staging` after the
-smoke-feedback PR merges. Each sub-issue branch is cut from the umbrella and
-PRs back into it. `staging` is merged into the umbrella periodically. The
-umbrella's own PR goes to `staging` once, after the staging smoke.
+### 13.1 Grouping rule
 
-| # | Child issue (PR) | Content | ACs | Blocked by |
+**Every PR leaves `staging` in a complete, consistent state.** A PR migrates a
+shared part on **all three pages at once**, never one page at a time. If
+splitting two parts would leave a page showing an old component next to a new
+one of the same kind, both parts go in the same PR.
+
+- The four shared components (header, contact, location, and the summaries
+  that take the experience price out of the hero) change together. A page
+  with the new header and the old contact block would look half-done.
+- The reorder and the tabs change together. Tabs that point at sections in the
+  old order would jump back and forth.
+- Every guard lands in the PR that makes it true. No PR ships a guard with an
+  exemption list for "later".
+- No feature flag and no dead code are left in `staging`. The only exception
+  is PR 1: its additive props and analytics events have no caller until PR 2
+  and PR 4. They are inert and covered by their own tests.
+
+### 13.2 The four PRs
+
+| # | PR (one Linear child issue each) | Content | ACs | Depends on |
 |---|---|---|---|---|
-| 1 | Order contract + tabs | `listing-detail-order.ts`, slot wrappers on the three pages (no reordering yet), new tab keys, `VENUE_SECTION_SLOT` + `orderVenueDetailSections`, tabs on venue and experience | AC-2, 3, 5, 6, 7 | smoke-feedback PR |
-| 2 | `ListingContactBlock` + `ListingSocialLinks` | rename, extract, builders, delete the three wrappers, repoint guards | AC-13–16 | 1 |
-| 3 | `LocationSection` + map | move, builders, venue map, experience gate, delete `VenueAddress` and `ExperienceMeetingPoint` | AC-17–19 | 1 |
-| 4 | `ListingHeader` | four components, builders, desktop share, `VenueSummary`, `ExperienceSummary`, delete the three headers | AC-8–12 | 1 |
-| 5 | Reorder + content parity | apply the 13-slot order on the three pages, split `ExperienceInfo`, `ClampedText`, policies `<h2>`, order guard | AC-1, 4 (unit), 24, 25 | 2, 3, 4 |
-| 6 | SEO + tracking | FAQ JSON-LD helper and venue/experience usage, richer experience JSON-LD, `EntityViewTracker` ACCOMMODATION | AC-22, 23, 26 | 1 |
-| 7 | Icon sweep + guard | §6.7 replacements, `listing-detail-no-glyph-icons` guard, shared-components guard | AC-20, 21 | 2, 3, 4, 5 |
-| 8 | Icon-only action bar | `ListingActionBarButtons`, `ShareButtons`/`FavoriteButton` props, analytics catalog changes, i18n | AC-27–32, 35–38 | 4 |
-| 9 | E2E | fixtures + `guest-13`, update `guest-11` and `guest-12` | AC-4, 33, 34, 30 (E2E) | 5, 8 |
+| 1 | **Foundations, SEO and tracking** (no visual change) | `listing-detail-order.ts`; analytics catalog: `origin?` on the favorite events, new `listing_shared`; `FavoriteButton` `origin?`; `ShareButtons` `appearance: 'icon'` + `analytics?`; missing icons (`BackpackIcon`, `ForkKnifeIcon`) in `@repo/icons`; `faq-jsonld-sections` helper + `FAQPageJsonLd` on venue and experience; richer experience JSON-LD (D-2); `EntityViewTracker` ACCOMMODATION + delete `AccommodationViewTracker` | AC-22, 23, 26, the catalog-schema units of §6.10.4 | — (only `head-extra` and headless islands of the pages; merges `staging` before review) |
+| 2 | **Shared components on the three pages** (same order as today) | `ListingHeader` (+ builders, desktop share, bookmark `FavoriteIcon`); `VenueSummary`, `ExperienceSummary`; `ListingContactBlock` + `ListingSocialLinks` (+ builders, socials half of `ExperienceInfo` removed); `LocationSection` + venue map + experience gate; delete the three headers, three contact wrappers, `VenueAddress`, `ExperienceMeetingPoint`; icon sweep (§6.7); guards `listing-detail-shared-components` and `listing-detail-no-glyph-icons`; repointed guards | AC-8–21 | 1 and the smoke-feedback PR |
+| 3 | **Common order, tabs and content parity** | slot wrappers + 13-slot order on the three pages; `VENUE_SECTION_SLOT` (venue events in `offers`, D-3) + new `orderVenueDetailSections`; new tab keys and the venue «Lo que ofrece» label; tabs on venue and experience; remaining split of `ExperienceInfo` (file deleted); `ClampedText` on venue and experience; policies `<h2>`; guard `listing-detail-section-order`; E2E `guest-13` order and tabs cases | AC-1–7 (incl. AC-2b), 24, 25 | 2 |
+| 4 | **Icon-only mobile action bar** | `ListingActionBarButtons` in `ListingContactBar`; the six buttons with their gates; venue «Ver carta» primary (D-1); delegated `[data-contact-channel]` reporting; i18n labels; E2E `guest-13` width and tap-target cases; `guest-11` and `guest-12` moved to role+name selectors; the new E2E fixtures | AC-27–38 | 2 (and 1 for the analytics) |
 
-PRs 2, 3, 4 and 6 can run in parallel after 1. They touch different components,
-and each changes only its own call site in the pages. PR 5 is the only one that
-moves blocks around in the pages.
+PR 1 and PR 2 may be developed in parallel, but PR 2 merges after PR 1. The
+order on `staging` is 1 → 2 → 3 → 4. Each one waits for the previous one's
+staging smoke (§13.3) before it merges.
+
+PR 2 is the largest. It is still reviewable because it is mostly moves and
+deletions. It is built as one commit per shared component (header,
+summaries, contact, location, icon sweep and guards), so the reviewer can
+read it commit by commit. Splitting it into PRs would break the §13.1 rule.
+
+### 13.3 Tracking, magic words and smoke per PR
+
+- On approval, create **four** Linear sub-issues of HOS-2579 (team `Hospeda`,
+  `kind-spec`, `area-web`). Each carries `status-needs-smoke-staging`.
+- Each PR title carries its child's `[HOS-NNNN]`. Its body carries
+  `Closes HOS-<its own child>`, since that PR fully completes that child. No
+  PR carries a magic word for HOS-2579. The parent is closed with
+  `/closeIssue HOS-2579` once the four children are done.
+- After each merge, the child stays In Review (`smoke-gate-sync`) until its
+  staging smoke is signed with `/smoke HOS-<child>`. A deploy to staging
+  needs the owner's OK. Then the next PR may merge.
+- **Smoke per PR on `https://staging.hospeda.com.ar`:**
+  1. **PR 1**: the venue and experience pages' JSON-LD pass the Schema Markup
+     Validator (FAQ, `TouristAttraction` + `TouristTrip` with `offers`, `geo`
+     and `aggregateRating`). An accommodation view still reaches Umami as
+     `accommodation_viewed` with the same fields. The owner view stats still
+     count.
+  2. **PR 2**: the three pages at 390px and 1280px.
+     - Header, contact block with brand logos, and location: the venue map,
+       an experience with the trait (map) and one without (text only).
+     - Desktop share works.
+     - The owner-panel interaction counters still increment from the contact
+       block.
+     - No emoji or text glyph is left on the three pages.
+  3. **PR 3**: the three pages follow the 13-slot order.
+     - On venue, the menu and the agenda appear together in «Lo que ofrece».
+     - The tabs scroll to each section and follow the scroll on all three.
+     - «Leer más» works on venue and experience.
+  4. **PR 4**: on a real 360px phone and a 390px one, on the three
+     verticals.
+     - The row fits in one line over the browser chrome and the safe area.
+     - Every button is comfortable to tap, and Consultar reads as primary.
+     - The Web Share sheet opens.
+     - WhatsApp: direct link for a VIP account, upsell for a free one, and
+       venue `PUBLIC` vs `LOGGED_IN_ONLY`.
+     - Favorite in the bar syncs with the gallery's favorite.
 
 ## 14. Follow-ups (create on approval)
 
@@ -1057,21 +1129,20 @@ moves blocks around in the pages.
   missing field.
 - The glyph guard has a mutation check (AC-21).
 
-**Open questions for the owner. None blocks Phase 1 (PR 1), and each has a
-recommendation:**
+### Decisiones del owner (2026-11-23)
 
-1. **Venue position 1, «Ver carta» vs «Consultar».** *Recommended:* keep «Ver
-   carta» as the primary when there is a menu (HOS-2520 §7.8).
-   *Alternative:* «Consultar» always, with the menu as the first row of the
-   panel. That costs one extra tap to reach the menu.
-2. **Experience price in JSON-LD as `TouristAttraction` + `TouristTrip`.**
-   *Recommended:* multi-type with `offers`. *Alternative:* no price in JSON-LD,
-   because `TouristAttraction` alone cannot carry it validly.
-3. **Venue events in slot 6 (promotions)**, not slot 4 (what it offers).
-   *Recommended:* slot 6.
-4. **Umbrella branch for the 9 PRs**, as in HOS-2520. *Recommended:* yes. The
-   nine PRs edit the same three pages, and an umbrella lets them reach
-   `staging` as one tested unit.
-5. **The in-flight smoke-feedback PR** had not been opened on 2026-11-23. This
-   spec assumes it lands first, with `ListingContactChannels` as written in
-   its worktree.
+The owner answered the open questions of the first draft on 2026-11-23. No
+open question remains.
+
+| # | Decision | Where it applies |
+|---|---|---|
+| D-1 | A venue **with** a menu has «Ver carta» in position 1 of the action bar, as the primary action. A venue **without** a menu has «Consultar». (Kept as drafted, consistent with HOS-2520 §7.8.) | §6.10.1, AC-32 |
+| D-2 | Experience JSON-LD uses `TouristTrip` as a second type, carrying `offers` (`@type: ['TouristAttraction','TouristTrip']`). (Kept as drafted.) | §6.6, AC-23 |
+| D-3 | **Changed from the draft.** Venue events and agenda (`VenueEvents`, `VenueEventsCta`) go in slot 4 «Lo que ofrece», together with the menu, **not** in slot 6 «Promociones». The venue slot-4 tab is labelled «Lo que ofrece». | §6.1, §6.1.1, §6.2 item 5, §6.2.3, AC-2b, AC-6 |
+| D-4 | **Changed from the draft.** No umbrella branch. Each PR goes to `staging` on its own, and the number of PRs is minimized. The nine draft PRs are regrouped into four. Each one leaves all three pages working and consistent, with no mixed old and new components, and each one gets its own staging smoke under `status-needs-smoke-staging`. | §12, §13 |
+
+**Standing dependency (a fact, not a question):** the HOS-2520 smoke-feedback
+work had no PR open on 2026-11-23 (branch `fix/HOS-2520-owner-smoke-feedback`).
+PR 1 of this spec may start in parallel, because it does not touch the
+components that work changes. PR 2 starts only after it merges to `staging`
+(§5.3).
