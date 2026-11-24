@@ -13,7 +13,7 @@
 
 import type { AccommodationModel, OwnerPromotionModel } from '@repo/db';
 import type { OwnerPromotionSearchInput } from '@repo/schemas';
-import { PermissionEnum } from '@repo/schemas';
+import { PermissionEnum, TouristAudienceEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { OwnerPromotionService } from '../../../src/services/owner-promotion/ownerPromotion.service';
 import { createActor } from '../../factories/actorFactory';
@@ -23,6 +23,9 @@ import {
 } from '../../factories/ownerPromotionFactory';
 import { getMockId } from '../../factories/utilsFactory';
 import { createLoggerMock, createModelMock } from '../../utils/modelMockFactory';
+
+/** A reader with no audience scope sees only PLUS promotions (HOS-2590). */
+const PLUS_ONLY = [TouristAudienceEnum.PLUS];
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -154,7 +157,7 @@ describe('OwnerPromotionService visibility (SPEC-285 T-003)', () => {
             expect(
                 modelMock.findActiveForAccommodation as ReturnType<typeof vi.fn>
             ).toHaveBeenCalledWith(
-                { accommodationId, ownerId },
+                { accommodationId, ownerId, touristAudiences: PLUS_ONLY },
                 expect.objectContaining({ page: expect.any(Number), pageSize: expect.any(Number) })
             );
             // findAll must NOT be called — we went through the D-4 path
@@ -231,7 +234,7 @@ describe('OwnerPromotionService visibility (SPEC-285 T-003)', () => {
             expect(accommodationModelMock.findById).toHaveBeenCalledWith(accommodationId);
             expect(
                 modelMock.countActiveForAccommodation as ReturnType<typeof vi.fn>
-            ).toHaveBeenCalledWith({ accommodationId, ownerId });
+            ).toHaveBeenCalledWith({ accommodationId, ownerId, touristAudiences: PLUS_ONLY });
             // Row-fetching methods must NOT be called — count path uses dedicated query.
             expect(
                 modelMock.findActiveForAccommodation as ReturnType<typeof vi.fn>
@@ -280,7 +283,7 @@ describe('OwnerPromotionService visibility (SPEC-285 T-003)', () => {
             expect(
                 modelMock.findActiveForAccommodation as ReturnType<typeof vi.fn>
             ).toHaveBeenCalledWith(
-                { accommodationId, ownerId },
+                { accommodationId, ownerId, touristAudiences: PLUS_ONLY },
                 expect.objectContaining({ page: 3, pageSize: 10 })
             );
         });
