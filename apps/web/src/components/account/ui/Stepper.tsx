@@ -1,7 +1,8 @@
 /**
  * Stepper — where a person is in a short multi-step flow (HOS-2485, spec
- * HOS-2414 §6.2). Consumers: the add-on purchase (choose → target → confirm)
- * and the profile completion (HOS-2501).
+ * HOS-2414 §6.2). Consumer: the add-on purchase (choose → target → confirm).
+ * Only for a flow that really moves between screens: a single-page form gets
+ * no stepper (HOS-2601 removed it from the profile completion).
  *
  * A labelled `<ol>`; the current step carries `aria-current="step"` and the
  * finished ones a hidden translated «completed». Above the list, a
