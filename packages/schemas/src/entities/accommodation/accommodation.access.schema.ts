@@ -435,6 +435,14 @@ export const AccommodationPublicSchema = AccommodationSchema.pick({
      */
     hasAiChat: z.boolean().optional(),
     /**
+     * HOS-2589 D-6: the accommodation has at least one active «Para todos» owner
+     * promotion (the «Promo» search badge). Presence only, the same for every
+     * reader, so it stays in the cacheable list. Resolved at the list route.
+     */
+    hasFreePromotion: z.boolean().optional(),
+    /** HOS-2589 D-6: at least one active «Solo VIP» owner promotion (the «VIP» badge). */
+    hasVipPromotion: z.boolean().optional(),
+    /**
      * Whether this accommodation carries a WhatsApp contact number
      * (`contactInfo.whatsapp`). This is a cache-safe, OWNER-derived boolean —
      * the number itself is NEVER exposed on this public payload because the

@@ -35,7 +35,7 @@ import {
     type OwnerPromotionWithAccommodationSlug,
     withAccommodationSlugs
 } from './ownerPromotion.exclusive-deals';
-import { generateOwnerPromotionSlug } from './ownerPromotion.helpers';
+import { generateOwnerPromotionSlug, resolveActivationStamps } from './ownerPromotion.helpers';
 import {
     emitOwnerPromotionLifecycleEvent,
     OwnerPromotionLifecycleEventType
@@ -180,7 +180,12 @@ export class OwnerPromotionService extends BaseCrudService<
             description: data.description
         });
         const slug = data.slug ?? (await generateOwnerPromotionSlug(data.title, this.model));
-        return { ...data, ...target, slug };
+        // HOS-2589 §7.7: a promotion created live is first activated now.
+        const firstActivatedAt =
+            (data.lifecycleState ?? LifecycleStatusEnum.ACTIVE) === LifecycleStatusEnum.ACTIVE
+                ? new Date()
+                : null;
+        return { ...data, ...target, slug, firstActivatedAt };
     }
 
     protected _canUpdate(actor: Actor, entity: OwnerPromotion): void {
@@ -378,7 +383,11 @@ export class OwnerPromotionService extends BaseCrudService<
                     venueModel: this.venueModel,
                     tx: ctx.tx
                 });
-                return { ...data, ...extra } as Partial<OwnerPromotion>;
+                return {
+                    ...data,
+                    ...extra,
+                    ...resolveActivationStamps({ previous: prev, data, now: new Date() })
+                } as Partial<OwnerPromotion>;
             }
         }
         return data as Partial<OwnerPromotion>;

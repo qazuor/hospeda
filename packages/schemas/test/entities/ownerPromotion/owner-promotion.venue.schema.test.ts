@@ -165,9 +165,17 @@ describe('VenuePromotionCreateRequestSchema', () => {
         ).toBe(false);
     });
 
-    it('only the general audience is accepted for now (vip comes with HOS-2273)', () => {
+    it('accepts both audiences and defaults to «Para todos» (HOS-2589 D-4 absorbs HOS-2273)', () => {
+        const vip = VenuePromotionCreateRequestSchema.safeParse({
+            ...valid,
+            touristAudience: 'vip'
+        });
+        const plain = VenuePromotionCreateRequestSchema.safeParse(valid);
+
+        expect(vip.success && vip.data.touristAudience).toBe('vip');
+        expect(plain.success && plain.data.touristAudience).toBe('plus');
         expect(
-            VenuePromotionCreateRequestSchema.safeParse({ ...valid, touristAudience: 'vip' })
+            VenuePromotionCreateRequestSchema.safeParse({ ...valid, touristAudience: 'gold' })
                 .success
         ).toBe(false);
     });

@@ -105,7 +105,8 @@ export function buildVenueCreateInput(args: {
         validUntil: request.validUntil ?? null,
         ...fromPromotionWindow(request.window),
         lifecycleState: LifecycleStatusEnum.ACTIVE,
-        touristAudience: TouristAudienceEnum.PLUS
+        // HOS-2589 D-4: «Para todos» by default; «Solo VIP» is gated at the route.
+        touristAudience: request.touristAudience ?? TouristAudienceEnum.PLUS
     };
 }
 

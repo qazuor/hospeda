@@ -13,6 +13,7 @@ import { z } from 'zod';
 import { LifecycleStatusEnumSchema } from '../../enums/lifecycle-state.schema.js';
 import { OwnerPromotionDiscountTypeEnum } from '../../enums/owner-promotion-discount-type.enum.js';
 import { TouristAudienceEnum } from '../../enums/tourist-audience.enum.js';
+import { TouristAudienceEnumSchema } from '../../enums/tourist-audience.schema.js';
 import { VenueEventTimeSchema } from '../venue/subtypes/venue.event.schema.js';
 import { OwnerPromotionObjectSchema } from './owner-promotion.schema.js';
 
@@ -124,12 +125,11 @@ const venuePromotionFields = {
         .date({ message: 'zodError.ownerPromotion.validUntil.invalid' })
         .nullable()
         .optional(),
-    /** Only `plus` is accepted here; `vip` enters with the VIP-promotions leaf (HOS-2273). */
-    touristAudience: z
-        .literal(TouristAudienceEnum.PLUS, {
-            error: () => ({ message: 'zodError.ownerPromotion.touristAudience.venuePlusOnly' })
-        })
-        .default(TouristAudienceEnum.PLUS),
+    /**
+     * «Para todos» (`plus`, the default) or «Solo VIP» (`vip`). HOS-2589 D-4 absorbs
+     * HOS-2273: venues get the VIP option too, gated by `vip_only_promotions` at the route.
+     */
+    touristAudience: TouristAudienceEnumSchema.default(TouristAudienceEnum.PLUS),
     window: PromotionWindowSchema.nullable().optional()
 };
 
@@ -236,11 +236,7 @@ export const VenuePromotionUpdateRequestSchema = z
     .object({
         ...updatableFields,
         // An absent key means "no change", so no default here.
-        touristAudience: z
-            .literal(TouristAudienceEnum.PLUS, {
-                error: () => ({ message: 'zodError.ownerPromotion.touristAudience.venuePlusOnly' })
-            })
-            .optional(),
+        touristAudience: TouristAudienceEnumSchema.optional(),
         lifecycleState: LifecycleStatusEnumSchema
     })
     .partial()
@@ -264,6 +260,7 @@ export const VenuePromotionProtectedSchema = OwnerPromotionObjectSchema.pick({
     discountValue: true,
     lifecycleState: true,
     touristAudience: true,
+    vipPausedAt: true,
     validFrom: true,
     validUntil: true,
     createdAt: true,
