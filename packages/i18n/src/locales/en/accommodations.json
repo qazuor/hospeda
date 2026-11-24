@@ -442,7 +442,12 @@
             "amenities": "Amenities",
             "location": "Location",
             "reviews": "Reviews",
-            "host": "Host"
+            "host": "Host",
+            "hours": "Hours",
+            "contact": "Contact",
+            "offers": "What it offers",
+            "labelVenue": "Venue sections",
+            "labelExperience": "Experience sections"
         },
         "listingContact": {
             "bar": {

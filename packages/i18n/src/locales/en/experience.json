@@ -90,7 +90,10 @@
             "title": "What to bring"
         },
         "whatsapp": "Enquire via WhatsApp",
-        "whatsappMessage": "Hi, I'm interested in more information about {{name}}"
+        "whatsappMessage": "Hi, I'm interested in more information about {{name}}",
+        "policies": {
+            "title": "Before you go"
+        }
     },
     "type": {
         "CAR_RENTAL": "Car Rental",

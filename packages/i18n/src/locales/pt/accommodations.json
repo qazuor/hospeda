@@ -442,7 +442,12 @@
             "amenities": "Comodidades",
             "location": "Localização",
             "reviews": "Avaliações",
-            "host": "Anfitrião"
+            "host": "Anfitrião",
+            "hours": "Horários",
+            "contact": "Contato",
+            "offers": "O que oferece",
+            "labelVenue": "Seções do estabelecimento",
+            "labelExperience": "Seções da experiência"
         },
         "listingContact": {
             "bar": {
