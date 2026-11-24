@@ -691,6 +691,11 @@
             "title": "Tus suscripciones",
             "replacedBy": "Reemplazada por {{plan}}; se da de baja en la próxima hora.",
             "empty": "No tenés suscripciones vigentes.",
+            "expiredDeclined": {
+                "title": "No pudimos cobrar tu suscripción",
+                "body": "Tu suscripción al plan {{plan}} ({{vertical}}) no se pudo cobrar y el plazo para reintentar ya terminó. No se te cobró nada. Podés empezar de nuevo cuando quieras.",
+                "cta": "Empezar de nuevo"
+            },
             "pause": {
                 "open": "Pausar suscripción",
                 "pending": "Procesando la pausa...",

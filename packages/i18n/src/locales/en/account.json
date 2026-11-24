@@ -691,6 +691,11 @@
             "title": "Your subscriptions",
             "replacedBy": "Replaced by {{plan}}; it will be canceled within the next hour.",
             "empty": "You have no current subscriptions.",
+            "expiredDeclined": {
+                "title": "We couldn't charge your subscription",
+                "body": "Your subscription to the {{plan}} plan ({{vertical}}) could not be charged and the time to retry has ended. You were not charged. You can start again whenever you like.",
+                "cta": "Start again"
+            },
             "pause": {
                 "open": "Pause subscription",
                 "pending": "Processing pause...",
