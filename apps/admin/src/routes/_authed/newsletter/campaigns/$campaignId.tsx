@@ -141,7 +141,9 @@ function CampaignDetailPage() {
                 </div>
 
                 {/* Campaign editor (branches by mode) */}
+                {/* key: reset form + autosave baseline when navigating between campaigns */}
                 <CampaignEditor
+                    key={campaign.id}
                     mode={editorMode}
                     campaign={campaign}
                 />

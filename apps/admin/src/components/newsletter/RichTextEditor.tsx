@@ -344,10 +344,12 @@ export function RichTextEditor({
         }
     }, [editor, value]);
 
-    // Sync disabled state.
+    // Sync disabled state. `emitUpdate=false` is essential: by default TipTap
+    // emits an `update` event on setEditable, which would surface as a phantom
+    // onChange (HOS-2584: autosave loop while a save toggles `disabled`).
     useEffect(() => {
         if (!editor) return;
-        editor.setEditable(!disabled);
+        editor.setEditable(!disabled, false);
     }, [editor, disabled]);
 
     // Cleanup debounce timer on unmount.

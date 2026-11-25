@@ -12,6 +12,7 @@
  *   useTestSendCampaign(id)          POST /campaigns/:id/test-send
  *   useSendCampaign(id)              POST /campaigns/:id/send  → 202 / 200 / 409
  *   useCancelCampaign(id)            POST /campaigns/:id/cancel → 200 / 409
+ *   useCampaignAudienceCount(id)     GET  /campaigns/:id/audience-count (send estimate)
  *
  * The metrics + errors queries live in their own files (use-campaign-metrics
  * and use-campaign-errors) because they have specialised polling /
@@ -87,6 +88,21 @@ interface TestSendResponse {
         readonly sent: true;
         readonly sentTo: string;
     };
+}
+
+/** Estimated audience of a campaign, computed with the same filter the send uses. */
+export interface CampaignAudienceCount {
+    /** Subscribers a send would enqueue now. */
+    readonly eligible: number;
+    /** Matching subscribers skipped by the frequency limit. */
+    readonly softCapped: number;
+    /** All active subscribers matching the language and content filters. */
+    readonly totalCandidates: number;
+}
+
+interface AudienceCountResponse {
+    readonly success: boolean;
+    readonly data: CampaignAudienceCount;
 }
 
 /** Filters accepted by the admin campaign list endpoint. */
@@ -167,6 +183,14 @@ async function testSendCampaignRequest(id: string, toEmail?: string) {
     return result.data.data;
 }
 
+async function fetchCampaignAudienceCount(id: string, ignoreSoftCap: boolean) {
+    const query = ignoreSoftCap ? '?ignoreSoftCap=true' : '';
+    const result = await fetchApi<AudienceCountResponse>({
+        path: `/api/v1/admin/newsletter/campaigns/${id}/audience-count${query}`
+    });
+    return result.data.data;
+}
+
 async function sendCampaignRequest(id: string, ignoreSoftCap = false) {
     const result = await fetchApi<SendResponse>({
         path: `/api/v1/admin/newsletter/campaigns/${id}/send`,
@@ -202,6 +226,34 @@ export function useNewsletterCampaign(id: string) {
         queryFn: () => fetchNewsletterCampaign(id),
         enabled: !!id,
         staleTime: 30_000
+    });
+}
+
+/**
+ * Audience estimate for a campaign (what a send would enqueue now).
+ *
+ * Always refetched (`staleTime: 0`) so reopening the confirmation dialog after
+ * an edit shows the current number. Pass `enabled: false` until the dialog is open.
+ */
+export function useCampaignAudienceCount({
+    id,
+    ignoreSoftCap = false,
+    enabled = true
+}: {
+    readonly id: string;
+    readonly ignoreSoftCap?: boolean;
+    readonly enabled?: boolean;
+}) {
+    return useQuery({
+        queryKey: [
+            ...newsletterCampaignQueryKeys.detail(id),
+            'audience-count',
+            { ignoreSoftCap }
+        ] as const,
+        queryFn: () => fetchCampaignAudienceCount(id, ignoreSoftCap),
+        enabled: enabled && !!id,
+        staleTime: 0,
+        gcTime: 0
     });
 }
 

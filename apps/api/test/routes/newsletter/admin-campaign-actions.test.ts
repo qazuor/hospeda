@@ -32,6 +32,7 @@ const mockSend = vi.fn();
 const mockTestSend = vi.fn();
 const mockCancel = vi.fn();
 const mockComputeMetrics = vi.fn();
+const mockGetAudienceEstimate = vi.fn();
 const mockGetFailedDeliveries = vi.fn();
 const mockUserGetById = vi.fn();
 
@@ -44,6 +45,7 @@ vi.mock('../../../src/routes/newsletter/admin/_singletons', () => ({
         testSend: mockTestSend,
         cancel: mockCancel,
         computeMetrics: mockComputeMetrics,
+        getAudienceEstimate: mockGetAudienceEstimate,
         getFailedDeliveries: mockGetFailedDeliveries
     })),
     _resetCampaignRouteSingletons: vi.fn()
@@ -92,6 +94,7 @@ vi.mock('../../../src/middlewares/authorization', () => ({
 
 import { Hono } from 'hono';
 import {
+    adminCampaignAudienceCountRoute,
     adminCampaignErrorsRoute,
     adminCampaignMetricsRoute,
     adminCancelCampaignRoute,
@@ -133,6 +136,7 @@ function buildApp() {
     app.route('/api/v1/admin/newsletter', adminSendCampaignRoute);
     app.route('/api/v1/admin/newsletter', adminCancelCampaignRoute);
     app.route('/api/v1/admin/newsletter', adminCampaignMetricsRoute);
+    app.route('/api/v1/admin/newsletter', adminCampaignAudienceCountRoute);
     app.route('/api/v1/admin/newsletter', adminCampaignErrorsRoute);
     return app;
 }
@@ -146,6 +150,7 @@ beforeEach(() => {
     mockTestSend.mockReset();
     mockCancel.mockReset();
     mockComputeMetrics.mockReset();
+    mockGetAudienceEstimate.mockReset();
     mockGetFailedDeliveries.mockReset();
     mockUserGetById.mockReset();
 
@@ -502,5 +507,74 @@ describe('GET /api/v1/admin/newsletter/campaigns/:id/errors', () => {
             page: 2,
             pageSize: 10
         });
+    });
+});
+
+// ---------------------------------------------------------------------------
+// GET /:id/audience-count (HOS-2586)
+// ---------------------------------------------------------------------------
+
+describe('GET /api/v1/admin/newsletter/campaigns/:id/audience-count', () => {
+    it('returns 200 with the estimate and Cache-Control: no-store', async () => {
+        mockGetAudienceEstimate.mockResolvedValue({
+            data: { eligible: 7, softCapped: 2, totalCandidates: 9 },
+            error: null
+        });
+
+        const app = buildApp();
+        const res = await app.request(
+            `/api/v1/admin/newsletter/campaigns/${campaignId}/audience-count`
+        );
+
+        expect(res.status).toBe(200);
+        expect(res.headers.get('Cache-Control')).toBe('no-store');
+        const body = await res.json();
+        expect(body.data).toEqual({ eligible: 7, softCapped: 2, totalCandidates: 9 });
+        expect(mockGetAudienceEstimate).toHaveBeenCalledWith(
+            expect.objectContaining({ id: ACTOR_ID }),
+            { id: campaignId, ignoreSoftCap: false }
+        );
+    });
+
+    it('forwards ignoreSoftCap=true to the service', async () => {
+        mockGetAudienceEstimate.mockResolvedValue({
+            data: { eligible: 9, softCapped: 0, totalCandidates: 9 },
+            error: null
+        });
+
+        const app = buildApp();
+        const res = await app.request(
+            `/api/v1/admin/newsletter/campaigns/${campaignId}/audience-count?ignoreSoftCap=true`
+        );
+
+        expect(res.status).toBe(200);
+        expect(mockGetAudienceEstimate).toHaveBeenCalledWith(expect.anything(), {
+            id: campaignId,
+            ignoreSoftCap: true
+        });
+    });
+
+    it('returns 400 for a non-UUID id', async () => {
+        const app = buildApp();
+        const res = await app.request(
+            '/api/v1/admin/newsletter/campaigns/not-a-uuid/audience-count'
+        );
+
+        expect(res.status).toBe(400);
+        expect(mockGetAudienceEstimate).not.toHaveBeenCalled();
+    });
+
+    it('returns 404 when the campaign does not exist', async () => {
+        mockGetAudienceEstimate.mockResolvedValue({
+            data: null,
+            error: { code: 'NOT_FOUND', message: 'Campaign not found' }
+        });
+
+        const app = buildApp();
+        const res = await app.request(
+            `/api/v1/admin/newsletter/campaigns/${campaignId}/audience-count`
+        );
+
+        expect(res.status).toBe(404);
     });
 });
