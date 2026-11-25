@@ -542,9 +542,9 @@
                 "completed": "Contacto completado"
             },
             "empty": "Todavía no hay datos",
+            "emptyDescription": "Cuando tus fichas reciban visitas, vas a ver acá de dónde vienen.",
             "visitors_one": "{{count}} visitante",
-            "visitors_other": "{{count}} visitantes",
-            "emptyDescription": "Las visitas a tus fichas se muestran acá apenas empiecen a llegar."
+            "visitors_other": "{{count}} visitantes"
         },
         "locationException": {
             "requestButton": "Pedir una excepción",

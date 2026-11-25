@@ -22,6 +22,7 @@ import {
     YAxis
 } from 'recharts';
 import type { AccommodationViewsData, HostViewDailySeriesData } from '@/lib/api/types';
+import { buildLinearAxis } from '@/lib/chart-axis';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import styles from './ViewsWidget.module.css';
@@ -86,6 +87,9 @@ export function ViewsWidget({
     }, [dailySeries]);
 
     const hasChart = chartData.length > 0;
+    const valueAxis = buildLinearAxis({
+        max: Math.max(0, ...chartData.map((point) => point.total))
+    });
 
     // ── Loading skeleton ────────────────────────────────────────────────
     if (isLoading) {
@@ -205,6 +209,8 @@ export function ViewsWidget({
                                 axisLine={false}
                                 tickLine={false}
                                 allowDecimals={false}
+                                domain={valueAxis.domain as [number, number]}
+                                ticks={[...valueAxis.ticks]}
                             />
                             <Tooltip
                                 contentStyle={{

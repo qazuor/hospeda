@@ -23,6 +23,11 @@
  * `event` field outside the SPEC-101 §4.4 whitelist are silently skipped
  * — Brevo emits "request", "proxy_open", etc. that we don't care about.
  *
+ * Opens (HOS-2583): an `opened` event is also reported to Umami as `email-open`
+ * (see `resolveEmailOpen`, emitted only when the batch answers 200). The email carries no pixel of ours, so this is the only open
+ * measurement. A transactional open is attributed through the `template:<catalog key>`
+ * tag Brevo echoes back in the event's `tags` array.
+ *
  * Hard bounces (HOS-1627, AC:U2:12): a `hard_bounce` event is ALSO written as
  * the idempotent `bounced` row of the address in `notification_log`, which
  * the email outbox suppression reads. That write happens before the
@@ -44,11 +49,16 @@
 
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { notificationLogModel } from '@repo/db';
-import { recordProviderHardBounce } from '@repo/notifications';
+import {
+    findEmailCatalogEntry,
+    parseEmailTemplateTag,
+    recordProviderHardBounce
+} from '@repo/notifications';
 import { ServiceErrorCode } from '@repo/schemas';
 import { NewsletterTrackingService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { captureEmailOpen, type EmailOpenInput } from '../../lib/email-open-analytics';
 import { createPerRouteRateLimitMiddleware } from '../../middlewares/rate-limit';
 import { createRouter } from '../../utils/create-app';
 import { env } from '../../utils/env';
@@ -129,6 +139,11 @@ interface RawBrevoEvent {
     readonly ts_event?: number;
     /** Bounce reason (transactional `hard_bounce` / `soft_bounce` events). */
     readonly reason?: string;
+    /**
+     * Tags of the send, echoed by Brevo on every transactional event (an array of strings).
+     * Typed `unknown`: the body is an unchecked cast, so the reader validates it.
+     */
+    readonly tags?: unknown;
 }
 
 /** `notification_log.recipient` is `varchar(255)`. */
@@ -210,6 +225,68 @@ async function recordHardBounce(input: {
 }
 
 /**
+ * Resolves what an `opened` event reports to Umami as `email-open` (HOS-2583).
+ *
+ * A newsletter delivery is recognised by the tracking service (it matched the message id
+ * to a delivery row), which also names the campaign. Anything else is a transactional
+ * mail, attributed through the `template:<catalog key>` tag the Brevo transport adds to
+ * every send. A missing tag, or a key that is not in the email catalog, is logged and
+ * skipped: it never fails the batch, and an unknown key never becomes an Umami value.
+ *
+ * Never throws. The caller emits the result only once the whole batch is going to answer 200,
+ * so a 503 (Brevo redelivers the batch) never double counts.
+ */
+function resolveEmailOpen(input: {
+    readonly raw: RawBrevoEvent;
+    readonly messageId: unknown;
+    readonly campaignSlug: string | undefined;
+    readonly at: Date;
+}): EmailOpenInput | null {
+    const { raw, campaignSlug, at } = input;
+    try {
+        if (campaignSlug) {
+            return { kind: 'newsletter', campaignSlug, at };
+        }
+        const templateKey = parseEmailTemplateTag({ tags: raw.tags });
+        if (!templateKey) {
+            apiLogger.warn(
+                { hasMessageId: Boolean(input.messageId) },
+                'Brevo webhook: opened event has no template tag, not reported to analytics'
+            );
+            return null;
+        }
+        if (!findEmailCatalogEntry({ key: templateKey })) {
+            apiLogger.warn(
+                { templateKey },
+                'Brevo webhook: opened event names a template that is not in the email catalog, not reported to analytics'
+            );
+            return null;
+        }
+        return { kind: 'transactional', templateKey, at };
+    } catch (err) {
+        apiLogger.warn(
+            { error: err instanceof Error ? err.message : String(err) },
+            'Brevo webhook: failed to resolve an email open for analytics'
+        );
+        return null;
+    }
+}
+
+/** Emits the collected opens. Never throws: one failing capture must not stop the rest. */
+function emitEmailOpens(opens: readonly EmailOpenInput[]): void {
+    for (const open of opens) {
+        try {
+            captureEmailOpen(open);
+        } catch (err) {
+            apiLogger.warn(
+                { error: err instanceof Error ? err.message : String(err) },
+                'Brevo webhook: failed to report an email open to analytics'
+            );
+        }
+    }
+}
+
+/**
  * Best-effort timestamp parse. Brevo sends either `date` (ISO string),
  * `ts_event` (unix seconds) or `ts` (unix seconds, older payload shape).
  */
@@ -270,6 +347,7 @@ async function brevoWebhookHandler(c: Context): Promise<Response> {
 
     let processed = 0;
     let skipped = 0;
+    const pendingOpens: EmailOpenInput[] = [];
 
     for (const raw of events) {
         if (!raw || typeof raw !== 'object') {
@@ -336,6 +414,15 @@ async function brevoWebhookHandler(c: Context): Promise<Response> {
             } else {
                 processed += 1;
             }
+            if (eventType === 'opened') {
+                const open = resolveEmailOpen({
+                    raw,
+                    messageId,
+                    campaignSlug: result.data?.openedCampaignSlug,
+                    at: parseEventDate(raw)
+                });
+                if (open) pendingOpens.push(open);
+            }
         } catch (err) {
             if (err instanceof ServiceError && err.code === ServiceErrorCode.SERVICE_UNAVAILABLE) {
                 apiLogger.error(
@@ -355,6 +442,8 @@ async function brevoWebhookHandler(c: Context): Promise<Response> {
         }
     }
 
+    // Only a batch that answers 200 emits: a 503 above makes Brevo redeliver everything.
+    emitEmailOpens(pendingOpens);
     return c.json({ ok: true, processed, skipped });
 }
 

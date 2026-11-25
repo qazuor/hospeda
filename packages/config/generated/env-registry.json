@@ -1443,24 +1443,8 @@
       ],
       "category": "monitoring",
       "helpUrl": "https://umami.is/docs",
-      "howToObtain": "Create a view-only Umami user, then mint an API key for it (format `umami_...`). Never use an admin user key: this key only reads stats. It must NOT be widened to create pixels; that is HOSPEDA_UMAMI_PIXEL_API_KEY, a separate account (HOS-2359).",
-      "howToObtainEs": "Creá un usuario view-only en Umami y generá una API key para él (formato `umami_...`). Nunca uses la key de un admin: esta key solo lee stats. NO se amplía para crear pixels; eso es HOSPEDA_UMAMI_PIXEL_API_KEY, otra cuenta (HOS-2359)."
-    },
-    {
-      "name": "HOSPEDA_UMAMI_PIXEL_API_KEY",
-      "description": "Umami API key of a dedicated `user`-role account allowed to create pixels; used only to create one pixel per newsletter campaign at dispatch (HOS-2359). Unset: campaigns go out without a pixel.",
-      "descriptionEs": "API key de Umami de una cuenta dedicada con rol `user` que puede crear pixels; se usa solo para crear un pixel por campaña de newsletter al despacharla (HOS-2359). Sin setear: las campañas salen sin pixel.",
-      "type": "string",
-      "required": false,
-      "secret": true,
-      "exampleValue": "umami_xxx",
-      "apps": [
-        "api"
-      ],
-      "category": "monitoring",
-      "helpUrl": "https://umami.is/docs",
-      "howToObtain": "Create a Umami user `hospeda-api-pixels` with role `user` (never admin, and not view-only: a view-only key gets 401 on POST /api/pixels, measured on Umami 3.5.0), log in as it and mint an API key (`POST /api/me/api-keys` or the UI; format `umami_...`). It can only create and read pixels owned by that user. Optional everywhere: the feature is fail-open.",
-      "howToObtainEs": "Creá un usuario de Umami `hospeda-api-pixels` con rol `user` (nunca admin, y tampoco view-only: una key view-only recibe 401 en POST /api/pixels, medido en Umami 3.5.0), logueate como él y generá una API key (`POST /api/me/api-keys` o la UI; formato `umami_...`). Solo puede crear y leer pixels de ese usuario. Opcional en todos los entornos: la funcionalidad es fail-open."
+      "howToObtain": "Create a view-only Umami user, then mint an API key for it (format `umami_...`). Never use an admin user key: this key only reads stats. It must NOT be widened to write: the api holds no Umami write credential.",
+      "howToObtainEs": "Creá un usuario view-only en Umami y generá una API key para él (formato `umami_...`). Nunca uses la key de un admin: esta key solo lee stats. NO se amplía para escribir: la api no tiene ninguna credencial de escritura de Umami."
     },
     {
       "name": "HOSPEDA_UMAMI_DATABASE_URL",
@@ -1475,8 +1459,8 @@
       ],
       "category": "monitoring",
       "helpUrl": "https://umami.is/docs",
-      "howToObtain": "Create the restricted role on the Umami Postgres with the SQL in docs/analytics/session-replay-privacy.md (CONNECT, USAGE on public, SELECT and DELETE on session_replay, heatmap_event and session_replay_saved only), then build the URL with that role. This is the only Umami DATABASE write path the api holds. Its only Umami API write credential is HOSPEDA_UMAMI_PIXEL_API_KEY, which can only create pixels owned by its own `user`-role account (HOS-2359).",
-      "howToObtainEs": "Crea el rol restringido en el Postgres de Umami con el SQL de docs/analytics/session-replay-privacy.md (CONNECT, USAGE sobre public, SELECT y DELETE solo sobre session_replay, heatmap_event y session_replay_saved) y arma la URL con ese rol. Es el unico camino de escritura a la BASE de Umami que tiene la api. Su unica credencial de escritura a la API de Umami es HOSPEDA_UMAMI_PIXEL_API_KEY, que solo puede crear pixels de su propia cuenta con rol `user` (HOS-2359)."
+      "howToObtain": "Create the restricted role on the Umami Postgres with the SQL in docs/analytics/session-replay-privacy.md (CONNECT, USAGE on public, SELECT and DELETE on session_replay, heatmap_event and session_replay_saved only), then build the URL with that role. This is the only Umami DATABASE write path the api holds.",
+      "howToObtainEs": "Crea el rol restringido en el Postgres de Umami con el SQL de docs/analytics/session-replay-privacy.md (CONNECT, USAGE sobre public, SELECT y DELETE solo sobre session_replay, heatmap_event y session_replay_saved) y arma la URL con ese rol. Es el unico camino de escritura a la BASE de Umami que tiene la api."
     },
     {
       "name": "SENTRY_AUTH_TOKEN",

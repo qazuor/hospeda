@@ -1047,7 +1047,12 @@
             },
             "viewAll": "Ver todos",
             "quickActions": "Acciones rápidas",
-            "propertiesHint": "{{published}} publicadas · {{draft}} borradores"
+            "propertiesPublished_one": "{{count}} publicada",
+            "propertiesPublished_other": "{{count}} publicadas",
+            "propertiesDraft_one": "{{count}} borrador",
+            "propertiesDraft_other": "{{count}} borradores",
+            "propertiesOther_one": "{{count}} en otro estado",
+            "propertiesOther_other": "{{count}} en otro estado"
         },
         "quickActions": {
             "properties": "Propiedades",

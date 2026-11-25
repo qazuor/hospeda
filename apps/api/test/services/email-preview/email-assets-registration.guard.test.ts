@@ -31,10 +31,8 @@ describe('HOS-2540: email assets are configured at API startup', () => {
         );
     });
 
-    it('passes the Umami URL as the open-pixel origin (HOS-2359)', () => {
-        expect(indexSource).toMatch(
-            /configureEmailAssets\(\s*\{[^}]*pixelBaseUrl:\s*checkEmailPixelBaseUrl\(\s*\{\s*umamiUrl:\s*env\.HOSPEDA_UMAMI_URL/s
-        );
+    it('passes no open-pixel origin (HOS-2583)', () => {
+        expect(indexSource).not.toMatch(/pixelBaseUrl|checkEmailPixelBaseUrl/);
     });
 
     it('runs after env validation and before the cron scheduler starts', () => {

@@ -1047,7 +1047,12 @@
             },
             "viewAll": "View all",
             "quickActions": "Quick actions",
-            "propertiesHint": "{{published}} published · {{draft}} drafts"
+            "propertiesPublished_one": "{{count}} published",
+            "propertiesPublished_other": "{{count}} published",
+            "propertiesDraft_one": "{{count}} draft",
+            "propertiesDraft_other": "{{count}} drafts",
+            "propertiesOther_one": "{{count}} in another state",
+            "propertiesOther_other": "{{count}} in another state"
         },
         "quickActions": {
             "properties": "Properties",

@@ -1047,7 +1047,12 @@
             },
             "viewAll": "Ver todas",
             "quickActions": "Ações rápidas",
-            "propertiesHint": "{{published}} publicadas · {{draft}} rascunhos"
+            "propertiesPublished_one": "{{count}} no ar",
+            "propertiesPublished_other": "{{count}} no ar",
+            "propertiesDraft_one": "{{count}} rascunho",
+            "propertiesDraft_other": "{{count}} rascunhos",
+            "propertiesOther_one": "{{count}} em outro estado",
+            "propertiesOther_other": "{{count}} em outro estado"
         },
         "quickActions": {
             "properties": "Propriedades",

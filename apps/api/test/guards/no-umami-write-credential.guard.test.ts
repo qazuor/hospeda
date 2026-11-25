@@ -20,14 +20,9 @@
  * name it, and any other Umami write credential (an API key with write scope,
  * an admin key, a username or password) is still refused.
  *
- * ## The second exception (HOS-2359 campaign pixels)
- *
- * Owner decision (2026-11-23): the api creates one Umami pixel per newsletter
- * campaign at dispatch, through `HOSPEDA_UMAMI_PIXEL_API_KEY`. That key belongs
- * to a dedicated Umami account with role `user` that does NOT own the main
- * website, so it cannot write the recorder config this guard protects. Only the
- * files in `PIXEL_KEY_ALLOWLIST` may name it: the env schema and the pixel
- * client, which only calls `POST /api/pixels` and `GET /api/pixels`.
+ * HOS-2359 briefly added a second exception, a `user`-role key that created one
+ * pixel per newsletter campaign. HOS-2583 removed the pixels and that key with them,
+ * so the api is back to a single exception.
  *
  * ## What it checks
  *
@@ -41,11 +36,8 @@
  *    write or admin credential (`HOSPEDA_UMAMI_WRITE_*`, `HOSPEDA_UMAMI_ADMIN_*`
  *    keys, tokens, passwords).
  * 4. Only the allowlisted api files name `HOSPEDA_UMAMI_DATABASE_URL`.
- * 5. Only the allowlisted api files name `HOSPEDA_UMAMI_PIXEL_API_KEY`, and the
- *    pixel client calls no Umami endpoint besides `/api/pixels`.
- * 6. The registry declares exactly two secret `HOSPEDA_UMAMI_*` variables beside
- *    the view-only `HOSPEDA_UMAMI_API_KEY`: `HOSPEDA_UMAMI_DATABASE_URL` and
- *    `HOSPEDA_UMAMI_PIXEL_API_KEY`.
+ * 5. The registry declares exactly one secret `HOSPEDA_UMAMI_*` variable beside
+ *    the view-only `HOSPEDA_UMAMI_API_KEY`: `HOSPEDA_UMAMI_DATABASE_URL`.
  *
  * ## What it does NOT see
  *
@@ -71,15 +63,6 @@ const REPO_ROOT = join(fileURLToPath(new URL('.', import.meta.url)), '../../../.
 const DATABASE_URL_ALLOWLIST = [
     'apps/api/src/utils/env-schema.ts',
     'apps/api/src/services/session-recording-purge.ts'
-] as const;
-
-/**
- * The only api files allowed to name `HOSPEDA_UMAMI_PIXEL_API_KEY` (HOS-2359):
- * the env schema that validates it and the pixel client that sends it.
- */
-const PIXEL_KEY_ALLOWLIST = [
-    'apps/api/src/utils/env-schema.ts',
-    'apps/api/src/lib/umami-pixel-client.ts'
 ] as const;
 
 /** A Umami credential with write or admin reach, under any name. */
@@ -178,38 +161,7 @@ describe('the api holds no write-capable Umami credential (HOS-2347 AC-S6)', () 
         }
     });
 
-    it('HOSPEDA_UMAMI_PIXEL_API_KEY is named only by the allowlisted api files (HOS-2359 exception)', () => {
-        // Arrange
-        const files = listTsFiles(join(REPO_ROOT, 'apps/api/src'));
-
-        // Act
-        const namers = files
-            .filter((file) => /\bHOSPEDA_UMAMI_PIXEL_API_KEY\b/.test(readFileSync(file, 'utf8')))
-            .map((file) => relative(REPO_ROOT, file));
-
-        // Assert
-        expect(namers.length).toBeGreaterThan(0);
-        for (const namer of namers) {
-            expect(PIXEL_KEY_ALLOWLIST).toContain(namer);
-        }
-    });
-
-    it('the pixel client calls no Umami endpoint besides /api/pixels (HOS-2359 exception)', () => {
-        // Arrange
-        const source = readFileSync(
-            join(REPO_ROOT, 'apps/api/src/lib/umami-pixel-client.ts'),
-            'utf8'
-        );
-
-        // Act
-        const endpoints = [...source.matchAll(/\/api\/([a-z-]+)/g)].map((match) => match[1]);
-
-        // Assert
-        expect(endpoints.length).toBeGreaterThan(0);
-        expect(new Set(endpoints)).toEqual(new Set(['pixels']));
-    });
-
-    it('the registry has exactly two secret HOSPEDA_UMAMI_* variables beside the view-only API key', () => {
+    it('the registry has exactly one secret HOSPEDA_UMAMI_* variable beside the view-only API key', () => {
         // Arrange
         const secrets = ENV_REGISTRY.filter(
             (entry) => entry.name.startsWith('HOSPEDA_UMAMI_') && entry.secret
@@ -218,8 +170,7 @@ describe('the api holds no write-capable Umami credential (HOS-2347 AC-S6)', () 
         // Assert
         expect([...secrets].sort()).toEqual([
             'HOSPEDA_UMAMI_API_KEY',
-            'HOSPEDA_UMAMI_DATABASE_URL',
-            'HOSPEDA_UMAMI_PIXEL_API_KEY'
+            'HOSPEDA_UMAMI_DATABASE_URL'
         ]);
     });
 });

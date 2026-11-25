@@ -25,7 +25,8 @@ import { apiClient } from '@/lib/api/client';
 import type { EntitlementsData } from '@/lib/entitlements-cache';
 import { getEntitlementsCached } from '@/lib/entitlements-cache';
 
-vi.mock('@/lib/i18n', () => ({
+vi.mock('@/lib/i18n', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@/lib/i18n')>()),
     createTranslations: () => ({
         t: (key: string, fallback?: string, params?: Record<string, string>) =>
             (fallback ?? key).replace(
@@ -202,6 +203,10 @@ describe('VenueMenuManager — a locked section is read-only and can be emptied 
 
         // Proactive: the refusal was never needed.
         expect(screen.getByTestId('venue-section-locked-notice')).toHaveTextContent(/plan Plan X/);
+        // HOS-2612 F-15: the lock is the kit LockedState, naming the catalog plan.
+        expect(
+            screen.getByTestId('venue-section-locked-notice').querySelector('[data-reason="plan"]')
+        ).not.toBeNull();
         expect(mockPut).not.toHaveBeenCalled();
 
         await confirmVaciar();

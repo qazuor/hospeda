@@ -34,7 +34,7 @@ import {
 } from '@repo/schemas';
 import type { JSX } from 'react';
 import { useEffect, useState } from 'react';
-import { EmptyState } from '@/components/account/ui/EmptyState';
+import { EmptyState } from '@/components/account/ui';
 import { listingAnalyticsApi } from '@/lib/api/endpoints-protected';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -278,14 +278,12 @@ export function TrafficStatsCards({
             <div data-testid="traffic-stats-empty">
                 <EmptyState
                     variant="compact"
-                    icon={
-                        <BarChartIcon
-                            size={28}
-                            aria-hidden={true}
-                        />
-                    }
+                    icon={<BarChartIcon size={32} />}
                     title={emptyLabel}
-                    description={t('listing.owner.traffic.emptyDescription')}
+                    description={t(
+                        'listing.owner.traffic.emptyDescription',
+                        'Cuando tus fichas reciban visitas, vas a ver acá de dónde vienen.'
+                    )}
                 />
             </div>
         );

@@ -62,7 +62,7 @@
         },
         "emailAttribution": {
             "title": "Emails, campaign links and QR codes",
-            "body": "The emails we send you include a tiny, invisible image that tells us, in aggregate, how many times an email of each type was opened. That image does not identify you: everyone who receives the same email gets exactly the same image, with no data about you. Links in our emails, links shared from the site, printed QR codes and the links to our presentations carry campaign parameters (UTM) that tell us which channel a visit came from; we analyse them with Umami, an analytics tool we host ourselves. Brevo, our email delivery provider, also measures opens and clicks of newsletter emails. Image blocking and the privacy features of email apps make the open count approximate. There is no individual option to opt out of this count: if you block images in your email app, the open is not counted."
+            "body": "To know whether our emails are opened, Brevo, our email delivery provider, records when each message is opened and reports that open to us. We only count opens by type of email or campaign, in aggregate, with Umami, an analytics tool we host ourselves; that count does not include your email address. Brevo also measures clicks on newsletter emails. Links in our emails, links shared from the site, printed QR codes and the links to our presentations carry campaign parameters (UTM) that tell us which channel a visit came from; we analyse them with Umami as well. The privacy features of email apps make the open count approximate. There is no individual option to opt out of this count: if you block images in your email app, the open is not recorded."
         },
         "dataSecurity": {
             "title": "6. Data Security",

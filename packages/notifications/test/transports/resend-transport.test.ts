@@ -56,8 +56,7 @@ function createTestInput(overrides?: Partial<SendEmailInput>): SendEmailInput {
         react: {} as ReactElement,
         attribution: {
             medium: 'transactional',
-            templateKey: 'notification.payment_success',
-            includePixel: true
+            templateKey: 'notification.payment_success'
         },
         ...overrides
     };
@@ -128,10 +127,7 @@ describe('BrevoEmailTransport', () => {
 
         it('forwards the attribution to the renderer (HOS-2359)', async () => {
             // Arrange
-            configureEmailAssets({
-                siteUrl: 'https://hospeda.com.ar',
-                pixelBaseUrl: 'https://pulso.hospeda.com.ar'
-            });
+            configureEmailAssets({ siteUrl: 'https://hospeda.com.ar' });
             const transport = new BrevoEmailTransport(TEST_CLIENT, DEFAULT_TRANSPORT_OPTIONS);
             fetchMock.mockResolvedValue(jsonResponse({ messageId: '<msg@brevo>' }));
 
@@ -141,9 +137,7 @@ describe('BrevoEmailTransport', () => {
 
             // Assert
             const body = JSON.parse((fetchMock.mock.calls[0]?.[1] as RequestInit).body as string);
-            expect(body.htmlContent).toContain(
-                '<img src="https://pulso.hospeda.com.ar/p/email-notification-payment-success"'
-            );
+            expect(body.htmlContent).not.toContain('<img');
             expect(attributionWarn).not.toHaveBeenCalled();
         });
 
@@ -154,8 +148,7 @@ describe('BrevoEmailTransport', () => {
             const input = createTestInput({
                 attribution: {
                     medium: 'transactional',
-                    templateKey: 'notification.not-a-real-template',
-                    includePixel: true
+                    templateKey: 'notification.not-a-real-template'
                 }
             });
 
@@ -284,7 +277,39 @@ describe('BrevoEmailTransport', () => {
             // Assert
             const [, init] = fetchMock.mock.calls[0] ?? [];
             const body = JSON.parse((init as RequestInit).body as string);
-            expect(body.tags).toEqual(['category:transactional', 'env:prod']);
+            expect(body.tags).toEqual([
+                'category:transactional',
+                'env:prod',
+                'template:notification.payment_success'
+            ]);
+        });
+
+        it('tags every transactional send with its catalog key (HOS-2583)', async () => {
+            // Arrange
+            const transport = new BrevoEmailTransport(TEST_CLIENT, DEFAULT_TRANSPORT_OPTIONS);
+            fetchMock.mockResolvedValue(jsonResponse({ messageId: '<msg@brevo>' }));
+
+            // Act
+            await transport.send(createTestInput());
+
+            // Assert
+            const body = JSON.parse((fetchMock.mock.calls[0]?.[1] as RequestInit).body as string);
+            expect(body.tags).toEqual(['template:notification.payment_success']);
+        });
+
+        it('adds no template tag to a campaign send (HOS-2583)', async () => {
+            // Arrange
+            const transport = new BrevoEmailTransport(TEST_CLIENT, DEFAULT_TRANSPORT_OPTIONS);
+            fetchMock.mockResolvedValue(jsonResponse({ messageId: '<msg@brevo>' }));
+
+            // Act
+            await transport.send(
+                createTestInput({ attribution: { medium: 'campaign', campaignSlug: 'otono-1' } })
+            );
+
+            // Assert
+            const body = JSON.parse((fetchMock.mock.calls[0]?.[1] as RequestInit).body as string);
+            expect(body.tags).toBeUndefined();
         });
 
         it('should pass attachments converting Buffer content to base64', async () => {

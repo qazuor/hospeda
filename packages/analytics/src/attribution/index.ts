@@ -1,10 +1,6 @@
 export {
     buildEmailTemplateCampaign,
-    buildEmailTemplatePixelSlug,
     buildNewsletterCampaignSlug,
-    buildNewsletterPixelSlug,
-    EMAIL_TEMPLATE_PIXEL_PREFIX,
-    NEWSLETTER_PIXEL_PREFIX,
     toUtmToken
 } from './email-attribution-slugs.js';
 export { buildOwnWebOrigins, isOwnWebUrl } from './own-origin.js';

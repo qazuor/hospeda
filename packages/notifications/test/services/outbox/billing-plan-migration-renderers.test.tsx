@@ -409,3 +409,56 @@ describe('AC:B12:9 la cancelación del aumento', () => {
         );
     });
 });
+
+describe('HOS-2608 price-increase mails say the promo is kept', () => {
+    const KEPT = 'Tu promoción se sigue aplicando sobre el precio nuevo.';
+    const increase = {
+        ...base,
+        losesPromo: false,
+        reason: 'PRICE_INCREASE'
+    };
+    const cases = [
+        ['billing.plan-migration-announced', { ...increase, variant: 'SCHEDULED' }],
+        ['billing.plan-migration-upcoming', { ...increase, daysBefore: 7 }]
+    ] as const;
+
+    it.each(cases)('%s shows the line when keepsPromo is true', (template, payload) => {
+        // Arrange + Act
+        const { html } = render(template, { ...payload, keepsPromo: true });
+        // Assert
+        expect(html).toContain(KEPT);
+    });
+
+    it.each(cases)('%s omits the line when keepsPromo is false', (template, payload) => {
+        const { html } = render(template, { ...payload, keepsPromo: false });
+        expect(html).not.toContain(KEPT);
+    });
+
+    it.each(
+        cases
+    )('%s still renders a row queued without keepsPromo and omits the line', (template, payload) => {
+        const { html, subject } = render(template, payload);
+        expect(subject).toBeTruthy();
+        expect(html).toContain(currentAmount);
+        expect(html).not.toContain(KEPT);
+    });
+
+    it.each([
+        ['billing.plan-migration-announced', { ...base, variant: 'SCHEDULED' }],
+        ['billing.plan-migration-upcoming', { ...base, daysBefore: 7 }]
+    ] as const)('%s never shows the line in the retirement branch', (template, payload) => {
+        const { html } = render(template, { ...payload, keepsPromo: true });
+        expect(html).not.toContain(KEPT);
+        expect(html).toContain('perdés tu promoción actual');
+    });
+
+    it('rejects a non-boolean keepsPromo instead of rendering it', () => {
+        expect(() =>
+            render('billing.plan-migration-upcoming', {
+                ...increase,
+                daysBefore: 7,
+                keepsPromo: 'yes'
+            })
+        ).toThrow();
+    });
+});

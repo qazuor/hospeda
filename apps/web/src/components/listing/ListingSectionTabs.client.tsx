@@ -13,6 +13,7 @@ import {
     getListingContactPrice,
     listingContactPriceSchema
 } from '@/lib/listing-contact/listing-contact-price';
+import { scrollToListingSection } from '@/lib/listing-detail/section-scroll';
 import { getListingSectionTabLabelKey, listingSectionKeySchema } from '@/lib/listing-section-tabs';
 import { ListingContactActions } from './contact/ListingContactActions';
 import styles from './ListingSectionTabs.module.css';
@@ -115,11 +116,16 @@ export function ListingSectionTabs(props: ListingSectionTabsProps) {
         parsed.success ? (parsed.data.tabs[0]?.id ?? null) : null
     );
     const [galleryOut, setGalleryOut] = useState(false);
+    // The running tab-jump animation, so a second tap replaces the first.
+    const scrollRef = useRef<{ readonly cancel: () => void } | null>(null);
     const tabs = parsed.success ? parsed.data.tabs : [];
     const galleryId = parsed.success ? parsed.data.galleryId : undefined;
     const tabIds = tabs.map((tab) => tab.id).join('|');
     // Sticky offset, re-measured when the wave band slides out/in or the viewport changes.
     const [stickyOffset, setStickyOffset] = useState<number | null>(null);
+
+    // A tab jump never outlives the island (view transitions unmount it).
+    useEffect(() => () => scrollRef.current?.cancel(), []);
 
     useEffect(() => {
         const nav = navRef.current;
@@ -242,8 +248,17 @@ export function ListingSectionTabs(props: ListingSectionTabsProps) {
         if (!target) return;
         event.preventDefault();
         const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        // scroll-margin-top on the section (plus the page scroll-padding) keeps it below the sticky band.
-        target.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
+        // Not scrollIntoView: the wave band collapses and slides out during the
+        // scroll, so a destination computed up front lands under the tabs (HOS-2605).
+        // The driver re-measures the sticky offset on every frame.
+        scrollRef.current?.cancel();
+        scrollRef.current = scrollToListingSection({
+            target,
+            readOffset: () => readStickyOffset({ nav: navRef.current }),
+            gap: SCROLL_GAP_PX,
+            reduceMotion,
+            win: window
+        });
         history.replaceState(null, '', `#${id}`);
         setActiveId(id);
     }

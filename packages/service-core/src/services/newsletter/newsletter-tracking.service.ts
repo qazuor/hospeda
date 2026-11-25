@@ -41,7 +41,13 @@
  *      instead of `provider_message_id`.
  */
 
-import { getDb, newsletterCampaignDeliveries, newsletterSubscribers } from '@repo/db';
+import { buildNewsletterCampaignSlug } from '@repo/analytics';
+import {
+    getDb,
+    newsletterCampaignDeliveries,
+    newsletterCampaigns,
+    newsletterSubscribers
+} from '@repo/db';
 import { NewsletterDeliveryStatusEnum, NewsletterSubscriberStatusEnum } from '@repo/schemas';
 import { and, eq, isNull, sql } from 'drizzle-orm';
 import { z } from 'zod';
@@ -103,6 +109,13 @@ export interface ProcessBrevoWebhookEventOutput {
     readonly matchedBySubscriberEmail: boolean;
     /** Diagnostic free-form reason for `updated=false` (e.g. `no_match`). */
     readonly skippedReason?: string;
+    /**
+     * `opened` only (HOS-2583): the `utm_campaign` slug of the campaign the opened message
+     * belongs to, set on EVERY open of a newsletter delivery (not just the first, which is
+     * the only one that writes `opened_at`). Absent when the message is not a newsletter
+     * delivery, so the caller treats the open as a transactional one.
+     */
+    readonly openedCampaignSlug?: string;
 }
 
 /** Options accepted by the {@link NewsletterTrackingService} constructor. */
@@ -231,12 +244,53 @@ export class NewsletterTrackingService extends BaseService {
                 )
             )
             .returning({ id: newsletterCampaignDeliveries.id });
+        // Analytics only (HOS-2583): a failed lookup must not undo or hide the opened_at
+        // write above, so it is logged and the open falls through to the tag branch.
+        let openedCampaignSlug: string | null = null;
+        try {
+            openedCampaignSlug = await this.findCampaignSlugByMessageId(input.messageId);
+        } catch (error) {
+            this.logger.warn(
+                `[newsletterTracking.opened] campaign slug lookup failed, open not attributed to a campaign: ${error instanceof Error ? error.message : String(error)}`
+            );
+        }
         return {
             updated: result.length > 0,
             matchedByMessageId: result.length > 0,
             matchedBySubscriberEmail: false,
-            skippedReason: result.length > 0 ? undefined : 'no_match_or_already_opened'
+            skippedReason: result.length > 0 ? undefined : 'no_match_or_already_opened',
+            ...(openedCampaignSlug ? { openedCampaignSlug } : {})
         };
+    }
+
+    /**
+     * Resolves the campaign slug of a newsletter delivery by its Brevo message id. A
+     * campaign dispatched before HOS-2359 has no stored slug, so it is recomputed.
+     *
+     * @returns The slug, or `null` when no delivery carries that message id.
+     */
+    private async findCampaignSlugByMessageId(messageId: string): Promise<string | null> {
+        const rows = await getDb()
+            .select({
+                id: newsletterCampaigns.id,
+                title: newsletterCampaigns.title,
+                attributionSlug: newsletterCampaigns.attributionSlug
+            })
+            .from(newsletterCampaignDeliveries)
+            .innerJoin(
+                newsletterCampaigns,
+                eq(newsletterCampaigns.id, newsletterCampaignDeliveries.campaignId)
+            )
+            .where(eq(newsletterCampaignDeliveries.providerMessageId, messageId))
+            .limit(1);
+        const campaign = rows[0];
+        if (!campaign) {
+            return null;
+        }
+        return (
+            campaign.attributionSlug ??
+            buildNewsletterCampaignSlug({ title: campaign.title, id: campaign.id })
+        );
     }
 
     private async applyClick(

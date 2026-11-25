@@ -393,8 +393,7 @@ async function sendRow(input: {
             react: mail.react,
             attribution: {
                 medium: 'transactional',
-                templateKey: `outbox.${row.template}`,
-                includePixel: true
+                templateKey: `outbox.${row.template}`
             },
             tags: [
                 { name: 'notification_type', value: row.template },

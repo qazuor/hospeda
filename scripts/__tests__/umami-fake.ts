@@ -4,7 +4,6 @@
  * Not a test file: vitest only collects `*.test.ts`.
  */
 import { buildReportDefinitions } from '../umami/definitions.js';
-import type { PixelDefinition } from '../umami/pixels-client.js';
 import { buildSegmentDefinitions } from '../umami/segment-definitions.js';
 import type { RunSetupInput } from '../umami/setup.js';
 
@@ -33,12 +32,6 @@ export const BOARD_COUNT = 7;
 export const SEGMENT_COUNT = buildSegmentDefinitions().filter((d) => d.type === 'segment').length;
 /** Number of declared cohorts. */
 export const COHORT_COUNT = buildSegmentDefinitions().filter((d) => d.type === 'cohort').length;
-
-/** Small pixel set the setup tests upsert instead of the 123-entry manifest. */
-export const TEST_PIXELS: readonly PixelDefinition[] = [
-    { name: 'Email · Verificar email', slug: 'email-auth-verify-email' },
-    { name: 'Email · Restablecer contraseña', slug: 'email-auth-reset-password' }
-];
 
 /** One request seen by the fake. */
 export interface Call {
@@ -82,7 +75,6 @@ export function fakeUmami(
     reports: Stored[];
     boards: Stored[];
     segments: Stored[];
-    pixels: Stored[];
     website: StoredWebsite;
 } {
     const website: StoredWebsite = {
@@ -96,7 +88,6 @@ export function fakeUmami(
     const reports: Stored[] = [];
     const boards: Stored[] = [];
     const segments: Stored[] = [];
-    const pixels: Stored[] = [];
     const calls: Call[] = [];
     let seq = 0;
     let reportListCalls = 0;
@@ -137,24 +128,6 @@ export function fakeUmami(
                     merged['replayEnabled'] === true || merged['heatmapEnabled'] === true;
             }
             return json(200, { ...website, shareId: null });
-        }
-        if (path.startsWith('/api/pixels')) {
-            if (method === 'GET') return json(200, envelope(pixels));
-            const pixelId = path.slice('/api/pixels'.length + 1);
-            if (pixelId) {
-                const target = pixels.find((p) => p.id === pixelId);
-                if (!target) return json(404, {});
-                Object.assign(target, body);
-                return json(200, target);
-            }
-            // Measured Umami 3.5: a duplicate slug answers 500 with an empty body.
-            if (pixels.some((p) => p['slug'] === body['slug'])) {
-                return new Response('', { status: 500 });
-            }
-            seq++;
-            const created = { ...body, id: `px-${seq}`, name: String(body['name']) } as Stored;
-            pixels.push(created);
-            return json(200, created);
         }
         const segmentBase = `/api/websites/${WEBSITE}/segments`;
         if (path.startsWith(segmentBase)) {
@@ -201,7 +174,7 @@ export function fakeUmami(
         store.push(created);
         return json(200, created);
     }) as typeof fetch;
-    return { fetchImpl, calls, reports, boards, segments, pixels, website };
+    return { fetchImpl, calls, reports, boards, segments, website };
 }
 
 /** Builds a run input with captured stdout and stderr. */
@@ -220,7 +193,6 @@ export function baseInput(over: Partial<RunSetupInput> & { fetchImpl: typeof fet
             websiteId: WEBSITE,
             credentials: { kind: 'token', token: TOKEN },
             dryRun: false,
-            pixelDefinitions: TEST_PIXELS,
             log: (l) => out.push(l),
             error: (l) => err.push(l),
             ...over

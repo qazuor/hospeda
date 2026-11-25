@@ -1,16 +1,10 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import {
-    applyEmailAttribution,
-    buildEmailPixelUrl,
-    type EmailAttribution,
-    UMAMI_PIXEL_PATH
-} from '../src/attribution.js';
+import { applyEmailAttribution, type EmailAttribution } from '../src/attribution.js';
 import { configureEmailAssets, resetEmailAssets } from '../src/email-assets.js';
 
 const TRANSACTIONAL: EmailAttribution = {
     medium: 'transactional',
-    templateKey: 'auth.reset-password',
-    includePixel: true
+    templateKey: 'auth.reset-password'
 };
 
 const UTM_TX = 'utm_source=email&amp;utm_medium=transactional&amp;utm_campaign=auth-reset-password';
@@ -70,7 +64,7 @@ describe('applyEmailAttribution', () => {
 
             const result = applyEmailAttribution({
                 html,
-                attribution: { ...TRANSACTIONAL, includePixel: false }
+                attribution: { ...TRANSACTIONAL }
             });
 
             expect(result.html).toBe(html);
@@ -81,7 +75,7 @@ describe('applyEmailAttribution', () => {
 
             const result = applyEmailAttribution({
                 html,
-                attribution: { ...TRANSACTIONAL, includePixel: false }
+                attribution: { ...TRANSACTIONAL }
             });
 
             expect(result.html).toBe(html);
@@ -92,7 +86,7 @@ describe('applyEmailAttribution', () => {
 
             const result = applyEmailAttribution({
                 html,
-                attribution: { medium: 'campaign', campaignSlug: 'otono-0f3a9c2e', pixelSlug: null }
+                attribution: { medium: 'campaign', campaignSlug: 'otono-0f3a9c2e' }
             });
 
             expect(result.html).toContain(
@@ -106,7 +100,7 @@ describe('applyEmailAttribution', () => {
 
             const result = applyEmailAttribution({
                 html,
-                attribution: { ...TRANSACTIONAL, includePixel: false }
+                attribution: { ...TRANSACTIONAL }
             });
 
             expect(result.html).toContain('http://localhost:4321/es/?utm_source=email');
@@ -125,7 +119,7 @@ describe('applyEmailAttribution', () => {
             const result = applyEmailAttribution({
                 html,
                 text,
-                attribution: { ...TRANSACTIONAL, includePixel: false }
+                attribution: { ...TRANSACTIONAL }
             });
 
             const plain = UTM_TX.replaceAll('&amp;', '&');
@@ -146,7 +140,7 @@ describe('applyEmailAttribution', () => {
             const result = applyEmailAttribution({
                 html,
                 text: 'Mira https://hospeda.com.ar/x. Y https://hospeda.com.ar/x, o (https://hospeda.com.ar/x)!',
-                attribution: { ...TRANSACTIONAL, includePixel: false }
+                attribution: { ...TRANSACTIONAL }
             });
 
             // Assert
@@ -161,7 +155,7 @@ describe('applyEmailAttribution', () => {
             const result = applyEmailAttribution({
                 html,
                 text: 'https://hospeda.com.ar/x.html',
-                attribution: { ...TRANSACTIONAL, includePixel: false }
+                attribution: { ...TRANSACTIONAL }
             });
 
             expect(result.text).toBe('https://hospeda.com.ar/x.html');
@@ -173,7 +167,7 @@ describe('applyEmailAttribution', () => {
             const result = applyEmailAttribution({
                 html,
                 text: 'x [https://hospeda.com.ar/es/x/?a=1&b=2]',
-                attribution: { ...TRANSACTIONAL, includePixel: false }
+                attribution: { ...TRANSACTIONAL }
             });
 
             expect(result.text).toContain('?a=1&b=2&utm_source=email&utm_medium=transactional');
@@ -186,122 +180,30 @@ describe('applyEmailAttribution', () => {
         });
     });
 
-    describe('pixel', () => {
-        it('inserts exactly one pixel before </body> when the pixel origin is https (AC-2)', () => {
-            configureEmailAssets({
-                siteUrl: 'https://hospeda.com.ar',
-                pixelBaseUrl: 'https://pulso.hospeda.com.ar/'
-            });
-
-            const result = applyEmailAttribution({
-                html: doc('<p>hola</p>'),
-                text: 'hola',
-                attribution: TRANSACTIONAL
-            });
-
-            const pixel =
-                '<img src="https://pulso.hospeda.com.ar/p/email-auth-reset-password" width="1" height="1" alt="" style="display:block;width:1px;height:1px;border:0" />';
-            expect(result.html).toBe(doc(`<p>hola</p>${pixel}`));
-            expect(result.html.split('/p/').length - 1).toBe(1);
-            expect(result.text).toBe('hola');
-        });
-
-        it('builds the pixel URL with no query string', () => {
-            expect(UMAMI_PIXEL_PATH).toBe('/p');
-            expect(
-                buildEmailPixelUrl({ pixelBaseUrl: 'https://pulso.hospeda.com.ar', slug: 'x' })
-            ).toBe('https://pulso.hospeda.com.ar/p/x');
-        });
-
-        it('appends the pixel when there is no </body>', () => {
-            configureEmailAssets({
-                siteUrl: 'https://hospeda.com.ar',
-                pixelBaseUrl: 'https://pulso.hospeda.com.ar'
-            });
-
-            const result = applyEmailAttribution({ html: '<p>x</p>', attribution: TRANSACTIONAL });
-
-            expect(
-                result.html.startsWith('<p>x</p><img src="https://pulso.hospeda.com.ar/p/')
-            ).toBe(true);
-        });
-
-        it('uses the campaign pixel slug and skips a null one', () => {
-            configureEmailAssets({
-                siteUrl: 'https://hospeda.com.ar',
-                pixelBaseUrl: 'https://pulso.hospeda.com.ar'
-            });
-
-            const withPixel = applyEmailAttribution({
-                html: doc(''),
-                attribution: {
-                    medium: 'campaign',
-                    campaignSlug: 'otono-0f3a9c2e',
-                    pixelSlug: 'newsletter-otono-0f3a9c2e'
-                }
-            });
-            const withoutPixel = applyEmailAttribution({
-                html: doc(''),
-                attribution: { medium: 'campaign', campaignSlug: 'otono-0f3a9c2e', pixelSlug: null }
-            });
-
-            expect(withPixel.html).toContain(
-                'src="https://pulso.hospeda.com.ar/p/newsletter-otono-0f3a9c2e"'
-            );
-            expect(withoutPixel.html).toBe(doc(''));
-        });
-
-        it('renders no pixel when includePixel is false (admin preview, AC-5)', () => {
-            configureEmailAssets({
-                siteUrl: 'https://hospeda.com.ar',
-                pixelBaseUrl: 'https://pulso.hospeda.com.ar'
-            });
-
-            const result = applyEmailAttribution({
-                html: doc(''),
-                attribution: { ...TRANSACTIONAL, includePixel: false }
-            });
-
-            expect(result.html).toBe(doc(''));
-        });
-
+    describe('no open pixel (HOS-2583, AC-2)', () => {
         it.each([
-            undefined,
-            'http://umami:3000',
-            'not a url'
-        ])('renders UTMs and no pixel when the pixel origin is %s (AC-4)', (pixelBaseUrl) => {
-            configureEmailAssets({
-                siteUrl: 'https://hospeda.com.ar',
-                ...(pixelBaseUrl === undefined ? {} : { pixelBaseUrl })
-            });
-
+            ['transactional', TRANSACTIONAL],
+            ['campaign', { medium: 'campaign', campaignSlug: 'otono-0f3a9c2e' } as EmailAttribution]
+        ])('never inserts an image for a %s email, even with an https Umami origin', (_kind, attribution) => {
             const result = applyEmailAttribution({
-                html: doc('<a href="https://hospeda.com.ar/es/">x</a>'),
-                attribution: TRANSACTIONAL
+                html: doc('<p>hola</p><a href="https://hospeda.com.ar/es/">x</a>'),
+                text: 'hola',
+                attribution
             });
 
             expect(result.html).not.toContain('<img');
+            expect(result.html).not.toContain('/p/');
             expect(result.html).toContain('utm_source=email');
+            expect(result.text).toBe('hola');
         });
 
-        it('is identical for two renders of the same template (AC-3)', () => {
-            configureEmailAssets({
-                siteUrl: 'https://hospeda.com.ar',
-                pixelBaseUrl: 'https://pulso.hospeda.com.ar'
-            });
-
-            const a = applyEmailAttribution({
-                html: doc('<p>Hola Ana</p>'),
-                attribution: TRANSACTIONAL
-            });
-            const b = applyEmailAttribution({
-                html: doc('<p>Hola Juan</p>'),
+        it('leaves a document without links byte-identical', () => {
+            const result = applyEmailAttribution({
+                html: '<p>x</p>',
                 attribution: TRANSACTIONAL
             });
 
-            const src = (h: string) => /<img src="([^"]+)"/.exec(h)?.[1];
-            expect(src(a.html)).toBeDefined();
-            expect(src(a.html)).toBe(src(b.html));
+            expect(result.html).toBe('<p>x</p>');
         });
     });
 });
