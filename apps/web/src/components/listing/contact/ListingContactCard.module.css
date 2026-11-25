@@ -39,6 +39,11 @@
     font-family: var(--font-sans);
 }
 
+.field small {
+    font: var(--app-meta);
+    color: var(--core-muted-foreground);
+}
+
 .direct {
     display: flex;
     flex-direction: column;

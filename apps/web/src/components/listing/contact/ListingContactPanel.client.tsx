@@ -9,6 +9,8 @@ import {
 import { WhatsAppContact } from '@/components/accommodation/WhatsAppContact.client';
 import { Dialog, DialogBody, DialogHeader } from '@/components/shared/ui/Dialog.client';
 import { FieldError } from '@/components/ui/FieldError';
+import { GradientButton } from '@/components/ui/GradientButtonReact';
+import { useListingConversationAction } from '@/hooks/use-listing-conversation-action';
 import { WebEvents } from '@/lib/analytics/events';
 import { trackEvent } from '@/lib/analytics/umami-client';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -74,6 +76,7 @@ function ListingContactSheet({
 }: ListingContactPanelProps) {
     const [request, setRequest] = useState<ListingContactPanelOpen | null>(null);
     const { t } = createTranslations(locale);
+    const action = useListingConversationAction({ accommodationId: accommodation.id, locale });
     const titleId = useId();
     const ownerFirstName = ownerName.trim().split(/\s+/)[0];
     const display = getListingContactPrice({ price, locale });
@@ -269,63 +272,97 @@ function ListingContactSheet({
                     invalid.focus();
                 }}
             >
-                <div className={styles.fields}>
-                    {fields.map((field) => {
-                        const id = `${fieldId}-${field}`;
-                        const guests = field === 'guests';
-                        const error = errors?.[field];
-                        return (
-                            <div
-                                className={styles.field}
-                                key={field}
-                            >
-                                <label htmlFor={id}>
-                                    {t(`accommodations.detail.listingContact.fields.${field}`)}
-                                </label>
-                                <input
-                                    id={id}
-                                    ref={(control) => {
-                                        controls.current[field] = control;
-                                    }}
-                                    type={guests ? 'number' : 'date'}
-                                    min={guests ? 1 : undefined}
-                                    max={guests ? guestLimit : undefined}
-                                    defaultValue={values[field]}
-                                    onInput={syncFields}
-                                    onChange={guests ? undefined : syncFields}
-                                    aria-invalid={Boolean(error)}
-                                    aria-describedby={error ? `${id}-error` : undefined}
-                                />
-                                <FieldError
-                                    id={`${id}-error`}
-                                    message={error}
-                                />
-                            </div>
-                        );
-                    })}
-                </div>
-                <ContactPanelDraftContext.Provider
-                    value={{
-                        draft: contactDraft,
-                        setDraft: (update) => {
-                            draftRevision.current += 1;
-                            setContactDraft(update);
-                        },
-                        submission,
-                        captureDraftReset
-                    }}
-                >
-                    <ContactHost
-                        accommodation={accommodation}
-                        locale={locale}
-                        initialMessage={draft}
-                        initialMessageInvalid={Boolean(errors)}
-                        inquiry={inquiry}
-                        onMessageEdited={() => setMessageEdited(true)}
-                        sourcePage="accommodation_contact_panel"
-                        origin={request?.origin}
-                    />
-                </ContactPanelDraftContext.Provider>
+                {action.hasConversation ? (
+                    <>
+                        <p>{t('accommodations.detail.listingContact.card.existingConversation')}</p>
+                        <GradientButton
+                            href={action.href}
+                            label={action.label}
+                            variant="accent"
+                            flat
+                            size="md"
+                        />
+                    </>
+                ) : (
+                    <>
+                        <div className={styles.fields}>
+                            {fields.map((field) => {
+                                const id = `${fieldId}-${field}`;
+                                const guests = field === 'guests';
+                                const error = errors?.[field];
+                                return (
+                                    <div
+                                        className={styles.field}
+                                        key={field}
+                                    >
+                                        <label htmlFor={id}>
+                                            {t(
+                                                `accommodations.detail.listingContact.fields.${field}`
+                                            )}
+                                        </label>
+                                        <input
+                                            id={id}
+                                            ref={(control) => {
+                                                controls.current[field] = control;
+                                            }}
+                                            type={guests ? 'number' : 'date'}
+                                            min={guests ? 1 : undefined}
+                                            max={guests ? guestLimit : undefined}
+                                            step={guests ? 1 : undefined}
+                                            placeholder={t(
+                                                `accommodations.detail.listingContact.placeholders.${field}`
+                                            )}
+                                            defaultValue={values[field]}
+                                            onInput={syncFields}
+                                            onChange={guests ? undefined : syncFields}
+                                            aria-invalid={Boolean(error)}
+                                            aria-describedby={
+                                                error
+                                                    ? `${id}-error`
+                                                    : !guests && !values[field]
+                                                      ? `${id}-hint`
+                                                      : undefined
+                                            }
+                                        />
+                                        {!guests && !values[field] && (
+                                            <small id={`${id}-hint`}>
+                                                {t(
+                                                    `accommodations.detail.listingContact.placeholders.${field}`
+                                                )}
+                                            </small>
+                                        )}
+                                        <FieldError
+                                            id={`${id}-error`}
+                                            message={error}
+                                        />
+                                    </div>
+                                );
+                            })}
+                        </div>
+                        <ContactPanelDraftContext.Provider
+                            value={{
+                                draft: contactDraft,
+                                setDraft: (update) => {
+                                    draftRevision.current += 1;
+                                    setContactDraft(update);
+                                },
+                                submission,
+                                captureDraftReset
+                            }}
+                        >
+                            <ContactHost
+                                accommodation={accommodation}
+                                locale={locale}
+                                initialMessage={draft}
+                                initialMessageInvalid={Boolean(errors)}
+                                inquiry={inquiry}
+                                onMessageEdited={() => setMessageEdited(true)}
+                                sourcePage="accommodation_contact_panel"
+                                origin={request?.origin}
+                            />
+                        </ContactPanelDraftContext.Provider>
+                    </>
+                )}
             </section>
             <p className={styles.trust}>{t('accommodations.detail.listingContact.panel.trust')}</p>
         </DialogBody>

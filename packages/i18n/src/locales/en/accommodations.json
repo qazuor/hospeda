@@ -247,7 +247,7 @@
         "checkOutPlaceholder": "Check-out",
         "minCapacity": "Minimum capacity",
         "search": "Search by text",
-        "searchPlaceholder": "Search by name or description...",
+        "searchPlaceholder": "Name or description",
         "features": "Features",
         "includeNoPrice": "Include without price",
         "includeNoReviews": "Include without rating",
@@ -478,7 +478,15 @@
                 "social": "Social media"
             },
             "fields": { "checkIn": "Check-in", "checkOut": "Check-out", "guests": "Guests" },
-            "card": { "direct": "Or contact directly" },
+            "placeholders": {
+                "checkIn": "Choose check-in",
+                "checkOut": "Choose check-out",
+                "guests": "Number of guests"
+            },
+            "card": {
+                "direct": "Or contact directly",
+                "existingConversation": "You already have a conversation with this host."
+            },
             "errors": {
                 "checkOutAfterCheckIn": "Check-out must be after check-in",
                 "invalidDate": "Enter a valid date.",
@@ -590,6 +598,7 @@
             "feesHeading": "Additional costs",
             "discountsHeading": "Discounts",
             "consult": "Inquire",
+            "consultContext": "Ask the host directly about the price.",
             "included": "included",
             "optional": "optional",
             "perNightFlag": "per night",
@@ -721,6 +730,7 @@
             "cancelSuccess": "Alert cancelled",
             "cancelError": "Couldn't cancel the alert",
             "locked": "Alert me for price drops",
+            "vipOnly": "Only for VIP tourists",
             "maxReached": "Alert limit reached",
             "signInTitle": "Price alerts",
             "signInHint": "You need an account for us to tell you when the price drops.",

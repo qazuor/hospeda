@@ -21,6 +21,7 @@ import { useSyncExternalStore } from 'react';
 import { DetailCompareButton } from '@/components/accommodation/DetailCompareButton.client';
 import { ShareButtons } from '@/components/ShareButtons.client';
 import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
+import { useListingConversationAction } from '@/hooks/use-listing-conversation-action';
 import { WebEvents } from '@/lib/analytics/events';
 import { trackEvent } from '@/lib/analytics/umami-client';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -100,6 +101,11 @@ export function ListingActionBarButtons({
     compare
 }: ListingActionBarButtonsProps) {
     const { t } = createTranslations(locale);
+    const action = useListingConversationAction({
+        accommodationId: vertical === 'accommodation' ? listingId : undefined,
+        locale,
+        fallbackHref
+    });
     const panelReady = useSyncExternalStore(
         subscribeToListingContactReadiness,
         () => isListingContactPanelReady({ panelId }),
@@ -177,12 +183,20 @@ export function ListingActionBarButtons({
             )}
             {primary?.kind === 'inquire' && (
                 <a
-                    href={fallbackHref}
+                    href={action.href}
                     className={styles.primary}
-                    aria-label={t('accommodations.detail.listingContact.bar.actions.inquire')}
-                    aria-haspopup={panelReady ? 'dialog' : undefined}
+                    aria-label={
+                        action.hasConversation
+                            ? action.label
+                            : t('accommodations.detail.listingContact.bar.actions.inquire')
+                    }
+                    aria-haspopup={!action.hasConversation && panelReady ? 'dialog' : undefined}
                     data-action="primary"
-                    onClick={(event) => openPanel({ event, focus: 'form' })}
+                    onClick={
+                        action.hasConversation
+                            ? undefined
+                            : (event) => openPanel({ event, focus: 'form' })
+                    }
                 >
                     <ChatIcon
                         size={22}

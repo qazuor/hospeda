@@ -69,6 +69,27 @@ function makeSnippet(overrides: Partial<ExternalReviewSnippet> = {}): ExternalRe
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
 describe('ExternalReviews', () => {
+    it('uses shared initials when the author has no photo', () => {
+        render(
+            <ExternalReviews
+                snippets={[makeSnippet()]}
+                locale="es"
+            />
+        );
+        expect(screen.getByText('MG')).toBeInTheDocument();
+    });
+
+    it('falls back to initials when the photo fails to load', () => {
+        render(
+            <ExternalReviews
+                snippets={[makeSnippet({ profilePhoto: 'https://example.test/missing.jpg' })]}
+                locale="es"
+            />
+        );
+        fireEvent.error(screen.getByRole('img', { name: 'María García' }));
+        expect(screen.getByText('MG')).toBeInTheDocument();
+        expect(screen.queryByRole('img', { name: 'María García' })).not.toBeInTheDocument();
+    });
     it('renders nothing when snippets is empty', () => {
         const { container } = render(
             <ExternalReviews
@@ -264,7 +285,7 @@ describe('ExternalReviews', () => {
                 locale="es"
             />
         );
-        expect(screen.getByText('C')).toBeDefined();
+        expect(screen.getByText('CA')).toBeDefined();
     });
 
     it('shows a read-more toggle only when the text overflows', () => {

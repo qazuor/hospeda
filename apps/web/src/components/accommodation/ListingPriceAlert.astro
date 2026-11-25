@@ -1,0 +1,40 @@
+---
+/** @file Shared responsive mount of the existing price-alert island and anonymous fallback. */
+import { PriceAlertButton } from './PriceAlertButton';
+import SignInCtaCard from '@/components/shared/auth/SignInCtaCard.astro';
+import { createTranslations, type SupportedLocale } from '@/lib/i18n';
+
+interface Props {
+    readonly accommodationId: string;
+    readonly apiUrl: string;
+    readonly locale: SupportedLocale;
+    readonly slug: string;
+    readonly placement: 'summary' | 'sidebar';
+}
+const { accommodationId, apiUrl, locale, slug, placement } = Astro.props;
+const { t } = createTranslations(locale);
+---
+<div class:list={['listing-price-alert', `listing-price-alert--${placement}`]}>
+    <PriceAlertButton
+        client:media={placement === 'summary' ? '(max-width: 1024px)' : '(min-width: 1025px)'}
+        accommodationId={accommodationId}
+        apiUrl={apiUrl}
+        locale={locale}
+    >
+        <SignInCtaCard
+            locale={locale}
+            returnPath={`alojamientos/${slug}`}
+            icon="bell"
+            title={t('accommodations.detail.priceAlert.signInTitle')}
+            hint={t('accommodations.detail.priceAlert.signInHint')}
+            ctaLabel={t('accommodations.detail.priceAlert.signInCta')}
+        />
+    </PriceAlertButton>
+</div>
+<style>
+    .listing-price-alert--summary { display: none; flex-basis: 100%; }
+    @media (max-width: 1024px) {
+        .listing-price-alert--summary { display: block; }
+        .listing-price-alert--sidebar { display: none; }
+    }
+</style>

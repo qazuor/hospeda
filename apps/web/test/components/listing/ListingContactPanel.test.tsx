@@ -13,7 +13,8 @@ import { openListingContactPanel } from '@/lib/listing-contact/listing-contact-e
 import { __setNavigateImpl } from '../../stubs/astro-transitions-client';
 import { props } from './listing-contact-panel-fixture';
 
-const { getWhatsApp, trackEvent } = vi.hoisted(() => ({
+const { getWhatsApp, trackEvent, conversation } = vi.hoisted(() => ({
+    conversation: { conversationId: null as string | null },
     getWhatsApp: vi.fn(),
     trackEvent: vi.fn()
 }));
@@ -23,7 +24,7 @@ vi.mock('@/hooks/use-account-permissions', () => ({
     useAccountPermissions: () => ({ user: null })
 }));
 vi.mock('@/store/accommodation-conversation-store', () => ({
-    useAccommodationConversation: () => ({ conversationId: null })
+    useAccommodationConversation: () => conversation
 }));
 vi.mock('@/lib/api/endpoints-protected', () => ({ protectedAccommodationsApi: { getWhatsApp } }));
 
@@ -57,8 +58,21 @@ function fillEditedInquiry() {
 
 describe('ListingContactPanel', () => {
     afterEach(() => {
+        conversation.conversationId = null;
         vi.clearAllMocks();
         vi.unstubAllGlobals();
+    });
+
+    it('shows the thread action without orphaned booking fields for an existing conversation', () => {
+        conversation.conversationId = 'thread-1';
+        render(<ListingContactPanel {...props} />);
+        const dialog = within(openPanel());
+        expect(dialog.queryByLabelText('Llegada')).not.toBeInTheDocument();
+        expect(dialog.queryByLabelText('Huéspedes')).not.toBeInTheDocument();
+        expect(dialog.getByRole('link', { name: 'Ver conversación' })).toHaveAttribute(
+            'href',
+            '/es/mi-cuenta/consultas/thread-1/'
+        );
     });
 
     it.each([
@@ -455,7 +469,11 @@ describe('ListingContactPanel', () => {
 
         badInput = false;
         fireEvent.input(field);
-        expect(field).not.toHaveAccessibleDescription();
+        if (label === 'Huéspedes') expect(field).not.toHaveAccessibleDescription();
+        else
+            expect(field).toHaveAccessibleDescription(
+                label === 'Llegada' ? 'Elegí la llegada' : 'Elegí la salida'
+            );
         expect(submit).toBeEnabled();
         await act(async () => fireEvent.click(submit));
         expect(fetchMock).toHaveBeenCalledOnce();

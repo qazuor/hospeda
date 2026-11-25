@@ -24,23 +24,16 @@
     text-decoration: none;
 }
 
-/* Primary by every means except width: first, larger (52×44), white with the
- * brand orange (HOS-2607, owner rule: white with orange or white with blue, never
- * orange on the blue-ish dock). `--on-action-accent` is white in both themes.
- * `--brand-accent-l82` is the brand orange at ~0.58 lightness in BOTH themes
- * (`--brand-accent-text` lightens to 0.72 in dark, too light on white), and a
- * soft orange ring plus the card shadow keep it reading as the primary control. */
+/* D7: functional contact actions use a flat orange accent without elevation. */
 .primary {
     inline-size: 52px;
-    border: 1.5px solid var(--brand-accent-a35);
-    background: var(--on-action-accent);
-    color: var(--brand-accent-l82);
-    box-shadow: var(--shadow-card);
+    border: 1.5px solid var(--brand-accent);
+    background: var(--brand-accent);
+    color: var(--accent-foreground);
 }
 
 .primary:hover {
-    border-color: var(--brand-accent);
-    box-shadow: var(--shadow-card-hover);
+    background: var(--brand-accent-l82);
 }
 
 /* Outline round icon buttons. `--surface-overlay` is the card white in light and

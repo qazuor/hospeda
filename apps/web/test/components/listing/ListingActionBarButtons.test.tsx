@@ -22,6 +22,11 @@ import { onListingContactPanelOpen } from '@/lib/listing-contact/listing-contact
 import { initContactLinkTracking } from '@/lib/listing-contact/track-contact-links';
 import { resetFavoritesStore } from '@/store/favorites-store';
 
+const conversation = vi.hoisted(() => ({ conversationId: null as string | null }));
+vi.mock('@/store/accommodation-conversation-store', () => ({
+    useAccommodationConversation: () => conversation
+}));
+
 const { trackEvent, readCachedAuthMe, toggle, checkBulk, compareState } = vi.hoisted(() => ({
     trackEvent: vi.fn(),
     readCachedAuthMe: vi.fn(),
@@ -112,6 +117,7 @@ const signedIn = () => ({
 });
 
 beforeEach(() => {
+    conversation.conversationId = null;
     trackEvent.mockClear();
     resetFavoritesStore();
     compareState.selected = false;
@@ -136,6 +142,24 @@ afterEach(() => {
 });
 
 describe('ListingActionBarButtons: render rules', () => {
+    it('links to an existing thread instead of opening the contact panel', () => {
+        conversation.conversationId = 'thread-1';
+        const receive = vi.fn();
+        const unsubscribe = onListingContactPanelOpen(receive);
+        const clearReady = markListingContactPanelReady({ panelId: accommodation.panelId });
+        try {
+            render(<ListingActionBarButtons {...accommodation} />);
+            const link = screen.getByRole('link', { name: 'Ver conversación' });
+            expect(link).toHaveAttribute('href', '/es/mi-cuenta/consultas/thread-1/');
+            expect(link).not.toHaveAttribute('aria-haspopup');
+            blockNavigation();
+            fireEvent.click(link);
+            expect(receive).not.toHaveBeenCalled();
+        } finally {
+            unsubscribe();
+            act(clearReady);
+        }
+    });
     it('AC-27: accommodation renders the six actions in order, named, with Consultar primary', () => {
         const { container } = render(<ListingActionBarButtons {...accommodation} />);
 
