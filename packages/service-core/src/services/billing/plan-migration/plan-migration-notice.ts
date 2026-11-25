@@ -33,6 +33,8 @@ const noticePayloadSchema = z.strictObject({
     applicationDate: dateSchema.nullable(),
     daysBefore: z.number().int().positive().optional(),
     losesPromo: z.boolean(),
+    /** A live promo keeps applying on the new price. Sent only when true so older payloads stay identical. */
+    keepsPromo: z.boolean().optional(),
     /** True when the provider also notifies the customer of the amount change (card payers). */
     providerNotifies: z.boolean().optional(),
     variant: z.enum(['SCHEDULED', 'WAITING', 'TO_RESOLVE', 'NOTHING_CHANGES', 'ALREADY_STARTED']),

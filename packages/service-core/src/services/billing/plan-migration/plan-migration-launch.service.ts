@@ -270,6 +270,7 @@ export async function launchPlanMigration(args: {
                         currency: pricing.currency,
                         applicationDate: variant === 'SCHEDULED' ? scheduled.applicationDate : null,
                         losesPromo: pricing.losesPromo,
+                        ...(pricing.keepsPromo ? { keepsPromo: true } : {}),
                         variant,
                         deadlinesVersion: deadlines.version,
                         // A retirement keeps its original payload byte for byte; the increase
