@@ -1118,6 +1118,16 @@
                 "unavailable": "Indisponível",
                 "reviewsDesc": "Avaliações publicadas",
                 "subscriptionDesc": "Plano atual",
+                "favoritesEmpty": "Seus lugares favoritos aparecerão aqui.",
+                "favoritesNext_one": "Visite seu lugar salvo novamente.",
+                "favoritesNext_other": "Explore seus {{count}} lugares salvos.",
+                "reviewsEmpty": "Compartilhe a experiência da sua próxima viagem.",
+                "reviewsNext_one": "Reveja a avaliação que você compartilhou.",
+                "reviewsNext_other": "Reveja suas {{count}} avaliações compartilhadas.",
+                "planContext": "Confira os benefícios do seu plano.",
+                "trialEndsToday": "Seu período de teste termina hoje. Escolha como continuar.",
+                "trialNext_one": "Seu período de teste termina em {{count}} dia.",
+                "trialNext_other": "Seu período de teste termina em {{count}} dias.",
                 "subscriptionStatus": "Estado da assinatura",
                 "activeStatus": "Ativo",
                 "trialStatus": "Em avaliação",
@@ -1370,7 +1380,6 @@
         "contextOAuth": "Adicione uma senha à sua conta para também entrar com email e senha.",
         "fields": {
             "password": "Senha",
-            "passwordPlaceholder": "Mínimo 8 caracteres",
             "passwordHint": "Mínimo 8 caracteres.",
             "confirmPassword": "Confirmar senha",
             "confirmPasswordPlaceholder": "Repita a senha"
@@ -1840,7 +1849,7 @@
             "benefitSection": "Benefício para anfitriões",
             "benefitNote": "Uma mudança no benefício vai para revisão da equipe da Hospeda antes de ser publicada. Enquanto isso, o benefício atual continua visível no diretório.",
             "liveBenefitLabel": "Benefício publicado atualmente",
-            "noBenefit": "Nenhum benefício estruturado cadastrado",
+            "noBenefit": "Ainda não há um benefício publicado",
             "pendingLabel": "Aguardando revisão",
             "noChanges": "Não há mudanças para salvar",
             "success": "Mudanças salvas",
@@ -1869,7 +1878,7 @@
         "pageTitle": "Minha ficha de parceiro",
         "pageSubtitle": "Gerencie sua presença como parceiro da Hospeda",
         "empty": {
-            "text": "Você ainda não tem uma ficha de parceiro. Candidate-se em \"Seja parceiro\" e, depois que sua solicitação for aprovada, sua ficha vai aparecer aqui.",
+            "text": "Você ainda não tem uma ficha de parceiro. Candidate-se em “Seja parceiro” e, depois que sua solicitação for aprovada, sua ficha vai aparecer aqui.",
             "cta": "Ir para Seja parceiro",
             "title": "Sua ficha de parceiro"
         },

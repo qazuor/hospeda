@@ -207,8 +207,8 @@
             }
         },
         "usage": {
-            "label_one": "{{current}} de {{max}} propriedade",
-            "label_other": "{{current}} de {{max}} propriedades",
+            "label_one": "Cota de publicação: {{current}} de {{max}} hospedagem",
+            "label_other": "Cota de publicação: {{current}} de {{max}} hospedagens",
             "unlimited": "Propriedades ilimitadas",
             "upgrade": "Melhorar plano"
         },
