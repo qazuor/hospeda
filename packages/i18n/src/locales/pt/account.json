@@ -762,7 +762,7 @@
                 "confirmCheckout": "Se precisar de autorização, você irá ao checkout do Mercado Pago; seu plano atual continua até você autorizar.",
                 "confirmScheduled": "Se a mudança for agendada, você verá a data exata em que o novo plano começa.",
                 "payerEmailLabel": "E-mail do pagador no Mercado Pago",
-                "payerEmailHint": "É o e-mail com o qual você vai pagar no Mercado Pago. Você o declara; o provedor não o confirma.",
+                "payerEmailHint": "Este é o e-mail da sua conta do Mercado Pago. Se você pagar com outra conta, altere aqui: se não coincidir, o pagamento será recusado.",
                 "payerEmailInvalid": "Informe um e-mail válido do pagador.",
                 "confirm": "Confirmar mudança",
                 "back": "Voltar",
