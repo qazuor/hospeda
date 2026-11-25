@@ -21,6 +21,7 @@
  */
 
 import { lazy, type Ref, Suspense, useState } from 'react';
+import { Disclosure } from '@/components/account/ui/Disclosure';
 import { Field } from '@/components/account/ui/Field';
 import { TextInput } from '@/components/account/ui/TextInput';
 import { buildFieldId } from '@/lib/forms/build-field-id';
@@ -227,13 +228,14 @@ export function EditorMapPin({
             {pin ? (
                 <p className={styles.hint}>{t('account.editorFields.location.pinHint')}</p>
             ) : null}
-            <details
-                className={styles.coordinates}
-                open={hasCoordinateError || undefined}
+            <Disclosure
+                defaultOpen={hasCoordinateError}
+                summary={
+                    pin
+                        ? `${t('account.editorFields.location.coordinates')}: ${pin.lat.toFixed(PIN_DECIMALS)}, ${pin.lng.toFixed(PIN_DECIMALS)}`
+                        : t('account.editorFields.location.enterCoordinates')
+                }
             >
-                <summary className={styles.summary}>
-                    {t('account.editorFields.location.coordinates')}
-                </summary>
                 <div className={fieldStyles.grid}>
                     <CoordinateInput
                         locale={locale}
@@ -254,7 +256,7 @@ export function EditorMapPin({
                         onChange={(next) => onChange({ lat: lat.value, long: next })}
                     />
                 </div>
-            </details>
+            </Disclosure>
         </div>
     );
 }

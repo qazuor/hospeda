@@ -33,6 +33,7 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AccommodationFaqItem } from '@/components/host/editor/FaqSection.client';
 import { FaqSection } from '@/components/host/editor/FaqSection.client';
+import { createT } from '@/lib/i18n';
 import { addToast } from '@/store/toast-store';
 
 // ---------------------------------------------------------------------------
@@ -59,15 +60,11 @@ vi.mock('@/components/host/editor/PlanEntitlementGate.client', () => ({
 // Module mocks
 // ---------------------------------------------------------------------------
 
-vi.mock('@/components/host/editor/FaqSection.module.css', () => ({
-    default: new Proxy({} as Record<string, string>, { get: (_t, prop) => String(prop) })
-}));
-
 vi.mock('@/lib/i18n', async (importOriginal) => ({
     ...(await importOriginal<typeof import('@/lib/i18n')>()),
     createTranslations: (_locale: string) => ({
         t: (key: string, fallback?: string, params?: Record<string, unknown>) => {
-            const raw = fallback ?? key;
+            const raw = fallback ?? createT('es')(key);
             if (!params) return raw;
             return Object.keys(params).reduce(
                 (acc, k) => acc.replace(new RegExp(`\\{\\{${k}\\}\\}`, 'g'), String(params[k])),
@@ -132,6 +129,22 @@ function renderSection(initialFaqs: readonly AccommodationFaqItem[] = []) {
 // ---------------------------------------------------------------------------
 
 describe('FaqSection', () => {
+    it('uses one help-anchored kit section, collapsed help, and actions after the answer', () => {
+        const { container } = renderSection([FAQ_1]);
+        expect(container.querySelectorAll('[data-kit-section]')).toHaveLength(1);
+        expect(
+            container.querySelector('[data-help="section:accommodation.preguntas"]')
+        ).not.toBeNull();
+        const help = container.querySelector('details');
+        expect(help).not.toBeNull();
+        expect(help).not.toHaveAttribute('open');
+        const answer = screen.getByText(FAQ_1.answer);
+        const edit = screen.getByRole('button', { name: /Editar/ });
+        expect(
+            answer.compareDocumentPosition(edit) & Node.DOCUMENT_POSITION_FOLLOWING
+        ).toBeTruthy();
+    });
+
     beforeEach(() => {
         mockAdd.mockReset();
         mockUpdate.mockReset();
@@ -300,8 +313,12 @@ describe('FaqSection', () => {
         expect(mockAdd).not.toHaveBeenCalled();
         expect(screen.getByLabelText('Pregunta')).toHaveAttribute('aria-invalid', 'true');
         expect(screen.getByLabelText('Respuesta')).toHaveAttribute('aria-invalid', 'true');
-        expect(screen.getByText('zodError.common.faq.question.min')).toBeInTheDocument();
-        expect(screen.getByText('zodError.common.faq.answer.min')).toBeInTheDocument();
+        expect(screen.getByLabelText('Pregunta')).toHaveAccessibleDescription(
+            /La pregunta debe tener al menos 10 caracteres/
+        );
+        expect(screen.getByLabelText('Respuesta')).toHaveAccessibleDescription(
+            /La respuesta debe tener al menos 10 caracteres/
+        );
     });
 
     it('clears a field error as soon as the user edits that field', () => {

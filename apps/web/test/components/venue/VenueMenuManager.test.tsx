@@ -43,7 +43,8 @@ vi.mock('../../../src/lib/i18n', async (importOriginal) => ({
 }));
 
 vi.mock('../../../src/lib/env', () => ({
-    getApiUrl: () => 'https://api.test'
+    getApiUrl: () => 'https://api.test',
+    isLoggingEnabled: () => false
 }));
 
 vi.mock('../../../src/lib/api/client', () => ({

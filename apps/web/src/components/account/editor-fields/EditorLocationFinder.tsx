@@ -19,6 +19,7 @@
 
 import { LocationIcon } from '@repo/icons';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { Alert } from '@/components/account/ui/Alert';
 import { Button } from '@/components/account/ui/Button';
 import { Field } from '@/components/account/ui/Field';
 import { TextInput } from '@/components/account/ui/TextInput';
@@ -196,17 +197,14 @@ export function EditorLocationFinder({
                 ) : null}
             </div>
 
-            {pin === null ? (
-                <p className={styles.notice}>{t('host.properties.editor.location.pinNotSet')}</p>
-            ) : null}
-
-            {reverse?.label ? (
-                <p className={styles.reference}>
-                    <span className={styles.referenceLabel}>
-                        {t('host.properties.editor.location.pinAt')}
-                    </span>{' '}
+            {pin && reverse?.label ? (
+                <Alert
+                    locale={locale}
+                    tone="info"
+                    title={t('host.properties.editor.location.pinAt')}
+                >
                     {reverse.label}
-                </p>
+                </Alert>
             ) : null}
         </div>
     );

@@ -55,6 +55,7 @@ describe('LocationExceptionPanel', () => {
         renderPanel({ locationException: { hasException: false, request: request('PENDING') } });
         expect(screen.getByTestId('location-exception-pending')).toHaveTextContent(/en revisión/i);
         expect(screen.queryByRole('button')).toBeNull();
+        expect(screen.getByRole('status')).toHaveAttribute('data-tone', 'info');
     });
 
     it('approved: says it can publish and offers no request button', () => {
@@ -63,6 +64,7 @@ describe('LocationExceptionPanel', () => {
             /ya podés publicar/i
         );
         expect(screen.queryByRole('button')).toBeNull();
+        expect(screen.getByRole('status')).toHaveAttribute('data-tone', 'success');
     });
 
     it('approved move request: says it can save that address and offers no button', () => {

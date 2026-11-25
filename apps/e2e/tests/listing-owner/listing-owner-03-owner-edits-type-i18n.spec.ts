@@ -272,9 +272,10 @@ test.describe('LISTING-OWNER-03: owner edits type + i18n fields — persist on p
         // of it gates the `setReactInputValue` call further down.
         await waitForListingEditorHydration({ page });
 
-        // The panel renders a fieldset with legend 'Traducciones'. The active
-        // locale tab is 'es' by default (matches the page locale 'es').
-        const translationPanelLegend = page.getByRole('group').filter({ hasText: /traducciones/i });
+        // The panel is a kit Section (a labelled region) titled 'Contenido por
+        // idioma'. The active locale tab is 'es' by default (matches the page
+        // locale 'es').
+        const translationPanelLegend = page.getByRole('region', { name: /contenido por idioma/i });
         await expect(translationPanelLegend).toBeVisible({ timeout: 15_000 });
 
         // The es tab is the default active tab (locale='es'). The nameI18n.es

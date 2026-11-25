@@ -9,6 +9,7 @@
  */
 import 'leaflet/dist/leaflet.css';
 
+import type { Map as LeafletMap, Marker } from 'leaflet';
 import { useEffect, useRef } from 'react';
 import styles from './LocationPickerMap.module.css';
 
@@ -26,7 +27,6 @@ const TILE_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
 const TILE_ATTRIBUTION =
     '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
 const DEFAULT_ZOOM = 15;
-const UNPLACED_MARKER_OPACITY = 0.5;
 
 /**
  * Raw Leaflet map with a draggable marker.
@@ -40,8 +40,10 @@ export function LocationPickerMap({
     ariaLabel
 }: LocationPickerMapProps) {
     const mapRef = useRef<HTMLDivElement>(null);
-    const leafletMapRef = useRef<unknown>(null);
-    const markerRef = useRef<unknown>(null);
+    const leafletMapRef = useRef<LeafletMap | null>(null);
+    const markerRef = useRef<Marker | null>(null);
+    const syncMarkerRef = useRef<(() => void) | null>(null);
+    const positionRef = useRef(markerPosition);
     const resizeObserverRef = useRef<ResizeObserver | null>(null);
     // The Leaflet handlers below are registered ONCE, at mount. Reading the
     // callback (and the lock) through refs keeps them on the LATEST render's
@@ -53,12 +55,14 @@ export function LocationPickerMap({
     useEffect(() => {
         onMoveRef.current = onMove;
         disabledRef.current = disabled;
+        positionRef.current = markerPosition;
     });
 
     // Initialize Leaflet map
     // biome-ignore lint/correctness/useExhaustiveDependencies: Leaflet map needs full re-init on prop changes
     useEffect(() => {
         if (!mapRef.current) return;
+        let cancelled = false;
         // Dynamic import of Leaflet (client-only)
         import('leaflet').then(async (L) => {
             if (!mapRef.current) return;
@@ -74,6 +78,7 @@ export function LocationPickerMap({
                 import('leaflet/dist/images/marker-icon-2x.png'),
                 import('leaflet/dist/images/marker-shadow.png')
             ]);
+            if (cancelled || !mapRef.current) return;
             // HOS-95: Leaflet's `Icon.Default._getIconUrl` prepends its CSS-detected
             // `imagePath` (e.g. `.../leaflet/dist/images/`) to whatever `iconUrl` we
             // set. Since the bundler already resolves these imports to fully-qualified
@@ -81,7 +86,6 @@ export function LocationPickerMap({
             // renders (see ListingMapInner.client.tsx for the same fix). Deleting the
             // override makes Leaflet use the base `Icon._getIconUrl`, which returns our
             // explicit URL verbatim.
-            // biome-ignore lint/performance/noDelete: one-time reset of a prototype method; not a hot path.
             // TYPE-WORKAROUND: Leaflet's public types don't expose the internal `_getIconUrl` member we must delete.
             delete (L.Icon.Default.prototype as unknown as { _getIconUrl?: unknown })._getIconUrl;
             L.Icon.Default.mergeOptions({
@@ -110,33 +114,48 @@ export function LocationPickerMap({
             ro.observe(container);
             resizeObserverRef.current = ro;
 
-            // Add marker
-            const start = markerPosition ?? center;
-            const marker = L.marker([start.lat, start.lng], {
-                draggable: !disabled,
-                opacity: markerPosition ? 1 : UNPLACED_MARKER_OPACITY
-            });
-
-            marker.addTo(map);
-
-            // Handle marker drag
-            marker.on('dragend', () => {
-                const pos = marker.getLatLng();
-                onMoveRef.current(pos.lat, pos.lng);
-            });
+            const syncMarker = () => {
+                const position = positionRef.current;
+                if (!position) {
+                    markerRef.current?.remove();
+                    markerRef.current = null;
+                    return;
+                }
+                if (markerRef.current) {
+                    markerRef.current.setLatLng([position.lat, position.lng]);
+                } else {
+                    const marker = L.marker([position.lat, position.lng], {
+                        draggable: !disabledRef.current,
+                        opacity: 1
+                    });
+                    marker.addTo(map);
+                    marker.on('dragend', () => {
+                        if (disabledRef.current) return;
+                        const pos = marker.getLatLng();
+                        onMoveRef.current(pos.lat, pos.lng);
+                    });
+                    markerRef.current = marker;
+                }
+                if (disabledRef.current) markerRef.current.dragging?.disable();
+                else markerRef.current.dragging?.enable();
+            };
+            syncMarkerRef.current = syncMarker;
+            syncMarker();
 
             // Handle map click (drop/move pin)
             map.on('click', (e: { latlng: { lat: number; lng: number } }) => {
                 if (disabledRef.current) return;
-                marker.setLatLng(e.latlng);
+                positionRef.current = e.latlng;
+                syncMarker();
                 onMoveRef.current(e.latlng.lat, e.latlng.lng);
             });
 
             leafletMapRef.current = map;
-            markerRef.current = marker;
         });
 
         return () => {
+            cancelled = true;
+            syncMarkerRef.current = null;
             resizeObserverRef.current?.disconnect();
             resizeObserverRef.current = null;
             if (
@@ -154,14 +173,10 @@ export function LocationPickerMap({
 
     // Update marker position when props change
     useEffect(() => {
-        if (!markerRef.current || !markerPosition) return;
-        const marker = markerRef.current as {
-            setLatLng: (pos: [number, number]) => void;
-            setOpacity: (opacity: number) => void;
-        };
-        marker.setLatLng([markerPosition.lat, markerPosition.lng]);
-        marker.setOpacity(1);
-    }, [markerPosition]);
+        positionRef.current = markerPosition;
+        disabledRef.current = disabled;
+        syncMarkerRef.current?.();
+    }, [markerPosition, disabled]);
 
     // Update map center when props change
     const prevCenterRef = useRef(center);

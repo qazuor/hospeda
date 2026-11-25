@@ -127,46 +127,52 @@ export function CapacitySection({
                     />
                 </Field>
 
-                <Field
-                    locale={locale}
-                    idParts={idOf('policies.minNights')}
-                    label={t('host.properties.editor.field.minNights', 'Mínimo de noches')}
-                    hint={t(
-                        'host.properties.editor.field.minNightsHint',
-                        'La cantidad mínima de noches que un huésped debe reservar. Se muestra en la ficha pública.'
-                    )}
-                    error={errors['policies.minNights']}
-                >
-                    <TextInput
-                        type="number"
-                        inputMode="numeric"
-                        value={data.policies.minNights ?? ''}
-                        min={1}
-                        max={365}
-                        onChange={(e) => onPolicyChange('minNights', readNights(e.target.value))}
-                    />
-                </Field>
+                <div className={styles.stayBounds}>
+                    <Field
+                        locale={locale}
+                        idParts={idOf('policies.minNights')}
+                        label={t('host.properties.editor.field.minNights', 'Mínimo de noches')}
+                        hint={t(
+                            'host.properties.editor.field.minNightsHint',
+                            'La cantidad mínima de noches que un huésped debe reservar. Se muestra en la ficha pública.'
+                        )}
+                        error={errors['policies.minNights']}
+                    >
+                        <TextInput
+                            type="number"
+                            inputMode="numeric"
+                            value={data.policies.minNights ?? ''}
+                            min={1}
+                            max={365}
+                            onChange={(e) =>
+                                onPolicyChange('minNights', readNights(e.target.value))
+                            }
+                        />
+                    </Field>
 
-                <Field
-                    locale={locale}
-                    idParts={idOf('policies.maxNights')}
-                    label={t('host.properties.editor.field.maxNights', 'Máximo de noches')}
-                    hint={t(
-                        'host.properties.editor.field.maxNightsHint',
-                        'Opcional. La cantidad máxima de noches por reserva; no puede ser menor que el mínimo.'
-                    )}
-                    error={errors['policies.maxNights']}
-                >
-                    <TextInput
-                        type="number"
-                        inputMode="numeric"
-                        value={data.policies.maxNights ?? ''}
-                        min={data.policies.minNights ?? 1}
-                        max={365}
-                        step={1}
-                        onChange={(e) => onPolicyChange('maxNights', readNights(e.target.value))}
-                    />
-                </Field>
+                    <Field
+                        locale={locale}
+                        idParts={idOf('policies.maxNights')}
+                        label={t('host.properties.editor.field.maxNights', 'Máximo de noches')}
+                        hint={t(
+                            'host.properties.editor.field.maxNightsHint',
+                            'Opcional. La cantidad máxima de noches por reserva; no puede ser menor que el mínimo.'
+                        )}
+                        error={errors['policies.maxNights']}
+                    >
+                        <TextInput
+                            type="number"
+                            inputMode="numeric"
+                            value={data.policies.maxNights ?? ''}
+                            min={data.policies.minNights ?? 1}
+                            max={365}
+                            step={1}
+                            onChange={(e) =>
+                                onPolicyChange('maxNights', readNights(e.target.value))
+                            }
+                        />
+                    </Field>
+                </div>
             </div>
         </Section>
     );

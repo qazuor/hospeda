@@ -105,6 +105,11 @@
         flex-wrap: wrap;
     }
 
+    /* Fixed name column so every switch starts at the same x (HOS-2624). */
+    .dayName {
+        min-inline-size: 7rem;
+    }
+
     .time {
         flex: 0 1 9rem;
     }

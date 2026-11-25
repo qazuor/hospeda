@@ -33,8 +33,7 @@ describe('Mi cuenta empty states carry an icon', () => {
         ['components/billing/recurring-addons/RecurringAddonWithdrawal.client.tsx', /<PackageIcon/],
         ['components/host/host-trades/BenefitUsagesPanel.client.tsx', /<CheckCircleIcon/],
         ['components/listing/ai-questions/AiQuestionsPanel.client.tsx', /<ChatIcon/],
-        ['components/listing/ListingFaqManager.client.tsx', /<FaqsIcon/],
-        ['components/host/editor/FaqSection.client.tsx', /<FaqsIcon/],
+        ['components/account/editor/FaqEditor.tsx', /<FaqsIcon/],
         ['components/listing/TrafficStatsCards.client.tsx', /<BarChartIcon/],
         ['components/host/ExternalReputationSection.client.tsx', /<StarIcon/]
     ])('%s', (file, icon) => {

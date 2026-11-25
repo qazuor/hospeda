@@ -1,4 +1,18 @@
 {
+    "editorHub": {
+        "publicationStatus": "Estado de publicação",
+        "publicationUnavailable": "Estado de publicação indisponível",
+        "complete": "Requisitos cumpridos",
+        "incomplete": "Requisitos pendentes",
+        "recommended": "Sugerido",
+        "requiredOnly": "O indicador conta apenas as seções obrigatórias para publicar. Recomendações não impedem a publicação; outras verificações de publicação são avaliadas separadamente.",
+        "readyWithRecommendations": "Os requisitos de conteúdo estão completos. Você pode melhorar a ficha com as recomendações indicadas; elas não impedem a publicação. Outras verificações de publicação são avaliadas separadamente."
+    },
+    "editorPresentation": {
+        "faqTitle": "Perguntas e respostas",
+        "translationTitle": "Conteúdo por idioma",
+        "missingHint": "Faltam traduções em {{locales}}. Abra cada aba de idioma para revisar os campos pendentes."
+    },
     "whatsNewModal": {
         "title": "Novidades",
         "close": "Fechar",
@@ -1630,7 +1644,8 @@
                 "hint": {
                     "summary": "Entre 10 e 300 caracteres. Aparece na listagem do blog.",
                     "content": "Mínimo de 100 caracteres.",
-                    "readingTime": "Deixe vazio para manter o valor atual."
+                    "readingTime": "Altere os minutos ou deixe o campo vazio para redefinir o tempo de leitura salvo.",
+                    "readingTimeEmpty": "Nenhum tempo de leitura foi definido. Informe a quantidade de minutos para defini-lo."
                 },
                 "placeholder": {
                     "content": "Escreva sua publicação..."
@@ -1659,6 +1674,8 @@
         "editor": {
             "media": {
                 "sectionTitle": "Fotos",
+                "photoSectionTitle": "Capa e galeria de fotos",
+                "photoActions": "Ações da foto {{index}}",
                 "featured": "Imagem principal",
                 "gallery": "Galeria de fotos",
                 "add": "Adicionar foto",
@@ -2293,7 +2310,7 @@
         },
         "hoursEditor": {
             "title": "Horário de funcionamento",
-            "hint": "Ative os dias em que você abre e cadastre os horários. Com «Copiar para todos os dias» você repete o horário de um dia na semana inteira.",
+            "hint": "Ative os dias em que você abre e cadastre os horários.",
             "open": "Aberto",
             "closed": "Fechado",
             "openAria": "{{day}} aberto",
@@ -2419,6 +2436,7 @@
                 "action": "Ir para o mapa"
             },
             "coordinates": "Coordenadas",
+            "enterCoordinates": "Inserir coordenadas",
             "latitude": "Latitude",
             "longitude": "Longitude"
         }

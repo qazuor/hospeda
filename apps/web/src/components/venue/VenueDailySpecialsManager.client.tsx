@@ -48,10 +48,12 @@ import type { JSX } from 'react';
 import { useCallback, useEffect, useId, useMemo, useState } from 'react';
 import { EditorSaveBar } from '@/components/account/editor-shell/EditorSaveBar';
 import { Repeater } from '@/components/account/ui/Repeater';
+import { Section } from '@/components/account/ui/Section';
 import type { SaveOutcome } from '@/components/account/ui/use-save-bar';
 import { type ListingPlanGate, useListingPlanGate } from '@/hooks/useListingPlanGate';
 import { useSectionVaciar } from '@/hooks/useSectionVaciar';
 import { apiClient } from '@/lib/api/client';
+import { sectionHelpId } from '@/lib/help/section-help-id';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import {
@@ -321,96 +323,98 @@ export function VenueDailySpecialsManager({
     const newSpecial = t('venue.owner.editor.dailySpecials.newSpecial', 'Nuevo plato del día');
 
     return (
-        <section className={styles.panel}>
-            <h2 className={styles.heading}>
-                {t('venue.owner.editor.dailySpecials.title', 'Menú del día')}
-            </h2>
-            <p className={styles.intro}>
-                {t(
-                    'venue.owner.editor.dailySpecials.intro',
-                    'El plato del día o la sugerencia del chef. Cada uno vale hasta la fecha que le pongas y después deja de mostrarse solo — no hace falta que vuelvas a sacarlo.'
-                )}
-            </p>
-
-            {isSectionLocked ? (
-                <VenueSectionLockedPanel
-                    id={planNoticeId}
-                    gate={lockedGate}
-                    locale={locale}
-                    messageKey="venue.owner.editor.dailySpecials.locked"
-                    messageFallback="El menú del día está disponible desde el plan {{plan}}."
-                    noPlanMessageFallback="El menú del día está disponible en un plan pago."
-                    planName={upsellPlanName}
-                    preTrialMessageKey="venue.owner.editor.dailySpecials.lockedPreTrial"
-                    preTrialMessageFallback="El menú del día se habilita cuando publiques tu ficha."
-                    sectionLabel={t('venue.owner.editor.dailySpecials.title', 'Menú del día')}
-                    hasData={specials.length > 0}
-                    vaciar={vaciar}
-                >
-                    {specials.length === 0 ? (
-                        <p className={styles.intro}>
-                            {t(
-                                'venue.owner.editor.lockedSection.empty',
-                                'No hay datos cargados en esta sección.'
-                            )}
-                        </p>
-                    ) : (
-                        specials.map((special, index) => (
-                            <DailySpecialReadOnly
-                                // biome-ignore lint/suspicious/noArrayIndexKey: stored rows carry no id in this draft shape
-                                key={`locked-special-${index}`}
-                                special={special}
-                                today={today}
-                                t={t}
-                            />
-                        ))
+        <Section
+            helpId={sectionHelpId({ vertical: 'venue', slug: 'menu-del-dia' })}
+            title={t('venue.owner.editor.dailySpecials.title', 'Menú del día')}
+        >
+            <div className={styles.panel}>
+                <p className={styles.intro}>
+                    {t(
+                        'venue.owner.editor.dailySpecials.intro',
+                        'El plato del día o la sugerencia del chef. Cada uno vale hasta la fecha que le pongas y después deja de mostrarse solo — no hace falta que vuelvas a sacarlo.'
                     )}
-                </VenueSectionLockedPanel>
-            ) : (
-                <>
-                    <Repeater
-                        locale={locale}
-                        label={t('venue.owner.editor.dailySpecials.title', 'Menú del día')}
-                        items={specials}
-                        getKey={(_special, index) => `special-${index}`}
-                        getItemLabel={(special) => special.title || newSpecial}
-                        disabled={isLocked || state === 'loading'}
-                        onMove={moveSpecial}
-                        onRemove={removeSpecial}
-                        onAdd={addSpecial}
-                        addLabel={t(
-                            'venue.owner.editor.dailySpecials.add',
-                            'Agregar plato del día'
-                        )}
-                        renderItem={(special, index) => (
-                            <DailySpecialFields
-                                special={special}
-                                today={today}
-                                locale={locale}
-                                t={t}
-                                readOnly={isLocked}
-                                onPatch={(patch) => patchSpecial(index, patch)}
-                            />
-                        )}
-                    />
-
-                    <EditorSaveBar
-                        locale={locale}
-                        isDirty={isDirty}
-                        onSave={save}
-                        onDiscard={discard}
-                    />
-                </>
-            )}
-
-            {message && (
-                <p
-                    className={styles.message}
-                    role="status"
-                >
-                    {message}
                 </p>
-            )}
-        </section>
+
+                {isSectionLocked ? (
+                    <VenueSectionLockedPanel
+                        id={planNoticeId}
+                        gate={lockedGate}
+                        locale={locale}
+                        messageKey="venue.owner.editor.dailySpecials.locked"
+                        messageFallback="El menú del día está disponible desde el plan {{plan}}."
+                        noPlanMessageFallback="El menú del día está disponible en un plan pago."
+                        planName={upsellPlanName}
+                        preTrialMessageKey="venue.owner.editor.dailySpecials.lockedPreTrial"
+                        preTrialMessageFallback="El menú del día se habilita cuando publiques tu ficha."
+                        sectionLabel={t('venue.owner.editor.dailySpecials.title', 'Menú del día')}
+                        hasData={specials.length > 0}
+                        vaciar={vaciar}
+                    >
+                        {specials.length === 0 ? (
+                            <p className={styles.intro}>
+                                {t(
+                                    'venue.owner.editor.lockedSection.empty',
+                                    'No hay datos cargados en esta sección.'
+                                )}
+                            </p>
+                        ) : (
+                            specials.map((special, index) => (
+                                <DailySpecialReadOnly
+                                    // biome-ignore lint/suspicious/noArrayIndexKey: stored rows carry no id in this draft shape
+                                    key={`locked-special-${index}`}
+                                    special={special}
+                                    today={today}
+                                    t={t}
+                                />
+                            ))
+                        )}
+                    </VenueSectionLockedPanel>
+                ) : (
+                    <>
+                        <Repeater
+                            locale={locale}
+                            label={t('venue.owner.editor.dailySpecials.title', 'Menú del día')}
+                            items={specials}
+                            getKey={(_special, index) => `special-${index}`}
+                            getItemLabel={(special) => special.title || newSpecial}
+                            disabled={isLocked || state === 'loading'}
+                            onMove={moveSpecial}
+                            onRemove={removeSpecial}
+                            onAdd={addSpecial}
+                            addLabel={t(
+                                'venue.owner.editor.dailySpecials.add',
+                                'Agregar plato del día'
+                            )}
+                            renderItem={(special, index) => (
+                                <DailySpecialFields
+                                    special={special}
+                                    today={today}
+                                    locale={locale}
+                                    t={t}
+                                    readOnly={isLocked}
+                                    onPatch={(patch) => patchSpecial(index, patch)}
+                                />
+                            )}
+                        />
+
+                        <EditorSaveBar
+                            locale={locale}
+                            isDirty={isDirty}
+                            onSave={save}
+                            onDiscard={discard}
+                        />
+                    </>
+                )}
+
+                {message && (
+                    <p
+                        className={styles.message}
+                        role="status"
+                    >
+                        {message}
+                    </p>
+                )}
+            </div>
+        </Section>
     );
 }
