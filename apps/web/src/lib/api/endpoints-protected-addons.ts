@@ -17,15 +17,18 @@ const PROTECTED = '/api/v1/protected';
 
 /** Reads offers, starts purchases, resumes a purchase and chooses a free addon. */
 export const billingAddonApi = {
-    /** List this owner's live recurring addons, optionally for one listing. */
+    /** List this owner's live recurring addons; forward the request cookie during SSR. */
     listRecurringAddons({
-        listingId
+        listingId,
+        cookieHeader
     }: {
         readonly listingId?: string;
+        readonly cookieHeader?: string;
     } = {}): Promise<ApiResult<z.infer<typeof OwnerRecurringAddonsResponseSchema>>> {
         return apiClient.getProtected({
             path: `${PROTECTED}/billing/addons/instances`,
-            params: { listingId }
+            params: { listingId },
+            cookieHeader
         });
     },
     /** Withdraw one of this owner's live recurring addon instances. */

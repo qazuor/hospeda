@@ -93,7 +93,7 @@ describe('«Complementos» (HOS-2485, AC-8)', () => {
 
     it('both pages carry the «Plan / Complementos» NavTabs, each marking itself', () => {
         expect(read('pages/[lang]/mi-cuenta/suscripcion/index.astro')).toContain(
-            '<SubscriptionTabs slot="tabs" locale={locale} current="plan" showAddons={hasSubscriptions} />'
+            '<SubscriptionTabs slot="tabs" locale={locale} current="plan" showAddons={billingPresence} />'
         );
         expect(read('pages/[lang]/mi-cuenta/complementos/index.astro')).toContain(
             '<SubscriptionTabs slot="tabs" locale={locale} current="addons" />'
@@ -104,10 +104,10 @@ describe('«Complementos» (HOS-2485, AC-8)', () => {
         expect(tabs).toContain("current: current === 'addons'");
     });
 
-    it('hides the tab navigation without subscriptions and keeps it on a failed read', () => {
+    it('gates the tab navigation with the shared fail-closed billing presence check', () => {
         const page = read('pages/[lang]/mi-cuenta/suscripcion/index.astro');
         expect(page).toContain(
-            'const hasSubscriptions = ownSubscriptions === null || ownSubscriptions.subscriptions.length > 0;'
+            'const billingPresence = await hasBillingPresence({ userId: user.id, cookieHeader });'
         );
         const tabs = read('components/account/SubscriptionTabs.astro');
         expect(tabs).toContain('readonly showAddons?: boolean');

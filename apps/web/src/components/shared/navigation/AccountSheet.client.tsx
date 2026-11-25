@@ -22,11 +22,11 @@ export interface AccountSheetProps {
     readonly locale: SupportedLocale;
     readonly mcpEnabled?: boolean;
     /**
-     * Whether the account holds at least one subscription (HOS-2627), resolved
+     * Whether the account holds a subscription or active add-on (D5b), resolved
      * by the account layout. Gates the Complementos entry; the public header
      * does not resolve it, so it fails closed there.
      */
-    readonly hasSubscription?: boolean;
+    readonly billingPresence?: boolean;
     readonly adminPanelUrl?: string;
 }
 
@@ -34,7 +34,7 @@ export interface AccountSheetProps {
 export function AccountSheet({
     locale,
     mcpEnabled = false,
-    hasSubscription = false,
+    billingPresence = false,
     adminPanelUrl
 }: AccountSheetProps) {
     const t = createT(locale);
@@ -80,7 +80,7 @@ export function AccountSheet({
         ownsHostTradeListing,
         ownsPartner,
         mcpEnabled,
-        hasSubscription,
+        billingPresence,
         activeSection
     });
     const shell = buildFullAccountMenu({

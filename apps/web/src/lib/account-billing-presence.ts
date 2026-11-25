@@ -1,12 +1,14 @@
+import { OwnerRecurringAddonsResponseSchema } from '@repo/schemas';
 import { billingSubscriptionApi } from '@/lib/api/endpoints-protected';
+import { billingAddonApi } from '@/lib/api/endpoints-protected-addons';
 import { parseOwnSubscriptions } from '@/lib/billing/self-cancel';
 
 const TTL_MS = 60_000;
 const cache = new Map<string, { readonly value: boolean; readonly expiresAt: number }>();
 const inflight = new Map<string, Promise<boolean>>();
 
-/** Cached server-side subscription presence, scoped by user; failed reads hide the nav item. */
-export async function hasAnySubscription({
+/** Cached subscription or active add-on presence, scoped by user; failed reads hide the entry. */
+export async function hasBillingPresence({
     userId,
     cookieHeader
 }: {
@@ -26,6 +28,16 @@ export async function hasAnySubscription({
                 result: await billingSubscriptionApi.listMine({ cookieHeader })
             });
             value = parsed !== null && parsed.subscriptions.length > 0;
+            // Only query add-ons when a valid subscription read is empty.
+            if (parsed !== null && !value) {
+                const result = await billingAddonApi.listRecurringAddons({ cookieHeader });
+                const addons = result.ok
+                    ? OwnerRecurringAddonsResponseSchema.safeParse(result.data)
+                    : null;
+                value =
+                    addons?.success === true &&
+                    addons.data.items.some((item) => item.status === 'ACTIVE');
+            }
         } catch {
             value = false;
         }

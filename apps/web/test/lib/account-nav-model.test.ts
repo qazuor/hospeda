@@ -12,20 +12,20 @@ import {
 
 const BASE = { ownsHostTradeListing: false, mcpEnabled: true, activeSection: 'mi-cuenta' } as const;
 
-describe('subscription-only add-ons navigation', () => {
+describe('billing-presence add-ons navigation', () => {
     it.each([
         true,
         false,
         undefined
-    ])('hasSubscription=%s gates the add-ons entry', (hasSubscription) => {
-        const model = buildAccountNavModel({ ...BASE, roles: ['USER'], hasSubscription });
+    ])('billingPresence=%s gates the add-ons entry', (billingPresence) => {
+        const model = buildAccountNavModel({ ...BASE, roles: ['USER'], billingPresence });
         const ids = model.groups.flatMap((group) => group.items.map(({ item }) => item.id));
-        expect(ids.includes('addons')).toBe(hasSubscription === true);
+        expect(ids.includes('addons')).toBe(billingPresence === true);
         expect(ids).toContain('subscription');
         const shellIds = model.shell.groups.flatMap((group) =>
             group.items.map(({ item }) => item.id)
         );
-        expect(shellIds.includes('addons')).toBe(hasSubscription === true);
+        expect(shellIds.includes('addons')).toBe(billingPresence === true);
     });
 });
 

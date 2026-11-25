@@ -20,7 +20,7 @@ import AccountShell from './AccountShell.astro';
 import { buildAccountNavModel } from '@/lib/account-nav-model';
 import type { AccountShellTemplate } from '@/components/account/ui/account-shell-template';
 import { getConfiguredMcpUrl } from '@/lib/mcp-discovery';
-import { hasAnySubscription } from '@/lib/account-has-subscription';
+import { hasBillingPresence } from '@/lib/account-billing-presence';
 
 interface Props {
 	readonly locale: SupportedLocale;
@@ -81,17 +81,17 @@ const ownsPartner = Astro.locals.user?.ownsPartner === true;
 
 /**
  * HOS-2627: the add-ons summary entry exists only for an account with at least
- * one subscription. Cached per user for a minute and fail-closed.
+ * one subscription or active add-on. Cached per user for a minute and fail-closed.
  */
-const hasSubscription = Astro.locals.user
-	? await hasAnySubscription({
+const billingPresence = Astro.locals.user
+	? await hasBillingPresence({
 			userId: Astro.locals.user.id,
 			cookieHeader: Astro.request.headers.get('cookie') ?? undefined
 		})
 	: false;
 
 const navModel = buildAccountNavModel({
-	hasSubscription,
+	billingPresence,
 	roles: userRoles,
 	permissions: userPermissions,
 	ownsHostTradeListing,
@@ -105,7 +105,7 @@ const navModel = buildAccountNavModel({
 	locale={locale}
 	navModel={navModel}
 	mcpEnabled={mcpEnabled}
-	hasSubscription={hasSubscription}
+	billingPresence={billingPresence}
 	title={resolvedTitle}
 	description={resolvedDescription}
 	template={template}

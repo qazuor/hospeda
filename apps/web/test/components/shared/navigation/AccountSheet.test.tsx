@@ -35,12 +35,12 @@ vi.mock('../../../../src/lib/dialog-history', async (original) => ({
 }));
 vi.mock('astro:transitions/client', () => ({ navigate: (href: string) => mocks.navigate(href) }));
 
-function renderSheet({ hasSubscription }: { readonly hasSubscription?: boolean } = {}) {
+function renderSheet({ billingPresence }: { readonly billingPresence?: boolean } = {}) {
     return render(
         <AccountSheet
             locale="es"
             mcpEnabled
-            hasSubscription={hasSubscription}
+            billingPresence={billingPresence}
             adminPanelUrl="https://admin.test"
         />
     );
@@ -205,8 +205,8 @@ describe('AccountSheet', () => {
         expect(within(without).queryByRole('link', { name: 'Complementos' })).toBeNull();
         unmount();
 
-        // Arrange + Act: one subscription
-        renderSheet({ hasSubscription: true });
+        // Arrange + Act: a subscription or active add-on
+        renderSheet({ billingPresence: true });
         open();
         const withOne = await screen.findByRole('dialog', { name: 'Menú de cuenta' });
         // Assert
