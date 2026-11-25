@@ -1,7 +1,7 @@
 ---
 id: addons
 title: "Comprar o dar de baja un complemento"
-summary: "Cómo comprar un complemento para una ficha y cómo dar de baja uno recurrente."
+summary: "Cómo comprar un complemento desde tu suscripción y cómo dar de baja uno recurrente."
 audiences:
   - host
   - venue
@@ -21,6 +21,8 @@ keywords:
   - "promocionar"
   - "comprar complemento"
 destinations:
+  - kind: subscription
+    label: "Suscripción"
   - kind: addons
     label: "Complementos"
 faqKey: owners.featured
@@ -31,23 +33,24 @@ related:
   - pause-resume
 covers:
   - "entitlement:featured_listing"
+  - "page:mi-cuenta/suscripcion"
 entryFor:
   - "page:mi-cuenta/complementos"
-reviewedAt: "2026-11-24"
+reviewedAt: "2026-11-25"
 ---
 
 ## Qué podés hacer
 
-Comprar un complemento y dar de baja los recurrentes desde {{link:addons|Complementos}}.
+Comprar un complemento desde la sección de tu categoría en {{link:subscription|Suscripción}} y consultar o dar de baja los recurrentes desde {{link:addons|Complementos}}.
 
 ## Cómo se hace
 
-1. Entrá a «Suscripción» y abrí la pestaña «Complementos». Si todavía no tenés ninguna suscripción, la página te pide elegir un plan primero.
-2. Elegí un complemento de la lista.
+1. Entrá a «Suscripción» y buscá la sección de complementos de la categoría que tiene una suscripción activa. Si todavía no tenés ninguna suscripción, elegí un plan primero: la pestaña «Complementos» no aparece y su dirección te devuelve a «Mi cuenta».
+2. Elegí un complemento de la lista de esa categoría. Podés filtrar por categoría de complemento; cada tarjeta muestra su precio y los que ya tenés llevan «Activo».
 3. Elegí la ficha (o la suscripción) a la que se aplica.
 4. Revisá el resumen: muestra el importe y la frecuencia. Si tu beneficio lo incluye, aparece «Gratis por tu beneficio» y podés elegirlo sin pagar.
-5. Ingresá el correo con el que pagás en Mercado Pago y tocá «Confirmar compra».
-6. Los complementos recurrentes (destaques) se dan de baja en la misma página, en «Tus destaques recurrentes»: al confirmar, se corta el cobro y el destaque se apaga hoy, sin reembolso.
+5. Si el complemento es recurrente y pago, ingresá el correo con el que pagás en Mercado Pago. Tocá «Confirmar compra»; los de pago único no piden ese correo.
+6. Consultá los complementos recurrentes en la pestaña «Complementos», en «Tus complementos activos». Para dar uno de baja, confirmá la acción: se corta el cobro y el complemento se desactiva hoy, sin reembolso. Si no tenés complementos activos, el estado vacío te lleva a «Suscripción» para comprarlos.
 7. Si ves «Compras pausadas», por ahora no se pueden comprar complementos: probá más tarde.
 
 ## Qué esperar

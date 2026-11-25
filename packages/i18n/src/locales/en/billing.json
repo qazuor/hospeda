@@ -242,6 +242,14 @@
             "title": "Confirm your subscription",
             "intro": "You will authorize the payment with Mercado Pago.",
             "planSummary": "{{plan}} · {{amount}} {{cycle}}",
+            "back": "Back",
+            "summary": {
+                "title": "Subscription summary",
+                "plan": "Plan",
+                "vertical": "Category",
+                "period": "Billing period",
+                "total": "Total per period"
+            },
             "promo": {
                 "limited_one": "With code {{code}}: {{amount}} {{cycle}} for {{count}} charge (then {{listAmount}}).",
                 "limited_other": "With code {{code}}: {{amount}} {{cycle}} for {{count}} charges (then {{listAmount}}).",
@@ -877,6 +885,16 @@
         }
     },
     "addonPurchase": {
+        "verticalTitle": "Add-ons for {{vertical}}",
+        "filterCategory": "Filter add-ons by category",
+        "allCategories": "All",
+        "category": {
+            "visibility": "Visibility",
+            "listings": "Listings",
+            "media": "Photos and media",
+            "other": "Other"
+        },
+        "group": { "packs": "Recurring packs", "boosts": "Listing boosts and extras" },
         "title": "Buy add-ons",
         "noSubscription": {
             "title": "You need to subscribe to a plan first",
@@ -939,18 +957,19 @@
             "annual": "Yearly"
         },
         "recurringAddons": {
-            "title": "Your recurring featured add-ons",
-            "loading": "Loading recurring featured add-ons…",
-            "empty": "You have no active recurring featured add-ons.",
-            "loadError": "We could not load your recurring featured add-ons.",
+            "title": "Your active add-ons",
+            "loading": "Loading active add-ons…",
+            "empty": "You have no active add-ons.",
+            "viewSubscriptions": "View subscriptions and add-ons",
+            "loadError": "We could not load your active add-ons.",
             "invalidListing": "The listing is invalid.",
             "noListing": "No associated listing",
             "withdraw": "Withdraw",
-            "confirmText": "Confirming stops charges and turns off the featured add-on today. There is no refund. The provider may send a cancellation email.",
+            "confirmText": "Confirming stops charges and deactivates the add-on today. There is no refund. The provider may send a cancellation email.",
             "confirm": "Confirm withdrawal",
             "cancel": "Cancel",
-            "withdrawn": "The featured add-on was withdrawn.",
-            "withdrawError": "We could not withdraw the featured add-on."
+            "withdrawn": "The add-on was withdrawn.",
+            "withdrawError": "We could not withdraw the add-on."
         },
         "steps": {
             "label": "Purchase steps",
