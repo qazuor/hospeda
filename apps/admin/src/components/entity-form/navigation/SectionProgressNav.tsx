@@ -5,24 +5,24 @@ import { cn } from '@/lib/utils';
 import type { SectionProgress } from '../../../hooks/useSectionProgress';
 
 /**
- * Props for SmartBreadcrumbs component
+ * Props for SectionProgressNav component
  */
-export interface SmartBreadcrumbsProps {
+export interface SectionProgressNavProps {
     /** Array of section progress data */
     sections: SectionProgress[];
     /** Currently active section ID */
     activeSectionId?: string;
-    /** Callback when breadcrumb is clicked */
+    /** Callback when a section is clicked */
     onSectionSelect: (sectionId: string) => void;
     /** Whether to show status icons */
     showIcons?: boolean;
     /** Whether to show progress indicators */
     showProgress?: boolean;
-    /** Maximum number of breadcrumbs to show before collapsing */
+    /** Maximum number of sections to show before collapsing */
     maxVisible?: number;
     /** Additional CSS classes */
     className?: string;
-    /** Separator between breadcrumbs */
+    /** Separator between sections */
     separator?: React.ReactNode;
 }
 
@@ -47,9 +47,9 @@ const getSectionIcon = (status: SectionProgress['status']) => {
 };
 
 /**
- * Get color classes for breadcrumb status
+ * Get color classes for section status
  */
-const getBreadcrumbColors = (status: SectionProgress['status'], isActive: boolean) => {
+const getSectionColors = (status: SectionProgress['status'], isActive: boolean) => {
     if (isActive) {
         return 'text-primary font-semibold';
     }
@@ -75,12 +75,12 @@ const getBreadcrumbColors = (status: SectionProgress['status'], isActive: boolea
 };
 
 /**
- * Smart breadcrumbs component for entity form navigation
+ * Section progress navigation for entity forms
  * Shows section progress and allows quick navigation
  *
  * @example
  * ```tsx
- * <SmartBreadcrumbs
+ * <SectionProgressNav
  *   sections={sectionProgress}
  *   activeSectionId={activeSection}
  *   onSectionSelect={handleSectionSelect}
@@ -90,7 +90,7 @@ const getBreadcrumbColors = (status: SectionProgress['status'], isActive: boolea
  * />
  * ```
  */
-export const SmartBreadcrumbs: React.FC<SmartBreadcrumbsProps> = ({
+export const SectionProgressNav: React.FC<SectionProgressNavProps> = ({
     sections,
     activeSectionId,
     onSectionSelect,
@@ -176,7 +176,7 @@ export const SmartBreadcrumbs: React.FC<SmartBreadcrumbsProps> = ({
                                     disabled={isDisabled}
                                     className={cn(
                                         'flex items-center space-x-1 transition-colors duration-200',
-                                        getBreadcrumbColors(section.status, isActive),
+                                        getSectionColors(section.status, isActive),
                                         !isDisabled && 'hover:underline',
                                         isDisabled && 'cursor-not-allowed opacity-50'
                                     )}
