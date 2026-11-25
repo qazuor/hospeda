@@ -301,7 +301,9 @@ describe('HOS-2119 AnalyticsSection traffic block', () => {
         const block = await screen.findByTestId('analytics-traffic-block');
         const heading = within(block).getByRole('heading', { level: 2 });
         expect(heading).toHaveTextContent('Tráfico de tus fichas');
-        expect(block).toHaveAttribute('aria-labelledby', heading.id);
+        // HOS-2612: the block is a kit Section card, a region named by that heading.
+        const region = within(block).getByRole('region');
+        expect(region).toHaveAttribute('aria-labelledby', heading.id);
     });
 
     it('shows a labelled select with every property and the first as default for 2+', async () => {

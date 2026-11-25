@@ -92,7 +92,10 @@ export function ResponseRateWidget({
     }
 
     // ── Empty state ─────────────────────────────────────────────────────
-    if (!data) {
+    // HOS-2612: 0% with no reply time is «nothing replied or nothing received»
+    // (the API answers 0 when there are no conversations), not a measured rate.
+    // Say there is no data instead of drawing an empty ring beside «N/A».
+    if (!data || (data.responseRatePct === 0 && data.avgResponseTimeMinutes == null)) {
         return (
             <div className={styles.widget}>
                 <div className={styles.header}>

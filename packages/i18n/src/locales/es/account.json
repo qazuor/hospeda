@@ -2347,7 +2347,10 @@
             "onboardingDescription": "Cargá tu primera experiencia para que los viajeros la encuentren.",
             "trafficLockedFeature": "Visitas a tus experiencias"
         },
-        "listingsHint": "{{published}} publicadas · {{draft}} borradores",
+        "listingsPublished_one": "{{count}} publicada",
+        "listingsPublished_other": "{{count}} publicadas",
+        "listingsDraft_one": "{{count}} borrador",
+        "listingsDraft_other": "{{count}} borradores",
         "manage": "Gestionar",
         "quickActions": "Acciones rápidas",
         "trafficLabel": "Visitas",

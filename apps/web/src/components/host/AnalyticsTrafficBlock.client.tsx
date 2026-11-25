@@ -14,7 +14,8 @@
  */
 
 import { EntityTypeEnum } from '@repo/schemas';
-import { type JSX, useId, useState } from 'react';
+import { type JSX, useState } from 'react';
+import { Field, Section, Select } from '@/components/account/ui';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { TrafficStatsCards } from '../listing/TrafficStatsCards.client';
@@ -49,8 +50,6 @@ export function AnalyticsTrafficBlock({
 }: AnalyticsTrafficBlockProps): JSX.Element | null {
     const { t } = createTranslations(locale);
     const [selectedId, setSelectedId] = useState<string | null>(null);
-    const headingId = useId();
-    const selectId = useId();
 
     const first = properties[0];
     if (!first) return null;
@@ -59,48 +58,41 @@ export function AnalyticsTrafficBlock({
     const selected = properties.find((property) => property.id === selectedId) ?? first;
 
     return (
-        <section
+        <div
             className={styles.trafficBlock}
-            aria-labelledby={headingId}
             data-testid="analytics-traffic-block"
         >
-            <h2
-                id={headingId}
-                className={styles.sectionTitle}
+            <Section
+                title={t('listing.owner.traffic.title', 'Tráfico de tus fichas')}
+                helpId="section:host.dashboard"
             >
-                {t('listing.owner.traffic.title', 'Tráfico de tus fichas')}
-            </h2>
-            {properties.length > 1 ? (
-                <div className={styles.trafficSelectRow}>
-                    <label
-                        htmlFor={selectId}
-                        className={styles.trafficSelectLabel}
+                {properties.length > 1 ? (
+                    <Field
+                        locale={locale}
+                        label={t('listing.owner.traffic.propertySelectLabel', 'Propiedad')}
                     >
-                        {t('listing.owner.traffic.propertySelectLabel', 'Propiedad')}
-                    </label>
-                    <select
-                        id={selectId}
-                        className={styles.trafficSelect}
-                        value={selected.id}
-                        onChange={(event) => setSelectedId(event.target.value)}
-                    >
-                        {properties.map((property) => (
-                            <option
-                                key={property.id}
-                                value={property.id}
-                            >
-                                {property.name}
-                            </option>
-                        ))}
-                    </select>
-                </div>
-            ) : null}
-            <TrafficStatsCards
-                locale={locale}
-                entityType={EntityTypeEnum.ACCOMMODATION}
-                entityId={selected.id}
-                window={window}
-            />
-        </section>
+                        <Select
+                            value={selected.id}
+                            onChange={(event) => setSelectedId(event.target.value)}
+                        >
+                            {properties.map((property) => (
+                                <option
+                                    key={property.id}
+                                    value={property.id}
+                                >
+                                    {property.name}
+                                </option>
+                            ))}
+                        </Select>
+                    </Field>
+                ) : null}
+                <TrafficStatsCards
+                    locale={locale}
+                    entityType={EntityTypeEnum.ACCOMMODATION}
+                    entityId={selected.id}
+                    window={window}
+                />
+            </Section>
+        </div>
     );
 }

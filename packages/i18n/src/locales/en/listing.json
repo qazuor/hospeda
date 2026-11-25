@@ -541,6 +541,7 @@
                 "completed": "Contact completed"
             },
             "empty": "No data yet",
+            "emptyDescription": "Once your listings get visits, you will see where they come from here.",
             "visitors_one": "{{count}} visitor",
             "visitors_other": "{{count}} visitors"
         },
