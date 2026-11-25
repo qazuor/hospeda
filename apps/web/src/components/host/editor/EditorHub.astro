@@ -20,7 +20,10 @@
  * Zero JavaScript.
  */
 
-import { CompletenessMeter, StatusPill } from '@/components/account/ui';
+import { AlertCircleIcon, CheckCircleIcon, InfoIcon, LockIcon } from '@repo/icons';
+import { Alert, CompletenessMeter, StatusPill } from '@/components/account/ui';
+import { resolveEditorHubPresentation } from '@/lib/editor/editor-hub-presentation';
+import EditorPublicationStatus from '@/components/account/editor/EditorPublicationStatus.astro';
 import type { StatusTone } from '@/components/account/ui/status-tone';
 import type { EditorCompleteness } from '@/lib/editor/editor-completeness';
 import type { EditorSectionStatus, EditorStatusTone } from '@/lib/editor/editor-hub-status-model';
@@ -34,6 +37,8 @@ import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 
 interface Props {
+    readonly publicationStatus?: string | null;
+    readonly slug?: string | null;
 	readonly locale: SupportedLocale;
 	/** The vertical's section registry. */
 	readonly registry: EditorRegistry;
@@ -46,13 +51,16 @@ interface Props {
 	readonly completeness?: EditorCompleteness;
 }
 
-const { locale, registry, entityId, visibility = {}, statuses, completeness } = Astro.props;
+const { locale, registry, entityId, visibility = {}, statuses, completeness, publicationStatus, slug } = Astro.props;
 const { t, tPlural } = createTranslations(locale);
+const presentation = completeness ? resolveEditorHubPresentation({ completeness, statuses }) : null;
+const rowStatuses = presentation?.statuses ?? statuses;
+const meter = presentation?.completeness;
 
 /** Hub tone → kit pill tone. */
 const PILL_TONE: Readonly<Record<EditorStatusTone, StatusTone>> = {
 	neutral: 'neutral',
-	warning: 'warning',
+	warning: 'info',
 	blocking: 'danger',
 	locked: 'plan',
 };
@@ -93,23 +101,32 @@ const missingItems = (completeness?.missing ?? []).map((sectionId) => {
 ---
 
 <div class="editor-hub" data-editor-hub>
+    <EditorPublicationStatus locale={locale} vertical={registry.id} publicationStatus={publicationStatus} slug={slug} />
 	{
-		completeness && (
+		meter && (
 			<CompletenessMeter
-				done={completeness.done}
-				total={completeness.total}
+				done={meter.done}
+				total={meter.total}
 				missing={missingItems}
 				locale={locale}
 			/>
 		)
 	}
+	{presentation && (
+		<Alert locale={locale} tone="info">
+			{t(meter?.missing.length === 0 && presentation.recommendedCount > 0
+				? 'account.editorHub.readyWithRecommendations'
+				: 'account.editorHub.requiredOnly')}
+		</Alert>
+	)}
 
 	{groups.map((entry) => (
 		<section class="editor-hub__group" aria-labelledby={`editor-hub-${entry.group}`}>
 			<h2 class="editor-hub__heading" id={`editor-hub-${entry.group}`}>{t(entry.headingKey)}</h2>
 			<ul class="editor-hub__list">
 				{entry.sections.map((section) => {
-					const status = statuses[section.id];
+					const status = rowStatuses[section.id];
+					const Icon = status?.tone === 'locked' ? LockIcon : status?.tone === 'blocking' ? AlertCircleIcon : status?.tone === 'warning' ? InfoIcon : CheckCircleIcon;
 					return (
 						<li class="editor-hub__item">
 							<a
@@ -118,8 +135,15 @@ const missingItems = (completeness?.missing ?? []).map((sectionId) => {
 							>
 								<span class="editor-hub__text">
 									<span class="editor-hub__title">{t(section.labelKey)}</span>
-									{status && (
+									{status?.completion && status.tone !== 'locked' && (
+										<StatusPill tone={status.completion === 'complete' ? 'success' : 'danger'}>
+											{t(`account.editorHub.${status.completion}`)}
+										</StatusPill>
+									)}
+									{status && !status.labelKey.startsWith('account.editorHub.') && (
 										<StatusPill tone={PILL_TONE[status.tone]} className="editor-hub__status">
+											<Icon size="sm" aria-hidden="true" />
+											{status.tone === 'warning' && <span>{t('account.editorHub.recommended')}: </span>}
 											{statusText(status)}
 										</StatusPill>
 									)}

@@ -66,10 +66,10 @@ describe('buildEditorSwitcherModel', () => {
 
 describe('toEditorNavStatus', () => {
     it.each([
-        ['warning', 'incomplete'],
+        ['warning', undefined],
         ['blocking', 'incomplete'],
         ['locked', 'locked'],
-        ['neutral', 'complete']
+        ['neutral', undefined]
     ] as const)('maps a %s hub line to %s', (tone, expected) => {
         expect(toEditorNavStatus({ status: { labelKey: 'x', tone } })).toBe(expected);
     });
@@ -84,11 +84,11 @@ describe('toEditorNavStatus', () => {
             registry: ACCOMMODATION_EDITOR_REGISTRY,
             entityId: ID,
             currentSectionId: null,
-            statuses: { photos: { labelKey: 'x', tone: 'warning' } }
+            statuses: { photos: { labelKey: 'x', tone: 'warning', completion: 'complete' } }
         });
         const links = groups.flatMap((group) => group.links);
 
-        expect(links.find((link) => link.sectionId === 'photos')?.status).toBe('incomplete');
+        expect(links.find((link) => link.sectionId === 'photos')?.status).toBe('complete');
         expect(links.find((link) => link.sectionId === 'basicInfo')).not.toHaveProperty('status');
     });
 });

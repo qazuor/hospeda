@@ -69,6 +69,8 @@ export type EditorStatusTone = 'neutral' | 'warning' | 'blocking' | 'locked';
 
 /** One resolved status line. */
 export interface EditorSectionStatus {
+    /** Known required-section completion; absent means unmeasured, not complete. */
+    readonly completion?: 'complete' | 'incomplete';
     readonly labelKey: string;
     readonly tone: EditorStatusTone;
     /** Interpolation values for the i18n string, when it takes any. */

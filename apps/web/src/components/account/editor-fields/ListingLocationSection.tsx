@@ -148,17 +148,19 @@ export function ListingLocationSection({
                         tone="warning"
                         locale={locale}
                         title={t('account.editorFields.location.noPinNotice.title')}
-                        action={
-                            <Button
-                                variant="secondary"
-                                size="sm"
-                                onClick={() => focusEditorMap({ frame: mapFrameRef.current })}
-                            >
-                                {t('account.editorFields.location.noPinNotice.action')}
-                            </Button>
-                        }
                     >
-                        {t('account.editorFields.location.noPinNotice.body')}
+                        <div className={styles.stack}>
+                            <p>{t('account.editorFields.location.noPinNotice.body')}</p>
+                            <div>
+                                <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    onClick={() => focusEditorMap({ frame: mapFrameRef.current })}
+                                >
+                                    {t('account.editorFields.location.noPinNotice.action')}
+                                </Button>
+                            </div>
+                        </div>
                     </Alert>
                 )}
                 {lead}

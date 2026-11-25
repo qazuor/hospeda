@@ -34,6 +34,8 @@ const { mockMap, mockMarker } = vi.hoisted(() => {
         on: vi.fn(),
         setLatLng: vi.fn(),
         setOpacity: vi.fn(),
+        remove: vi.fn(),
+        dragging: { enable: vi.fn(), disable: vi.fn() },
         getLatLng: vi.fn(() => ({ lat: 0, lng: 0 }))
     };
     return { mockMap: map, mockMarker: marker };
@@ -89,15 +91,14 @@ describe('LocationPickerMap — unplaced pin (HOS-1767)', () => {
         vi.clearAllMocks();
     });
 
-    it('TEST:1767:15 — creates the marker semi-transparent until it is placed', async () => {
+    it('does not create a marker until a position is placed', async () => {
         const { unmount } = render(<LocationPickerMap {...DEFAULT_PROPS} />);
 
         await waitFor(() => {
-            expect(L.marker).toHaveBeenCalled();
+            expect(mockMap.on).toHaveBeenCalled();
         });
 
-        const unplacedOptions = vi.mocked(L.marker).mock.calls.at(-1)?.[1];
-        expect(unplacedOptions).toMatchObject({ opacity: 0.5 });
+        expect(L.marker).not.toHaveBeenCalled();
 
         unmount();
         vi.clearAllMocks();
@@ -117,7 +118,7 @@ describe('LocationPickerMap — unplaced pin (HOS-1767)', () => {
         expect(placedOptions).toMatchObject({ opacity: 1 });
     });
 
-    it('TEST:1767:16 — restores full opacity once a position arrives', async () => {
+    it('creates a marker when coordinates arrive and removes it when cleared', async () => {
         const { rerender } = render(<LocationPickerMap {...DEFAULT_PROPS} />);
 
         await waitFor(() => {
@@ -132,8 +133,13 @@ describe('LocationPickerMap — unplaced pin (HOS-1767)', () => {
         );
 
         await waitFor(() => {
-            expect(mockMarker.setOpacity).toHaveBeenCalledWith(1);
+            expect(L.marker).toHaveBeenCalledWith(
+                [PLACED_POSITION.lat, PLACED_POSITION.lng],
+                expect.objectContaining({ draggable: true })
+            );
         });
+        rerender(<LocationPickerMap {...DEFAULT_PROPS} />);
+        expect(mockMarker.remove).toHaveBeenCalledOnce();
     });
 });
 

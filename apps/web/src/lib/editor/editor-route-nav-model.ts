@@ -50,9 +50,9 @@ export interface EditorNavLink {
 export type EditorNavStatus = 'complete' | 'incomplete' | 'locked';
 
 /**
- * Reduces a hub status line to the nav state: a warning or a publish blocker is
- * `incomplete`, a plan-withheld section is `locked`, a neutral fact
- * («8 huéspedes») is `complete`. No line means unknown, and shows nothing.
+ * Uses measured required completion, never an advisory warning or neutral count.
+ * A plan-withheld section is locked; an unmet requirement is incomplete.
+ * Unmeasured optional sections show no state.
  *
  * @param params - The hub status of one section, if any.
  * @returns The nav state, or `undefined` when unknown.
@@ -64,8 +64,8 @@ export function toEditorNavStatus({
 }): EditorNavStatus | undefined {
     if (status === undefined) return undefined;
     if (status.tone === 'locked') return 'locked';
-    if (status.tone === 'neutral') return 'complete';
-    return 'incomplete';
+    if (status.tone === 'blocking') return 'incomplete';
+    return status.completion;
 }
 
 /** One rendered nav group: a heading plus its links. */

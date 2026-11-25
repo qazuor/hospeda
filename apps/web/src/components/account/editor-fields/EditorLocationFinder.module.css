@@ -70,27 +70,3 @@
     font: var(--app-meta);
     color: var(--status-danger-fg);
 }
-
-/* Shown while no pin is placed (HOS-1767): the map only opens on the city
-   centre as a starting point, nothing is saved yet. */
-.notice {
-    margin: 0;
-    padding: var(--space-2) var(--space-3);
-    border-inline-start: 3px solid var(--brand-primary);
-    border-radius: var(--radius-control);
-    background-color: var(--surface-warm);
-    font: var(--app-ui);
-    color: var(--core-foreground);
-}
-
-/* Where the pin sits, reverse-geocoded (HOS-795): reference text, never a control. */
-.reference {
-    margin: 0;
-    font: var(--app-meta);
-    color: var(--core-muted-foreground);
-}
-
-.referenceLabel {
-    font-weight: 500;
-    color: var(--core-foreground);
-}

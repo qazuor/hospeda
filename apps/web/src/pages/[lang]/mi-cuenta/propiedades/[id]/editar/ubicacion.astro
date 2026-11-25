@@ -8,6 +8,7 @@
  */
 
 import { LocationForm } from '@/components/host/editor/forms/LocationForm.client';
+import editorStyles from '@/components/account/editor-fields/EditorFields.module.css';
 import { LocationExceptionPanel } from '@/components/listing/LocationExceptionPanel.client';
 import LocationDuplicateNotice from '@/components/listing/LocationDuplicateNotice.astro';
 import EditorSectionLayout from '@/layouts/EditorSectionLayout.astro';
@@ -41,6 +42,7 @@ const showDuplicateWarning =
 	hasTranslations={data.translations !== null}
 	title={t('host.properties.editor.section.location', 'Ubicación')}
 >
+	<div class={editorStyles.stack}>
 	<LocationDuplicateNotice locale={locale} show={showDuplicateWarning} />
 	<LocationExceptionPanel
 		locale={locale}
@@ -56,4 +58,5 @@ const showDuplicateWarning =
 		initialData={data.accommodation}
 		client:load
 	/>
+	</div>
 </EditorSectionLayout>
