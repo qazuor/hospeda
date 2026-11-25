@@ -32,6 +32,13 @@ const placeComponentSrc = readFileSync(resolve(SEO_BASE, 'PlaceJsonLd.astro'), '
 // alojamientos/[slug].astro — LodgingBusinessJsonLd
 // ---------------------------------------------------------------------------
 describe('alojamientos/[slug].astro — typed JSON-LD (SPEC-157 REQ-7)', () => {
+    it('uses one shared trail without the mobile hiding wrapper', () => {
+        expect(alojamientoSrc).toMatch(/<Breadcrumbs\s+slot="breadcrumbs"/);
+        expect(alojamientoSrc).toContain("breadcrumbLabel({ t, key: 'accommodations' })");
+        expect(alojamientoSrc).not.toContain('BreadcrumbJsonLd');
+        expect(alojamientoSrc).not.toContain('acc-detail-breadcrumbs');
+    });
+
     it('imports LodgingBusinessJsonLd', () => {
         expect(alojamientoSrc).toMatch(
             /import LodgingBusinessJsonLd from ['"]@\/components\/seo\/LodgingBusinessJsonLd\.astro['"]/
@@ -54,7 +61,7 @@ describe('alojamientos/[slug].astro — typed JSON-LD (SPEC-157 REQ-7)', () => {
 
     it('no longer passes inline jsonLd to the generic JsonLd component for lodging', () => {
         // The page should no longer define a const jsonLd containing '@context': 'https://schema.org'
-        // for a LodgingBusiness schema (the BreadcrumbJsonLd/FAQPageJsonLd are fine).
+        // for a LodgingBusiness schema (FAQPageJsonLd remains separate).
         // We detect the removal by checking that schemaType variable is gone.
         expect(alojamientoSrc).not.toContain('schemaType');
     });

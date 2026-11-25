@@ -11,6 +11,7 @@
 
 import ListingLayout from '@/layouts/ListingLayout.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import { breadcrumbLabel } from '@/lib/navigation/breadcrumb-labels';
 import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
 import ArticleCard from '@/components/shared/cards/ArticleCard.astro';
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
@@ -77,7 +78,7 @@ const baseUrl = buildUrl({ locale, path: `publicaciones/categoria/${canonicalSlu
 ---
 
 <ListingLayout locale={locale} title={`${catLabel} - ${t('blog.title', 'Publicaciones')}`} description={`Publicaciones de ${catLabel}`} showFilters={false} noindex={true} totalCount={total}>
-	<Breadcrumbs slot="breadcrumbs" locale={locale} items={[{ label: t('blog.title', 'Publicaciones'), path: 'publicaciones' }, { label: catLabel }]} />
+	<Breadcrumbs slot="breadcrumbs" locale={locale} items={[{ label: breadcrumbLabel({ t, key: 'posts' }), path: 'publicaciones' }, { label: catLabel }]} />
 	<ListingPageHeader slot="page-header" locale={locale} tagline={t('blog.byCategory.tagline')} title={catLabel} />
 
 	{hasError && !result.ok && <ErrorBanner locale={locale} error={result.error} entityName="publicaciones" />}

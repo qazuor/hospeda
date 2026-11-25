@@ -18,6 +18,8 @@ import { CACHE_TAG_SITE_CONFIG } from '@repo/cache-tags';
 import SectionHeader from '@/components/shared/layout/SectionHeader.astro';
 import { PromotionsListing } from '@/components/promotions/PromotionsListing.client';
 import DefaultLayout from '@/layouts/DefaultLayout.astro';
+import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import { breadcrumbLabel } from '@/lib/navigation/breadcrumb-labels';
 import { applyCacheHeaders } from '@/lib/cache/response-cache';
 import { getApiUrl } from '@/lib/env';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -45,6 +47,7 @@ applyCacheHeaders({
 >
     <section class="promotions-page section">
         <div class="promotions-page__container">
+            <Breadcrumbs locale={locale} items={[{ label: breadcrumbLabel({ t, key: 'promotions' }) }]} />
             <SectionHeader
                 tagline={t('common.promotions.page.tagline')}
                 title={t('common.promotions.page.heading')}

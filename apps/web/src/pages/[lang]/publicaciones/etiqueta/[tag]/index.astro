@@ -21,6 +21,7 @@
  */
 import ListingLayout from '@/layouts/ListingLayout.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import { breadcrumbLabel } from '@/lib/navigation/breadcrumb-labels';
 import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
 import ArticleCard from '@/components/shared/cards/ArticleCard.astro';
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
@@ -105,8 +106,7 @@ const baseUrl = buildUrl({ locale, path: `publicaciones/etiqueta/${tagSlug}` });
         slot="breadcrumbs"
         locale={locale}
         items={[
-            { label: t('blog.title', 'Publicaciones'), path: 'publicaciones' },
-            { label: t('blog.detail.tags', 'Etiquetas') },
+            { label: breadcrumbLabel({ t, key: 'posts' }), path: 'publicaciones' },
             { label: `#${tagName}` }
         ]}
     />

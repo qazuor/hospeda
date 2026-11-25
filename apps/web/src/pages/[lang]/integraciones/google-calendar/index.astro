@@ -10,7 +10,8 @@
  */
 
 import AboutPageJsonLd from '@/components/seo/AboutPageJsonLd.astro';
-import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
+import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import { breadcrumbLabel } from '@/lib/navigation/breadcrumb-labels';
 import MarketingHero from '@/components/marketing/MarketingHero.astro';
 import GradientButton from '@/components/shared/ui/GradientButton.astro';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -31,7 +32,6 @@ const pageDescription = t(
 
 const siteBase = getSiteUrl();
 const canonicalUrl = new URL(Astro.url.pathname, siteBase).href;
-const homeUrl = new URL(buildUrl({ locale, path: '' }), siteBase).href;
 const policyUrl = buildUrl({ locale, path: '/legal/privacidad/' });
 const contactUrl = buildUrl({ locale, path: '/contacto/' });
 const ownerPlansUrl = buildUrl({ locale, path: '/planes/anfitriones/' });
@@ -42,10 +42,6 @@ const inLanguageMap: Record<SupportedLocale, string> = {
     pt: 'pt-BR'
 };
 
-const breadcrumbItems = [
-    { name: t('google-calendar.breadcrumb.home', 'Inicio'), url: homeUrl },
-    { name: t('google-calendar.breadcrumb.current', 'Integracion con Google Calendar'), url: canonicalUrl }
-];
 
 const purposeCards = [
     {
@@ -111,7 +107,7 @@ const privacyCards = [
         url={canonicalUrl}
         inLanguage={inLanguageMap[locale]}
     />
-    <BreadcrumbJsonLd slot="head-extra" items={breadcrumbItems} />
+    <Breadcrumbs slot="breadcrumbs" locale={locale} items={[{ label: breadcrumbLabel({ t, key: 'googleCalendar' }) }]} />
 
     <MarketingHero
         tagline={t('google-calendar.hero.tagline', 'Sincronizacion para anfitriones')}

@@ -20,7 +20,7 @@
  */
 import ListingLayout from '@/layouts/ListingLayout.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
-import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
+import { breadcrumbLabel } from '@/lib/navigation/breadcrumb-labels';
 import ItemListJsonLd from '@/components/seo/ItemListJsonLd.astro';
 import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
 import DestinationCard from '@/components/shared/cards/DestinationCard.astro';
@@ -96,18 +96,6 @@ const seoDescription = description
 	: heading;
 
 const siteOrigin = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
-const canonicalPath = buildUrl({ locale, path: `destinos/atraccion/${slug}` });
-
-// Mirrors the visible trail below PLUS the current page: the visible component
-// drops the leaf (it is already the H1), but BreadcrumbList must stay complete.
-const breadcrumbItems = [
-	{ name: t('nav.home', 'Inicio'), url: `${siteOrigin}${buildUrl({ locale, path: '' })}` },
-	{
-		name: t('destinations.title', 'Destinos'),
-		url: `${siteOrigin}${buildUrl({ locale, path: 'destinos' })}`
-	},
-	{ name, url: `${siteOrigin}${canonicalPath}` }
-];
 
 const itemListItems = cards.map((card) => ({
 	name: card.name,
@@ -122,7 +110,6 @@ const itemListItems = cards.map((card) => ({
 	showFilters={false}
 	totalCount={cards.length}
 >
-	<BreadcrumbJsonLd slot="head-extra" items={breadcrumbItems} />
 	{itemListItems.length > 0 && (
 		<ItemListJsonLd slot="head-extra" name={heading} items={itemListItems} />
 	)}
@@ -131,7 +118,7 @@ const itemListItems = cards.map((card) => ({
 		slot="breadcrumbs"
 		locale={locale}
 		items={[
-			{ label: t('destinations.title', 'Destinos'), path: 'destinos' },
+			{ label: breadcrumbLabel({ t, key: 'destinations' }), path: 'destinos' },
 			{ label: name }
 		]}
 	/>

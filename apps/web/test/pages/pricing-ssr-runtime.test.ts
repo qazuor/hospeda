@@ -169,9 +169,11 @@ describe.each(AUDIENCE_PAGES)('$path', (page: AudiencePage) => {
         });
 
         it('emits BreadcrumbList structured data beside its visible trail', () => {
-            expect(src).toContain('<BreadcrumbJsonLd');
-            expect(src).toContain('items={breadcrumbs.jsonLd}');
-            expect(src).toContain('items={breadcrumbs.visible}');
+            expect(src).toContain('<Breadcrumbs');
+            expect(src).not.toContain('BreadcrumbJsonLd');
+            expect(src).toContain('items={breadcrumbs}');
+            expect(src).toContain("plansLabel: breadcrumbLabel({ t, key: 'plans' })");
+            expect(src).toContain("pageLabel: breadcrumbLabel({ t, key: 'pricing' })");
         });
 
         it(

@@ -14,10 +14,10 @@ import { getMediaUrl } from '@repo/media';
 import DetailLayout from '@/layouts/DetailLayout.astro';
 import { DestinationViewTracker } from '@/components/analytics/DestinationViewTracker.client';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import { breadcrumbLabel } from '@/lib/navigation/breadcrumb-labels';
 import AccommodationCard from '@/components/shared/cards/AccommodationCard.astro';
 import EventCardHorizontal from '@/components/shared/cards/EventCardHorizontal.astro';
 import PlaceJsonLd from '@/components/seo/PlaceJsonLd.astro';
-import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
 import FAQPageJsonLd from '@/components/seo/FAQPageJsonLd.astro';
 import { isThinDestination } from '@/lib/seo/thin-destination';
 import { LocationMap } from '@/components/maps/LocationMap.client';
@@ -463,15 +463,31 @@ try {
 }
 
 // --- Breadcrumbs ------------------------------------------------------------
-const pathSegments = path.split('/').filter(Boolean);
+// Resolve URL ancestors through the same API as the detail lookup, preserving
+// proper names and accents. Missing ancestors are omitted, never slug-formatted.
+const ancestorResults = await Promise.allSettled(
+	segments.slice(0, -1).map((_, index) =>
+		index === 0
+			? destinationsApi.getBySlug({ slug: segments[0] })
+			: destinationsApi.getByPath({ path: `/${segments.slice(0, index + 1).join('/')}` })
+	)
+);
+const ancestorItems = ancestorResults.flatMap((ancestor, index) => {
+	if (ancestor.status === 'rejected' || !ancestor.value.ok) {
+		markResponseDegraded({ locals: Astro.locals });
+		return [];
+	}
+	const ancestorName = ancestor.value.data.name;
+	if (!ancestorName?.trim()) {
+		markResponseDegraded({ locals: Astro.locals });
+		return [];
+	}
+	return [{ label: ancestorName, path: `destinos/${segments.slice(0, index + 1).join('/')}` }];
+});
 const breadcrumbItems = [
-	{ label: t('destinations.title', 'Destinos'), path: 'destinos' },
-	...pathSegments.map((segment, i) => ({
-		label: segment.replace(/-/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase()),
-		...(i < pathSegments.length - 1
-			? { path: `destinos/${pathSegments.slice(0, i + 1).join('/')}` }
-			: {})
-	}))
+	{ label: breadcrumbLabel({ t, key: 'destinations' }), path: 'destinos' },
+	...ancestorItems,
+	{ label: name }
 ];
 
 // --- TouristDestination JSON-LD --------------------------------------------
@@ -506,17 +522,6 @@ const placeImage =
 // Entity disambiguation (schema.org sameAs): interim curated slug→Wikipedia
 // map. Resolves only for the main Entre Ríos destinations; undefined otherwise.
 const placeSameAs = getDestinationSameAs({ slug });
-
-// --- Breadcrumb JSON-LD (REQ-096-37 / T-068) -------------------------------
-const siteOriginDest = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
-const breadcrumbJsonLdItems = [
-	{ name: t('nav.home', 'Inicio'), url: `${siteOriginDest}/${locale}/` },
-	{ name: t('destinations.title', 'Destinos'), url: `${siteOriginDest}/${locale}/destinos/` },
-	...pathSegments.map((segment, i) => ({
-		name: segment.replace(/-/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase()),
-		url: `${siteOriginDest}/${locale}/destinos/${pathSegments.slice(0, i + 1).join('/')}/`
-	}))
-];
 
 // Description rendering — `dest.contentHtml` (TipTap-rendered HTML, when
 // present) takes precedence; otherwise `description` may be markdown or plain
@@ -562,12 +567,11 @@ const isThinContent = isThinDestination({
 		geo={placeGeo}
 		sameAs={placeSameAs}
 	/>
-	<BreadcrumbJsonLd slot="head-extra" items={breadcrumbJsonLdItems} />
 	{faqSections.length > 0 && (
 		<FAQPageJsonLd slot="head-extra" sections={faqSections} inLanguage={faqSetInLanguage(faqs, locale)} />
 	)}
 
-	<Breadcrumbs slot="breadcrumbs" locale={locale} items={breadcrumbItems} />
+	<Breadcrumbs slot="breadcrumbs" locale={locale} jsonLd={!isThinContent} items={breadcrumbItems} />
 
 	<Fragment slot="page-header">
 		<DestinationDetailHeader

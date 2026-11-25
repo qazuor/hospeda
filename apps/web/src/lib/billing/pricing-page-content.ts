@@ -38,6 +38,7 @@
  * @module lib/billing/pricing-page-content
  */
 
+import { NEUTRAL_PLANS_PATH } from '@/lib/billing/addon-purchase';
 import type { PublicPlanData } from '@/lib/billing/fetch-plans';
 import { computeMinimumTrialDays } from '@/lib/billing/generic-trial-days';
 import type { PricingPriceMode } from '@/lib/billing/price-on-request-audiences';
@@ -237,66 +238,23 @@ export function resolvePricingPageContent({
     };
 }
 
-/** One pricing page's breadcrumb trail, in both shapes it has to be rendered in. */
-export interface PricingBreadcrumbs {
-    /**
-     * For `<Breadcrumbs>`: `{ label, path? }`, current page last. Home is
-     * prepended by the component, so it is not in this list.
-     */
-    readonly visible: readonly { readonly label: string; readonly path?: string }[];
-    /** For `<BreadcrumbJsonLd>`: absolute URLs, home FIRST. */
-    readonly jsonLd: readonly { readonly name: string; readonly url: string }[];
-}
-
-/**
- * Build a pricing page's breadcrumbs, visible and structured, from ONE trail.
- *
- * The two are derived from the same three labels rather than written out twice,
- * because the guard that made this necessary — `breadcrumbs-coverage.test.ts` —
- * only checks that a page rendering `<Breadcrumbs>` also emits a
- * `BreadcrumbList`. It cannot check that the two describe the same trail, which
- * is the failure that actually misleads a search result: a visible crumb saying
- * one thing while the structured data says another. Deriving both from one
- * input is what makes that unrepresentable.
- *
- * The trail is always three deep — home → the audience's sales page → this
- * page — which is the structure D-7 defines, and it is the same for all five.
- *
- * @param params.homeLabel - Localised label for the site root.
- * @param params.homeUrl - Absolute URL of the locale's home page.
- * @param params.salesLabel - The audience's level-2 page title, as that page
- *   itself renders it — read from the same i18n key, never re-worded here.
- * @param params.salesPath - Locale-agnostic path of that sales page.
- * @param params.salesUrl - Absolute URL of the same page.
- * @param params.pageLabel - This page's own title.
- * @param params.pageUrl - This page's absolute URL.
- * @returns Both renderings of the one trail.
- */
+/** Build the full pricing trail; the shared component derives navigation and JSON-LD. */
 export function buildPricingBreadcrumbs({
-    homeLabel,
-    homeUrl,
+    plansLabel,
     salesLabel,
     salesPath,
-    salesUrl,
-    pageLabel,
-    pageUrl
+    pageLabel
 }: {
-    readonly homeLabel: string;
-    readonly homeUrl: string;
+    readonly plansLabel: string;
     readonly salesLabel: string;
     readonly salesPath: string;
-    readonly salesUrl: string;
     readonly pageLabel: string;
-    readonly pageUrl: string;
-}): PricingBreadcrumbs {
-    return {
-        visible: [{ label: salesLabel, path: salesPath }, { label: pageLabel }],
-        jsonLd: [
-            { name: homeLabel, url: homeUrl },
-            { name: salesLabel, url: salesUrl },
-            { name: pageLabel, url: pageUrl }
-        ]
-    };
+}): readonly { readonly label: string; readonly path?: string }[] {
+    return [
+        { label: plansLabel, path: NEUTRAL_PLANS_PATH },
+        { label: salesLabel, path: salesPath },
+        { label: pageLabel }
+    ];
 }
 
 /**

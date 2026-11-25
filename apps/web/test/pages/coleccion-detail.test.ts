@@ -90,9 +90,11 @@ describe('collection detail page — T-051b (SPEC-098)', () => {
             expect(pageSrc).toContain('collectionId={id}');
         });
 
-        it('replaces the shared Breadcrumbs with the PageHeader back link', () => {
+        it('renders shared account breadcrumbs through the island PageHeader', () => {
             expect(pageSrc).not.toContain('Breadcrumbs');
-            expect(viewSrc).toContain("t('account.favorites.collections.backToList')");
+            expect(viewSrc).toContain('breadcrumbs={buildAccountBreadcrumbs(');
+            expect(viewSrc).toContain("getAccountSectionLabel({ t, section: 'favoritos' })");
+            expect(viewSrc).not.toContain('back={{');
         });
 
         it('builds the type tabs from the shared list as URL links (NavTabs)', () => {

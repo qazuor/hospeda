@@ -10,6 +10,7 @@
 
 import ListingLayout from '@/layouts/ListingLayout.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import { breadcrumbLabel } from '@/lib/navigation/breadcrumb-labels';
 import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
 import ListingViewToggle from '@/components/shared/layout/ListingViewToggle.astro';
 import CompareModeControls from '@/components/shared/compare/CompareModeControls.astro';
@@ -463,9 +464,10 @@ const newColors = getBadgeStatusColor({ status: 'new' });
 	<Breadcrumbs
 		slot="breadcrumbs"
 		locale={locale}
+		jsonLd={false}
 		items={[
-			{ label: t('accommodations.title', 'Alojamientos'), path: 'alojamientos' },
-			{ label: t('accommodations.viewToggle.map', 'Mapa') },
+			{ label: breadcrumbLabel({ t, key: 'accommodations' }), path: 'alojamientos' },
+			{ label: breadcrumbLabel({ t, key: 'map' }) },
 		]}
 	/>
 

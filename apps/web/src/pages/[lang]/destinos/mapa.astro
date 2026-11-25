@@ -7,8 +7,9 @@
  * @rendering SSR
  */
 
-import DefaultLayout from '@/layouts/DefaultLayout.astro';
+import ListingLayout from '@/layouts/ListingLayout.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import { breadcrumbLabel } from '@/lib/navigation/breadcrumb-labels';
 import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
@@ -47,13 +48,6 @@ const items = result.ok ? result.data.items : [];
 const total = result.ok ? result.data.pagination.total : 0;
 const cards = items.map((item) => toDestinationCardProps({ item: item as unknown as Record<string, unknown>, locale }));
 
-// BETA-22: this page predates ListingLayout (still on DefaultLayout + its own
-// wave decorative markup), so it doesn't get ListingLayout's shared
-// `totalCount`/`filterSummary` results-summary handling. Built locally with
-// the same visual treatment, placed in the content column above the map
-// instead of inside the page header.
-const resultsSummaryLabel = tPlural('ui.listing.resultsFound', total);
-
 const mapItems = cards
 	.filter((c) => c.coordinates?.lat && c.coordinates?.long)
 	.map((c) => {
@@ -85,109 +79,65 @@ const mapCenter: [number, number] = mapItems.length > 0
 const listHref = buildUrl({ locale, path: 'destinos' });
 ---
 
-<DefaultLayout
+<ListingLayout
 	locale={locale}
 	title={`${t('destinations.title', 'Destinos')} — ${t('accommodations.viewToggle.map', 'Mapa')}`}
 	description={t('destinations.description', 'Explorá los destinos turísticos del Litoral Entrerriano.')}
 	noindex={true}
+	totalCount={hasError ? undefined : total}
 >
-	<div class="dest-listing">
-		<div class="dest-listing__header section section--warm">
-			<div class="dest-listing__header-container">
-				<Breadcrumbs
-					locale={locale}
-					items={[
-						{ label: t('destinations.title', 'Destinos'), path: 'destinos' },
-						{ label: t('accommodations.viewToggle.map', 'Mapa') },
-					]}
-				/>
-				<ListingPageHeader
-					locale={locale}
-					tagline={t('destinations.tagline', 'Explorá la región')}
-					title={t('destinations.title', 'Destinos')}
-				/>
-			</div>
+	<Breadcrumbs
+		slot="breadcrumbs"
+		locale={locale}
+		jsonLd={false}
+		items={[
+			{ label: breadcrumbLabel({ t, key: 'destinations' }), path: 'destinos' },
+			{ label: breadcrumbLabel({ t, key: 'map' }) },
+		]}
+	/>
+	<ListingPageHeader
+		slot="page-header"
+		locale={locale}
+		tagline={t('destinations.tagline', 'Explorá la región')}
+		title={t('destinations.title', 'Destinos')}
+	/>
+	{hasError && !result.ok && <ErrorBanner locale={locale} error={result.error} entityName="destinos" />}
+
+	{!hasError && cards.length === 0 && (
+		<EmptyState locale={locale} variant="empty" />
+	)}
+
+	{!hasError && cards.length > 0 && (
+		<div class="view-toggle" role="tablist" aria-label={t('accommodations.viewToggle.ariaLabel', 'Vista')}>
+			<a href={listHref} class="view-toggle__btn" role="tab" aria-selected="false">
+				{t('accommodations.viewToggle.list', 'Lista')}
+			</a>
+			<span class="view-toggle__btn view-toggle__btn--active" role="tab" aria-selected="true">
+				{t('accommodations.viewToggle.map', 'Mapa')}
+			</span>
 		</div>
+	)}
 
-		<div class="dest-listing__wave" aria-hidden="true">
-			<svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
-				<path d="M0,64 C288,120 576,0 864,64 C1152,128 1440,32 1440,32 L1440,0 L0,0 Z" fill="var(--surface-warm, #fdf6f0)" />
-			</svg>
+	{!hasError && cards.length > 0 && mapItems.length > 0 && (
+		<div class="dest-listing-map">
+			<ListingMap
+				client:only="react"
+				mode="destination-list"
+				items={mapItems}
+				initialCenter={mapCenter}
+				initialZoom={LITORAL_ZOOM}
+				ariaLabel={t('maps.ariaLabelDestination')}
+				i18nStrings={{
+					attribution: t('maps.attribution'),
+					approximateDisclaimer: t('maps.approximateDisclaimer'),
+					viewDetails: t('maps.viewDetails', 'Ver más'),
+				}}
+			/>
 		</div>
-
-		<div class="dest-listing__body">
-			<div class="dest-listing__container">
-				{!hasError && (
-					<p class="listing-results-summary" role="status" aria-live="polite">{resultsSummaryLabel}</p>
-				)}
-
-				{hasError && !result.ok && <ErrorBanner locale={locale} error={result.error} entityName="destinos" />}
-
-				{!hasError && cards.length === 0 && (
-					<EmptyState locale={locale} variant="empty" />
-				)}
-
-				{!hasError && cards.length > 0 && (
-					<div class="view-toggle" role="tablist" aria-label={t('accommodations.viewToggle.ariaLabel', 'Vista')}>
-						<a href={listHref} class="view-toggle__btn" role="tab" aria-selected="false">
-							{t('accommodations.viewToggle.list', 'Lista')}
-						</a>
-						<span class="view-toggle__btn view-toggle__btn--active" role="tab" aria-selected="true">
-							{t('accommodations.viewToggle.map', 'Mapa')}
-						</span>
-					</div>
-				)}
-
-				{!hasError && cards.length > 0 && mapItems.length > 0 && (
-					<div class="dest-listing-map">
-						<ListingMap
-							client:only="react"
-							mode="destination-list"
-							items={mapItems}
-							initialCenter={mapCenter}
-							initialZoom={LITORAL_ZOOM}
-							ariaLabel={t('maps.ariaLabelDestination')}
-							i18nStrings={{
-								attribution: t('maps.attribution'),
-								approximateDisclaimer: t('maps.approximateDisclaimer'),
-								viewDetails: t('maps.viewDetails', 'Ver más'),
-							}}
-						/>
-					</div>
-				)}
-			</div>
-		</div>
-	</div>
-</DefaultLayout>
+	)}
+</ListingLayout>
 
 <style>
-	.dest-listing__header-container,
-	.dest-listing__container {
-		max-width: var(--container-max);
-		margin: 0 auto;
-		padding: 0 var(--space-container-x);
-	}
-
-	.dest-listing__header {
-		padding: 3rem 0 1.5rem;
-	}
-
-	.dest-listing__wave { margin-top: -1px; line-height: 0; }
-	.dest-listing__wave svg { width: 100%; height: 80px; display: block; }
-
-	.dest-listing__body { padding: var(--space-section-sm) 0; }
-
-	/* Results summary (BETA-22): same visual treatment as ListingLayout's
-	 * shared `.listing-results-summary` — this page predates ListingLayout,
-	 * so the rule is duplicated locally instead of imported. */
-	.listing-results-summary {
-		font-family: var(--font-sans);
-		font-size: var(--text-body-sm);
-		color: var(--core-muted-foreground);
-		margin: 0 0 var(--space-4);
-		text-wrap: pretty;
-	}
-
 	.view-toggle {
 		display: inline-flex;
 		gap: var(--space-2, 8px);

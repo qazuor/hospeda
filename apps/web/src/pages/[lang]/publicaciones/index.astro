@@ -33,6 +33,7 @@
 
 import ListingLayout from '@/layouts/ListingLayout.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import { breadcrumbLabel } from '@/lib/navigation/breadcrumb-labels';
 import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
 import ContributionBanner from '@/components/contributions/ContributionBanner.astro';
 import ArticleCard from '@/components/shared/cards/ArticleCard.astro';
@@ -530,7 +531,7 @@ const postCategoryClearChip = buildClearFacetChip({
     <Breadcrumbs
         slot="breadcrumbs"
         locale={locale}
-        items={[{ label: t('blog.title', 'Publicaciones') }]}
+        items={[{ label: breadcrumbLabel({ t, key: 'posts' }) }]}
     />
 
     <ListingPageHeader

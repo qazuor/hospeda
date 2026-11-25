@@ -20,6 +20,11 @@ const src = readFileSync(
 );
 
 describe('colaborar/index.astro (hub landing, FR-2)', () => {
+    it('declares a top-level short breadcrumb label', () => {
+        expect(src).toContain("items={[{ label: breadcrumbLabel({ t, key: 'collaborate' }) }]}");
+        expect(src).not.toContain('BreadcrumbJsonLd');
+    });
+
     describe('rendering mode (SSR — HOS-74)', () => {
         it('does NOT set prerender = true (SSR so the middleware CSP header reaches it)', () => {
             expect(src).not.toContain('export const prerender = true');

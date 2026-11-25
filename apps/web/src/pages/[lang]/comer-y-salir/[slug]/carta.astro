@@ -51,6 +51,7 @@
 
 import DetailLayout from '@/layouts/DetailLayout.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import { breadcrumbLabel } from '@/lib/navigation/breadcrumb-labels';
 import VenueMenu from '@/components/venue/VenueMenu.astro';
 import OpeningHoursSection from '@/components/venue/OpeningHoursSection.astro';
 import { venueApi } from '@/lib/api/endpoints';
@@ -154,10 +155,11 @@ const hasOpeningHours =
     <Breadcrumbs
         slot="breadcrumbs"
         locale={locale}
+        jsonLd={false}
         items={[
-            { label: t('venue.listing.title'), path: 'comer-y-salir/' },
+            { label: breadcrumbLabel({ t, key: 'eatAndDrink' }), path: 'comer-y-salir/' },
             { label: venue.name, path: listingPath },
-            { label: pageTitleWord }
+            { label: breadcrumbLabel({ t, key: 'menu' }) }
         ]}
     />
 

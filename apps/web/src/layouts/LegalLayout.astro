@@ -53,6 +53,7 @@ const resolvedDescription = description ?? 'Información legal de Hospeda';
 	<!-- Page header -->
 	<div class="legal-header">
 		<div class="legal-header__container">
+            <!-- Legal titles are already short; the shared trail also emits their JSON-LD. -->
 			<Breadcrumbs class="legal-breadcrumbs" locale={locale} items={[{ label: resolvedTitle }]} />
 			<h1 class="legal-header__title">{resolvedTitle}</h1>
 			{lastUpdated && (

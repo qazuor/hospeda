@@ -27,8 +27,12 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { PublicPlanData } from '@/lib/billing/fetch-plans';
 import type { PricingPageTranslators } from '@/lib/billing/pricing-page-content';
-import { resolvePricingPageContent } from '@/lib/billing/pricing-page-content';
+import {
+    buildPricingBreadcrumbs,
+    resolvePricingPageContent
+} from '@/lib/billing/pricing-page-content';
 import type { PricingAudience } from '@/lib/billing-i18n';
+import { buildBreadcrumbListJsonLd, buildBreadcrumbTrail } from '@/lib/navigation/breadcrumb-trail';
 
 vi.mock('@/lib/env', () => ({
     getApiUrl: vi.fn(() => 'http://api.test')
@@ -47,6 +51,43 @@ const PRICED_AUDIENCES: readonly PricingAudience[] = [
     'venue',
     'experience'
 ] as const;
+
+describe('pricing breadcrumb hierarchy', () => {
+    it.each([
+        'anfitriones',
+        'turistas',
+        'experiencias',
+        'comer-y-salir'
+    ])('preserves the plans ancestor for %s in both outputs', (audience) => {
+        const items = buildPricingBreadcrumbs({
+            plansLabel: 'Plans',
+            salesLabel: 'Audience',
+            salesPath: `planes/${audience}`,
+            pageLabel: 'Pricing'
+        });
+        const input = { items, locale: 'en' as const, homeLabel: 'Home' };
+        expect(Array.isArray(items)).toBe(true);
+        expect(buildBreadcrumbTrail(input).entries.map((entry) => entry.label)).toEqual([
+            'Home',
+            'Plans',
+            'Audience'
+        ]);
+        const structured = buildBreadcrumbListJsonLd({
+            ...input,
+            siteOrigin: 'https://example.test',
+            currentPath: `/en/planes/${audience}/precios/`
+        });
+        expect(structured.itemListElement.map((entry) => entry.name)).toEqual([
+            'Home',
+            'Plans',
+            'Audience',
+            'Pricing'
+        ]);
+        expect(structured.itemListElement.at(-1)?.item).toBe(
+            `https://example.test/en/planes/${audience}/precios/`
+        );
+    });
+});
 
 const makePlan = (overrides: Partial<PublicPlanData> = {}): PublicPlanData =>
     ({

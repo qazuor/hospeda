@@ -25,6 +25,7 @@
 
 import ListingLayout from '@/layouts/ListingLayout.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import { breadcrumbLabel } from '@/lib/navigation/breadcrumb-labels';
 import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
 import CompareModeControls from '@/components/shared/compare/CompareModeControls.astro';
 import AccommodationCard from '@/components/shared/cards/AccommodationCard.astro';
@@ -33,7 +34,6 @@ import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
 import Pagination from '@/components/shared/feedback/Pagination.astro';
 import ItemListJsonLd from '@/components/seo/ItemListJsonLd.astro';
 import CollectionPageJsonLd from '@/components/seo/CollectionPageJsonLd.astro';
-import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
 import { FilterSidebar } from '@/components/shared/filters/FilterSidebar.client';
 import { buildAccommodationsFilterGroups } from '@/lib/filters/accommodations-filter-groups';
 import { canonicalizeFacetValues } from '@/lib/filters/canonical-facet-order';
@@ -342,16 +342,7 @@ const itemListEntries = cards.map((card) => ({
 	name: card.name
 }));
 
-// Breadcrumb JSON-LD — Inicio / Alojamientos / {type}.
 const siteOrigin = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
-const breadcrumbJsonLdItems = [
-	{ name: t('accommodations.byType.labels.breadcrumbHome', 'Inicio'), url: `${siteOrigin}/${locale}/` },
-	{
-		name: t('accommodations.byType.labels.breadcrumbAccommodations', 'Alojamientos'),
-		url: `${siteOrigin}${buildUrl({ locale, path: 'alojamientos' })}`
-	},
-	{ name: typeName, url: `${siteOrigin}${baseUrl}` }
-];
 
 const collectionPageUrl = `${siteOrigin}${canonicalPath}`;
 ---
@@ -382,13 +373,12 @@ const collectionPageUrl = `${siteOrigin}${canonicalPath}`;
 		startPosition={(page - 1) * pageSize + 1}
 	/>
 
-	<BreadcrumbJsonLd slot="head-extra" items={breadcrumbJsonLdItems} />
 
 	<Breadcrumbs
 		slot="breadcrumbs"
 		locale={locale}
 		items={[
-			{ label: t('accommodations.byType.labels.breadcrumbAccommodations', 'Alojamientos'), path: 'alojamientos' },
+			{ label: breadcrumbLabel({ t, key: 'accommodations' }), path: 'alojamientos' },
 			{ label: typeName }
 		]}
 	/>

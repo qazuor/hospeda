@@ -1,147 +1,134 @@
-/**
- * @file breadcrumb-trail.test.ts
- * @description Unit tests for the visible breadcrumb trail builder.
- */
-
 import { describe, expect, it } from 'vitest';
-import { buildBreadcrumbTrail } from '../../../src/lib/navigation/breadcrumb-trail';
+import {
+    buildBreadcrumbListJsonLd,
+    buildBreadcrumbTrail,
+    serializeJsonLd
+} from '../../../src/lib/navigation/breadcrumb-trail';
+
+const input = {
+    locale: 'es',
+    homeLabel: 'Inicio',
+    items: [
+        { label: 'Destinos', path: 'destinos/' },
+        { label: 'Grouping without a page' },
+        { label: 'Colón', path: 'destinos/colon' },
+        { label: 'Eventos', path: 'ignored-current-path' }
+    ]
+} as const;
 
 describe('buildBreadcrumbTrail', () => {
-    describe('dropping the current page', () => {
-        it('omits the last item, which is the current page', () => {
-            // Arrange
-            const items = [
-                { label: 'Publicaciones', path: 'publicaciones' },
-                { label: 'Fiesta Nacional de la Playa de Río en Concepción del Uruguay' }
-            ];
-
-            // Act
-            const { entries } = buildBreadcrumbTrail({ items, locale: 'es', homeLabel: 'Inicio' });
-
-            // Assert
-            expect(entries.map((e) => e.label)).toEqual(['Inicio', 'Publicaciones']);
-        });
-
-        it('keeps every ancestor of a deep trail', () => {
-            // Arrange
-            const items = [
-                { label: 'Destinos', path: 'destinos' },
-                { label: 'Colón', path: 'destinos/colon' },
-                { label: 'Eventos' }
-            ];
-
-            // Act
-            const { entries } = buildBreadcrumbTrail({ items, locale: 'es', homeLabel: 'Inicio' });
-
-            // Assert
-            expect(entries.map((e) => e.label)).toEqual(['Inicio', 'Destinos', 'Colón']);
-        });
-
-        it('never emits aria-current-worthy state because the current page is gone', () => {
-            // Arrange
-            const items = [
-                { label: 'Alojamientos', path: 'alojamientos' },
-                { label: 'Casa del Río' }
-            ];
-
-            // Act
-            const { entries } = buildBreadcrumbTrail({ items, locale: 'es', homeLabel: 'Inicio' });
-
-            // Assert
-            expect(entries.some((e) => e.label === 'Casa del Río')).toBe(false);
+    it('returns linked ancestors with home first, dropping the current page and dead levels', () => {
+        expect(buildBreadcrumbTrail(input)).toEqual({
+            entries: [
+                { label: 'Inicio', href: '/es/' },
+                { label: 'Destinos', href: '/es/destinos/' },
+                { label: 'Colón', href: '/es/destinos/colon/' }
+            ]
         });
     });
 
-    describe('trails that carry no hierarchy', () => {
-        it('returns no entries when the only item is the current page', () => {
-            // Arrange — every top-level listing (/alojamientos/, /eventos/, …)
-            const items = [{ label: 'Alojamientos' }];
+    it('omits home when requested, retaining a single linked ancestor', () => {
+        expect(
+            buildBreadcrumbTrail({
+                ...input,
+                includeHome: false,
+                items: [{ label: 'Mi cuenta', path: 'mi-cuenta' }, { label: 'Perfil' }]
+            }).entries
+        ).toEqual([{ label: 'Mi cuenta', href: '/es/mi-cuenta/' }]);
+    });
 
-            // Act
-            const { entries } = buildBreadcrumbTrail({ items, locale: 'es', homeLabel: 'Inicio' });
+    it.each([
+        { items: [] },
+        { items: [{ label: 'Current' }] },
+        { items: [{ label: 'Dead level' }, { label: 'Current' }] }
+    ])('returns no visible trail without linked ancestors: $items', ({ items }) => {
+        expect(buildBreadcrumbTrail({ ...input, items }).entries).toEqual([]);
+        expect(buildBreadcrumbTrail({ ...input, items, includeHome: false }).entries).toEqual([]);
+    });
 
-            // Assert — home alone is not a trail
-            expect(entries).toEqual([]);
-        });
+    it('resolves all links for the active locale without mutating input', () => {
+        const before = JSON.stringify(input);
+        expect(
+            buildBreadcrumbTrail({ ...input, locale: 'pt' }).entries.map((entry) => entry.href)
+        ).toEqual(['/pt/', '/pt/destinos/', '/pt/destinos/colon/']);
+        expect(JSON.stringify(input)).toBe(before);
+    });
+});
 
-        it('returns no entries for an empty item list', () => {
-            // Arrange / Act
-            const { entries } = buildBreadcrumbTrail({
-                items: [],
-                locale: 'es',
-                homeLabel: 'Inicio'
-            });
+describe('buildBreadcrumbListJsonLd', () => {
+    const canonical = {
+        siteOrigin: 'https://hospeda.test/',
+        currentPath: '/es/destinos/colon/eventos/'
+    };
 
-            // Assert
-            expect(entries).toEqual([]);
+    it('uses absolute URLs, drops dead levels, and puts the canonical current page last', () => {
+        expect(buildBreadcrumbListJsonLd({ ...input, ...canonical })).toEqual({
+            '@context': 'https://schema.org',
+            '@type': 'BreadcrumbList',
+            itemListElement: [
+                {
+                    '@type': 'ListItem',
+                    position: 1,
+                    name: 'Inicio',
+                    item: 'https://hospeda.test/es/'
+                },
+                {
+                    '@type': 'ListItem',
+                    position: 2,
+                    name: 'Destinos',
+                    item: 'https://hospeda.test/es/destinos/'
+                },
+                {
+                    '@type': 'ListItem',
+                    position: 3,
+                    name: 'Colón',
+                    item: 'https://hospeda.test/es/destinos/colon/'
+                },
+                {
+                    '@type': 'ListItem',
+                    position: 4,
+                    name: 'Eventos',
+                    item: 'https://hospeda.test/es/destinos/colon/eventos/'
+                }
+            ]
         });
     });
 
-    describe('href resolution', () => {
-        it('links home to the locale root', () => {
-            // Arrange
-            const items = [{ label: 'Eventos', path: 'eventos' }, { label: 'Fiesta' }];
-
-            // Act
-            const { entries } = buildBreadcrumbTrail({ items, locale: 'es', homeLabel: 'Inicio' });
-
-            // Assert
-            expect(entries[0]).toEqual({ label: 'Inicio', href: '/es/' });
+    it('keeps structured data for a top-level page despite an empty visible trail', () => {
+        const result = buildBreadcrumbListJsonLd({
+            ...input,
+            ...canonical,
+            items: [{ label: 'Eventos' }]
         });
-
-        it('prefixes every href with the active locale', () => {
-            // Arrange
-            const items = [{ label: 'Eventos', path: 'eventos' }, { label: 'Fiesta' }];
-
-            // Act
-            const { entries } = buildBreadcrumbTrail({ items, locale: 'en', homeLabel: 'Home' });
-
-            // Assert
-            expect(entries.map((e) => e.href)).toEqual(['/en/', '/en/eventos/']);
-        });
-
-        it('leaves an item without a path unlinked instead of pointing it at home', () => {
-            // Arrange — "Autor" is a grouping level with no page of its own.
-            // Regression: `path ?? ''` used to resolve it to the homepage.
-            const items = [
-                { label: 'Publicaciones', path: 'publicaciones' },
-                { label: 'Autor' },
-                { label: 'Leandro' }
-            ];
-
-            // Act
-            const { entries } = buildBreadcrumbTrail({ items, locale: 'es', homeLabel: 'Inicio' });
-
-            // Assert
-            expect(entries[2]).toEqual({ label: 'Autor', href: undefined });
-        });
-
-        it('normalizes a path that already carries a trailing slash', () => {
-            // Arrange — gastronomia/experiencias pass 'gastronomia/'
-            const items = [
-                { label: 'Gastronomía', path: 'comer-y-salir/' },
-                { label: 'La Parrilla' }
-            ];
-
-            // Act
-            const { entries } = buildBreadcrumbTrail({ items, locale: 'es', homeLabel: 'Inicio' });
-
-            // Assert
-            expect(entries[1]?.href).toBe('/es/comer-y-salir/');
-        });
+        expect(result.itemListElement.map((entry) => entry.name)).toEqual(['Inicio', 'Eventos']);
     });
 
-    describe('input safety', () => {
-        it('does not mutate the caller-supplied items array', () => {
-            // Arrange
-            const items = [{ label: 'Destinos', path: 'destinos' }, { label: 'Colón' }];
+    it('renders no visible trail when Inicio would be the only ancestor (D4b), JSON-LD stays complete', () => {
+        const items = [{ label: 'Grupo' }, { label: 'Pagina' }];
+        expect(buildBreadcrumbTrail({ ...input, items }).entries).toEqual([]);
+        expect(
+            buildBreadcrumbListJsonLd({ ...input, ...canonical, items }).itemListElement.map(
+                (entry) => entry.name
+            )
+        ).toEqual(['Inicio', 'Pagina']);
+    });
 
-            // Act
-            buildBreadcrumbTrail({ items, locale: 'es', homeLabel: 'Inicio' });
+    it('honors includeHome and numbers the remaining levels consecutively', () => {
+        const result = buildBreadcrumbListJsonLd({ ...input, ...canonical, includeHome: false });
+        expect(result.itemListElement.map((entry) => [entry.name, entry.position])).toEqual([
+            ['Destinos', 1],
+            ['Colón', 2],
+            ['Eventos', 3]
+        ]);
+    });
+});
 
-            // Assert
-            expect(items).toHaveLength(2);
-            expect(items[1]).toEqual({ label: 'Colón' });
-        });
+describe('serializeJsonLd', () => {
+    it('escapes script terminators, angle brackets, and ampersands while preserving JSON values', () => {
+        const data = { name: '</script><script>alert("x")</script> & café' };
+        const serialized = serializeJsonLd(data);
+        expect(serialized).not.toMatch(/[<>&]/);
+        expect(serialized).toContain('\\u003c/script\\u003e');
+        expect(JSON.parse(serialized)).toEqual(data);
     });
 });

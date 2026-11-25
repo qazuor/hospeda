@@ -8,6 +8,8 @@
 
 import { getSiteUrl } from '@/lib/env';
 import DefaultLayout from '@/layouts/DefaultLayout.astro';
+import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import { breadcrumbLabel } from '@/lib/navigation/breadcrumb-labels';
 import { ContactForm } from '@/components/ContactForm.client';
 import SectionHeader from '@/components/shared/layout/SectionHeader.astro';
 import ContactFAQ from '@/components/contact/ContactFAQ.astro';
@@ -202,6 +204,7 @@ const contactPageJsonLd = {
 		</div>
 
 		<div class="contact-hero__container">
+            <Breadcrumbs locale={locale} items={[{ label: breadcrumbLabel({ t, key: 'contact' }) }]} />
 			<div class="contact-hero__content" data-reveal="up">
 				<p class="contact-hero__tagline">{t('contact.tagline', 'Escribinos')}</p>
 				<h1 class="contact-hero__title">{t('contact.heading', 'Contactanos')}</h1>

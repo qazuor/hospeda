@@ -162,15 +162,14 @@ describe('experience and venue mobile header spacing (same fixes as accommodatio
         }
     ] as const;
 
-    it.each(cases)('$name page pads the band under hidden breadcrumbs and drops the gray strip', ({
+    it.each(cases)('$name page keeps the breadcrumb visible (HOS-2623) and drops the gray strip', ({
         page,
         cls
     }) => {
         const source = read(page);
 
-        expect(source).toContain(
-            `:global(.wave-header:not(.wave-header--compact) .wave-header__bar:has(.${cls}-breadcrumbs) .wave-header__content)`
-        );
+        // HOS-2623: the per-page hide hack is gone; the shared breadcrumb shows its parent on mobile.
+        expect(source).not.toContain(`${cls}-breadcrumbs`);
         expect(source).toMatch(
             new RegExp(
                 `:global\\(\\.wave-header \\.detail-page:has\\(\\.${cls}\\)\\)\\s*\\{\\s*padding-top: 0;`

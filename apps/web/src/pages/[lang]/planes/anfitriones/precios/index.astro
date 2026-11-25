@@ -36,7 +36,7 @@ import AudiencePricingSections from '@/components/billing/AudiencePricingSection
 import MarketingHero from '@/components/marketing/MarketingHero.astro';
 import JsonLd from '@/components/seo/JsonLd.astro';
 import PriceSpecificationJsonLd from '@/components/seo/PriceSpecificationJsonLd.astro';
-import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
+import { breadcrumbLabel } from '@/lib/navigation/breadcrumb-labels';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import MarketingLayout from '@/layouts/MarketingLayout.astro';
 import { getPlanDescription, getPlanName } from '@/lib/billing-i18n';
@@ -106,13 +106,10 @@ const description = t(`${copyRoot}.pageDescription`);
  * result quotes cannot describe different paths.
  */
 const breadcrumbs = buildPricingBreadcrumbs({
-    homeLabel: t('nav.home', 'Inicio'),
-    homeUrl: `${siteOrigin}${buildUrl({ locale, path: '' })}`,
-    salesLabel: t('owners.hero.title'),
+    plansLabel: breadcrumbLabel({ t, key: 'plans' }),
+    salesLabel: breadcrumbLabel({ t, key: 'plansHosts' }),
     salesPath: 'planes/anfitriones',
-    salesUrl: `${siteOrigin}${buildUrl({ locale, path: 'planes/anfitriones' })}`,
-    pageLabel: title,
-    pageUrl: `${siteOrigin}${pagePath}`
+    pageLabel: breadcrumbLabel({ t, key: 'pricing' })
 });
 
 const headingFull = t(`${copyRoot}.heading`);
@@ -124,9 +121,8 @@ const headingMain = headingWords.join(' ');
 <MarketingLayout locale={locale} title={title} description={description}>
     {plans.length > 0 && <PriceSpecificationJsonLd slot="head-extra" plans={jsonLdPlans} />}
     <JsonLd slot="head-extra" data={buildBillingFaqJsonLd({ faqs })} />
-    <BreadcrumbJsonLd slot="head-extra" items={breadcrumbs.jsonLd} />
 
-    <Breadcrumbs slot="breadcrumbs" locale={locale} items={breadcrumbs.visible} />
+    <Breadcrumbs slot="breadcrumbs" locale={locale} items={breadcrumbs} />
 
     <MarketingHero
         tagline={t(`${copyRoot}.tagline`)}

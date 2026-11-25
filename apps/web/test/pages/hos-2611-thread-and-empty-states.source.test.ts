@@ -1,7 +1,7 @@
 /**
  * @file hos-2611-thread-and-empty-states.source.test.ts
  * @description HOS-2611 guards over source: the inquiry thread pages use the kit
- * LinkButton for «Volver» (no PageHeader `back` link), the Mi cuenta empty
+ * breadcrumbs for parent navigation (no PageHeader `back` link), the Mi cuenta empty
  * states carry an icon, and the publish/provider controls no longer use the
  * legacy gradient or pill button styles.
  */
@@ -16,12 +16,13 @@ describe('inquiry thread pages', () => {
     it.each([
         'pages/[lang]/mi-cuenta/consultas/[conversationId].astro',
         'pages/[lang]/mi-cuenta/consultas-propietario/[conversationId].astro'
-    ])('%s renders «Volver» as a kit LinkButton', (page) => {
+    ])('%s renders shared account breadcrumbs', (page) => {
         // Arrange
         const source = read(page);
 
         // Assert
-        expect(source).toMatch(/<LinkButton slot="actions" variant="secondary"/);
+        expect(source).toContain('breadcrumbs={buildAccountBreadcrumbs(');
+        expect(source).not.toContain('href={back.href}');
         expect(source).not.toMatch(/back=\{back\}/);
     });
 });

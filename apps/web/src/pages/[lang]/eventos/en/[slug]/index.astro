@@ -10,7 +10,7 @@
  */
 import ListingLayout from '@/layouts/ListingLayout.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
-import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
+import { breadcrumbLabel } from '@/lib/navigation/breadcrumb-labels';
 import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
 import EventCardHorizontal from '@/components/shared/cards/EventCardHorizontal.astro';
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
@@ -78,20 +78,10 @@ if (isPageOutOfRange({ page, totalPages: result?.ok ? totalPages : null })) {
 const cards = items.map((item: (typeof items)[number]) => toEventCardProps({ item: item as unknown as Record<string, unknown>, locale }));
 const baseUrl = buildUrl({ locale, path: `eventos/en/${slug}` });
 
-// --- Breadcrumb JSON-LD ---
-// Mirrors the visible trail below PLUS the current page: the visible component
-// drops the leaf (it is already the H1), but BreadcrumbList must stay complete.
-const siteOrigin = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
-const breadcrumbItems = [
-	{ name: t('nav.home', 'Inicio'), url: `${siteOrigin}${buildUrl({ locale, path: '' })}` },
-	{ name: t('events.title', 'Eventos'), url: `${siteOrigin}${buildUrl({ locale, path: 'eventos' })}` },
-	{ name: locationName, url: `${siteOrigin}${Astro.url.pathname}` }
-];
 ---
 
 <ListingLayout locale={locale} title={`${locationName} - ${t('events.title', 'Eventos')}`} showFilters={false} totalCount={total}>
-	<BreadcrumbJsonLd slot="head-extra" items={breadcrumbItems} />
-	<Breadcrumbs slot="breadcrumbs" locale={locale} items={[{ label: t('events.title', 'Eventos'), path: 'eventos' }, { label: locationName }]} />
+	<Breadcrumbs slot="breadcrumbs" locale={locale} items={[{ label: breadcrumbLabel({ t, key: 'events' }), path: 'eventos' }, { label: locationName }]} />
 	<ListingPageHeader slot="page-header" locale={locale} tagline={t('events.byLocation.tagline', 'Lugar')} title={locationName} />
 	{hasError && result && !result.ok && <ErrorBanner locale={locale} error={result.error} entityName="eventos" />}
 	{!hasError && cards.length === 0 && <EmptyState locale={locale} variant="no-results" actionUrl={buildUrl({ locale, path: 'eventos' })} />}
