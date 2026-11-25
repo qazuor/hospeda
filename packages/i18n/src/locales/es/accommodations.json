@@ -585,7 +585,7 @@
         "checkOutPlaceholder": "Salida",
         "minCapacity": "Huéspedes",
         "search": "Búsqueda por texto",
-        "searchPlaceholder": "Buscar por nombre o descripción...",
+        "searchPlaceholder": "Nombre o descripción",
         "features": "Características",
         "includeNoPrice": "Incluir sin precio",
         "includeNoReviews": "Incluir sin calificación",
@@ -816,7 +816,15 @@
                 "social": "Redes sociales"
             },
             "fields": { "checkIn": "Llegada", "checkOut": "Salida", "guests": "Huéspedes" },
-            "card": { "direct": "O contactá directo" },
+            "placeholders": {
+                "checkIn": "Elegí la llegada",
+                "checkOut": "Elegí la salida",
+                "guests": "Cantidad de huéspedes"
+            },
+            "card": {
+                "direct": "O contactá directo",
+                "existingConversation": "Ya tenés una conversación con este anfitrión."
+            },
             "errors": {
                 "checkOutAfterCheckIn": "La salida tiene que ser después de la llegada",
                 "invalidDate": "Ingresá una fecha válida.",
@@ -928,6 +936,7 @@
             "feesHeading": "Costos adicionales",
             "discountsHeading": "Descuentos",
             "consult": "Consultar",
+            "consultContext": "Consultá el precio directamente con el anfitrión.",
             "included": "incluido",
             "optional": "opcional",
             "perNightFlag": "por noche",
@@ -1059,6 +1068,7 @@
             "cancelSuccess": "Alerta cancelada",
             "cancelError": "No se pudo cancelar la alerta",
             "locked": "Avisame si baja el precio",
+            "vipOnly": "Solo para turistas VIP",
             "maxReached": "Límite de alertas alcanzado",
             "signInTitle": "Alertas de precio",
             "signInHint": "Necesitás una cuenta para que te avisemos si baja el precio.",

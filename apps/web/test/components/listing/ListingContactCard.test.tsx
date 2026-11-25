@@ -13,7 +13,8 @@ import {
 import { createTranslations } from '@/lib/i18n';
 import { buildInquiryMessage } from '@/lib/listing-contact/build-inquiry-message';
 
-const { getWhatsApp, trackEvent } = vi.hoisted(() => ({
+const { getWhatsApp, trackEvent, conversation } = vi.hoisted(() => ({
+    conversation: { conversationId: null as string | null },
     getWhatsApp: vi.fn(),
     trackEvent: vi.fn()
 }));
@@ -22,7 +23,7 @@ vi.mock('@/hooks/use-account-permissions', () => ({
     useAccountPermissions: () => ({ user: null })
 }));
 vi.mock('@/store/accommodation-conversation-store', () => ({
-    useAccommodationConversation: () => ({ conversationId: null })
+    useAccommodationConversation: () => conversation
 }));
 vi.mock('@/lib/api/endpoints-protected', () => ({ protectedAccommodationsApi: { getWhatsApp } }));
 
@@ -52,6 +53,7 @@ function message(): HTMLTextAreaElement {
 
 describe('ListingContactCard', () => {
     afterEach(() => {
+        conversation.conversationId = null;
         vi.clearAllMocks();
         vi.unstubAllGlobals();
     });
@@ -63,6 +65,31 @@ describe('ListingContactCard', () => {
         expect(screen.getByLabelText('Salida')).toBeInTheDocument();
         expect(screen.getByLabelText('Huéspedes')).toBeInTheDocument();
         expect(message().value).toBe(buildInquiryMessage({ locale: 'es' }).message);
+        expect(screen.getByLabelText('Huéspedes')).toHaveAttribute(
+            'placeholder',
+            'Cantidad de huéspedes'
+        );
+        expect(screen.getByLabelText('Huéspedes')).toHaveAttribute('min', '1');
+        expect(screen.getByLabelText('Huéspedes')).toHaveAttribute('max', '4');
+        expect(screen.getByLabelText('Llegada')).toHaveAccessibleDescription('Elegí la llegada');
+    });
+
+    it('replaces the whole inquiry form with an existing-conversation state', () => {
+        conversation.conversationId = 'thread-1';
+        render(<ListingContactCard {...baseProps} />);
+        expect(screen.queryByLabelText('Llegada')).not.toBeInTheDocument();
+        expect(screen.queryByLabelText('Huéspedes')).not.toBeInTheDocument();
+        expect(screen.queryByRole('textbox', { name: /^Mensaje/ })).not.toBeInTheDocument();
+        expect(
+            screen.getByText('Ya tenés una conversación con este anfitrión.')
+        ).toBeInTheDocument();
+        expect(screen.getByRole('link', { name: 'Ver conversación' })).toHaveAttribute(
+            'href',
+            '/es/mi-cuenta/consultas/thread-1/'
+        );
+        expect(screen.getByRole('link', { name: 'Ver conversación' })).toHaveClass(
+            'btn-gradient--flat'
+        );
     });
 
     it('builds the message with buildInquiryMessage from dates and guests', () => {

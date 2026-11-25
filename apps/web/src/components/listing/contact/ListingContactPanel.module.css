@@ -57,3 +57,8 @@
     background: var(--core-background);
     color: var(--core-foreground);
 }
+
+.field small {
+    font: var(--app-meta);
+    color: var(--core-muted-foreground);
+}

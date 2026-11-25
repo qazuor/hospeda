@@ -51,7 +51,7 @@ import { ListingContactCard } from '@/components/listing/contact/ListingContactC
 import { EntityViewTracker } from '@/components/analytics/EntityViewTracker.client';
 import { InternalEntryTracker } from '@/components/analytics/InternalEntryTracker.client';
 import { AiChatWidget } from '@/components/accommodation/AiChatWidget';
-import { PriceAlertButton } from '@/components/accommodation/PriceAlertButton';
+import ListingPriceAlert from '@/components/accommodation/ListingPriceAlert.astro';
 import { getApiUrl } from '@/lib/env';
 import { EntitlementKeyEnum } from '@repo/schemas';
 import { getGatePlanNames } from '@/lib/billing/gate-plan-names';
@@ -707,7 +707,9 @@ const { sections: faqSections, inLanguage: faqInLanguage } = buildFaqJsonLdSecti
                 minNights={accommodation.policies?.minNights}
                 maxNights={accommodation.policies?.maxNights}
                 hasWhatsapp={accommodation.hasWhatsapp}
-            />
+            >
+                <ListingPriceAlert accommodationId={accommodation.id} apiUrl={getApiUrl()} locale={locale} slug={slug} placement="summary" />
+            </MobileBookingSummary>
             <!-- Promotions also sit right under the price summary in the
                  single-column layout (owner smoke, HOS-2520): a discount is a
                  booking argument, so it belongs next to the price. Rendered twice
@@ -923,22 +925,8 @@ const { sections: faqSections, inLanguage: faqInLanguage } = buildFaqJsonLdSecti
     <!-- Sidebar -->
     <Fragment slot="sidebar">
         <div class="acc-sidebar">
-            <PricingSidebar price={accommodation.price} extraInfo={accommodation.extraInfo} policies={accommodation.policies} lang={locale} />
-            <PriceAlertButton
-                client:idle
-                accommodationId={accommodation.id}
-                apiUrl={getApiUrl()}
-                locale={locale}
-            >
-                <SignInCtaCard
-                    locale={locale}
-                    returnPath={`alojamientos/${slug}`}
-                    icon="bell"
-                    title={t('accommodations.detail.priceAlert.signInTitle', 'Alertas de precio')}
-                    hint={t('accommodations.detail.priceAlert.signInHint', 'Necesitás una cuenta para que te avisemos si baja el precio.')}
-                    ctaLabel={t('accommodations.detail.priceAlert.signInCta', 'Iniciá sesión para crear la alerta')}
-                />
-            </PriceAlertButton>
+            <PricingSidebar accommodationId={accommodation.id} price={accommodation.price} extraInfo={accommodation.extraInfo} policies={accommodation.policies} lang={locale} />
+            <ListingPriceAlert accommodationId={accommodation.id} apiUrl={getApiUrl()} locale={locale} slug={slug} placement="sidebar" />
             <ContactCard>
                 <ContactHostShell contactInfo={accommodation.contactInfo} locale={locale}>
                     <ListingContactCard

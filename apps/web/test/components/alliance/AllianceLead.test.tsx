@@ -134,6 +134,39 @@ describe('AllianceLead', () => {
 
     // ── Render — generic fields ─────────────────────────────────────────────
 
+    it.each([
+        'partner',
+        'sponsor',
+        'service_provider'
+    ] as const)('uses the account email notice and flat accent submit for %s', async (kind) => {
+        mockReadCachedAuthMe.mockReturnValue({
+            isAuthenticated: true,
+            user: { email: 'account@example.com', name: 'Applicant' }
+        });
+        renderForm(kind);
+        expect(await screen.findByText('account@example.com')).toBeInTheDocument();
+        expect(screen.queryByLabelText(/correo electrónico/i)).toBeNull();
+        expect(screen.getByRole('button', { name: /enviar solicitud/i })).toHaveClass(
+            'btn-gradient--accent',
+            'btn-gradient--flat'
+        );
+    });
+
+    it('associates sponsorship examples and a persistent hint with the native text field', () => {
+        renderForm('sponsor');
+        const input = screen.getByLabelText(/^sponsorshipInterest/i);
+        expect(input).toHaveAttribute(
+            'placeholder',
+            'alliance-leads.form.placeholders.sponsorshipInterest'
+        );
+        expect(input).toHaveAccessibleDescription('alliance-leads.form.hints.sponsorshipInterest');
+        fireEvent.click(screen.getByRole('button', { name: /enviar solicitud/i }));
+        expect(input).toHaveAttribute(
+            'aria-describedby',
+            'al-sponsorshipInterest-hint al-sponsorshipInterest-error'
+        );
+    });
+
     describe('Generic fields (all kinds)', () => {
         it('renders contactName input', () => {
             renderForm();

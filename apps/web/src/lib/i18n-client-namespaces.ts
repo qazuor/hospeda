@@ -61,6 +61,7 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'accommodations.amenityNames',
     'accommodations.comparison',
     'accommodations.detail',
+    'accommodations.entity',
     'accommodations.featureCategories',
     'accommodations.featureNames',
     'accommodations.types',

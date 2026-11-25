@@ -149,9 +149,12 @@ describe('TEST:B13a:25 PriceAlertButton effective-set gate', () => {
 
         render(<PriceAlertButton {...PROPS} />);
 
-        expect(
-            await screen.findByRole('link', { name: /avisame si baja el precio/i })
-        ).toBeInTheDocument();
+        const upsell = await screen.findByRole('link', {
+            name: /avisame si baja el precio.*solo para turistas vip/i
+        });
+        expect(upsell).toHaveAttribute('href', '/es/planes/turistas/precios/');
+        expect(upsell).toHaveTextContent('VIP');
+        expect(upsell.querySelector('svg[aria-hidden="true"]')).toBeInTheDocument();
     });
     it('locks without capability and disables at the exact quota', async () => {
         mockGetEffectiveSet.mockResolvedValue({
@@ -161,9 +164,12 @@ describe('TEST:B13a:25 PriceAlertButton effective-set gate', () => {
         });
         mockAlertsList.mockResolvedValue({ ok: true, data: { items: [] } });
         const { unmount } = render(<PriceAlertButton {...PROPS} />);
-        expect(
-            await screen.findByRole('link', { name: /avisame si baja el precio/i })
-        ).toBeInTheDocument();
+        const upsell = await screen.findByRole('link', {
+            name: /avisame si baja el precio.*solo para turistas vip/i
+        });
+        expect(upsell).toHaveAttribute('href', '/es/planes/turistas/precios/');
+        expect(upsell).toHaveTextContent('VIP');
+        expect(upsell.querySelector('svg[aria-hidden="true"]')).toBeInTheDocument();
         unmount();
         mockGetEffectiveSet.mockResolvedValue({
             entitlements: { price_alerts: 1 },
@@ -202,7 +208,9 @@ describe('TEST:B13a:25 PriceAlertButton effective-set gate', () => {
         mockAlertsList.mockResolvedValue({ ok: true, data: { items: [] } });
         render(<PriceAlertButton {...PROPS} />);
         expect(
-            await screen.findByRole('link', { name: /avisame si baja el precio/i })
+            await screen.findByRole('link', {
+                name: /avisame si baja el precio.*solo para turistas vip/i
+            })
         ).toBeInTheDocument();
     });
     it('translates an ENTITLEMENT_REQUIRED refusal and hides the API English message', async () => {

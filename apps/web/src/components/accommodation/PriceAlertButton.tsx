@@ -35,7 +35,7 @@
  * action, not needed for first interaction).
  */
 
-import { BellIcon } from '@repo/icons';
+import { BellIcon, LockIcon } from '@repo/icons';
 import { type ReactNode, useCallback, useEffect, useState } from 'react';
 import { Spinner } from '@/components/shared/feedback/Spinner';
 import { useAccountPermissions } from '@/hooks/use-account-permissions';
@@ -315,7 +315,20 @@ export function PriceAlertButton({
                     className={styles.priceAlertButtonCreate}
                     href={pricingHref}
                 >
+                    <LockIcon
+                        size="sm"
+                        aria-hidden="true"
+                    />
                     {t('accommodations.detail.priceAlert.locked', 'Avisame si baja el precio')}
+                    <span
+                        className={styles.vipBadge}
+                        aria-hidden="true"
+                    >
+                        {t('common.promotions.vipBadge', 'VIP')}
+                    </span>
+                    <span className="sr-only">
+                        {t('accommodations.detail.priceAlert.vipOnly', 'Solo para turistas VIP')}
+                    </span>
                 </a>
             </div>
         );
@@ -338,7 +351,7 @@ export function PriceAlertButton({
         );
     }
 
-    // No existing alert — the primary create action.
+    // No existing alert — a secondary action alongside the contact CTA.
     return (
         <div className={styles.priceAlertWrapper}>
             <button

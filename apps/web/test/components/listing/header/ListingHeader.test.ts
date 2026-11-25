@@ -52,6 +52,19 @@ describe('the three detail pages share one header (AC-8)', () => {
 });
 
 describe('ListingHeader frame', () => {
+    it('wraps rating chips without breaking review or bookmark phrases', () => {
+        expect(HEADER).toMatch(
+            /\.listing-header__rating\s*\{[^}]*flex-wrap: wrap;[^}]*gap: var\(--space-2/
+        );
+        for (const chip of ['reviews-count', 'bookmark-count']) {
+            expect(HEADER).toMatch(
+                new RegExp(`\\.listing-header__${chip}\\s*\\{[^}]*white-space: nowrap;`)
+            );
+        }
+        expect(mobileStyles(HEADER)).toMatch(
+            /\.listing-header__bookmark-count--after-rating\s*\{[^}]*border-left: 0;/
+        );
+    });
     it('keeps every WaveHeader compact hook the old headers used (AC-12)', () => {
         const all = [HEADER, BADGES, LOCATION].map(markup).join('\n');
         for (const cls of [

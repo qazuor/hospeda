@@ -166,6 +166,29 @@ describe('NewsletterForm authed email', () => {
         expect(screen.getByText(USER_EMAIL)).toHaveAttribute('title', USER_EMAIL);
     });
 
+    it('resolves the account on a cold mobile page without relying on the desktop session cache', async () => {
+        vi.stubGlobal('innerWidth', 375);
+        vi.mocked(fetch).mockResolvedValueOnce({
+            ok: true,
+            json: async () => ({ data: { isAuthenticated: true, actor: { email: USER_EMAIL } } })
+        } as Response);
+
+        render(
+            <NewsletterForm
+                isAuthenticated={false}
+                apiUrl={API_URL}
+                locale="es"
+            />
+        );
+
+        expect(await screen.findByText(USER_EMAIL)).toHaveAttribute('title', USER_EMAIL);
+        expect(screen.queryByRole('textbox')).toBeNull();
+        expect(fetch).toHaveBeenCalledWith(
+            `${API_URL}/api/v1/public/auth/me`,
+            expect.objectContaining({ credentials: 'include' })
+        );
+    });
+
     it('HOS-1773 — groups "Configurar" with the button, apart from the email block', async () => {
         seedAuthMeCache({ isAuthenticated: true, email: USER_EMAIL });
 

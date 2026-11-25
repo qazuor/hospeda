@@ -51,7 +51,8 @@ export function tabLabelKey({ tab }: { readonly tab: FavoritesTabKey }): string 
  */
 export function entityTypeLabelKey({ entityType }: { readonly entityType: string }): string | null {
     const known = COLLECTION_ENTITY_TYPES.find((type) => type === entityType);
-    return known ? COLLECTION_FILTER_LABELS[known].key : null;
+    if (known === 'ACCOMMODATION') return 'accommodations.entity.name';
+    return known ? `account.favorites.cardTypes.${known.toLowerCase()}` : null;
 }
 
 /**

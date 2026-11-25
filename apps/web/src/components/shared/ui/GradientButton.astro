@@ -33,6 +33,8 @@ interface Props {
   readonly variant?: 'primary' | 'accent' | 'outline-primary' | 'outline-accent';
   readonly size?: 'sm' | 'md' | 'lg';
   readonly shape?: 'pill' | 'rounded';
+  /** Use a solid accent fill without a shadow or hover lift. Defaults to false. */
+  readonly flat?: boolean;
   readonly icon?: string;
   readonly class?: string;
   readonly id?: string;
@@ -67,6 +69,7 @@ const {
   variant = 'accent',
   size = 'md',
   shape = 'pill',
+  flat = false,
   icon,
   class: extraClass,
   id,
@@ -82,6 +85,7 @@ const classes = [
   `btn-gradient--${variant}`,
   `btn-gradient--${size}`,
   shape === 'rounded' ? 'btn-gradient--shape-rounded' : '',
+  flat ? 'btn-gradient--flat' : '',
   extraClass ?? '',
 ]
   .filter(Boolean)

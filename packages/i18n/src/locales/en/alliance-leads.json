@@ -42,7 +42,11 @@
         "placeholders": {
             "destinationId": "Select a destination",
             "benefitType": "Select a benefit",
-            "partnerType": "Select an organization type"
+            "partnerType": "Select an organization type",
+            "sponsorshipInterest": "E.g. brand placement, sponsored content or campaigns"
+        },
+        "hints": {
+            "sponsorshipInterest": "Tell us what you would like to sponsor and your brand's goals."
         },
         "benefitTypeOptions": {
             "PERCENTAGE": "Percentage discount",

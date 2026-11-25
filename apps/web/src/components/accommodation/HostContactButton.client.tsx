@@ -10,10 +10,10 @@ import {
     isListingContactPanelReady,
     subscribeToListingContactReadiness
 } from '@/components/listing/contact/listing-contact-readiness';
+import { useListingConversationAction } from '@/hooks/use-listing-conversation-action';
 import { WebEvents } from '@/lib/analytics/events';
 import { trackEvent } from '@/lib/analytics/umami-client';
 import type { SupportedLocale } from '@/lib/i18n';
-import { createTranslations } from '@/lib/i18n';
 import { openListingContactPanel } from '@/lib/listing-contact/listing-contact-events';
 import styles from './HostContactButton.module.css';
 
@@ -27,7 +27,7 @@ export interface HostContactButtonProps {
 
 /** Opens the listing contact panel from the host section. */
 export function HostContactButton({ listingId, locale, panelId }: HostContactButtonProps) {
-    const { t } = createTranslations(locale);
+    const action = useListingConversationAction({ accommodationId: listingId, locale });
     const panelReady = useSyncExternalStore(
         subscribeToListingContactReadiness,
         () => isListingContactPanelReady({ panelId }),
@@ -51,14 +51,13 @@ export function HostContactButton({ listingId, locale, panelId }: HostContactBut
     }
 
     return (
-        // biome-ignore lint/a11y/useValidAnchor: navigates to the real sidebar contact section until the panel is ready.
         <a
-            href="#contact"
-            className={`${styles.button} btn-gradient--accent`}
-            aria-haspopup={panelReady ? 'dialog' : undefined}
-            onClick={activate}
+            href={action.href}
+            className={`${styles.button} btn-gradient--accent btn-gradient--flat`}
+            aria-haspopup={!action.hasConversation && panelReady ? 'dialog' : undefined}
+            onClick={action.hasConversation ? undefined : activate}
         >
-            {t('accommodations.detail.listingContact.bar.inquire')}
+            {action.label}
         </a>
     );
 }
