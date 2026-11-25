@@ -6,7 +6,7 @@
  * @module AiChatFab
  */
 
-import { ChatIcon, SparkleIcon } from '@repo/icons';
+import { AskToAiIcon } from '@repo/icons';
 import type { AiChatEntityType } from '@repo/schemas';
 import { forwardRef } from 'react';
 import { resolveAiChatCopy } from '@/lib/ai-chat-copy';
@@ -47,24 +47,15 @@ export const AiChatFab = forwardRef<HTMLButtonElement, AiChatFabProps>(function 
             aria-label={resolveAiChatCopy({ t, entityType, suffix: 'fabLabel' })}
             data-dock-item
         >
-            <span className={styles.icon}>
-                <ChatIcon
-                    size={24}
-                    weight="regular"
-                    aria-hidden="true"
-                />
-                <span
-                    className={styles.badge}
-                    data-testid="ai-chat-fab-badge"
-                >
-                    <SparkleIcon
-                        size={10}
-                        weight="fill"
-                        aria-hidden="true"
-                        data-testid="ai-chat-fab-sparkle"
-                    />
-                </span>
-            </span>
+            {/* HOS-2607: one AI glyph (the robot every other AI surface of the
+                site uses) instead of a chat bubble plus a sparkle badge: the bubble
+                was the same one «Consultar» draws, and the 10px badge did not read. */}
+            <AskToAiIcon
+                size={24}
+                weight="regular"
+                aria-hidden="true"
+                data-testid="ai-chat-fab-icon"
+            />
         </button>
     );
 });

@@ -128,6 +128,13 @@ describe('experience and venue contact bar presence (AC-2.8, AC-2.9, HOS-2579 §
 
     it('the venue primary follows the menu/socials decision and its panel the panel mode or a gated WhatsApp', () => {
         expect(venuePage).toMatch(/contactMode\.kind === 'menu'\s*\?\s*\(\{ kind: 'menu'/);
+        // HOS-2607: the menu glyph is decided by the venue type, never hard-coded.
+        expect(venuePage).toContain(
+            'const { glyph: venueMenuGlyph } = resolveVenueMenuGlyph({ type: venue.type });'
+        );
+        expect(venuePage).toMatch(
+            /\{ kind: 'menu', href: contactMode\.href, glyph: venueMenuGlyph \}/
+        );
         expect(venuePage).toMatch(/contactMode\.kind === 'panel'\s*\?\s*\(\{ kind: 'inquire' \}/);
         expect(venuePage).toMatch(
             /contactMode\.kind === 'panel' \|\| venueWhatsApp\?\.mode === 'LOGGED_IN_ONLY'/
