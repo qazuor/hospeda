@@ -28,6 +28,7 @@ import {
     PRICING_PAGE_PATH_BY_VERTICAL
 } from '@/lib/publish/publish-page-paths';
 import { resolvePublishPageSlot } from '@/lib/publish/publish-page-slot';
+import { resolvePublishPageFlow } from '@/lib/publish/publish-page-variant';
 import { buildUrl } from '@/lib/urls';
 
 export const prerender = false;
@@ -48,6 +49,15 @@ const slot = await resolvePublishPageSlot({
     pathname: Astro.url.pathname,
     wantsCreate: Astro.url.searchParams.get('create') === '1'
 });
+
+const { variant, redirectUrl } = resolvePublishPageFlow({
+    isAuthenticated,
+    permissions: Astro.locals.user?.permissions ?? [],
+    vertical: VERTICAL,
+    searchParams: Astro.url.searchParams,
+    slot
+});
+if (redirectUrl) return Astro.redirect(redirectUrl);
 
 // The expired-trial banner this page used to render read the visitor's trial
 // from the old billing (`GET /protected/billing/trial/status`), a route the API
@@ -126,6 +136,7 @@ const benefits = [
     )}
 >
     <PublishHero
+        variant={variant}
         tagline={t('publish.experience.hero.tagline', 'Para quienes ofrecen experiencias')}
         title={t('publish.experience.hero.title', 'Publicá tu experiencia y llenala')}
         body={t(
@@ -147,6 +158,7 @@ const benefits = [
     </PublishFormSlot>
 
     <PublishHowItWorks
+        variant={variant}
         stepsTagline={t('publish.steps.tagline', 'Es así de fácil')}
         stepsTitle={t('publish.steps.title', '¿Cómo funciona?')}
         steps={steps}
@@ -156,6 +168,7 @@ const benefits = [
     />
 
     <PublishPlanLinks
+        variant={variant}
         locale={locale}
         plansUrl={buildUrl({ locale, path: PLANS_PAGE_PATH_BY_VERTICAL[VERTICAL] })}
         pricingUrl={buildUrl({ locale, path: PRICING_PAGE_PATH_BY_VERTICAL[VERTICAL] })}

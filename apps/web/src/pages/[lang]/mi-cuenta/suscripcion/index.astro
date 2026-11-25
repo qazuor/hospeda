@@ -37,12 +37,13 @@ import { ExpiredDeclinedSignupNotice } from '@/components/account/ExpiredDecline
 import { PromoCodeRedeem } from '@/components/account/PromoCodeRedeem.client';
 import StripMercadoPagoReturnParams from '@/components/billing/StripMercadoPagoReturnParams.astro';
 import { SubscriptionReturn } from '@/components/billing/SubscriptionReturn.client';
+import { AddonPurchaseGate } from '@/components/billing/addon-purchase/AddonPurchaseGate.client';
 import { TrialStatusEnum } from '@repo/schemas';
 import { billingSubscriptionApi, publishApi, type PublishVerticalSlug } from '@/lib/api/endpoints-protected';
 import { parseOwnSubscriptions } from '@/lib/billing/self-cancel';
 import { parseReturnSubscriptionId, selectDeclinedNoticesToShow } from '@/lib/billing/subscription-return';
 import { getPlanName } from '@/lib/billing-i18n';
-import { plansPathForVertical } from '@/lib/billing/addon-purchase';
+import { eligibleSubscriptionTargets, plansPathForVertical } from '@/lib/billing/addon-purchase';
 import { resolveMySubscriptionVerticalLabelKey } from '@/lib/billing/my-subscription-summary';
 import { buildUrl } from '@/lib/urls';
 import { createTranslations } from '@/lib/i18n';
@@ -85,6 +86,13 @@ try {
 	 ownSubscriptions = null;
 }
 
+const hasSubscriptions = ownSubscriptions === null || ownSubscriptions.subscriptions.length > 0;
+
+const addonVerticals = [...new Set(eligibleSubscriptionTargets({
+    subscriptions: ownSubscriptions?.subscriptions ?? [],
+    compatibleVerticals: ownSubscriptions?.subscriptions.map((row) => row.vertical) ?? []
+}).map((row) => row.vertical))];
+
 // HOS-1979: the payer returns from Mercado Pago with `?subscription=<our id>`.
 // Read that attempt's real status here, server-side; the island polls from there.
 const returnSubscriptionId = parseReturnSubscriptionId({ search: Astro.url.search });
@@ -109,7 +117,7 @@ if (returnSubscriptionId) {
 	<StripMercadoPagoReturnParams slot="head-early" />
 	<PageHeader locale={locale} title={title}>
 		<PageHelpLink slot="help" locale={locale} />
-		<SubscriptionTabs slot="tabs" locale={locale} current="plan" />
+		<SubscriptionTabs slot="tabs" locale={locale} current="plan" showAddons={hasSubscriptions} />
 	</PageHeader>
 	{returnSubscriptionId && <SubscriptionReturn
 		client:load
@@ -147,6 +155,11 @@ if (returnSubscriptionId) {
 	))}
 	<div data-subscription-sections class="sub-page__sections">
 	<MySubscriptions locale={locale} result={ownSubscriptions} plansPath={resolveEmptySubscriptionPlansPath({ roles: user.roles })} />
+    {addonVerticals.map((vertical) => (
+        <Section id={`addons-${vertical}`} helpId="section:complementos.recurrentes" title={t('billing.addonPurchase.verticalTitle', undefined, { vertical: t(resolveMySubscriptionVerticalLabelKey({ vertical })) })}>
+            <AddonPurchaseGate client:visible locale={locale} returnOrderRequestId={null} accountEmail={user.email} onlyVertical={vertical} plansPath={plansPathForVertical({ vertical })} />
+        </Section>
+    ))}
 	<TrialSummary locale={locale} entries={trialSummaries} liveSubscriptionVerticals={ownSubscriptions?.subscriptions.map((row) => row.vertical) ?? []} audience={isOwnerAudience({ roles: user.roles }) ? 'owner' : 'tourist'} />
 	{trialSummaries.some(({ summary }) => summary.status === TrialStatusEnum.TRIAL_ACTIVE) && <div data-testid="trial-promo-redeem">
 		<Section title={t('account.subscription.promoRedeem.trialSectionTitle')} helpId="section:suscripcion.promo">

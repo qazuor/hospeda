@@ -5,7 +5,12 @@ import { AddonPurchaseGate } from '@/components/billing/addon-purchase/AddonPurc
 const { listMine } = vi.hoisted(() => ({ listMine: vi.fn() }));
 vi.mock('@/lib/api/endpoints-protected', () => ({ billingSubscriptionApi: { listMine } }));
 vi.mock('@/components/billing/addon-purchase/AddonPurchase.client', () => ({
-    AddonPurchase: () => <div data-testid="addon-purchase-flow" />
+    AddonPurchase: ({ accountVerticals }: { accountVerticals: readonly string[] | null }) => (
+        <div
+            data-testid="addon-purchase-flow"
+            data-verticals={JSON.stringify(accountVerticals)}
+        />
+    )
 }));
 
 const mount = (returnOrderRequestId: string | null = null) =>
@@ -29,6 +34,23 @@ const subscriptions = (count: number) => ({
 beforeEach(() => vi.clearAllMocks());
 
 describe('AddonPurchaseGate (owner decision 3)', () => {
+    it('restricts a subscription section to its vertical and skips the empty-state read', () => {
+        render(
+            <AddonPurchaseGate
+                locale="es"
+                returnOrderRequestId={null}
+                accountEmail="payer@example.test"
+                plansPath="planes"
+                onlyVertical="venue"
+            />
+        );
+        expect(screen.getByTestId('addon-purchase-flow')).toHaveAttribute(
+            'data-verticals',
+            '["venue"]'
+        );
+        expect(listMine).not.toHaveBeenCalled();
+        expect(screen.queryByTestId('addons-no-subscription')).toBeNull();
+    });
     it('shows «subscribe first» with the vertical plans CTA when the account has no subscription', async () => {
         // Arrange
         listMine.mockResolvedValue(subscriptions(0));

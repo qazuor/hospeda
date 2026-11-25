@@ -14,6 +14,8 @@ export const AddonOfferSchema = z.strictObject({
     price: z.int().positive(),
     currency: z.literal('ARS'),
     compatibleVerticals: z.array(z.string()),
+    /** Entitlement and limit keys granted by this immutable addon version. */
+    grantedKeys: z.array(z.string()),
     scopeType: z.enum(['LISTING', 'VERTICAL_SUBSCRIPTION', 'USER', 'GLOBAL']),
     validity: z.enum(['FIXED_DAYS', 'WHILE_SUBSCRIPTION_ALIVE']),
     validityDays: z.int().positive().nullable(),

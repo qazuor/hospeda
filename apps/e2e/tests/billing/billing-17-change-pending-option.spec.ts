@@ -145,6 +145,9 @@ test.describe('TEST:1735:16 AC:1735:16 change the billing option with a pending 
                 'href',
                 new RegExp(`/es/suscriptores/checkout/\\?opcion=${monthlyOptionId}$`)
             );
+            // HOS-2627: the toggle filters the card buttons, so the annual link only
+            // exists in the accessibility tree once Anual is selected.
+            await page.locator('[data-pricing-toggle="annual"]').click();
             const annual = basic.getByRole('link', { name: /suscribirme.*anual/i });
             await expect(annual).toHaveAttribute(
                 'href',

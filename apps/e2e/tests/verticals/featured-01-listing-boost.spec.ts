@@ -171,7 +171,7 @@ test.describe('TEST:HOS-2138:1-2 listing boost features the listing @p0 @billing
         );
 
         await page.goto(`${WEB_URL}/es/mi-cuenta/complementos/?listing=${z.id}#recurring-addons`);
-        const row = page.getByTestId(`recurring-addon-${purchase.instanceId}`);
+        const row = page.locator(`[data-row="${purchase.instanceId}"]`);
         await expect(row).toBeVisible();
         await row.getByTestId(`recurring-addon-withdraw-${purchase.instanceId}`).click();
         await row

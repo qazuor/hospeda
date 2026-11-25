@@ -83,7 +83,9 @@ for (const page of PAGES) {
 
         it('never redirects a signed-out visitor to login (D-1, AC-5)', () => {
             expect(src).not.toContain('buildLoginRedirect');
-            expect(src).not.toContain('Astro.redirect');
+            // D10 permits only the shared flow's authenticated draft resume.
+            expect(src.match(/Astro\.redirect\([^)]*\)/g)).toEqual(['Astro.redirect(redirectUrl)']);
+            expect(src).toContain('if (redirectUrl) return Astro.redirect(redirectUrl)');
         });
 
         it('resolves its form slot through the shared resolver', () => {

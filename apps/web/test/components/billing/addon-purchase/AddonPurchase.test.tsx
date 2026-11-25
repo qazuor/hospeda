@@ -31,7 +31,8 @@ const baseOffer = {
     scopeType: 'LISTING',
     validity: 'WHILE_SUBSCRIPTION_ALIVE',
     validityDays: null,
-    freeUnderGrantVerticals: []
+    freeUnderGrantVerticals: [],
+    grantedKeys: ['featured_listing']
 };
 
 const ONE_TIME = {

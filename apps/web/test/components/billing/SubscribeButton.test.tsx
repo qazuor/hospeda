@@ -21,7 +21,7 @@ describe('SubscribeButton (TEST:V8a:3 / TEST:V8a:4)', () => {
         );
         const container = await screen.findByTestId('subscribe-button');
         expect(container).toHaveAttribute('data-destination', 'publish');
-        expect(container.querySelector('a')).toHaveAttribute('href', '/es/publicar/');
+        expect(container.querySelector('a')).toHaveAttribute('href', '/es/publicar/?desde=planes');
         expect(container).toHaveTextContent('14 días');
         expect(container).toHaveTextContent(/empieza cuando publicás/i);
     });
@@ -40,7 +40,7 @@ describe('SubscribeButton (TEST:V8a:3 / TEST:V8a:4)', () => {
         expect(container).toHaveAttribute('data-destination', 'signed-out');
         expect(container.querySelector('a')).toHaveAttribute(
             'href',
-            '/es/auth/signup/?returnUrl=%2Fes%2Fpublicar%2F'
+            '/es/auth/signup/?returnUrl=%2Fes%2Fpublicar%2F%3Fdesde%3Dplanes'
         );
         expect(container).not.toHaveTextContent(/días/);
     });

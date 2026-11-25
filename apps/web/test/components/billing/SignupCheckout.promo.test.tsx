@@ -47,7 +47,11 @@ describe('HOS-2382 checkout confirmation with a promo', () => {
             />
         );
         const summary = screen.getByTestId('signup-checkout-plan-summary');
-        expect(text(summary)).toContain('Básico · $ 14.400 por mes');
+        expect(within(summary).getByText('Básico')).toBeInTheDocument();
+        expect(
+            within(summary).getByText('$ 14.400', { exact: false, selector: 'dd' })
+        ).toBeInTheDocument();
+        expect(within(summary).getByText('por mes', { exact: true })).toBeInTheDocument();
         expect(text(within(summary).getByTestId('signup-checkout-list-price'))).toBe('$ 18.000');
         expect(text(screen.getByTestId('signup-checkout-promo'))).toBe(
             'Con el código SMOKES23: $ 14.400 por mes durante 3 cobros (después $ 18.000).'
@@ -83,9 +87,10 @@ describe('HOS-2382 checkout confirmation with a promo', () => {
                 planSummary={basePlan}
             />
         );
-        expect(text(screen.getByTestId('signup-checkout-plan-summary'))).toBe(
-            'Básico · $ 18.000 por mes'
-        );
+        const summary = screen.getByTestId('signup-checkout-plan-summary');
+        expect(within(summary).getByText('Básico')).toBeInTheDocument();
+        expect(within(summary).getByText('$ 18.000')).toBeInTheDocument();
+        expect(within(summary).getByText('por mes')).toBeInTheDocument();
         expect(screen.queryByTestId('signup-checkout-promo')).toBeNull();
         expect(screen.queryByTestId('signup-checkout-list-price')).toBeNull();
     });

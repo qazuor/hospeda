@@ -29,6 +29,7 @@
  * it from here would produce two competing `FAQPage` blocks on one URL.
  */
 
+import { ChevronDownIcon } from '@repo/icons';
 import SalesSection from './SalesSection.astro';
 
 /** One question and its answer, both already translated. */
@@ -55,7 +56,10 @@ const { tagline, title, items, warm = false } = Astro.props;
         {
             items.map((item) => (
                 <details class="faq__item">
-                    <summary class="faq__question">{item.q}</summary>
+                    <summary class="faq__question">
+                        <span>{item.q}</span>
+                        <span class="faq__chevron" aria-hidden="true"><ChevronDownIcon size="sm" /></span>
+                    </summary>
                     <p class="faq__answer">{item.a}</p>
                 </details>
             ))
@@ -76,6 +80,10 @@ const { tagline, title, items, warm = false } = Astro.props;
     }
 
     .faq__question {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-4);
         font-family: var(--font-heading);
         font-weight: 600;
         font-size: var(--text-body-lg);
@@ -87,6 +95,18 @@ const { tagline, title, items, warm = false } = Astro.props;
 
     .faq__question::-webkit-details-marker {
         display: none;
+    }
+
+    .faq__chevron {
+        display: inline-flex;
+        flex-shrink: 0;
+        transition: transform var(--duration-normal) ease;
+    }
+
+    .faq__item[open] .faq__chevron { transform: rotate(180deg); }
+    .faq__question:focus-visible { outline: 2px solid var(--brand-accent); outline-offset: 2px; }
+    @media (prefers-reduced-motion: reduce) {
+        .faq__chevron { transition: none; }
     }
 
     .faq__answer {

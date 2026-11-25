@@ -81,7 +81,10 @@ export async function openAddonPurchase(args: {
             response.request().method() === 'GET',
         { timeout: 30_000 }
     );
-    await args.page.goto(`${WEB_URL}/es/mi-cuenta/complementos/`);
+    // HOS-2627: add-ons are bought inside each vertical's subscription area; the
+    // island hydrates when its section scrolls into view.
+    await args.page.goto(`${WEB_URL}/es/mi-cuenta/suscripcion/`);
+    await args.page.locator('[id^="addons-"]').first().scrollIntoViewIfNeeded();
     const response = await responsePromise;
     expect(response.ok(), `Addon offers HTTP ${response.status()}`).toBe(true);
     await args.page.getByTestId(`addon-offer-${args.productId}`).click();

@@ -12,6 +12,23 @@ import {
 
 const BASE = { ownsHostTradeListing: false, mcpEnabled: true, activeSection: 'mi-cuenta' } as const;
 
+describe('subscription-only add-ons navigation', () => {
+    it.each([
+        true,
+        false,
+        undefined
+    ])('hasSubscription=%s gates the add-ons entry', (hasSubscription) => {
+        const model = buildAccountNavModel({ ...BASE, roles: ['USER'], hasSubscription });
+        const ids = model.groups.flatMap((group) => group.items.map(({ item }) => item.id));
+        expect(ids.includes('addons')).toBe(hasSubscription === true);
+        expect(ids).toContain('subscription');
+        const shellIds = model.shell.groups.flatMap((group) =>
+            group.items.map(({ item }) => item.id)
+        );
+        expect(shellIds.includes('addons')).toBe(hasSubscription === true);
+    });
+});
+
 /**
  * The effective permissions the seed grants each role, for the verticals only.
  * HOS-2562: «Asistentes de IA» reads PERMISSIONS (never roles), so a test that
