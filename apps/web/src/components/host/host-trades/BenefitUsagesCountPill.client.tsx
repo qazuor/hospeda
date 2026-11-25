@@ -43,21 +43,29 @@ export function BenefitUsagesCountPill({ locale }: BenefitUsagesCountPillProps) 
     const { tPlural } = createTranslations(locale);
     const [count, setCount] = useState(0);
 
-    const readCount = useCallback(async () => {
+    const readCount = useCallback(async ({ isActive }: { readonly isActive: () => boolean }) => {
         const result = await hostTradesApi.countPendingUsages();
+        // A read that resolves after unmount is dropped: updating state then
+        // reaches into a torn-down environment (HOS-2634).
+        if (!isActive()) return;
         // A failed read renders nothing rather than a zero: claiming "nothing
         // pending" to a host who has three is worse than showing no badge.
         setCount(result.ok ? result.data.count : 0);
     }, []);
 
     useEffect(() => {
-        void readCount();
+        let active = true;
+        const isActive = () => active;
+        void readCount({ isActive });
 
         const onResolved = () => {
-            void readCount();
+            void readCount({ isActive });
         };
         window.addEventListener(BENEFIT_USAGES_UPDATED_EVENT, onResolved);
-        return () => window.removeEventListener(BENEFIT_USAGES_UPDATED_EVENT, onResolved);
+        return () => {
+            active = false;
+            window.removeEventListener(BENEFIT_USAGES_UPDATED_EVENT, onResolved);
+        };
     }, [readCount]);
 
     if (count <= 0) {
