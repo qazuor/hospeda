@@ -6,7 +6,8 @@
  *
  * Sections: appearance (theme, language), notifications (email, push, SMS and,
  * only for an account that owns listings with an AI assistant, the weekly AI
- * digest), newsletter, search history. The newsletter and the
+ * digest, and for a VIP tourist the weekly promotions digest), newsletter,
+ * search history. The newsletter and the
  * search history have their own sections because their data comes from their
  * own endpoints (the ones the newsletter and history pages used before).
  *
@@ -15,6 +16,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { getEntitlementsCached } from '@/lib/entitlements-cache';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createT } from '@/lib/i18n';
 import { applyThemeChoice, markThemeSynced } from '@/lib/theme';
@@ -53,6 +55,8 @@ interface WebSettings {
     notifications: NotificationSettings;
     /** Weekly email of unanswered AI chat questions (HOS-2101). Opt-out. */
     aiQuestionsDigest: boolean;
+    /** Weekly email of the week's new promotions, VIP tourists only (HOS-2589). Opt-out. */
+    vipPromotionsDigest: boolean;
     /** Search-history recording (opt-out: absent means enabled). */
     searchHistoryEnabled: boolean;
 }
@@ -65,6 +69,7 @@ interface UserApiResponse {
             readonly languageWeb?: string;
             readonly notifications?: Partial<NotificationSettings>;
             readonly aiQuestionsDigest?: boolean;
+            readonly vipPromotionsDigest?: boolean;
             readonly searchHistoryEnabled?: boolean;
         } | null;
     };
@@ -96,6 +101,7 @@ const DEFAULT_SETTINGS: WebSettings = {
     languageWeb: 'es',
     notifications: { enabled: true, allowEmails: true, allowPush: false, allowSms: false },
     aiQuestionsDigest: true,
+    vipPromotionsDigest: true,
     searchHistoryEnabled: true
 };
 
@@ -124,6 +130,8 @@ async function loadSettings({
             allowSms: raw?.notifications?.allowSms ?? defaults.notifications.allowSms
         },
         aiQuestionsDigest: raw?.aiQuestionsDigest ?? defaults.aiQuestionsDigest,
+        // HOS-2589: only an explicit `false` opts out of the VIP promotions digest.
+        vipPromotionsDigest: raw?.vipPromotionsDigest !== false,
         // Explicit `false` is the opt-out; everything else is enabled.
         searchHistoryEnabled: raw?.searchHistoryEnabled !== false
     };
@@ -162,6 +170,24 @@ export function PreferenceToggles({
     useEffect(() => {
         void load();
     }, [load]);
+
+    // HOS-2589 AC-20: the VIP promotions digest row is shown only to a VIP tourist,
+    // decided by the TOURIST effective set (a failed read hides it: fail-closed).
+    const [isVipTourist, setIsVipTourist] = useState(false);
+    useEffect(() => {
+        let cancelled = false;
+        const check = async (): Promise<void> => {
+            const effectiveSet = await getEntitlementsCached({ vertical: 'tourist' });
+            if (cancelled) return;
+            setIsVipTourist(
+                !effectiveSet.failed && (effectiveSet.entitlements.vip_promotions_access ?? 0) > 0
+            );
+        };
+        void check();
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     /** PATCHes one slice of `settings` and merges it into the island state. */
     const patchSettings = async ({
@@ -237,6 +263,15 @@ export function PreferenceToggles({
                 patchSettings({
                     patch: { aiQuestionsDigest: next },
                     local: { aiQuestionsDigest: next }
+                })
+        });
+
+    const toggleVipDigest = (next: boolean) =>
+        notificationsSave.run({
+            save: () =>
+                patchSettings({
+                    patch: { vipPromotionsDigest: next },
+                    local: { vipPromotionsDigest: next }
                 })
         });
 
@@ -351,6 +386,17 @@ export function PreferenceToggles({
                                 locale={locale}
                                 checked={settings.aiQuestionsDigest}
                                 onChange={toggleDigest}
+                            />
+                        ) : null}
+                        {isVipTourist ? (
+                            <SwitchRow
+                                label={t('account.preferences.vipPromotionsDigest.label')}
+                                description={t(
+                                    'account.preferences.vipPromotionsDigest.description'
+                                )}
+                                locale={locale}
+                                checked={settings.vipPromotionsDigest}
+                                onChange={toggleVipDigest}
                             />
                         ) : null}
                     </Section>

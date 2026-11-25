@@ -23,8 +23,8 @@ import type { NewsletterCampaign } from '@repo/schemas';
 import { NewsletterCampaignLocaleFilterEnum, NewsletterCampaignStatusEnum } from '@repo/schemas';
 import { act, fireEvent, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import type { ReactNode } from 'react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { type ReactNode, useEffect, useRef } from 'react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderWithProviders } from '../helpers/render-with-providers';
 
 // ── Mocks ─────────────────────────────────────────────────────────────────────
@@ -35,45 +35,63 @@ const mockTestSendMutateAsync = vi.fn();
 const mockCancelMutateAsync = vi.fn();
 const mockSendMutateAsync = vi.fn();
 
-vi.mock('@/hooks/newsletter', () => ({
-    useCreateCampaign: () => ({
-        mutateAsync: mockCreateMutateAsync,
-        isPending: false
-    }),
-    useUpdateCampaign: (_id: string) => ({
-        mutateAsync: mockUpdateMutateAsync,
-        isPending: false,
-        mutate: mockUpdateMutateAsync
-    }),
-    useTestSendCampaign: (_id: string) => ({
-        mutateAsync: mockTestSendMutateAsync,
-        isPending: false
-    }),
-    useCancelCampaign: (_id: string) => ({
-        mutateAsync: mockCancelMutateAsync,
-        isPending: false,
-        mutate: mockCancelMutateAsync
-    }),
-    useSendCampaign: (_id: string) => ({
-        mutateAsync: mockSendMutateAsync,
-        isPending: false,
-        mutate: mockSendMutateAsync
-    }),
-    useCampaignMetrics: (_id: string, _status?: string) => ({
-        data: {
-            totalRecipients: 42,
-            totalSoftcapped: 3,
-            delivered: 0,
-            failed: 0,
-            skipped: 0,
-            opened: 0,
-            clicked: 0,
-            openRate: 0,
-            clickRate: 0
+vi.mock('@/hooks/newsletter', async () => {
+    const { useState } = await import('react');
+    return {
+        useCreateCampaign: () => ({
+            mutateAsync: mockCreateMutateAsync,
+            isPending: false
+        }),
+        // Stateful isPending, like the real mutation: the editor derives `isSending`
+        // from it and passes it to the RichTextEditor as `disabled` (HOS-2584).
+        useUpdateCampaign: (_id: string) => {
+            const [isPending, setIsPending] = useState(false);
+            return {
+                mutateAsync: async (input: unknown) => {
+                    setIsPending(true);
+                    try {
+                        const result = await mockUpdateMutateAsync(input);
+                        // Keep isPending true across a render so `disabled` really toggles.
+                        await new Promise((resolve) => setTimeout(resolve, 250));
+                        return result;
+                    } finally {
+                        setIsPending(false);
+                    }
+                },
+                isPending,
+                mutate: mockUpdateMutateAsync
+            };
         },
-        isLoading: false
-    })
-}));
+        useTestSendCampaign: (_id: string) => ({
+            mutateAsync: mockTestSendMutateAsync,
+            isPending: false
+        }),
+        useCancelCampaign: (_id: string) => ({
+            mutateAsync: mockCancelMutateAsync,
+            isPending: false,
+            mutate: mockCancelMutateAsync
+        }),
+        useSendCampaign: (_id: string) => ({
+            mutateAsync: mockSendMutateAsync,
+            isPending: false,
+            mutate: mockSendMutateAsync
+        }),
+        useCampaignMetrics: (_id: string, _status?: string) => ({
+            data: {
+                totalRecipients: 42,
+                totalSoftcapped: 3,
+                delivered: 0,
+                failed: 0,
+                skipped: 0,
+                opened: 0,
+                clicked: 0,
+                openRate: 0,
+                clickRate: 0
+            },
+            isLoading: false
+        })
+    };
+});
 
 // Mock RichTextEditor — too heavy (TipTap + ProseMirror) for unit tests
 vi.mock('@/components/newsletter/RichTextEditor', () => ({
@@ -85,23 +103,36 @@ vi.mock('@/components/newsletter/RichTextEditor', () => ({
         value: unknown;
         onChange: (v: unknown) => void;
         disabled?: boolean;
-    }) => (
-        <div data-testid="rich-text-editor">
-            <textarea
-                data-testid="rte-textarea"
-                disabled={disabled}
-                defaultValue={value ? JSON.stringify(value) : ''}
-                onChange={(e) => {
-                    try {
-                        onChange(JSON.parse(e.target.value));
-                    } catch {
-                        onChange({ type: 'doc', content: [] });
-                    }
-                }}
-                aria-label="Contenido del email"
-            />
-        </div>
-    )
+    }) => {
+        // Reproduces the pre-fix TipTap behaviour: a `disabled` change emitted a
+        // phantom onChange with unchanged content. The editor must not re-save.
+        const isFirstRender = useRef(true);
+        // biome-ignore lint/correctness/useExhaustiveDependencies: only react to `disabled`
+        useEffect(() => {
+            if (isFirstRender.current) {
+                isFirstRender.current = false;
+                return;
+            }
+            onChange(value);
+        }, [disabled]);
+        return (
+            <div data-testid="rich-text-editor">
+                <textarea
+                    data-testid="rte-textarea"
+                    disabled={disabled}
+                    defaultValue={value ? JSON.stringify(value) : ''}
+                    onChange={(e) => {
+                        try {
+                            onChange(JSON.parse(e.target.value));
+                        } catch {
+                            onChange({ type: 'doc', content: [] });
+                        }
+                    }}
+                    aria-label="Contenido del email"
+                />
+            </div>
+        );
+    }
 }));
 
 // Mock @repo/utils renderTiptapContent
@@ -384,7 +415,7 @@ describe('CampaignEditor', () => {
             vi.useRealTimers();
         });
 
-        it('calls testSendMutation on test-send button click', async () => {
+        it('opens the test-send dialog (does not send) when the button is clicked', () => {
             renderWithProviders(
                 <CampaignEditor
                     mode="edit"
@@ -394,9 +425,71 @@ describe('CampaignEditor', () => {
 
             fireEvent.click(screen.getByTestId('test-send-btn'));
 
+            expect(
+                screen.getByLabelText('admin-newsletter.campaigns.testSendEmailLabel')
+            ).toHaveValue('test@example.com');
+            expect(mockTestSendMutateAsync).not.toHaveBeenCalled();
+        });
+
+        it('test-send with the unchanged address omits toEmail (actor email)', async () => {
+            renderWithProviders(
+                <CampaignEditor
+                    mode="edit"
+                    campaign={DRAFT_CAMPAIGN}
+                />
+            );
+
+            fireEvent.click(screen.getByTestId('test-send-btn'));
+            fireEvent.click(screen.getByText('admin-newsletter.campaigns.testSendSubmit'));
+
             await waitFor(() => {
-                expect(mockTestSendMutateAsync).toHaveBeenCalled();
+                expect(mockTestSendMutateAsync).toHaveBeenCalledWith(undefined);
             });
+        });
+
+        it('test-send to another address passes it as toEmail', async () => {
+            renderWithProviders(
+                <CampaignEditor
+                    mode="edit"
+                    campaign={DRAFT_CAMPAIGN}
+                />
+            );
+
+            fireEvent.click(screen.getByTestId('test-send-btn'));
+            fireEvent.change(
+                screen.getByLabelText('admin-newsletter.campaigns.testSendEmailLabel'),
+                {
+                    target: { value: 'other@example.com' }
+                }
+            );
+            fireEvent.click(screen.getByText('admin-newsletter.campaigns.testSendSubmit'));
+
+            await waitFor(() => {
+                expect(mockTestSendMutateAsync).toHaveBeenCalledWith('other@example.com');
+            });
+        });
+
+        it('test-send with an invalid address does not call the API', async () => {
+            renderWithProviders(
+                <CampaignEditor
+                    mode="edit"
+                    campaign={DRAFT_CAMPAIGN}
+                />
+            );
+
+            fireEvent.click(screen.getByTestId('test-send-btn'));
+            fireEvent.change(
+                screen.getByLabelText('admin-newsletter.campaigns.testSendEmailLabel'),
+                {
+                    target: { value: 'nope' }
+                }
+            );
+            fireEvent.click(screen.getByText('admin-newsletter.campaigns.testSendSubmit'));
+
+            expect(
+                await screen.findByText('admin-newsletter.campaigns.testSendEmailInvalid')
+            ).toBeInTheDocument();
+            expect(mockTestSendMutateAsync).not.toHaveBeenCalled();
         });
 
         it('opens SendConfirmDialog when Send Campaign is clicked', () => {
@@ -440,6 +533,66 @@ describe('CampaignEditor', () => {
 
             fireEvent.click(screen.getByTestId('dialog-cancel-btn'));
             expect(screen.queryByTestId('send-confirm-dialog')).not.toBeInTheDocument();
+        });
+    });
+
+    // ── Autosave loop regression (HOS-2584) ────────────────────────────────────
+
+    describe('autosave does not loop', () => {
+        /** Advances time in small separate act() steps so React renders between them. */
+        async function advance(totalMs: number) {
+            for (let elapsed = 0; elapsed < totalMs; elapsed += 100) {
+                await act(async () => {
+                    await vi.advanceTimersByTimeAsync(100);
+                });
+            }
+        }
+
+        beforeEach(() => {
+            vi.useFakeTimers();
+        });
+        afterEach(() => {
+            vi.useRealTimers();
+        });
+
+        it('sends no PATCH for an untouched draft, however long it stays open', async () => {
+            renderWithProviders(
+                <CampaignEditor
+                    mode="edit"
+                    campaign={DRAFT_CAMPAIGN}
+                />
+            );
+
+            await advance(15_000);
+
+            expect(mockUpdateMutateAsync).not.toHaveBeenCalled();
+        });
+
+        it('sends exactly one PATCH 3s after the last keystroke, then stays quiet', async () => {
+            renderWithProviders(
+                <CampaignEditor
+                    mode="edit"
+                    campaign={DRAFT_CAMPAIGN}
+                />
+            );
+            const title = screen.getByTestId('campaign-title-input');
+
+            fireEvent.change(title, { target: { value: 'Mayo 2025 a' } });
+            await advance(2000);
+            fireEvent.change(title, { target: { value: 'Mayo 2025 ab' } });
+            await advance(2900);
+            expect(mockUpdateMutateAsync).not.toHaveBeenCalled();
+
+            await advance(200);
+            expect(mockUpdateMutateAsync).toHaveBeenCalledTimes(1);
+            expect(mockUpdateMutateAsync).toHaveBeenCalledWith(
+                expect.objectContaining({ title: 'Mayo 2025 ab' })
+            );
+
+            // The save toggled isSending/disabled (phantom onChange in the mocked
+            // editor): no second PATCH may follow.
+            await advance(15_000);
+            expect(mockUpdateMutateAsync).toHaveBeenCalledTimes(1);
         });
     });
 

@@ -73,6 +73,34 @@ describe('HostDashboard (HOS-2474)', () => {
         expect(within(card(container, 'hostUnreadMessages')).getByText('2')).toBeInTheDocument();
     });
 
+    it('the hint adds up to the total and takes singular and plural (HOS-2612)', async () => {
+        // Arrange: 5 = 1 published + 0 draft + 4 in another state.
+        mockHostDashboardGet.mockResolvedValue({
+            ok: true,
+            data: { ...READY, properties: { total: 5, published: 1, draft: 0, archived: 3 } }
+        });
+        // Act
+        const { container } = renderDashboard();
+        await screen.findByText('5');
+        // Assert
+        const hint = card(container, 'hostProperties').textContent ?? '';
+        expect(hint).toContain('1 publicada · 4 en otro estado');
+        expect(hint).not.toContain('publicadas');
+        expect(hint).not.toContain('0 borradores');
+    });
+
+    it('uses the singular for one draft and the plural for several (HOS-2612)', async () => {
+        mockHostDashboardGet.mockResolvedValue({
+            ok: true,
+            data: { ...READY, properties: { total: 4, published: 2, draft: 1, archived: 1 } }
+        });
+        const { container } = renderDashboard();
+        await screen.findByText('4');
+        expect(card(container, 'hostProperties').textContent).toContain(
+            '2 publicadas · 1 borrador · 1 en otro estado'
+        );
+    });
+
     it('a failed read shows «—» and retry on each card, never 0', async () => {
         // Arrange
         mockHostDashboardGet.mockResolvedValueOnce({

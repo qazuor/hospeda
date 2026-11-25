@@ -31,6 +31,7 @@ export class OwnerPromotionVenueModel extends BaseModelImpl<OwnerPromotion> {
                 .select({
                     entityId: ownerPromotions.entityId,
                     hasPlus: sql<boolean>`bool_or(${ownerPromotions.touristAudience} = 'plus')`,
+                    hasVip: sql<boolean>`bool_or(${ownerPromotions.touristAudience} = 'vip')`,
                     windowWeekdays: ownerPromotions.windowWeekdays,
                     windowStart: ownerPromotions.windowStart,
                     windowEnd: ownerPromotions.windowEnd
@@ -56,6 +57,7 @@ export class OwnerPromotionVenueModel extends BaseModelImpl<OwnerPromotion> {
                 string,
                 {
                     hasPlus: boolean;
+                    hasVip: boolean;
                     hasUnscheduled: boolean;
                     windows: Map<string, PromotionWindow>;
                 }
@@ -64,10 +66,12 @@ export class OwnerPromotionVenueModel extends BaseModelImpl<OwnerPromotion> {
                 if (!row.entityId) continue;
                 const entry = grouped.get(row.entityId) ?? {
                     hasPlus: false,
+                    hasVip: false,
                     hasUnscheduled: false,
                     windows: new Map<string, PromotionWindow>()
                 };
                 entry.hasPlus ||= row.hasPlus;
+                entry.hasVip ||= row.hasVip;
                 const window = toPromotionWindow(row);
                 if (!window) entry.hasUnscheduled = true;
                 else if (entry.windows.size < 10) entry.windows.set(JSON.stringify(window), window);
@@ -79,6 +83,9 @@ export class OwnerPromotionVenueModel extends BaseModelImpl<OwnerPromotion> {
                     {
                         hasPromo: true,
                         vipOnly: !entry.hasPlus,
+                        // HOS-2589 D-6: the «Promo» and «VIP» search badges.
+                        hasFreePromotion: entry.hasPlus,
+                        hasVipPromotion: entry.hasVip,
                         hasUnscheduled: entry.hasUnscheduled,
                         windows: [...entry.windows.values()]
                     }

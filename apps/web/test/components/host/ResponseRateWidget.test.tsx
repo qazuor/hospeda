@@ -82,4 +82,17 @@ describe('ResponseRateWidget', () => {
         expect(screen.getByText('85%')).toBeInTheDocument();
         expect(screen.getByText(/N\/A/i)).toBeInTheDocument();
     });
+
+    it('shows the no-data state, not a 0% ring, when nothing was replied', () => {
+        render(
+            <ResponseRateWidget
+                locale="es"
+                data={{ responseRatePct: 0, avgResponseTimeMinutes: null }}
+                isLoading={false}
+                error={null}
+            />
+        );
+        expect(screen.getByText('Sin datos de respuesta aún')).toBeInTheDocument();
+        expect(screen.queryByText('0%')).not.toBeInTheDocument();
+    });
 });

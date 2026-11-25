@@ -12,6 +12,7 @@
 
 import { createRouter } from '../../../utils/create-app';
 import {
+    adminCampaignAudienceCountRoute,
     adminCampaignErrorsRoute,
     adminCampaignMetricsRoute,
     adminCancelCampaignRoute,
@@ -57,6 +58,8 @@ export const newsletterAdminRoutes = createRouter()
     .route('/', adminCancelCampaignRoute)
     // /api/v1/admin/newsletter/campaigns/:id/metrics
     .route('/', adminCampaignMetricsRoute)
+    // /api/v1/admin/newsletter/campaigns/:id/audience-count
+    .route('/', adminCampaignAudienceCountRoute)
     // /api/v1/admin/newsletter/campaigns/:id/errors
     .route('/', adminCampaignErrorsRoute)
 

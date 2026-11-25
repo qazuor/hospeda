@@ -565,6 +565,7 @@
                 "completed": "Contacto completado"
             },
             "empty": "Todavía no hay datos",
+            "emptyDescription": "Cuando tus fichas reciban visitas, vas a ver acá de dónde vienen.",
             "visitors_one": "{{count}} visitante",
             "visitors_other": "{{count}} visitantes"
         },

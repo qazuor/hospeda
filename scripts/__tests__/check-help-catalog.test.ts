@@ -104,7 +104,7 @@ describe('check-help-catalog on the real repo', () => {
         const result = run({ now: new Date() });
 
         // Assert
-        expect(result.output).toMatch(/^OK GUARD:help-catalog: 17 articles/);
+        expect(result.output).toMatch(/^OK GUARD:help-catalog: 18 articles/);
         expect(result.exitCode).toBe(0);
     });
 

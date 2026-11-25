@@ -1742,6 +1742,18 @@ export function createDbMock() {
         // "not a constructor" while it loads.
         VenueModel: GenericMockModel,
         ownerPromotionModel: new GenericMockModel(),
+        // HOS-2589: the tourist-facing promotion reads (per-actor `visible` and
+        // `listing`, search-badge presence, the weekly digest and the VIP pause).
+        OwnerPromotionTouristModel: GenericMockModel,
+        ownerPromotionTouristModel: Object.assign(new GenericMockModel(), {
+            findActiveForVenueAllAudiences: async () => [],
+            findActiveListingPage: async () => ({ items: [], total: 0 }),
+            findFirstActivatedBetween: async () => ({ items: [], total: 0 }),
+            findPublicPlaces: async () => ({ accommodations: new Map(), venues: new Map() }),
+            findAccommodationPromotionPresence: async () => new Map(),
+            findActiveVipPromotions: async () => [],
+            pauseVipPromotions: async () => []
+        }),
         venues: VENUE_TABLE_COLUMNS,
         venueReviewModel: new GenericMockModel(),
         rVenueAmenityModel: new GenericMockModel(),

@@ -1,82 +1,37 @@
 /**
- * Protected exclusive-deals list endpoint (HOS-21 T-008/T-009)
+ * Protected exclusive-deals list endpoint, reshaped by HOS-2589 (D-2, AC-24).
  *
- * Tourist-facing listing of owner promotions scoped by touristAudience tier.
- * Reuses `OwnerPromotionService.findExclusiveDeals` — not the public search path.
- * Each deal carries its accommodation's public slug (owner decision 17).
+ * The account page that read it (`/mi-cuenta/ofertas-exclusivas`) now redirects to
+ * the public `/{lang}/promociones/` page, so this route is kept only for clients
+ * still calling it during the rollout. It no longer gates on `exclusive_deals`
+ * (a free tourist gets a list, never a 403) and answers exactly what
+ * `GET /public/owner-promotions/listing` answers: one page of `visible | locked`
+ * items resolved by the free / VIP rule, per-actor and never cached.
  *
  * Mounted at `/exclusive-deals` before `/{id}` in `protected/index.ts` so the
  * literal path is not swallowed by the parameter route.
  */
-
-import { ExclusiveDealListItemSchema, TouristAudienceEnum, VerticalEnum } from '@repo/schemas';
-import { OwnerPromotionService, ServiceError } from '@repo/service-core';
+import { PromotionListingQuerySchema, PromotionListingResponseSchema } from '@repo/schemas';
 import type { Context } from 'hono';
-import { z } from 'zod';
 
-import { getActorFromContext } from '../../../utils/actor';
-import { enforceUserGate, readEffectiveKeys } from '../../../utils/listing-access/user-gate';
-import { apiLogger } from '../../../utils/logger';
-import { extractPaginationParams, getPaginationResponse } from '../../../utils/pagination';
-import { createProtectedListRoute } from '../../../utils/route-factory';
-
-const ownerPromotionService = new OwnerPromotionService({ logger: apiLogger });
+import { createProtectedRoute } from '../../../utils/route-factory';
+import { handleListingPromotions } from '../public/listing';
 
 /** GET /api/v1/protected/owner-promotions/exclusive-deals */
-export const protectedListExclusiveDealsRoute = createProtectedListRoute({
+export const protectedListExclusiveDealsRoute = createProtectedRoute({
     method: 'get',
     path: '/exclusive-deals',
-    summary: 'List exclusive deals',
+    summary: 'List exclusive deals (deprecated alias of the promotions listing)',
     description:
-        "Returns active owner promotions scoped to the authenticated tourist's effective plan tier.",
+        'Deprecated: same answer as GET /api/v1/public/owner-promotions/listing for the signed-in tourist. One page of current promotions as visible or locked items under the free / VIP rule. Per-actor and never cached.',
     tags: ['Owner Promotions'],
-    requestQuery: {
-        accommodationId: z.string().uuid().optional()
-    },
-    // Each row carries `accommodationSlug` (owner decision 17).
-    responseSchema: ExclusiveDealListItemSchema,
+    requestQuery: PromotionListingQuerySchema.shape,
+    responseSchema: PromotionListingResponseSchema,
     handler: async (
         ctx: Context,
         _params: Record<string, unknown>,
         _body: Record<string, unknown>,
         query?: Record<string, unknown>
-    ) => {
-        const actor = getActorFromContext(ctx);
-        const { page, pageSize } = extractPaginationParams(query ?? {});
-
-        await enforceUserGate({
-            userId: actor.id,
-            vertical: VerticalEnum.TOURIST,
-            keys: ['exclusive_deals']
-        });
-
-        const effectiveKeys = await readEffectiveKeys({
-            userId: actor.id,
-            vertical: VerticalEnum.TOURIST,
-            keys: ['vip_promotions_access']
-        });
-        const audienceScope = effectiveKeys.vip_promotions_access
-            ? [TouristAudienceEnum.PLUS, TouristAudienceEnum.VIP]
-            : [TouristAudienceEnum.PLUS];
-
-        const result = await ownerPromotionService.findExclusiveDeals(
-            actor,
-            {
-                page,
-                pageSize,
-                accommodationId: query?.accommodationId as string | undefined
-            },
-            audienceScope
-        );
-
-        if (result.error) {
-            throw new ServiceError(result.error.code, result.error.message);
-        }
-
-        return {
-            items: result.data?.items ?? [],
-            pagination: getPaginationResponse(result.data?.total ?? 0, { page, pageSize })
-        };
-    },
+    ) => handleListingPromotions(ctx, query),
     options: {}
 });

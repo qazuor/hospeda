@@ -12,6 +12,7 @@
 import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
 import { VenueOpenNowBadge } from '@/components/venue/VenueOpenNowBadge.client';
 import { VenuePromoBadge } from '@/components/venue/VenuePromoBadge.client';
+import { resolveVenuePromoBadges } from '@/lib/promotions/promotion-badges';
 import { Image } from 'astro:assets';
 import { StarIcon, LocationIcon } from '@repo/icons';
 import { isCloudinaryDeliveryUrl } from '@/lib/media';
@@ -57,6 +58,7 @@ const isNew = data.createdAt
     : false;
 
 const featuredLabel = t('venue.card.featured', 'Destacado');
+const promoBadges = resolveVenuePromoBadges({ badge: data.promoBadge });
 const shouldProxyFeaturedImage = isCloudinaryDeliveryUrl(data.featuredImage.url);
 ---
 
@@ -161,7 +163,9 @@ const shouldProxyFeaturedImage = isCloudinaryDeliveryUrl(data.featuredImage.url)
             <!-- Type + Location row -->
             <div class="venue-card__category-row">
                 <span class="venue-card__type-badge">{typeLabel}</span>
-                {data.promoBadge?.hasPromo && (data.promoBadge.windows.length > 0 ? <VenuePromoBadge client:idle windows={data.promoBadge.windows} vipOnly={data.promoBadge.vipOnly} locale={locale} /> : <span class="venue-card__promo-badge">{t(data.promoBadge.vipOnly ? 'venue.card.promoVip' : 'venue.card.promo', data.promoBadge.vipOnly ? 'Promo VIP' : 'Promo')}</span>)}
+                {/* HOS-2589 D-6: «Promo» for any «Para todos» promotion, «VIP» for any «Solo VIP» one, both when both exist. */}
+                {promoBadges.free && (promoBadges.windows.length > 0 ? <VenuePromoBadge client:idle windows={promoBadges.windows} locale={locale} /> : <span class="venue-card__promo-badge">{t('common.promotions.badges.promo')}</span>)}
+                {promoBadges.vip && <span class="venue-card__promo-badge venue-card__promo-badge--vip">{t('common.promotions.badges.vip')}</span>}
                 <div class="venue-card__location-bar">
                     <LocationIcon size={12} weight="fill" aria-hidden="true" />
                     <span>{data.destinationName}</span>
@@ -388,6 +392,11 @@ const shouldProxyFeaturedImage = isCloudinaryDeliveryUrl(data.featuredImage.url)
         white-space: nowrap;
         min-width: 52px;
         justify-content: center;
+    }
+
+    :global(.venue-card__promo-badge--vip) {
+        background: var(--brand-accent);
+        color: var(--accent-foreground);
     }
 
     :global(.venue-card__promo-badge--active) {

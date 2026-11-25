@@ -159,7 +159,7 @@
         "favorites": "Favorites",
         "searchHistory": "Search history",
         "alerts": "Price alerts",
-        "exclusiveDeals": "Exclusive deals",
+        "exclusiveDeals": "Promotions",
         "reviews": "My reviews",
         "hostDashboard": "Host dashboard",
         "properties": "My accommodations",
@@ -393,6 +393,10 @@
         "changeInPreferences": "Change in Preferences",
         "searchHistory": {
             "planFallback": "Higher plan"
+        },
+        "vipPromotionsDigest": {
+            "label": "Get the weekly promotions summary",
+            "description": "An email on Mondays with the week's new promotions. If there were none, we don't write."
         }
     },
     "aiAssistants": {
@@ -1212,10 +1216,6 @@
             "title": "Price alerts",
             "description": "Manage your price-drop alerts on Hospeda"
         },
-        "exclusiveDeals": {
-            "title": "Exclusive deals",
-            "description": "Discover exclusive offers and discounts for your plan on Hospeda"
-        },
         "recommendations": {
             "title": "Suggestions for you",
             "description": "Accommodations picked especially for you, based on your favorites, searches, and recent activity on Hospeda"
@@ -1491,31 +1491,6 @@
         "deleteConfirmTitle": "Delete this alert?",
         "deleteConfirmBody": "You will stop getting price-drop notices for {{name}}.",
         "closedStatus": "Closed"
-    },
-    "exclusiveDeals": {
-        "lock": {
-            "description": "Get discounts and perks that hosts save for travelers on this plan."
-        },
-        "loading": "Loading exclusive deals...",
-        "errorFetch": "Could not load your exclusive deals",
-        "empty": {
-            "title": "No active deals right now",
-            "body": "Check back later for new exclusive deals for your plan."
-        },
-        "upgrade": {
-            "title": "Exclusive deals",
-            "message_one": "Exclusive deals are available on the {{plans}} plan. Upgrade your plan to access this feature.",
-            "message_other": "Exclusive deals are available on the {{plans}} plans. Upgrade your plan to access this feature.",
-            "messageNoPlans": "Exclusive deals are not included in your current plan. Upgrade your plan to access this feature.",
-            "cta": "View plans"
-        },
-        "listLabel": "Your exclusive deals",
-        "item": {
-            "vipBadge": "VIP only",
-            "viewListing": "View listing",
-            "listingUnavailable": "This listing is no longer available.",
-            "validUntil": "Valid until {{date}}"
-        }
     },
     "recommendations": {
         "loading": "Loading recommendations...",
@@ -2348,7 +2323,10 @@
             "onboardingDescription": "Add your first experience so travellers can find it.",
             "trafficLockedFeature": "Visits to your experiences"
         },
-        "listingsHint": "{{published}} published · {{draft}} drafts",
+        "listingsPublished_one": "{{count}} published",
+        "listingsPublished_other": "{{count}} published",
+        "listingsDraft_one": "{{count}} draft",
+        "listingsDraft_other": "{{count}} drafts",
         "manage": "Manage",
         "quickActions": "Quick actions",
         "trafficLabel": "Visits",

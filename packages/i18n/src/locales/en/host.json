@@ -903,11 +903,7 @@
             "accommodationId": "Property",
             "accommodationIdAll": "All my properties",
             "accommodationIdLoading": "Loading properties...",
-            "accommodationIdHint": "Select a property or leave 'All my properties' to apply the promotion to all.",
-            "vipOnly": "VIP plan exclusive",
-            "vipOnlyHint_one": "If enabled, only VIP-plan tourists will see this deal. If left off, tourists on the {{plans}} plan see it.",
-            "vipOnlyHint_other": "If enabled, only VIP-plan tourists will see this deal. If left off, tourists on the {{plans}} plans see it.",
-            "vipOnlyHintNoPlans": "If enabled, only VIP-plan tourists will see this deal. If left off, every tourist with access to exclusive deals sees it."
+            "accommodationIdHint": "Select a property or leave 'All my properties' to apply the promotion to all."
         },
         "discountTypes": {
             "percentage": "Percentage",
@@ -972,6 +968,23 @@
             "loadFailedHint": "Go back to the list and try again.",
             "backToList": "Back to my promotions",
             "pauseNamed": "Pause “{{title}}”"
+        },
+        "audience": {
+            "legend": "Who sees this promotion?",
+            "plusLabel": "Everyone",
+            "plusDescription_one": "Every VIP tourist sees it. Free tourists see up to {{count}} promotion per page, picked at random, so sometimes they see it and sometimes they do not.",
+            "plusDescription_other": "Every VIP tourist sees it. Free tourists see up to {{count}} promotions per page, picked at random, so sometimes they see it and sometimes they do not.",
+            "plusDescriptionNoQuota": "Every VIP tourist sees it. Free tourists see some promotions per page, picked at random, so sometimes they see it and sometimes they do not.",
+            "vipLabel": "VIP only",
+            "vipDescription": "Only VIP tourists see it, and we email them about it. Free tourists see it blurred, with an invitation to go VIP.",
+            "vipDescriptionPlan": "Only tourists on the {{plan}} plan see it, and we email them about it. Free tourists see it blurred, with an invitation to go VIP.",
+            "vipLocked": "Available on higher plans",
+            "vipLockedLink": "See plans"
+        },
+        "vipPaused": {
+            "title": "We paused your «VIP only» promotions",
+            "body": "Your plan no longer includes «VIP only», so these promotions are paused: {{titles}}. You can resume them as «Everyone» or change your plan.",
+            "badge": "Paused: your plan does not include «VIP only»"
         }
     },
     "dashboard": {
@@ -1045,7 +1058,12 @@
             },
             "viewAll": "View all",
             "quickActions": "Quick actions",
-            "propertiesHint": "{{published}} published · {{draft}} drafts"
+            "propertiesPublished_one": "{{count}} published",
+            "propertiesPublished_other": "{{count}} published",
+            "propertiesDraft_one": "{{count}} draft",
+            "propertiesDraft_other": "{{count}} drafts",
+            "propertiesOther_one": "{{count}} in another state",
+            "propertiesOther_other": "{{count}} in another state"
         },
         "quickActions": {
             "properties": "Properties",

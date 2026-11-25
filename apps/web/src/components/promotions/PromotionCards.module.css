@@ -1,0 +1,228 @@
+/* HOS-2589: visible and blurred promotion cards, the VIP upsell dialog and the
+ * per-reader promotion sections. Tokens only. */
+
+.section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4, 16px);
+}
+
+.sectionTitle {
+    margin: 0;
+    font-family: var(--font-heading);
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--core-foreground);
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr));
+    gap: var(--space-3, 12px);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.grid > li {
+    display: flex;
+}
+
+.card {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: var(--space-2, 8px);
+    min-height: 9rem;
+    padding: var(--space-4, 16px);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md, 10px);
+    background-color: var(--core-card);
+    color: var(--core-foreground);
+    font: inherit;
+    text-align: start;
+}
+
+.cardTop {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-2, 8px);
+}
+
+.headline {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--success);
+}
+
+.title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.description,
+.meta {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--core-muted-foreground);
+}
+
+.meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2, 8px);
+}
+
+.meta:empty {
+    display: none;
+}
+
+.placeLink {
+    margin-top: auto;
+    font-weight: 600;
+    color: var(--brand-primary-link);
+}
+
+.vipBadge {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: var(--space-1, 4px);
+    padding: 2px var(--space-2, 8px);
+    border-radius: var(--radius-pill);
+    background-color: var(--brand-accent);
+    color: var(--accent-foreground);
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.locked {
+    cursor: pointer;
+    background-color: var(--surface-warm);
+}
+
+.locked:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
+.typeLabel {
+    font-size: 0.875rem;
+    color: var(--core-muted-foreground);
+}
+
+.placeholder {
+    filter: blur(5px);
+    font-weight: 600;
+    user-select: none;
+}
+
+.lockRow {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2, 8px);
+    margin-top: auto;
+    font-size: 0.875rem;
+    color: var(--core-muted-foreground);
+}
+
+.status {
+    margin: 0;
+    color: var(--core-muted-foreground);
+}
+
+.pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-3, 12px);
+}
+
+.pageButton {
+    padding: var(--space-2, 8px) var(--space-4, 16px);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md, 10px);
+    background-color: var(--core-card);
+    color: var(--core-foreground);
+    font: inherit;
+    cursor: pointer;
+}
+
+.pageButton:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.dialog {
+    width: min(28rem, calc(100vw - 32px));
+    margin: auto;
+    padding: 0;
+    border: none;
+    border-radius: var(--radius-card, 20px);
+    background-color: var(--core-card);
+    color: var(--core-foreground);
+    box-shadow: var(--shadow-overlay);
+}
+
+.dialog::backdrop {
+    background-color: var(--overlay);
+}
+
+.dialogBody {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 12px);
+    padding: var(--space-6, 24px);
+}
+
+.dialogBody p {
+    margin: 0;
+}
+
+.dialogIcon {
+    color: var(--brand-accent);
+}
+
+.dialogTitle {
+    margin: 0;
+    font-family: var(--font-heading);
+    font-size: 1.25rem;
+}
+
+.dialogActions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3, 12px);
+    margin-top: var(--space-2, 8px);
+}
+
+.dialogCta {
+    padding: var(--space-2, 8px) var(--space-4, 16px);
+    border-radius: var(--radius-md, 10px);
+    background-color: var(--brand-primary);
+    color: var(--primary-foreground);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.dialogClose {
+    padding: var(--space-2, 8px) var(--space-4, 16px);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md, 10px);
+    background: transparent;
+    color: var(--core-foreground);
+    font: inherit;
+    cursor: pointer;
+}
+
+:global(.venue-promotion-now) {
+    display: inline-flex;
+    justify-content: center;
+    min-width: 3.25rem;
+    color: var(--brand-accent-strong);
+    font-weight: 700;
+}

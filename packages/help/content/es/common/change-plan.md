@@ -35,6 +35,7 @@ destinations:
     label: "Planes para experiencias"
 public: false
 related:
+  - owner-promotions
   - addons
   - publish-requirements
   - calendar

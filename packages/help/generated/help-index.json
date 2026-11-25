@@ -1,5 +1,5 @@
 {
-  "contentHash": "9a006f806dce9e988bd79394e812f9af184ae4842f8eb156d4eda73deca92e6f",
+  "contentHash": "56c6be3bacb5701b5b35e0566de17c581821ab9c78b2585ea809583e9f27a0d3",
   "locales": {
     "es": [
       {
@@ -474,6 +474,7 @@
         "locale": "es",
         "public": false,
         "related": [
+          "owner-promotions",
           "addons",
           "publish-requirements",
           "calendar"
@@ -872,6 +873,87 @@
         "translation": null,
         "verticals": [
           "accommodation"
+        ]
+      },
+      {
+        "audiences": [
+          "host",
+          "venue"
+        ],
+        "covers": [
+          "entitlement:create_promotions",
+          "entitlement:vip_only_promotions",
+          "limit:max_active_promotions",
+          "limit:max_free_visible_promotions"
+        ],
+        "destinations": [
+          {
+            "kind": "page",
+            "label": "Mis promociones",
+            "page": "promotions"
+          },
+          {
+            "kind": "ownEditorSection",
+            "label": "Promociones de tu comercio",
+            "section": "promotions",
+            "vertical": "venue"
+          },
+          {
+            "kind": "plans",
+            "label": "Planes para alojamientos",
+            "vertical": "accommodation"
+          },
+          {
+            "kind": "plans",
+            "label": "Planes para comercios",
+            "vertical": "venue"
+          }
+        ],
+        "entryFor": [
+          "page:mi-cuenta/promociones",
+          "page:mi-cuenta/promociones/nueva",
+          "section:venue.promociones"
+        ],
+        "folder": "common",
+        "id": "owner-promotions",
+        "keywords": [
+          "promocion",
+          "promociones",
+          "oferta",
+          "descuento",
+          "solo vip",
+          "para todos",
+          "promo borrosa",
+          "no ven mi promocion"
+        ],
+        "locale": "es",
+        "public": true,
+        "related": [
+          "change-plan",
+          "pause-resume"
+        ],
+        "reviewedAt": "2026-11-24",
+        "sections": {
+          "canDo": "Crear promociones para tus alojamientos en {{link:page:promotions|Mis promociones}} y para tu comercio en {{link:section:venue:promociones|las promociones de tu comercio}}. En cada promoción elegís quién la ve: «Para todos» o «Solo VIP».",
+          "expect": "- Crear promociones depende de tu plan, y tu plan fija cuántas pueden estar activas a la vez: {{limit:max_active_promotions:accommodation}}.\n- «Solo VIP» también depende de tu plan. Si tu plan no la incluye, la opción aparece con un candado y un enlace a los planes.\n- Una promoción borrosa muestra solo el valor y el tipo de beneficio. El nombre del lugar no aparece: en su lugar va un nombre de relleno.\n- En la búsqueda, las tarjetas muestran «Promo» si el lugar tiene una promoción «Para todos» y «VIP» si tiene una «Solo VIP». Si tiene de las dos, se ven las dos.\n- Los turistas suscriptos reciben una vez por semana un correo con las promociones nuevas de esa semana, de los dos tipos.\n\n### Ejemplo {#ejemplo}\n\nTenés tres promociones «Para todos» y una «Solo VIP». Un turista suscripto ve las cuatro. Un turista con el plan gratis ve algunas de las tres «Para todos», distintas en cada visita, y la «Solo VIP» borrosa.",
+          "howTo": {
+            "after": "### «Para todos» y «Solo VIP» {#opciones}\n\n- «Para todos»: todos los turistas suscriptos la ven. Los turistas con el plan gratis ven una cantidad limitada de promociones por página, elegidas al azar, así que a veces la ven y a veces no.\n- «Solo VIP»: solo la ven los turistas suscriptos, y les avisamos por correo. Los turistas con el plan gratis la ven borrosa, con una invitación a suscribirse.",
+            "steps": [
+              "Entrá a «Mis promociones» (alojamientos) o a la sección «Promociones» del editor de tu comercio.",
+              "Tocá «Nueva promoción» ({{link:page:promotionNew|crear una promoción de alojamiento}}) y cargá el título, el beneficio y las fechas.",
+              "Elegí quién la ve: «Para todos» o «Solo VIP».",
+              "Guardá. Podés cambiar la opción cuando quieras editando la promoción."
+            ]
+          },
+          "notExpect": "- Elegir qué promociones «Para todos» ve cada turista gratis: la selección es al azar en cada visita.\n- Que una promoción «Solo VIP» pase sola a «Para todos». Si tu plan deja de incluir «Solo VIP», esas promociones se pausan y te avisamos por correo. Para reactivarlas, volvé a un plan que la incluya o cambialas a «Para todos».",
+          "troubleshooting": "### ¿Por qué un turista no vio mi promoción? {#no-la-vio}\n\nPuede pasar por varias razones:\n\n- Es «Para todos» y el turista tiene el plan gratis: ve una cantidad limitada por página, al azar. En otra visita puede verla.\n- Es «Solo VIP» y el turista tiene el plan gratis: la ve borrosa, sin el nombre del lugar.\n- La promoción no está activa: está pausada, todavía no empezó o ya terminó.\n\n### «Solo VIP» aparece con un candado {#opcion-bloqueada}\n\nTu plan no incluye promociones «Solo VIP». Mirá {{link:plans:accommodation|los planes para alojamientos}} o {{link:plans:venue|los planes para comercios}}, o {{article:change-plan|cambiá de plan}}.\n\n### Mis promociones «Solo VIP» se pausaron {#pausadas}\n\nTu plan dejó de incluir «Solo VIP». Están pausadas, no borradas: editalas y elegí «Para todos», o volvé a un plan que incluya «Solo VIP»."
+        },
+        "summary": "Cómo se crea una promoción, qué cambia entre «Para todos» y «Solo VIP» y por qué un turista puede no verla.",
+        "title": "Crear promociones y elegir quién las ve",
+        "translation": null,
+        "verticals": [
+          "accommodation",
+          "venue"
         ]
       },
       {

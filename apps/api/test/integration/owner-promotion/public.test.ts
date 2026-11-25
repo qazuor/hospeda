@@ -10,13 +10,21 @@
  * public visibility gate (ACTIVE only) is exercised against real rows.
  */
 import { getDb, ownerPromotions } from '@repo/db';
-import { LifecycleStatusEnum, OwnerPromotionDiscountTypeEnum } from '@repo/schemas';
+import {
+    LifecycleStatusEnum,
+    OwnerPromotionDiscountTypeEnum,
+    TouristAudienceEnum
+} from '@repo/schemas';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
 import { clearCache } from '../../../src/middlewares/cache';
 import { validateApiEnv } from '../../../src/utils/env';
 import { createTestUser } from '../../e2e/setup/seed-helpers';
 import { testDb } from '../../e2e/setup/test-database';
+import {
+    FREE_VISIBLE_PROMOTIONS_QUOTA,
+    grantFreeVisiblePromotionsQuota
+} from './free-quota.fixture';
 
 const base = '/api/v1/public/owner-promotions';
 const headers = { 'user-agent': 'vitest' };
@@ -68,6 +76,8 @@ describe('GET /api/v1/public/owner-promotions (list)', () => {
     beforeAll(async () => {
         await testDb.setup();
         await testDb.clean();
+        // HOS-2589 AC-10: a guest sees at most the floor plan's free quota in full.
+        await grantFreeVisiblePromotionsQuota();
         clearCache();
         validateApiEnv();
         app = initApp();
@@ -94,6 +104,50 @@ describe('GET /api/v1/public/owner-promotions (list)', () => {
         expect(res.status).toBe(200);
         const body = await res.json();
         expect(body.data.items).toHaveLength(ACTIVE_COUNT);
+    });
+
+    it('caps a guest at the free quota and keeps VIP-only promotions out (HOS-2589 AC-10)', async () => {
+        // Arrange: two more ACTIVE «para todos» promotions and one ACTIVE «Solo VIP».
+        const suffix = crypto.randomUUID().slice(0, 8);
+        const owner = await createTestUser({
+            email: `owner-promo-cap-${suffix}@example.test`,
+            slug: `owner-promo-cap-${suffix}`
+        });
+        const validFrom = new Date(Date.now() - 24 * 60 * 60 * 1000);
+        const audiences = [
+            TouristAudienceEnum.PLUS,
+            TouristAudienceEnum.PLUS,
+            TouristAudienceEnum.VIP
+        ] as const;
+        const extra = await getDb()
+            .insert(ownerPromotions)
+            .values(
+                audiences.map((touristAudience, index) => ({
+                    slug: `owner-promo-cap-${index}-${suffix}`,
+                    ownerId: owner.id,
+                    title: `Capped promotion ${index} ${suffix}`,
+                    discountType: OwnerPromotionDiscountTypeEnum.PERCENTAGE,
+                    discountValue: 20 + index,
+                    validFrom,
+                    touristAudience,
+                    lifecycleState: LifecycleStatusEnum.ACTIVE
+                }))
+            )
+            .returning({
+                id: ownerPromotions.id,
+                touristAudience: ownerPromotions.touristAudience
+            });
+        const vipId = extra.find((row) => row.touristAudience === TouristAudienceEnum.VIP)?.id;
+
+        // Act
+        const res = await app.request(`${base}?pageSize=20`, { headers });
+
+        // Assert
+        expect(res.status).toBe(200);
+        const body = await res.json();
+        const ids = body.data.items.map((item: { id: string }) => item.id);
+        expect(ids).toHaveLength(FREE_VISIBLE_PROMOTIONS_QUOTA);
+        expect(ids).not.toContain(vipId);
     });
 
     it('includes pagination metadata', async () => {

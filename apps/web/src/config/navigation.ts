@@ -396,7 +396,8 @@ export const ACCOUNT_NAV_GROUPS: readonly NavGroup[] = [
             {
                 id: 'exclusiveDeals',
                 i18nKey: 'account.nav.exclusiveDeals',
-                href: 'mi-cuenta/ofertas-exclusivas',
+                // HOS-2589 D-2: the list moved to the public promotions page.
+                href: 'promociones',
                 icon: OffersIcon,
                 surfaces: FULL_SURFACES
             },

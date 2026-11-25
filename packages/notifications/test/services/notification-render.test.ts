@@ -91,8 +91,8 @@ describe('resolveNotificationSubject', () => {
 });
 
 describe('NOTIFICATION_TYPES_WITH_TEMPLATE', () => {
-    it('lists the 46 types with a template and none of the six sent elsewhere', () => {
-        expect(NOTIFICATION_TYPES_WITH_TEMPLATE).toHaveLength(46);
+    it('lists the 48 types with a template and none of the six sent elsewhere', () => {
+        expect(NOTIFICATION_TYPES_WITH_TEMPLATE).toHaveLength(48);
         for (const type of [
             NotificationType.TRIAL_ENDING_2D,
             NotificationType.TRIAL_ENDING_TODAY,

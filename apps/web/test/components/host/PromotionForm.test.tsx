@@ -215,33 +215,67 @@ describe('PromotionForm — feedback and action styling (HOS-2451)', () => {
     });
 });
 
-describe('PromotionForm — audience hint (HOS-2544)', () => {
-    it('names the catalog plan it receives in the VIP-only hint, never a hardcoded Plus', async () => {
-        // Arrange + Act
+describe('PromotionForm — audience (HOS-2589)', () => {
+    it('AC-1: offers «Para todos» (default) and «Solo VIP» with X and the plan from the catalog', async () => {
         render(
             <PromotionForm
                 locale="es"
                 mode="create"
-                audiencePlanNames={['Explorador']}
+                freeQuota={7}
+                vipPlanName="Viajero VIP"
             />
         );
-        await screen.findByLabelText(/Título/i);
-
-        // Assert
-        const hint = screen.getByText(/Explorador/);
-        expect(hint.textContent).toContain('vipOnlyHint_one');
-        expect(hint.textContent).not.toMatch(/Plus/);
+        const plus = await screen.findByRole('radio', { name: /plusLabel/ });
+        const vip = screen.getByRole('radio', { name: /vipLabel/ });
+        expect(plus).toBeChecked();
+        expect(vip).not.toBeChecked();
+        expect(screen.getByText(/plusDescription_other \{"count":7\}/)).toBeInTheDocument();
+        expect(screen.getByText(/vipDescriptionPlan \{"plan":"Viajero VIP"\}/)).toBeInTheDocument();
     });
 
-    it('names no plan when the catalog could not be read', async () => {
+    it('AC-1: drops X from the text when the catalog could not be read', async () => {
         render(
             <PromotionForm
                 locale="es"
                 mode="create"
             />
         );
-        await screen.findByLabelText(/Título/i);
-        expect(screen.queryByText(/Plus/)).not.toBeInTheDocument();
+        await screen.findByRole('radio', { name: /plusLabel/ });
+        expect(screen.getByText(/plusDescriptionNoQuota/)).toBeInTheDocument();
+    });
+
+    it('AC-25: without vip_only_promotions «Solo VIP» is disabled with the lock and the plans link', async () => {
+        render(
+            <PromotionForm
+                locale="es"
+                mode="create"
+                freeQuota={3}
+            />
+        );
+        const vip = await screen.findByRole('radio', { name: /vipLabel/ });
+        await waitFor(() => expect(vip).toBeDisabled());
+        const note = screen.getByTestId('promotion-audience-vip-locked');
+        expect(note.textContent).toContain('host.promotions.audience.vipLocked');
+        expect(note.querySelector('a')?.getAttribute('href')).toContain(
+            PRICING_PAGE_PATH_BY_AUDIENCE.owner
+        );
+    });
+
+    it('AC-25: with vip_only_promotions «Solo VIP» can be chosen', async () => {
+        mockEntitlements.mockResolvedValue({
+            entitlements: { create_promotions: 1, vip_only_promotions: 1 },
+            limits: {},
+            failed: false
+        });
+        render(
+            <PromotionForm
+                locale="es"
+                mode="create"
+            />
+        );
+        const vip = await screen.findByRole('radio', { name: /vipLabel/ });
+        await waitFor(() => expect(vip).not.toBeDisabled());
+        expect(screen.queryByTestId('promotion-audience-vip-locked')).toBeNull();
     });
 });
 
@@ -373,11 +407,16 @@ describe('PromotionForm — create mode', () => {
         );
         await screen.findByLabelText(/Título/i);
 
-        expect(await screen.findByRole('checkbox', { name: /vip/i })).not.toBeChecked();
+        expect(await screen.findByRole('radio', { name: /vipLabel/ })).not.toBeChecked();
     });
 
-    it('sends touristAudience: "vip" when the VIP-only toggle is checked (HOS-21 T-013)', async () => {
+    it('sends touristAudience: "vip" when «Solo VIP» is chosen (HOS-2589)', async () => {
         mockCreate.mockResolvedValueOnce({ ok: true, data: { id: 'new-promo-id' } });
+        mockEntitlements.mockResolvedValue({
+            entitlements: { create_promotions: 1, vip_only_promotions: 1 },
+            limits: {},
+            failed: false
+        });
 
         render(
             <PromotionForm
@@ -388,7 +427,9 @@ describe('PromotionForm — create mode', () => {
         await screen.findByLabelText(/Título/i);
 
         fillCreateFields();
-        fireEvent.click(screen.getByRole('checkbox', { name: /vip/i }));
+        const vipRadio = screen.getByRole('radio', { name: /vipLabel/ });
+        await waitFor(() => expect(vipRadio).not.toBeDisabled());
+        fireEvent.click(vipRadio);
 
         fireEvent.click(getSubmitButton());
 
@@ -400,7 +441,7 @@ describe('PromotionForm — create mode', () => {
         expect(callArg.body.touristAudience).toBe('vip');
     });
 
-    it('sends the schema default touristAudience: "plus" when the VIP-only toggle is left off (HOS-21 T-013, HOS-190)', async () => {
+    it('sends touristAudience: "plus" when «Para todos» is left selected (HOS-190, HOS-2589)', async () => {
         // HOS-190 form 16: create mode now validates against
         // OwnerPromotionCreateRequestSchema (the real client-facing create
         // schema), which carries the entity's `.default('plus')` for
@@ -761,7 +802,7 @@ describe('PromotionForm — edit mode', () => {
         expect(screen.getByLabelText(/Válido hasta/i)).toHaveValue('2026-08-31');
     });
 
-    it('pre-fills the VIP-only toggle as unchecked when touristAudience is "plus" (HOS-21 T-013)', async () => {
+    it('AC-2: pre-selects «Para todos» when touristAudience is "plus"', async () => {
         render(
             <PromotionForm
                 locale="es"
@@ -771,10 +812,10 @@ describe('PromotionForm — edit mode', () => {
             />
         );
 
-        expect(await screen.findByRole('checkbox', { name: /vip/i })).not.toBeChecked();
+        expect(await screen.findByRole('radio', { name: /plusLabel/ })).toBeChecked();
     });
 
-    it('pre-fills the VIP-only toggle as checked when touristAudience is "vip" (HOS-21 T-013)', async () => {
+    it('AC-2: pre-selects «Solo VIP» when touristAudience is "vip"', async () => {
         render(
             <PromotionForm
                 locale="es"
@@ -784,7 +825,44 @@ describe('PromotionForm — edit mode', () => {
             />
         );
 
-        expect(await screen.findByRole('checkbox', { name: /vip/i })).toBeChecked();
+        expect(await screen.findByRole('radio', { name: /vipLabel/ })).toBeChecked();
+    });
+
+    it('AC-2: saving «Para todos» on a «Solo VIP» promotion stores plus', async () => {
+        mockUpdate.mockResolvedValueOnce({ ok: true, data: { id: 'promo-uuid-1' } });
+        render(
+            <PromotionForm
+                locale="es"
+                mode="edit"
+                initialData={{ ...INITIAL_DATA, touristAudience: 'vip' }}
+                promotionId="promo-uuid-1"
+            />
+        );
+        fireEvent.click(await screen.findByRole('radio', { name: /plusLabel/ }));
+        fireEvent.click(getSubmitButton());
+        await waitFor(() => expect(mockUpdate).toHaveBeenCalledOnce());
+        const callArg = mockUpdate.mock.calls[0][0] as { body: Record<string, unknown> };
+        expect(callArg.body.touristAudience).toBe('plus');
+    });
+
+    it('D-8: an unchanged «Solo VIP» is not re-sent, so a paused one stays editable', async () => {
+        mockUpdate.mockResolvedValueOnce({ ok: true, data: { id: 'promo-uuid-1' } });
+        render(
+            <PromotionForm
+                locale="es"
+                mode="edit"
+                initialData={{ ...INITIAL_DATA, touristAudience: 'vip' }}
+                promotionId="promo-uuid-1"
+            />
+        );
+        const vip = await screen.findByRole('radio', { name: /vipLabel/ });
+        expect(vip).toBeChecked();
+        expect(vip).not.toBeDisabled();
+        fireEvent.change(screen.getByLabelText(/Noches mínimas/i), { target: { value: '4' } });
+        fireEvent.click(getSubmitButton());
+        await waitFor(() => expect(mockUpdate).toHaveBeenCalledOnce());
+        const callArg = mockUpdate.mock.calls[0][0] as { body: Record<string, unknown> };
+        expect(callArg.body.touristAudience).toBeUndefined();
     });
 
     it('calls ownerPromotionApi.update (not create) on submit', async () => {

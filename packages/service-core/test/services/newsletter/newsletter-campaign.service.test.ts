@@ -1173,3 +1173,93 @@ describe('NewsletterCampaignService — contentType segmentation', () => {
         expect((passedArg as { contentType?: unknown }).contentType).toBeUndefined();
     });
 });
+
+// ---------------------------------------------------------------------------
+// getAudienceEstimate (HOS-2586)
+// ---------------------------------------------------------------------------
+
+describe('NewsletterCampaignService.getAudienceEstimate', () => {
+    beforeEach(() => {
+        queryBuilderResponses = [];
+    });
+
+    it('returns the eligible, soft-capped and total counts for a draft', async () => {
+        // Arrange
+        const subscriberSvc = makeSubscriberService({
+            eligibleIds: [SUBSCRIBER_ID_1, SUBSCRIBER_ID_2],
+            softCappedCount: 1,
+            totalCandidates: 3
+        });
+        const svc = makeService({ subscriberService: subscriberSvc });
+        enqueueQueryResponse([
+            makeCampaignRow({ localeFilter: 'es', contentType: NewsletterContentTypeEnum.GUIDES })
+        ]);
+
+        // Act
+        const result = await svc.getAudienceEstimate(makeAdminActor(), { id: CAMPAIGN_ID });
+
+        // Assert
+        expect(result.error).toBeUndefined();
+        expect(result.data).toEqual({ eligible: 2, softCapped: 1, totalCandidates: 3 });
+    });
+
+    it('uses the same recipient filter as send (locale, contentType, soft-cap window)', async () => {
+        // Arrange
+        const subscriberSvc = makeSubscriberService();
+        const svc = makeService({ subscriberService: subscriberSvc });
+        enqueueQueryResponse([
+            makeCampaignRow({ localeFilter: 'en', contentType: NewsletterContentTypeEnum.OFFERS })
+        ]);
+
+        // Act
+        await svc.getAudienceEstimate(makeAdminActor(), { id: CAMPAIGN_ID });
+
+        // Assert
+        expect(subscriberSvc.getEligibleForCampaign).toHaveBeenCalledWith({
+            localeFilter: 'en',
+            softCapWindowDays: 7,
+            contentType: NewsletterContentTypeEnum.OFFERS
+        });
+    });
+
+    it('bypasses the soft-cap window when ignoreSoftCap is true', async () => {
+        // Arrange
+        const subscriberSvc = makeSubscriberService();
+        const svc = makeService({ subscriberService: subscriberSvc });
+        enqueueQueryResponse([makeCampaignRow()]);
+
+        // Act
+        await svc.getAudienceEstimate(makeAdminActor(), { id: CAMPAIGN_ID, ignoreSoftCap: true });
+
+        // Assert
+        const arg = subscriberSvc.getEligibleForCampaign.mock.calls[0]?.[0];
+        expect(arg).toMatchObject({ softCapWindowDays: 99999 });
+        expect((arg as { contentType?: unknown }).contentType).toBeUndefined();
+    });
+
+    it('returns NOT_FOUND when the campaign does not exist', async () => {
+        // Arrange
+        const svc = makeService({ subscriberService: makeSubscriberService() });
+        enqueueQueryResponse([]);
+
+        // Act
+        const result = await svc.getAudienceEstimate(makeAdminActor(), { id: CAMPAIGN_ID });
+
+        // Assert
+        expect(result.error?.code).toBe('NOT_FOUND');
+    });
+
+    it('rejects an actor without the send permission', async () => {
+        // Arrange
+        const svc = makeService({ subscriberService: makeSubscriberService() });
+        enqueueQueryResponse([makeCampaignRow()]);
+
+        // Act
+        const result = await svc.getAudienceEstimate(makeUnpermissionedActor(), {
+            id: CAMPAIGN_ID
+        });
+
+        // Assert
+        expect(result.error?.code).toBe('FORBIDDEN');
+    });
+});

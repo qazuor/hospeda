@@ -23,6 +23,10 @@ vi.mock('../../../src/lib/api/endpoints-protected', () => ({
         remove: mocks.remove
     }
 }));
+const entitlements = vi.hoisted(() => ({ read: vi.fn() }));
+vi.mock('../../../src/lib/entitlements-cache', () => ({
+    getEntitlementsCached: () => entitlements.read()
+}));
 vi.mock('../../../src/lib/billing-limit-error', () => ({
     buildLimitReachedPayloadFromDetails: mocks.limitMessage
 }));
@@ -47,7 +51,10 @@ vi.mock('../../../src/lib/i18n', async (importOriginal) => ({
     })
 }));
 
-beforeEach(() => vi.clearAllMocks());
+beforeEach(() => {
+    vi.clearAllMocks();
+    entitlements.read.mockResolvedValue({ entitlements: {}, limits: {}, failed: false });
+});
 
 const promotion = {
     id: 'promo-id',
@@ -497,5 +504,94 @@ describe('VenuePromotionsManager', () => {
         fireEvent.click(await screen.findByRole('button', { name: 'Reintentar' }));
 
         expect(await screen.findByText('Oferta')).toBeInTheDocument();
+    });
+
+    describe('audience (HOS-2589)', () => {
+        const vipPromotion = {
+            ...promotion,
+            description: 'Con la cena',
+            window: null,
+            touristAudience: 'vip',
+            vipPausedAt: null
+        };
+
+        function renderManager() {
+            render(
+                <VenuePromotionsManager
+                    listingId="venue-id"
+                    locale="es"
+                    sectionState="available"
+                    upsellPlanName={null}
+                    limitPlanOptions={[]}
+                    freeQuota={3}
+                    vipPlanName="Viajero VIP"
+                />
+            );
+        }
+
+        it('AC-1/AC-25: «Para todos» by default; «Solo VIP» locked without the key', async () => {
+            mocks.list.mockResolvedValue({
+                ok: true,
+                data: { items: [], meta: { activeCount: 0, maxActive: 5 } }
+            });
+            renderManager();
+            fireEvent.click(await screen.findByRole('button', { name: 'Nueva promoción' }));
+            expect(screen.getByRole('radio', { name: /plusLabel/ })).toBeChecked();
+            expect(screen.getByText(/plusDescription_other/)).toBeInTheDocument();
+            expect(screen.getByRole('radio', { name: /vipLabel/ })).toBeDisabled();
+            expect(screen.getByTestId('promotion-audience-vip-locked')).toBeInTheDocument();
+        });
+
+        it('AC-2: saving «Para todos» on a «Solo VIP» promotion stores plus', async () => {
+            entitlements.read.mockResolvedValue({
+                entitlements: { vip_only_promotions: 1 },
+                limits: {},
+                failed: false
+            });
+            mocks.list.mockResolvedValue({
+                ok: true,
+                data: { items: [vipPromotion], meta: { activeCount: 1, maxActive: 5 } }
+            });
+            mocks.update.mockResolvedValue({ ok: true, data: vipPromotion });
+            renderManager();
+            fireEvent.click(await screen.findByRole('button', { name: 'Editar' }));
+            expect(screen.getByRole('radio', { name: /vipLabel/ })).toBeChecked();
+            fireEvent.click(screen.getByRole('radio', { name: /plusLabel/ }));
+            fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+            await waitFor(() => expect(mocks.update).toHaveBeenCalledOnce());
+            expect(mocks.update.mock.calls[0]?.[0].body.touristAudience).toBe('plus');
+        });
+
+        it('D-8: an unchanged «Solo VIP» is not re-sent', async () => {
+            mocks.list.mockResolvedValue({
+                ok: true,
+                data: { items: [vipPromotion], meta: { activeCount: 1, maxActive: 5 } }
+            });
+            mocks.update.mockResolvedValue({ ok: true, data: vipPromotion });
+            renderManager();
+            fireEvent.click(await screen.findByRole('button', { name: 'Editar' }));
+            fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+            await waitFor(() => expect(mocks.update).toHaveBeenCalledOnce());
+            expect(mocks.update.mock.calls[0]?.[0].body).not.toHaveProperty('touristAudience');
+        });
+
+        it('AC-36: shows the in-app notice for promotions the pause holds', async () => {
+            mocks.list.mockResolvedValue({
+                ok: true,
+                data: {
+                    items: [
+                        {
+                            ...vipPromotion,
+                            lifecycleState: 'INACTIVE',
+                            vipPausedAt: '2026-11-24T12:20:00.000Z'
+                        }
+                    ],
+                    meta: { activeCount: 0, maxActive: 5 }
+                }
+            });
+            renderManager();
+            expect(await screen.findByText('host.promotions.vipPaused.title')).toBeInTheDocument();
+            expect(screen.getByText(/host.promotions.vipPaused.body/)).toBeInTheDocument();
+        });
     });
 });

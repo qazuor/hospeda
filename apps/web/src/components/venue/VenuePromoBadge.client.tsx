@@ -4,14 +4,15 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { createT } from '@/lib/i18n';
 import { isPromotionWindowActive } from '@/lib/venue/promotion-window';
 
-/** Cached card badge that swaps its static promotion label to «Now» in-browser. */
+/**
+ * Cached card «Promo» badge that swaps its label to «Now» in-browser. The «VIP»
+ * badge is a separate static badge (HOS-2589 D-6).
+ */
 export function VenuePromoBadge({
     windows,
-    vipOnly,
     locale
 }: {
     readonly windows: readonly PromotionWindow[];
-    readonly vipOnly: boolean;
     readonly locale: SupportedLocale;
 }) {
     const [active, setActive] = useState(false);
@@ -26,11 +27,7 @@ export function VenuePromoBadge({
                 .filter(Boolean)
                 .join(' ')}
         >
-            {active
-                ? t('venue.card.promoNow', 'Ahora')
-                : vipOnly
-                  ? t('venue.card.promoVip', 'Promo VIP')
-                  : t('venue.card.promo', 'Promo')}
+            {active ? t('venue.card.promoNow', 'Ahora') : t('venue.card.promo', 'Promo')}
         </span>
     );
 }

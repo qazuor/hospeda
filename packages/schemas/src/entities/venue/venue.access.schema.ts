@@ -5,6 +5,10 @@ import { PromotionWindowSchema } from '../ownerPromotion/owner-promotion.venue.s
 export const VenuePromoBadgeSchema = z.object({
     hasPromo: z.literal(true),
     vipOnly: z.boolean(),
+    /** HOS-2589 D-6: at least one active «Para todos» promotion («Promo» badge). */
+    hasFreePromotion: z.boolean().optional(),
+    /** HOS-2589 D-6: at least one active «Solo VIP» promotion («VIP» badge). */
+    hasVipPromotion: z.boolean().optional(),
     hasUnscheduled: z.boolean(),
     windows: z.array(PromotionWindowSchema).max(10)
 });

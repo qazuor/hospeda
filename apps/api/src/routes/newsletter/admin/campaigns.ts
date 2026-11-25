@@ -192,6 +192,16 @@ const TestSendResponseSchema = z.object({
     sentTo: z.string().email()
 });
 
+/** Response schema for the `audience-count` endpoint. */
+const AudienceCountResponseSchema = z.object({
+    /** Subscribers a send would enqueue now. */
+    eligible: z.number().int().min(0),
+    /** Matching subscribers skipped by the frequency limit. */
+    softCapped: z.number().int().min(0),
+    /** All active subscribers matching the language and content filters. */
+    totalCandidates: z.number().int().min(0)
+});
+
 /** Response schema for the `cancel` endpoint. */
 const CancelResponseSchema = z.object({
     cancelled: z.literal(true),
@@ -701,6 +711,50 @@ export const adminCampaignMetricsRoute = createAdminRoute({
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);
+        }
+
+        return result.data;
+    }
+});
+
+/**
+ * GET /api/v1/admin/newsletter/campaigns/:id/audience-count
+ *
+ * Read-only estimate of how many subscribers a send would enqueue, computed
+ * with the same recipient filter `send` uses (language filter, content-type
+ * segmentation, frequency limit). Nothing is persisted.
+ *
+ * Query: `ignoreSoftCap=true` bypasses the frequency limit (mirrors send).
+ * Sets `Cache-Control: no-store`.
+ *
+ * Requires `NEWSLETTER_CAMPAIGN_SEND` permission (same as the send route).
+ */
+export const adminCampaignAudienceCountRoute = createAdminRoute({
+    method: 'get',
+    path: '/campaigns/{id}/audience-count',
+    summary: 'Estimate campaign audience (admin)',
+    description:
+        'Returns the number of subscribers a send would enqueue now, using the same filter as send. Always fresh — Cache-Control: no-store.',
+    tags: ['Newsletter'],
+    requiredPermissions: [PermissionEnum.NEWSLETTER_CAMPAIGN_SEND],
+    requestParams: { id: z.string().uuid('Campaign ID must be a valid UUID') },
+    requestQuery: { ignoreSoftCap: z.enum(['true', 'false']).optional() },
+    responseSchema: AudienceCountResponseSchema,
+    handler: async (ctx: Context, params, _body, query) => {
+        const actor = getActorFromContext(ctx);
+        const campaignSvc = await getDefaultCampaignService();
+        const id = params.id as string;
+
+        ctx.header('Cache-Control', 'no-store');
+
+        const result = await campaignSvc.getAudienceEstimate(actor, {
+            id,
+            ignoreSoftCap: query?.ignoreSoftCap === 'true'
+        });
+
+        if (result.error) {
+            // Code-prefixed message so handleRouteError maps the right HTTP status.
+            throw new Error(`${result.error.code}: ${result.error.message}`);
         }
 
         return result.data;

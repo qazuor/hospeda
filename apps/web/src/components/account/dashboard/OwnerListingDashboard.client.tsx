@@ -111,10 +111,11 @@ export function OwnerListingDashboard({
     const [listingsId, trafficId] = OWNER_DASHBOARD_WIDGETS[vertical];
     const listingsState = toAsync(view.listings, (counts) => ({
         value: counts.total,
-        hint: t('account.ownerDashboard.listingsHint', undefined, {
-            published: counts.published,
-            draft: counts.draft
-        })
+        // Each count takes its own plural form («1 publicada · 2 borradores»).
+        hint: [
+            tPlural('account.ownerDashboard.listingsPublished', counts.published),
+            tPlural('account.ownerDashboard.listingsDraft', counts.draft)
+        ].join(' · ')
     }));
     const trafficState = toAsync(view.traffic, (traffic) => ({
         value: traffic.total,

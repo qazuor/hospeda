@@ -312,8 +312,8 @@ const INVENTORY = [
     ['apps/api/src/routes/owner-promotion/protected/create.ts', 'restored', 'enforceUserGate'],
     [
         'apps/api/src/routes/owner-promotion/protected/exclusive-deals.ts',
-        'restored',
-        'enforceUserGate|readEffectiveKeys'
+        'not-a-gate',
+        'HOS-2589 AC-24 retired the exclusive_deals gate; alias of the per-actor promotions listing'
     ],
     ['apps/api/src/routes/owner-promotion/protected/patch.ts', 'restored', 'enforceUserGate'],
     ['apps/api/src/routes/owner-promotion/protected/update.ts', 'restored', 'enforceUserGate'],

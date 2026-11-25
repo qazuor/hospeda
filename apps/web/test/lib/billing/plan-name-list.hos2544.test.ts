@@ -1,13 +1,10 @@
 /**
  * @file plan-name-list.hos2544.test.ts
- * @description HOS-2544: the collections gate and the promotion audience hint name the plans
- * the catalog supplies, never a hardcoded "Plus y VIP", in every locale.
+ * @description HOS-2544: the collections gate names the plans the catalog supplies
+ * (the promotion audience hint was removed by HOS-2589), never a hardcoded "Plus y VIP", in every locale.
  */
 import { describe, expect, it } from 'vitest';
-import {
-    resolveCollectionsGateMessage,
-    resolvePromotionAudienceHint
-} from '../../../src/lib/billing/plan-name-list';
+import { resolveCollectionsGateMessage } from '../../../src/lib/billing/plan-name-list';
 import { createT, type SupportedLocale } from '../../../src/lib/i18n';
 
 const LOCALES: readonly SupportedLocale[] = ['es', 'en', 'pt'];
@@ -43,23 +40,5 @@ describe('resolveCollectionsGateMessage (HOS-2544)', () => {
         });
         expect(message).not.toMatch(/Plus|VIP|account\.favorites/);
         expect(message.length).toBeGreaterThan(10);
-    });
-});
-
-describe('resolvePromotionAudienceHint (HOS-2544)', () => {
-    it.each(LOCALES)('%s: names the catalog plan it receives, never Plus', (locale) => {
-        const message = resolvePromotionAudienceHint({
-            locale,
-            planNames: ['Explorador'],
-            t: createT(locale)
-        });
-        expect(message).toContain('Explorador');
-        expect(message).not.toContain('Plus');
-    });
-
-    it.each(LOCALES)('%s: names no Plus plan when the catalog was unreadable', (locale) => {
-        const message = resolvePromotionAudienceHint({ locale, planNames: [], t: createT(locale) });
-        expect(message).not.toContain('Plus');
-        expect(message).not.toContain('host.promotions');
     });
 });

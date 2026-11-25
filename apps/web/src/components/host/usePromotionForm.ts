@@ -84,7 +84,8 @@ export interface UsePromotionFormResult {
     readonly onFieldChange: (
         e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
     ) => void;
-    readonly onVipOnlyChange: (e: ChangeEvent<HTMLInputElement>) => void;
+    /** HOS-2589: the audience radio group's change (`plus` or `vip`). */
+    readonly onAudienceChange: (value: 'plus' | 'vip') => void;
     readonly save: () => Promise<SaveOutcome>;
     readonly discard: () => void;
 }
@@ -209,9 +210,8 @@ export function usePromotionForm({
         []
     );
 
-    const onVipOnlyChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
-        const { checked } = e.currentTarget;
-        setFields((prev) => ({ ...prev, vipOnly: checked }));
+    const onAudienceChange = useCallback((value: 'plus' | 'vip') => {
+        setFields((prev) => ({ ...prev, vipOnly: value === 'vip' }));
     }, []);
 
     const save = useCallback(async (): Promise<SaveOutcome> => {
@@ -225,7 +225,10 @@ export function usePromotionForm({
             setErrors(required);
             return { ok: false, invalidFields: Object.keys(required) };
         }
-        const payload = buildPromotionPayload({ fields });
+        const payload = buildPromotionPayload({
+            fields,
+            baseline: mode === 'edit' ? baseline : undefined
+        });
         // Create validates against the exact client-facing POST schema (no
         // ownerId: the route injects it); edit against the partial strict
         // update schema.
@@ -291,7 +294,7 @@ export function usePromotionForm({
             setFailure({ kind: 'generic', message: saveFailed });
             return { ok: false };
         }
-    }, [fields, locale, mode, promotionId, t]);
+    }, [baseline, fields, locale, mode, promotionId, t]);
 
     const discard = useCallback(() => {
         setFields(baseline);
@@ -307,7 +310,7 @@ export function usePromotionForm({
         failure,
         isDirty,
         onFieldChange,
-        onVipOnlyChange,
+        onAudienceChange,
         save,
         discard
     };

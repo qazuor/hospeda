@@ -20,6 +20,7 @@ import {
     YAxis
 } from 'recharts';
 import type { InquiryTrendData } from '@/lib/api/types';
+import { buildLinearAxis } from '@/lib/chart-axis';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import styles from './InquiryTrendWidget.module.css';
@@ -120,9 +121,14 @@ export function InquiryTrendWidget({
 
     // ── Chart data ──────────────────────────────────────────────────────
     const chartData = data.months.map((item) => ({
-        month: item.month.slice(5), // MM
+        // Short month NAME («jun»), so the axis says what the ticks are (HOS-2612).
+        month: new Date(Date.UTC(2000, Number(item.month.slice(5, 7)) - 1, 1)).toLocaleDateString(
+            locale,
+            { month: 'short', timeZone: 'UTC' }
+        ),
         inquiries: item.count
     }));
+    const valueAxis = buildLinearAxis({ max: Math.max(0, ...chartData.map((p) => p.inquiries)) });
 
     return (
         <div className={styles.widget}>
@@ -159,6 +165,8 @@ export function InquiryTrendWidget({
                             axisLine={false}
                             tickLine={false}
                             allowDecimals={false}
+                            domain={valueAxis.domain as [number, number]}
+                            ticks={[...valueAxis.ticks]}
                         />
                         <Tooltip
                             contentStyle={{

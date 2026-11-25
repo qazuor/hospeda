@@ -409,3 +409,81 @@ describe('list', () => {
         expect(response.status).toBe(404);
     });
 });
+
+describe('HOS-2589 «Solo VIP» needs vip_only_promotions in the venue vertical (AC-26, AC-38)', () => {
+    const storedVip = (lifecycleState: string) =>
+        mocks.findOneOfVenue.mockResolvedValue({
+            id: PROMOTION_ID,
+            ownerId: OWNER_ID,
+            entityType: 'venue',
+            lifecycleState,
+            touristAudience: 'vip',
+            validUntil: null
+        });
+
+    it('create: 403 ENTITLEMENT_REQUIRED for vip without the key, nothing stored', async () => {
+        const response = await post(buildApp(), { ...validBody, touristAudience: 'vip' });
+        const body = await response.json();
+
+        expect(response.status).toBe(403);
+        expect(body.error).toMatchObject({
+            code: 'ENTITLEMENT_REQUIRED',
+            details: { entitlementKey: 'vip_only_promotions' }
+        });
+        expect(mocks.create).not.toHaveBeenCalled();
+    });
+
+    it('create: vip passes with the key; plus never needs it', async () => {
+        expect(
+            (await post(buildApp(), { ...validBody, touristAudience: 'plus' })).status
+        ).toBeLessThan(300);
+        keys = [...BASE_KEYS, 'create_promotions', 'vip_only_promotions'];
+        expect(
+            (await post(buildApp(), { ...validBody, touristAudience: 'vip' })).status
+        ).toBeLessThan(300);
+    });
+
+    it('edit: switching to vip without the key is refused on PUT and PATCH', async () => {
+        mocks.findOneOfVenue.mockResolvedValue({
+            id: PROMOTION_ID,
+            ownerId: OWNER_ID,
+            entityType: 'venue',
+            lifecycleState: 'ACTIVE',
+            touristAudience: 'plus',
+            validUntil: null
+        });
+        expect((await put(buildApp(), { ...validBody, touristAudience: 'vip' })).status).toBe(403);
+        expect((await patch(buildApp(), { touristAudience: 'vip' })).status).toBe(403);
+        expect(mocks.update).not.toHaveBeenCalled();
+    });
+
+    it('re-activating a paused vip promotion without the key is refused', async () => {
+        storedVip('INACTIVE');
+        const response = await patch(buildApp(), { lifecycleState: 'ACTIVE' });
+        expect(response.status).toBe(403);
+        expect(mocks.update).not.toHaveBeenCalled();
+    });
+
+    it('resuming it as «Para todos» needs no key and is not marked verified (AC-37)', async () => {
+        storedVip('INACTIVE');
+        const response = await patch(buildApp(), {
+            lifecycleState: 'ACTIVE',
+            touristAudience: 'plus'
+        });
+        expect(response.status).toBeLessThan(300);
+        expect(mocks.update.mock.calls[0]?.[0].vipOnlyVerified).toBe(false);
+    });
+
+    it('pausing a live vip promotion needs no key', async () => {
+        storedVip('ACTIVE');
+        expect((await patch(buildApp(), { lifecycleState: 'INACTIVE' })).status).toBeLessThan(300);
+    });
+
+    it('with the key, the re-activation reaches the service marked verified', async () => {
+        keys = [...BASE_KEYS, 'create_promotions', 'vip_only_promotions'];
+        storedVip('INACTIVE');
+        const response = await patch(buildApp(), { lifecycleState: 'ACTIVE' });
+        expect(response.status).toBeLessThan(300);
+        expect(mocks.update.mock.calls[0]?.[0].vipOnlyVerified).toBe(true);
+    });
+});

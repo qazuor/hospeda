@@ -34,7 +34,7 @@ import {
     resolveHostDashboardOutcome
 } from '@/lib/account/host-dashboard';
 import { hostDashboardApi } from '@/lib/api/endpoints-protected';
-import { createT, type SupportedLocale } from '@/lib/i18n';
+import { createT, createTranslations, type SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { AnalyticsSection } from './AnalyticsSection.client';
 
@@ -59,6 +59,7 @@ type ReadyState = Extract<HostDashboardOutcome, { kind: 'ready' }>;
  */
 export function HostDashboard({ locale, planNames, plansHref }: HostDashboardProps): JSX.Element {
     const t = createT(locale);
+    const { tPlural } = createTranslations(locale);
     const [state, setState] = useState<HostState>({ kind: 'loading' });
 
     const load = useCallback(async () => {
@@ -104,15 +105,34 @@ export function HostDashboard({ locale, planNames, plansHref }: HostDashboardPro
         return data === null ? { status: 'error', retry } : { status: 'ready', data };
     };
 
+    /**
+     * «1 publicada · 2 borradores · 2 en otro estado». The parts always add up to
+     * the total: whatever is neither published nor draft (archived, paused by
+     * billing, moderated) is counted as «otro estado» instead of vanishing
+     * (HOS-2612). Zero parts are left out and each one takes its own plural.
+     */
+    const propertiesHint = (counts: {
+        readonly total: number;
+        readonly published: number;
+        readonly draft: number;
+    }): string => {
+        const other = Math.max(0, counts.total - counts.published - counts.draft);
+        return [
+            { key: 'propertiesPublished', count: counts.published },
+            { key: 'propertiesDraft', count: counts.draft },
+            { key: 'propertiesOther', count: other }
+        ]
+            .filter((part) => part.count > 0)
+            .map((part) => tPlural(`host.dashboard.widgets.${part.key}`, part.count))
+            .join(' · ');
+    };
+
     const propertiesState = cardState(({ properties }) =>
         properties === null
             ? null
             : {
                   value: properties.total,
-                  hint: t('host.dashboard.widgets.propertiesHint', undefined, {
-                      published: properties.published,
-                      draft: properties.draft
-                  })
+                  hint: propertiesHint(properties)
               }
     );
     const unreadState = cardState(({ unread }) => (unread === null ? null : { value: unread }));
