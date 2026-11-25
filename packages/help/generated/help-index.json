@@ -1,5 +1,5 @@
 {
-  "contentHash": "f9e2372bc5788ec6c22a754e414741619a29d373ff6f5a8e323e4873834ce6d4",
+  "contentHash": "9c89350586cda35356b73a0ba56219624738df0ca5972a4ed2f362ebfaf3756c",
   "locales": {
     "es": [
       {
@@ -49,7 +49,7 @@
           "howTo": {
             "after": "",
             "steps": [
-              "Entrá a «Suscripción» y buscá la sección de complementos de la categoría que tiene una suscripción activa. Si todavía no tenés ninguna suscripción, elegí un plan primero: la pestaña «Complementos» no aparece y su dirección te devuelve a «Mi cuenta».",
+              "Entrá a «Suscripción» y buscá la sección de complementos de la categoría que tiene una suscripción activa. Si todavía no tenés ninguna suscripción ni ningún complemento activo, elegí un plan primero: la pestaña «Complementos» no aparece y su dirección te devuelve a «Mi cuenta».",
               "Elegí un complemento de la lista de esa categoría. Podés filtrar por categoría de complemento; cada tarjeta muestra su precio y los que ya tenés llevan «Activo».",
               "Elegí la ficha (o la suscripción) a la que se aplica.",
               "Revisá el resumen: muestra el importe y la frecuencia. Si tu beneficio lo incluye, aparece «Gratis por tu beneficio» y podés elegirlo sin pagar.",
