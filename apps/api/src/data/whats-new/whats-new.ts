@@ -187,7 +187,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         },
         translations: { en: 'machine', pt: 'machine' }
     },
-    // origin: #4714, #4715, #4718, #4720, #4735, #4737, #4739, #4747, #4754, #4755, #4758, #4759
+    // origin: #4714, #4715, #4718, #4720, #4735, #4737, #4739, #4747, #4754, #4755, #4758, #4759, #4766, #4781, #4784
     {
         id: '2026-11-23-listing-pages-easier-to-browse',
         publishedAt: 'on-promotion',
