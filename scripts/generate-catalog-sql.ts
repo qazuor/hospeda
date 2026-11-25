@@ -50,6 +50,11 @@ export interface CatalogLoad {
     readonly label: string;
     /** Column names, in insert order. The first one is the primary key. */
     readonly columns: readonly string[];
+    /**
+     * Columns G18 does not compare: cosmetic values that live databases change
+     * after the load (the plan name, HOS-2614). Still generated into the SQL.
+     */
+    readonly cosmeticColumns?: readonly string[];
     /** Rows, each aligned with {@link CatalogLoad.columns}. */
     readonly rows: readonly (readonly SqlValue[])[];
 }

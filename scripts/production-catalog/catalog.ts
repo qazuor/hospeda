@@ -30,7 +30,7 @@ export const PRODUCTION_PLAN_CATALOG = [
     {
         vertical: 'accommodation',
         slug: 'owner-basico',
-        name: 'Basic',
+        name: 'Alojamiento Básico',
         pricingOrder: 1,
         role: null,
         version: {
@@ -196,7 +196,7 @@ export const PRODUCTION_PLAN_CATALOG = [
     {
         vertical: 'accommodation',
         slug: 'owner-pro',
-        name: 'Professional',
+        name: 'Alojamiento Profesional',
         pricingOrder: 2,
         role: null,
         version: {
@@ -377,7 +377,7 @@ export const PRODUCTION_PLAN_CATALOG = [
     {
         vertical: 'accommodation',
         slug: 'owner-premium',
-        name: 'Premium',
+        name: 'Alojamiento Premium',
         pricingOrder: 3,
         role: null,
         version: {
@@ -1339,7 +1339,7 @@ export const PRODUCTION_PLAN_CATALOG = [
     {
         vertical: 'tourist',
         slug: 'tourist-vip',
-        name: 'VIP',
+        name: 'Turista VIP',
         pricingOrder: 3,
         role: null,
         version: {
@@ -1442,7 +1442,7 @@ export const PRODUCTION_PLAN_CATALOG = [
     {
         vertical: 'partner',
         slug: 'partner-silver',
-        name: 'Partner Silver',
+        name: 'Partner Plata',
         pricingOrder: 2,
         role: null,
         version: {
@@ -1464,7 +1464,7 @@ export const PRODUCTION_PLAN_CATALOG = [
     {
         vertical: 'partner',
         slug: 'partner-gold',
-        name: 'Partner Gold',
+        name: 'Partner Oro',
         pricingOrder: 3,
         role: null,
         version: {
@@ -1489,7 +1489,7 @@ export const PRODUCTION_PLAN_CATALOG = [
     {
         vertical: 'accommodation',
         slug: 'trial',
-        name: 'Accommodation Trial',
+        name: 'Alojamiento Prueba',
         pricingOrder: 0,
         role: 'trial',
         version: {
@@ -1512,7 +1512,7 @@ export const PRODUCTION_PLAN_CATALOG = [
     {
         vertical: 'accommodation',
         slug: 'pre-trial',
-        name: 'Accommodation Pre Trial',
+        name: 'Alojamiento Antes de la prueba',
         pricingOrder: 0,
         role: 'pre_trial',
         version: {
@@ -1537,7 +1537,7 @@ export const PRODUCTION_PLAN_CATALOG = [
     {
         vertical: 'accommodation',
         slug: 'floor',
-        name: 'Accommodation Floor',
+        name: 'Alojamiento Gratis',
         pricingOrder: 0,
         role: 'floor',
         version: {
@@ -1562,7 +1562,7 @@ export const PRODUCTION_PLAN_CATALOG = [
     {
         vertical: 'venue',
         slug: 'trial',
-        name: 'Comer y salir Trial',
+        name: 'Comer y salir Prueba',
         pricingOrder: 0,
         role: 'trial',
         version: {
@@ -1585,7 +1585,7 @@ export const PRODUCTION_PLAN_CATALOG = [
     {
         vertical: 'venue',
         slug: 'pre-trial',
-        name: 'Comer y salir Pre Trial',
+        name: 'Comer y salir Antes de la prueba',
         pricingOrder: 0,
         role: 'pre_trial',
         version: {
@@ -1610,7 +1610,7 @@ export const PRODUCTION_PLAN_CATALOG = [
     {
         vertical: 'venue',
         slug: 'floor',
-        name: 'Comer y salir Floor',
+        name: 'Comer y salir Gratis',
         pricingOrder: 0,
         role: 'floor',
         version: {
@@ -1635,7 +1635,7 @@ export const PRODUCTION_PLAN_CATALOG = [
     {
         vertical: 'experience',
         slug: 'trial',
-        name: 'Experience Trial',
+        name: 'Experiencias Prueba',
         pricingOrder: 0,
         role: 'trial',
         version: {
@@ -1658,7 +1658,7 @@ export const PRODUCTION_PLAN_CATALOG = [
     {
         vertical: 'experience',
         slug: 'pre-trial',
-        name: 'Experience Pre Trial',
+        name: 'Experiencias Antes de la prueba',
         pricingOrder: 0,
         role: 'pre_trial',
         version: {
@@ -1683,7 +1683,7 @@ export const PRODUCTION_PLAN_CATALOG = [
     {
         vertical: 'experience',
         slug: 'floor',
-        name: 'Experience Floor',
+        name: 'Experiencias Gratis',
         pricingOrder: 0,
         role: 'floor',
         version: {
@@ -1708,7 +1708,7 @@ export const PRODUCTION_PLAN_CATALOG = [
     {
         vertical: 'tourist',
         slug: 'trial',
-        name: 'Tourist Trial',
+        name: 'Turista Prueba',
         pricingOrder: 0,
         role: 'trial',
         version: {
@@ -1726,7 +1726,7 @@ export const PRODUCTION_PLAN_CATALOG = [
     {
         vertical: 'tourist',
         slug: 'pre-trial',
-        name: 'Tourist Pre Trial',
+        name: 'Turista Antes de la prueba',
         pricingOrder: 0,
         role: 'pre_trial',
         version: {
@@ -1751,7 +1751,7 @@ export const PRODUCTION_PLAN_CATALOG = [
     {
         vertical: 'tourist',
         slug: 'floor',
-        name: 'Turista Free',
+        name: 'Turista Gratis',
         pricingOrder: 0,
         role: 'floor',
         version: {
@@ -1808,7 +1808,7 @@ export const PRODUCTION_PLAN_CATALOG = [
     {
         vertical: 'partner',
         slug: 'trial',
-        name: 'Partner Trial',
+        name: 'Partner Prueba',
         pricingOrder: 0,
         role: 'trial',
         version: {
@@ -1826,7 +1826,7 @@ export const PRODUCTION_PLAN_CATALOG = [
     {
         vertical: 'partner',
         slug: 'pre-trial',
-        name: 'Partner Pre Trial',
+        name: 'Partner Antes de la prueba',
         pricingOrder: 0,
         role: 'pre_trial',
         version: {
@@ -1848,7 +1848,7 @@ export const PRODUCTION_PLAN_CATALOG = [
     {
         vertical: 'partner',
         slug: 'floor',
-        name: 'Partner Floor',
+        name: 'Partner Gratis',
         pricingOrder: 0,
         role: 'floor',
         version: {
