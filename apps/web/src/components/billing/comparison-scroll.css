@@ -1,0 +1,19 @@
+.comparison-scroll {
+    position: relative;
+}
+
+.comparison-scroll[data-scrollable="true"][data-at-end="false"]::after {
+    content: "";
+    position: absolute;
+    inset-block: 0;
+    inset-inline-end: 0;
+    width: var(--space-8);
+    background: linear-gradient(to right, transparent, var(--core-card));
+    pointer-events: none;
+    z-index: 4;
+}
+
+.comparison-scroll[data-scrollable="false"] + .comparison-table__scroll-hint,
+.comparison-scroll[data-at-end="true"] + .comparison-table__scroll-hint {
+    visibility: hidden;
+}
