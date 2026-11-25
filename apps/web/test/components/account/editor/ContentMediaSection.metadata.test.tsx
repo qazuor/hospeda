@@ -74,7 +74,8 @@ vi.mock('../../../../src/store/toast-store', () => ({
     addToast: mockAddToast
 }));
 
-vi.mock('../../../../src/lib/i18n', () => ({
+vi.mock('../../../../src/lib/i18n', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('../../../../src/lib/i18n')>()),
     createTranslations: () => ({
         t: (key: string, fallback?: string, params?: Record<string, string | number>): string => {
             const raw = fallback ?? key;
@@ -201,6 +202,17 @@ beforeEach(() => {
 // ---------------------------------------------------------------------------
 
 describe('ContentMediaSection — photo text metadata (HOS-1036)', () => {
+    it('uses a labelled icon-only gallery edit action and preserves expanded state', async () => {
+        await renderHydrated();
+        const toggle = screen.getByRole('button', { name: GALLERY_TOGGLE_1 });
+        expect(toggle).toHaveAttribute('aria-expanded', 'false');
+        expect(toggle).not.toHaveTextContent('Editar textos');
+        fireEvent.click(toggle);
+        expect(
+            screen.getByRole('button', { name: 'Cerrar edición de textos de la foto 1' })
+        ).toHaveAttribute('aria-expanded', 'true');
+    });
+
     it('offers the text editor on the featured photo AND on every gallery photo', async () => {
         await renderHydrated();
 

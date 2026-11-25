@@ -3573,8 +3573,6 @@
         "host.json:properties.editor.photo.galleryCapExceededOnSelectPicked_other",
         "host.json:properties.editor.section.policies",
         "host.json:properties.editor.section.seo",
-        "host.json:properties.editor.translation.collapseText",
-        "host.json:properties.editor.translation.expandText",
         "host.json:properties.editor.translation.roleSource",
         "host.json:properties.editor.video.captionLabel",
         "host.json:properties.editor.video.urlPlaceholder",

@@ -37,6 +37,12 @@ function renderLegend(sources: OccupancySourceEnum[] = []) {
 }
 
 describe('CalendarLegend', () => {
+    it('explains past, outside-month and blocked states even in an empty month', () => {
+        renderLegend();
+        expect(screen.getByText('Días pasados')).toBeInTheDocument();
+        expect(screen.getByText('Fuera del mes')).toBeInTheDocument();
+        expect(screen.getByText('Bloqueado manualmente')).toBeInTheDocument();
+    });
     it('starts collapsed', () => {
         const { container } = renderLegend();
 

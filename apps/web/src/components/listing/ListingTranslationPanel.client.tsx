@@ -2,8 +2,7 @@
  * @file ListingTranslationPanel.client.tsx
  * @description Owner-facing i18n editing panel for a listing (SPEC-253 T-022).
  *
- * Replicates the SPEC-212 TranslationPanel visual language (locale badges,
- * fieldCard grid, section card pattern) but adapts it to a direct-edit UX:
+ * Uses the shared TranslationEditor presentation with a direct-edit UX:
  * owners write translations for nameI18n / summaryI18n / descriptionI18n /
  * richDescriptionI18n directly in the panel, per locale (es/en/pt tabs).
  *
@@ -13,22 +12,22 @@
  *
  * Design decisions (D3 — SPEC-253):
  * - Per-locale tab navigation (same three locales as the accommodation panel).
- * - Each tab exposes all four translatable fields as labelled textareas.
- * - HOS-2492: ONE look with the accommodation panel — both import
- *   `host/editor/TranslationPanel.module.css` and render the kit `Tabs` (each
- *   tab counts its empty fields), a `StatusPill` per field, a kit `Alert` for
- *   missing translations and kit `Field` + `Textarea` controls. The data model
- *   and the `onChange` contract are untouched; the section keeps the editor
- *   save bar (`saveModel: 'bar'`).
+ * - Names use single-line kit inputs; summaries and descriptions autosize.
+ * - Shared Section, Tabs, missing hints and row chrome live in account/editor.
+ * - The data model and onChange contract stay local, including display-only
+ *   Spanish fallback. The editor retains its save bar (saveModel: 'bar').
  */
 
 import type { VenueOrExperience } from '@repo/schemas';
 import { type JSX, useCallback, useState } from 'react';
-import { Alert, Field, StatusPill, Tabs, Textarea } from '@/components/account/ui';
-import styles from '@/components/host/editor/TranslationPanel.module.css';
+import {
+    TranslationEditor,
+    TranslationEditorRow
+} from '@/components/account/editor/TranslationEditor';
+import { TranslationTextControl } from '@/components/account/editor/TranslationTextControl';
+import { Field, StatusPill } from '@/components/account/ui';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import cardStyles from './ListingTranslationPanel.module.css';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -223,7 +222,6 @@ export function ListingTranslationPanel({
 }: ListingTranslationPanelProps): JSX.Element {
     const { t } = createTranslations(locale);
 
-    const [activeLocale, setActiveLocale] = useState<SupportedLocale>(locale);
     const [values, setValues] = useState<ListingI18nValues>(initialValues);
 
     const handleFieldChange = useCallback(
@@ -279,9 +277,8 @@ export function ListingTranslationPanel({
     ).map((loc) => LOCALE_LABELS[loc]);
 
     const renderFields = (fieldLocale: SupportedLocale) => (
-        <ul className={styles.fieldList}>
+        <>
             {TRANSLATABLE_FIELDS.map((field) => {
-                const isRich = field === 'richDescriptionI18n' || field === 'descriptionI18n';
                 const value = resolveDisplayValue({
                     field,
                     locale: fieldLocale,
@@ -290,13 +287,11 @@ export function ListingTranslationPanel({
                 });
                 const stored = Boolean(values[field][fieldLocale]);
                 return (
-                    <li
+                    <TranslationEditorRow
                         key={field}
-                        className={styles.fieldCard}
-                        data-locale={fieldLocale}
-                    >
-                        <div className={styles.fieldHead}>
-                            {value === '' ? (
+                        locale={fieldLocale}
+                        heading={
+                            value === '' ? (
                                 <StatusPill tone="warning">
                                     {t('listing.owner.editor.translationPanel.statusEmpty')}
                                 </StatusPill>
@@ -308,83 +303,58 @@ export function ListingTranslationPanel({
                                 <StatusPill tone="neutral">
                                     {t('listing.owner.editor.translationPanel.statusSource')}
                                 </StatusPill>
-                            )}
-                        </div>
+                            )
+                        }
+                    >
                         <Field
                             locale={locale}
                             label={fieldLabelFor(field, fieldLocale)}
                             id={`ctp-${field}-${fieldLocale}`}
                         >
-                            <Textarea
-                                rows={isRich ? 5 : 3}
+                            <TranslationTextControl
+                                singleLine={field === 'nameI18n'}
                                 value={value}
                                 placeholder={t(
                                     'listing.owner.editor.translationPanel.localePlaceholder',
                                     `Ingresá el texto en ${LOCALE_LABELS[fieldLocale]}...`,
                                     { locale: LOCALE_LABELS[fieldLocale] }
                                 )}
-                                onChange={(event) =>
-                                    handleFieldChange(field, fieldLocale, event.target.value)
-                                }
+                                onChange={(text) => handleFieldChange(field, fieldLocale, text)}
                             />
                         </Field>
-                    </li>
+                    </TranslationEditorRow>
                 );
             })}
-        </ul>
+        </>
     );
 
     const tabs = SUPPORTED_LOCALES.map((loc) => {
         const count = emptyCount(loc);
         return {
-            id: loc,
-            label: LOCALE_LABELS[loc],
-            ...(count > 0
-                ? {
-                      count,
-                      countLabel: t(
-                          'listing.owner.editor.translationPanel.missingCount',
-                          undefined,
-                          {
-                              count
-                          }
-                      )
-                  }
-                : {}),
-            panel: renderFields(loc)
+            locale: loc,
+            count,
+            countLabel: t('listing.owner.editor.translationPanel.missingCount', undefined, {
+                count
+            }),
+            content: renderFields(loc)
         };
     });
 
     return (
-        <fieldset className={`${styles.section} ${cardStyles.section}`}>
-            <legend className={styles.sectionTitle}>
-                {t('listing.owner.editor.translationPanel.sectionTitle', 'Traducciones')}
-            </legend>
-
-            <p className={styles.sectionDescription}>
-                {t(`listing.owner.editor.translationPanel.sectionDescription.${vertical}`)}
-            </p>
-
-            {missingLocales.length > 0 && (
-                <Alert
-                    tone="info"
-                    locale={locale}
-                >
-                    {t('listing.owner.editor.translationPanel.missingNotice', undefined, {
-                        locales: missingLocales.join(', ')
-                    })}
-                </Alert>
-            )}
-
-            <Tabs
-                items={tabs}
-                ariaLabel={t('listing.owner.editor.translationPanel.sectionTitle', 'Traducciones')}
-                value={activeLocale}
-                onValueChange={(id) => {
-                    const next = SUPPORTED_LOCALES.find((loc) => loc === id);
-                    if (next) setActiveLocale(next);
-                }}
-            />
-        </fieldset>
+        <TranslationEditor
+            locale={locale}
+            vertical={vertical}
+            description={t(`listing.owner.editor.translationPanel.sectionDescription.${vertical}`)}
+            missingNotice={
+                missingLocales.length > 0
+                    ? t('listing.owner.editor.translationPanel.missingNotice', undefined, {
+                          locales: missingLocales.join(', ')
+                      })
+                    : undefined
+            }
+            tabs={tabs}
+            defaultLocale={locale}
+            ariaLabel={t('listing.owner.editor.translationPanel.sectionTitle', 'Traducciones')}
+        />
     );
 }

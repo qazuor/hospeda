@@ -30,6 +30,8 @@ import type { VenueOrExperience } from '@/lib/listing/owner-listings';
 
 /** The meter's input: section counts and the incomplete sections, in order. */
 export interface EditorCompleteness {
+    /** Every measured required section, including those already complete. */
+    readonly requiredSections: readonly string[];
     /** Sections with every requirement met. */
     readonly done: number;
     /** Sections that hold at least one requirement. */
@@ -71,7 +73,12 @@ export function buildEditorCompleteness({
         }
     }
 
-    return { done: sections.length - missing.length, total: sections.length, missing };
+    return {
+        done: sections.length - missing.length,
+        total: sections.length,
+        missing,
+        requiredSections: sections
+    };
 }
 
 /**

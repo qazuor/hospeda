@@ -18,6 +18,7 @@
 
 .grid {
     display: grid;
+    align-items: start;
     grid-template-columns: minmax(0, 1fr);
     gap: var(--space-4);
 }
@@ -46,7 +47,8 @@
 
 .groupTitle {
     padding: 0;
-    font: var(--app-ui);
+    margin-block-end: var(--space-3);
+    font: var(--app-card-title);
     font-weight: 600;
     color: var(--core-foreground);
 }

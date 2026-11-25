@@ -58,6 +58,14 @@ function makeProps(overrides: Partial<PhotoGalleryItemProps> = {}): PhotoGallery
 }
 
 describe('PhotoGalleryItem', () => {
+    it('groups ordering and promotion in one labelled, nonwrapping toolbar', () => {
+        render(<PhotoGalleryItem {...makeProps()} />);
+        const toolbar = screen.getByRole('toolbar', { name: 'Photo actions 2' });
+        expect(toolbar).toContainElement(screen.getByLabelText('Mover foto 2 hacia arriba'));
+        expect(toolbar).toContainElement(screen.getByLabelText('Usar foto 2 como portada'));
+        expect(toolbar.className).toContain('galleryToolbar');
+    });
+
     it('renders every action as a real <button> — keyboard-operable by default', () => {
         render(<PhotoGalleryItem {...makeProps()} />);
         for (const name of [

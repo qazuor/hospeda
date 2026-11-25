@@ -144,6 +144,8 @@ const statuses = applyLockedSectionStatuses({
 		visibility={buildAccommodationEditorVisibility({ hasTranslations: data.translations !== null })}
 		statuses={statuses}
 		completeness={completeness}
+        publicationStatus={accommodation.publicationStatus}
+        slug={accommodation.slug}
 	/>
 </EditorSectionLayout>
 

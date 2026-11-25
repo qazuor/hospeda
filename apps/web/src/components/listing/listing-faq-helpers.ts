@@ -144,20 +144,6 @@ export function faqBasePath({
 }
 
 /**
- * Whether a FAQ's channel-visibility flags differ from the default (both
- * `true`). Drives the per-row marker (HOS-400, mirroring HOS-393 AC-14): the
- * manager lists every FAQ regardless of its flags, so a non-default state must
- * stay visible at a glance, or a hidden FAQ becomes invisible in the very
- * screen meant to manage it.
- *
- * @param faq - The FAQ to inspect.
- * @returns `true` when the FAQ is hidden from the page or from the assistant.
- */
-export function hasNonDefaultChannelState(faq: ListingFaq): boolean {
-    return !faq.isVisibleOnListing || !faq.isUsableByAi;
-}
-
-/**
  * Sorts FAQs by `displayOrder` ascending (nulls last).
  *
  * @param faqs - The FAQs to sort.

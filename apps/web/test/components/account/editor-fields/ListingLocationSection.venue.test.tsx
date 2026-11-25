@@ -172,7 +172,7 @@ describe('venue location (ListingLocationSection)', () => {
         );
         expect(screen.getByLabelText('Calle')).toHaveAttribute('id', idOf('location.street'));
         expect(screen.getByLabelText(/^Piso/)).toHaveAttribute('id', idOf('location.floor'));
-        expect(screen.getByText('Coordenadas')).toBeInTheDocument();
+        expect(screen.getByText('Ingresar coordenadas')).toBeInTheDocument();
     });
 
     it('writes both coordinates when one is typed, keeping the address', () => {
@@ -210,7 +210,7 @@ describe('venue location (ListingLocationSection)', () => {
             />
         );
 
-        expect(screen.getByText('Coordenadas').closest('details')).toHaveAttribute('open');
+        expect(screen.getByText('Ingresar coordenadas').closest('details')).toHaveAttribute('open');
         expect(screen.getByLabelText(/^Latitud/)).toHaveAccessibleDescription(/Latitud inválida/);
     });
 });

@@ -26,7 +26,8 @@ vi.mock('@/lib/i18n', async (importOriginal) => ({
 }));
 
 vi.mock('@/lib/env', () => ({
-    getApiUrl: () => 'https://api.test'
+    getApiUrl: () => 'https://api.test',
+    isLoggingEnabled: () => false
 }));
 
 const { mockFreshEntitlements } = vi.hoisted(() => ({ mockFreshEntitlements: vi.fn() }));

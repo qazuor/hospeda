@@ -95,6 +95,27 @@ function dirtyAndSave(): void {
 }
 
 describe('VenueDailySpecialsManager', () => {
+    it('renders one help-linked Section', async () => {
+        mockGet.mockResolvedValue(LOADED);
+        const { container } = render(
+            <VenueDailySpecialsManager
+                listingId={LISTING_ID}
+                locale="es"
+            />
+        );
+        await screen.findByDisplayValue('Milanesa a la napolitana');
+        expect(container.querySelectorAll('[data-kit-section]')).toHaveLength(1);
+        expect(container.querySelector('[data-kit-section]')).toHaveAttribute(
+            'data-help',
+            'section:venue.menu-del-dia'
+        );
+        const section = container.querySelector('[data-kit-section]');
+        expect(section).not.toHaveClass('panel');
+        const stack = section?.querySelector(':scope > div > .panel');
+        expect(stack).toContainElement(container.querySelector('p.intro'));
+        expect(stack).toContainElement(screen.getByDisplayValue('Milanesa a la napolitana'));
+    });
+
     it('loads its own specials rather than waiting to be handed them', async () => {
         // Arrange
         mockGet.mockResolvedValue(LOADED);

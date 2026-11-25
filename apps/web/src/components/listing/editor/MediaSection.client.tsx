@@ -45,23 +45,17 @@ import { DeleteIcon } from '@repo/icons';
 import { DEFAULT_ENTITY_MAX_FILE_SIZE_MB } from '@repo/media';
 import type { Image } from '@repo/schemas';
 import { type JSX, useCallback } from 'react';
-import {
-    Alert,
-    Button,
-    MediaDropzone,
-    PhotoGrid,
-    PhotoTile,
-    useConfirm
-} from '@/components/account/ui';
+import { PhotoEditor } from '@/components/account/editor/PhotoEditor';
+import { Alert, Button, MediaDropzone, PhotoTile, useConfirm } from '@/components/account/ui';
 import { PhotoAltBadge } from '@/components/host/editor/PhotoAltBadge';
 import { PhotoMetadataEditor } from '@/components/host/editor/PhotoMetadataEditor.client';
 import styles from '@/components/host/editor/PhotoSection.module.css';
 import { PhotoUploadStatus } from '@/components/host/editor/PhotoUploadStatus';
 import { photoRemovalConfirmRequest } from '@/lib/forms/confirm-photo-removal';
+import { sectionHelpId } from '@/lib/help/section-help-id';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import type { VenueOrExperience } from '@/lib/listing/owner-listings';
-import fieldStyles from './editor-fields.module.css';
 import { useListingMedia } from './use-listing-media';
 
 export interface MediaSectionProps {
@@ -139,93 +133,27 @@ export function MediaSection({
     const removeLabel = t('listing.owner.editor.media.remove', 'Eliminar');
 
     return (
-        <section
-            className={fieldStyles.section}
+        <PhotoEditor
+            locale={locale}
+            uploadHint={t(
+                'listing.owner.editor.media.uploadHint',
+                'JPG, PNG, WebP o HEIC — máx. {{maxSize}}MB',
+                { maxSize: DEFAULT_ENTITY_MAX_FILE_SIZE_MB }
+            )}
+            helpId={sectionHelpId({ vertical, slug: 'fotos' })}
             id="editor-media"
-        >
-            <h3 className={styles.sectionTitle}>
-                {t('listing.owner.editor.sections.media', 'Fotos')}
-            </h3>
-
-            <div className={styles.slot}>
-                <span className={styles.slotLabel}>
-                    {t('listing.owner.editor.media.featured', 'Imagen principal')}
-                </span>
-                {featuredItem ? (
-                    <PhotoTile
-                        featured
-                        src={featuredItem.url}
-                        alt={
-                            featuredItem.alt ??
-                            t('listing.owner.editor.media.featured', 'Imagen principal')
-                        }
-                        actions={
-                            <Button
-                                variant="secondary"
-                                size="lg"
-                                iconOnly
-                                aria-label={removeLabel}
-                                disabled={anyOpInFlight || !opsReady || !featuredItem.id}
-                                onClick={handleFeaturedRemove}
-                            >
-                                <DeleteIcon
-                                    size="sm"
-                                    aria-hidden="true"
-                                />
-                            </Button>
-                        }
-                        badge={
-                            <PhotoAltBadge
-                                locale={locale}
-                                item={featuredItem}
-                            />
-                        }
-                    >
-                        <PhotoMetadataEditor
-                            locale={locale}
-                            item={featuredItem}
-                            disabled={anyOpInFlight || !opsReady}
-                            toggleAriaLabel={t(
-                                'host.properties.editor.photo.editFeaturedDetailsAria',
-                                'Editar textos de la portada'
-                            )}
-                            closeAriaLabel={t(
-                                'host.properties.editor.photo.closeFeaturedDetailsAria',
-                                'Cerrar edición de textos de la portada'
-                            )}
-                            onSave={handleUpdateText}
-                        />
-                    </PhotoTile>
-                ) : (
-                    <MediaDropzone
-                        title={t('listing.owner.editor.media.add', 'Agregar foto')}
-                        disabled={isUploading || isCompressing}
-                        onPick={() => featuredInputRef.current?.click()}
-                    />
-                )}
-                <input
-                    ref={featuredInputRef}
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp,image/heic"
-                    aria-label={t('listing.owner.editor.media.featured', 'Imagen principal')}
-                    className={styles.fileInput}
-                    onChange={handleFeaturedSelect}
-                />
-            </div>
-
-            <div className={styles.slot}>
-                <span className={styles.slotLabel}>
-                    {t('listing.owner.editor.media.gallery', 'Galería de fotos')} (
-                    {galleryItems.length}/{galleryCap})
-                </span>
-                <PhotoGrid>
-                    {galleryItems.map((image, index) => (
+            featured={
+                <div className={styles.slot}>
+                    <span className={styles.slotLabel}>
+                        {t('listing.owner.editor.media.featured', 'Imagen principal')}
+                    </span>
+                    {featuredItem ? (
                         <PhotoTile
-                            key={image.id || image.url}
-                            src={image.url}
+                            featured
+                            src={featuredItem.url}
                             alt={
-                                image.alt ??
-                                t('listing.owner.editor.media.gallery', 'Galería de fotos')
+                                featuredItem.alt ??
+                                t('listing.owner.editor.media.featured', 'Imagen principal')
                             }
                             actions={
                                 <Button
@@ -233,8 +161,8 @@ export function MediaSection({
                                     size="lg"
                                     iconOnly
                                     aria-label={removeLabel}
-                                    disabled={anyOpInFlight || !opsReady || !image.id}
-                                    onClick={() => handleGalleryRemove(image)}
+                                    disabled={anyOpInFlight || !opsReady || !featuredItem.id}
+                                    onClick={handleFeaturedRemove}
                                 >
                                     <DeleteIcon
                                         size="sm"
@@ -245,39 +173,107 @@ export function MediaSection({
                             badge={
                                 <PhotoAltBadge
                                     locale={locale}
-                                    item={image}
+                                    item={featuredItem}
                                 />
                             }
                         >
                             <PhotoMetadataEditor
                                 locale={locale}
-                                item={image}
+                                item={featuredItem}
                                 disabled={anyOpInFlight || !opsReady}
-                                compactLayout={true}
                                 toggleAriaLabel={t(
-                                    'host.properties.editor.photo.editDetailsAria',
-                                    'Editar textos de la foto {{index}}',
-                                    { index: index + 1 }
+                                    'host.properties.editor.photo.editFeaturedDetailsAria',
+                                    'Editar textos de la portada'
                                 )}
                                 closeAriaLabel={t(
-                                    'host.properties.editor.photo.closeDetailsAria',
-                                    'Cerrar edición de textos de la foto {{index}}',
-                                    { index: index + 1 }
+                                    'host.properties.editor.photo.closeFeaturedDetailsAria',
+                                    'Cerrar edición de textos de la portada'
                                 )}
                                 onSave={handleUpdateText}
                             />
                         </PhotoTile>
-                    ))}
-                    {!isGalleryFull && (
+                    ) : (
                         <MediaDropzone
-                            variant="tile"
                             title={t('listing.owner.editor.media.add', 'Agregar foto')}
                             disabled={isUploading || isCompressing}
-                            onPick={() => galleryInputRef.current?.click()}
+                            onPick={() => featuredInputRef.current?.click()}
                         />
                     )}
-                </PhotoGrid>
+                    <input
+                        ref={featuredInputRef}
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp,image/heic"
+                        aria-label={t('listing.owner.editor.media.featured', 'Imagen principal')}
+                        className={styles.fileInput}
+                        onChange={handleFeaturedSelect}
+                    />
+                </div>
+            }
+            galleryLabel={
+                <>
+                    {t('listing.owner.editor.media.gallery', 'Galería de fotos')} (
+                    {galleryItems.length}/{galleryCap})
+                </>
+            }
+            gallery={galleryItems.map((image, index) => (
+                <PhotoTile
+                    key={image.id || image.url}
+                    src={image.url}
+                    alt={image.alt ?? t('listing.owner.editor.media.gallery', 'Galería de fotos')}
+                    actions={
+                        <Button
+                            variant="secondary"
+                            size="lg"
+                            iconOnly
+                            aria-label={removeLabel}
+                            disabled={anyOpInFlight || !opsReady || !image.id}
+                            onClick={() => handleGalleryRemove(image)}
+                        >
+                            <DeleteIcon
+                                size="sm"
+                                aria-hidden="true"
+                            />
+                        </Button>
+                    }
+                    badge={
+                        <PhotoAltBadge
+                            locale={locale}
+                            item={image}
+                        />
+                    }
+                >
+                    <PhotoMetadataEditor
+                        locale={locale}
+                        item={image}
+                        disabled={anyOpInFlight || !opsReady}
+                        compactLayout={true}
+                        toggleAriaLabel={t(
+                            'host.properties.editor.photo.editDetailsAria',
+                            'Editar textos de la foto {{index}}',
+                            { index: index + 1 }
+                        )}
+                        closeAriaLabel={t(
+                            'host.properties.editor.photo.closeDetailsAria',
+                            'Cerrar edición de textos de la foto {{index}}',
+                            { index: index + 1 }
+                        )}
+                        onSave={handleUpdateText}
+                    />
+                </PhotoTile>
+            ))}
+            galleryPicker={
+                isGalleryFull
+                    ? undefined
+                    : {
+                          title: t('listing.owner.editor.media.add', 'Agregar foto'),
+                          disabled: isUploading || isCompressing,
+                          onPick: () => galleryInputRef.current?.click()
+                      }
+            }
+            galleryInputId="listing-gallery-image-input"
+            galleryInput={
                 <input
+                    id="listing-gallery-image-input"
                     ref={galleryInputRef}
                     type="file"
                     accept="image/jpeg,image/png,image/webp,image/heic"
@@ -287,30 +283,28 @@ export function MediaSection({
                     className={styles.fileInput}
                     onChange={handleGallerySelect}
                 />
-                <span className={styles.sectionDescription}>
-                    {t(
-                        'listing.owner.editor.media.uploadHint',
-                        'JPG, PNG, WebP o HEIC — máx. {{maxSize}}MB',
-                        { maxSize: DEFAULT_ENTITY_MAX_FILE_SIZE_MB }
-                    )}
-                </span>
-                <PhotoUploadStatus
-                    locale={locale}
-                    isCompressing={isCompressing}
-                    isUploading={isUploading}
-                    batch={uploadBatch}
-                />
-            </div>
+            }
+            status={
+                <>
+                    <PhotoUploadStatus
+                        locale={locale}
+                        isCompressing={isCompressing}
+                        isUploading={isUploading}
+                        batch={uploadBatch}
+                    />
 
-            {error && (
-                <Alert
-                    tone="danger"
-                    locale={locale}
-                >
-                    {error}
-                </Alert>
-            )}
+                    {error && (
+                        <Alert
+                            tone="danger"
+                            locale={locale}
+                        >
+                            {error}
+                        </Alert>
+                    )}
+                </>
+            }
+        >
             {confirmDialog}
-        </section>
+        </PhotoEditor>
     );
 }

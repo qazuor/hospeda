@@ -12,6 +12,7 @@
 
 import type { LocationExceptionOwnerView } from '@repo/schemas';
 import { type JSX, useState } from 'react';
+import { Alert } from '@/components/account/ui/Alert';
 import { Button } from '@/components/account/ui/Button';
 import { createTranslations, type SupportedLocale } from '@/lib/i18n';
 import {
@@ -55,52 +56,49 @@ export function LocationExceptionPanel({
 
     if (status === 'approved') {
         return (
-            <section
-                className={`${styles.block} ${styles.approved}`}
-                data-testid="location-exception-approved"
-            >
-                <p className={styles.message}>
+            <div data-testid="location-exception-approved">
+                <Alert
+                    locale={locale}
+                    tone="success"
+                >
                     {t(
                         'listing.owner.locationException.status.approved',
                         'Tu excepción de dirección fue aprobada: ya podés publicar esta ficha.'
                     )}
-                </p>
-            </section>
+                </Alert>
+            </div>
         );
     }
 
     if (status === 'approvedMove') {
         return (
-            <section
-                className={`${styles.block} ${styles.approved}`}
-                data-testid="location-exception-approved-move"
-            >
-                <p className={styles.message}>
+            <div data-testid="location-exception-approved-move">
+                <Alert
+                    locale={locale}
+                    tone="success"
+                >
                     {t(
                         'listing.owner.locationException.status.approvedMove',
                         'Aprobado: ya podés guardar esa dirección.'
                     )}
-                </p>
-            </section>
+                </Alert>
+            </div>
         );
     }
 
     if (status === 'pending') {
         return (
-            <section
-                className={`${styles.block} ${styles.pending}`}
-                data-testid="location-exception-pending"
-            >
-                <p
-                    className={styles.message}
-                    role="status"
+            <div data-testid="location-exception-pending">
+                <Alert
+                    locale={locale}
+                    tone="info"
                 >
                     {t(
                         'listing.owner.locationException.status.pending',
                         'Tu pedido de excepción está en revisión. Te avisamos por email cuando tengamos una respuesta.'
                     )}
-                </p>
-            </section>
+                </Alert>
+            </div>
         );
     }
 
@@ -114,15 +112,14 @@ export function LocationExceptionPanel({
     const decisionReason = resolved.decisionReason;
     return (
         <section
-            className={`${styles.block} ${status === 'rejected' ? styles.rejected : ''}`}
             data-testid={
                 status === 'rejected' ? 'location-exception-rejected' : 'location-exception-none'
             }
         >
             {status === 'rejected' && (
-                <p
-                    className={styles.message}
-                    role="status"
+                <Alert
+                    locale={locale}
+                    tone="warning"
                 >
                     {decisionReason
                         ? t(
@@ -134,7 +131,7 @@ export function LocationExceptionPanel({
                               'listing.owner.locationException.status.rejectedNoReason',
                               'Tu pedido de excepción fue rechazado.'
                           )}
-                </p>
+                </Alert>
             )}
             {canRequest && !formOpen && (
                 <div className={styles.actions}>

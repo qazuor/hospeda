@@ -2,18 +2,11 @@
    only since HOS-2490. The rows' chrome (label, move, remove, add) is the kit
    Repeater's; this file styles what is particular to the carta. */
 
+/* The caller owns spacing inside the kit Section body, not on its root. */
 .panel {
     display: flex;
     flex-direction: column;
     gap: var(--space-5);
-}
-
-.heading {
-    margin: 0;
-    padding-block-end: var(--space-2);
-    border-block-end: 1px solid var(--border);
-    font: var(--app-section);
-    color: var(--core-foreground);
 }
 
 .subheading {
@@ -223,19 +216,9 @@
     cursor: pointer;
 }
 
-/* HOS-1043 — the EN/PT translation fields, collapsed behind a native <details>. */
+/* HOS-1043 — the EN/PT translation fields inside the kit Disclosure. */
 .translationsBlock {
     inline-size: 100%;
-}
-
-.translationsSummary {
-    display: flex;
-    align-items: center;
-    min-block-size: var(--control-h-lg);
-    font: var(--app-meta);
-    font-weight: var(--app-card-title-weight);
-    color: var(--core-muted-foreground);
-    cursor: pointer;
 }
 
 .translationsLockedHint {

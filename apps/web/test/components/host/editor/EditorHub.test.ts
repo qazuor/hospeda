@@ -59,6 +59,18 @@ describe('EditorHub.astro — structure (AC-4)', () => {
 });
 
 describe('EditorHub.astro — status lines', () => {
+    it('composes existing publication facts without making API reads', () => {
+        expect(CODE).toContain('EditorPublicationStatus');
+        expect(CODE).toContain('publicationStatus={publicationStatus}');
+        expect(CODE).not.toContain('endpoints-protected');
+    });
+    it('derives meter and row states together and distinguishes recommendations with repo icons', () => {
+        expect(CODE).toContain('resolveEditorHubPresentation');
+        expect(CODE).toContain('account.editorHub.recommended');
+        expect(CODE).toContain('account.editorHub.readyWithRecommendations');
+        expect(CODE).toContain('InfoIcon');
+        expect(CODE).toContain('status.completion');
+    });
     it('should render the second line only when a status exists', () => {
         // `{status && (...)}` is what keeps a section with nothing to report from
         // rendering an empty or zero line.

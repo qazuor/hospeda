@@ -230,7 +230,7 @@ describe('accommodation location — pin reference and notice', () => {
 
     it('explains the unplaced pin above the map, and drops it once placed (HOS-1767)', async () => {
         const { rerender } = renderAccommodation();
-        const notice = screen.getByText(/Todavía no marcaste la ubicación/);
+        const notice = screen.getByText(/Todavía no marcaste el lugar en el mapa/);
         const map = await screen.findByTestId('mock-map');
         expect(notice.compareDocumentPosition(map) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
 
@@ -249,7 +249,9 @@ describe('accommodation location — pin reference and notice', () => {
                 }}
             />
         );
-        expect(screen.queryByText(/Todavía no marcaste la ubicación/)).not.toBeInTheDocument();
+        expect(
+            screen.queryByText(/Todavía no marcaste el lugar en el mapa/)
+        ).not.toBeInTheDocument();
     });
 });
 
@@ -302,7 +304,7 @@ describe('accommodation location — coordinates', () => {
     it('shows a coordinate error inside an open «Coordenadas» disclosure', () => {
         renderAccommodation({ latError: 'Latitud inválida' });
 
-        expect(screen.getByText('Coordenadas').closest('details')).toHaveAttribute('open');
+        expect(screen.getByText('Ingresar coordenadas').closest('details')).toHaveAttribute('open');
         expect(screen.getByLabelText(/^Latitud/)).toHaveAccessibleDescription(/Latitud inválida/);
     });
 

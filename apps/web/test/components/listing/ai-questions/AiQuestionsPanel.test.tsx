@@ -380,6 +380,20 @@ const EMPTY_RESPONSE = {
     }
 };
 
+// Filters are only offered when there is data to filter, or one is active (HOS-2624).
+const DATA_RESPONSE = {
+    ok: true,
+    data: {
+        items: [item('d1', 'Con datos', 'answered')],
+        total: 1,
+        unansweredCount: 0,
+        truncated: false,
+        dismissed: [],
+        dismissedCount: 0,
+        othersNextCursor: null
+    }
+};
+
 describe('AiQuestionsPanel date filter (HOS-2075)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
@@ -409,9 +423,10 @@ describe('AiQuestionsPanel date filter (HOS-2075)', () => {
 
     it('refetches from the first page with from/to when the range changes, and clears', async () => {
         mockGetProtected.mockResolvedValue(EMPTY_RESPONSE);
+        mockGetProtected.mockResolvedValueOnce(DATA_RESPONSE);
         renderPanel();
         await waitFor(() => expect(mockGetProtected).toHaveBeenCalledTimes(1));
-        await screen.findByText('Todavía nadie le hizo preguntas al asistente de esta ficha.');
+        await screen.findByText('Con datos');
 
         fireEvent.change(screen.getByLabelText('Desde'), { target: { value: '2026-10-01' } });
         await waitFor(() => expect(mockGetProtected).toHaveBeenCalledTimes(2));
@@ -435,8 +450,16 @@ describe('AiQuestionsPanel date filter (HOS-2075)', () => {
         });
     });
 
+    it('hides the date filters when there is nothing to filter yet', async () => {
+        mockGetProtected.mockResolvedValue(EMPTY_RESPONSE);
+        renderPanel();
+        await screen.findByText('Todavía nadie le hizo preguntas al asistente de esta ficha.');
+
+        expect(screen.queryByLabelText('Desde')).toBeNull();
+    });
+
     it('shows a polite message on a 400 and keeps the filters usable', async () => {
-        mockGetProtected.mockResolvedValueOnce(EMPTY_RESPONSE);
+        mockGetProtected.mockResolvedValueOnce(DATA_RESPONSE);
         renderPanel();
         await screen.findByLabelText('Desde');
 
