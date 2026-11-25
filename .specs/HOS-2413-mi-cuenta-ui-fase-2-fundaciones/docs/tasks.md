@@ -245,7 +245,8 @@ These are not repeated below.
     `aria-live="polite"` only when crossing 90% and 100%, and turns
     `status-danger-fg` over the limit. `softLimit` lets the text go over and
     warns.
-  - Checkbox is native with `accent-color` and supports `indeterminate`.
+  - Checkbox retains native semantics with token-painted CSS chrome and supports
+    `indeterminate` (HOS-2621 replaces the original `accent-color` painting).
   - Groups use `<fieldset>/<legend>`.
   - Radio arrows move the selection natively. A selected OptionCard shows a
     double border AND the `nav-active-bg` background, never color alone.

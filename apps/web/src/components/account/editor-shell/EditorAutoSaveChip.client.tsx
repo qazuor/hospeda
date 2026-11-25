@@ -1,13 +1,12 @@
 /**
  * @file EditorAutoSaveChip.client.tsx
- * @description The save signal of an `auto` editor section (HOS-2487, spec
- * HOS-2415 §6.2). The editor shell mounts it once, next to the page title,
- * only when the registry says the section saves `auto`.
+ * @description Shared editor status chip. Bar sections start clean during SSR;
+ * auto sections remain idle until an action reports its state.
  *
  * It renders the kit `AutoSaveChip` for whatever the section's islands report
  * through `editor-auto-save-signal` (`runEditorAutoSave` /
  * `reportEditorAutoSave`), and nothing while idle. The wrapper is always in the
- * markup with `data-editor-save-signal="auto"`, so a render test can tell which
+ * markup with `data-editor-save-signal`, so a render test can tell which
  * signal a page carries.
  */
 
@@ -26,6 +25,8 @@ import {
 export interface EditorAutoSaveChipProps {
     /** Locale for the chip copy. */
     readonly locale: SupportedLocale;
+    /** Persistence model; changes the wrapper and the initial presentation only. */
+    readonly saveModel?: 'auto' | 'bar';
 }
 
 /**
@@ -34,20 +35,21 @@ export interface EditorAutoSaveChipProps {
  * @param props - See {@link EditorAutoSaveChipProps}.
  * @returns The signal wrapper, with the chip once a save was reported.
  */
-export function EditorAutoSaveChip({ locale }: EditorAutoSaveChipProps) {
+export function EditorAutoSaveChip({ locale, saveModel = 'auto' }: EditorAutoSaveChipProps) {
     const state = useSyncExternalStore(
         subscribeEditorAutoSave,
         getEditorAutoSave,
         getEditorAutoSaveServerSnapshot
     );
+    const status = state.status === 'idle' && saveModel === 'bar' ? 'clean' : state.status;
 
     return (
-        <span data-editor-save-signal="auto">
-            {state.status === 'idle' ? null : (
+        <span data-editor-save-signal={saveModel}>
+            {status === 'idle' ? null : (
                 <AutoSaveChip
-                    status={state.status}
-                    savedAt={state.savedAt}
-                    onRetry={state.retry}
+                    status={status}
+                    savedAt={state.status === 'idle' ? undefined : state.savedAt}
+                    onRetry={state.status === 'idle' ? undefined : state.retry}
                     locale={locale}
                 />
             )}

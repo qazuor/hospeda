@@ -143,6 +143,46 @@ describe('Field + TextInput', () => {
 });
 
 describe('InputGroup', () => {
+    it('keeps native numeric constraints and form values in the bare recipe', () => {
+        render(
+            <form aria-label="Price">
+                <InputGroup
+                    aria-label="Amount"
+                    type="number"
+                    name="amount"
+                    min={1}
+                    max={10}
+                    step={2}
+                    defaultValue={3}
+                    prefix="$"
+                />
+            </form>
+        );
+        const input = screen.getByRole('spinbutton');
+        expect(input).toHaveClass('bare');
+        expect(input).toHaveAttribute('min', '1');
+        expect(input).toHaveAttribute('max', '10');
+        expect(input).toHaveAttribute('step', '2');
+        expect(new FormData(screen.getByRole('form') as HTMLFormElement).get('amount')).toBe('3');
+    });
+
+    it.each(['date', 'time'] as const)('retains the native %s type in both recipes', (type) => {
+        render(
+            <>
+                <TextInput
+                    aria-label="Standalone"
+                    type={type}
+                />
+                <InputGroup
+                    aria-label="Grouped"
+                    type={type}
+                />
+            </>
+        );
+        expect(screen.getByLabelText('Standalone')).toHaveAttribute('type', type);
+        expect(screen.getByLabelText('Grouped')).toHaveAttribute('type', type);
+    });
+
     it('renders the prefix and suffix addons', () => {
         const { container } = render(
             <Field

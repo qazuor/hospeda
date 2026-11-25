@@ -33,9 +33,37 @@
     cursor: not-allowed;
 }
 
-/* Select: native arrow kept, a little room on the end side. */
+/* Native select behavior with token-painted chrome; listboxes have no chevron. */
+.selectWrap {
+    position: relative;
+    min-inline-size: 0;
+    inline-size: 100%;
+}
+
 .select {
-    padding-inline-end: var(--space-2);
+    appearance: none;
+}
+
+.dropdown .select {
+    padding-inline-end: var(--space-10);
+}
+
+.dropdown::after {
+    content: "";
+    position: absolute;
+    inset-inline-end: var(--space-4);
+    inset-block-start: 50%;
+    inline-size: var(--space-2);
+    block-size: var(--space-2);
+    /* Physical edges keep the rotated glyph pointing down in both LTR and RTL. */
+    border-right: 2px solid var(--core-muted-foreground);
+    border-bottom: 2px solid var(--core-muted-foreground);
+    transform: translateY(-75%) rotate(45deg);
+    pointer-events: none;
+}
+
+.dropdown:has(.select:disabled)::after {
+    opacity: 0.5;
 }
 
 /* Textarea: padded vertically, resizable on the block axis only. */
@@ -92,4 +120,29 @@
 
 .bare:focus-visible {
     outline: none;
+}
+
+/* Remove numeric steppers, not native keyboard stepping or date/time pickers. */
+.control[type="number"],
+.bare[type="number"] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+
+.control[type="number"]::-webkit-inner-spin-button,
+.control[type="number"]::-webkit-outer-spin-button,
+.bare[type="number"]::-webkit-inner-spin-button,
+.bare[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.control[type="date"],
+.bare[type="date"] {
+    min-inline-size: calc(var(--space-10) * 4);
+}
+
+.control[type="time"],
+.bare[type="time"] {
+    min-inline-size: calc(var(--space-10) * 3);
 }

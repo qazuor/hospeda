@@ -42,7 +42,7 @@ export interface ListRowProps {
     readonly meta?: ReactNode;
     /** Block content under the description that is not text (a list of badges). */
     readonly extra?: ReactNode;
-    /** Longer text, clamped to one line (e.g. the last message). */
+    /** Supporting text, clamped to two lines (e.g. the last message). */
     readonly description?: ReactNode;
     /** Piece at the end (a date, a `CountPill`). */
     readonly trailing?: ReactNode;
@@ -50,7 +50,7 @@ export interface ListRowProps {
     readonly actions?: ListRowActions;
     /** Marks the row as needing attention (visual only). */
     readonly emphasis?: boolean;
-    /** Lets the description wrap onto several lines instead of clamping to one (a review body). */
+    /** Lets the description grow without a line clamp (a review body). */
     readonly wrapDescription?: boolean;
     /** Stable id rendered as `data-row`, for tests and analytics. */
     readonly rowId?: string;

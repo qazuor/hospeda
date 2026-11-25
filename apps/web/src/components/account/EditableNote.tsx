@@ -188,6 +188,7 @@ export function EditableNote({
                         ref={textareaRef}
                         className={styles.textarea}
                         aria-label={t('account.favorites.notes.label')}
+                        placeholder={t('account.favorites.notes.emptyPlaceholder')}
                         value={draft}
                         rows={computeRows(draft)}
                         maxLength={NOTE_MAX_LENGTH + 1}

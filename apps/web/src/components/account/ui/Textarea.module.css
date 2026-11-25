@@ -1,5 +1,5 @@
 /* Textarea.module.css — counter and live region around the kit Textarea
-   (HOS-2413 T-007). The control itself uses Control.module.css. */
+   (HOS-2413 T-007). Native editing; Control.module.css owns token painting. */
 
 .wrap {
     display: flex;

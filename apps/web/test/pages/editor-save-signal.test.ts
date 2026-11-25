@@ -96,10 +96,12 @@ describe('editor save signal per page (HOS-2487, AC-3)', () => {
         expect(PAGES).toHaveLength(30);
     });
 
-    it('the shell mounts the autosave chip only for an auto section', () => {
+    it('the shell mounts the shared chip for auto and bar sections, preserving SSR', () => {
         const shell = codeOf(read('src/layouts/EditorShellLayout.astro'));
 
-        expect(shell).toMatch(/saveModel === 'auto' && <EditorAutoSaveChip/);
+        expect(shell).toContain("(saveModel === 'auto' || saveModel === 'bar')");
+        expect(shell).toContain('saveModel={saveModel}');
+        expect(shell).not.toContain('client:only');
         expect(shell).toContain('data-save-model={saveModel}');
     });
 
