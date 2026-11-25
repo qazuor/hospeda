@@ -6,6 +6,8 @@
  * (HOS-2448).
  */
 
+import type { Config } from 'driver.js';
+
 /** Minimal translation function the helpers need. */
 type TourTranslate = (key: string, fallback?: string) => string;
 
@@ -20,6 +22,8 @@ export interface TourDriverTexts {
     readonly nextBtnText: string;
     readonly prevBtnText: string;
     readonly doneBtnText: string;
+    /** Hide, rather than disable, Previous on the first visible step. */
+    readonly onPopoverRender: NonNullable<Config['onPopoverRender']>;
 }
 
 /**
@@ -35,7 +39,10 @@ export function buildTourDriverTexts({ t }: { readonly t: TourTranslate }): Tour
         progressText: t('account.welcomeTour.step', 'Paso {{current}} de {{total}}'),
         nextBtnText: t('account.welcomeTour.next', 'Siguiente'),
         prevBtnText: t('account.welcomeTour.prev', 'Anterior'),
-        doneBtnText: t('account.welcomeTour.done', 'Finalizar')
+        doneBtnText: t('account.welcomeTour.done', 'Finalizar'),
+        onPopoverRender: (popover, { index }) => {
+            popover.previousButton.hidden = index === 0;
+        }
     };
 }
 
