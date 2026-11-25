@@ -44,6 +44,14 @@ describe('ConversationVerify', () => {
         expect(html).toContain('Hostería del Río');
     });
 
+    it('should tell the guest the host does not get the message until they confirm (HOS-2615)', () => {
+        // Arrange & Act
+        const html = renderToStaticMarkup(ConversationVerify(validProps));
+
+        // Assert
+        expect(html).toContain('el anfitrión no recibe tu mensaje');
+    });
+
     it('should include the 24-hour expiry mention', () => {
         // Arrange & Act
         const html = renderToStaticMarkup(ConversationVerify(validProps));

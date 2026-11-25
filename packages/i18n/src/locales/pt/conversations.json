@@ -129,7 +129,7 @@
         "conversationBlocked": "Conversa bloqueada.",
         "conversationClosed": "Conversa encerrada.",
         "messageSent": "Sua mensagem foi enviada com sucesso.",
-        "verificationSent": "Enviamos um e-mail de verificacao. Verifique sua caixa de entrada."
+        "verificationSent": "Enviamos um e-mail de verificação. Verifique sua caixa de entrada. Sua mensagem só chega ao anfitrião depois que você confirmar seu e-mail."
     },
     "senderLabels": {
         "guest": "Hospede",

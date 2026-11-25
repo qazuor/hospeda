@@ -67,7 +67,8 @@ export function ConversationVerify({
 
             <Text style={styles.paragraph}>
                 Recibimos tu consulta sobre <strong>{accommodationName}</strong>. Para poder
-                enviarla al anfitrión, necesitamos confirmar que el email es tuyo.
+                enviarla al anfitrión, necesitamos confirmar que el email es tuyo. Hasta que lo
+                confirmes, el anfitrión no recibe tu mensaje.
             </Text>
 
             {excerpt ? (

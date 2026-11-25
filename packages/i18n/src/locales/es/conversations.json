@@ -133,7 +133,7 @@
         "conversationBlocked": "Conversación bloqueada.",
         "conversationClosed": "Conversación cerrada.",
         "messageSent": "Tu mensaje fue enviado correctamente.",
-        "verificationSent": "Te enviamos un email de verificación. Revisá tu casilla."
+        "verificationSent": "Te enviamos un email de verificación. Revisá tu casilla. Tu mensaje le llega al anfitrión recién cuando confirmes tu email."
     },
     "status": {
         "blocked": "Bloqueada",
