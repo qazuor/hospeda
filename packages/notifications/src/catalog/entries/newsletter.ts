@@ -31,6 +31,11 @@ interface NewsletterOptInSample {
     readonly firstName?: string;
 }
 
+/** Sample of the welcome email: the guest variant carries the unsubscribe link. */
+interface NewsletterWelcomeSample extends NewsletterOptInSample {
+    readonly unsubscribeUrl?: string;
+}
+
 const CAMPAIGN_BODY_HTML =
     '<h2>Novedades del Litoral</h2><p>Este es un boletín de ejemplo con <strong>contenido ficticio</strong> para la vista previa.</p><ul><li>Fiesta de ejemplo en Concepción del Uruguay</li><li>Nuevos alojamientos de ejemplo</li></ul><p><a href="https://hospeda.com.ar/es/">Ver más en Hospeda</a></p>';
 
@@ -94,7 +99,7 @@ export const NEWSLETTER_ENTRIES: readonly EmailCatalogEntry[] = [
             warnings: []
         })
     }),
-    defineEmailCatalogEntry<NewsletterOptInSample>({
+    defineEmailCatalogEntry<NewsletterWelcomeSample>({
         sendPath: 'newsletter',
         id: 'welcome',
         name: 'Bienvenida al newsletter',
@@ -102,7 +107,12 @@ export const NEWSLETTER_ENTRIES: readonly EmailCatalogEntry[] = [
         audience: 'user',
         scenarios: [
             { id: 'with-name', label: 'Con nombre', input: { firstName: 'Ana' } },
-            { id: 'without-name', label: 'Sin nombre', input: {} }
+            { id: 'without-name', label: 'Sin nombre', input: {} },
+            {
+                id: 'guest',
+                label: 'Sin cuenta (con link de baja)',
+                input: { unsubscribeUrl: UNSUBSCRIBE_URL }
+            }
         ],
         render: ({ scenario, deps }) => ({
             subject: getSubject(NotificationType.NEWSLETTER_WELCOME, {}),

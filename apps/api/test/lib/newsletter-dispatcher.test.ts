@@ -59,7 +59,25 @@ describe('createNewsletterNotificationDispatcher', () => {
         );
     });
 
-    it('sends the welcome email', async () => {
+    it('sends the account welcome without an unsubscribe link when the subscriber has a user', async () => {
+        mockSendEmail.mockResolvedValue({ success: true });
+        const dispatcher = createNewsletterNotificationDispatcher();
+
+        await dispatcher.sendWelcome({
+            subscriberId: 's1',
+            email: 'user@example.com',
+            userId: 'u1',
+            locale: 'es',
+            unsubscribeToken: 'tok'
+        });
+
+        const input = mockSendEmail.mock.calls[0]?.[0];
+        expect(input.attribution.templateKey).toBe('newsletter.welcome');
+        expect(JSON.stringify(input.react.props)).not.toContain('newsletter/unsubscribe');
+        expect(JSON.stringify(input.react.props)).toContain('mi-cuenta/newsletter');
+    });
+
+    it('sends the guest welcome with the public unsubscribe link', async () => {
         mockSendEmail.mockResolvedValue({ success: true });
         const dispatcher = createNewsletterNotificationDispatcher();
 
@@ -67,11 +85,13 @@ describe('createNewsletterNotificationDispatcher', () => {
             subscriberId: 's1',
             email: 'guest@example.com',
             userId: null,
-            locale: 'es',
-            unsubscribeToken: 't'
+            locale: 'pt',
+            unsubscribeToken: 'tok.en'
         });
 
-        expect(mockSendEmail.mock.calls[0]?.[0].attribution.templateKey).toBe('newsletter.welcome');
+        expect(JSON.stringify(mockSendEmail.mock.calls[0]?.[0].react.props)).toContain(
+            'https://api.example.test/api/v1/public/newsletter/unsubscribe?token=tok.en&locale=pt'
+        );
     });
 
     it('does not throw when the provider fails', async () => {

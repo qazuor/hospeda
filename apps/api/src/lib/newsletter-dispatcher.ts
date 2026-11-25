@@ -69,7 +69,7 @@ export function createNewsletterNotificationDispatcher(): NewsletterNotification
             }
         },
 
-        async sendWelcome({ subscriberId, email }) {
+        async sendWelcome({ subscriberId, email, userId, locale, unsubscribeToken }) {
             if (!client) {
                 apiLogger.warn(
                     { subscriberId },
@@ -77,12 +77,18 @@ export function createNewsletterNotificationDispatcher(): NewsletterNotification
                 );
                 return;
             }
+            // A guest has no account, so the welcome carries the one-click unsubscribe
+            // link instead of the "Mi cuenta" preferences button.
+            const unsubscribeUrl = userId
+                ? undefined
+                : `${env.HOSPEDA_API_URL.replace(/\/$/, '')}/api/v1/public/newsletter/unsubscribe?token=${encodeURIComponent(unsubscribeToken)}&locale=${encodeURIComponent(locale)}`;
             const result = await sendAppEmail({
                 client,
                 to: email,
                 subject: getSubject(NotificationType.NEWSLETTER_WELCOME, {}),
                 react: NewsletterWelcomeEmail({
-                    baseUrl: (env.HOSPEDA_SITE_URL ?? 'https://hospeda.com.ar').replace(/\/$/, '')
+                    baseUrl: (env.HOSPEDA_SITE_URL ?? 'https://hospeda.com.ar').replace(/\/$/, ''),
+                    unsubscribeUrl
                 }),
                 attribution: buildTransactionalAttribution({
                     templateKey: NEWSLETTER_EMAIL_KEYS.welcome
