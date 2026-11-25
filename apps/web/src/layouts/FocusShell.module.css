@@ -3,6 +3,8 @@
    the `reading` width. Only the four closed breakpoints; the content column
    answers to its own container. */
 
+@import "./AccountPageFrame.module.css";
+
 .header {
     display: flex;
     align-items: center;

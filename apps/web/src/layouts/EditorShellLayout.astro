@@ -38,7 +38,7 @@
 
 import { EditorAutoSaveChip } from '@/components/account/editor-shell/EditorAutoSaveChip.client';
 import PageHelpLink from '@/components/account/help/PageHelpLink.astro';
-import { EditorSectionNav, EditorSwitcher, PageHeader } from '@/components/account/ui';
+import { EditorSectionNav, EditorSwitcher, LinkButton, PageHeader } from '@/components/account/ui';
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import type { EditorSectionStatus } from '@/lib/editor/editor-hub-status-model';
 import type { EditorRegistry, EditorSectionVisibility } from '@/lib/editor/editor-registry';
@@ -118,9 +118,12 @@ const saveModel = isHub
 ---
 
 <AccountLayout locale={locale} title={title} description={description} activeSection={accountSection}>
-	<PageHeader title={title} description={subtitle} back={back} locale={locale}>
+	<PageHeader title={title} description={subtitle} locale={locale}>
 		<PageHelpLink slot="help" anchor={helpAnchor} locale={locale} />
-		{saveModel === 'auto' && <EditorAutoSaveChip slot="actions" client:idle locale={locale} />}
+		<div slot="actions" class="editor-shell__actions">
+			<LinkButton href={back.href} variant="secondary">{back.label}</LinkButton>
+			{saveModel === 'auto' && <EditorAutoSaveChip client:idle locale={locale} />}
+		</div>
 	</PageHeader>
 
 	<div class="editor-shell" data-editor-shell>
@@ -164,6 +167,13 @@ const saveModel = isHub
 		.editor-shell {
 			--editor-switcher-top: 4rem;
 		}
+	}
+
+	.editor-shell__actions {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-3);
 	}
 
 	.editor-shell__grid {

@@ -146,6 +146,9 @@ const backToDirectory = t('host-trades.registerUsage.backToDirectory', 'Volver a
 >
     <PageHeader title={title} description={subtitle} locale={locale}>
         <PageHelpLink slot="help" locale={locale} />
+        <LinkButton slot="actions" href={buildUrl({ locale, path: `mi-cuenta/directorio-proveedores/${slug}` })} variant="secondary">
+            {t('host-trades.registerUsage.backToProvider')}
+        </LinkButton>
     </PageHeader>
 
     {outcome === 'ok' && provider ? (

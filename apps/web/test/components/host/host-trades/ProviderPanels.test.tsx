@@ -371,6 +371,17 @@ function reviewRow(reply: Record<string, unknown> | null) {
 }
 
 describe('ProviderReviewsPanel', () => {
+    it('shows the review author avatar and moderation state', () => {
+        const { container } = render(
+            <ProviderReviewsPanel
+                initialReviews={[reviewRow(null)]}
+                initialTotal={1}
+                locale="es"
+            />
+        );
+        expect(container.querySelector('[data-palette][aria-hidden="true"]')).not.toBeNull();
+        expect(screen.getByText('Aprobado')).toBeInTheDocument();
+    });
     it('shows a PENDING reply as in review, never as missing', () => {
         // The directory listing hides an unapproved answer. Doing that here
         // would tell its own author that what he wrote does not exist.
@@ -581,6 +592,21 @@ describe('ProviderQrPanel', () => {
     const URL_TARGET =
         'https://hospeda.com.ar/es/mi-cuenta/directorio-proveedores/plomero/registrar-uso';
 
+    it('copies exactly the destination encoded by the QR', async () => {
+        const user = userEvent.setup();
+        const copy = vi.spyOn(navigator.clipboard, 'writeText').mockResolvedValue();
+        render(
+            <ProviderQrPanel
+                locale="es"
+                slug="plomero"
+                svg={SVG}
+                targetUrl={URL_TARGET}
+            />
+        );
+        await user.click(screen.getByRole('button', { name: /copiar/i }));
+        expect(copy).toHaveBeenCalledWith(URL_TARGET);
+    });
+
     it('renders the code as an image, not as injected markup', () => {
         // An <img> with a data URL cannot execute script inside the SVG, which
         // injecting the same markup into the DOM could.
@@ -595,10 +621,11 @@ describe('ProviderQrPanel', () => {
 
         const image = screen.getByRole('img');
         expect(image.getAttribute('src')).toMatch(/^data:image\/svg\+xml/);
-        expect(container.querySelector('svg')).toBeNull();
+        expect(container.querySelector('svg rect')).toBeNull();
+        expect(image.parentElement?.querySelector('svg')).toBeNull();
     });
 
-    it('shows the encoded URL as text, for a provider who cannot scan it', () => {
+    it('shows the encoded URL in a labelled read-only copy field', () => {
         render(
             <ProviderQrPanel
                 locale="es"
@@ -608,15 +635,17 @@ describe('ProviderQrPanel', () => {
             />
         );
 
-        expect(
-            screen.getByText(new RegExp(URL_TARGET.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')))
-        ).toBeInTheDocument();
+        expect(screen.getByDisplayValue(URL_TARGET)).toHaveAttribute('readonly');
+        expect(screen.getByRole('button', { name: /copiar/i })).toBeInTheDocument();
     });
 
     it('names the downloaded file after the listing', async () => {
         // The anchor is created for the click and discarded, so it is captured
         // here rather than queried out of the DOM.
         const created: HTMLAnchorElement[] = [];
+        const click = vi
+            .spyOn(HTMLAnchorElement.prototype, 'click')
+            .mockImplementation(() => undefined);
         const realCreateElement = document.createElement.bind(document);
         const spy = vi.spyOn(document, 'createElement').mockImplementation(((tag: string) => {
             const element = realCreateElement(tag);
@@ -638,6 +667,8 @@ describe('ProviderQrPanel', () => {
 
         expect(created.at(-1)?.download).toBe('qr-plomero.svg');
         expect(created.at(-1)?.href).toMatch(/^data:image\/svg\+xml/);
+        expect(click).toHaveBeenCalledOnce();
+        click.mockRestore();
         spy.mockRestore();
     });
 });

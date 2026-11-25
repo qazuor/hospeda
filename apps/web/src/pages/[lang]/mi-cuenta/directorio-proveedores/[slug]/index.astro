@@ -32,7 +32,7 @@
  * @rendering SSR (prerender = false — requires an authenticated host)
  */
 
-import { EmptyState, LinkButton, PageHeader } from '@/components/account/ui';
+import { EmptyState, LinkButton, PageHeader, Section } from '@/components/account/ui';
 import PageHelpLink from '@/components/account/help/PageHelpLink.astro';
 import { DirectoryReviewsList } from '@/components/host/host-trades/DirectoryReviewsList.client';
 import HostTradesAccessDenied from '@/components/host/host-trades/HostTradesAccessDenied.astro';
@@ -179,15 +179,17 @@ const backToDirectory = t('host-trades.registerUsage.backToDirectory', 'Volver a
                 registerUsageHref={registerUsageHref}
             />
 
-            <DirectoryReviewsList
-                client:load
-                locale={locale}
-                hostTradeId={provider.id}
-                initialLoadFailed={reviewsLoadFailed}
-                initialRows={reviewRows}
-                initialTotal={reviewTotal}
-                initialTotalPages={reviewTotalPages}
-            />
+            <Section title={t('host-trades.provider.reviews.title')} helpId="section:hosttrade.reviews">
+                <DirectoryReviewsList
+                    client:load
+                    locale={locale}
+                    hostTradeId={provider.id}
+                    initialLoadFailed={reviewsLoadFailed}
+                    initialRows={reviewRows}
+                    initialTotal={reviewTotal}
+                    initialTotalPages={reviewTotalPages}
+                />
+            </Section>
         </div>
     ) : outcome === 'accessDenied' ? (
         <HostTradesAccessDenied locale={locale} />

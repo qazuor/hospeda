@@ -30,6 +30,14 @@ function renderDetail(overrides: Partial<typeof provider> = {}) {
 }
 
 describe('ProviderDetail', () => {
+    it('renders a formatted WhatsApp link in the contact data instead of the raw URL', () => {
+        renderDetail({ contact: 'https://wa.me/5493442567890' });
+        expect(screen.getByRole('link', { name: /\+54 9 3442 567890/ })).toHaveAttribute(
+            'href',
+            'https://wa.me/5493442567890'
+        );
+        expect(screen.queryByText('https://wa.me/5493442567890')).not.toBeInTheDocument();
+    });
     it('lists the provider data in a description list with category pills', () => {
         const { container } = renderDetail();
 

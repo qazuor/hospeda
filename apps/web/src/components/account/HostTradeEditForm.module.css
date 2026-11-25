@@ -8,15 +8,16 @@
     gap: var(--space-6, 24px);
 }
 
-/* ── Section card ──────────────────────────────────────────────────────── */
-/* Canonical "section card" recipe, shared with ProfileEditForm.module.css. */
-
 .section {
-    composes: card from "./AccountSection.module.css";
+    min-inline-size: 0;
+    padding-block-end: var(--space-6);
+    border-block-end: 1px solid var(--border);
 }
 
 .sectionTitle {
-    composes: cardTitle from "./AccountSection.module.css";
+    margin: 0 0 var(--space-3);
+    font: var(--app-card-title);
+    color: var(--core-foreground);
 }
 
 /* ── Fields grid ───────────────────────────────────────────────────────── */
@@ -128,7 +129,6 @@
     font-size: var(--app-caption-size);
     font-weight: 600;
     letter-spacing: 0.03em;
-    text-transform: uppercase;
     color: var(--core-muted-foreground);
 }
 
