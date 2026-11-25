@@ -82,6 +82,9 @@ async function validateBody(c: Context, next: () => Promise<void>): Promise<Resp
 
     // TYPE-WORKAROUND: storing the Zod-validated body on a non-standard ctx property to pass it to the handler without a ContextVariableMap entry; cast widens to a writable record.
     (c as unknown as Record<string, unknown>)._validatedBody = parseResult.data;
+    // The keyed limiter reads it through `c.get`; a bare property is invisible to it, which
+    // left the per-email limiter without a key (HOS-2570, same bug as HOS-2568 in `initiate`).
+    c.set('_validatedBody' as never, parseResult.data as never);
     await next();
     return undefined;
 }
