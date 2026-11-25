@@ -212,6 +212,29 @@ describe('ListingContactBar', () => {
         expect(css).not.toMatch(/core-card-a\d+|frost-bg/);
     });
 
+    it('HOS-2607: every dock-row override outranks the dock own scoped rule, whatever the load order', () => {
+        // The dock's row rule is Astro-scoped, `.mobile-dock__row[data-astro-cid-…]`,
+        // (0,2,0). A tie loses whenever the dock stylesheet loads last, which is
+        // what staging served on the experience page: the ai-chat button stayed
+        // centred, 17px above the action row. `html` lifts each override to (0,2,1).
+        const css = readFileSync(
+            resolve(
+                __dirname,
+                '../../../src/components/listing/contact/ListingContactBar.module.css'
+            ),
+            'utf8'
+        ).replace(/\/\*[\s\S]*?\*\//g, '');
+        const overrides = [...css.matchAll(/([^{}]*mobile-dock__row[^{}]*)\{([^{}]*)\}/g)];
+
+        expect(overrides.length).toBeGreaterThanOrEqual(2);
+        for (const [, selector = ''] of overrides) {
+            expect(selector.trim()).toMatch(/^:global\(html \.mobile-dock__row\)/);
+        }
+        expect(overrides.some(([, , body]) => /align-items:\s*flex-end/.test(body ?? ''))).toBe(
+            true
+        );
+    });
+
     it('server renders the nightly price and portals a measurable item into the contact slot', () => {
         const html = renderToString(<ListingContactBar {...props} />);
         const { container } = renderInDock(props);
