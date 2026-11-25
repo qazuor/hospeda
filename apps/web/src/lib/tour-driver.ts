@@ -6,8 +6,6 @@
  * (HOS-2448).
  */
 
-import type { Config } from 'driver.js';
-
 /** Minimal translation function the helpers need. */
 type TourTranslate = (key: string, fallback?: string) => string;
 
@@ -23,7 +21,10 @@ export interface TourDriverTexts {
     readonly prevBtnText: string;
     readonly doneBtnText: string;
     /** Hide, rather than disable, Previous on the first visible step. */
-    readonly onPopoverRender: NonNullable<Config['onPopoverRender']>;
+    readonly onPopoverRender: (
+        popover: { readonly previousButton: HTMLButtonElement },
+        options: { readonly index?: number }
+    ) => void;
 }
 
 /**
