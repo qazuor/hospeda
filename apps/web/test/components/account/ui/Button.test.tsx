@@ -66,6 +66,8 @@ describe('Button', () => {
         expect(button).toHaveAttribute('aria-busy', 'true');
         expect(button).toHaveClass('loading');
         expect(button).not.toBeDisabled();
+        button.focus();
+        expect(button).toHaveFocus();
         expect(onClick).not.toHaveBeenCalled();
         // The label stays in flow so the width is kept.
         expect(screen.getByText('Save')).toBeInTheDocument();
