@@ -1,10 +1,7 @@
 .card {
+    composes: card from "../alliance/AllianceLead.module.css";
     display: grid;
     gap: var(--space-5, 1.25rem);
-    padding: var(--space-6, 1.5rem);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg, 1rem);
-    background: var(--core-background);
 }
 
 .heading {
@@ -14,31 +11,21 @@
     font-size: var(--text-body-lg, 1.5rem);
 }
 
-.form,
-.field {
+.form {
     display: grid;
-    gap: var(--space-3, 0.75rem);
+    gap: var(--space-5);
+}
+
+.field {
+    composes: field from "../alliance/AllianceLead.module.css";
 }
 
 .label {
-    color: var(--core-foreground);
-    font-weight: 600;
+    composes: label from "../alliance/AllianceLead.module.css";
 }
 
 .input {
-    width: 100%;
-    min-height: 2.75rem;
-    padding-inline: var(--space-3, 0.75rem);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md, 0.5rem);
-    color: var(--core-foreground);
-    background: var(--core-background);
-    font: inherit;
-}
-
-.input:focus-visible {
-    outline: 3px solid var(--brand-primary);
-    outline-offset: 2px;
+    composes: input from "../alliance/AllianceLead.module.css";
 }
 
 .help,
@@ -68,10 +55,4 @@
     overflow: hidden;
     clip: rect(0, 0, 0, 0);
     white-space: nowrap;
-}
-
-@media (max-width: 40rem) {
-    .card {
-        padding: var(--space-4, 1rem);
-    }
 }

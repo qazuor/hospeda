@@ -14,7 +14,11 @@ const { submit, fetchAuthMe, resendVerificationEmail } = vi.hoisted(() => ({
 }));
 
 vi.mock('@/lib/api/endpoints', () => ({ partnerApplicationApi: { submit } }));
-vi.mock('@/lib/auth-cache', () => ({ fetchAuthMe }));
+vi.mock('@/lib/auth-cache', () => ({
+    fetchAuthMe,
+    readCachedAuthMe: vi.fn(() => null),
+    writeCachedAuthMe: vi.fn()
+}));
 vi.mock('@/lib/auth-client', () => ({ resendVerificationEmail }));
 vi.mock('@/lib/i18n', () => ({
     createTranslations: () => ({
@@ -111,6 +115,46 @@ describe('PartnerApplication (AC:V7:15)', () => {
             target: { value: 'persona@example.com' }
         });
         expect(screen.getByRole('button', { name: 'Enviar postulación' })).toBeDisabled();
+        expect(screen.getByRole('button', { name: 'Enviar postulación' })).toHaveClass(
+            'btn-gradient--accent',
+            'btn-gradient--flat'
+        );
+    });
+
+    it('uses the resolved account email instead of asking a signed-in visitor for it', async () => {
+        fetchAuthMe.mockResolvedValue({
+            isAuthenticated: true,
+            user: { email: 'account@example.com', name: 'Applicant' }
+        });
+        renderForm();
+
+        expect(await screen.findByText('account@example.com')).toBeInTheDocument();
+        expect(screen.queryByLabelText('Correo electrónico')).toBeNull();
+        expect(screen.getByText('alliance-leads.form.accountEmailNotice')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Enviar postulación' })).toBeDisabled();
+        act(() => resolveTurnstile?.('valid-turnstile-token'));
+        fireEvent.click(screen.getByRole('button', { name: 'Enviar postulación' }));
+
+        await waitFor(() =>
+            expect(submit).toHaveBeenCalledWith({
+                email: 'account@example.com',
+                cfTurnstileToken: 'valid-turnstile-token'
+            })
+        );
+    });
+
+    it('keeps an editable email when the account has no usable address', async () => {
+        fetchAuthMe.mockResolvedValue({ isAuthenticated: true, user: { email: '  ' } });
+        renderForm();
+        await waitFor(() => expect(fetchAuthMe).toHaveBeenCalled());
+        completeForm('fallback@example.com');
+        fireEvent.click(screen.getByRole('button', { name: 'Enviar postulación' }));
+        await waitFor(() =>
+            expect(submit).toHaveBeenCalledWith({
+                email: 'fallback@example.com',
+                cfTurnstileToken: 'valid-turnstile-token'
+            })
+        );
     });
 
     it('does not call the client when the honeypot is filled and simulates success', async () => {
@@ -273,7 +317,8 @@ describe('PartnerApplication row 34 (AC:V8b:5)', () => {
             'No pudimos enviar la postulación. Intentá de nuevo más tarde.'
         );
         expect(screen.queryByTestId('partner-application-verify-email')).toBeNull();
-        expect(fetchAuthMe).not.toHaveBeenCalled();
+        // The mount lookup resolves the visitor; a Turnstile error adds no verification lookup.
+        expect(fetchAuthMe).toHaveBeenCalledTimes(1);
     });
 
     it('(f) keeps a server error on the generic error state', async () => {
