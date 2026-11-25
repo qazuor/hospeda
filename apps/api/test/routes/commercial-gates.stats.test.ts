@@ -216,16 +216,6 @@ const rows = [
         denied: GASTRO_BASIC,
         allowed: VENUE_ADVANCED_ONLY,
         resource: true
-    },
-    {
-        file: 'host/dashboard',
-        route: hostDashboardRoute,
-        path: '/dashboard',
-        key: 'view_basic_stats',
-        vertical: VerticalEnum.ACCOMMODATION,
-        denied: TRIAL,
-        allowed: BASIC,
-        dashboard: true
     }
 ] as const;
 
@@ -302,20 +292,18 @@ beforeEach(() => {
 });
 
 describe('TEST:V5:32 stats gates', () => {
-    it('dashboard keeps plan null only after view_basic_stats is granted', async () => {
-        const row = rows.find((candidate) => candidate.file === 'host/dashboard');
-        if (!row) throw new Error('Dashboard route case missing');
-        const denied = await request(row, TRIAL);
-        expect(denied.status).toBe(403);
-        expect((await denied.json()).error).toMatchObject({
-            code: ServiceErrorCode.ENTITLEMENT_REQUIRED,
-            details: { entitlementKey: 'view_basic_stats' }
-        });
-        expect(mocks.service).not.toHaveBeenCalled();
+    it('dashboard is NOT a stats gate: counts open to a host without view_basic_stats (HOS-2214)', async () => {
+        const get = (actorId: string) =>
+            makeApp(
+                { route: hostDashboardRoute } as unknown as (typeof rows)[number],
+                actorId
+            ).request('/case/dashboard', { method: 'GET' });
         mocks.service.mockResolvedValue({ data: { accommodations: [] } });
-        const allowed = await request(row, BASIC);
-        expect(allowed.status).toBe(200);
-        expect((await allowed.json()).data.plan).toBeNull();
+        const withoutKey = await get(TRIAL);
+        expect(withoutKey.status).toBe(200);
+        expect((await withoutKey.json()).data.plan).toBeNull();
+        expect(mocks.effectiveSet).not.toHaveBeenCalled();
+        expect((await get('guest')).status).toBe(401);
     });
 
     it.each(
@@ -344,7 +332,6 @@ describe('TEST:V5:32 stats gates', () => {
                 facts: { ownerId: row.allowed, publicationStatus: PublicationStatusEnum.PUBLISHED },
                 ownerId: row.allowed
             });
-        if ('dashboard' in row) mocks.service.mockResolvedValue({ data: { accommodations: [] } });
         if (row.file === 'conversations/response-rate') {
             mocks.service.mockResolvedValue({
                 data: { responseRatePct: 0, avgResponseTimeMinutes: null }
@@ -387,7 +374,6 @@ describe('TEST:V5:32 stats gates', () => {
             userId: row.allowed,
             vertical: row.vertical
         });
-        if ('dashboard' in row) expect(body.data.plan).toBeNull();
     });
 
     it.each(rows)('$file preserves guest and input-shape priority', async (row) => {
