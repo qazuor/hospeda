@@ -99,6 +99,53 @@ describe('Dialog (kit)', () => {
         expect(event.defaultPrevented).toBe(true);
     });
 
+    it('does not steal focus from a field the user already focused inside the panel (HOS-2591)', async () => {
+        // Arrange: hold every animation frame so the open-focus callback can be
+        // released AFTER the user has already moved into a field. Under CI load
+        // that is exactly the order jsdom produced, and the deferred
+        // `panel.focus()` swallowed the keystrokes typed into the field.
+        const frames: FrameRequestCallback[] = [];
+        const rafSpy = vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb) => {
+            frames.push(cb);
+            return frames.length;
+        });
+        try {
+            render(<Harness />);
+            fireEvent.click(screen.getByText('trigger'));
+            const field = await screen.findByLabelText('campo');
+
+            // Act: the user focuses the field, then the pending frame fires.
+            field.focus();
+            for (const frame of frames.splice(0)) frame(performance.now());
+
+            // Assert
+            expect(field).toHaveFocus();
+        } finally {
+            rafSpy.mockRestore();
+        }
+    });
+
+    it('still moves focus into the panel when nothing inside it is focused yet', async () => {
+        const frames: FrameRequestCallback[] = [];
+        const rafSpy = vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb) => {
+            frames.push(cb);
+            return frames.length;
+        });
+        try {
+            render(<Harness />);
+            const trigger = screen.getByText('trigger');
+            trigger.focus();
+            fireEvent.click(trigger);
+            const dialog = await screen.findByRole('dialog');
+
+            for (const frame of frames.splice(0)) frame(performance.now());
+
+            expect(dialog).toHaveFocus();
+        } finally {
+            rafSpy.mockRestore();
+        }
+    });
+
     it('honours initialFocus', async () => {
         const ref = createRef<HTMLElement>();
         function WithTarget() {
