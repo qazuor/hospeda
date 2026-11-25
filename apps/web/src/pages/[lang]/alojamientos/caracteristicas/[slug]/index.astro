@@ -14,6 +14,7 @@
  */
 import ListingLayout from '@/layouts/ListingLayout.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import { breadcrumbLabel } from '@/lib/navigation/breadcrumb-labels';
 import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
 import CompareModeControls from '@/components/shared/compare/CompareModeControls.astro';
 import AccommodationCard from '@/components/shared/cards/AccommodationCard.astro';
@@ -60,7 +61,7 @@ const baseUrl = buildUrl({ locale, path: `alojamientos/caracteristicas/${slug}` 
 ---
 
 <ListingLayout locale={locale} title={`${featureName} - ${t('accommodations.title', 'Alojamientos')}`} showFilters={false} noindex={true} totalCount={total}>
-	<Breadcrumbs slot="breadcrumbs" locale={locale} items={[{ label: t('accommodations.title', 'Alojamientos'), path: 'alojamientos' }, { label: t('accommodations.features') }, { label: featureName }]} />
+	<Breadcrumbs slot="breadcrumbs" locale={locale} jsonLd={false} items={[{ label: breadcrumbLabel({ t, key: 'accommodations' }), path: 'alojamientos' }, { label: featureName }]} />
 	<ListingPageHeader slot="page-header" locale={locale} tagline={t('accommodations.byFeature.tagline')} title={featureName} />
 	<CompareModeControls slot="page-header" locale={locale} />
 	{hasError && !result.ok && <ErrorBanner locale={locale} error={result.error} entityName="alojamientos" />}

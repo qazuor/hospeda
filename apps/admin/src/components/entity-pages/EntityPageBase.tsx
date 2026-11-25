@@ -128,7 +128,7 @@ export interface EntityPageBaseProps<T = Record<string, unknown>> {
  * and wraps children in an EntityFormProvider.
  *
  * The old Card/CardHeader layout is replaced by EntityPageHeader.
- * SmartNavigation / PageTabs / SmartBreadcrumbs are no longer rendered here —
+ * SmartNavigation / PageTabs / SectionProgressNav are no longer rendered here —
  * EntityViewContent and EntityEditContent use a SectionAccordion instead.
  */
 export const EntityPageBase = <T = Record<string, unknown>>({

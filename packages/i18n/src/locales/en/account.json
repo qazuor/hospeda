@@ -952,7 +952,6 @@
             "removeConfirmButton": "Remove",
             "fetchError": "We had a temporary problem loading this collection. Please try again in a few minutes.",
             "errorTitle": "We couldn't load the collection",
-            "backToList": "Back to my favorites",
             "bookmarksLabel": "favorites",
             "prevPage": "Previous page",
             "nextPage": "Next page",
@@ -1630,7 +1629,6 @@
             "editor": {
                 "pageTitle": "Edit post",
                 "slugImmutableNotice": "The public URL is generated when the post is created and cannot be changed.",
-                "backToList": "Back to my posts",
                 "lockNotice": "This post has already been approved and published, so you can't edit it. Contact the team if you need a change.",
                 "unsavedChanges": "You have unsaved changes. If you leave now they will be lost. Leave anyway?",
                 "publicationExplainer": "Your post is visible on the public site only when it is approved, public and active at the same time.",
@@ -1754,7 +1752,6 @@
             },
             "editor": {
                 "pageTitle": "Edit event",
-                "backToList": "Back to my events",
                 "readOnlyNotice": "The URL, the organizer and the venue are set when the event is created and cannot be edited here.",
                 "lockNotice": "This event has already been approved and published, so you can't edit it. Contact the team if you need a change.",
                 "unsavedChanges": "You have unsaved changes. If you leave now they will be lost. Leave anyway?",
@@ -2302,10 +2299,6 @@
             "summary": "{{done}} of {{total}} sections complete",
             "complete": "Your listing has everything it needs to be published.",
             "missingTitle": "Still to complete:"
-        },
-        "editorShell": {
-            "backToHub": "Back to the editor",
-            "backToList": "Back to the list"
         },
         "repeater": {
             "add": "Add",

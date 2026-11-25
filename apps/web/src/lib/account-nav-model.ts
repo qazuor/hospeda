@@ -32,6 +32,7 @@ import type { DiscoveryDoor } from '@/config/discovery-doors';
 import { ACCOUNT_DISCOVERY_DOORS } from '@/config/discovery-doors';
 import type { NavGroup, NavItem } from '@/config/navigation';
 import {
+    ACCOUNT_NAV_GROUPS,
     ADDONS_NAV_ITEM_ID,
     AI_ASSISTANTS_NAV_ITEM_ID,
     getNavForSurface,
@@ -44,6 +45,7 @@ import {
     buildShellNavModel,
     withShellOpen
 } from '@/lib/account-nav-shell';
+import type { createT } from '@/lib/i18n';
 import { isDoorVisible, isVisibleByPermissions } from '@/lib/nav-gating';
 
 export { ACTIVE_SECTION_OVERRIDES, getActiveSectionKey } from '@/lib/account-nav-section';
@@ -51,6 +53,20 @@ export type { AccountNavMode, AccountShellNavModel } from '@/lib/account-nav-she
 
 /** i18n key of the generic menu label, used when no single entry is active. */
 export const ACCOUNT_MENU_LABEL_KEY = 'account.menu';
+
+/** Resolve a section label from the same item configuration as the sidebar. */
+export function getAccountSectionLabel({
+    t,
+    section
+}: {
+    readonly t: ReturnType<typeof createT>;
+    readonly section: string;
+}): string {
+    const item = [...ACCOUNT_NAV_GROUPS, PROVIDER_NAV_GROUP]
+        .flatMap((group) => group.items)
+        .find((entry) => getActiveSectionKey({ href: entry.href }) === section);
+    return t(item?.i18nKey ?? ACCOUNT_MENU_LABEL_KEY);
+}
 
 /** Facts the layout reads from the request and hands to the model. */
 export interface AccountNavModelInput {

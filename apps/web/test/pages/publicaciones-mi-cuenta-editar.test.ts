@@ -119,8 +119,9 @@ describe('mi-cuenta/publicaciones/[id]/editar.astro — what it renders', () => 
     it('always offers a way back to the listing, including under the edit lock', () => {
         // The editor drops its save bar when locked, so this link is the only
         // exit left on that path.
-        // HOS-2505: the kit PageHeader's back link, outside the editor island.
-        expect(template).toMatch(/back=\{\{[^}]*href: listUrl \}\}/);
+        // The shared account breadcrumb lives outside the editor island.
+        expect(template).toContain('breadcrumbs={buildAccountBreadcrumbs(');
+        expect(template).not.toMatch(/\bback=\{/);
     });
 
     it('HOS-2505: shows a permission LockedState instead of redirecting to mi-cuenta (D9)', () => {

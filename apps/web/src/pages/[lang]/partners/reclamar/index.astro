@@ -11,6 +11,8 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import SEOHead from '@/components/seo/SEOHead.astro';
+import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import { breadcrumbLabel } from '@/lib/navigation/breadcrumb-labels';
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
@@ -30,6 +32,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site).href;
     />
     <section class="section section--warm">
         <div class="section__container">
+            <Breadcrumbs locale={locale} jsonLd={false} items={[{ label: breadcrumbLabel({ t, key: 'claimPartner' }) }]} />
             <PartnerClaim client:load locale={locale} />
         </div>
     </section>

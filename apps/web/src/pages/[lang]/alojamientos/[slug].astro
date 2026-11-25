@@ -10,9 +10,9 @@
 import { formatCalendarDate } from '@repo/utils';
 import DetailLayout from '@/layouts/DetailLayout.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import { breadcrumbLabel } from '@/lib/navigation/breadcrumb-labels';
 import { CompareBar } from '@/components/shared/compare/CompareBar.client';
 import LodgingBusinessJsonLd from '@/components/seo/LodgingBusinessJsonLd.astro';
-import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
 import FAQPageJsonLd from '@/components/seo/FAQPageJsonLd.astro';
 import { buildFaqJsonLdSections } from '@/lib/seo/faq-jsonld-sections';
 import { ImageGallery } from '@/components/ImageGallery.client';
@@ -542,16 +542,7 @@ const lodgingAmenities = buildLodgingAmenityNames({
     t
 });
 
-// --- Breadcrumb JSON-LD (REQ-096-37 / T-068) ---
 const siteOrigin = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
-const breadcrumbItems = [
-    { name: t('nav.home', 'Inicio'), url: `${siteOrigin}/${locale}/` },
-    {
-        name: t('accommodations.title', 'Alojamientos'),
-        url: `${siteOrigin}/${locale}/alojamientos/`
-    },
-    { name: accommodation.name, url: `${siteOrigin}${Astro.url.pathname}` }
-];
 
 // --- Sticky section tabs (HOS-2527) ---
 // A tab exists only when its section does.
@@ -638,20 +629,18 @@ const { sections: faqSections, inLanguage: faqInLanguage } = buildFaqJsonLdSecti
         checkoutTime={lodgingPolicyData.checkoutTime}
         paymentAccepted={lodgingPolicyData.paymentAccepted}
     />
-    <BreadcrumbJsonLd slot="head-extra" items={breadcrumbItems} />
     {faqSections.length > 0 && (
         <FAQPageJsonLd slot="head-extra" sections={faqSections} inLanguage={faqInLanguage} />
     )}
 
-    <div slot="breadcrumbs" class="acc-detail-breadcrumbs">
-        <Breadcrumbs
-            locale={locale}
-            items={[
-                { label: t('accommodations.title'), path: 'alojamientos' },
-                { label: accommodation.name }
-            ]}
-        />
-    </div>
+    <Breadcrumbs
+        slot="breadcrumbs"
+        locale={locale}
+        items={[
+            { label: breadcrumbLabel({ t, key: 'accommodations' }), path: 'alojamientos' },
+            { label: accommodation.name }
+        ]}
+    />
 
     <Fragment slot="page-header">
         <ListingHeader {...headerProps} />
@@ -975,17 +964,6 @@ const { sections: faqSections, inLanguage: faqInLanguage } = buildFaqJsonLdSecti
 
 <style>
     @media (max-width: 767px) {
-        :global(.wave-header__breadcrumbs:has(.acc-detail-breadcrumbs)) {
-            display: none;
-        }
-
-        /* The hidden breadcrumbs carried the band's top padding, so without this
-           the badges sit flush under the navbar. Expanded state only: the compact
-           state sets its own padding-top. */
-        :global(.wave-header:not(.wave-header--compact) .wave-header__bar:has(.acc-detail-breadcrumbs) .wave-header__content) {
-            padding-top: var(--space-6, 1.5rem);
-        }
-
         /* The full-bleed mobile gallery meets the blue header directly: drop the
            page-background strip DetailLayout leaves above the body. The extra
            selector weight beats DetailLayout's scoped `.detail-page[data-astro-cid]`. */

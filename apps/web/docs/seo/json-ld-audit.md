@@ -33,7 +33,7 @@ component and reused on lower-detail surfaces.
 | `ArticleJsonLd` | `src/components/seo/ArticleJsonLd.astro` | `Article` (`BlogPosting`) | `publicaciones/[slug].astro` |
 | `VenueJsonLd` | `src/components/seo/VenueJsonLd.astro` | `Restaurant`, `BarOrPub`, `NightClub`, `CafeOrCoffeeShop`, `IceCreamShop`, `Bakery` (by venue type) | `comer-y-salir/[slug].astro` |
 | `TouristAttractionJsonLd` | `src/components/seo/TouristAttractionJsonLd.astro` | `TouristAttraction` | `experiencias/[slug].astro` |
-| `BreadcrumbJsonLd` | `src/components/seo/BreadcrumbJsonLd.astro` | `BreadcrumbList` | All 6 detail pages above |
+| `Breadcrumbs` | `src/components/shared/navigation/Breadcrumbs.tsx` (via `Breadcrumbs.astro`) | `BreadcrumbList` | All 6 detail pages above |
 | `FAQPageJsonLd` | `src/components/seo/FAQPageJsonLd.astro` | `FAQPage` | Legal pages (privacidad, terminos, cookies), accommodation detail (when FAQs exist), destination detail (when FAQs exist, SPEC-158) |
 | `AboutPageJsonLd` | `src/components/seo/AboutPageJsonLd.astro` | `AboutPage` | `nosotros`, `beneficios` |
 | `PriceSpecificationJsonLd` | `src/components/seo/PriceSpecificationJsonLd.astro` | `Offer` + `UnitPriceSpecification` | `suscriptores/turistas`, `suscriptores/planes` |
@@ -47,12 +47,12 @@ but neither the audit doc nor the coverage guard test tracked them.
 
 | Detail page | File | Primary typed component | Also mounts |
 |-------------|------|--------------------------|--------------|
-| Accommodation | `src/pages/[lang]/alojamientos/[slug].astro` | `LodgingBusinessJsonLd` | `BreadcrumbJsonLd`, `FAQPageJsonLd` (conditional) |
-| Event | `src/pages/[lang]/eventos/[slug].astro` | `EventJsonLd` | `BreadcrumbJsonLd` |
-| Destination | `src/pages/[lang]/destinos/[...path].astro` | `PlaceJsonLd` | `BreadcrumbJsonLd`, `FAQPageJsonLd` (conditional) |
-| Post | `src/pages/[lang]/publicaciones/[slug].astro` | `ArticleJsonLd` | `BreadcrumbJsonLd` |
-| Venue | `src/pages/[lang]/comer-y-salir/[slug].astro` | `VenueJsonLd` | `BreadcrumbJsonLd` |
-| Experience | `src/pages/[lang]/experiencias/[slug].astro` | `TouristAttractionJsonLd` | `BreadcrumbJsonLd` |
+| Accommodation | `src/pages/[lang]/alojamientos/[slug].astro` | `LodgingBusinessJsonLd` | `Breadcrumbs`, `FAQPageJsonLd` (conditional) |
+| Event | `src/pages/[lang]/eventos/[slug].astro` | `EventJsonLd` | `Breadcrumbs` |
+| Destination | `src/pages/[lang]/destinos/[...path].astro` | `PlaceJsonLd` | `Breadcrumbs`, `FAQPageJsonLd` (conditional) |
+| Post | `src/pages/[lang]/publicaciones/[slug].astro` | `ArticleJsonLd` | `Breadcrumbs` |
+| Venue | `src/pages/[lang]/comer-y-salir/[slug].astro` | `VenueJsonLd` | `Breadcrumbs` |
+| Experience | `src/pages/[lang]/experiencias/[slug].astro` | `TouristAttractionJsonLd` | `Breadcrumbs` |
 
 ## Required-field audit per @type
 
@@ -185,16 +185,13 @@ Reference: schema.org/BreadcrumbList. Required: `itemListElement[]`
 | `destinos/[...path]` | Yes (T-068 fix) |
 | `comer-y-salir/[slug]` | Yes |
 | `experiencias/[slug]` | Yes |
-| Legal pages (`legal/*`) | Not required: legal layout renders breadcrumbs but they are a 2-level Home → Title trail; accepted gap (could be added in v1.1) |
-| Listing pages (`alojamientos/`, `eventos/`, `publicaciones/`, `destinos/`, `comer-y-salir/`, `experiencias/`) | Not implemented (1-level trail, low value) |
+| Legal pages (`legal/*`) | Yes (HOS-2623): the legal layout mounts `<Breadcrumbs />` (single level: no visible trail, JSON-LD complete) |
+| Listing pages (`alojamientos/`, `eventos/`, `publicaciones/`, `destinos/`, `comer-y-salir/`, `experiencias/`) | Yes (HOS-2623): top-level, no visible trail, JSON-LD `Inicio > Page` |
 
-The visible `<Breadcrumbs />` component does NOT emit JSON-LD by
-itself — it is intentionally separated from `BreadcrumbJsonLd` so
-pages can decide whether the trail warrants structured data and to
-let pages compose the absolute URLs (which Breadcrumbs cannot do
-cheaply because it only sees relative `path` strings). All 6 detail
-pages render `<Breadcrumbs />` and therefore emit `<BreadcrumbJsonLd />`
-explicitly via the `head-extra` slot.
+Since HOS-2623 the shared `<Breadcrumbs />` component renders the visible trail
+(ancestors only, parent link on mobile) AND emits the `BreadcrumbList` JSON-LD
+from the same items, with absolute URLs derived from `Astro.site` and the current
+pathname. Pages never call a separate JSON-LD component for breadcrumbs.
 
 ### FAQPage
 
@@ -257,7 +254,7 @@ retired inline pattern as current.
 (accommodation, event, destination, post). T-007 extended `DETAIL_PAGES`
 to all 6 (adding venue → `VenueJsonLd` and experience →
 `TouristAttractionJsonLd`), closing a real regression gap: the two newer
-verticals could have dropped their typed component or `BreadcrumbJsonLd`
+verticals could have dropped their typed component or `Breadcrumbs`
 with no CI signal.
 
 ## Validation strategy
@@ -272,7 +269,7 @@ test requires a publicly deployable URL. We rely on three layers:
    (`apps/web/test/integration/json-ld-coverage.test.ts`) that is the
    **enforced CI contract**: it reads every `[lang]/{detail-page}.astro`
    and asserts each of the 6 detail pages imports its typed JSON-LD
-   component and `BreadcrumbJsonLd`, and mounts both via the
+   component and `Breadcrumbs`, and mounts both via the
    `head-extra` slot. This is what prevents a regression like a new
    vertical shipping without structured data, or an existing one losing
    it silently during a refactor.
@@ -291,7 +288,7 @@ checklist:
 - [ ] Map each required field to an actual data source, in a typed
       `*JsonLd.astro` component (not an inline object on the page).
 - [ ] Add the page family to the BreadcrumbList table above and emit
-      `BreadcrumbJsonLd` if the page renders `<Breadcrumbs />`.
+      `Breadcrumbs` if the page renders `<Breadcrumbs />`.
 - [ ] Extend `apps/web/test/integration/json-ld-coverage.test.ts`'s
       `DETAIL_PAGES` array beyond the current 6 entities to cover the
       new one.

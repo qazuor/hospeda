@@ -123,7 +123,10 @@ describe('publicaciones/etiqueta/[tag]/index.astro (SPEC-086 T-034)', () => {
         });
 
         it('imports Breadcrumbs', () => {
-            expect(tagPageSrc).toContain('Breadcrumbs');
+            expect(tagPageSrc).toContain('<Breadcrumbs');
+            expect(tagPageSrc).not.toContain('BreadcrumbJsonLd');
+            expect(tagPageSrc).toContain("breadcrumbLabel({ t, key: 'posts' })");
+            expect(tagPageSrc).not.toContain("label: t('blog.detail.tags'");
         });
 
         it('renders the tag name as page title', () => {

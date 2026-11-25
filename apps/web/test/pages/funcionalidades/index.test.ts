@@ -124,7 +124,8 @@ describe('Funcionalidades marketing page (funcionalidades/index.astro)', () => {
     it('includes the three JSON-LD components', () => {
         expect(src).toContain('CollectionPageJsonLd');
         expect(src).toContain('ItemListJsonLd');
-        expect(src).toContain('BreadcrumbJsonLd');
+        expect(src).toContain('<Breadcrumbs');
+        expect(src).not.toContain('BreadcrumbJsonLd');
     });
 
     it('guards the hero blob animation behind prefers-reduced-motion', () => {

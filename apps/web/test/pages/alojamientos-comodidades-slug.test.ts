@@ -21,6 +21,14 @@ const pageSource = readFileSync(
 );
 
 describe('alojamientos/comodidades/[slug]/index.astro', () => {
+    it('links directly to accommodations without a dead amenities grouping level', () => {
+        const trail = pageSource.match(/<Breadcrumbs[\s\S]*?\/>/)?.[0];
+        expect(trail).toContain("breadcrumbLabel({ t, key: 'accommodations' })");
+        expect(trail).toContain('{ label: amenityName }');
+        expect(trail).not.toContain("t('accommodations.amenities')");
+        expect(trail).toContain('jsonLd={false}');
+    });
+
     it('filters the accommodation listing by the resolved amenity id', () => {
         expect(pageSource).toMatch(/accommodationsApi\.list\(\{\s*amenities:\s*amenityId\s*,/);
     });

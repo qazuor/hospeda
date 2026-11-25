@@ -219,9 +219,10 @@ describe('editor pages follow the /mi-cuenta conventions', () => {
         }
     });
 
-    it('should give the way back as the header back link, not a breadcrumb trail (HOS-2493)', () => {
-        expect(codeOf(LAYOUT)).toContain('back={back}');
-        expect(codeOf(LAYOUT)).not.toContain('Breadcrumbs');
+    it('gives the way back through shared account/list/entity breadcrumbs', () => {
+        expect(codeOf(LAYOUT)).toContain('breadcrumbs={breadcrumbs}');
+        expect(codeOf(LAYOUT)).toContain('buildAccountBreadcrumbs(');
+        expect(codeOf(LAYOUT)).not.toContain('back={back}');
     });
 });
 

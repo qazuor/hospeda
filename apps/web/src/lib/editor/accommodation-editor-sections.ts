@@ -4,7 +4,7 @@
  * (HOS-318).
  *
  * The editor is one page per section. The route nav, the hub list and the
- * breadcrumbs ALL derive from this registry — a section must never be spelled
+ * section titles ALL derive from this registry — a section must never be spelled
  * out twice, or the three surfaces drift and a route ends up reachable from one
  * of them but not the others.
  *
@@ -169,7 +169,7 @@ export function buildAccommodationEditorSections({
  * Builds the accommodation editor as an {@link EditorRegistry} (HOS-1080,
  * HOS-1809).
  *
- * This is what the shared nav / hub / breadcrumb machinery reads. The helpers
+ * This is what the shared nav / hub / editor shell reads. The helpers
  * below keep their accommodation-flavoured signatures — thirty-odd call sites
  * say `accommodationId`, and renaming them would have been churn with no
  * behaviour behind it — but every one of them now resolves through this object,

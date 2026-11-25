@@ -7,6 +7,15 @@ import { describe, expect, it } from 'vitest';
 import { Button, PageHeader, StatusPill } from '../../../../src/components/account/ui';
 
 describe('PageHeader', () => {
+    it('omits breadcrumb navigation on a top-level section', () => {
+        render(
+            <PageHeader
+                title="Favoritos"
+                locale="es"
+            />
+        );
+        expect(screen.queryByRole('navigation', { name: 'Ruta de navegación' })).toBeNull();
+    });
     it('renders exactly one h1: the title', () => {
         render(
             <PageHeader
@@ -42,14 +51,14 @@ describe('PageHeader', () => {
         expect(back.tagName).toBe('A');
     });
 
-    it('marks the last breadcrumb with aria-current and leaves it unlinked', () => {
-        render(
+    it('renders shared linked ancestors without home, current page, or JSON-LD', () => {
+        const { container } = render(
             <PageHeader
                 title="x"
                 locale="es"
                 breadcrumbs={[
-                    { label: 'Mi cuenta', href: '/es/mi-cuenta/' },
-                    { label: 'Locales', href: '/es/mi-cuenta/locales/' },
+                    { label: 'Mi cuenta', path: 'mi-cuenta' },
+                    { label: 'Locales', path: 'mi-cuenta/locales' },
                     { label: 'La Casona' }
                 ]}
             />
@@ -57,7 +66,18 @@ describe('PageHeader', () => {
         expect(screen.getByRole('navigation', { name: 'Ruta de navegación' })).toBeInTheDocument();
         expect(screen.getAllByRole('link')).toHaveLength(2);
         const items = screen.getAllByRole('listitem');
-        expect(items.at(-1)).toHaveAttribute('aria-current', 'page');
+        expect(items).toHaveLength(2);
+        expect(screen.getByRole('link', { name: 'Mi cuenta' })).toHaveAttribute(
+            'href',
+            '/es/mi-cuenta/'
+        );
+        expect(screen.getByRole('link', { name: 'Locales' })).toHaveAttribute(
+            'href',
+            '/es/mi-cuenta/locales/'
+        );
+        expect(screen.queryByText('La Casona')).not.toBeInTheDocument();
+        expect(container.querySelector('script')).toBeNull();
+        expect(items.at(-1)).not.toHaveAttribute('aria-current');
         expect(items[0]).not.toHaveAttribute('aria-current');
     });
 

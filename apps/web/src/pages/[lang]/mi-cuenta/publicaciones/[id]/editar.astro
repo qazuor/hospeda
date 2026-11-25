@@ -37,6 +37,8 @@ import { transformPostEditDetail } from '@/lib/api/transforms';
 import type { PostDestinationOption } from '@/components/post/editor/DetailsSection.client';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { buildAccountBreadcrumbs } from '@/lib/account/account-breadcrumbs';
+import { getAccountSectionLabel } from '@/lib/account-nav-model';
 import { buildLoginRedirect } from '@/lib/middleware-helpers';
 import { hasPostsNavAccess } from '@/lib/nav-gating';
 import { resolveAuthoredEditorItem } from '@/lib/editor/resolve-authored-editor-item';
@@ -50,8 +52,6 @@ if (denied) return denied;
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
-
-const listUrl = buildUrl({ locale, path: 'mi-cuenta/publicaciones' });
 
 const user = Astro.locals.user;
 if (!user) {
@@ -124,7 +124,11 @@ const title = t('account.myContent.posts.editor.pageTitle', 'Editar publicación
             title={title}
             description={post.title}
             locale={locale}
-            back={{ label: t('account.myContent.posts.editor.backToList', 'Volver a mis publicaciones'), href: listUrl }}
+            breadcrumbs={buildAccountBreadcrumbs({
+                t,
+                parents: [{ label: getAccountSectionLabel({ t, section: 'publicaciones' }), path: 'mi-cuenta/publicaciones' }],
+                current: post.title
+            })}
         >
             <PageHelpLink slot="help" locale={locale} />
         </PageHeader>
@@ -152,7 +156,11 @@ const title = t('account.myContent.posts.editor.pageTitle', 'Editar publicación
     </AccountLayout>
 ) : (
     <AccountLayout locale={locale} title={title} activeSection="publicaciones">
-        <PageHeader title={title} locale={locale}>
+        <PageHeader title={title} locale={locale} breadcrumbs={buildAccountBreadcrumbs({
+            t,
+            parents: [{ label: getAccountSectionLabel({ t, section: 'publicaciones' }), path: 'mi-cuenta/publicaciones' }],
+            current: title
+        })}>
             <PageHelpLink slot="help" locale={locale} />
         </PageHeader>
 

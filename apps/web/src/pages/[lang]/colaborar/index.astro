@@ -9,6 +9,8 @@
  */
 
 import DefaultLayout from '@/layouts/DefaultLayout.astro';
+import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import { breadcrumbLabel } from '@/lib/navigation/breadcrumb-labels';
 import SectionHeader from '@/components/shared/layout/SectionHeader.astro';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -84,6 +86,7 @@ const cards = [
     <!-- ───── Hero ───────────────────────────────────────────────────────── -->
     <section class="colaborar-hero section">
         <div class="colaborar-hero__container">
+            <Breadcrumbs locale={locale} items={[{ label: breadcrumbLabel({ t, key: 'collaborate' }) }]} />
             <div data-reveal="up">
                 <SectionHeader
                     tagline={t('contributions.hub.tagline', 'Entre todos')}

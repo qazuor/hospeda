@@ -3,8 +3,8 @@
  * @description The collection detail page on the account kit (HOS-2480).
  *
  * The SSR page reads the collection (and redirects a missing or foreign one);
- * this island draws it: one `PageHeader` with a real back link (it replaces
- * the shared `Breadcrumbs` here) and the Edit/Delete actions, then one
+ * this island draws it: one `PageHeader` with shared account breadcrumbs
+ * and the Edit/Delete actions, then one
  * Section with URL type tabs (`NavTabs`, every type of HOS-2423), an
  * `AsyncRegion` over the read and link `Pagination`. A failed read is
  * `ErrorState` with a retry (a reload), never an empty collection (AC-2).
@@ -29,6 +29,8 @@ import {
     Skeleton,
     useConfirm
 } from '@/components/account/ui';
+import { buildAccountBreadcrumbs } from '@/lib/account/account-breadcrumbs';
+import { getAccountSectionLabel } from '@/lib/account-nav-model';
 import {
     COLLECTION_ENTITY_TYPES,
     COLLECTION_FILTER_LABELS,
@@ -150,10 +152,18 @@ export function CollectionDetailView({
                 }
                 description={read.ok ? (read.collection.description ?? undefined) : undefined}
                 locale={locale}
-                back={{
-                    label: t('account.favorites.collections.backToList'),
-                    href: buildUrl({ locale, path: 'mi-cuenta/favoritos' })
-                }}
+                breadcrumbs={buildAccountBreadcrumbs({
+                    t,
+                    parents: [
+                        {
+                            label: getAccountSectionLabel({ t, section: 'favoritos' }),
+                            path: 'mi-cuenta/favoritos'
+                        }
+                    ],
+                    current: read.ok
+                        ? read.collection.name
+                        : t('account.favorites.collections.errorTitle')
+                })}
                 actions={
                     read.ok ? (
                         <CollectionDetailActions

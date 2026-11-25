@@ -26,6 +26,7 @@
  */
 
 import DefaultLayout from '@/layouts/DefaultLayout.astro';
+import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import { buildEntityCacheTags, CACHE_TAG_ALL, CACHE_TAG_PARTNER_TYPES } from '@repo/cache-tags';
 import { EntityViewTracker } from '@/components/analytics/EntityViewTracker.client';
 import { InternalEntryTracker } from '@/components/analytics/InternalEntryTracker.client';
@@ -153,6 +154,7 @@ const contactRows = Object.entries(partner.contactInfo ?? {})
     analyticsTag={partnerId}
 >
     <article class="partner">
+        <Breadcrumbs locale={locale} jsonLd={isIndexable} items={[{ label: partner.name }]} />
         <header class="partner__header">
             {partner.logoUrl && (
                 <img

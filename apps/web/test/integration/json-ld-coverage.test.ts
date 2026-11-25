@@ -35,37 +35,37 @@ const DETAIL_PAGES: ReadonlyArray<{
         file: 'alojamientos/[slug].astro',
         typedComponent: 'LodgingBusinessJsonLd',
         // FAQPage emitted conditionally when faqs.length > 0
-        extras: ['BreadcrumbJsonLd', 'FAQPageJsonLd']
+        extras: ['FAQPageJsonLd']
     },
     {
         name: 'event detail',
         file: 'eventos/[slug].astro',
         typedComponent: 'EventJsonLd',
-        extras: ['BreadcrumbJsonLd']
+        extras: []
     },
     {
         name: 'destination detail',
         file: 'destinos/[...path].astro',
         typedComponent: 'PlaceJsonLd',
-        extras: ['BreadcrumbJsonLd']
+        extras: []
     },
     {
         name: 'post detail',
         file: 'publicaciones/[slug].astro',
         typedComponent: 'ArticleJsonLd',
-        extras: ['BreadcrumbJsonLd']
+        extras: []
     },
     {
         name: 'venue detail',
         file: 'comer-y-salir/[slug].astro',
         typedComponent: 'VenueJsonLd',
-        extras: ['BreadcrumbJsonLd', 'FAQPageJsonLd']
+        extras: ['FAQPageJsonLd']
     },
     {
         name: 'experience detail',
         file: 'experiencias/[slug].astro',
         typedComponent: 'TouristAttractionJsonLd',
-        extras: ['BreadcrumbJsonLd', 'FAQPageJsonLd']
+        extras: ['FAQPageJsonLd']
     }
 ];
 
@@ -125,14 +125,15 @@ describe('JSON-LD coverage across pages (SPEC-096 REQ-096-37)', () => {
                     expect(src).toMatch(new RegExp(`<${page.typedComponent}\\b`));
                 });
 
-                it('imports BreadcrumbJsonLd', () => {
+                it('imports the shared intrinsic breadcrumb component', () => {
                     expect(src).toContain(
-                        "import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro'"
+                        "import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro'"
                     );
                 });
 
-                it('mounts <BreadcrumbJsonLd /> into the head-extra slot', () => {
-                    expect(src).toMatch(/<BreadcrumbJsonLd[^>]*slot=["']head-extra["'][^>]*\/>/);
+                it('mounts Breadcrumbs without manual JSON-LD', () => {
+                    expect(src).toContain('<Breadcrumbs');
+                    expect(src).not.toContain('BreadcrumbJsonLd');
                 });
 
                 if (page.extras?.includes('FAQPageJsonLd')) {
@@ -308,7 +309,7 @@ describe('JSON-LD coverage across pages (SPEC-096 REQ-096-37)', () => {
  */
 function headExtraContributorDepths(src: string): number[] {
     // Skip the frontmatter — only the template region can contribute to a slot.
-    const templateStart = src.indexOf('---', src.indexOf('---') + 3) + 3;
+    const templateStart = src.match(/^---\s*$[\s\S]*?^---\s*$/m)?.[0].length ?? 0;
     const template = src.slice(templateStart);
 
     const depths: number[] = [];
@@ -368,7 +369,7 @@ const x = 1;
     for (const page of DETAIL_PAGES) {
         it(`${page.name}: no plain head-extra contributor follows an expression-wrapped one`, () => {
             const depths = headExtraContributorDepths(readPage(page.file));
-            expect(depths.length).toBeGreaterThan(1);
+            expect(depths.length).toBeGreaterThan(0);
 
             const firstNestedAt = depths.findIndex((d) => d > 0);
             if (firstNestedAt === -1) return;

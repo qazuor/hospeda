@@ -2,7 +2,7 @@
  * PageHeader — one page anatomy for every account page (HOS-2413 T-022).
  *
  * The title is the page's ONLY `h1`. Optional parts: breadcrumbs
- * (`<nav aria-label>`, `aria-current="page"` on the last item), a `back` link
+ * (linked ancestors only), a `back` link
  * (a real link with a translated label, NEVER `history.back()`), a `status`
  * (StatusPill), a `help` slot (the page's «?», see `PageHelpLink.astro`),
  * `actions` and `tabs`. Put at most ONE primary action in
@@ -13,19 +13,13 @@
  */
 
 import type { ReactNode } from 'react';
+import { Breadcrumbs } from '@/components/shared/navigation/Breadcrumbs';
 import { createT, type SupportedLocale } from '@/lib/i18n';
+import type { BreadcrumbInputItem } from '@/lib/navigation/breadcrumb-trail';
 import { cx } from './cx';
 import { type HelpAnchor, helpAttr } from './help-anchor';
 import styles from './PageHeader.module.css';
 import { TextLink } from './TextLink';
-
-/** One breadcrumb. The last one is the current page and carries no link. */
-export interface Breadcrumb {
-    /** Visible, translated label. */
-    readonly label: string;
-    /** Link target; omitted on the current page. */
-    readonly href?: string;
-}
 
 /** Props of {@link PageHeader}. */
 export interface PageHeaderProps {
@@ -36,7 +30,7 @@ export interface PageHeaderProps {
     /** One supporting line under the title. */
     readonly description?: ReactNode;
     /** Breadcrumb trail, last item = current page. */
-    readonly breadcrumbs?: readonly Breadcrumb[];
+    readonly breadcrumbs?: readonly BreadcrumbInputItem[];
     /** A real link back, with a translated label. */
     readonly back?: { readonly label: string; readonly href: string };
     /** A StatusPill next to the title. */
@@ -92,39 +86,13 @@ export function PageHeader({
                 </TextLink>
             ) : null}
             {breadcrumbs && breadcrumbs.length > 0 ? (
-                <nav aria-label={t('account.ui.breadcrumbs')}>
-                    <ol className={styles.crumbs}>
-                        {breadcrumbs.map((crumb, index) => {
-                            const last = index === breadcrumbs.length - 1;
-                            return (
-                                <li
-                                    key={crumb.href ?? crumb.label}
-                                    aria-current={last ? 'page' : undefined}
-                                >
-                                    {crumb.href && !last ? (
-                                        <TextLink
-                                            href={crumb.href}
-                                            tone="muted"
-                                        >
-                                            {crumb.label}
-                                        </TextLink>
-                                    ) : (
-                                        crumb.label
-                                    )}
-                                    {last ? null : (
-                                        <span
-                                            className={styles.crumbSeparator}
-                                            aria-hidden="true"
-                                        >
-                                            {' '}
-                                            /
-                                        </span>
-                                    )}
-                                </li>
-                            );
-                        })}
-                    </ol>
-                </nav>
+                <Breadcrumbs
+                    items={breadcrumbs}
+                    locale={locale}
+                    homeLabel=""
+                    ariaLabel={t('account.ui.breadcrumbs')}
+                    includeHome={false}
+                />
             ) : null}
             <div className={styles.top}>
                 <div className={styles.heading}>

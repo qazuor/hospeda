@@ -3,11 +3,11 @@
  *
  * This module exports navigation components for entity forms.
  * These components provide intelligent navigation with progress tracking,
- * breadcrumbs, and smart scrolling capabilities.
+ * section navigation, and smart scrolling capabilities.
  */
 
-export type { SmartBreadcrumbsProps } from './SmartBreadcrumbs';
-export { SmartBreadcrumbs } from './SmartBreadcrumbs';
+export type { SectionProgressNavProps } from './SectionProgressNav';
+export { SectionProgressNav } from './SectionProgressNav';
 export type { SmartNavigationProps } from './SmartNavigation';
 // Navigation Components
 export { SmartNavigation } from './SmartNavigation';

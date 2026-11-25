@@ -952,7 +952,6 @@
             "removeConfirmButton": "Quitar",
             "fetchError": "Hubo un problema temporal al cargar esta colección. Probá de nuevo en unos minutos.",
             "errorTitle": "No pudimos cargar la colección",
-            "backToList": "Volver a mis favoritos",
             "bookmarksLabel": "favoritos",
             "prevPage": "Página anterior",
             "nextPage": "Página siguiente",
@@ -1630,7 +1629,6 @@
             "editor": {
                 "pageTitle": "Editar publicación",
                 "slugImmutableNotice": "La URL pública se genera al crear la nota y no se puede cambiar.",
-                "backToList": "Volver a mis publicaciones",
                 "lockNotice": "Esta nota ya fue aprobada y publicada, así que no podés editarla. Escribile al equipo si necesitás cambiar algo.",
                 "unsavedChanges": "Tenés cambios sin guardar. Si salís ahora se pierden. ¿Querés salir igual?",
                 "publicationExplainer": "Tu nota se ve en el sitio público solo cuando está aprobada, pública y activa a la vez.",
@@ -1754,7 +1752,6 @@
             },
             "editor": {
                 "pageTitle": "Editar evento",
-                "backToList": "Volver a mis eventos",
                 "readOnlyNotice": "La URL, el organizador y el lugar se definen al crear el evento y no se editan desde acá.",
                 "lockNotice": "Este evento ya fue aprobado y publicado, así que no podés editarlo. Escribile al equipo si necesitás cambiar algo.",
                 "unsavedChanges": "Tenés cambios sin guardar. Si salís ahora se pierden. ¿Querés salir igual?",
@@ -2302,10 +2299,6 @@
             "summary": "{{done}} de {{total}} secciones completas",
             "complete": "Tu ficha tiene todo lo necesario para publicarse.",
             "missingTitle": "Te falta completar:"
-        },
-        "editorShell": {
-            "backToHub": "Volver al editor",
-            "backToList": "Volver a la lista"
         },
         "repeater": {
             "add": "Agregar",

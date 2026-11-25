@@ -3,10 +3,6 @@
         "title": "Google Calendar integration",
         "description": "Learn how Hospeda uses read-only Google Calendar access to sync availability and avoid double bookings."
     },
-    "breadcrumb": {
-        "home": "Home",
-        "current": "Google Calendar integration"
-    },
     "hero": {
         "tagline": "Sync for hosts",
         "titleMain": "Google Calendar in",

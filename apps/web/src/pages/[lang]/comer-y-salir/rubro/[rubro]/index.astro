@@ -25,8 +25,8 @@
 import ListingLayout from '@/layouts/ListingLayout.astro';
 import ItemListJsonLd from '@/components/seo/ItemListJsonLd.astro';
 import CollectionPageJsonLd from '@/components/seo/CollectionPageJsonLd.astro';
-import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import { breadcrumbLabel } from '@/lib/navigation/breadcrumb-labels';
 import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
 import VenueCard from '@/components/venue/VenueCard.astro';
 import VenueFilterOptionsDegradation from '@/components/venue/VenueFilterOptionsDegradation.astro';
@@ -303,11 +303,6 @@ const itemListEntries = cards.map((card) => ({
         .href,
     name: card.name
 }));
-const breadcrumbJsonLdItems = [
-    { name: t('nav.home', 'Inicio'), url: `${siteOrigin}/${locale}/` },
-    { name: t('venue.listing.title'), url: `${siteOrigin}${listBaseUrl}` },
-    { name: businessLineLabel, url: `${siteOrigin}${baseUrl}` }
-];
 ---
 
 <ListingLayout
@@ -339,13 +334,13 @@ const breadcrumbJsonLdItems = [
         startPosition={(page - 1) * pageSize + 1}
     />
 
-    <BreadcrumbJsonLd slot="head-extra" items={breadcrumbJsonLdItems} />
 
     <Breadcrumbs
         slot="breadcrumbs"
         locale={locale}
+        jsonLd={!isEmptyCollection}
         items={[
-            { label: t('venue.listing.title'), path: 'comer-y-salir' },
+            { label: breadcrumbLabel({ t, key: 'eatAndDrink' }), path: 'comer-y-salir' },
             { label: businessLineLabel }
         ]}
     />

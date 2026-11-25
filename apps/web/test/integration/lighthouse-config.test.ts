@@ -124,7 +124,7 @@ describe('JSON-LD audit doc', () => {
         expect(md).toContain('EventJsonLd');
         expect(md).toContain('PlaceJsonLd');
         expect(md).toContain('ArticleJsonLd');
-        expect(md).toContain('BreadcrumbJsonLd');
+        expect(md).toContain('Breadcrumbs');
         expect(md).toContain('FAQPageJsonLd');
         expect(md).toContain('AboutPageJsonLd');
         expect(md).toContain('PriceSpecificationJsonLd');

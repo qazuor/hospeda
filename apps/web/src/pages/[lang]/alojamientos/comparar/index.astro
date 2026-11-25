@@ -31,6 +31,7 @@ import { CompareCount } from '@/components/shared/compare/CompareCount.client';
 import { ComparisonMatrix } from '@/components/shared/compare/ComparisonMatrix.client';
 import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import { breadcrumbLabel } from '@/lib/navigation/breadcrumb-labels';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -55,9 +56,8 @@ const subtitle = t(
 	'accommodations.comparison.page.subtitle',
 	'Resaltamos las diferencias para que decidas más fácil'
 );
-const breadcrumbLabel = t('accommodations.comparison.page.breadcrumbLabel', 'Comparar');
 const backLabel = t('accommodations.comparison.page.backToListing', 'Volver a alojamientos');
-const accommodationsLabel = t('accommodations.title', 'Alojamientos');
+const accommodationsLabel = breadcrumbLabel({ t, key: 'accommodations' });
 
 const listingUrl = buildUrl({ locale, path: 'alojamientos' });
 // HOS-2554: the compare upsell names the catalog plans that carry comparison. The catalog is
@@ -77,9 +77,10 @@ const compareGatePlanNames = await getGatePlanNames({
 	<Breadcrumbs
 		slot="breadcrumbs"
 		locale={locale}
+		jsonLd={false}
 		items={[
 			{ label: accommodationsLabel, path: 'alojamientos' },
-			{ label: breadcrumbLabel },
+			{ label: breadcrumbLabel({ t, key: 'compare' }) },
 		]}
 	/>
 

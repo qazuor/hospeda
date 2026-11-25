@@ -130,8 +130,6 @@
             }
         },
         "labels": {
-            "breadcrumbHome": "Inicio",
-            "breadcrumbEvents": "Eventos",
             "emptyTitle": "No hay eventos de categoría {category} disponibles"
         }
     },

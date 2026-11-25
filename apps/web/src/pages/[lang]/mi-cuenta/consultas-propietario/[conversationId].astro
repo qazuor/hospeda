@@ -3,7 +3,7 @@
  * @file mi-cuenta/consultas-propietario/[conversationId].astro
  * @description Authenticated owner conversation thread on the account kit
  * (HOS-2482): the same `ConversationPanel` island as the guest thread, with
- * `viewer="owner"`, and a labelled back link in the `PageHeader`.
+ * `viewer="owner"`, and shared account breadcrumbs in the `PageHeader`.
  *
  * Gate (HOS-2433): signed-out → login with this URL as the return path;
  * signed-in without the owner permission (`resolveOwnerInboxGate`) → kit
@@ -17,7 +17,9 @@
  */
 
 import AccountLayout from '@/layouts/AccountLayout.astro';
-import { LinkButton, PageHeader } from '@/components/account/ui';
+import { PageHeader } from '@/components/account/ui';
+import { buildAccountBreadcrumbs } from '@/lib/account/account-breadcrumbs';
+import { getAccountSectionLabel } from '@/lib/account-nav-model';
 import PageHelpLink from '@/components/account/help/PageHelpLink.astro';
 import { ConversationPanel } from '@/components/account/conversations/ConversationPanel.client';
 import { ConversationLoadError } from '@/components/account/conversations/ConversationLoadError.client';
@@ -71,11 +73,6 @@ if (gate.action === 'continue') {
     thread = result.ok ? result.data : null;
 }
 
-const back = {
-    label: t('conversations.thread.backToOwnerInbox'),
-    href: buildUrl({ locale, path: 'mi-cuenta/consultas-propietario' })
-};
-
 let pageTitle = t('conversations.inbox.ownerInboxTitle');
 let subtitle: string | undefined;
 let headerDescription: string | undefined;
@@ -114,9 +111,12 @@ if (thread) {
 ---
 
 <AccountLayout locale={locale} title={pageTitle} description={subtitle ?? pageTitle} activeSection="owner-messages">
-    <PageHeader title={pageTitle} description={headerDescription} locale={locale}>
+    <PageHeader title={pageTitle} description={headerDescription} locale={locale} breadcrumbs={buildAccountBreadcrumbs({
+        t,
+        parents: [{ label: getAccountSectionLabel({ t, section: 'owner-messages' }), path: 'mi-cuenta/consultas-propietario' }],
+        current: pageTitle
+    })}>
         <PageHelpLink slot="help" locale={locale} />
-        <LinkButton slot="actions" variant="secondary" href={back.href}>← {back.label}</LinkButton>
     </PageHeader>
 
     {gate.action === 'locked' ? (

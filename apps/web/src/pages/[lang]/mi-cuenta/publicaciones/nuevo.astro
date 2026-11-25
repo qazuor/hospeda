@@ -21,6 +21,8 @@ import { LockedState, PageHeader, Section } from '@/components/account/ui';
 import { PostCreateForm } from '@/components/post/editor/PostCreateForm.client';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { buildAccountBreadcrumbs } from '@/lib/account/account-breadcrumbs';
+import { getAccountSectionLabel } from '@/lib/account-nav-model';
 import { buildLoginRedirect } from '@/lib/middleware-helpers';
 import { hasPostsNavAccess } from '@/lib/nav-gating';
 import { buildUrl } from '@/lib/urls';
@@ -53,10 +55,11 @@ const subtitle = t(
         title={title}
         description={subtitle}
         locale={locale}
-        back={{
-            label: t('account.myContent.posts.editor.backToList', 'Volver a mis publicaciones'),
-            href: buildUrl({ locale, path: 'mi-cuenta/publicaciones' })
-        }}
+        breadcrumbs={buildAccountBreadcrumbs({
+            t,
+            parents: [{ label: getAccountSectionLabel({ t, section: 'publicaciones' }), path: 'mi-cuenta/publicaciones' }],
+            current: title
+        })}
     >
         <PageHelpLink slot="help" locale={locale} />
     </PageHeader>

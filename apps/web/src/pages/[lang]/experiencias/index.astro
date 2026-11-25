@@ -13,6 +13,7 @@
 import ListingLayout from '@/layouts/ListingLayout.astro';
 import ItemListJsonLd from '@/components/seo/ItemListJsonLd.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import { breadcrumbLabel } from '@/lib/navigation/breadcrumb-labels';
 import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
 import ExperienceCard from '@/components/experience/ExperienceCard.astro';
 import ExperienceGrid from '@/components/experience/ExperienceGrid.astro';
@@ -391,7 +392,7 @@ const itemListEntries = cards.map((card) => ({
     <Breadcrumbs
         slot="breadcrumbs"
         locale={locale}
-        items={[{ label: t('experience.listing.title', 'Experiencias') }]}
+        items={[{ label: breadcrumbLabel({ t, key: 'experiences' }) }]}
     />
 
     <ListingPageHeader

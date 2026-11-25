@@ -13,7 +13,7 @@
  * list its options would be worse than showing the current value.
  *
  * HOS-2505: the page is the account-kit editor template: kit `PageHeader`
- * with the back link and the page «?», the read-only context in an `Alert`,
+ * with account breadcrumbs and the page «?», the read-only context in an `Alert`,
  * then the editor island (kit Sections + StickySaveBar). Without access it is
  * a `LockedState` (`reason.kind='permission'`), never a redirect (D9).
  *
@@ -29,6 +29,8 @@ import { eventEditApi } from '@/lib/api/endpoints-protected';
 import { transformEventEditDetail } from '@/lib/api/transforms';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { buildAccountBreadcrumbs } from '@/lib/account/account-breadcrumbs';
+import { getAccountSectionLabel } from '@/lib/account-nav-model';
 import { buildLoginRedirect } from '@/lib/middleware-helpers';
 import { hasEventsNavAccess } from '@/lib/nav-gating';
 import { resolveAuthoredEditorItem } from '@/lib/editor/resolve-authored-editor-item';
@@ -42,8 +44,6 @@ if (denied) return denied;
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
-
-const listUrl = buildUrl({ locale, path: 'mi-cuenta/eventos' });
 
 const user = Astro.locals.user;
 if (!user) {
@@ -102,7 +102,11 @@ const locationLabel = t('account.myContent.events.editor.field.location', 'Lugar
             title={title}
             description={event.name}
             locale={locale}
-            back={{ label: t('account.myContent.events.editor.backToList', 'Volver a mis eventos'), href: listUrl }}
+            breadcrumbs={buildAccountBreadcrumbs({
+                t,
+                parents: [{ label: getAccountSectionLabel({ t, section: 'eventos' }), path: 'mi-cuenta/eventos' }],
+                current: event.name
+            })}
         >
             <PageHelpLink slot="help" locale={locale} />
         </PageHeader>
@@ -135,7 +139,11 @@ const locationLabel = t('account.myContent.events.editor.field.location', 'Lugar
     </AccountLayout>
 ) : (
     <AccountLayout locale={locale} title={title} activeSection="eventos">
-        <PageHeader title={title} locale={locale}>
+        <PageHeader title={title} locale={locale} breadcrumbs={buildAccountBreadcrumbs({
+            t,
+            parents: [{ label: getAccountSectionLabel({ t, section: 'eventos' }), path: 'mi-cuenta/eventos' }],
+            current: title
+        })}>
             <PageHelpLink slot="help" locale={locale} />
         </PageHeader>
 

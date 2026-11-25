@@ -13,6 +13,7 @@
 import ListingLayout from '@/layouts/ListingLayout.astro';
 import ItemListJsonLd from '@/components/seo/ItemListJsonLd.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import { breadcrumbLabel } from '@/lib/navigation/breadcrumb-labels';
 import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
 import VenueCard from '@/components/venue/VenueCard.astro';
 import VenueFilterOptionsDegradation from '@/components/venue/VenueFilterOptionsDegradation.astro';
@@ -349,7 +350,7 @@ const itemListEntries = cards.map((card) => ({
     <Breadcrumbs
         slot="breadcrumbs"
         locale={locale}
-        items={[{ label: t('venue.listing.title', 'Gastronomía') }]}
+        items={[{ label: breadcrumbLabel({ t, key: 'eatAndDrink' }) }]}
     />
 
     <ListingPageHeader
