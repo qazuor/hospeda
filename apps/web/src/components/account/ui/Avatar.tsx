@@ -12,6 +12,7 @@
  * @module components/account/ui/Avatar
  */
 
+import { getInitials } from '@/lib/avatar-utils';
 import styles from './Avatar.module.css';
 import { cx } from './cx';
 import { type HelpAnchor, helpAttr } from './help-anchor';
@@ -36,21 +37,14 @@ export interface AvatarProps {
 }
 
 /**
- * Up to two initials from a display name: first letter of the first two words.
+ * Shared avatar initials, with an empty fallback for a blank name.
  *
  * @param input - Options object.
  * @param input.name - The display name.
  * @returns Uppercase initials, or an empty string for a blank name.
  */
 export function avatarInitials({ name }: { readonly name: string }): string {
-    return name
-        .trim()
-        .split(/\s+/)
-        .filter((word) => word.length > 0)
-        .slice(0, 2)
-        .map((word) => Array.from(word)[0] ?? '')
-        .join('')
-        .toUpperCase();
+    return getInitials({ name, placeholder: '' });
 }
 
 /**

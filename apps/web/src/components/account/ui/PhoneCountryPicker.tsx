@@ -1,11 +1,11 @@
 /**
- * @file CountryCodeCombobox.client.tsx
+ * @file PhoneCountryPicker.tsx
  * @description Accessible searchable combobox for picking a phone country
  * code (BETA-144 design review, item 5). Replaces the previous
  * `<input list>` + `<datalist>` selector in `ContactInfoSection`, which
  * rendered as a plain text field with no visible dropdown affordance.
  *
- * UX: a trigger button shows the current selection (e.g. "Argentina (+54)")
+ * UX: a trigger button shows the current dial code (e.g. "+54")
  * with a chevron affordance. Activating it (click, Enter, Space, or
  * ArrowDown) opens a popover with an autofocused search input that filters
  * the curated `PHONE_COUNTRIES` list by name or dial code, and a
@@ -28,17 +28,12 @@ import { createPortal } from 'react-dom';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import {
-    flagEmoji,
-    formatPhoneCountryLabel,
-    PHONE_COUNTRIES,
-    type PhoneCountry
-} from '@/lib/phone-countries';
+import { flagEmoji, PHONE_COUNTRIES, type PhoneCountry } from '@/lib/phone-countries';
 import { foldForRanking } from '@/lib/rank-city-suggestions';
-import styles from './CountryCodeCombobox.module.css';
+import styles from './PhoneCountryPicker.module.css';
 
-/** Props for {@link CountryCodeCombobox}. */
-export interface CountryCodeComboboxProps {
+/** Props for {@link PhoneCountryPicker}. */
+export interface PhoneCountryPickerProps {
     /** Active locale (drives translated labels). */
     readonly locale: SupportedLocale;
     /** DOM id for the trigger button — lets an external `<label for>` target it. */
@@ -82,13 +77,16 @@ function computePosition(triggerEl: HTMLButtonElement): PopoverPosition {
  * `+`) — HOS-979. The name side folds accents (e.g. `Mexico` matches
  * `México`); the dial-code side is numeric and needs no folding.
  */
-function filterCountries(query: string): readonly PhoneCountry[] {
+function filterCountries(
+    query: string,
+    countryName: (country: PhoneCountry) => string
+): readonly PhoneCountry[] {
     const needle = foldForRanking(query);
     if (!needle) return PHONE_COUNTRIES;
     return PHONE_COUNTRIES.filter((country) => {
         const dial = country.dialCode.toLowerCase();
         return (
-            foldForRanking(country.name).includes(needle) ||
+            foldForRanking(countryName(country)).includes(needle) ||
             dial.includes(needle) ||
             dial.replace('+', '').includes(needle)
         );
@@ -99,14 +97,18 @@ function filterCountries(query: string): readonly PhoneCountry[] {
  * Searchable phone country-code combobox. See file header for the full
  * interaction contract.
  */
-export function CountryCodeCombobox({
+export function PhoneCountryPicker({
     locale,
     id,
     value,
     onChange,
     disabled = false
-}: CountryCodeComboboxProps) {
+}: PhoneCountryPickerProps) {
     const { t } = createTranslations(locale);
+    const countryName = useCallback(
+        (country: PhoneCountry) => t(`account.ui.phoneCountries.${country.iso}`, country.name),
+        [t]
+    );
 
     const generatedId = useId();
     const triggerId = id ?? `country-code-combobox-${generatedId}`;
@@ -123,7 +125,7 @@ export function CountryCodeCombobox({
     const searchInputRef = useRef<HTMLInputElement>(null);
     const optionRefs = useRef<Map<number, HTMLButtonElement>>(new Map());
 
-    const results = useMemo(() => filterCountries(query), [query]);
+    const results = useMemo(() => filterCountries(query, countryName), [query, countryName]);
 
     const reposition = useCallback(() => {
         if (!triggerRef.current) return;
@@ -154,11 +156,14 @@ export function CountryCodeCombobox({
         [onChange, closePopover]
     );
 
-    const handleQueryChange = useCallback((nextQuery: string) => {
-        setQuery(nextQuery);
-        const filtered = filterCountries(nextQuery);
-        setHighlightedIndex(filtered.length > 0 ? 0 : -1);
-    }, []);
+    const handleQueryChange = useCallback(
+        (nextQuery: string) => {
+            setQuery(nextQuery);
+            const filtered = filterCountries(nextQuery, countryName);
+            setHighlightedIndex(filtered.length > 0 ? 0 : -1);
+        },
+        [countryName]
+    );
 
     // Autofocus the search input as soon as the popover opens.
     useEffect(() => {
@@ -249,7 +254,7 @@ export function CountryCodeCombobox({
         'No se encontraron países'
     );
     const fieldLabel = t('host.properties.editor.field.phoneCountry', 'País');
-    const selectedLabel = formatPhoneCountryLabel(value);
+    const selectedLabel = `${countryName(value)} (${value.dialCode})`;
 
     return (
         <>
@@ -279,7 +284,7 @@ export function CountryCodeCombobox({
                     >
                         {flagEmoji(value.iso)}
                     </span>
-                    <span className={styles.triggerLabelText}>{selectedLabel}</span>
+                    <span className={styles.triggerLabelText}>{value.dialCode}</span>
                 </span>
                 <ChevronDownIcon
                     size={16}
@@ -372,7 +377,7 @@ export function CountryCodeCombobox({
                                                     {flagEmoji(country.iso)}
                                                 </span>
                                                 <span className={styles.optionNameText}>
-                                                    {country.name}
+                                                    {countryName(country)}
                                                 </span>
                                             </span>
                                             <span className={styles.optionDial}>

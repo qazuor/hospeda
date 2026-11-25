@@ -141,8 +141,7 @@ export function ProfileCompletion({
 
     const [birthDate, setBirthDate] = useState('');
     const [imageUrl, setImageUrl] = useState(initialAvatarUrl ?? '');
-    const [phoneCode, setPhoneCode] = useState('+54');
-    const [phoneNumber, setPhoneNumber] = useState('');
+    const [phone, setPhone] = useState('');
     const [selectedLocale, setSelectedLocale] = useState<SupportedLocale>(locale);
     // HOS-1966: the select starts on the theme the visitor is ALREADY seeing
     // (their stored choice, `'light'` when they never chose), not on a
@@ -190,15 +189,6 @@ export function ProfileCompletion({
     });
     const [submitting, setSubmitting] = useState(false);
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
-
-    /** Build E.164-compatible phone string. */
-    function buildPhone(): string | undefined {
-        const trimmed = phoneNumber.trim();
-        if (!trimmed) return undefined;
-        return `${phoneCode}${trimmed.replace(/[\s\-().]/g, '')}`;
-    }
-
     // ── Submit ────────────────────────────────────────────────────────────────
 
     async function handleSubmit(event: React.FormEvent<HTMLFormElement>): Promise<void> {
@@ -220,7 +210,6 @@ export function ProfileCompletion({
         const trimmedBio = bio.trim();
         const trimmedWebsite = website.trim();
         const trimmedOccupation = occupation.trim();
-        const phone = buildPhone();
 
         const payload: Record<string, unknown> = {
             firstName: firstName.trim(),
@@ -381,15 +370,13 @@ export function ProfileCompletion({
                     >
                         <ProfileCompletionContactFields
                             locale={locale}
-                            phoneCode={phoneCode}
-                            phoneNumber={phoneNumber}
+                            phone={phone}
                             selectedLocale={selectedLocale}
                             selectedTheme={selectedTheme}
                             errors={fieldErrors}
                             submitting={submitting}
                             t={t}
-                            onPhoneCodeChange={setPhoneCode}
-                            onPhoneNumberChange={setPhoneNumber}
+                            onPhoneChange={setPhone}
                             onLocaleChange={setSelectedLocale}
                             onThemeChange={setSelectedTheme}
                         />

@@ -15,6 +15,7 @@ import { useEffect, useRef, useState } from 'react';
 import { DayPicker } from 'react-day-picker';
 import { enUS as enLocale, es as esLocale, ptBR as ptLocale } from 'react-day-picker/locale';
 import dayPickerCssUrl from 'react-day-picker/style.css?url';
+import { getInitials } from '@/lib/avatar-utils';
 import { ensureStylesheet } from '@/lib/ensure-stylesheet';
 import type { FieldErrors } from '@/lib/forms/field-errors';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -133,7 +134,7 @@ export function ProfileCompletionBasicFields({
                             className={styles.avatarInitials}
                             aria-hidden="true"
                         >
-                            {(firstName[0] ?? '?').toUpperCase()}
+                            {getInitials({ name: `${firstName} ${lastName}` })}
                         </span>
                     )}
                 </div>
@@ -306,7 +307,6 @@ function BirthDateField({
                 </Button>
                 {pickerOpen && (
                     <div
-                        // biome-ignore lint/a11y/useSemanticElements: popover panel, not a modal
                         role="dialog"
                         aria-label={t(
                             'account.profileCompletion.fields.birthDate',

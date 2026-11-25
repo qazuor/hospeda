@@ -1,6 +1,6 @@
 /**
- * @file CountryCodeCombobox.test.tsx
- * @description Tests for the CountryCodeCombobox component (BETA-144).
+ * @file PhoneCountryPicker.test.tsx
+ * @description Tests for the kit phone country picker (BETA-144).
  *
  * Covers:
  * - Renders the trigger button showing the currently selected country
@@ -15,8 +15,10 @@
 
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import type { CountryCodeComboboxProps } from '@/components/host/editor/CountryCodeCombobox.client';
-import { CountryCodeCombobox } from '@/components/host/editor/CountryCodeCombobox.client';
+import {
+    PhoneCountryPicker,
+    type PhoneCountryPickerProps
+} from '@/components/account/ui/PhoneCountryPicker';
 import { PHONE_COUNTRIES } from '@/lib/phone-countries';
 
 vi.mock('@/lib/i18n', () => ({
@@ -30,7 +32,7 @@ vi.mock('@/lib/cn', () => ({
     cn: (...classes: (string | undefined | false | null)[]) => classes.filter(Boolean).join(' ')
 }));
 
-vi.mock('@/components/host/editor/CountryCodeCombobox.module.css', () => ({
+vi.mock('@/components/account/ui/PhoneCountryPicker.module.css', () => ({
     default: new Proxy({} as Record<string, string>, {
         get: (_target, prop) => String(prop)
     })
@@ -58,25 +60,26 @@ if (!ARGENTINA || !URUGUAY) {
     throw new Error('Fixture countries missing from PHONE_COUNTRIES');
 }
 
-const DEFAULT_PROPS: CountryCodeComboboxProps = {
+const DEFAULT_PROPS: PhoneCountryPickerProps = {
     locale: 'es',
     value: ARGENTINA,
     onChange: vi.fn()
 };
 
-describe('CountryCodeCombobox', () => {
+describe('PhoneCountryPicker', () => {
     it('renders a trigger button showing the currently selected country', () => {
-        render(<CountryCodeCombobox {...DEFAULT_PROPS} />);
+        render(<PhoneCountryPicker {...DEFAULT_PROPS} />);
 
         const trigger = screen.getByRole('button', { name: /argentina/i });
         expect(trigger).toBeInTheDocument();
-        expect(trigger).toHaveTextContent('Argentina (+54)');
+        expect(trigger).toHaveTextContent('+54');
+        expect(trigger).not.toHaveTextContent('Argentina');
         expect(trigger).toHaveAttribute('aria-expanded', 'false');
         expect(trigger).toHaveAttribute('aria-haspopup', 'listbox');
     });
 
     it('opens the popover with a search input and listbox on click', () => {
-        render(<CountryCodeCombobox {...DEFAULT_PROPS} />);
+        render(<PhoneCountryPicker {...DEFAULT_PROPS} />);
 
         fireEvent.click(screen.getByRole('button', { name: /argentina/i }));
 
@@ -89,7 +92,7 @@ describe('CountryCodeCombobox', () => {
     });
 
     it('filters the country list as the user types', () => {
-        render(<CountryCodeCombobox {...DEFAULT_PROPS} />);
+        render(<PhoneCountryPicker {...DEFAULT_PROPS} />);
         fireEvent.click(screen.getByRole('button', { name: /argentina/i }));
 
         const searchInput = screen.getByRole('combobox');
@@ -101,7 +104,7 @@ describe('CountryCodeCombobox', () => {
     });
 
     it('filters by dial code too', () => {
-        render(<CountryCodeCombobox {...DEFAULT_PROPS} />);
+        render(<PhoneCountryPicker {...DEFAULT_PROPS} />);
         fireEvent.click(screen.getByRole('button', { name: /argentina/i }));
 
         const searchInput = screen.getByRole('combobox');
@@ -113,7 +116,7 @@ describe('CountryCodeCombobox', () => {
     });
 
     it('finds "México" when the visitor types "Mexico" without the accent (HOS-979)', () => {
-        render(<CountryCodeCombobox {...DEFAULT_PROPS} />);
+        render(<PhoneCountryPicker {...DEFAULT_PROPS} />);
         fireEvent.click(screen.getByRole('button', { name: /argentina/i }));
 
         const searchInput = screen.getByRole('combobox');
@@ -125,7 +128,7 @@ describe('CountryCodeCombobox', () => {
     });
 
     it('shows a "no results" message when nothing matches', () => {
-        render(<CountryCodeCombobox {...DEFAULT_PROPS} />);
+        render(<PhoneCountryPicker {...DEFAULT_PROPS} />);
         fireEvent.click(screen.getByRole('button', { name: /argentina/i }));
 
         const searchInput = screen.getByRole('combobox');
@@ -138,7 +141,7 @@ describe('CountryCodeCombobox', () => {
     it('fires onChange with the selected country and closes the popover on select', () => {
         const onChange = vi.fn();
         render(
-            <CountryCodeCombobox
+            <PhoneCountryPicker
                 {...DEFAULT_PROPS}
                 onChange={onChange}
             />
@@ -156,7 +159,7 @@ describe('CountryCodeCombobox', () => {
     it('selects the highlighted option via ArrowDown + Enter', () => {
         const onChange = vi.fn();
         render(
-            <CountryCodeCombobox
+            <PhoneCountryPicker
                 {...DEFAULT_PROPS}
                 onChange={onChange}
             />
@@ -175,7 +178,7 @@ describe('CountryCodeCombobox', () => {
     it('closes on Escape without firing onChange, and returns focus to the trigger', () => {
         const onChange = vi.fn();
         render(
-            <CountryCodeCombobox
+            <PhoneCountryPicker
                 {...DEFAULT_PROPS}
                 onChange={onChange}
             />
@@ -192,7 +195,7 @@ describe('CountryCodeCombobox', () => {
     });
 
     it('closes when clicking outside the trigger and popover', () => {
-        render(<CountryCodeCombobox {...DEFAULT_PROPS} />);
+        render(<PhoneCountryPicker {...DEFAULT_PROPS} />);
         fireEvent.click(screen.getByRole('button', { name: /argentina/i }));
         expect(screen.getByRole('listbox')).toBeInTheDocument();
 
@@ -202,7 +205,7 @@ describe('CountryCodeCombobox', () => {
     });
 
     it('marks the currently selected option with aria-selected', () => {
-        render(<CountryCodeCombobox {...DEFAULT_PROPS} />);
+        render(<PhoneCountryPicker {...DEFAULT_PROPS} />);
         fireEvent.click(screen.getByRole('button', { name: /argentina/i }));
 
         const selectedOption = screen.getByRole('option', { name: /argentina/i });
@@ -211,7 +214,7 @@ describe('CountryCodeCombobox', () => {
 
     it('does not open when disabled', () => {
         render(
-            <CountryCodeCombobox
+            <PhoneCountryPicker
                 {...DEFAULT_PROPS}
                 disabled
             />

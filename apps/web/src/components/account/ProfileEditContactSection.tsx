@@ -5,9 +5,11 @@
  */
 
 import type { SupportedLocale } from '@/lib/i18n';
-import { ProfileTextField } from './ProfileEditFields';
+import { PROFILE_FIELD_PREFIX, ProfileTextField } from './ProfileEditFields';
 import type { ProfileEditFieldErrors } from './ProfileEditForm.helpers';
 import styles from './ProfileEditForm.module.css';
+import { Field } from './ui/Field';
+import { PhoneField } from './ui/PhoneField';
 import { Section } from './ui/Section';
 
 /** Props of {@link ProfileEditContactSection}. */
@@ -63,18 +65,20 @@ export function ProfileEditContactSection({
             helpId="section:profile.contact"
         >
             <div className={styles.grid}>
-                <ProfileTextField
-                    name="phone"
+                <Field
+                    idParts={{ prefix: PROFILE_FIELD_PREFIX, name: 'phone' }}
                     label={t('account.editProfile.fields.phone', 'Teléfono')}
                     locale={locale}
-                    type="tel"
-                    value={phone}
-                    onChange={onPhoneChange}
                     error={fieldErrors.phone}
-                    hint={t('account.editProfile.fields.phoneHint')}
-                    autoComplete="tel"
-                    disabled={submitting}
-                />
+                >
+                    <PhoneField
+                        locale={locale}
+                        name="phone"
+                        value={phone}
+                        onValueChange={onPhoneChange}
+                        disabled={submitting}
+                    />
+                </Field>
                 <ProfileTextField
                     name="website"
                     label={t('account.editProfile.fields.website')}

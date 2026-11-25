@@ -59,7 +59,7 @@ const FIXED_POSITION_FILES: Readonly<Record<string, FixedPositionCategory>> = Ob
     'components/shared/navigation/MobileMenu.module.css': 'overlay',
     'components/shared/navigation/ScrollToTop.astro': 'dock',
     'components/shared/navigation/SkipToContent.astro': 'top',
-    'components/host/editor/CountryCodeCombobox.module.css': 'overlay',
+    'components/account/ui/PhoneCountryPicker.module.css': 'overlay',
     'components/sections/SearchBar.client.tsx': 'comment',
     'components/shared/ui/Dialog.module.css': 'overlay',
     'components/shared/navigation/NavigationProgress.astro': 'top',

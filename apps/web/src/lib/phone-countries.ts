@@ -15,15 +15,8 @@ export interface PhoneCountry {
     /** E.164 dial code, including the leading `+` (e.g. `'+54'`). */
     readonly dialCode: string;
     /**
-     * Display name in Spanish.
-     *
-     * Stored inline rather than as an i18n key: this is a short (~25 entries),
-     * rarely-changing reference dataset — not paragraph-level UI copy — and
-     * `es` is already the app's default/primary locale, with `en`/`pt`
-     * falling back to `es` strings project-wide until translated. Adding 25
-     * country-name keys x 3 locales for a value a host picks once during
-     * onboarding isn't worth the i18n upkeep. If localized country names
-     * become a real requirement, promote `name` to an i18n key at that point.
+     * Stable Spanish reference label for legacy label parsing. The kit phone
+     * picker renders localized names from `account.ui.phoneCountries.<iso>`.
      */
     readonly name: string;
 }

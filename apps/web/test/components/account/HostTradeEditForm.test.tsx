@@ -32,6 +32,7 @@ vi.mock('../../../src/components/account/HostTradeEditForm.module.css', () => ({
 }));
 
 vi.mock('../../../src/lib/i18n', () => ({
+    createT: (_locale: string) => (_key: string, fallback?: string) => fallback ?? _key,
     createTranslations: (_locale: string) => ({
         t: (_key: string, fallback?: string) => fallback ?? _key
     })

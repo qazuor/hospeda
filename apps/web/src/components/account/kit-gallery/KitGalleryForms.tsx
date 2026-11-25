@@ -150,7 +150,7 @@ export function KitGalleryForms({ locale }: GalleryGroupProps) {
                             label="Teléfono"
                             locale={locale}
                         >
-                            <PhoneField />
+                            <PhoneField locale={locale} />
                         </Field>
                     </div>
                 </Visual>

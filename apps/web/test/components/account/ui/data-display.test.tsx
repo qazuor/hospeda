@@ -180,7 +180,7 @@ describe('ListRow', () => {
 
 describe('Avatar', () => {
     it('derives up to two initials and a stable palette', () => {
-        expect(avatarInitials({ name: '  ana   maría pérez ' })).toBe('AM');
+        expect(avatarInitials({ name: '  ana   maría pérez ' })).toBe('AP');
         expect(avatarInitials({ name: '' })).toBe('');
         expect(avatarPalette({ name: 'Ana' })).toBe(avatarPalette({ name: 'Ana' }));
         expect([1, 2, 3, 4]).toContain(avatarPalette({ name: 'Bruno' }));

@@ -11,7 +11,7 @@
  */
 
 import styles from '@/components/account/editor/content-editor-fields.module.css';
-import { TextField } from '@/components/ui/TextField';
+import { Field, Select, TextInput } from '@/components/account/ui';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { POST_FIELD_PREFIX } from './field-ids';
@@ -67,17 +67,21 @@ export function DetailsSection({
                 {t('account.myContent.posts.editor.section.details', 'Detalles')}
             </legend>
 
-            <div className={styles.field}>
-                <TextField
-                    prefix={POST_FIELD_PREFIX}
+            <Field
+                locale={locale}
+                idParts={{ prefix: POST_FIELD_PREFIX, name: 'readingTimeMinutes' }}
+                label={t(
+                    'account.myContent.posts.editor.field.readingTime',
+                    'Tiempo de lectura (minutos)'
+                )}
+                error={errors.readingTimeMinutes}
+                hint={t(
+                    'account.myContent.posts.editor.hint.readingTime',
+                    'Dejalo vacío para mantener el valor actual.'
+                )}
+            >
+                <TextInput
                     name="readingTimeMinutes"
-                    label={t(
-                        'account.myContent.posts.editor.field.readingTime',
-                        'Tiempo de lectura (minutos)'
-                    )}
-                    labelClassName={styles.fieldLabel}
-                    className={styles.fieldInput}
-                    error={errors.readingTimeMinutes}
                     type="number"
                     value={data.readingTimeMinutes ?? ''}
                     min={1}
@@ -85,13 +89,7 @@ export function DetailsSection({
                         onReadingTimeChange(e.target.value === '' ? null : Number(e.target.value))
                     }
                 />
-                <span className={styles.fieldHint}>
-                    {t(
-                        'account.myContent.posts.editor.hint.readingTime',
-                        'Dejalo vacío para mantener el valor actual.'
-                    )}
-                </span>
-            </div>
+            </Field>
 
             {/*
              * Hidden entirely when the catalog fetch failed or is empty. Unlike
@@ -101,18 +99,17 @@ export function DetailsSection({
              * locked out of reaching.
              */}
             {destinations.length > 0 && (
-                <div className={styles.field}>
-                    <TextField
-                        as="select"
-                        prefix={POST_FIELD_PREFIX}
+                <Field
+                    locale={locale}
+                    idParts={{ prefix: POST_FIELD_PREFIX, name: 'destinationId' }}
+                    label={t(
+                        'account.myContent.posts.editor.field.destination',
+                        'Destino relacionado'
+                    )}
+                    error={errors.destinationId}
+                >
+                    <Select
                         name="destinationId"
-                        label={t(
-                            'account.myContent.posts.editor.field.destination',
-                            'Destino relacionado'
-                        )}
-                        labelClassName={styles.fieldLabel}
-                        className={styles.fieldInput}
-                        error={errors.destinationId}
                         value={data.relatedDestinationId}
                         onChange={(e) => onDestinationChange(e.target.value)}
                     >
@@ -130,8 +127,8 @@ export function DetailsSection({
                                 {destination.name}
                             </option>
                         ))}
-                    </TextField>
-                </div>
+                    </Select>
+                </Field>
             )}
         </fieldset>
     );

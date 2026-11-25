@@ -1,4 +1,4 @@
-/* CountryCodeCombobox.module.css — BETA-144
+/* PhoneCountryPicker.module.css — BETA-144
  * Trigger button + portal-mounted search popover for the phone country-code
  * picker. Uses CSS custom properties from global.css / @repo/design-tokens
  * only — no hardcoded colors, spacing, or radii.
@@ -14,10 +14,11 @@
     justify-content: space-between;
     gap: var(--space-2, 0.5rem);
     width: 100%;
-    padding: 0.625rem 0.75rem;
-    background-color: var(--core-card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
+    min-block-size: var(--control-h-lg);
+    padding-inline: var(--space-3);
+    background-color: transparent;
+    border: 0;
+    border-radius: 0;
     color: var(--core-foreground);
     font-family: var(--font-sans);
     font-size: var(--app-control-size);
@@ -32,9 +33,7 @@
 }
 
 .trigger:focus-visible {
-    outline: 2px solid var(--brand-primary);
-    outline-offset: 1px;
-    border-color: var(--brand-primary);
+    outline: none;
 }
 
 .triggerDisabled {
@@ -56,8 +55,6 @@
 }
 
 .triggerLabelText {
-    overflow: hidden;
-    text-overflow: ellipsis;
     white-space: nowrap;
 }
 

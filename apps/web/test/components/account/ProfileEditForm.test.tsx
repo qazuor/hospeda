@@ -125,7 +125,8 @@ describe('ProfileEditForm', () => {
     it('renders phone field pre-populated', () => {
         renderForm();
         const input = screen.getByLabelText(/teléfono/i) as HTMLInputElement;
-        expect(input.value).toBe('+541134567890');
+        expect(input.value).toBe('1134567890');
+        expect(screen.getByRole('button', { name: /Argentina/ })).toHaveTextContent('+54');
     });
 
     it('hides the save bar until something changes (explicit save, D8)', () => {

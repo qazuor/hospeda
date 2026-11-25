@@ -21,13 +21,13 @@
 
 import { Field } from '@/components/account/ui/Field';
 import type { HelpAnchor } from '@/components/account/ui/help-anchor';
+import { PhoneField } from '@/components/account/ui/PhoneField';
 import { Radio, RadioGroup } from '@/components/account/ui/Radio';
 import { Section } from '@/components/account/ui/Section';
 import { TextInput } from '@/components/account/ui/TextInput';
 import { buildFieldId } from '@/lib/forms/build-field-id';
 import { createT, type SupportedLocale } from '@/lib/i18n';
 import styles from './EditorFields.module.css';
-import { EditorPhoneField } from './EditorPhoneField';
 
 /** One contact channel: its Zod key, value, setter and error. */
 export interface ContactChannel {
@@ -101,39 +101,40 @@ export function ListingContactSection({
             helpId={helpId}
         >
             <div className={styles.stack}>
-                <EditorPhoneField
-                    locale={locale}
-                    label={t('account.editorFields.contact.phone')}
-                    idPrefix={idPrefix}
-                    name={phone.name}
-                    suffix={suffixes[phone.name]}
-                    value={phone.value}
-                    onChange={phone.onChange}
-                    error={phone.error}
-                />
-                <EditorPhoneField
-                    locale={locale}
-                    label={t('account.editorFields.contact.landline')}
-                    idPrefix={idPrefix}
-                    name={landline.name}
-                    suffix={suffixes[landline.name]}
-                    value={landline.value}
-                    onChange={landline.onChange}
-                    error={landline.error}
-                    optional
-                />
-                {whatsapp ? (
-                    <EditorPhoneField
-                        locale={locale}
-                        label={t('account.editorFields.contact.whatsapp')}
-                        idPrefix={idPrefix}
-                        name={whatsapp.name}
-                        suffix={suffixes[whatsapp.name]}
-                        value={whatsapp.value}
-                        onChange={whatsapp.onChange}
-                        error={whatsapp.error}
-                    />
-                ) : null}
+                {(
+                    [
+                        { channel: phone, key: 'phone', optional: false },
+                        { channel: landline, key: 'landline', optional: true },
+                        { channel: whatsapp, key: 'whatsapp', optional: false }
+                    ] as const
+                ).map(({ channel, key, optional }) =>
+                    channel ? (
+                        <Field
+                            key={key}
+                            locale={locale}
+                            label={t(`account.editorFields.contact.${key}`)}
+                            id={buildFieldId({
+                                prefix: idPrefix,
+                                name: channel.name,
+                                suffix: suffixes[channel.name]
+                            })}
+                            error={channel.error}
+                            optional={optional}
+                        >
+                            <PhoneField
+                                locale={locale}
+                                name={channel.name}
+                                value={channel.value}
+                                countryId={buildFieldId({
+                                    prefix: idPrefix,
+                                    name: channel.name,
+                                    suffix: 'country'
+                                })}
+                                onValueChange={channel.onChange}
+                            />
+                        </Field>
+                    ) : null
+                )}
                 {whatsappVisibility ? (
                     <RadioGroup
                         locale={locale}
@@ -168,7 +169,7 @@ export function ListingContactSection({
                         ))}
                     </RadioGroup>
                 ) : null}
-                <div className={styles.grid}>
+                <div className={styles.stack}>
                     <Field
                         locale={locale}
                         label={t('account.editorFields.contact.email')}

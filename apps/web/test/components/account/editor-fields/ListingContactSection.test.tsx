@@ -81,7 +81,7 @@ describe('ListingContactSection', () => {
             target: { value: '9 343 2222222' }
         });
 
-        expect(phone.onChange).toHaveBeenCalledWith('+54 9 343 2222222');
+        expect(phone.onChange).toHaveBeenCalledWith('+5493432222222');
     });
 
     it('recomposes the stored phone when only the country changes', () => {
@@ -91,7 +91,7 @@ describe('ListingContactSection', () => {
         fireEvent.click(document.getElementById('acc-phone-country') as HTMLElement);
         fireEvent.mouseDown(screen.getByRole('option', { name: /Uruguay/ }));
 
-        expect(phone.onChange).toHaveBeenCalledWith('+598 9 343 1111111');
+        expect(phone.onChange).toHaveBeenCalledWith('+59893431111111');
     });
 
     it('clears the phone entirely instead of saving a bare dial code', () => {
@@ -112,7 +112,7 @@ describe('ListingContactSection', () => {
             target: { value: '3442 45-2345' }
         });
 
-        expect(landline.onChange).toHaveBeenCalledWith('+54 3442 45-2345');
+        expect(landline.onChange).toHaveBeenCalledWith('+543442452345');
         expect(phone.onChange).not.toHaveBeenCalled();
     });
 

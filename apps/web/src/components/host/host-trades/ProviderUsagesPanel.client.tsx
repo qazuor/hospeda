@@ -34,7 +34,16 @@
  */
 
 import { useCallback, useEffect, useId, useState } from 'react';
-import { Button } from '@/components/account/ui/Button';
+import {
+    Button,
+    Field,
+    Radio,
+    RadioGroup,
+    Section,
+    Select,
+    Textarea,
+    TextInput
+} from '@/components/account/ui';
 import type { BenefitUsage, BenefitUsageStatus, LinkedHost } from '@/lib/api/endpoints-protected';
 import { hostTradesApi } from '@/lib/api/endpoints-protected';
 import { translateApiError } from '@/lib/api-errors';
@@ -402,174 +411,160 @@ export function ProviderUsagesPanel({
                     </p>
                 </div>
             ) : (
-                <form
-                    className={styles.form}
-                    onSubmit={handleSubmit}
-                    noValidate
+                <Section
+                    title={t(
+                        'host-trades.provider.usages.form.title',
+                        'Registrar un uso del beneficio'
+                    )}
+                    helpId="section:hosttrade.panel"
                 >
-                    <h2 className={styles.formTitle}>
-                        {t(
-                            'host-trades.provider.usages.form.title',
-                            'Registrar un uso del beneficio'
-                        )}
-                    </h2>
-
-                    <fieldset className={styles.channelGroup}>
-                        <legend
-                            className={styles.label}
-                            id={channelId}
+                    <form
+                        className={styles.declarationForm}
+                        onSubmit={handleSubmit}
+                        noValidate
+                    >
+                        <RadioGroup
+                            locale={locale}
+                            name={`${channelId}-channel`}
+                            value={channel}
+                            onValueChange={(value) =>
+                                setChannel(value === 'selector' ? 'selector' : 'email')
+                            }
+                            legend={t(
+                                'host-trades.provider.usages.form.channel',
+                                '¿A quién atendiste?'
+                            )}
                         >
-                            {t('host-trades.provider.usages.form.channel', '¿A quién atendiste?')}
-                        </legend>
-                        <label className={styles.choice}>
-                            <input
-                                checked={channel === 'selector'}
+                            <Radio
+                                value="selector"
                                 disabled={initialLinkedHosts.length === 0}
-                                name={`${channelId}-channel`}
-                                onChange={() => setChannel('selector')}
-                                type="radio"
+                                label={t(
+                                    'host-trades.provider.usages.form.channelSelector',
+                                    'Un cliente que ya me confirmó un uso'
+                                )}
                             />
-                            {t(
-                                'host-trades.provider.usages.form.channelSelector',
-                                'Un cliente que ya me confirmó un uso'
-                            )}
-                        </label>
-                        <label className={styles.choice}>
-                            <input
-                                checked={channel === 'email'}
-                                name={`${channelId}-channel`}
-                                onChange={() => setChannel('email')}
-                                type="radio"
+                            <Radio
+                                value="email"
+                                label={t(
+                                    'host-trades.provider.usages.form.channelEmail',
+                                    'Alguien nuevo, por su email'
+                                )}
                             />
-                            {t(
-                                'host-trades.provider.usages.form.channelEmail',
-                                'Alguien nuevo, por su email'
-                            )}
-                        </label>
-                    </fieldset>
+                        </RadioGroup>
 
-                    {channel === 'selector' ? (
-                        <div className={styles.field}>
-                            <label
-                                className={styles.label}
-                                htmlFor={hostFieldId}
-                            >
-                                {t('host-trades.provider.usages.form.host', 'Anfitrión')}
-                            </label>
-                            <select
-                                className={styles.input}
+                        {channel === 'selector' ? (
+                            <Field
+                                locale={locale}
                                 id={hostFieldId}
-                                onChange={(event) => setHostUserId(event.target.value)}
-                                value={hostUserId}
+                                label={t('host-trades.provider.usages.form.host', 'Anfitrión')}
                             >
-                                <option value="">
-                                    {t(
-                                        'host-trades.provider.usages.form.hostPlaceholder',
-                                        'Elegí uno…'
-                                    )}
-                                </option>
-                                {initialLinkedHosts.map((host) => (
-                                    <option
-                                        key={host.id}
-                                        value={host.id}
-                                    >
-                                        {host.displayName}
+                                <Select
+                                    id={hostFieldId}
+                                    onChange={(event) => setHostUserId(event.target.value)}
+                                    value={hostUserId}
+                                >
+                                    <option value="">
+                                        {t(
+                                            'host-trades.provider.usages.form.hostPlaceholder',
+                                            'Elegí uno…'
+                                        )}
                                     </option>
-                                ))}
-                            </select>
-                        </div>
-                    ) : (
-                        <div className={styles.field}>
-                            <label
-                                className={styles.label}
-                                htmlFor={hostFieldId}
-                            >
-                                {t('host-trades.provider.usages.form.email', 'Email del anfitrión')}
-                            </label>
-                            <input
-                                autoComplete="off"
-                                className={styles.input}
+                                    {initialLinkedHosts.map((host) => (
+                                        <option
+                                            key={host.id}
+                                            value={host.id}
+                                        >
+                                            {host.displayName}
+                                        </option>
+                                    ))}
+                                </Select>
+                            </Field>
+                        ) : (
+                            <Field
+                                locale={locale}
                                 id={hostFieldId}
-                                onChange={(event) => setHostEmail(event.target.value)}
-                                type="email"
-                                value={hostEmail}
-                            />
-                            <p className={styles.hint}>
-                                {t(
+                                label={t(
+                                    'host-trades.provider.usages.form.email',
+                                    'Email del anfitrión'
+                                )}
+                                hint={t(
                                     'host-trades.provider.usages.form.emailHint',
                                     'Tiene que ser el email con el que se registró en Hospeda. Si no coincide, te lo avisamos en el momento.'
                                 )}
-                            </p>
-                        </div>
-                    )}
+                            >
+                                <TextInput
+                                    autoComplete="off"
+                                    id={hostFieldId}
+                                    onChange={(event) => setHostEmail(event.target.value)}
+                                    type="email"
+                                    value={hostEmail}
+                                />
+                            </Field>
+                        )}
 
-                    <div className={styles.field}>
-                        <label
-                            className={styles.label}
-                            htmlFor={dateFieldId}
-                        >
-                            {t(
+                        <Field
+                            locale={locale}
+                            id={dateFieldId}
+                            label={t(
                                 'host-trades.provider.usages.form.date',
                                 '¿Qué día fue el servicio?'
                             )}
-                        </label>
-                        <input
-                            className={styles.input}
-                            id={dateFieldId}
-                            max={today}
-                            onChange={(event) => setServicedAt(event.target.value)}
-                            type="date"
-                            value={servicedAt}
-                        />
-                    </div>
-
-                    <div className={styles.field}>
-                        <label
-                            className={styles.label}
-                            htmlFor={noteFieldId}
                         >
-                            {t('host-trades.provider.usages.form.note', 'Nota (opcional)')}
-                        </label>
-                        <textarea
-                            className={styles.textarea}
+                            <TextInput
+                                id={dateFieldId}
+                                max={today}
+                                onChange={(event) => setServicedAt(event.target.value)}
+                                type="date"
+                                value={servicedAt}
+                            />
+                        </Field>
+
+                        <Field
+                            locale={locale}
                             id={noteFieldId}
-                            maxLength={NOTE_MAX}
-                            onChange={(event) => setNote(event.target.value)}
-                            rows={2}
-                            value={note}
-                        />
-                    </div>
-
-                    {errorMessage ? (
-                        <p
-                            className={styles.error}
-                            role="alert"
+                            label={t('host-trades.provider.usages.form.note', 'Nota (opcional)')}
                         >
-                            {errorMessage}
-                        </p>
-                    ) : null}
+                            <Textarea
+                                id={noteFieldId}
+                                limit={NOTE_MAX}
+                                locale={locale}
+                                onChange={(event) => setNote(event.target.value)}
+                                rows={2}
+                                value={note}
+                            />
+                        </Field>
 
-                    {declared ? (
-                        <p
-                            className={styles.success}
-                            role="status"
+                        {errorMessage ? (
+                            <p
+                                className={styles.error}
+                                role="alert"
+                            >
+                                {errorMessage}
+                            </p>
+                        ) : null}
+
+                        {declared ? (
+                            <p
+                                className={styles.success}
+                                role="status"
+                            >
+                                {t(
+                                    'host-trades.provider.usages.form.success',
+                                    'Listo. Le pedimos al anfitrión que lo confirme; hasta entonces queda pendiente y no suma a tus números.'
+                                )}
+                            </p>
+                        ) : null}
+
+                        <Button
+                            type="submit"
+                            loading={submitting}
                         >
-                            {t(
-                                'host-trades.provider.usages.form.success',
-                                'Listo. Le pedimos al anfitrión que lo confirme; hasta entonces queda pendiente y no suma a tus números.'
-                            )}
-                        </p>
-                    ) : null}
-
-                    <Button
-                        type="submit"
-                        loading={submitting}
-                    >
-                        {submitting
-                            ? t('host-trades.provider.usages.form.submitting', 'Registrando…')
-                            : t('host-trades.provider.usages.form.submit', 'Registrar el uso')}
-                    </Button>
-                </form>
+                            {submitting
+                                ? t('host-trades.provider.usages.form.submitting', 'Registrando…')
+                                : t('host-trades.provider.usages.form.submit', 'Registrar el uso')}
+                        </Button>
+                    </form>
+                </Section>
             )}
 
             <section className={styles.section}>
