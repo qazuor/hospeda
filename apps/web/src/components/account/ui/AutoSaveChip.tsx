@@ -1,14 +1,15 @@
 /**
- * AutoSaveChip — the direct-action save signal (HOS-2413 T-027, D8).
+ * AutoSaveChip — presentational save status for direct and explicit saves.
  *
  * For a control that saves on its own (a switch, a reorder). `saving` says
  * «Guardando…», `saved` says «Guardado 14:32» (es-AR 24h time from `savedAt`)
  * and `error` says «No se guardó · Reintentar». It is `role="status"`, or
- * `alert` on error. Never mix it with a StickySaveBar in the same form.
+ * `alert` on error. Clean/dirty are informational: they never initiate a save.
  *
  * @module components/account/ui/AutoSaveChip
  */
 
+import { CheckIcon } from '@repo/icons';
 import { createT, type SupportedLocale } from '@/lib/i18n';
 import { Button } from './Button';
 import { cx } from './cx';
@@ -19,7 +20,7 @@ import styles from './StickySaveBar.module.css';
 const TIME_ZONE = 'America/Argentina/Buenos_Aires';
 
 /** Status of the chip. */
-export type AutoSaveStatus = 'saving' | 'saved' | 'error';
+export type AutoSaveStatus = 'clean' | 'dirty' | 'saving' | 'saved' | 'error';
 
 /** Props of {@link AutoSaveChip}. */
 export interface AutoSaveChipProps {
@@ -75,15 +76,34 @@ export function AutoSaveChip({
               })
             : status === 'saving'
               ? t('account.ui.autoSave.saving')
-              : t('account.ui.autoSave.error');
+              : t(`account.ui.autoSave.${status}`);
 
     return (
         <span
             {...helpAttr({ helpId })}
             role={status === 'error' ? 'alert' : 'status'}
             data-status={status}
-            className={cx(styles.chip, status === 'error' && styles.chipError, className)}
+            className={cx(
+                styles.chip,
+                status === 'clean' && styles.chipClean,
+                status === 'dirty' && styles.chipDirty,
+                status === 'error' && styles.chipError,
+                className
+            )}
         >
+            {status === 'clean' ? (
+                <CheckIcon
+                    size="xs"
+                    weight="bold"
+                    aria-hidden="true"
+                />
+            ) : null}
+            {status === 'dirty' ? (
+                <span
+                    className={styles.chipDot}
+                    aria-hidden="true"
+                />
+            ) : null}
             {text}
             {status === 'error' && onRetry ? (
                 <>

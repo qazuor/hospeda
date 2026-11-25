@@ -20,6 +20,11 @@ export interface TourDriverTexts {
     readonly nextBtnText: string;
     readonly prevBtnText: string;
     readonly doneBtnText: string;
+    /** Hide, rather than disable, Previous on the first visible step. */
+    readonly onPopoverRender: (
+        popover: { readonly previousButton: HTMLButtonElement },
+        options: { readonly index?: number }
+    ) => void;
 }
 
 /**
@@ -35,7 +40,10 @@ export function buildTourDriverTexts({ t }: { readonly t: TourTranslate }): Tour
         progressText: t('account.welcomeTour.step', 'Paso {{current}} de {{total}}'),
         nextBtnText: t('account.welcomeTour.next', 'Siguiente'),
         prevBtnText: t('account.welcomeTour.prev', 'Anterior'),
-        doneBtnText: t('account.welcomeTour.done', 'Finalizar')
+        doneBtnText: t('account.welcomeTour.done', 'Finalizar'),
+        onPopoverRender: (popover, { index }) => {
+            popover.previousButton.hidden = index === 0;
+        }
     };
 }
 

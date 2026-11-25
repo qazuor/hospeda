@@ -130,7 +130,7 @@ export function PageHeader({
                 <div className={styles.heading}>
                     <div className={styles.titleRow}>
                         <h1 className={styles.title}>{title}</h1>
-                        {help}
+                        {help ? <span className={styles.help}>{help}</span> : null}
                         {status}
                     </div>
                     {description ? <p className={styles.description}>{description}</p> : null}

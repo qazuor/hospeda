@@ -2,8 +2,8 @@
    the look; tokens only. */
 
 .list {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
     gap: var(--space-3);
     margin: 0;
     padding: 0;
@@ -11,14 +11,16 @@
 }
 
 .item {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: subgrid;
     align-items: center;
-    justify-content: space-between;
     gap: var(--space-3);
 }
 
 .name {
-    font-weight: 600;
+    min-inline-size: 0;
+    overflow-wrap: anywhere;
+    font: var(--app-control);
     color: var(--core-foreground);
 }

@@ -3,6 +3,8 @@
  *
  * The template sets the content column's maximum width through
  * `[data-template]` in `AccountShell.module.css`:
+ * The shell owns the sibling stack (`--space-6`) for every template; page
+ * wrappers own only their internal grouping gaps, not extra outer spacing.
  *
  * - `list`: tables and card lists, full column.
  * - `form`: a single form, 720px max (`--form-max`), left-aligned.

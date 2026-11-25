@@ -1,5 +1,6 @@
 /**
  * Textarea — the multi-line control of the Mi Cuenta kit (HOS-2413 T-007).
+ * Native editing and resizing with the shared token-painted control surface.
  *
  * With a `limit` it shows a counter that is part of `aria-describedby`. The
  * counter itself is NOT live (it would announce on every keystroke): a

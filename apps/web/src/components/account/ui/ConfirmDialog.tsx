@@ -140,6 +140,7 @@ export function ConfirmDialog({
                 >
                     <Icon
                         size="md"
+                        duotoneColor="currentColor"
                         aria-hidden="true"
                     />
                 </span>

@@ -67,6 +67,8 @@ export interface UseSaveBarResult {
     readonly goToFirstError: () => boolean;
     /** The last failed save's `message`, while the bar is in `error`. */
     readonly errorMessage: string | null;
+    /** Timestamp of the last successful save, shared by status presentations. */
+    readonly savedAt?: Date;
 }
 
 /**
@@ -86,6 +88,7 @@ export function useSaveBar({
     const [phase, setPhase] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
     const invalidFields = useRef<readonly string[]>([]);
     const [failureMessage, setFailureMessage] = useState<string | null>(null);
+    const [savedAt, setSavedAt] = useState<Date>();
     const t = createT(locale);
 
     const status: SaveBarStatus =
@@ -128,6 +131,7 @@ export function useSaveBar({
             if (outcome.ok) {
                 invalidFields.current = [];
                 setFailureMessage(null);
+                setSavedAt(new Date());
                 setPhase('saved');
             } else {
                 invalidFields.current = outcome.invalidFields ?? [];
@@ -187,6 +191,7 @@ export function useSaveBar({
         save,
         discard,
         goToFirstError,
+        savedAt,
         errorMessage: status === 'error' ? failureMessage : null
     };
 }

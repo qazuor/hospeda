@@ -35,6 +35,7 @@ import styles from './ProfileEditForm.module.css';
 import { ProfileEditIdentitySection } from './ProfileEditIdentitySection';
 import { ProfileEditSecuritySection } from './ProfileEditSecuritySection';
 import { ProfileEditSocialSection } from './ProfileEditSocialSection';
+import { AutoSaveChip } from './ui/AutoSaveChip';
 import { StickySaveBar } from './ui/StickySaveBar';
 import { useSaveBar } from './ui/use-save-bar';
 import { useProfileEditSubmit } from './useProfileEditSubmit';
@@ -334,6 +335,13 @@ export function ProfileEditForm({
             noValidate
             aria-label={t('account.pages.editProfile.title', 'Editar perfil')}
         >
+            {/* The sticky bar already tells every non-clean state; the chip covers clean. */}
+            {saveBar.status === 'clean' ? (
+                <AutoSaveChip
+                    status="clean"
+                    locale={locale}
+                />
+            ) : null}
             <ProfileEditIdentitySection
                 locale={locale}
                 t={t}

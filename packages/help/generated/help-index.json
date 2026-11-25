@@ -1,5 +1,5 @@
 {
-  "contentHash": "7da656afa85cea3bc0a648720e08104d0982666c3b0099649d352d2f05faa59a",
+  "contentHash": "9ee672d3f9041bb8cd81f026e114acd75f2ca2f1cc37952083e7cd7be9179e34",
   "locales": {
     "es": [
       {
@@ -852,7 +852,7 @@
           "ai-assistants",
           "calendar"
         ],
-        "reviewedAt": "2026-11-23",
+        "reviewedAt": "2026-11-25",
         "sections": {
           "canDo": "Leer y responder las conversaciones de tus alojamientos en {{link:inquiries|Mensajes de huéspedes}}.",
           "expect": "- Las conversaciones con mensajes sin leer tienen una marca.\n- Un asistente redacta la respuesta y te la muestra antes de enviarla (mirá {{article:ai-assistants|cómo conectarlo}}).",
