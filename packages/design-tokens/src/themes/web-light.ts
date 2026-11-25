@@ -353,6 +353,14 @@ export const webLight: Theme = {
     'overlay-ring': 'oklch(0.2 0.02 220 / 0.12)',
     'shadow-overlay':
         '0 26px 54px -8px oklch(from var(--core-foreground) l c h / 0.28), 0 8px 18px -4px oklch(from var(--core-foreground) l c h / 0.16), 0 0 44px 4px oklch(from var(--core-foreground) l c h / 0.08)',
+    // HOS-2607: the listing mobile dock. Its secondary icon buttons take a light
+    // brand-tinted surface so they read as buttons on the white dock (the card
+    // white of `--surface-overlay` vanished into it), and the dock casts a
+    // stronger upward shadow than `--shadow-sticky` so it separates from the
+    // page that scrolls behind it.
+    'dock-action-surface': surfaces.warm,
+    'shadow-dock':
+        '0 -8px 24px -6px oklch(from var(--core-foreground) l c h / 0.28), 0 -1px 3px oklch(from var(--core-foreground) l c h / 0.12)',
     // Subtle dismiss-on-click scrim behind an open popover (NOT used by
     // toasts — they're ephemeral and never gate interaction). Kept far
     // lighter than `--overlay-bg-light` (which backs full drawers/sheets)

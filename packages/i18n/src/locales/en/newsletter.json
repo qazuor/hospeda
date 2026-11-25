@@ -37,6 +37,14 @@
         "description": "You will no longer receive emails from Hospeda.",
         "resubscribeLink": "If this was a mistake, resubscribe"
     },
+    "unsubscribeConfirm": {
+        "title": "Do you want to unsubscribe from the Hospeda newsletter?",
+        "description": "You will stop receiving our emails. You can subscribe again whenever you like.",
+        "confirmButton": "Confirm unsubscribe",
+        "confirming": "Processing...",
+        "keepLink": "No, keep me subscribed",
+        "networkError": "We could not process your request. Please try again in a moment."
+    },
     "whatsapp": {
         "title": "Join the Hospeda WhatsApp channel",
         "description": "Receive exclusive deals and Litoral news on your WhatsApp.",

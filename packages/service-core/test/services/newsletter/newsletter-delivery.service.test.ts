@@ -811,3 +811,76 @@ describe('sendTestEmail', () => {
         expect(call?.isTest).toBe(true);
     });
 });
+
+// ===========================================================================
+// HOS-2617: unsubscribe links point at the web confirmation page
+// ===========================================================================
+
+describe('unsubscribe links (HOS-2617)', () => {
+    const arrange = async (overrides: Partial<NewsletterDeliveryServiceOptions> = {}) => {
+        queryBuilderResponses = [
+            [makeCampaignRow()],
+            [makeDeliveryRow(DELIVERY_ID_1, SUBSCRIBER_ID_1)],
+            [makeSubscriberRow(SUBSCRIBER_ID_1)],
+            [{ id: DELIVERY_ID_1 }],
+            []
+        ];
+        const email = `user-${DELIVERY_ID_1.slice(0, 8)}@example.com`;
+        const sendBatchFn = vi.fn(
+            async (_input: { payload: DeliveryBatchPayload; apiKey: string }) =>
+                makeBatchResult([email], ['brevo-msg-001'])
+        );
+        const renderCampaignEmailFn = vi.fn(
+            ({ subject }: { subject: string; unsubscribeUrl: string }) => `<p>${subject}</p>`
+        );
+        const svc = makeService({ sendBatchFn, renderCampaignEmailFn, ...overrides });
+        await svc.processBatch({ campaignId: CAMPAIGN_ID, deliveryIds: [DELIVERY_ID_1] });
+        return { sendBatchFn, renderCampaignEmailFn };
+    };
+
+    it('points the campaign footer link at the web page, never the API', async () => {
+        const { renderCampaignEmailFn } = await arrange();
+
+        const url = renderCampaignEmailFn.mock.calls[0]?.[0].unsubscribeUrl ?? '';
+        expect(url).toMatch(
+            /^https:\/\/hospeda\.com\.ar\/(es|en|pt)\/newsletter\/unsubscribe\/\?token=.+/
+        );
+        expect(url).not.toContain('/api/');
+    });
+
+    it('adds RFC 8058 one-click headers pointing at the API POST endpoint when apiUrl is set', async () => {
+        const { sendBatchFn } = await arrange({ apiUrl: 'https://api.hospeda.com.ar' });
+
+        const headers = sendBatchFn.mock.calls[0]?.[0].payload.messageVersions[0]?.headers;
+        expect(headers?.['List-Unsubscribe']).toMatch(
+            /^<https:\/\/api\.hospeda\.com\.ar\/api\/v1\/public\/newsletter\/unsubscribe\?token=.+>$/
+        );
+        expect(headers?.['List-Unsubscribe-Post']).toBe('List-Unsubscribe=One-Click');
+        expect(headers?.['X-Newsletter-Delivery-Id']).toBe(DELIVERY_ID_1);
+    });
+
+    it('omits the one-click headers when apiUrl is not configured', async () => {
+        const { sendBatchFn } = await arrange();
+
+        const headers = sendBatchFn.mock.calls[0]?.[0].payload.messageVersions[0]?.headers;
+        expect(headers).not.toHaveProperty('List-Unsubscribe');
+    });
+
+    it('points the test-send footer link at the web page', async () => {
+        queryBuilderResponses = [[makeCampaignRow({ status: 'draft' })]];
+        const buildCampaignReactElementFn = vi.fn((_input: { unsubscribeUrl: string }) => ({
+            type: 'div',
+            props: {}
+        }));
+        const svc = makeService({ buildCampaignReactElementFn });
+
+        await svc.sendTestEmail(
+            { campaignId: CAMPAIGN_ID, toEmail: 'admin@example.com' },
+            makeAdminActor()
+        );
+
+        expect(buildCampaignReactElementFn.mock.calls[0]?.[0].unsubscribeUrl).toBe(
+            'https://hospeda.com.ar/es/newsletter/unsubscribe/'
+        );
+    });
+});

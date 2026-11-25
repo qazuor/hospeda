@@ -79,6 +79,12 @@ interface ShareButtonsProps {
     readonly analytics?: ShareButtonsAnalytics;
     /** Accessible name of the trigger, replacing «Compartir» (listing action bar, HOS-2579). */
     readonly label?: string;
+    /**
+     * Weight of the trigger glyph. Absent keeps the icon set's default (duotone),
+     * which every existing caller relies on; the listing action bar passes
+     * `regular` so its secondary glyphs share one stroke (HOS-2607).
+     */
+    readonly iconWeight?: 'regular';
 }
 
 /** A share action's `utm_source`. */
@@ -107,7 +113,8 @@ export function ShareButtons({
     className,
     appearance,
     analytics,
-    label
+    label,
+    iconWeight
 }: ShareButtonsProps) {
     const { t } = createTranslations(locale);
     const sharedUrl = (source: ShareSource): string =>
@@ -296,10 +303,20 @@ export function ShareButtons({
                 aria-haspopup={isCompact ? undefined : 'menu'}
                 onClick={() => void handleMainClick()}
             >
-                <ShareIcon
-                    size={20}
-                    aria-hidden="true"
-                />
+                {/* Both pairs written out: the icon-manifest analyzer and the
+                    shipped-weights guard only see literal weights. */}
+                {iconWeight === 'regular' ? (
+                    <ShareIcon
+                        size={20}
+                        weight="regular"
+                        aria-hidden="true"
+                    />
+                ) : (
+                    <ShareIcon
+                        size={20}
+                        aria-hidden="true"
+                    />
+                )}
                 {!isCompact && (
                     <span className={styles.triggerLabel}>
                         {t('ui.actions.share', 'Compartir')}
