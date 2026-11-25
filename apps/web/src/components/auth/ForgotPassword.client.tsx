@@ -184,6 +184,7 @@ export function ForgotPassword({ locale, resetPasswordUrl, signInUrl }: ForgotPa
                 as="button"
                 type="submit"
                 variant="accent"
+                flat
                 size="md"
                 shape="rounded"
                 label={

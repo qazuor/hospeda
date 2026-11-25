@@ -1,5 +1,5 @@
 {
-  "contentHash": "88556b4044d3582c6975864ffcab5df1b7170c402cd77bbee1d9d2d126a335f3",
+  "contentHash": "328fad57535cf6613bd13f4177abf39b6e99a3cf9f416f4ead757569690ad197",
   "locales": {
     "es": [
       {
@@ -479,7 +479,7 @@
           "publish-requirements",
           "calendar"
         ],
-        "reviewedAt": "2026-11-24",
+        "reviewedAt": "2026-11-25",
         "sections": {
           "canDo": "Cambiar el plan o la frecuencia de cobro de una suscripción activa desde {{link:subscription|Suscripción}}.\n\nComparar los planes en {{link:plans:accommodation|planes para alojamientos}}, {{link:plans:venue|planes para comercios}} o {{link:plans:experience|planes para experiencias}}.",
           "expect": "- Si el cambio requiere autorización, pasás por el checkout de Mercado Pago y tu plan actual sigue hasta que autorices.\n- Si el cambio se programa, ves la fecha exacta desde la que rige.\n- Los importes se ven en la lista de opciones y en la página de planes.",

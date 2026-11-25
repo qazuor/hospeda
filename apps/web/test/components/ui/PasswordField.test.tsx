@@ -72,6 +72,18 @@ const baseProps = {
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
 describe('PasswordField', () => {
+    it('shares the kit control appearance with auth text inputs', () => {
+        const modules = ['ui/PasswordField', 'auth/SignIn', 'auth/SignUp', 'auth/ForgotPassword'];
+        for (const module of modules) {
+            const css = readFileSync(
+                resolve(__dirname, `../../../src/components/${module}.module.css`),
+                'utf8'
+            );
+            expect(css).toContain('composes: control from "../account/ui/Control.module.css"');
+            expect(css).not.toMatch(/\.input\s*\{[^}]*background-color:/);
+        }
+    });
+
     // Label rendering
     it('renders the label text', () => {
         render(<PasswordField {...baseProps} />);

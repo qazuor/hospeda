@@ -22,6 +22,16 @@ export type ListingContactPrice = z.infer<typeof listingContactPriceSchema>;
 /** Display fallback for accommodation prices whose currency is missing. */
 export const DEFAULT_ACCOMMODATION_CURRENCY = 'ARS';
 
+/**
+ * Display form of a public price. `onRequest` marks the «Consultar precio» label,
+ * which callers may render lighter than a real amount (HOS-2607, action bar).
+ */
+export interface ListingContactPriceDisplay {
+    readonly amount: string;
+    readonly unit?: string;
+    readonly onRequest?: true;
+}
+
 /** Formats the public nightly price using the same currency fallback as the sidebar. */
 export function getListingContactPrice({
     price,
@@ -29,11 +39,14 @@ export function getListingContactPrice({
 }: {
     readonly price: ListingContactPrice;
     readonly locale: SupportedLocale;
-}): { readonly amount: string; readonly unit?: string } | null {
+}): ListingContactPriceDisplay | null {
     if (!price) return null;
     const { t } = createTranslations(locale);
     if (price.onRequest || price.amount === null) {
-        return { amount: t('accommodations.detail.listingContact.bar.priceOnRequest') };
+        return {
+            amount: t('accommodations.detail.listingContact.bar.priceOnRequest'),
+            onRequest: true
+        };
     }
     const amount = new Intl.NumberFormat(toRegionalLocaleTag({ locale }), {
         style: 'currency',

@@ -198,7 +198,9 @@ export function getNewsletterDeliveryService(): NewsletterDeliveryService | null
             senderEmail,
             senderName,
             siteUrl: env.HOSPEDA_SITE_URL ?? 'https://hospeda.com.ar',
-            hmacSecret: env.HOSPEDA_NEWSLETTER_HMAC_SECRET
+            hmacSecret: env.HOSPEDA_NEWSLETTER_HMAC_SECRET,
+            // HOS-2617: enables the RFC 8058 List-Unsubscribe one-click headers.
+            apiUrl: env.HOSPEDA_API_URL
         }
     );
 

@@ -4,13 +4,16 @@
  */
 
 import { type FormEvent, useEffect, useRef, useState } from 'react';
+import { GradientButton } from '@/components/ui/GradientButtonReact';
 import { partnerApplicationApi } from '@/lib/api/endpoints';
 import { fetchAuthMe } from '@/lib/auth-cache';
 import { resendVerificationEmail } from '@/lib/auth-client';
 import { formatDate } from '@/lib/format-utils';
+import { usePublicFormVisitor } from '@/lib/forms/use-public-form-visitor';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
+import allianceStyles from '../alliance/AllianceLead.module.css';
 import styles from './PartnerApplication.module.css';
 
 interface TurnstileOptions {
@@ -32,6 +35,7 @@ declare global {
     }
 }
 
+/** Props for the public Partner application island. */
 export interface PartnerApplicationProps {
     readonly locale: SupportedLocale;
     readonly turnstileSiteKey?: string;
@@ -69,6 +73,8 @@ export function PartnerApplication({ locale, turnstileSiteKey }: PartnerApplicat
     const [state, setState] = useState<FormState>('idle');
     const [resendState, setResendState] = useState<ResendState>('idle');
     const [accountEmail, setAccountEmail] = useState<string | null>(null);
+    const { accountEmail: visitorEmail } = usePublicFormVisitor();
+    const applicationEmail = visitorEmail || email.trim();
     const [reapplyAfter, setReapplyAfter] = useState<Date | null>(null);
     const widgetRef = useRef<HTMLDivElement>(null);
     const resendInFlightRef = useRef(false);
@@ -115,7 +121,8 @@ export function PartnerApplication({ locale, turnstileSiteKey }: PartnerApplicat
 
     const submit = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
         event.preventDefault();
-        if (!turnstileSiteKey || !isValidEmail(email) || !token || state === 'sending') return;
+        if (!turnstileSiteKey || !isValidEmail(applicationEmail) || !token || state === 'sending')
+            return;
         if (honeypot) {
             setState('success');
             return;
@@ -124,7 +131,7 @@ export function PartnerApplication({ locale, turnstileSiteKey }: PartnerApplicat
         setState('sending');
         try {
             const result = await partnerApplicationApi.submit({
-                email: email.trim(),
+                email: applicationEmail,
                 cfTurnstileToken: token
             });
             if (result.ok) {
@@ -253,16 +260,22 @@ export function PartnerApplication({ locale, turnstileSiteKey }: PartnerApplicat
                             </p>
                         )}
                         {accountEmail !== null && (
-                            <button
-                                type="button"
+                            <GradientButton
+                                as="button"
+                                variant="accent"
+                                flat
+                                shape="rounded"
                                 className={styles.button}
                                 disabled={resendState === 'sending'}
                                 onClick={resendVerification}
-                            >
-                                {resendState === 'sending'
-                                    ? t('alliance-leads.partnerApplication.resendingVerification')
-                                    : t('alliance-leads.partnerApplication.resendVerification')}
-                            </button>
+                                label={
+                                    resendState === 'sending'
+                                        ? t(
+                                              'alliance-leads.partnerApplication.resendingVerification'
+                                          )
+                                        : t('alliance-leads.partnerApplication.resendVerification')
+                                }
+                            />
                         )}
                     </>
                 )}
@@ -285,31 +298,38 @@ export function PartnerApplication({ locale, turnstileSiteKey }: PartnerApplicat
                 className={styles.form}
                 onSubmit={submit}
             >
-                <div className={styles.field}>
-                    <label
-                        className={styles.label}
-                        htmlFor="partner-application-email"
-                    >
-                        {t('alliance-leads.partnerApplication.emailLabel')}
-                    </label>
-                    <input
-                        id="partner-application-email"
-                        className={styles.input}
-                        type="email"
-                        name="email"
-                        autoComplete="email"
-                        required
-                        value={email}
-                        aria-describedby="partner-application-email-help"
-                        onChange={(event) => setEmail(event.currentTarget.value)}
-                    />
-                    <p
-                        id="partner-application-email-help"
-                        className={styles.help}
-                    >
-                        {t('alliance-leads.partnerApplication.emailHelp')}
+                {visitorEmail ? (
+                    <p className={allianceStyles.accountEmailNotice}>
+                        {t('alliance-leads.form.accountEmailNotice')}{' '}
+                        <strong>{visitorEmail}</strong>
                     </p>
-                </div>
+                ) : (
+                    <div className={styles.field}>
+                        <label
+                            className={styles.label}
+                            htmlFor="partner-application-email"
+                        >
+                            {t('alliance-leads.partnerApplication.emailLabel')}
+                        </label>
+                        <input
+                            id="partner-application-email"
+                            className={styles.input}
+                            type="email"
+                            name="email"
+                            autoComplete="email"
+                            required
+                            value={email}
+                            aria-describedby="partner-application-email-help"
+                            onChange={(event) => setEmail(event.currentTarget.value)}
+                        />
+                        <p
+                            id="partner-application-email-help"
+                            className={styles.help}
+                        >
+                            {t('alliance-leads.partnerApplication.emailHelp')}
+                        </p>
+                    </div>
+                )}
                 <div
                     className={styles.honeypot}
                     aria-hidden="true"
@@ -349,15 +369,20 @@ export function PartnerApplication({ locale, turnstileSiteKey }: PartnerApplicat
                               : t('alliance-leads.partnerApplication.error')}
                     </p>
                 )}
-                <button
+                <GradientButton
+                    as="button"
+                    variant="accent"
+                    flat
+                    shape="rounded"
                     className={styles.button}
                     type="submit"
-                    disabled={!isValidEmail(email) || !token || state === 'sending'}
-                >
-                    {state === 'sending'
-                        ? t('alliance-leads.partnerApplication.sending')
-                        : t('alliance-leads.partnerApplication.submit')}
-                </button>
+                    disabled={!isValidEmail(applicationEmail) || !token || state === 'sending'}
+                    label={
+                        state === 'sending'
+                            ? t('alliance-leads.partnerApplication.sending')
+                            : t('alliance-leads.partnerApplication.submit')
+                    }
+                />
             </form>
         </section>
     );

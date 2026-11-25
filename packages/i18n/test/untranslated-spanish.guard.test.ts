@@ -44,6 +44,8 @@ const LEGITIMATE_IDENTICAL: Readonly<Record<string, readonly TargetLocale[]>> = 
     Complementos: ['pt'],
     Complemento: ['pt'],
     Destino: ['pt'],
+    // Same word in Brazilian Portuguese (HOS-2628 favorites singular card type).
+    Evento: ['pt'],
     Confirmar: ['pt'],
     WhatsApp: ['en', 'pt'],
     // Correct in both Spanish and Brazilian Portuguese (HOS-2521 contact copy).

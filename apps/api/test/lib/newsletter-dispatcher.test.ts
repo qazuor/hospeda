@@ -77,7 +77,7 @@ describe('createNewsletterNotificationDispatcher', () => {
         expect(JSON.stringify(input.react.props)).toContain('mi-cuenta/newsletter');
     });
 
-    it('sends the guest welcome with the public unsubscribe link', async () => {
+    it('sends the guest welcome with the web unsubscribe confirmation link (HOS-2617)', async () => {
         mockSendEmail.mockResolvedValue({ success: true });
         const dispatcher = createNewsletterNotificationDispatcher();
 
@@ -89,9 +89,10 @@ describe('createNewsletterNotificationDispatcher', () => {
             unsubscribeToken: 'tok.en'
         });
 
-        expect(JSON.stringify(mockSendEmail.mock.calls[0]?.[0].react.props)).toContain(
-            'https://api.example.test/api/v1/public/newsletter/unsubscribe?token=tok.en&locale=pt'
-        );
+        const props = JSON.stringify(mockSendEmail.mock.calls[0]?.[0].react.props);
+        expect(props).toContain('https://example.test/pt/newsletter/unsubscribe/?token=tok.en');
+        // Never the API GET: a link a mail scanner prefetches must not unsubscribe.
+        expect(props).not.toContain('/api/v1/public/newsletter/unsubscribe');
     });
 
     it('does not throw when the provider fails', async () => {

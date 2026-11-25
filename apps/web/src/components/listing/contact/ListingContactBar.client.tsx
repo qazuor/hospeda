@@ -6,6 +6,7 @@ import {
     getListingContactPrice,
     listingContactPriceSchema
 } from '@/lib/listing-contact/listing-contact-price';
+import { venueMenuGlyphSchema } from '@/lib/listing-contact/venue-menu-glyph';
 import { ListingActionBarButtons } from './ListingActionBarButtons';
 import styles from './ListingContactBar.module.css';
 
@@ -25,7 +26,14 @@ const propsSchema = z
         primary: z
             .union([
                 z.object({ kind: z.literal('inquire') }).readonly(),
-                z.object({ kind: z.literal('menu'), href: z.string().url() }).readonly()
+                z
+                    .object({
+                        kind: z.literal('menu'),
+                        href: z.string().url(),
+                        /** HOS-2607: fork and knife (`food`) or a drink (`nightlife`). */
+                        glyph: venueMenuGlyphSchema.default('food')
+                    })
+                    .readonly()
             ])
             .nullable(),
         /**
@@ -75,8 +83,21 @@ export function ListingContactBar(props: ListingContactBarProps) {
                 className={styles.bar}
                 data-dock-item
             >
-                {display && (
-                    <p className={styles.price}>
+                {display?.onRequest && (
+                    // HOS-2607: a status, not a figure. Same line box as a priced
+                    // line, at caption weight, so it never outweighs the buttons.
+                    <p
+                        className={styles.price}
+                        data-price-state="on-request"
+                    >
+                        <span className={styles.onRequest}>{display.amount}</span>
+                    </p>
+                )}
+                {display && !display.onRequest && (
+                    <p
+                        className={styles.price}
+                        data-price-state="amount"
+                    >
                         {display.unit && (
                             <span className={styles.prefix}>
                                 {createTranslations(actions.locale).t(

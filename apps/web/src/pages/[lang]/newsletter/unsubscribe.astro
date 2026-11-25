@@ -1,0 +1,50 @@
+---
+/**
+ * @file [lang]/newsletter/unsubscribe.astro
+ * @description Unsubscribe confirmation page (HOS-2617).
+ *
+ * Target of the "darse de baja" link in every newsletter mail
+ * (`buildNewsletterUnsubscribePageUrl` from `@repo/utils`). Opening it NEVER
+ * unsubscribes: mail scanners prefetch links. The NewsletterUnsubscribeConfirm
+ * island POSTs to the API only when the person clicks "Confirmar baja", then
+ * goes to `desuscripto` (or `error` with the reason).
+ *
+ * Session-blind (reads no session, no cookies), noindex.
+ */
+
+import { NewsletterUnsubscribeConfirm } from '@/components/newsletter/NewsletterUnsubscribeConfirm.client';
+import StatusPage from '@/components/shared/StatusPage.astro';
+import DefaultLayout from '@/layouts/DefaultLayout.astro';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { MailIcon } from '@repo/icons';
+
+const lang = (Astro.params.lang ?? 'es') as SupportedLocale;
+const { t } = createTranslations(lang);
+
+const token = (Astro.url.searchParams.get('token') ?? '').trim();
+
+const pageTitle = t('newsletter.unsubscribeConfirm.title');
+const pageDescription = t('newsletter.unsubscribeConfirm.description');
+const keepLink = t('newsletter.unsubscribeConfirm.keepLink');
+---
+
+<DefaultLayout
+    locale={lang}
+    title={pageTitle}
+    description={pageDescription}
+    noindex={true}
+>
+    <StatusPage
+        variant="info"
+        Icon={MailIcon}
+        title={pageTitle}
+        description={pageDescription}
+        hideBlob
+    >
+        <div slot="actions">
+            <NewsletterUnsubscribeConfirm client:load token={token} locale={lang} />
+        </div>
+        <a slot="footer" href={`/${lang}/`}>{keepLink}</a>
+    </StatusPage>
+</DefaultLayout>

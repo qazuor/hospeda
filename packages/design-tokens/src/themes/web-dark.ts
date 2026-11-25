@@ -115,6 +115,11 @@ export const webDark: Theme = {
     'overlay-ring': 'oklch(0.94 0.02 258 / 0.26)',
     'shadow-overlay':
         '0 28px 64px -12px oklch(0 0 0 / 0.72), 0 8px 22px -4px oklch(0 0 0 / 0.6), 0 0 50px 6px oklch(0 0 0 / 0.38), inset 0 1px 0 oklch(1 0 0 / 0.1)',
+    // HOS-2607: the listing mobile dock (see web-light.ts). In dark the
+    // secondary buttons keep the lifted overlay surface, and the shadow is
+    // literal black at real weight plus a brighter top-edge highlight.
+    'dock-action-surface': oklchValue(0.37, 0.045, 258),
+    'shadow-dock': '0 -10px 28px -6px oklch(0 0 0 / 0.8), inset 0 1px 0 oklch(1 0 0 / 0.14)',
     // A touch stronger than light's 0.12 — dark surfaces need more contrast
     // for the same "click outside to close" affordance to register.
     'popover-scrim': 'oklch(0 0 0 / 0.22)',

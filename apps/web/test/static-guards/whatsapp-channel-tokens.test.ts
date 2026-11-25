@@ -127,9 +127,10 @@ const EXPECTED_REFERENCES: Readonly<Record<string, Readonly<Record<string, numbe
         '--channel-whatsapp-foreground': 1,
         '--channel-whatsapp-hover': 1
     },
+    // HOS-2607: a logo-only badge, inked white under the logotype exemption.
     'components/listing/contact/ListingActionBarWhatsapp.module.css': {
         '--channel-whatsapp': 1,
-        '--channel-whatsapp-foreground': 1,
+        '--channel-whatsapp-logo': 1,
         '--channel-whatsapp-hover': 1
     },
     'components/accommodation/WhatsAppContact.module.css': {

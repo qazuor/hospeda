@@ -899,6 +899,14 @@
         }
     },
     "favorites": {
+        "cardTypes": {
+            "destination": "Destino",
+            "venue": "Estabelecimento",
+            "experience": "Experiência",
+            "event": "Evento",
+            "post": "Publicação",
+            "attraction": "Atração"
+        },
         "tabs": {
             "all": "Todos",
             "accommodation": "Acomodações",

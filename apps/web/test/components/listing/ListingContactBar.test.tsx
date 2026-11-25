@@ -144,6 +144,97 @@ describe('ListingContactBar', () => {
         expect(screen.queryByText(/155\.500|\/noche/)).not.toBeInTheDocument();
     });
 
+    it('HOS-2607: «Consultar precio» is a light status label, never the bold amount', () => {
+        // Arrange
+        const { container } = render(
+            <ListingContactBar
+                {...props}
+                price={{ ...props.price, onRequest: true } as ListingContactBarProps['price']}
+            />
+        );
+        const css = readFileSync(
+            resolve(
+                __dirname,
+                '../../../src/components/listing/contact/ListingContactBar.module.css'
+            ),
+            'utf8'
+        );
+        const ruleOf = (cls: string): string =>
+            css.match(new RegExp(`\\.${cls}\\s*\\{([^}]*)\\}`))?.[1] ?? '';
+
+        // Act
+        const line = container.querySelector('p');
+        const label = screen.getByText('Consultar precio');
+
+        // Assert: it is not the <strong> amount, and carries the on-request state.
+        expect(line).toHaveAttribute('data-price-state', 'on-request');
+        expect(line?.querySelector('strong')).toBeNull();
+        expect(label.tagName).toBe('SPAN');
+        expect(label.className).toMatch(/onRequest/);
+        // Lighter and smaller than the amount, on the amount's line box (same bar height).
+        const onRequest = ruleOf('onRequest');
+        const amount = ruleOf('amount');
+        expect(onRequest).toMatch(/font-size:\s*var\(--text-sm\)/);
+        expect(onRequest).toMatch(/font-weight:\s*600/);
+        expect(onRequest).toMatch(/color:\s*var\(--core-muted-foreground\)/);
+        expect(onRequest).toMatch(/line-height:\s*calc\(var\(--text-lg\)\s*\*\s*1\.1\)/);
+        expect(amount).toMatch(/font-size:\s*var\(--text-lg\)/);
+        expect(amount).toMatch(/line-height:\s*1\.1/);
+    });
+
+    it('HOS-2607: a priced line keeps the amount state', () => {
+        const { container } = render(<ListingContactBar {...props} />);
+
+        expect(container.querySelector('p')).toHaveAttribute('data-price-state', 'amount');
+        expect(container.querySelector('[data-price-state="on-request"]')).toBeNull();
+    });
+
+    it('HOS-2607: the listing dock is opaque in BOTH themes, with a stronger edge', () => {
+        const css = readFileSync(
+            resolve(
+                __dirname,
+                '../../../src/components/listing/contact/ListingContactBar.module.css'
+            ),
+            'utf8'
+        ).replace(/\/\*[\s\S]*?\*\//g, '');
+        const rules = [...css.matchAll(/([^{}]*mobile-dock__row[^{}]*)\{([^{}]*)\}/g)];
+        const surface = rules.find(([, , body]) => /background/.test(body ?? ''));
+
+        expect(surface).toBeDefined();
+        const [, selector = '', body = ''] = surface ?? [];
+        // One rule for both themes: no theme qualifier on the selector.
+        expect(selector).not.toMatch(/data-theme|prefers-color-scheme/);
+        expect(body).toMatch(/background:\s*var\(--core-card\)\s*;/);
+        expect(body).toMatch(/backdrop-filter:\s*none/);
+        expect(body).toMatch(/border-block-start-color:\s*var\(--core-foreground-a15\)/);
+        expect(body).toMatch(/box-shadow:\s*var\(--shadow-dock\)/);
+        // Nothing translucent left for the listing dock.
+        expect(css).not.toMatch(/core-card-a\d+|frost-bg/);
+    });
+
+    it('HOS-2607: every dock-row override outranks the dock own scoped rule, whatever the load order', () => {
+        // The dock's row rule is Astro-scoped, `.mobile-dock__row[data-astro-cid-…]`,
+        // (0,2,0). A tie loses whenever the dock stylesheet loads last, which is
+        // what staging served on the experience page: the ai-chat button stayed
+        // centred, 17px above the action row. `html` lifts each override to (0,2,1).
+        const css = readFileSync(
+            resolve(
+                __dirname,
+                '../../../src/components/listing/contact/ListingContactBar.module.css'
+            ),
+            'utf8'
+        ).replace(/\/\*[\s\S]*?\*\//g, '');
+        const overrides = [...css.matchAll(/([^{}]*mobile-dock__row[^{}]*)\{([^{}]*)\}/g)];
+
+        expect(overrides.length).toBeGreaterThanOrEqual(2);
+        for (const [, selector = ''] of overrides) {
+            expect(selector.trim()).toMatch(/^:global\(html \.mobile-dock__row\)/);
+        }
+        expect(overrides.some(([, , body]) => /align-items:\s*flex-end/.test(body ?? ''))).toBe(
+            true
+        );
+    });
+
     it('server renders the nightly price and portals a measurable item into the contact slot', () => {
         const html = renderToString(<ListingContactBar {...props} />);
         const { container } = renderInDock(props);

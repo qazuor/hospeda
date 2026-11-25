@@ -307,6 +307,7 @@ export function ResetPassword({ locale, token, signInUrl }: ResetPasswordProps) 
                 as="button"
                 type="submit"
                 variant="accent"
+                flat
                 size="md"
                 shape="rounded"
                 label={

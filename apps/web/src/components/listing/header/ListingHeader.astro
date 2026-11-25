@@ -169,7 +169,7 @@ const showsMeta = showsRating || bookmarkCount !== undefined;
         align-items: center;
         gap: var(--space-2, 8px);
         overflow: hidden;
-        max-height: 3em;
+        max-height: 6em;
         opacity: 1;
         transition:
             max-height var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease),
@@ -178,11 +178,13 @@ const showsMeta = showsRating || bookmarkCount !== undefined;
 
     .listing-header__rating {
         display: inline-flex;
+        flex-wrap: wrap;
         align-items: center;
         gap: var(--space-2, 8px);
     }
 
     .listing-header__reviews-count {
+        white-space: nowrap;
         font-family: var(--font-sans);
         font-size: 0.85rem;
         color: var(--core-muted-foreground);
@@ -191,6 +193,7 @@ const showsMeta = showsRating || bookmarkCount !== undefined;
     /* Bookmark count (non-interactive, info only). The number is plain text, so
        its label is read as is; the heart is decorative. */
     .listing-header__bookmark-count {
+        white-space: nowrap;
         display: inline-flex;
         align-items: center;
         gap: 0.3em;
@@ -204,6 +207,13 @@ const showsMeta = showsRating || bookmarkCount !== undefined;
         border-left: 1px solid var(--border);
         padding-left: var(--space-2, 8px);
         margin-left: var(--space-1, 4px);
+    }
+    @media (max-width: 767px) {
+        .listing-header__bookmark-count--after-rating {
+            border-left: 0;
+            padding-left: 0;
+            margin-left: 0;
+        }
     }
 
     /* Compact state: only the overrides the shared `.wh-compact-*` utilities

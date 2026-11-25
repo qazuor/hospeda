@@ -15,23 +15,29 @@
         min-inline-size: 0;
         min-block-size: 48px;
         /* HOS-2607: breathing room between the price line and the buttons. */
-        gap: var(--space-2);
+        gap: var(--space-3);
     }
 
     /* The bar is taller than one control (price line above the icons), so the
-       row aligns on the bottom edge: the icons and the ai-chat button share a line. */
-    :global(.mobile-dock__row):has(.bar) {
+       row aligns on the bottom edge: the icons and the ai-chat button share a line.
+       `html` lifts the selector to (0,2,1): a (0,2,0) tie with the dock's scoped
+       row rule lost whenever the dock stylesheet loaded last (HOS-2607, the
+       experience page on staging, where the ai-chat button stayed centred). */
+    :global(html .mobile-dock__row):has(.bar) {
         align-items: flex-end;
     }
 
-    /* HOS-2607: in light mode the frosted dock (card white at 72%) melted into the
-       page scrolling behind it. On listing pages it gets a near-opaque surface, a
-       visible top border and the sticky-bar shadow. Dark mode already contrasts
-       and keeps the shared dock surface. */
-    :global(html:not([data-theme="dark"]) .mobile-dock__row):has(.bar) {
-        border-block-start-color: var(--border);
-        background: var(--core-card-a95);
-        box-shadow: var(--shadow-sticky);
+    /* HOS-2607: on listing pages the dock is OPAQUE in both themes (the shared
+       frosted surface, card at 72% + blur, let the page bleed through and melted
+       into it). It takes the card surface, a top hairline in the foreground ink
+       at 15% (dark on light, light on dark) and the dock shadow, stronger than
+       the sticky-bar one, whose dark variant adds an inset highlight on the top edge. `html` lifts the selector
+       to (0,2,1), above the dock's own scoped `.mobile-dock__row` (0,2,0). */
+    :global(html .mobile-dock__row):has(.bar) {
+        border-block-start-color: var(--core-foreground-a15);
+        background: var(--core-card);
+        backdrop-filter: none;
+        box-shadow: var(--shadow-dock);
     }
 }
 
@@ -61,6 +67,16 @@
     align-items: baseline;
     gap: var(--space-1);
     white-space: nowrap;
+}
+
+/* HOS-2607: «Consultar precio» is a status, not a figure. It keeps the priced
+   line's box (the amount's line height) so the bar does not change height, at
+   caption size and weight in the muted ink, below the amount in the hierarchy. */
+.onRequest {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    line-height: calc(var(--text-lg) * 1.1);
+    color: var(--core-muted-foreground);
 }
 
 /* HOS-2607: the amount is the bar's headline, not a caption. */

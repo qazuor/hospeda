@@ -155,7 +155,8 @@ describe('HOS-314 — WhatsApp channel tokens clear WCAG AA', () => {
             // WCAG 1.4.3 exempts logotypes, so the logo-only badge keeps the
             // mark white (owner decision, HOS-314). White on the fill is 1.98:1,
             // which is exactly why this token must never reach TEXT; the web
-            // static guard enumerates its single legitimate consumer.
+            // static guard enumerates its legitimate consumers, all of them
+            // logo-only badges (newsletter badge; listing action bar, HOS-2607).
             const logo = oklchToken(webLight, 'channel-whatsapp-logo');
             expect(logo.l).toBe(1);
             expect(logo.c).toBe(0);

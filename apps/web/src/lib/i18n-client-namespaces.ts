@@ -61,6 +61,7 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'accommodations.amenityNames',
     'accommodations.comparison',
     'accommodations.detail',
+    'accommodations.entity',
     'accommodations.featureCategories',
     'accommodations.featureNames',
     'accommodations.types',
@@ -362,6 +363,8 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'newsletter.error',
     'newsletter.errorMessage',
     'newsletter.errorPage',
+    // HOS-2617: the unsubscribe confirmation island renders its button and states.
+    'newsletter.unsubscribeConfirm',
     // Partner claim copy is read in the browser after consuming the link fragment.
     'partners.claim',
     // Presentation index share row (HOS-2359): channel labels and copy feedback.

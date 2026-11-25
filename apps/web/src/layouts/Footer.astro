@@ -297,11 +297,10 @@ const noCommissionsLabel = t("footer.trustSignals.noCommissions", "Sin comisione
             </div>
             {/* SPEC-101 T-101-33: live double opt-in flow. The island
                 handles all 6 states (idle-guest, idle-auth, pending,
-                pending-verification, already-active, error). Hydration
-                is deferred via client:visible so the footer above the
-                fold paints without blocking on the island JS. */}
+                 pending-verification, already-active, error). Resolve the
+                 account on load on every viewport, before scrolling here. */}
             <NewsletterForm
-                client:visible
+                client:load
                 isAuthenticated={isAuthenticated}
                 userEmail={userEmail}
                 apiUrl={apiUrl}
@@ -863,17 +862,24 @@ const noCommissionsLabel = t("footer.trustSignals.noCommissions", "Sin comisione
     }
 
     .footer__legal li {
-        position: relative;
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-3);
     }
 
     .footer__legal li + li::before {
         content: "·";
-        position: absolute;
-        left: -0.625rem;
-        top: 50%;
-        transform: translateY(-50%);
+        flex: none;
         color: var(--footer-fg-muted);
         opacity: 0.5;
+    }
+
+    /* A separator bound to its item strands at the start of a wrapped line;
+       on narrow screens the row wraps, so it relies on the gap alone. */
+    @media (max-width: 639px) {
+        .footer__legal li + li::before {
+            display: none;
+        }
     }
 
     .footer__legal-link {

@@ -5,13 +5,13 @@
 .oauthBlock {
     display: flex;
     flex-direction: column;
-    gap: 1.25rem;
+    gap: var(--space-5);
 }
 
 .divider {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: var(--space-3);
     color: var(--core-muted-foreground);
     font-size: var(--text-body-sm);
     font-family: var(--font-sans);

@@ -15,17 +15,19 @@
  * `initContactLinkTracking` listener. The controls that open a panel report
  * with a direct `trackEvent`. One tap, one event.
  */
-import { ChatIcon, ForkKnifeIcon, PhoneIcon, WhatsappLogo } from '@repo/icons';
+import { BarServiceIcon, ChatIcon, ForkKnifeIcon, PhoneIcon, WhatsappIcon } from '@repo/icons';
 import type { MouseEvent } from 'react';
 import { useSyncExternalStore } from 'react';
 import { DetailCompareButton } from '@/components/accommodation/DetailCompareButton.client';
 import { ShareButtons } from '@/components/ShareButtons.client';
 import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
+import { useListingConversationAction } from '@/hooks/use-listing-conversation-action';
 import { WebEvents } from '@/lib/analytics/events';
 import { trackEvent } from '@/lib/analytics/umami-client';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { openListingContactPanel } from '@/lib/listing-contact/listing-contact-events';
+import type { VenueMenuGlyph } from '@/lib/listing-contact/venue-menu-glyph';
 import { buildWhatsAppLink } from '@/lib/whatsapp';
 import styles from './ListingActionBarButtons.module.css';
 import whatsappStyles from './ListingActionBarWhatsapp.module.css';
@@ -37,10 +39,14 @@ import {
 /** The vertical a listing page belongs to. */
 export type ListingActionBarVertical = 'accommodation' | 'experience' | 'venue';
 
-/** What position 1 does: open the contact panel, link to the venue menu, or nothing. */
+/**
+ * What position 1 does: open the contact panel, link to the venue menu, or
+ * nothing. A menu's `glyph` comes from `resolveVenueMenuGlyph` (HOS-2607): a fork
+ * and knife for a food venue, a drink for a nightlife venue. Absent means `food`.
+ */
 export type ListingActionBarPrimary =
     | { readonly kind: 'inquire' }
-    | { readonly kind: 'menu'; readonly href: string }
+    | { readonly kind: 'menu'; readonly href: string; readonly glyph?: VenueMenuGlyph }
     | null;
 
 /** Venue WhatsApp state from the public payload (HOS-2256). `null` means no button. */
@@ -100,6 +106,11 @@ export function ListingActionBarButtons({
     compare
 }: ListingActionBarButtonsProps) {
     const { t } = createTranslations(locale);
+    const action = useListingConversationAction({
+        accommodationId: vertical === 'accommodation' ? listingId : undefined,
+        locale,
+        fallbackHref
+    });
     const panelReady = useSyncExternalStore(
         subscribeToListingContactReadiness,
         () => isListingContactPanelReady({ panelId }),
@@ -166,23 +177,42 @@ export function ListingActionBarButtons({
                     rel="noopener noreferrer"
                     data-action="primary"
                     data-contact-channel="menu"
+                    data-menu-glyph={primary.glyph ?? 'food'}
                     {...trackingAttributes}
                 >
-                    <ForkKnifeIcon
-                        size={22}
-                        weight="bold"
-                        aria-hidden="true"
-                    />
+                    {/* HOS-2607: written out per glyph (not looked up in a map) so the
+                        icon-manifest analyzer sees each (glyph, weight) pair. */}
+                    {primary.glyph === 'nightlife' ? (
+                        <BarServiceIcon
+                            size={22}
+                            weight="bold"
+                            aria-hidden="true"
+                        />
+                    ) : (
+                        <ForkKnifeIcon
+                            size={22}
+                            weight="bold"
+                            aria-hidden="true"
+                        />
+                    )}
                 </a>
             )}
             {primary?.kind === 'inquire' && (
                 <a
-                    href={fallbackHref}
+                    href={action.href}
                     className={styles.primary}
-                    aria-label={t('accommodations.detail.listingContact.bar.actions.inquire')}
-                    aria-haspopup={panelReady ? 'dialog' : undefined}
+                    aria-label={
+                        action.hasConversation
+                            ? action.label
+                            : t('accommodations.detail.listingContact.bar.actions.inquire')
+                    }
+                    aria-haspopup={!action.hasConversation && panelReady ? 'dialog' : undefined}
                     data-action="primary"
-                    onClick={(event) => openPanel({ event, focus: 'form' })}
+                    onClick={
+                        action.hasConversation
+                            ? undefined
+                            : (event) => openPanel({ event, focus: 'form' })
+                    }
                 >
                     <ChatIcon
                         size={22}
@@ -203,9 +233,8 @@ export function ListingActionBarButtons({
                     data-interaction-kind="WHATSAPP_CLICK"
                     {...trackingAttributes}
                 >
-                    <WhatsappLogo
+                    <WhatsappIcon
                         size={22}
-                        weight="fill"
                         aria-hidden="true"
                     />
                 </a>
@@ -219,9 +248,8 @@ export function ListingActionBarButtons({
                     data-action="whatsapp"
                     onClick={(event) => openPanel({ event, focus: 'whatsapp' })}
                 >
-                    <WhatsappLogo
+                    <WhatsappIcon
                         size={22}
-                        weight="fill"
                         aria-hidden="true"
                     />
                 </a>
@@ -236,8 +264,13 @@ export function ListingActionBarButtons({
                     {...(vertical === 'venue' ? { 'data-interaction-kind': 'PHONE_CLICK' } : {})}
                     {...trackingAttributes}
                 >
+                    {/* HOS-2607: every secondary glyph (call, share, compare, resting
+                        heart) is 22px `regular`, so none reads heavier, lighter or in
+                        another colour than its neighbours. The islands that size their
+                        own glyph are brought to the same box by the row CSS. */}
                     <PhoneIcon
                         size={22}
+                        weight="regular"
                         aria-hidden="true"
                     />
                 </a>
@@ -268,6 +301,7 @@ export function ListingActionBarButtons({
                     campaign={vertical}
                     locale={locale}
                     appearance="icon"
+                    iconWeight="regular"
                     label={t('accommodations.detail.listingContact.bar.actions.share')}
                     analytics={{ listingId, vertical, origin: 'bar' }}
                     className={styles.share}

@@ -1,6 +1,7 @@
 import { WhatsappLogo } from '@repo/icons';
 import type { MouseEvent } from 'react';
 import { useSyncExternalStore } from 'react';
+import { useListingConversationAction } from '@/hooks/use-listing-conversation-action';
 import { WebEvents } from '@/lib/analytics/events';
 import { trackEvent } from '@/lib/analytics/umami-client';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -43,6 +44,11 @@ export function ListingContactActions({
     primaryLink
 }: ListingContactActionsProps) {
     const { t } = createTranslations(locale);
+    const action = useListingConversationAction({
+        accommodationId: vertical === 'accommodation' ? listingId : undefined,
+        locale,
+        fallbackHref
+    });
     const panelReady = useSyncExternalStore(
         subscribeToListingContactReadiness,
         () => isListingContactPanelReady({ panelId }),
@@ -99,7 +105,7 @@ export function ListingContactActions({
             {primaryLink ? (
                 <a
                     href={primaryLink.href}
-                    className={`${styles.primary} btn-gradient--accent`}
+                    className={`${styles.primary} btn-gradient--accent btn-gradient--flat`}
                     target="_blank"
                     rel="noopener noreferrer"
                     data-contact-channel={primaryLink.channel}
@@ -111,12 +117,16 @@ export function ListingContactActions({
                 </a>
             ) : (
                 <a
-                    href={fallbackHref}
-                    className={`${styles.primary} btn-gradient--accent`}
-                    aria-haspopup={panelReady ? 'dialog' : undefined}
-                    onClick={(event) => activate({ event, focus: 'form' })}
+                    href={action.href}
+                    className={`${styles.primary} btn-gradient--accent btn-gradient--flat`}
+                    aria-haspopup={!action.hasConversation && panelReady ? 'dialog' : undefined}
+                    onClick={
+                        action.hasConversation
+                            ? undefined
+                            : (event) => activate({ event, focus: 'form' })
+                    }
                 >
-                    {t(primaryLabelKey)}
+                    {action.hasConversation ? action.label : t(primaryLabelKey)}
                 </a>
             )}
         </div>
