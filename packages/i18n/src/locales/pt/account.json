@@ -991,6 +991,7 @@
         "notes": {
             "cancel": "Cancelar",
             "placeholder": "Adicione uma nota pessoal...",
+            "emptyPlaceholder": "Escreva uma nota pessoal...",
             "save": "Salvar nota",
             "saved": "Nota salva",
             "label": "Nota pessoal",
@@ -1171,7 +1172,14 @@
         },
         "reviews": {
             "title": "Minhas avaliações",
-            "description": "Gerencie suas avaliações de acomodações e destinos no Hospeda"
+            "description": "Gerencie suas avaliações de acomodações e destinos no Hospeda",
+            "headingDesc": "Veja e gerencie as avaliações que você compartilhou sobre suas experiências."
+        },
+        "guestInbox": {
+            "headingDesc": "Veja suas conversas com os anfitriões e acompanhe as respostas às suas consultas."
+        },
+        "ownerInbox": {
+            "headingDesc": "Responda às consultas dos viajantes e gerencie as conversas sobre seus anúncios."
         },
         "preferences": {
             "title": "Preferencias",
@@ -2169,6 +2177,8 @@
             "leaveMessage": "Você tem alterações não salvas. Se sair agora, elas serão perdidas."
         },
         "autoSave": {
+            "clean": "Tudo salvo",
+            "dirty": "Alterações não salvas",
             "saving": "Salvando…",
             "saved": "Salvo {{time}}",
             "error": "Não foi salvo",
