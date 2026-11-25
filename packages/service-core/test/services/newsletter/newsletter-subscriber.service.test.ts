@@ -118,7 +118,7 @@ function makeAdminActor(): Actor {
 function makeSubscriberRow(
     overrides: Partial<{
         id: string;
-        userId: string;
+        userId: string | null;
         email: string;
         channel: string;
         status: string;
@@ -455,6 +455,28 @@ describe('NewsletterSubscriberService.verifyToken', () => {
         expect(result.data?.status).toBe('active');
         expect(dispatcher.sendWelcome).toHaveBeenCalledOnce();
         expect(dispatcher.sendVerification).not.toHaveBeenCalled();
+    });
+
+    it.each([
+        ['an account subscriber', USER_ID],
+        ['a guest', null]
+    ])('hands the welcome dispatcher userId and unsubscribe token for %s', async (_label, userId) => {
+        const { svc, dispatcher } = makeService();
+        const token = generateVerificationToken({
+            subscriberId: SUBSCRIBER_ID,
+            channel: 'email',
+            secret: HMAC_SECRET
+        });
+        enqueueResponse([makeSubscriberRow({ status: 'pending_verification', userId })]);
+        enqueueResponse([]);
+
+        await svc.verifyToken(token);
+
+        const input = dispatcher.sendWelcome.mock.calls[0]?.[0];
+        expect(input.userId).toBe(userId);
+        expect(input.subscriberId).toBe(SUBSCRIBER_ID);
+        expect(typeof input.unsubscribeToken).toBe('string');
+        expect(input.unsubscribeToken.length).toBeGreaterThan(0);
     });
 
     it('returns already_active when subscriber is already active (idempotent)', async () => {

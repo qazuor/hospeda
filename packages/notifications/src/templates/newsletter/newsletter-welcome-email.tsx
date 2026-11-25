@@ -1,4 +1,4 @@
-import { Text } from '@react-email/components';
+import { Link, Text } from '@react-email/components';
 import { Button, Callout, EmailLayout } from '@repo/email';
 import { Heading } from '../components/heading.js';
 
@@ -12,6 +12,12 @@ export interface NewsletterWelcomeEmailProps {
     baseUrl: string;
     /** Optional WhatsApp channel invite URL — renders the CTA when present */
     waChannelUrl?: string;
+    /**
+     * Public one-click unsubscribe URL. Its presence marks the GUEST variant (subscriber
+     * without an account): the account-only copy and the "Mi cuenta" button are replaced
+     * by this link. Absent means the subscriber has an account.
+     */
+    unsubscribeUrl?: string;
     /** When true, prefixes subject and shows a test banner */
     isTest?: boolean;
 }
@@ -27,6 +33,7 @@ export function NewsletterWelcomeEmail({
     firstName,
     baseUrl,
     waChannelUrl,
+    unsubscribeUrl,
     isTest = false
 }: NewsletterWelcomeEmailProps) {
     const previewText = isTest
@@ -57,12 +64,18 @@ export function NewsletterWelcomeEmail({
                 Concepción del Uruguay y el Litoral argentino.
             </Text>
 
-            <Text style={styles.paragraph}>
-                Podés gestionar tus preferencias de comunicación en cualquier momento desde tu
-                cuenta.
-            </Text>
+            {unsubscribeUrl ? null : (
+                <>
+                    <Text style={styles.paragraph}>
+                        Podés gestionar tus preferencias de comunicación en cualquier momento desde
+                        tu cuenta.
+                    </Text>
 
-            <Button href={`${baseUrl}/es/mi-cuenta/newsletter/`}>Ver mis preferencias</Button>
+                    <Button href={`${baseUrl}/es/mi-cuenta/newsletter/`}>
+                        Ver mis preferencias
+                    </Button>
+                </>
+            )}
 
             {waChannelUrl && (
                 <>
@@ -80,10 +93,23 @@ export function NewsletterWelcomeEmail({
                 </>
             )}
 
-            <Text style={styles.footerNote}>
-                Si en algún momento no querés recibir más correos, vas a poder darte de baja desde
-                el pie de cada newsletter.
-            </Text>
+            {unsubscribeUrl ? (
+                <Text style={styles.footerNote}>
+                    Si en algún momento no querés recibirlo más, podés darte de baja desde este
+                    link.{' '}
+                    <Link
+                        href={unsubscribeUrl}
+                        style={styles.unsubscribeLink}
+                    >
+                        Darme de baja
+                    </Link>
+                </Text>
+            ) : (
+                <Text style={styles.footerNote}>
+                    Si en algún momento no querés recibir más correos, vas a poder darte de baja
+                    desde el pie de cada newsletter.
+                </Text>
+            )}
         </EmailLayout>
     );
 }
@@ -106,6 +132,10 @@ const styles = {
         fontSize: '16px',
         lineHeight: '24px',
         margin: '0 0 16px'
+    },
+    unsubscribeLink: {
+        color: '#3b82f6',
+        textDecoration: 'underline'
     },
     footerNote: {
         color: '#64748b',
