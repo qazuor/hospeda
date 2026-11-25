@@ -1,5 +1,5 @@
 {
-  "contentHash": "c8a4bff24767052ab368968bb05a1ba3bead3a4dd08b6290547d32dc6205ffdb",
+  "contentHash": "56c6be3bacb5701b5b35e0566de17c581821ab9c78b2585ea809583e9f27a0d3",
   "locales": {
     "es": [
       {
@@ -41,7 +41,7 @@
           "delete-listing",
           "pause-resume"
         ],
-        "reviewedAt": "2026-11-23",
+        "reviewedAt": "2026-11-24",
         "sections": {
           "canDo": "Comprar un complemento y dar de baja los recurrentes desde {{link:addons|Complementos}}.",
           "expect": "- El resumen muestra el importe y la frecuencia antes de confirmar.\n- Si tu beneficio incluye el complemento, aparece «Gratis por tu beneficio».\n- Dar de baja un destaque recurrente corta el cobro y lo apaga ese mismo día.",
@@ -401,7 +401,7 @@
           "howTo": {
             "after": "",
             "steps": [
-              "Abrí el editor de tu alojamiento («Mis propiedades» → «Editar») y entrá a «Calendario». Es una sección de alojamientos.",
+              "Abrí el editor de tu alojamiento («Mis alojamientos» → «Editar») y entrá a «Calendario». Es una sección de alojamientos.",
               "En el calendario de ocupación, hacé clic en un día y en otro para elegir un rango, sumá una nota si querés y tocá «Bloquear». Con «Liberar» desbloqueás. Esas fechas no aparecen disponibles en las búsquedas.",
               "Para sincronizar con otro calendario, tocá «Conectar calendarios externos».",
               "Con Google Calendar, tocá «Conectar Google Calendar» y aprobá el acceso de solo lectura. Con Airbnb, Booking.com u otro, pegá la URL de exportación en formato iCal (.ics) y tocá «Conectar».",
@@ -454,7 +454,9 @@
             "vertical": "experience"
           }
         ],
-        "entryFor": [],
+        "entryFor": [
+          "page:mi-cuenta/suscripcion"
+        ],
         "folder": "common",
         "id": "change-plan",
         "keywords": [
@@ -568,7 +570,7 @@
               "Entrá a la página de publicar del rubro que querés: alojamiento, comer y salir o experiencias.",
               "Completá el formulario de alta con los datos básicos. Si ya tenés un borrador, el sitio te ofrece retomarlo antes de crear otro.",
               "La publicación se crea como borrador: todavía no se ve en el sitio.",
-              "Abrila desde «Mis propiedades» o «Mi comercio»: en un borrador, «Editar» está en el menú «Más acciones» de la tarjeta. Completá sus secciones. El editor marca lo que falta.",
+              "Abrila desde «Mis alojamientos» o «Mi comercio»: en un borrador, «Editar» está en el menú «Más acciones» de la tarjeta. Completá sus secciones. El editor marca lo que falta.",
               "Cuando cumpla los requisitos, tocá «Publicar» en su tarjeta."
             ]
           },
@@ -597,7 +599,7 @@
         "destinations": [
           {
             "kind": "ownerListings",
-            "label": "Mis propiedades",
+            "label": "Mis alojamientos",
             "vertical": "accommodation"
           },
           {
@@ -632,14 +634,14 @@
           "addons",
           "fix-request"
         ],
-        "reviewedAt": "2026-11-23",
+        "reviewedAt": "2026-11-24",
         "sections": {
-          "canDo": "Eliminar una propiedad desde su tarjeta en {{link:list:accommodation|Mis propiedades}}.\n\nPara un comercio o una experiencia, {{link:contact|escribinos}}.",
+          "canDo": "Eliminar una propiedad desde su tarjeta en {{link:list:accommodation|Mis alojamientos}}.\n\nPara un comercio o una experiencia, {{link:contact|escribinos}}.",
           "expect": "- Antes de confirmar ves los complementos que se pierden con la publicación, sin devolución (mirá {{article:addons|los complementos}}).\n- El borrado es definitivo: textos, fotos y preguntas se borran.",
           "howTo": {
             "after": "",
             "steps": [
-              "Entrá a «Mis propiedades» y buscá la tarjeta de la propiedad.",
+              "Entrá a «Mis alojamientos» y buscá la tarjeta de la propiedad.",
               "Abrí el menú «Más acciones» de la tarjeta (el botón de los tres puntos) y elegí «Eliminar». El sitio te pide confirmar y, si la publicación tiene complementos, te muestra cuáles se pierden con ella, sin devolución.",
               "Confirmá con «Sí, eliminar». El borrado es definitivo: el contenido se borra y la publicación no vuelve.",
               "Si lo que querés es sacarla del sitio por un tiempo, es mejor despublicarla (mirá «Pausar y volver a publicar»).",
@@ -673,7 +675,7 @@
         "destinations": [
           {
             "kind": "ownerListings",
-            "label": "Mis propiedades",
+            "label": "Mis alojamientos",
             "vertical": "accommodation"
           },
           {
@@ -711,14 +713,14 @@
           "delete-listing",
           "pause-resume"
         ],
-        "reviewedAt": "2026-11-23",
+        "reviewedAt": "2026-11-24",
         "sections": {
-          "canDo": "Ver el aviso de arreglo o de moderación en {{link:list:accommodation|Mis propiedades}}, {{link:list:venue|Mis locales}} o {{link:list:experience|Mis experiencias}}, corregir desde el editor y avisar a Hospeda.",
+          "canDo": "Ver el aviso de arreglo o de moderación en {{link:list:accommodation|Mis alojamientos}}, {{link:list:venue|Mis locales}} o {{link:list:experience|Mis experiencias}}, corregir desde el editor y avisar a Hospeda.",
           "expect": "- Con un pedido de arreglo la publicación sigue a la vista mientras corregís.\n- «Ya lo corregí» avisa al equipo; el pedido lo cierra Hospeda.\n- Una publicación moderada se puede ver, exportar y editar, pero no publicar.",
           "howTo": {
             "after": "",
             "steps": [
-              "Si Hospeda te pidió un arreglo, vas a ver el aviso «Te pidieron un arreglo en esta ficha» en «Mis propiedades» o «Mi comercio» y en el editor de esa publicación.",
+              "Si Hospeda te pidió un arreglo, vas a ver el aviso «Te pidieron un arreglo en esta ficha» en «Mis alojamientos» o «Mi comercio» y en el editor de esa publicación.",
               "El aviso puede traer una fecha sugerida para corregirlo. Tu publicación sigue a la vista mientras tanto.",
               "Corregí lo que se pidió desde el editor.",
               "Tocá «Ya lo corregí» para avisar a Hospeda. Eso no cierra el pedido ni publica nada: lo revisa el equipo.",
@@ -969,7 +971,7 @@
         "destinations": [
           {
             "kind": "ownerListings",
-            "label": "Mis propiedades",
+            "label": "Mis alojamientos",
             "vertical": "accommodation"
           },
           {
@@ -1010,14 +1012,14 @@
           "addons",
           "change-plan"
         ],
-        "reviewedAt": "2026-11-23",
+        "reviewedAt": "2026-11-24",
         "sections": {
-          "canDo": "Despublicar una propiedad desde {{link:list:accommodation|Mis propiedades}} y volver a publicarla cuando quieras.\n\nLas publicaciones de {{link:list:venue|Mis locales}} y {{link:list:experience|Mis experiencias}} se pausan y reanudan con un asistente de IA.",
+          "canDo": "Despublicar una propiedad desde {{link:list:accommodation|Mis alojamientos}} y volver a publicarla cuando quieras.\n\nLas publicaciones de {{link:list:venue|Mis locales}} y {{link:list:experience|Mis experiencias}} se pausan y reanudan con un asistente de IA.",
           "expect": "- Al despublicar, la publicación vuelve a borrador y deja de verse en el sitio.\n- Podés despublicar o pausar aunque no tengas un plan vigente. Volver a publicar sí lo pide.\n- Volver a publicar exige cumplir {{article:publish-requirements|los requisitos}} otra vez.\n- Los destaques recurrentes se siguen cobrando hasta que los des de baja en {{link:addons|Complementos}}.",
           "howTo": {
             "after": "",
             "steps": [
-              "Entrá a «Mis propiedades» y buscá la tarjeta de la propiedad publicada.",
+              "Entrá a «Mis alojamientos» y buscá la tarjeta de la propiedad publicada.",
               "Abrí el menú «Más acciones» de la tarjeta (el botón de los tres puntos), elegí «Despublicar» y confirmá con «Sí, despublicar»: la propiedad deja de aparecer en el sitio.",
               "Despublicar no frena la prueba gratis si la tenés en curso, y los destaques recurrentes se siguen cobrando hasta que los des de baja en «Complementos».",
               "Para volver a publicarla, tocá «Publicar» en la misma tarjeta (queda como borrador) y confirmá. Tiene que cumplir los requisitos de publicación.",
@@ -1098,7 +1100,7 @@
           "howTo": {
             "after": "",
             "steps": [
-              "Abrí el editor de la publicación: desde «Mis propiedades» (alojamientos) o «Mi comercio» (comercios y experiencias), tocá «Editar» en su tarjeta. Si todavía no está publicada, «Editar» está en el menú «Más acciones».",
+              "Abrí el editor de la publicación: desde «Mis alojamientos» (alojamientos) o «Mi comercio» (comercios y experiencias), tocá «Editar» en su tarjeta. Si todavía no está publicada, «Editar» está en el menú «Más acciones».",
               "Entrá a la sección «Fotos».",
               "Cargá la imagen principal: arrastrá una imagen o hacé clic para elegirla. Es obligatoria para poder publicar.",
               "Sumá más fotos a la galería. Cada archivo puede ser JPG, PNG, WebP o HEIC y pesar hasta 10 MB.",
@@ -1193,7 +1195,7 @@
         "destinations": [
           {
             "kind": "ownerListings",
-            "label": "Mis propiedades",
+            "label": "Mis alojamientos",
             "vertical": "accommodation"
           },
           {
@@ -1252,9 +1254,9 @@
           "change-plan",
           "fix-request"
         ],
-        "reviewedAt": "2026-11-23",
+        "reviewedAt": "2026-11-24",
         "sections": {
-          "canDo": "Ver qué le falta a tu publicación y completarlo desde {{link:list:accommodation|Mis propiedades}}, {{link:list:venue|Mis locales}} o {{link:list:experience|Mis experiencias}}.\n\nPedir una excepción a la regla de una dirección desde {{link:section:accommodation:ubicacion|Ubicación del alojamiento}} o {{link:section:venue:ubicacion|Ubicación del comercio}}.",
+          "canDo": "Ver qué le falta a tu publicación y completarlo desde {{link:list:accommodation|Mis alojamientos}}, {{link:list:venue|Mis locales}} o {{link:list:experience|Mis experiencias}}.\n\nPedir una excepción a la regla de una dirección desde {{link:section:accommodation:ubicacion|Ubicación del alojamiento}} o {{link:section:venue:ubicacion|Ubicación del comercio}}.",
           "expect": "- El editor marca cada sección incompleta y la tarjeta de la publicación también.\n- Publicar pide un plan activo o la prueba gratis; si no te corresponde la prueba, te lleva a elegir un plan.\n- Un pedido de excepción lo revisa Hospeda y te responde por email.",
           "howTo": {
             "after": "",

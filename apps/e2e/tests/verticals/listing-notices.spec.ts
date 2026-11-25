@@ -92,7 +92,7 @@ async function openPropertyCard(input: {
     await seedCookieConsent(input.page);
     await attachSession({ page: input.page, sessionCookie: input.sessionCookie });
     await input.page.goto(`${WEB_URL}/es/mi-cuenta/propiedades/`);
-    const list = input.page.getByRole('list', { name: 'Mis propiedades' });
+    const list = input.page.getByRole('list', { name: 'Mis alojamientos' });
     const card = list.getByRole('listitem').filter({ hasText: input.name });
     await expect(card).toHaveCount(1);
     return card;
@@ -250,7 +250,7 @@ test.describe('Listing notices of V8a @verticals', () => {
             name: byQuota
         });
         const pb5Card = page
-            .getByRole('list', { name: 'Mis propiedades' })
+            .getByRole('list', { name: 'Mis alojamientos' })
             .getByRole('listitem')
             .filter({ hasText: byOwner });
 

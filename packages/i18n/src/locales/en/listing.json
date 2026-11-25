@@ -26,15 +26,27 @@
         },
         "list": {
             "title": "My business",
-            "subtitle": "Manage the information of your published listings.",
-            "empty": "You don't have any businesses yet. Create your first listing to get started.",
+            "subtitle": {
+                "venue": "Manage the information of your published listings.",
+                "experience": "Manage the information of your published experiences."
+            },
+            "empty": {
+                "venue": "You don't have any businesses yet. Create your first listing to get started.",
+                "experience": "You don't have any experiences yet. Create your first listing to get started."
+            },
             "edit": "Edit",
             "badge": {
                 "venue": "Food & nightlife",
                 "experience": "Experience"
             },
-            "emptyCta": "Create my first business",
-            "createCta": "+ New business",
+            "emptyCta": {
+                "venue": "Create my first business",
+                "experience": "Create my first experience"
+            },
+            "createCta": {
+                "venue": "+ New business",
+                "experience": "+ New experience"
+            },
             "state": {
                 "published": "Published",
                 "viewPublic": "View public listing",
@@ -108,7 +120,10 @@
                 }
             },
             "loadError": {
-                "title": "We couldn't load your listings",
+                "title": {
+                    "venue": "We couldn't load your listings",
+                    "experience": "We couldn't load your experiences"
+                },
                 "body": "There was a problem reading your listings. They haven't gone anywhere: please try again in a moment.",
                 "retry": "Try again"
             },
@@ -140,7 +155,10 @@
                 "basicInfo": "Identity and description",
                 "practicalInfo": "Practical details of the trip",
                 "price": "How much it costs",
-                "amenities": "What your business offers"
+                "amenities": {
+                    "venue": "What your business offers",
+                    "experience": "What your experience offers"
+                }
             },
             "sections": {
                 "type": "Category",
@@ -171,7 +189,10 @@
                 "features": "Features",
                 "translations": "Translations",
                 "faqs": "FAQ",
-                "name": "Business name",
+                "name": {
+                    "venue": "Business name",
+                    "experience": "Experience name"
+                },
                 "destination": "City / Destination",
                 "description": "Description",
                 "destinationLoadError": "We couldn't load the list of cities / destinations. Reload the page to try again.",
@@ -247,7 +268,10 @@
             },
             "translationPanel": {
                 "sectionTitle": "Translations",
-                "sectionDescription": "Edit the translations of the main fields of your listing in the three available languages.",
+                "sectionDescription": {
+                    "venue": "Edit the translations of the main fields of your listing in the three available languages.",
+                    "experience": "Edit the translations of the main fields of your experience in the three available languages."
+                },
                 "fieldName": "Name",
                 "fieldSummary": "Summary",
                 "fieldDescription": "Description",

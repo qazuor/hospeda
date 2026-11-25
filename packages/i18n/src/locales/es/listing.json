@@ -26,15 +26,27 @@
         },
         "list": {
             "title": "Mi comercio",
-            "subtitle": "Gestioná la información de tus comercios publicados.",
-            "empty": "Todavía no tenés comercios. Creá tu primera ficha para empezar.",
+            "subtitle": {
+                "venue": "Gestioná la información de tus comercios publicados.",
+                "experience": "Gestioná la información de tus experiencias publicadas."
+            },
+            "empty": {
+                "venue": "Todavía no tenés comercios. Creá tu primera ficha para empezar.",
+                "experience": "Todavía no tenés experiencias. Creá tu primera ficha para empezar."
+            },
             "edit": "Editar",
             "badge": {
                 "venue": "Comer y salir",
                 "experience": "Experiencia"
             },
-            "emptyCta": "Crear mi primer comercio",
-            "createCta": "+ Nuevo comercio",
+            "emptyCta": {
+                "venue": "Crear mi primer comercio",
+                "experience": "Crear mi primera experiencia"
+            },
+            "createCta": {
+                "venue": "+ Nuevo comercio",
+                "experience": "+ Nueva experiencia"
+            },
             "state": {
                 "published": "Publicado",
                 "viewPublic": "Ver ficha pública",
@@ -108,7 +120,10 @@
                 }
             },
             "loadError": {
-                "title": "No pudimos cargar tus comercios",
+                "title": {
+                    "venue": "No pudimos cargar tus comercios",
+                    "experience": "No pudimos cargar tus experiencias"
+                },
                 "body": "Hubo un problema al leer tus fichas. Siguen ahí: probá de nuevo en un momento.",
                 "retry": "Reintentar"
             },
@@ -140,7 +155,10 @@
                 "basicInfo": "Identidad y descripción",
                 "practicalInfo": "Lo práctico de la salida",
                 "price": "Cuánto cuesta",
-                "amenities": "Qué ofrece tu comercio"
+                "amenities": {
+                    "venue": "Qué ofrece tu comercio",
+                    "experience": "Qué ofrece tu experiencia"
+                }
             },
             "sections": {
                 "type": "Categoría",
@@ -171,7 +189,10 @@
                 "features": "Características",
                 "translations": "Traducciones",
                 "faqs": "Preguntas frecuentes",
-                "name": "Nombre del comercio",
+                "name": {
+                    "venue": "Nombre del comercio",
+                    "experience": "Nombre de la experiencia"
+                },
                 "destination": "Ciudad / Destino",
                 "description": "Descripción",
                 "destinationLoadError": "No pudimos cargar el listado de ciudades / destinos. Recargá la página para reintentar.",
@@ -247,7 +268,10 @@
             },
             "translationPanel": {
                 "sectionTitle": "Traducciones",
-                "sectionDescription": "Editá las traducciones de los campos principales de tu comercio en los tres idiomas disponibles.",
+                "sectionDescription": {
+                    "venue": "Editá las traducciones de los campos principales de tu comercio en los tres idiomas disponibles.",
+                    "experience": "Editá las traducciones de los campos principales de tu experiencia en los tres idiomas disponibles."
+                },
                 "fieldName": "Nombre",
                 "fieldSummary": "Resumen",
                 "fieldDescription": "Descripción",

@@ -195,7 +195,7 @@
     },
     "properties": {
         "list": {
-            "title": "My properties",
+            "title": "My accommodations",
             "subtitle": "Manage your listings",
             "publishAnother": "Publish another",
             "needsPlanBanner": {
@@ -715,7 +715,7 @@
                 "management": "Management"
             },
             "breadcrumb": {
-                "properties": "My properties"
+                "properties": "My accommodations"
             },
             "hub": {
                 "title": "Edit property",

@@ -309,7 +309,6 @@ describe('buildAccountNavModel: zoned shell (HOS-2551)', () => {
             'newsletter',
             'asistentes-ia',
             'novedades',
-            'ayuda',
             'favoritos',
             'messages',
             'resenas',
@@ -317,6 +316,16 @@ describe('buildAccountNavModel: zoned shell (HOS-2551)', () => {
             'aliados'
         ])('treats activeSection=%s as the personal zone', (activeSection) => {
             expect(shellFor({ roles: ['HOST'], activeSection }).mode).toBe('personal');
+        });
+
+        it('keeps the business zone on the help center for a host (HOS-2610 F-30)', () => {
+            const shell = shellFor({ roles: ['HOST'], activeSection: 'ayuda' });
+            expect(shell.mode).toBe('business');
+            expect(itemIds(shell)).toContain('properties');
+        });
+
+        it('keeps the personal zone on the help center for a tourist (HOS-2610 F-30)', () => {
+            expect(shellFor({ roles: ['USER'], activeSection: 'ayuda' }).mode).toBe('personal');
         });
 
         it('never lists a business entry', () => {

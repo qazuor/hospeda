@@ -106,7 +106,7 @@ if (decision.kind === 'redirect') {
 const listVertical = decision.vertical;
 
 const title = t(OWNER_LIST_LABEL_KEYS[listVertical]);
-const subtitle = t('listing.owner.list.subtitle', '');
+const subtitle = t(`listing.owner.list.subtitle.${listVertical}`, '');
 
 const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
 // HOS-2421: a failed read must never render the "you have no listings" empty
@@ -259,7 +259,7 @@ const listHelpId = 'section:comercio.listado' as const;
     >
         <PageHelpLink slot="help" locale={locale} />
         <LinkButton slot="actions" href={createUrl}>
-            {t('listing.owner.list.createCta', '+ Nuevo comercio')}
+            {t(`listing.owner.list.createCta.${listVertical}`)}
         </LinkButton>
     </PageHeader>
 
@@ -295,7 +295,7 @@ const listHelpId = 'section:comercio.listado' as const;
                 <PageLoadError
                     client:load
                     locale={locale}
-                    title={t('listing.owner.list.loadError.title', 'No pudimos cargar tus comercios')}
+                    title={t(`listing.owner.list.loadError.title.${listVertical}`)}
                     description={t(
                         'listing.owner.list.loadError.body',
                         'Hubo un problema al leer tus fichas. Siguen ahí: probá de nuevo en un momento.'
@@ -304,15 +304,12 @@ const listHelpId = 'section:comercio.listado' as const;
                 />
             ) : listings.length === 0 ? (
                 <EmptyState
-                    title={t(
-                        'listing.owner.list.empty',
-                        'Todavía no tenés comercios. Creá tu primera ficha para empezar.'
-                    )}
+                    title={t(`listing.owner.list.empty.${listVertical}`)}
                     helpId={listHelpId}
                 >
                     <VenueIcon slot="icon" size="lg" aria-hidden="true" />
                     <LinkButton slot="action" href={createUrl}>
-                        {t('listing.owner.list.emptyCta', 'Crear mi primer comercio')}
+                        {t(`listing.owner.list.emptyCta.${listVertical}`)}
                     </LinkButton>
                 </EmptyState>
             ) : (

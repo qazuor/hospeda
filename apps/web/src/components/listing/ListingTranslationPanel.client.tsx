@@ -22,6 +22,7 @@
  *   save bar (`saveModel: 'bar'`).
  */
 
+import type { VenueOrExperience } from '@repo/schemas';
 import { type JSX, useCallback, useState } from 'react';
 import { Alert, Field, StatusPill, Tabs, Textarea } from '@/components/account/ui';
 import styles from '@/components/host/editor/TranslationPanel.module.css';
@@ -64,6 +65,8 @@ export interface ListingPlainTextValues {
 export interface ListingTranslationPanelProps {
     /** Active UI locale — also the default active tab. */
     readonly locale: SupportedLocale;
+    /** Which vertical the listing belongs to; picks the section copy (venue by default). */
+    readonly vertical?: VenueOrExperience;
     /** Initial i18n values sourced from the listing detail. */
     readonly initialValues: ListingI18nValues;
     /**
@@ -206,12 +209,14 @@ function resolveDisplayValue({
  * field change so the parent editor can track dirty state.
  *
  * @param locale - Active UI locale (sets the default active tab).
+ * @param vertical - The listing's vertical (section copy), `venue` by default.
  * @param initialValues - Initial i18n values from the listing detail.
  * @param plainTextValues - Plain-column values for the ES display fallback (HOS-902).
  * @param onChange - Callback receiving the full updated i18n state.
  */
 export function ListingTranslationPanel({
     locale,
+    vertical = 'venue',
     initialValues,
     plainTextValues,
     onChange
@@ -357,10 +362,7 @@ export function ListingTranslationPanel({
             </legend>
 
             <p className={styles.sectionDescription}>
-                {t(
-                    'listing.owner.editor.translationPanel.sectionDescription',
-                    'Editá las traducciones de los campos principales de tu comercio en los tres idiomas disponibles.'
-                )}
+                {t(`listing.owner.editor.translationPanel.sectionDescription.${vertical}`)}
             </p>
 
             {missingLocales.length > 0 && (

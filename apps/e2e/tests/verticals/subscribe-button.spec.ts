@@ -143,7 +143,7 @@ test.describe('Subscribe button with no plans @verticals @billing', () => {
             await expect(cardNoPlans).not.toContainText(/suscribite/i);
             await expect(
                 page
-                    .getByRole('list', { name: 'Mis propiedades' })
+                    .getByRole('list', { name: 'Mis alojamientos' })
                     .getByRole('button', { name: 'Publicar', exact: true })
             ).toHaveCount(0);
         } finally {

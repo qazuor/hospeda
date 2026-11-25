@@ -8,7 +8,8 @@
  *
  * Variants `underline` and `segmented`. A CountPill is optional per item. The
  * bar scrolls horizontally inside its own container, so the page never
- * overflows; each tab is 44px tall.
+ * overflows; when tabs are hidden it fades at that edge and the active tab is
+ * scrolled into view (HOS-2610 F-24); each tab is 44px tall.
  *
  * @module components/account/ui/Tabs
  */
@@ -18,6 +19,7 @@ import { cx } from './cx';
 import { type HelpAnchor, helpAttr } from './help-anchor';
 import { CountPill } from './StatusPill';
 import styles from './Tabs.module.css';
+import { useTabScrollAffordance } from './use-tab-scroll-affordance';
 
 /** Visual variant of the tab bar. */
 export type TabsVariant = 'underline' | 'segmented';
@@ -80,6 +82,7 @@ export function Tabs({
     const [inner, setInner] = useState(defaultValue ?? items[0]?.id);
     const selected = value ?? inner;
     const refs = useRef(new Map<string, HTMLButtonElement>());
+    const barRef = useTabScrollAffordance<HTMLDivElement>({ selectedKey: selected });
 
     const select = (id: string, focus: boolean) => {
         setInner(id);
@@ -115,6 +118,7 @@ export function Tabs({
             className={className}
         >
             <div
+                ref={barRef}
                 role="tablist"
                 aria-label={ariaLabel}
                 className={cx(styles.bar, variant === 'segmented' && styles.segmented)}
@@ -201,8 +205,12 @@ export function NavTabs({
     className,
     helpId
 }: NavTabsProps) {
+    const barRef = useTabScrollAffordance<HTMLElement>({
+        selectedKey: items.find((item) => item.current)?.href
+    });
     return (
         <nav
+            ref={barRef}
             aria-label={ariaLabel}
             {...helpAttr({ helpId })}
             className={cx(styles.bar, variant === 'segmented' && styles.segmented, className)}

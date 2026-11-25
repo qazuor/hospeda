@@ -45,7 +45,8 @@ covers:
   - "page:planes/comer-y-salir"
   - "page:planes/experiencias"
   - "file:apps/web/src/components/account/PlanChangeOffer.client.tsx"
-entryFor: []
+entryFor:
+  - "page:mi-cuenta/suscripcion"
 reviewedAt: "2026-11-24"
 ---
 

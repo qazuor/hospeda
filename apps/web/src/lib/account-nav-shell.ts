@@ -82,6 +82,14 @@ export const BUSINESS_SECTION_KEYS: ReadonlySet<string> = new Set(
 );
 
 /**
+ * Sections that belong to no zone of their own and follow the reader instead
+ * (HOS-2610 F-30): the help center is read by hosts from their business pages,
+ * so it keeps the business menu for anyone who has a business vertical, and
+ * the personal one for everybody else.
+ */
+export const ZONE_NEUTRAL_SECTION_KEYS: ReadonlySet<string> = new Set(['ayuda']);
+
+/**
  * Recomputes `shellDefaultOpen` over a list of groups (HOS-2549): only the
  * group holding the current page opens, or the first headed one when none does.
  *
@@ -240,8 +248,9 @@ function personalZone({
 
 /**
  * Builds the kit shell's zoned view (HOS-2551). A page is in the business zone
- * when its `activeSection` is one of {@link BUSINESS_SECTION_KEYS}; every
- * other account page is in the personal zone.
+ * when its `activeSection` is one of {@link BUSINESS_SECTION_KEYS}, or a
+ * {@link ZONE_NEUTRAL_SECTION_KEYS} one read by a person with a business
+ * vertical; every other account page is in the personal zone.
  *
  * @param params - See {@link BuildShellNavModelParams}.
  * @returns See {@link AccountShellNavModel}.
@@ -252,7 +261,13 @@ export function buildShellNavModel({
     activeSection,
     ownsPartner
 }: BuildShellNavModelParams): AccountShellNavModel {
-    if (BUSINESS_SECTION_KEYS.has(activeSection)) {
+    const hasBusinessVertical =
+        ownsPartner ||
+        groups.some((entry) => (BUSINESS_GROUP_IDS as readonly string[]).includes(entry.group.id));
+    if (
+        BUSINESS_SECTION_KEYS.has(activeSection) ||
+        (ZONE_NEUTRAL_SECTION_KEYS.has(activeSection) && hasBusinessVertical)
+    ) {
         return businessZone({ groups, activeSection, ownsPartner });
     }
     return personalZone({ groups, doors });

@@ -33,7 +33,7 @@ function renderPlanCta({
     const message =
         view.kind === 'running'
             ? 'Tu prueba sigue activa.'
-            : 'Tu prueba terminó. Elegí un plan para volver a publicar.';
+            : 'Elegí un plan para volver a publicar.';
     const path = {
         accommodation: 'planes/anfitriones/precios',
         venue: 'planes/comer-y-salir/precios',
@@ -92,7 +92,7 @@ describe('TrialSummary plan CTA markup behaviour', () => {
                 locale: 'es',
                 vertical: 'accommodation'
             });
-            expect(html).toContain('Tu prueba terminó. Elegí un plan para volver a publicar.');
+            expect(html).toContain('Elegí un plan para volver a publicar.');
             expect(html).toContain('href="/es/planes/anfitriones/precios/"');
         }
     });
