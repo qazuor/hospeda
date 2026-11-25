@@ -1,6 +1,6 @@
 /**
  * @fileoverview
- * Data migration: 0191-hos-2614-spanish-plan-names
+ * Data migration: 0192-hos-2614-spanish-plan-names
  *
  * Owner decision (2026-11-25, HOS-2614): every plan name is Spanish and follows
  * the "vertical + level" pattern. Only `plan.name` changes. Slugs, roles and
@@ -24,7 +24,7 @@ import { sql } from '@repo/db';
 import type { SeedMigrationCtx, SeedMigrationModule, SeedMigrationResult } from './types.js';
 
 export const meta = {
-    name: '0191-hos-2614-spanish-plan-names',
+    name: '0192-hos-2614-spanish-plan-names',
     group: 'required',
     destructive: false,
     contentOnly: true,

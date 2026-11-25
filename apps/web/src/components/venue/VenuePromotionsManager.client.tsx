@@ -8,6 +8,7 @@
  * through `runRetryableEditorAutoSave`.
  */
 
+import { AddIcon } from '@repo/icons';
 import {
     LifecycleStatusEnum,
     OwnerPromotionDiscountTypeEnum,
@@ -465,7 +466,11 @@ export function VenuePromotionsManager({
                             disabled={activeCount >= maxActive}
                             onClick={() => setFormOpen(true)}
                         >
-                            {t('venue.owner.editor.promotionsManager.create', 'Nueva promoción')}
+                            <AddIcon
+                                size="sm"
+                                aria-hidden="true"
+                            />
+                            {t('venue.owner.editor.promotionsManager.create', 'Agregar promoción')}
                         </Button>
                     </div>
                 )}

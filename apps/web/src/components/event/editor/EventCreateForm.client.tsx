@@ -64,6 +64,7 @@
 
 import { EventCategoryEnum, EventCreateHttpSchema } from '@repo/schemas';
 import { type FormEvent, type JSX, useState } from 'react';
+import { Button } from '@/components/account/ui/Button';
 import { FieldError, fieldErrorId } from '@/components/ui/FieldError';
 import { eventEditApi } from '@/lib/api/endpoints-protected';
 import { useZodForm } from '@/lib/forms/use-zod-form';
@@ -390,17 +391,16 @@ export function EventCreateForm({
                 </p>
             )}
 
-            <button
+            <Button
                 type="submit"
                 className={styles.submit}
-                disabled={isSubmitting}
-                aria-busy={isSubmitting}
+                loading={isSubmitting}
                 data-testid="event-create-submit"
             >
                 {isSubmitting
                     ? t('account.myContent.events.create.submitting', 'Creando...')
                     : t('account.myContent.events.create.submit', 'Crear evento')}
-            </button>
+            </Button>
         </form>
     );
 }

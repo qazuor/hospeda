@@ -179,7 +179,7 @@ describe('VenuePromotionsManager', () => {
         expect(await screen.findByRole('status')).toHaveTextContent(
             'Las promociones todavía no están disponibles para tu plan.'
         );
-        expect(screen.queryByRole('button', { name: 'Nueva promoción' })).not.toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: 'Agregar promoción' })).not.toBeInTheDocument();
         expect(screen.queryByRole('link', { name: 'Ver planes' })).not.toBeInTheDocument();
     });
 
@@ -228,7 +228,7 @@ describe('VenuePromotionsManager', () => {
             screen.getByText('venue.owner.editor.promotionsManager.lockedExisting')
         ).toBeInTheDocument();
         expect(screen.queryByRole('button', { name: 'Reactivar' })).not.toBeInTheDocument();
-        expect(screen.queryByRole('button', { name: 'Nueva promoción' })).not.toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: 'Agregar promoción' })).not.toBeInTheDocument();
     });
 
     it('locks creation at the active limit and names the plan from the catalog', async () => {
@@ -250,7 +250,7 @@ describe('VenuePromotionsManager', () => {
                 'Alcanzaste el tope. El plan Plan Premium permite más promociones.'
             )
         ).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: 'Nueva promoción' })).toBeDisabled();
+        expect(screen.getByRole('button', { name: 'Agregar promoción' })).toBeDisabled();
     });
 
     it('shows the no-plan message at the cap when no catalog plan has a higher limit', async () => {
@@ -286,7 +286,7 @@ describe('VenuePromotionsManager', () => {
                 limitPlanOptions={[]}
             />
         );
-        fireEvent.click(await screen.findByRole('button', { name: 'Nueva promoción' }));
+        fireEvent.click(await screen.findByRole('button', { name: 'Agregar promoción' }));
         const type = screen.getByLabelText('Beneficio');
         fireEvent.change(type, { target: { value: 'special_offer' } });
         expect(screen.getAllByRole('textbox')[1]).toHaveAttribute('maxLength', '1000');
@@ -310,7 +310,7 @@ describe('VenuePromotionsManager', () => {
                 limitPlanOptions={[]}
             />
         );
-        fireEvent.click(await screen.findByRole('button', { name: 'Nueva promoción' }));
+        fireEvent.click(await screen.findByRole('button', { name: 'Agregar promoción' }));
         fireEvent.click(screen.getByLabelText('Activar franja semanal'));
         fireEvent.click(screen.getByLabelText('Jue'));
         fireEvent.change(screen.getByLabelText('Desde'), { target: { value: '22:00' } });
@@ -535,7 +535,7 @@ describe('VenuePromotionsManager', () => {
                 data: { items: [], meta: { activeCount: 0, maxActive: 5 } }
             });
             renderManager();
-            fireEvent.click(await screen.findByRole('button', { name: 'Nueva promoción' }));
+            fireEvent.click(await screen.findByRole('button', { name: 'Agregar promoción' }));
             expect(screen.getByRole('radio', { name: /plusLabel/ })).toBeChecked();
             expect(screen.getByText(/plusDescription_other/)).toBeInTheDocument();
             expect(screen.getByRole('radio', { name: /vipLabel/ })).toBeDisabled();

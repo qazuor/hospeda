@@ -37,6 +37,8 @@ import {
     parsePublishRequirementsReason
 } from '@repo/schemas';
 import { type JSX, useState } from 'react';
+import { Button } from '@/components/account/ui/Button';
+import { LinkButton } from '@/components/account/ui/LinkButton';
 import { PaidSignupsPausedNotice } from '@/components/billing/PaidSignupsPausedNotice';
 import { LocationExceptionRequestForm } from '@/components/listing/LocationExceptionRequestForm.client';
 import type { PublishVerticalSlug } from '@/lib/api/endpoints-protected';
@@ -345,12 +347,11 @@ export function PublishButton({
             >
                 <strong>{subscribeToPublish.title}</strong>
                 <span>{subscribeToPublish.body}</span>
-                <a
+                <LinkButton
                     href={buildUrl({ locale, path: resolvePublishPricingPath({ vertical }) })}
-                    className={`${styles.action} ${styles.primary}`}
                 >
                     {choosePlanLabel}
-                </a>
+                </LinkButton>
             </span>
         );
     }
@@ -359,13 +360,7 @@ export function PublishButton({
     if (state === 'idle' || state === 'error') {
         return (
             <span style={{ display: 'contents' }}>
-                <button
-                    type="button"
-                    className={`${styles.action} ${styles.primary}`}
-                    onClick={handleRequestConfirm}
-                >
-                    {label}
-                </button>
+                <Button onClick={handleRequestConfirm}>{label}</Button>
                 {state === 'error' && apiError && (
                     <span
                         role="alert"
@@ -392,9 +387,8 @@ export function PublishButton({
                                 onCancel={() => setExceptionFormOpen(false)}
                             />
                         ) : (
-                            <button
-                                type="button"
-                                className={`${styles.action} ${styles.secondary}`}
+                            <Button
+                                variant="secondary"
                                 onClick={() => setExceptionFormOpen(true)}
                                 data-testid="publish-location-exception-open"
                             >
@@ -402,7 +396,7 @@ export function PublishButton({
                                     'listing.owner.locationException.requestButton',
                                     'Pedir una excepción'
                                 )}
-                            </button>
+                            </Button>
                         )}
                     </span>
                 )}
@@ -423,12 +417,7 @@ export function PublishButton({
             >
                 <strong>{subscribeToPublish.title}</strong>
                 <span>{subscribeToPublish.body}</span>
-                <a
-                    href={plansUrl}
-                    className={`${styles.action} ${styles.primary}`}
-                >
-                    {subscriptionRequiredCta}
-                </a>
+                <LinkButton href={plansUrl}>{subscriptionRequiredCta}</LinkButton>
             </span>
         );
     }
@@ -442,12 +431,11 @@ export function PublishButton({
                 data-testid="publish-limit-reached"
             >
                 <span>{t('publish.limitReached.body')}</span>
-                <a
+                <LinkButton
                     href={buildUrl({ locale, path: resolvePublishPricingPath({ vertical }) })}
-                    className={`${styles.action} ${styles.primary}`}
                 >
                     {t('publish.limitReached.cta')}
-                </a>
+                </LinkButton>
             </span>
         );
     }
@@ -491,12 +479,7 @@ export function PublishButton({
                 >
                     {message}
                 </span>
-                <a
-                    href={editUrl}
-                    className={`${styles.action} ${styles.primary}`}
-                >
-                    {missingRequirementsCta}
-                </a>
+                <LinkButton href={editUrl}>{missingRequirementsCta}</LinkButton>
             </span>
         );
     }
@@ -527,33 +510,24 @@ export function PublishButton({
                  * spent never reaches the confirm step at all.
                  */}
                 {affordance.startsTrial && <p className={styles.calloutNote}>{confirmTrialNote}</p>}
-                <button
-                    type="button"
-                    className={`${styles.action} ${styles.primary}`}
-                    onClick={handleConfirm}
-                >
-                    {confirmYes}
-                </button>
-                <button
-                    type="button"
-                    className={`${styles.action} ${styles.secondary}`}
+                <Button onClick={handleConfirm}>{confirmYes}</Button>
+                <Button
+                    variant="secondary"
                     onClick={handleCancel}
                 >
                     {confirmNo}
-                </button>
+                </Button>
             </span>
         );
     }
 
     // ── Pending ───────────────────────────────────────────────────────────
     return (
-        <button
-            type="button"
-            className={`${styles.action} ${styles.primary}`}
+        <Button
             disabled
             aria-busy="true"
         >
             {confirmYes}…
-        </button>
+        </Button>
     );
 }

@@ -40,12 +40,12 @@
                 "experience": "Experience"
             },
             "emptyCta": {
-                "venue": "Create my first business",
-                "experience": "Create my first experience"
+                "venue": "Add business",
+                "experience": "Add experience"
             },
             "createCta": {
-                "venue": "+ New business",
-                "experience": "+ New experience"
+                "venue": "Add business",
+                "experience": "Add experience"
             },
             "state": {
                 "published": "Published",

@@ -59,25 +59,6 @@
 
 .submit {
     align-self: flex-start;
-    padding: var(--space-3) var(--space-8);
-    border: none;
-    border-radius: var(--radius-button);
-    background: var(--brand-accent);
-    color: var(--accent-foreground);
-    font-family: var(--font-sans);
-    font-weight: 600;
-    font-size: var(--text-body-lg);
-    cursor: pointer;
-    transition: opacity 150ms ease;
-}
-
-.submit:disabled {
-    cursor: not-allowed;
-    opacity: 0.6;
-}
-
-.submit:not(:disabled):hover {
-    opacity: 0.85;
 }
 
 .error {

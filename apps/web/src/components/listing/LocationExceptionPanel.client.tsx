@@ -12,6 +12,7 @@
 
 import type { LocationExceptionOwnerView } from '@repo/schemas';
 import { type JSX, useState } from 'react';
+import { Button } from '@/components/account/ui/Button';
 import { createTranslations, type SupportedLocale } from '@/lib/i18n';
 import {
     canRequestLocationException,
@@ -137,9 +138,8 @@ export function LocationExceptionPanel({
             )}
             {canRequest && !formOpen && (
                 <div className={styles.actions}>
-                    <button
-                        type="button"
-                        className={`${styles.button} ${styles.primary}`}
+                    <Button
+                        variant="secondary"
                         onClick={() => setFormOpen(true)}
                         data-testid="location-exception-open"
                     >
@@ -149,7 +149,7 @@ export function LocationExceptionPanel({
                                   'listing.owner.locationException.requestButton',
                                   'Pedir una excepción'
                               )}
-                    </button>
+                    </Button>
                 </div>
             )}
             {canRequest && formOpen && (

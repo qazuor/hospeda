@@ -28,6 +28,7 @@
  * ```
  */
 
+import { AddIcon } from '@repo/icons';
 import { formatCalendarDate } from '@repo/utils';
 import { type JSX, type ReactNode, useCallback, useEffect, useState } from 'react';
 import {
@@ -288,7 +289,11 @@ export function PromotionList({
                 createAction={
                     gate === 'open' ? (
                         <LinkButton href={createHref}>
-                            {t('host.promotions.createButton')}
+                            <AddIcon
+                                size="sm"
+                                aria-hidden="true"
+                            />
+                            {t('host.promotions.addButton')}
                         </LinkButton>
                     ) : undefined
                 }
