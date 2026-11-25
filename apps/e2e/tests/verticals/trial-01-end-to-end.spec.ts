@@ -15,6 +15,7 @@ import {
     type E2eMailCaptureServer,
     startE2eMailCapture
 } from '../../fixtures/mail-capture-server.ts';
+import { DRAFT_PROPERTY_LIST } from '../../fixtures/owner-lists.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
 
 const API_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:18001';
@@ -180,7 +181,7 @@ test.describe('TEST:V4:23 AC:V4:17 the trial end to end @p0 @verticals @clock', 
             await attachSession(page, ownerUser.sessionCookie);
             await page.goto(`${WEB_URL}/es/mi-cuenta/propiedades/`);
             await page
-                .getByRole('list', { name: 'Mis alojamientos' })
+                .getByRole('list', { name: DRAFT_PROPERTY_LIST })
                 .getByRole('button', { name: 'Publicar', exact: true })
                 .click();
             await page.getByRole('button', { name: 'Sí, publicar', exact: true }).click();

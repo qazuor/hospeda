@@ -21,6 +21,7 @@ import { signUpCardSubscriber } from '../../fixtures/cancellation-flow.ts';
 import { execSQL, getDbPool } from '../../fixtures/db-helpers.ts';
 import { startE2eFakeProvider } from '../../fixtures/fake-provider-server.ts';
 import { startE2eMailCapture } from '../../fixtures/mail-capture-server.ts';
+import { ALL_PROPERTY_LISTS } from '../../fixtures/owner-lists.ts';
 import { openPropertyCardConfirm } from '../../fixtures/property-card-actions.ts';
 import { createRecurringAddonLive } from '../../fixtures/recurring-addon-live.ts';
 import { attachSession } from '../../fixtures/signup-checkout.ts';
@@ -97,7 +98,7 @@ test.describe('TEST:B13b:2 AC:B13b:2 AC:B13b:4 unpublishing a listing with a liv
         // HOS-2483: the card is a list item of «Mis propiedades»; Despublicar
         // lives in its «Más acciones» menu and confirms in a dialog.
         const card = page
-            .getByRole('list', { name: 'Mis alojamientos' })
+            .getByRole('list', { name: ALL_PROPERTY_LISTS })
             .getByRole('listitem')
             .filter({ has: page.getByRole('heading', { level: 3 }) });
         await expect(card).toHaveCount(1);
@@ -134,7 +135,7 @@ test.describe('TEST:B13b:2 AC:B13b:2 AC:B13b:4 unpublishing a listing with a liv
         // HOS-2483: the card is a list item of «Mis propiedades»; Despublicar
         // lives in its «Más acciones» menu and confirms in a dialog.
         const card = page
-            .getByRole('list', { name: 'Mis alojamientos' })
+            .getByRole('list', { name: ALL_PROPERTY_LISTS })
             .getByRole('listitem')
             .filter({ has: page.getByRole('heading', { level: 3 }) });
         await expect(card).toHaveCount(1);
