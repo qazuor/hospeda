@@ -60,7 +60,7 @@ covers:
   - "entitlement:publish_venue"
   - "entitlement:publish_experience"
 entryFor: []
-reviewedAt: "2026-11-24"
+reviewedAt: "2026-11-25"
 ---
 
 ## Qué podés hacer

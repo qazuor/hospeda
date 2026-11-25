@@ -24,6 +24,7 @@
  */
 
 import { useId, useState } from 'react';
+import { Button } from '@/components/account/ui/Button';
 import type { SavedReviewReply } from '@/lib/api/endpoints-protected';
 import { hostTradesApi } from '@/lib/api/endpoints-protected';
 import { translateApiError } from '@/lib/api-errors';
@@ -176,23 +177,21 @@ export function ReviewReplyForm({
             ) : null}
 
             <div className={styles.actions}>
-                <button
-                    className={styles.secondaryAction}
+                <Button
+                    variant="secondary"
                     disabled={submitting}
                     onClick={onCancel}
-                    type="button"
                 >
                     {t('host-trades.provider.reviews.reply.cancel', 'Cancelar')}
-                </button>
-                <button
-                    className={styles.primaryAction}
+                </Button>
+                <Button
                     disabled={submitting}
                     type="submit"
                 >
                     {isEdit
                         ? t('host-trades.provider.reviews.reply.save', 'Guardar respuesta')
                         : t('host-trades.provider.reviews.reply.send', 'Enviar respuesta')}
-                </button>
+                </Button>
             </div>
         </form>
     );

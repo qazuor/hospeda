@@ -59,7 +59,7 @@ import {
 import PageHelpLink from '@/components/account/help/PageHelpLink.astro';
 import { PageLoadError } from '@/components/account/PageLoadError.client';
 import PropertyCard from '@/components/host/PropertyCard.astro';
-import { BuildingIcon } from '@repo/icons';
+import { AddIcon, BuildingIcon } from '@repo/icons';
 import { resolveUsageAlertTone } from '@/lib/listing/usage-alert-tone';
 import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 
@@ -234,7 +234,9 @@ const { t, tPlural } = createTranslations(locale);
 const title = t('host.properties.list.title', 'Mis alojamientos');
 const subtitle = t('host.properties.list.subtitle', 'Gestioná tus publicaciones');
 const emptyMessage = t('host.properties.empty.title', 'Aún no publicaste ninguna propiedad');
-const emptyCta = t('host.properties.empty.cta', 'Publicar ahora');
+// HOS-2611: one «create» pattern across Mi cuenta — the kit primary button,
+// a «+» icon and «Agregar …». Shared by the header and the empty state.
+const addLabel = t('host.properties.list.add', 'Agregar alojamiento');
 
 // HOS-1156: `/publicar/nueva/` was absorbed into `/publicar/`, which now
 // carries the create form itself. Repointed here rather than left riding the
@@ -306,7 +308,8 @@ const needsPlanCta = t('host.properties.list.needsPlanBanner.cta', 'Elegir plan 
         <PageHelpLink slot="help" locale={locale} />
         {!isEmpty && !fetchError && (
             <LinkButton slot="actions" href={publishNewUrl}>
-                {t('host.properties.list.publishAnother', 'Publicar otra')}
+                <AddIcon size="sm" aria-hidden="true" />
+                {addLabel}
             </LinkButton>
         )}
     </PageHeader>
@@ -384,7 +387,8 @@ const needsPlanCta = t('host.properties.list.needsPlanBanner.cta', 'Elegir plan 
         >
             <BuildingIcon slot="icon" size="lg" aria-hidden="true" />
             <LinkButton slot="action" href={publishNewUrl}>
-                {emptyCta}
+                <AddIcon size="sm" aria-hidden="true" />
+                {addLabel}
             </LinkButton>
         </EmptyState>
     )}

@@ -1,10 +1,19 @@
 /* TextLink.module.css — the one inline link recipe of the Mi Cuenta kit
    (HOS-2413 T-004). Also holds the visually-hidden helper LinkButton reuses. */
 
+/* `font` is a default the caller may replace through `className` (StatCard's
+   `.link`, Switch's `.lockedLink`). It sits at zero specificity so the
+   caller's font wins whatever order the CSS chunks load in: this module is
+   shared by islands that import TextLink / LinkButton directly, so the bundler
+   may emit it in its own chunk, after the caller's rule, and a same-specificity
+   `font: inherit` would then win and shift every StatCard (HOS-2611). */
+:where(.root) {
+    font: inherit;
+}
+
 .root {
     display: inline;
     border-radius: var(--radius-control);
-    font: inherit;
     text-decoration: underline;
     text-underline-offset: 0.2em;
     cursor: pointer;

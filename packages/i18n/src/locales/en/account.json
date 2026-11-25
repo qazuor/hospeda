@@ -903,6 +903,7 @@
         },
         "collections": {
             "create": "Create collection",
+            "add": "Add collection",
             "delete": "Delete collection",
             "delete_confirm": "Are you sure you want to delete this collection? Bookmarks inside will become uncollected, not deleted.",
             "edit": "Edit collection",
@@ -1560,7 +1561,7 @@
                 "empty": "You haven't written any post yet",
                 "fetchError": "Couldn't load the list. Try reloading the page.",
                 "createCta": "+ New post",
-                "emptyCta": "Write my first post"
+                "emptyCta": "Add post"
             },
             "create": {
                 "pageTitle": "New post",
@@ -1659,7 +1660,7 @@
                 "empty": "You haven't created any event yet",
                 "fetchError": "Couldn't load the list. Try reloading the page.",
                 "createCta": "+ New event",
-                "emptyCta": "Create my first event"
+                "emptyCta": "Add event"
             },
             "create": {
                 "pageTitle": "New event",
@@ -1757,7 +1758,7 @@
         "contentList": {
             "editNamed": "Edit “{{title}}”",
             "events": {
-                "create": "New event",
+                "create": "Add event",
                 "sectionTitle": "Your events",
                 "locked": {
                     "feature": "Managing events is an editor feature",
@@ -1765,7 +1766,7 @@
                 }
             },
             "posts": {
-                "create": "New post",
+                "create": "Add post",
                 "sectionTitle": "Your posts",
                 "locked": {
                     "feature": "Writing posts is an editor feature",

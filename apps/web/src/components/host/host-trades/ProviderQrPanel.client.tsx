@@ -17,6 +17,7 @@
  */
 
 import { useCallback, useMemo, useState } from 'react';
+import { Button } from '@/components/account/ui/Button';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import styles from './ProviderPanels.module.css';
@@ -85,13 +86,9 @@ export function ProviderQrPanel({ locale, svg, slug, targetUrl }: ProviderQrPane
                 {t('host-trades.provider.qr.encodes', 'Lleva a: {{url}}', { url: targetUrl })}
             </p>
 
-            <button
-                className={styles.primaryAction}
-                onClick={handleDownload}
-                type="button"
-            >
+            <Button onClick={handleDownload}>
                 {t('host-trades.provider.qr.download', 'Descargar el QR')}
-            </button>
+            </Button>
 
             {downloaded ? (
                 <p

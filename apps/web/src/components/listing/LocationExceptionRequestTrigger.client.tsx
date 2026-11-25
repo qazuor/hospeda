@@ -8,6 +8,7 @@
 
 import type { JSX } from 'react';
 import { useState } from 'react';
+import { Button } from '@/components/account/ui/Button';
 import { createTranslations, type SupportedLocale } from '@/lib/i18n';
 import type {
     LocationExceptionTarget,
@@ -60,14 +61,13 @@ export function LocationExceptionRequestTrigger({
             className={styles.actions}
             data-testid="location-exception-trigger"
         >
-            <button
-                type="button"
-                className={`${styles.button} ${styles.primary}`}
+            <Button
+                variant="secondary"
                 onClick={() => setOpen(true)}
                 data-testid="location-exception-open"
             >
                 {t('listing.owner.locationException.requestButton', 'Pedir una excepción')}
-            </button>
+            </Button>
         </div>
     );
 }

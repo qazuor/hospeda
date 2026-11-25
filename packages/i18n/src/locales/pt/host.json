@@ -197,7 +197,7 @@
         "list": {
             "title": "Meus alojamentos",
             "subtitle": "Gerencie suas publicações",
-            "publishAnother": "Publicar outra",
+            "add": "Adicionar hospedagem",
             "needsPlanBanner": {
                 "title": "Você é um anfitrião em preparação",
                 "description": "Suas propriedades ficam salvas como rascunho e ainda não são visíveis no site. Para publicá-las é necessário um plano de anfitrião ativo.",
@@ -807,7 +807,6 @@
         },
         "empty": {
             "title": "Você ainda não publicou nenhuma propriedade",
-            "cta": "Publicar agora",
             "fetchError": "No se pudo cargar la lista. Intentá recargar la página."
         },
         "error": {
@@ -890,6 +889,7 @@
         "pageDescription": "Crie e gerencie descontos e ofertas especiais para seus imóveis",
         "empty": "Você ainda não tem nenhuma promoção. Crie sua primeira oferta!",
         "createButton": "Nova promoção",
+        "addButton": "Adicionar promoção",
         "loading": "Carregando promoção...",
         "fields": {
             "title": "Título",
