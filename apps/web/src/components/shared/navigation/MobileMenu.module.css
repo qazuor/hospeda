@@ -39,22 +39,6 @@
     border-radius: 4px;
 }
 
-.logoIcon {
-    width: 32px;
-    height: 35px;
-    object-fit: contain;
-    flex-shrink: 0;
-}
-
-.logoText {
-    font-family: var(--font-decorative);
-    font-weight: 700;
-    font-size: 1.375rem;
-    line-height: 1.2;
-    color: var(--brand-secondary-foreground);
-    white-space: nowrap;
-}
-
 .nav {
     flex: 1;
     overflow-y: auto;

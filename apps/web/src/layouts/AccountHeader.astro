@@ -27,7 +27,8 @@
  * Session-blind: the badge count is fetched by its island in the browser.
  */
 
-import { getImage, Image } from 'astro:assets';
+import { getImage } from 'astro:assets';
+import { BrandWordmark } from '@/components/shared/brand/BrandWordmark';
 import { FaqsIcon, HamburgerIcon, SparkleIcon } from '@repo/icons';
 import MobileMenuIsland from '@/components/shared/navigation/MobileMenuIsland.astro';
 import { PublishMenu } from '@/components/shared/navigation/PublishMenu.client';
@@ -89,8 +90,7 @@ const adminPanelUrl = getAdminUrl();
 			class="account-header__logo"
 			aria-label={t('nav.goHome', 'Hospeda - Go to home')}
 		>
-			<Image src={logoSrc} alt="" width={34} height={36} loading="eager" />
-			<span class="account-header__name">Hospeda</span>
+			<BrandWordmark logoSrc={menuLogoSrc} />
 		</a>
 
 		<nav class="account-header__nav" aria-label={t('account.ui.chrome.siteNav')}>
@@ -205,11 +205,6 @@ const adminPanelUrl = getAdminUrl();
 	.account-header__nav-link:focus-visible {
 		outline: 2px solid var(--focus-ring);
 		outline-offset: 2px;
-	}
-
-	.account-header__name {
-		font: var(--app-card-title);
-		color: var(--brand-secondary-foreground);
 	}
 
 	/* The inline site nav exists from 80rem only; below it the hamburger holds it. */

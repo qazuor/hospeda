@@ -15,7 +15,8 @@
  * @rendering SSR + Cloudflare cache (no `prerender`, matches beneficios/nosotros)
  */
 
-import { Image } from 'astro:assets';
+import { getImage, Image } from 'astro:assets';
+import { BrandWordmark } from '@/components/shared/brand/BrandWordmark';
 import { BriefcaseIcon, CheckIcon, HomeIcon, ShieldIcon, UserIcon } from '@repo/icons';
 
 import StandaloneLayout from '@/layouts/StandaloneLayout.astro';
@@ -32,6 +33,13 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { getSiteUrl } from '@/lib/env';
 import { buildUrl } from '@/lib/urls';
 import logoSrc from '@/assets/images/logo.webp';
+
+let brandLogoSrc = logoSrc.src;
+try {
+	brandLogoSrc = (await getImage({ src: logoSrc, width: 68, format: 'webp' })).src;
+} catch {
+	// Fall back to the unprocessed asset path.
+}
 import {
 	ANFITRIONES_ADDONS,
 	ANFITRIONES_BANNER_ICON,
@@ -149,8 +157,7 @@ const subnavSectionIds = SUBNAV_LINKS.map((link) => link.id);
 		<div class="fx-topbar">
 			<div class="fx-container fx-topbar__in">
 				<a href="#top" class="fx-topbar__brand" aria-label={t('features.hero.logoAlt', 'Hospeda — volver arriba')}>
-					<Image src={logoSrc} alt="" width={30} height={32} loading="eager" />
-					<span class="fx-topbar__wordmark">Hospeda</span>
+					<BrandWordmark logoSrc={brandLogoSrc} />
 				</a>
 
 				<!-- ===== AUDIENCE SUBNAV ===== -->
@@ -796,14 +803,8 @@ const subnavSectionIds = SUBNAV_LINKS.map((link) => link.id);
 		align-items: center;
 		gap: var(--space-2);
 		flex: none;
-		font-family: var(--font-heading);
-		font-weight: 700;
-		font-size: var(--text-body);
 		color: var(--fx-ink);
 		text-decoration: none;
-	}
-	.fx-topbar__wordmark {
-		letter-spacing: -0.01em;
 	}
 
 	/* --- subnav (nested inside the top bar) --- */

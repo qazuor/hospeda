@@ -309,8 +309,9 @@ describe('Header.astro — styling', () => {
         expect(src).toContain('var(--brand-primary)');
     });
 
-    it('uses var(--font-decorative) for logo text', () => {
-        expect(src).toContain('var(--font-decorative)');
+    it('delegates the sans brand to the shared static wordmark', () => {
+        expect(src).toContain('<BrandWordmark logoSrc={mobileLogoSrc} size="lg" />');
+        expect(src).not.toContain('var(--font-decorative)');
     });
 
     it('uses var(--font-sans) for nav links', () => {

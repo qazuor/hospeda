@@ -51,6 +51,7 @@
 import { CloseIcon } from '@repo/icons';
 import type { MouseEvent } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { BrandWordmark } from '@/components/shared/brand/BrandWordmark';
 import { LanguageSwitcher } from '@/components/shared/preferences/LanguageSwitcher.client';
 import { ThemeControl } from '@/components/shared/preferences/ThemeControl.client';
 import { IconButton } from '@/components/ui/IconButtonReact';
@@ -480,14 +481,7 @@ export function MobileMenu({
                     className={styles.logoLink}
                     aria-label={t('nav.goHome', 'Hospeda - Go to home')}
                 >
-                    <img
-                        src={logoSrc}
-                        alt="Hospeda logo"
-                        className={styles.logoIcon}
-                        width={36}
-                        height={39}
-                    />
-                    <span className={styles.logoText}>Hospeda</span>
+                    <BrandWordmark logoSrc={logoSrc} />
                 </a>
                 <IconButton
                     ref={closeButtonRef}

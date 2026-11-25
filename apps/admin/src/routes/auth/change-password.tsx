@@ -17,6 +17,7 @@ import type { TranslationKey } from '@repo/i18n';
 import { AlertTriangleIcon, CheckCircleIcon, ShieldIcon, XCircleIcon } from '@repo/icons';
 import { createFileRoute, redirect } from '@tanstack/react-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { BrandWordmark } from '@/components/brand/BrandWordmark';
 import { env } from '@/env';
 import {
     PasswordRequirements,
@@ -224,11 +225,7 @@ function ForcedChangePasswordPage() {
                     <div className="w-full max-w-md space-y-6">
                         <div className="text-center">
                             <div className="mb-6 flex justify-center">
-                                <img
-                                    src="/logo.webp"
-                                    alt="Logo"
-                                    className="h-16 w-auto"
-                                />
+                                <BrandWordmark size="lg" />
                             </div>
                             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-warning/15">
                                 <ShieldIcon className="h-8 w-8 text-warning" />

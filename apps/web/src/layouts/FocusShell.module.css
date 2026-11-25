@@ -26,12 +26,6 @@
     outline-offset: 2px;
 }
 
-.name {
-    font-family: var(--font-heading);
-    font-size: var(--text-body-lg);
-    font-weight: 600;
-}
-
 .content {
     container-type: inline-size;
     container-name: account-content;
