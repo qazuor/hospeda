@@ -77,7 +77,6 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'account.doors',
     'account.editProfile',
     'account.editorFields',
-    'account.exclusiveDeals',
     'account.favorites',
     'account.help',
     // HOS-2413 — the account kit (`components/account/ui/`) renders these in islands.
@@ -199,6 +198,11 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'common.form',
     'common.loading',
     'common.optional',
+    // HOS-2589 — the per-reader promotion islands (detail pages, /promociones/):
+    // visible and blurred cards, the VIP upsell dialog and the listing page copy.
+    'common.promotions',
+    // HOS-2589 — the retry button of the `/promociones/` island's error state.
+    'common.retry',
     // HOS-982 — `ListingQrSheet.client.tsx` (the printable QR sheet download,
     // shared by the three verticals) names this subtree. It also carries the
     // three keys the PDF itself prints (`headline` / `invite` / `brandTagline`,

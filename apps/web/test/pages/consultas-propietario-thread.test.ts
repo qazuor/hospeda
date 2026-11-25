@@ -37,9 +37,11 @@ describe('consultas-propietario/[conversationId].astro (owner thread on the kit)
         expect(source).toMatch(/Astro\.request\.headers\.get\(\s*['"]cookie['"]\s*\)/);
     });
 
-    it('renders ONE PageHeader whose back link is labelled (not a bare arrow)', () => {
+    it('renders ONE PageHeader whose back LinkButton is labelled (not a bare arrow)', () => {
         expect(markup.match(/<PageHeader\b/g)).toHaveLength(1);
-        expect(markup).toContain('back={back}');
+        expect(markup).toContain(
+            '<LinkButton slot="actions" variant="secondary" href={back.href}>'
+        );
         expect(source).toContain("label: t('conversations.thread.backToOwnerInbox')");
         expect(markup).not.toMatch(/<h1[\s>]/);
     });

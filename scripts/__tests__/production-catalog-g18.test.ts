@@ -71,7 +71,7 @@ describe('GUARD:G18 — production catalog load', () => {
         );
         const load = buildPlanCatalogLoads()[0]!;
         const id = load.rows[0]![0] as string;
-        const changed = sql.replace("'owner-basico', 'Basic', 1", "'owner-basico', 'Changed', 1");
+        const changed = sql.replace("'owner-basico', 'Basic', 1", "'owner-basico', 'Basic', 7");
         expect(changed).not.toBe(sql);
         const result = run({
             migrationsDir: migrationsDir(changed),
@@ -80,7 +80,20 @@ describe('GUARD:G18 — production catalog load', () => {
         expect(result.exitCode).toBe(1);
         expect(result.output).toContain('FAIL load production catalog plan');
         expect(result.output).toContain(`key '${id}'`);
-        expect(result.output).toContain('name is "Basic" in code, "Changed" in SQL');
+        expect(result.output).toContain('pricing_order is 1 in code, 7 in SQL');
+    });
+
+    it('HOS-2614: the plan name is cosmetic, so renamed code names do not turn G18 red', () => {
+        const sql = readFileSync(
+            resolve('packages/db/src/migrations/0144_production_plan_catalog.sql'),
+            'utf8'
+        );
+        const result = run({
+            migrationsDir: migrationsDir(sql),
+            loads: [buildPlanCatalogLoads()[0]!]
+        });
+        expect(result.exitCode).toBe(0);
+        expect(buildPlanCatalogLoads()[0]!.rows[0]![3]).toBe('Alojamiento Básico');
     });
 
     it('the definition accepts a declared trial limit without treating absence as an invariant', () => {

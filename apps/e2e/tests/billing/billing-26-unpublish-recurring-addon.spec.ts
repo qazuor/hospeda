@@ -97,7 +97,7 @@ test.describe('TEST:B13b:2 AC:B13b:2 AC:B13b:4 unpublishing a listing with a liv
         // HOS-2483: the card is a list item of «Mis propiedades»; Despublicar
         // lives in its «Más acciones» menu and confirms in a dialog.
         const card = page
-            .getByRole('list', { name: 'Mis propiedades' })
+            .getByRole('list', { name: 'Mis alojamientos' })
             .getByRole('listitem')
             .filter({ has: page.getByRole('heading', { level: 3 }) });
         await expect(card).toHaveCount(1);
@@ -134,7 +134,7 @@ test.describe('TEST:B13b:2 AC:B13b:2 AC:B13b:4 unpublishing a listing with a liv
         // HOS-2483: the card is a list item of «Mis propiedades»; Despublicar
         // lives in its «Más acciones» menu and confirms in a dialog.
         const card = page
-            .getByRole('list', { name: 'Mis propiedades' })
+            .getByRole('list', { name: 'Mis alojamientos' })
             .getByRole('listitem')
             .filter({ has: page.getByRole('heading', { level: 3 }) });
         await expect(card).toHaveCount(1);

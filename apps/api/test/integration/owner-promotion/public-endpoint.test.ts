@@ -18,7 +18,7 @@
  */
 
 import type { Mock } from 'vitest';
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 /**
  * Mutable reference for the captured `search` mock. The `vi.mock()` factory is
@@ -51,6 +51,8 @@ vi.mock('@repo/service-core', async (importOriginal) => {
 
 import { initApp } from '../../../src/app';
 import { validateApiEnv } from '../../../src/utils/env';
+import { testDb } from '../../e2e/setup/test-database';
+import { grantFreeVisiblePromotionsQuota } from './free-quota.fixture';
 
 describe('Public OwnerPromotion list — AC-005-01', () => {
     let app: ReturnType<typeof initApp>;
@@ -68,6 +70,8 @@ describe('Public OwnerPromotion list — AC-005-01', () => {
         minNights: 2,
         validFrom: new Date('2026-01-01T00:00:00Z').toISOString(),
         validUntil: new Date('2026-12-31T23:59:59Z').toISOString(),
+        // HOS-2589: a «para todos» promotion, so a guest within the free quota sees it.
+        touristAudience: 'plus',
         // Admin-only field that MUST be stripped by OwnerPromotionPublicSchema
         lifecycleState: 'ACTIVE',
         ownerId: crypto.randomUUID(),
@@ -91,9 +95,17 @@ describe('Public OwnerPromotion list — AC-005-01', () => {
         'user-agent': 'vitest'
     };
 
-    beforeAll(() => {
+    beforeAll(async () => {
+        await testDb.setup();
+        // HOS-2589 AC-10: the guest read keeps only what the floor plan's free quota
+        // shows in full; the integration DB lacks the row data-migration 0191 writes.
+        await grantFreeVisiblePromotionsQuota();
         validateApiEnv();
         app = initApp();
+    });
+
+    afterAll(async () => {
+        await testDb.teardown();
     });
 
     beforeEach(() => {

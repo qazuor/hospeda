@@ -132,5 +132,9 @@ export const NOTIFICATION_CATEGORY_MAP: Record<NotificationType, NotificationCat
     // Location exception decisions (HOS-2192) — TRANSACTIONAL: the answer to
     // something the owner asked for.
     [NotificationType.LISTING_LOCATION_EXCEPTION_APPROVED]: NotificationCategory.TRANSACTIONAL,
-    [NotificationType.LISTING_LOCATION_EXCEPTION_REJECTED]: NotificationCategory.TRANSACTIONAL
+    [NotificationType.LISTING_LOCATION_EXCEPTION_REJECTED]: NotificationCategory.TRANSACTIONAL,
+    // HOS-2589 — the VIP digest is an opt-out-able nudge; the pause notice explains a
+    // change made to the owner's own promotions.
+    [NotificationType.VIP_PROMOTIONS_WEEKLY_DIGEST]: NotificationCategory.REMINDER,
+    [NotificationType.VIP_PROMOTIONS_PAUSED]: NotificationCategory.TRANSACTIONAL
 };

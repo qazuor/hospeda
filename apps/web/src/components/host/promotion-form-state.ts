@@ -97,13 +97,22 @@ export function samePromotionFields({
  *
  * @param input - Options object.
  * @param input.fields - The current field values.
+ * @param input.baseline - The values the form opened with (edit mode).
  * @returns The payload the Zod schema validates.
+ *
+ * The audience (HOS-2589 AC-2) is always explicit: «Para todos» stores `plus` even
+ * when the stored value was `vip`. The one omission is an UNCHANGED «Solo VIP» on
+ * edit, so an owner whose plan lost `vip_only_promotions` can still fix the text of
+ * a paused promotion without re-asserting the audience the API would refuse (D-8).
  */
 export function buildPromotionPayload({
-    fields
+    fields,
+    baseline
 }: {
     readonly fields: PromotionFieldValues;
+    readonly baseline?: PromotionFieldValues;
 }): Record<string, unknown> {
+    const keepsVip = fields.vipOnly && baseline?.vipOnly === true;
     const numberOrUndefined = (value: string): number | undefined =>
         value === '' ? undefined : Number(value);
     return {
@@ -116,7 +125,7 @@ export function buildPromotionPayload({
         minNights: numberOrUndefined(fields.minNights),
         maxRedemptions: numberOrUndefined(fields.maxRedemptions),
         accommodationId: fields.accommodationId === '' ? undefined : fields.accommodationId,
-        touristAudience: fields.vipOnly ? 'vip' : undefined
+        touristAudience: keepsVip ? undefined : fields.vipOnly ? 'vip' : 'plus'
     };
 }
 

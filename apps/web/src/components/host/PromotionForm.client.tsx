@@ -57,10 +57,11 @@ export interface PromotionFormProps {
     /** Required in edit mode: the promotion's UUID to update. */
     readonly promotionId?: string;
     /**
-     * HOS-2544: catalog names of the tourist plans that carry exclusive deals, read by the SSR
-     * page (the catalog reader is server-only). Empty when the catalog could not be read.
+     * HOS-2589: X (the free quota) and the VIP plan name, read from the tourist catalog by the
+     * SSR page (the catalog reader is server-only). `null` when the catalog could not be read.
      */
-    readonly audiencePlanNames?: readonly string[];
+    readonly freeQuota?: number | null;
+    readonly vipPlanName?: string | null;
     /**
      * HOS-2505: catalog names of the owner plans that include promotions, for the
      * LockedState. Empty when the catalog could not be read.
@@ -71,6 +72,12 @@ export interface PromotionFormProps {
 /** Result of the create-mode plan check. */
 type PlanGate = 'checking' | 'open' | 'locked';
 
+/** Plan gate plus whether «Solo VIP» may be chosen (HOS-2589 AC-25). */
+interface PromotionPlanAccess {
+    readonly gate: PlanGate;
+    readonly vipOnlyAllowed: boolean;
+}
+
 /**
  * Reads the effective set once in create mode.
  *
@@ -78,8 +85,9 @@ type PlanGate = 'checking' | 'open' | 'locked';
  * @param input.enabled - Whether to check (create mode).
  * @returns `checking` until the read settles, then `open` or `locked`.
  */
-function usePromotionPlanGate({ enabled }: { readonly enabled: boolean }): PlanGate {
+function usePromotionPlanGate({ enabled }: { readonly enabled: boolean }): PromotionPlanAccess {
     const [gate, setGate] = useState<PlanGate>(enabled ? 'checking' : 'open');
+    const [vipOnlyAllowed, setVipOnlyAllowed] = useState(false);
     useEffect(() => {
         if (!enabled) return;
         let cancelled = false;
@@ -90,13 +98,17 @@ function usePromotionPlanGate({ enabled }: { readonly enabled: boolean }): PlanG
             const locked =
                 !effectiveSet.failed && (effectiveSet.entitlements.create_promotions ?? 0) <= 0;
             setGate(locked ? 'locked' : 'open');
+            // A failed read keeps «Solo VIP» locked here; the API is the real gate.
+            setVipOnlyAllowed(
+                !effectiveSet.failed && (effectiveSet.entitlements.vip_only_promotions ?? 0) > 0
+            );
         };
         void check();
         return () => {
             cancelled = true;
         };
     }, [enabled]);
-    return gate;
+    return { gate, vipOnlyAllowed };
 }
 
 /**
@@ -110,7 +122,8 @@ export function PromotionForm({
     mode,
     initialData,
     promotionId,
-    audiencePlanNames = [],
+    freeQuota = null,
+    vipPlanName = null,
     lockPlanNames = []
 }: PromotionFormProps): JSX.Element {
     const { t } = createTranslations(locale);
@@ -122,7 +135,7 @@ export function PromotionForm({
         onDiscard: form.discard,
         idPrefix: PROMOTION_FIELD_PREFIX
     });
-    const gate = usePromotionPlanGate({ enabled: true });
+    const { gate, vipOnlyAllowed } = usePromotionPlanGate({ enabled: true });
 
     const promotionsListUrl = buildUrl({ locale, path: 'mi-cuenta/promociones' });
     const upgradeUrl = buildUrl({ locale, path: PRICING_PAGE_PATH_BY_AUDIENCE.owner });
@@ -216,9 +229,12 @@ export function PromotionForm({
                 fields={form.fields}
                 errors={form.errors}
                 accommodationsLoad={form.accommodationsLoad}
-                audiencePlanNames={audiencePlanNames}
+                freeQuota={freeQuota}
+                vipPlanName={vipPlanName}
+                vipOnlyAllowed={vipOnlyAllowed}
+                plansHref={upgradeUrl}
                 onFieldChange={form.onFieldChange}
-                onVipOnlyChange={form.onVipOnlyChange}
+                onAudienceChange={form.onAudienceChange}
             />
 
             {/* A generic failure is told by the save bar alone (owner decision 7);

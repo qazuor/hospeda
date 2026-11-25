@@ -159,7 +159,7 @@
         "favorites": "Favoritos",
         "searchHistory": "Histórico de buscas",
         "alerts": "Alertas de preço",
-        "exclusiveDeals": "Ofertas exclusivas",
+        "exclusiveDeals": "Promoções",
         "reviews": "Minhas avaliações",
         "hostDashboard": "Painel do anfitrião",
         "properties": "Meus alojamentos",
@@ -393,6 +393,10 @@
         "changeInPreferences": "Alterar em Preferências",
         "searchHistory": {
             "planFallback": "Plano superior"
+        },
+        "vipPromotionsDigest": {
+            "label": "Receber o resumo semanal de promoções",
+            "description": "Um e-mail às segundas com as promoções novas da semana. Se não houve nenhuma, não escrevemos."
         }
     },
     "aiAssistants": {
@@ -664,10 +668,11 @@
         "trialSummary": {
             "title": "Seu teste grátis de {{vertical}}",
             "endedTitle": "Seu teste grátis de {{vertical}} terminou",
-            "endedConverted": "Seu teste terminou e agora você tem seu plano.",
-            "endedExpired": "Seu teste terminou em {{end}}.",
+            "endedConverted": "Agora você tem seu plano.",
+            "endedExpired": "Data de término: {{end}}.",
             "activePlanMessage": "Quando seu teste terminar, seu anúncio deixará de aparecer. Escolha um plano para mantê-lo publicado.",
-            "endedPlanMessage": "Seu teste terminou. Escolha um plano para publicar novamente.",
+            "endedPlanMessage": "Escolha um plano para publicar novamente.",
+            "endedPlanMessageTourist": "Escolha um plano para continuar aproveitando seus benefícios.",
             "choosePlan": "Escolha seu plano",
             "vertical": {
                 "accommodation": "hospedagem",
@@ -762,7 +767,7 @@
                 "confirmCheckout": "Se precisar de autorização, você irá ao checkout do Mercado Pago; seu plano atual continua até você autorizar.",
                 "confirmScheduled": "Se a mudança for agendada, você verá a data exata em que o novo plano começa.",
                 "payerEmailLabel": "E-mail do pagador no Mercado Pago",
-                "payerEmailHint": "É o e-mail com o qual você vai pagar no Mercado Pago. Você o declara; o provedor não o confirma.",
+                "payerEmailHint": "Este é o e-mail da sua conta do Mercado Pago. Se você pagar com outra conta, altere aqui: se não coincidir, o pagamento será recusado.",
                 "payerEmailInvalid": "Informe um e-mail válido do pagador.",
                 "confirm": "Confirmar mudança",
                 "back": "Voltar",
@@ -822,7 +827,8 @@
                 "venue": "Comer e sair"
             },
             "price": "{{amount}} {{cycle}}",
-            "nextCharge": "Próxima cobrança: {{date}}, no valor de {{amount}}."
+            "nextCharge": "Próxima cobrança: {{date}}, no valor de {{amount}}.",
+            "emptyDescription": "Escolha um plano para publicar e gerenciar seus anúncios."
         },
         "cancel": {
             "open": "Cancelar assinatura",
@@ -1083,7 +1089,7 @@
                 "newsletterDesc": "Gerencie sua assinatura do boletim",
                 "whatsNew": "Novidades do Hospeda",
                 "whatsNewDesc": "Novidades e atualizações da plataforma",
-                "myProperties": "Meus imóveis",
+                "myProperties": "Meus alojamentos",
                 "myPropertiesDesc": "Gerencie suas acomodações publicadas",
                 "hostDashboard": "Painel do anfitrião",
                 "hostDashboardDesc": "Resumo da sua atividade como anfitrião",
@@ -1127,7 +1133,7 @@
                 "pendingSubscriptionsPart_one": "{{count}} pendente",
                 "pendingSubscriptionsPart_other": "{{count}} pendentes",
                 "subscriptionsSummary": "{{active}} · {{pending}}",
-                "properties": "Meus imóveis",
+                "properties": "Meus alojamentos",
                 "propertiesDesc": "Acomodações publicadas",
                 "messages": "Mensagens não lidas",
                 "messagesDesc": "Consultas de hóspedes",
@@ -1210,10 +1216,6 @@
         "alerts": {
             "title": "Alertas de preço",
             "description": "Gerencie seus alertas de queda de preço no Hospeda"
-        },
-        "exclusiveDeals": {
-            "title": "Ofertas exclusivas",
-            "description": "Descubra ofertas e descontos exclusivos para o seu plano no Hospeda"
         },
         "recommendations": {
             "title": "Sugestões para você",
@@ -1490,31 +1492,6 @@
         "deleteConfirmTitle": "Excluir este alerta?",
         "deleteConfirmBody": "Você deixa de receber avisos de queda de preço de {{name}}.",
         "closedStatus": "Encerrado"
-    },
-    "exclusiveDeals": {
-        "lock": {
-            "description": "Acesse descontos e benefícios que os anfitriões reservam para os viajantes deste plano."
-        },
-        "loading": "Carregando ofertas exclusivas...",
-        "errorFetch": "Não foi possível carregar suas ofertas exclusivas",
-        "empty": {
-            "title": "Nenhuma oferta ativa no momento",
-            "body": "Volte mais tarde para ver novas ofertas exclusivas para o seu plano."
-        },
-        "upgrade": {
-            "title": "Ofertas exclusivas",
-            "message_one": "As ofertas exclusivas estão disponíveis no plano {{plans}}. Atualize seu plano para acessar.",
-            "message_other": "As ofertas exclusivas estão disponíveis nos planos {{plans}}. Atualize seu plano para acessar.",
-            "messageNoPlans": "As ofertas exclusivas não estão incluídas no seu plano atual. Atualize seu plano para acessar.",
-            "cta": "Ver planos"
-        },
-        "listLabel": "Suas ofertas exclusivas",
-        "item": {
-            "vipBadge": "Somente VIP",
-            "viewListing": "Ver acomodação",
-            "listingUnavailable": "Esta acomodação não está mais disponível.",
-            "validUntil": "Válida até {{date}}"
-        }
     },
     "recommendations": {
         "loading": "Carregando recomendações...",

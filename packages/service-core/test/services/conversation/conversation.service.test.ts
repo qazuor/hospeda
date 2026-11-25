@@ -1747,13 +1747,37 @@ describe('ConversationService', () => {
             expect(notificationScheduleMock.cancelForRecipient).not.toHaveBeenCalled();
         });
 
+        it('should reject the owner of an unverified (PENDING_VERIFICATION) inquiry (HOS-2615)', async () => {
+            // Arrange
+            asMock(conversationModelMock.findById).mockResolvedValue(
+                makeConversation({
+                    id: CONVERSATION_ID,
+                    accommodationId: ACCOMMODATION_ID,
+                    userId: null,
+                    status: 'PENDING_VERIFICATION'
+                })
+            );
+
+            // Act
+            const result = await service.getThread(
+                OWNER_ACTOR,
+                { conversationId: CONVERSATION_ID, actorSide: 'OWNER' },
+                [ACCOMMODATION_ID]
+            );
+
+            // Assert
+            expectForbiddenError(result);
+            expect(messageModelMock.findByConversationId).not.toHaveBeenCalled();
+        });
+
         it('should return the thread and run side effects for the legitimate owner', async () => {
             // Arrange — owner owns ACCOMMODATION_ID, which the conversation
             // belongs to.
             const ownedConversation = makeConversation({
                 id: CONVERSATION_ID,
                 accommodationId: ACCOMMODATION_ID,
-                userId: null
+                userId: null,
+                status: 'PENDING_OWNER'
             });
             asMock(conversationModelMock.findById).mockResolvedValue(ownedConversation);
             asMock(messageModelMock.findByConversationId).mockResolvedValue([]);
@@ -1777,7 +1801,8 @@ describe('ConversationService', () => {
             const ownedConversation = makeConversation({
                 id: CONVERSATION_ID,
                 accommodationId: ACCOMMODATION_ID,
-                userId: null
+                userId: null,
+                status: 'PENDING_OWNER'
             });
             asMock(conversationModelMock.findById).mockResolvedValue(ownedConversation);
             asMock(messageModelMock.findByConversationId).mockResolvedValue([]);
@@ -1803,7 +1828,8 @@ describe('ConversationService', () => {
             const ownedConversation = makeConversation({
                 id: CONVERSATION_ID,
                 accommodationId: ACCOMMODATION_ID,
-                userId: null
+                userId: null,
+                status: 'PENDING_OWNER'
             });
             asMock(conversationModelMock.findById).mockResolvedValue(ownedConversation);
             // limit=2 -> service requests 3; model returns 3 newest-first (m3,m2,m1).

@@ -15,6 +15,7 @@
  */
 
 import type { HelpAudience } from '@repo/help';
+import { syncTabScrollFade } from '@/lib/ui/tab-scroll-fade';
 import {
     HELP_AUDIENCE_CHANGED_EVENT,
     HELP_AUDIENCE_PARAM,
@@ -175,6 +176,7 @@ export function initHelpTabs({ root, eventTarget = window }: InitHelpTabsArgs): 
         }
         root.dataset.selected = audience;
         revealTab({ tablist, tab: target });
+        syncTabScrollFade({ bar: tablist });
         if (focus) {
             target.focus({ preventScroll: true });
         }
@@ -227,10 +229,13 @@ export function initHelpTabs({ root, eventTarget = window }: InitHelpTabsArgs): 
         }
     };
 
+    const onScroll = (): void => syncTabScrollFade({ bar: tablist });
+    tablist.addEventListener('scroll', onScroll, { passive: true });
     tablist.addEventListener('click', onClick);
     tablist.addEventListener('keydown', onKeyDown);
     eventTarget.addEventListener(HELP_SELECT_AUDIENCE_EVENT, onSelectRequest);
     return () => {
+        tablist.removeEventListener('scroll', onScroll);
         tablist.removeEventListener('click', onClick);
         tablist.removeEventListener('keydown', onKeyDown);
         eventTarget.removeEventListener(HELP_SELECT_AUDIENCE_EVENT, onSelectRequest);

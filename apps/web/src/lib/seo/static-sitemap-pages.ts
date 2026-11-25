@@ -104,6 +104,11 @@ export const STATIC_SITEMAP_PAGES: readonly StaticSitemapPage[] = [
     { path: '/planes/comer-y-salir/precios/', changefreq: 'monthly', priority: 0.7 },
     { path: '/planes/experiencias/precios/', changefreq: 'monthly', priority: 0.7 },
 
+    // HOS-2589: the public promotions listing. Listed as a shell only: the
+    // promotions are filled per visitor by a client island, so the indexed HTML
+    // carries the heading and description and no promotion content.
+    { path: '/promociones/', changefreq: 'daily', priority: 0.6 },
+
     // Partner / collaborator acquisition.
     { path: '/sumate/partner/', changefreq: 'monthly', priority: 0.6 },
     { path: '/sumate/proveedor/', changefreq: 'monthly', priority: 0.6 },

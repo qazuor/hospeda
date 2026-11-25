@@ -105,7 +105,8 @@ export function buildVenueCreateInput(args: {
         validUntil: request.validUntil ?? null,
         ...fromPromotionWindow(request.window),
         lifecycleState: LifecycleStatusEnum.ACTIVE,
-        touristAudience: TouristAudienceEnum.PLUS
+        // HOS-2589 D-4: «Para todos» by default; «Solo VIP» is gated at the route.
+        touristAudience: request.touristAudience ?? TouristAudienceEnum.PLUS
     };
 }
 
@@ -307,13 +308,16 @@ export class VenuePromotionService {
         readonly venueId: string;
         readonly promotionId: string;
         readonly request: VenuePromotionUpdateRequest;
+        /** HOS-2589 D-8: the route checked the owner's `vip_only_promotions`. */
+        readonly vipOnlyVerified?: boolean;
     }): Promise<ServiceOutput<OwnerPromotion>> {
         return this.guard(async () => {
             const { venue, promotion } = await this.loadVenuePromotion(args);
             const updated = await this.promotions.update(
                 args.actor,
                 promotion.id,
-                buildVenueUpdateInput({ existing: promotion, request: args.request })
+                buildVenueUpdateInput({ existing: promotion, request: args.request }),
+                { hookState: { vipOnlyVerified: args.vipOnlyVerified === true } }
             );
             if (updated.error) throw updated.error;
             await this.revalidate(venue);

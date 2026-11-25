@@ -1,4 +1,4 @@
-/** TEST:HOS-2308 payer-email hints open with the owner's phrase in es, en, and pt. */
+/** TEST:HOS-2615 the three payer-email hints carry one owner-fixed text in es, en, and pt. */
 import { describe, expect, it } from 'vitest';
 import englishAccount from '../src/locales/en/account.json';
 import englishBilling from '../src/locales/en/billing.json';
@@ -7,24 +7,12 @@ import spanishBilling from '../src/locales/es/billing.json';
 import portugueseAccount from '../src/locales/pt/account.json';
 import portugueseBilling from '../src/locales/pt/billing.json';
 
-const OWNER_PHRASE = {
-    es: /correo con el que vas a pagar en Mercado Pago/i,
-    en: /email you will pay with on Mercado Pago/i,
-    pt: /e-mail com o qual você vai pagar no Mercado Pago/i
-} as const;
+type Locale = 'es' | 'en' | 'pt';
 
-const DECLARED_CLAUSE = {
-    es: /declar/i,
-    en: /declar/i,
-    pt: /declar/i
-} as const;
-
-type Locale = keyof typeof OWNER_PHRASE;
-
-const OWNER_OPENING: Record<Locale, string> = {
-    es: 'Es el correo con el que vas a pagar en Mercado Pago',
-    en: 'It is the email you will pay with on Mercado Pago',
-    pt: 'É o e-mail com o qual você vai pagar no Mercado Pago'
+const OWNER_TEXT: Record<Locale, string> = {
+    es: 'Es el correo de tu cuenta de Mercado Pago. Si pagás con otra cuenta, cambialo acá: si no coincide, el pago se rechaza.',
+    en: 'This is the email of your Mercado Pago account. If you pay with a different account, change it here: if it does not match, the payment is rejected.',
+    pt: 'Este é o e-mail da sua conta do Mercado Pago. Se você pagar com outra conta, altere aqui: se não coincidir, o pagamento será recusado.'
 };
 
 const signupHint: Record<Locale, string> = {
@@ -45,40 +33,17 @@ const addonHint: Record<Locale, string> = {
     pt: portugueseBilling.addonPurchase.payerEmailHint
 };
 
-describe('payer email hint copy — HOS-2308', () => {
+describe('payer email hint copy - HOS-2615', () => {
     it.each([
-        ['es', signupHint.es],
-        ['en', signupHint.en],
-        ['pt', signupHint.pt]
-    ])('signup checkout hint opens with the owner phrase in %s', (locale, hint) => {
-        expect(hint.startsWith(OWNER_OPENING[locale as Locale])).toBe(true);
-        expect(hint).toMatch(OWNER_PHRASE[locale as Locale]);
+        ['signup checkout', signupHint],
+        ['plan change', planChangeHint],
+        ['addon purchase', addonHint]
+    ])('%s shows the single owner text in es, en and pt', (_place, hints) => {
+        expect(hints).toEqual(OWNER_TEXT);
     });
 
-    it.each([
-        ['es', planChangeHint.es],
-        ['en', planChangeHint.en],
-        ['pt', planChangeHint.pt]
-    ])('plan change hint opens with the owner phrase in %s', (locale, hint) => {
-        expect(hint.startsWith(OWNER_OPENING[locale as Locale])).toBe(true);
-        expect(hint).toMatch(OWNER_PHRASE[locale as Locale]);
-        expect(hint).toMatch(DECLARED_CLAUSE[locale as Locale]);
-    });
-
-    it.each([
-        ['es', addonHint.es],
-        ['en', addonHint.en],
-        ['pt', addonHint.pt]
-    ])('addon purchase hint opens with the owner phrase in %s', (locale, hint) => {
-        expect(hint.startsWith(OWNER_OPENING[locale as Locale])).toBe(true);
-        expect(hint).toMatch(OWNER_PHRASE[locale as Locale]);
-        expect(hint).toMatch(DECLARED_CLAUSE[locale as Locale]);
-    });
-
-    it('keeps the rejection warning on the signup hint after the rewrite', () => {
-        expect(signupHint.es).toContain('el pago se rechaza');
-        expect(signupHint.en).toContain('the payment is rejected');
-        expect(signupHint.pt).toContain('o pagamento será recusado');
+    it('pt differs from es', () => {
+        expect(signupHint.pt).not.toBe(signupHint.es);
     });
 
     it('uses no em dashes in any of the nine hints', () => {

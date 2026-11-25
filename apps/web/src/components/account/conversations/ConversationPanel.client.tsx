@@ -14,9 +14,10 @@
  * verification, HOS-2568) shows the kit `EmptyState` instead of an empty
  * message list (HOS-2600); the first message sent replaces it.
  *
- * The thread lives in a `Section`; the composer sits AFTER it, outside the
- * box, so it can stick to the bottom of the viewport (a Section clips its
- * overflow, which would keep a sticky child from sticking).
+ * The thread AND the composer live in the same `Section` (HOS-2611): the
+ * composer is the last thing inside the messages card, so it no longer sticks
+ * to the viewport (a Section clips its overflow, which would keep a sticky
+ * child from sticking).
  */
 
 import { ChatIcon } from '@repo/icons';
@@ -292,15 +293,16 @@ export function ConversationPanel({
                     />
                 )}
                 {children}
+                {canReply && (
+                    <Composer
+                        className={styles.composer}
+                        locale={locale}
+                        onSend={handleSend}
+                        placeholder={t('conversations.thread.replyPlaceholder')}
+                        error={error}
+                    />
+                )}
             </Section>
-            {canReply && (
-                <Composer
-                    locale={locale}
-                    onSend={handleSend}
-                    placeholder={t('conversations.thread.replyPlaceholder')}
-                    error={error}
-                />
-            )}
         </div>
     );
 }

@@ -82,11 +82,11 @@ describe('«Complementos» (HOS-2485, AC-8)', () => {
         expect(addons?.i18nKey).toBe('account.nav.addons');
     });
 
-    it('the add-ons page highlights that item, not «Suscripción»', () => {
+    it('the add-ons page highlights «Suscripción»: both tabs are one page (HOS-2610 F-19)', () => {
         expect(getActiveSectionKey({ href: 'mi-cuenta/complementos' })).toBe('complementos');
-        expect(read('pages/[lang]/mi-cuenta/complementos/index.astro')).toContain(
-            'activeSection="complementos"'
-        );
+        const page = read('pages/[lang]/mi-cuenta/complementos/index.astro');
+        expect(page).toContain('activeSection="suscripcion"');
+        expect(page).toContain("t('account.pages.subscription.title'");
     });
 
     it('both pages carry the «Plan / Complementos» NavTabs, each marking itself', () => {

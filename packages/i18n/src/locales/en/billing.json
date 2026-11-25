@@ -257,7 +257,7 @@
             "submitting": "Preparing your payment…",
             "payerEmail": {
                 "label": "Which email do you use to sign in to Mercado Pago?",
-                "hint": "It is the email you will pay with on Mercado Pago. We’ve filled in your Hospeda email; change it only if you use another one in Mercado Pago. If they don’t match, the payment is rejected and you won’t be charged.",
+                "hint": "This is the email of your Mercado Pago account. If you pay with a different account, change it here: if it does not match, the payment is rejected.",
                 "invalid": "Enter a valid email."
             },
             "pending": {
@@ -453,6 +453,9 @@
         },
         "max_ai_faq_draft_per_month": {
             "title": "Monthly AI FAQ draft limit reached"
+        },
+        "max_free_visible_promotions": {
+            "title": "Visible promotions limit reached"
         }
     },
     "limits": {
@@ -634,7 +637,8 @@
         "recover_own_listing": "View, export, reactivate or delete your listings",
         "subscribe_to_plan": "Subscribe to a plan",
         "activate_trial": "Start the trial period",
-        "ai_faq_draft": "AI FAQ answer drafts"
+        "ai_faq_draft": "AI FAQ answer drafts",
+        "vip_only_promotions": "\"VIP only\" promotions"
     },
     "entitlementByAudience": {
         "venue": {
@@ -799,7 +803,8 @@
             "max_search_history_entries": "Search history entries",
             "max_collections": "Favorites collections",
             "max_active_private_galleries": "Active private galleries",
-            "max_ai_faq_draft_per_month": "AI FAQ answer drafts per month"
+            "max_ai_faq_draft_per_month": "AI FAQ answer drafts per month",
+            "max_free_visible_promotions": "Promotions visible on the free plan"
         },
         "lineMark": "For listings in the {{rubro}} category"
     },
@@ -826,7 +831,8 @@
         "max_venues": "How many food and drink venues you can have published at once. At the cap you need a higher plan to add another.",
         "max_experiences": "How many experiences you can have published at once. At the cap you need a higher plan to add another.",
         "max_active_private_galleries": "How many private galleries you can keep alive at the same time. Each gallery expires on its own once its term is up and is deleted, so slots free up as they lapse.",
-        "max_ai_faq_draft_per_month": "How many AI answer drafts you can generate each month for questions about your listings. The quota resets at the start of each month."
+        "max_ai_faq_draft_per_month": "How many AI answer drafts you can generate each month for questions about your listings. The quota resets at the start of each month.",
+        "max_free_visible_promotions": "How many \"for everyone\" promotions a tourist on the free plan sees in full per page. The rest appear blurred, with an invitation to become VIP."
     },
     "addon": {
         "extra-accommodations-5": {
@@ -898,7 +904,7 @@
         "chooseFree": "Choose for free",
         "payerEmailLabel": "Payer email",
         "payerEmailInvalid": "Enter a valid payer email.",
-        "payerEmailHint": "It is the email you will pay with on Mercado Pago. You declare it; the provider does not confirm it.",
+        "payerEmailHint": "This is the email of your Mercado Pago account. If you pay with a different account, change it here: if it does not match, the payment is rejected.",
         "confirmPurchase": "Confirm purchase",
         "oneTimeSummary": "One-time payment: charged once and never renewed.",
         "instantMethodsOnly": "You pay on Mercado Pago with a credit or debit card or your account balance. Cash payments are not accepted.",

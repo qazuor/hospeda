@@ -34,7 +34,7 @@ import {
  * exactly the entries they remove; raising it is visible in review. The
  * closing PR of HOS-2410 removes the kind entirely (AC-38).
  */
-const MAX_PENDING_CONTENT = 123;
+const MAX_PENDING_CONTENT = 117;
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 

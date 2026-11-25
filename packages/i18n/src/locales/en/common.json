@@ -308,5 +308,48 @@
         "codeLoading": "Loading the code…",
         "codeError": "We couldn't show the code here, but you can still download the sheet.",
         "encodes": "The code leads to: {{url}}"
+    },
+    "promotions": {
+        "sectionTitle": "Promotions",
+        "vipBadge": "VIP",
+        "badges": {
+            "promo": "Promo",
+            "vip": "VIP"
+        },
+        "lockedVipName": "VIP-only promotion",
+        "lockedHiddenName": "Hidden promotion",
+        "discountTypes": {
+            "percentage": "Discount",
+            "fixed": "Fixed discount",
+            "free_night": "Free night",
+            "special_offer": "Special benefit"
+        },
+        "percentOff": "{{value}}% off",
+        "amountOff": "{{value}} off",
+        "validUntil": "Until {{date}}",
+        "minNights_one": "Minimum {{count}} night",
+        "minNights_other": "Minimum {{count}} nights",
+        "viewPlace": "View {{name}}",
+        "dialog": {
+            "title": "Promotions for VIP tourists",
+            "body_one": "These promotions are for VIP tourists. With the free plan you see up to {{count}} non-VIP promotion per page.",
+            "body_other": "These promotions are for VIP tourists. With the free plan you see up to {{count}} non-VIP promotions per page.",
+            "bodyNoQuota": "These promotions are for VIP tourists. With the free plan you see only some non-VIP promotions per page.",
+            "plan": "With the {{plan}} plan you see every promotion and we email you the new ones.",
+            "cta": "Go VIP",
+            "close": "Close"
+        },
+        "loadError": "We couldn't load the promotions.",
+        "page": {
+            "title": "Promotions",
+            "heading": "Promotions in the Litoral",
+            "description": "Discounts and benefits from places to stay, eat and go out in Concepción del Uruguay and the region.",
+            "empty": "There are no active promotions right now. Check back soon.",
+            "pageStatus": "Page {{page}} of {{total}}",
+            "previous": "Previous",
+            "next": "Next",
+            "paginationLabel": "Promotion pages",
+            "tagline": "Worth it"
+        }
     }
 }

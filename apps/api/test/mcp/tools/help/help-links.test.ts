@@ -325,7 +325,7 @@ describe('buildHelpLinks', () => {
 
             // Assert
             expect(links.map((link) => link.label)).toEqual([
-                'Mis propiedades',
+                'Mis alojamientos',
                 'Mi comercio',
                 'Contactar a Hospeda'
             ]);

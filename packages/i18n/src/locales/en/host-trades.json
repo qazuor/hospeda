@@ -108,13 +108,15 @@
         "pending": {
             "title": "Waiting for your confirmation",
             "empty": "You have no usages waiting to be confirmed.",
-            "countLabel": "Waiting for your confirmation: {{count}}"
+            "countLabel": "Waiting for your confirmation: {{count}}",
+            "emptyDescription": "When a provider records a service for your listing, you will be able to confirm it here."
         },
         "history": {
             "title": "History",
             "empty": "No usages recorded yet.",
             "loadMore": "Show more",
-            "filterLabel": "Filter by status"
+            "filterLabel": "Filter by status",
+            "emptyDescription": "The uses you confirm or reject are kept in this history."
         },
         "filters": {
             "ALL": "All",

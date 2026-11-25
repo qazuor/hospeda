@@ -19,13 +19,20 @@ import {
     OwnerPromotionEntityTypeEnum,
     OwnerPromotionSearchSchema,
     OwnerPromotionUpdateInputSchema,
+    ServiceErrorCode,
     TouristAudienceEnumSchema
 } from '@repo/schemas';
 import type { SQL } from 'drizzle-orm';
 import { and, gte, isNull, lte, or, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
-import type { Actor, ServiceConfig, ServiceContext, ServiceOutput } from '../../types';
+import {
+    type Actor,
+    type ServiceConfig,
+    type ServiceContext,
+    ServiceError,
+    type ServiceOutput
+} from '../../types';
 import {
     ALL_TOURIST_AUDIENCES,
     resolvePublicAudienceFilter
@@ -35,7 +42,11 @@ import {
     type OwnerPromotionWithAccommodationSlug,
     withAccommodationSlugs
 } from './ownerPromotion.exclusive-deals';
-import { generateOwnerPromotionSlug } from './ownerPromotion.helpers';
+import {
+    generateOwnerPromotionSlug,
+    isVipResumption,
+    resolveActivationStamps
+} from './ownerPromotion.helpers';
 import {
     emitOwnerPromotionLifecycleEvent,
     OwnerPromotionLifecycleEventType
@@ -74,6 +85,12 @@ export interface OwnerPromotionHookState {
      * `undefined` when the entity was not fetched (e.g. no `updateId` set).
      */
     previousLifecycleState?: string;
+    /**
+     * HOS-2589 D-8: set by the API when it checked that the promotion's owner holds
+     * `vip_only_promotions`. Only then may a paused «Solo VIP» promotion be resumed
+     * as «Solo VIP»; without it the update is refused (ENTITLEMENT_REQUIRED).
+     */
+    vipOnlyVerified?: boolean;
 }
 
 /**
@@ -180,7 +197,12 @@ export class OwnerPromotionService extends BaseCrudService<
             description: data.description
         });
         const slug = data.slug ?? (await generateOwnerPromotionSlug(data.title, this.model));
-        return { ...data, ...target, slug };
+        // HOS-2589 §7.7: a promotion created live is first activated now.
+        const firstActivatedAt =
+            (data.lifecycleState ?? LifecycleStatusEnum.ACTIVE) === LifecycleStatusEnum.ACTIVE
+                ? new Date()
+                : null;
+        return { ...data, ...target, slug, firstActivatedAt };
     }
 
     protected _canUpdate(actor: Actor, entity: OwnerPromotion): void {
@@ -370,6 +392,17 @@ export class OwnerPromotionService extends BaseCrudService<
             const prev = await this.model.findById(id, ctx.tx);
             ctx.hookState.previousLifecycleState = prev?.lifecycleState ?? undefined;
             if (prev) {
+                const vipOnlyVerified = ctx.hookState.vipOnlyVerified === true;
+                if (!vipOnlyVerified && isVipResumption({ previous: prev, data })) {
+                    // Defense in depth behind the route gate: whatever door the update
+                    // came through, a paused «Solo VIP» promotion is not re-activated
+                    // as «Solo VIP» unless the owner's key was checked (AC-38).
+                    throw new ServiceError(
+                        ServiceErrorCode.ENTITLEMENT_REQUIRED,
+                        'Entitlement required',
+                        { entitlementKey: 'vip_only_promotions' }
+                    );
+                }
                 // HOS-2270: target-dependent rules + dual write on re-target.
                 const extra = await validatePromotionUpdate({
                     previous: prev,
@@ -378,7 +411,16 @@ export class OwnerPromotionService extends BaseCrudService<
                     venueModel: this.venueModel,
                     tx: ctx.tx
                 });
-                return { ...data, ...extra } as Partial<OwnerPromotion>;
+                return {
+                    ...data,
+                    ...extra,
+                    ...resolveActivationStamps({
+                        previous: prev,
+                        data,
+                        now: new Date(),
+                        vipOnlyVerified
+                    })
+                } as Partial<OwnerPromotion>;
             }
         }
         return data as Partial<OwnerPromotion>;

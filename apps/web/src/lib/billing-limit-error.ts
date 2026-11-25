@@ -109,7 +109,10 @@ export const KNOWN_LIMIT_KEYS = new Set([
     // owes this key a message and a CTA; what the entry buys today is that the
     // toast names the gallery cap instead of falling back to
     // `billing.limit.generic.*`, which never says which limit was hit.
-    'max_active_private_galleries'
+    'max_active_private_galleries',
+    // HOS-2589 — the free tourist's visible-promotions quota. It never blocks an
+    // action (no at-limit toast reaches it); title-only, for the exhaustiveness guard.
+    'max_free_visible_promotions'
 ]);
 
 /**

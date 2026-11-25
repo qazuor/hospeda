@@ -9,10 +9,12 @@
  * already loaded keeps running until it expires. Pausing (a body that is only
  * `{ lifecycleState }` other than ACTIVE) never needs the plan; creating, editing and
  * re-activating need `create_promotions` and, when the promotion ends up active, room
- * under `max_active_promotions`.
+ * under `max_active_promotions`. A promotion that stays or becomes «Solo VIP» and
+ * live also needs `vip_only_promotions` (HOS-2589 D-4, 403 ENTITLEMENT_REQUIRED).
  *
  * @module routes/venue/protected/putPromotion
  */
+import { ownerPromotionModel } from '@repo/db';
 import {
     PermissionEnum,
     toPromotionWindow,
@@ -27,6 +29,7 @@ import { z } from 'zod';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
+import { enforceVipOnlyPromotionGate } from '../../owner-promotion/vip-only-gate';
 import { PROMOTIONS_SECTION_ID, promotionEditIntent, promotionEditLimit } from './promotion-access';
 
 const venuePromotionService = new VenuePromotionService({ logger: apiLogger });
@@ -37,12 +40,29 @@ export async function handleEditVenuePromotion(
     params: Record<string, unknown>,
     body: Record<string, unknown>
 ) {
+    const actor = getActorFromContext(ctx);
+    const venueId = params.id as string;
+    const promotionId = params.promotionId as string;
+    // HOS-2589 D-4/D-8: a promotion that stays or becomes «Solo VIP» and live needs
+    // `vip_only_promotions`. A promotion that is not this owner's venue's is left to
+    // the service, which answers its 404 before any entitlement check.
+    const existing = await ownerPromotionModel.findOneOfVenue({ promotionId, venueId });
+    const vipOnlyVerified =
+        existing && existing.ownerId === actor.id
+            ? await enforceVipOnlyPromotionGate({
+                  userId: actor.id,
+                  vertical: VerticalEnum.VENUE,
+                  body,
+                  existing
+              })
+            : false;
     const result = await venuePromotionService.update({
-        actor: getActorFromContext(ctx),
-        venueId: params.id as string,
-        promotionId: params.promotionId as string,
+        actor,
+        venueId,
+        promotionId,
         // The route validated the body against `VenuePromotionUpdateRequestSchema`.
-        request: body as never
+        request: body as never,
+        vipOnlyVerified
     });
     if (result.error) throw new ServiceError(result.error.code, result.error.message);
     const { windowWeekdays, windowStart, windowEnd, ...item } = result.data;

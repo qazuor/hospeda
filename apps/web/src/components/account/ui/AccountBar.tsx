@@ -38,6 +38,12 @@ export interface AccountBarProps {
     readonly view: SidebarView;
     /** Locale for the copy. */
     readonly locale: SupportedLocale;
+    /**
+     * Title of the current page. Names the page in the bar when no menu entry
+     * does (a page with no sidebar item), so the trail never stops at
+     * «Mi cuenta» (HOS-2610 F-36).
+     */
+    readonly pageTitle?: string;
 }
 
 /** Max wait for the history unwind's `popstate` before navigating anyway. */
@@ -63,7 +69,7 @@ async function continueNavigation(href: string): Promise<void> {
  * @param props - See {@link AccountBarProps}.
  * @returns The sentinel, the bar and the drawer.
  */
-export function AccountBar({ view, locale }: AccountBarProps) {
+export function AccountBar({ view, locale, pageTitle }: AccountBarProps) {
     const t = createT(locale);
     const [open, setOpen] = useState(false);
     const [stuck, setStuck] = useState(false);
@@ -138,7 +144,11 @@ export function AccountBar({ view, locale }: AccountBarProps) {
         release?.();
     }, []);
 
-    const showCurrent = view.activeLabel !== menuLabel;
+    // The entry's label, else the page's own title. Never «Mi cuenta / Mi
+    // cuenta»: a current label equal to the account label adds nothing.
+    const currentLabel = view.activeLabel === menuLabel ? pageTitle : view.activeLabel;
+    const showCurrent =
+        currentLabel !== undefined && currentLabel !== '' && currentLabel !== accountLabel;
 
     return (
         <>
@@ -165,9 +175,7 @@ export function AccountBar({ view, locale }: AccountBarProps) {
                         aria-hidden="true"
                     />
                     <span>{accountLabel}</span>
-                    {showCurrent ? (
-                        <span className={styles.current}>/ {view.activeLabel}</span>
-                    ) : null}
+                    {showCurrent ? <span className={styles.current}>/ {currentLabel}</span> : null}
                 </button>
             </div>
             <Drawer

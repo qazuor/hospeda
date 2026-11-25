@@ -28,6 +28,7 @@
  *           deterministic pagination across pages when leading sort keys tie.
  */
 
+import { ownerPromotionTouristModel, type PromotionPresence } from '@repo/db';
 import {
     AccommodationPublicSchema,
     type AccommodationSearchHttp,
@@ -238,13 +239,18 @@ export const publicListAccommodationsRoute = createPublicListRoute({
         const { items: gatedItems, aiChatByOwner } = await projectPublicAccommodationPage({
             listings: rawItems
         });
+        const promotionPresence = await readAccommodationPromotionPresence({ listings: rawItems });
         const items = rawItems.map((item, index) => ({
             ...gatedItems[index],
             // HOS-929: the public `isFeatured` is derived from `featuredByEntitlement`
             // (the only featuring source since HOS-1419); the raw column itself is
             // stripped by the public schema (never in its pick).
             isFeatured: resolvePublicIsFeatured(item as { featuredByEntitlement?: boolean }),
-            hasAiChat: aiChatByOwner.get(item.ownerId ?? '') ?? false
+            hasAiChat: aiChatByOwner.get(item.ownerId ?? '') ?? false,
+            // HOS-2589 D-6: presence only (no content, no quota), the same for every
+            // reader, so it stays in this actor-blind cached response.
+            hasFreePromotion: promotionPresence.get(item.id)?.hasFreePromotion ?? false,
+            hasVipPromotion: promotionPresence.get(item.id)?.hasVipPromotion ?? false
         }));
 
         return {
@@ -256,3 +262,30 @@ export const publicListAccommodationsRoute = createPublicListRoute({
         customRateLimit: { requests: 200, windowMs: 60000 }
     }
 });
+
+/**
+ * Search-badge presence of the page's accommodations (HOS-2589 D-6, AC-33). A failed
+ * read degrades to «no badge» and is logged: it must never fail the search.
+ *
+ * @param params - `listings`: the page's raw rows (`id`, `ownerId`).
+ * @returns Presence per accommodation id.
+ */
+async function readAccommodationPromotionPresence({
+    listings
+}: {
+    readonly listings: readonly { readonly id: string; readonly ownerId?: string | null }[];
+}): Promise<ReadonlyMap<string, PromotionPresence>> {
+    try {
+        return await ownerPromotionTouristModel.findAccommodationPromotionPresence({
+            listings: listings.flatMap((listing) =>
+                listing.ownerId ? [{ id: listing.id, ownerId: listing.ownerId }] : []
+            )
+        });
+    } catch (error) {
+        apiLogger.warn(
+            { error: error instanceof Error ? error.message : String(error) },
+            'HOS-2589: promotion presence read failed; badges omitted'
+        );
+        return new Map();
+    }
+}

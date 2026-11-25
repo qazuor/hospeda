@@ -18,8 +18,10 @@
  * (HOS-794): a single click on a bare button used to wipe the row.
  */
 
+import { StarIcon } from '@repo/icons';
 import { useCallback, useMemo } from 'react';
 import { Alert } from '@/components/account/ui/Alert';
+import { EmptyState } from '@/components/account/ui/EmptyState';
 import { Section } from '@/components/account/ui/Section';
 import { SwitchRow } from '@/components/account/ui/Switch';
 import { useConfirm } from '@/components/account/ui/use-confirm';
@@ -155,12 +157,19 @@ export function ExternalReputationSection({
                 )}
 
                 {!data.isLoading && data.listings.length === 0 && !data.loadError && (
-                    <p
-                        className={styles.mutedText}
-                        data-testid="ext-rep-empty"
-                    >
-                        {t('external-reputation.aggregate.noData')}
-                    </p>
+                    <div data-testid="ext-rep-empty">
+                        <EmptyState
+                            variant="compact"
+                            icon={
+                                <StarIcon
+                                    size={28}
+                                    aria-hidden={true}
+                                />
+                            }
+                            title={t('external-reputation.aggregate.noData')}
+                            description={t('external-reputation.aggregate.noDataDescription')}
+                        />
+                    </div>
                 )}
 
                 {data.listings.length > 0 && (

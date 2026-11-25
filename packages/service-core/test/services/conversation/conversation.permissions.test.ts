@@ -166,6 +166,43 @@ describe('checkCanViewConversation', () => {
                 checkCanViewConversation(actor, conversation, [OTHER_ACCOMMODATION_ID])
             ).toThrow();
         });
+
+        it('should deny the owner an unverified (PENDING_VERIFICATION) inquiry, like a foreign one', () => {
+            // Arrange
+            const actor = createActor({
+                id: OTHER_USER_ID,
+                roles: [RoleEnum.HOST],
+                permissions: [PermissionEnum.CONVERSATION_VIEW_OWN]
+            });
+            const conversation = makeConversation({
+                accommodationId: ACCOMMODATION_ID,
+                status: 'PENDING_VERIFICATION' as SelectConversation['status']
+            });
+
+            // Act & Assert
+            expect(() =>
+                checkCanViewConversation(actor, conversation, [ACCOMMODATION_ID])
+            ).toThrow();
+            expect(() =>
+                checkCanReplyConversation(actor, conversation, [ACCOMMODATION_ID])
+            ).toThrow();
+            expect(() => checkCanUpdateStatus(actor, conversation, [ACCOMMODATION_ID])).toThrow();
+        });
+
+        it('should still let an admin with VIEW_ANY see an unverified inquiry', () => {
+            // Arrange
+            const actor = createActor({
+                id: OTHER_USER_ID,
+                roles: [RoleEnum.ADMIN],
+                permissions: [PermissionEnum.CONVERSATION_VIEW_ANY]
+            });
+            const conversation = makeConversation({
+                status: 'PENDING_VERIFICATION' as SelectConversation['status']
+            });
+
+            // Act & Assert
+            expect(() => checkCanViewConversation(actor, conversation, [])).not.toThrow();
+        });
     });
 
     describe('when actor has no view permissions', () => {

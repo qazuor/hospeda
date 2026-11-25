@@ -308,5 +308,48 @@
         "codeLoading": "Carregando o código…",
         "codeError": "Não conseguimos mostrar o código aqui, mas você pode baixar a folha assim mesmo.",
         "encodes": "O código leva a: {{url}}"
+    },
+    "promotions": {
+        "sectionTitle": "Promoções",
+        "vipBadge": "VIP",
+        "badges": {
+            "promo": "Promo",
+            "vip": "VIP"
+        },
+        "lockedVipName": "Promoção só para VIP",
+        "lockedHiddenName": "Promoção oculta",
+        "discountTypes": {
+            "percentage": "Desconto",
+            "fixed": "Desconto fixo",
+            "free_night": "Noite grátis",
+            "special_offer": "Benefício especial"
+        },
+        "percentOff": "{{value}}% de desconto",
+        "amountOff": "{{value}} de desconto",
+        "validUntil": "Até {{date}}",
+        "minNights_one": "Mínimo {{count}} noite",
+        "minNights_other": "Mínimo {{count}} noites",
+        "viewPlace": "Ver {{name}}",
+        "dialog": {
+            "title": "Promoções para turistas VIP",
+            "body_one": "Estas promoções são para turistas VIP. Com o plano grátis você vê até {{count}} promoção que não é VIP por página.",
+            "body_other": "Estas promoções são para turistas VIP. Com o plano grátis você vê até {{count}} promoções que não são VIP por página.",
+            "bodyNoQuota": "Estas promoções são para turistas VIP. Com o plano grátis você vê só algumas promoções que não são VIP por página.",
+            "plan": "Com o plano {{plan}} você vê todas as promoções e avisamos por e-mail das novas.",
+            "cta": "Seja VIP",
+            "close": "Fechar"
+        },
+        "loadError": "Não conseguimos carregar as promoções.",
+        "page": {
+            "title": "Promoções",
+            "heading": "Promoções no Litoral",
+            "description": "Descontos e benefícios de hospedagens e lugares para comer e sair em Concepción del Uruguay e na região.",
+            "empty": "Não há promoções ativas no momento. Volte em breve.",
+            "pageStatus": "Página {{page}} de {{total}}",
+            "previous": "Anterior",
+            "next": "Próxima",
+            "paginationLabel": "Páginas de promoções",
+            "tagline": "Para aproveitar"
+        }
     }
 }

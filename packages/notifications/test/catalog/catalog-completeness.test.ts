@@ -46,11 +46,11 @@ describe('email catalog completeness', () => {
         }
     });
 
-    it('has exactly the 46 notification entries renderNotificationEmail supports', () => {
+    it('has exactly the 48 notification entries renderNotificationEmail supports', () => {
         const ids = EMAIL_CATALOG.filter((entry) => entry.sendPath === 'notification').map(
             (entry) => entry.id
         );
-        expect(ids).toHaveLength(46);
+        expect(ids).toHaveLength(48);
         expect(new Set(ids)).toEqual(new Set(NOTIFICATION_TYPES_WITH_TEMPLATE));
     });
 
@@ -64,11 +64,8 @@ describe('email catalog completeness', () => {
         expect(EMAIL_CATALOG.filter((entry) => entry.sendPath === sendPath)).toHaveLength(count);
     });
 
-    it('marks only the newsletter verify and welcome entries as not wired', () => {
-        expect(EMAIL_CATALOG.filter((entry) => !entry.wired).map((entry) => entry.key)).toEqual([
-            'newsletter.verify',
-            'newsletter.welcome'
-        ]);
+    it('marks every entry as wired (the newsletter dispatcher sends verify and welcome, HOS-2603)', () => {
+        expect(EMAIL_CATALOG.filter((entry) => !entry.wired).map((entry) => entry.key)).toEqual([]);
     });
 });
 

@@ -62,7 +62,9 @@ import {
     trialMachineExpiryJob,
     unverifiedInquiryCleanupJob,
     venueEventsPastCleanupJob,
-    viewMonthlyRollupJob
+    viewMonthlyRollupJob,
+    vipOnlyPromotionsPauseJob,
+    vipPromotionsWeeklyDigestJob
 } from './jobs/index.js';
 import type { CronJobDefinition } from './types';
 
@@ -136,7 +138,10 @@ export const cronJobs: CronJobDefinition[] = [
     // HOS-2347: Umami replays and heatmaps are purged after the configured retention.
     sessionRecordingRetentionJob,
     // HOS-2254: past one-off venue events are deleted after 60 days.
-    venueEventsPastCleanupJob
+    venueEventsPastCleanupJob,
+    // HOS-2589: the weekly VIP promotions digest and the «Solo VIP» pause sweep (D-8).
+    vipPromotionsWeeklyDigestJob,
+    vipOnlyPromotionsPauseJob
 ];
 
 /**

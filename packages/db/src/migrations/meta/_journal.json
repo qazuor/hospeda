@@ -1751,6 +1751,20 @@
       "when": 1795423800544,
       "tag": "0249_hos2359_newsletter_campaign_attribution",
       "breakpoints": true
+    },
+    {
+      "idx": 250,
+      "version": "7",
+      "when": 1795538578173,
+      "tag": "0250_hos2589_owner_promotion_activation",
+      "breakpoints": true
+    },
+    {
+      "idx": 251,
+      "version": "7",
+      "when": 1795538598790,
+      "tag": "0251_hos2589_promotion_catalog_keys",
+      "breakpoints": true
     }
   ]
 }

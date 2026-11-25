@@ -32,11 +32,16 @@ function _isGuestParticipant(actor: Actor, conversation: SelectConversation): bo
 /**
  * Returns true when the actor (owner side) owns at least one accommodation
  * that matches the conversation's accommodation.
+ *
+ * An anonymous inquiry still in `PENDING_VERIFICATION` is not reachable by the
+ * owner (HOS-2615): the visitor has not confirmed their email, so it is
+ * treated exactly like a conversation the owner does not own.
  */
 function _isOwnerParticipant(
     conversation: SelectConversation,
     ownerAccommodationIds: readonly string[]
 ): boolean {
+    if (conversation.status === 'PENDING_VERIFICATION') return false;
     return ownerAccommodationIds.includes(conversation.accommodationId);
 }
 

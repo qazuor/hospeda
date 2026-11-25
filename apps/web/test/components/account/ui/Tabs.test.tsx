@@ -118,3 +118,50 @@ describe('NavTabs', () => {
         expect(screen.getByRole('link', { name: 'Seguridad' })).not.toHaveAttribute('aria-current');
     });
 });
+
+describe('tab bar scroll affordance (HOS-2610 F-24)', () => {
+    it('flags the end edge of an overflowing bar and scrolls the active tab into view', () => {
+        const widths = { scrollWidth: 600, clientWidth: 200 };
+        const protoScroll = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'scrollWidth');
+        const protoClient = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'clientWidth');
+        Object.defineProperty(HTMLElement.prototype, 'scrollWidth', {
+            configurable: true,
+            get: () => widths.scrollWidth
+        });
+        Object.defineProperty(HTMLElement.prototype, 'clientWidth', {
+            configurable: true,
+            get: () => widths.clientWidth
+        });
+        try {
+            render(
+                <NavTabs
+                    ariaLabel="Secciones"
+                    items={[
+                        { href: '/a', label: 'Uno' },
+                        { href: '/b', label: 'Dos', current: true }
+                    ]}
+                />
+            );
+            const bar = screen.getByRole('navigation', { name: 'Secciones' });
+            expect(bar.dataset.fadeEnd).toBe('true');
+            expect(bar.dataset.fadeStart).toBe('false');
+        } finally {
+            if (protoScroll)
+                Object.defineProperty(HTMLElement.prototype, 'scrollWidth', protoScroll);
+            else Reflect.deleteProperty(HTMLElement.prototype, 'scrollWidth');
+            if (protoClient)
+                Object.defineProperty(HTMLElement.prototype, 'clientWidth', protoClient);
+            else Reflect.deleteProperty(HTMLElement.prototype, 'clientWidth');
+        }
+    });
+
+    it('flags nothing when the bar fits', () => {
+        render(
+            <NavTabs
+                ariaLabel="Secciones"
+                items={[{ href: '/a', label: 'Uno', current: true }]}
+            />
+        );
+        expect(screen.getByRole('navigation', { name: 'Secciones' }).dataset.fadeEnd).toBe('false');
+    });
+});

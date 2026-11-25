@@ -237,4 +237,58 @@ describe('OwnerPromotionService lifecycle events (SPEC-285 T-004)', () => {
             expect(emitSpy).not.toHaveBeenCalled();
         });
     });
+
+    // ── HOS-2589 D-8: a paused «Solo VIP» promotion (security review) ─────────
+
+    describe('resuming a paused «Solo VIP» promotion', () => {
+        const pausedVip = {
+            ...draftPromo,
+            lifecycleState: LifecycleStatusEnum.INACTIVE,
+            touristAudience: 'vip',
+            vipPausedAt: new Date('2026-11-01T00:00:00Z')
+        };
+
+        it('refuses re-activating it as vip when the key was not verified', async () => {
+            modelMock.findById.mockResolvedValue(pausedVip);
+            modelMock.update.mockResolvedValue(activePromo);
+
+            const result = await service.update(adminActor, promotionId, {
+                lifecycleState: LifecycleStatusEnum.ACTIVE
+            });
+
+            expect(result.error?.code).toBe('ENTITLEMENT_REQUIRED');
+            expect(modelMock.update).not.toHaveBeenCalled();
+        });
+
+        it('lets it resume as vip once the route verified the key, lifting the pause', async () => {
+            modelMock.findById.mockResolvedValue(pausedVip);
+            modelMock.update.mockResolvedValue(activePromo);
+
+            const result = await service.update(
+                adminActor,
+                promotionId,
+                { lifecycleState: LifecycleStatusEnum.ACTIVE },
+                { hookState: { vipOnlyVerified: true } }
+            );
+
+            expect(result.error).toBeUndefined();
+            const written = modelMock.update.mock.calls[0]?.[1] as Record<string, unknown>;
+            expect(written.vipPausedAt).toBeNull();
+        });
+
+        it('lets it resume as «Para todos» without the key, lifting the pause', async () => {
+            modelMock.findById.mockResolvedValue(pausedVip);
+            modelMock.update.mockResolvedValue(activePromo);
+
+            const result = await service.update(adminActor, promotionId, {
+                lifecycleState: LifecycleStatusEnum.ACTIVE,
+                touristAudience: 'plus'
+            } as never);
+
+            expect(result.error).toBeUndefined();
+            const written = modelMock.update.mock.calls[0]?.[1] as Record<string, unknown>;
+            expect(written.vipPausedAt).toBeNull();
+            expect(written.touristAudience).toBe('plus');
+        });
+    });
 });

@@ -245,3 +245,15 @@ export function resolveEmptySubscriptionPlansPath({
         .map(([, path]) => path);
     return paths.length === 1 && paths[0] ? paths[0] : OWNER_PLANS_FALLBACK_PATH;
 }
+
+/**
+ * Whether an account reads the owner side of the billing pages: it holds a role
+ * that names an owner vertical (`HOST`, `VENUE_OWNER`, `EXPERIENCE_OWNER`).
+ * Used only to pick copy (HOS-2610 F-40); it never gates anything.
+ *
+ * @param params.roles - Every role the user holds, or `null`.
+ * @returns `true` when at least one owner-vertical role is held.
+ */
+export function isOwnerAudience({ roles }: { readonly roles: readonly string[] | null }): boolean {
+    return (roles ?? []).some((role) => role in OWNER_VERTICAL_PLANS_PATH_BY_ROLE);
+}

@@ -126,6 +126,32 @@ describe('Newsletter Email Templates (SPEC-101)', () => {
             expect(html).toContain('ya estás suscripto');
         });
 
+        describe('guest variant (unsubscribeUrl present)', () => {
+            const guestProps: NewsletterWelcomeEmailProps = {
+                ...validProps,
+                unsubscribeUrl:
+                    'https://api.hospeda.com.ar/api/v1/public/newsletter/unsubscribe?token=t'
+            };
+
+            it('replaces the account copy and button with the unsubscribe link', () => {
+                const html = renderToStaticMarkup(NewsletterWelcomeEmail(guestProps));
+
+                expect(html).not.toContain('mi-cuenta');
+                expect(html).not.toContain('desde tu cuenta');
+                expect(html).toContain('podés darte de baja desde este');
+                expect(html).toContain('Darme de baja');
+                expect(html).toContain(guestProps.unsubscribeUrl as string);
+            });
+
+            it('keeps the account variant unchanged when no unsubscribeUrl is given', () => {
+                const html = renderToStaticMarkup(NewsletterWelcomeEmail(validProps));
+
+                expect(html).toContain('mi-cuenta/newsletter');
+                expect(html).toContain('desde tu cuenta');
+                expect(html).not.toContain('Darme de baja');
+            });
+        });
+
         it('should render the account-preferences CTA pointing at baseUrl', () => {
             // Arrange & Act
             const html = renderToStaticMarkup(NewsletterWelcomeEmail(validProps));

@@ -33,7 +33,7 @@
  * `FaqEditorFields.client.tsx`.
  */
 
-import { EditIcon, EyeOffIcon, SparkleIcon } from '@repo/icons';
+import { EditIcon, EyeOffIcon, FaqsIcon, SparkleIcon } from '@repo/icons';
 import type { JSX } from 'react';
 import { Repeater } from '@/components/account/ui/Repeater';
 import type { AccommodationFaqItem } from '@/lib/api/endpoints-protected';
@@ -226,6 +226,13 @@ export function FaqSection({ locale, accommodationId, initialFaqs }: FaqSectionP
                     s.isAdding
                         ? undefined
                         : {
+                              icon: (
+                                  <FaqsIcon
+                                      size={28}
+                                      aria-hidden={true}
+                                  />
+                              ),
+                              description: t('host.properties.editor.faq.emptyDescription'),
                               title: t(
                                   'host.properties.editor.faq.emptyState',
                                   'Todavía no hay preguntas. Agregá la primera.'

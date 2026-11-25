@@ -17,6 +17,7 @@ import { getActorFromContext } from '../../../utils/actor';
 import { enforceUserGate } from '../../../utils/listing-access/user-gate';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
+import { enforceVipOnlyPromotionGate } from '../vip-only-gate';
 
 const ownerPromotionService = new OwnerPromotionService({ logger: apiLogger });
 
@@ -56,6 +57,12 @@ export const protectedCreateOwnerPromotionRoute = createProtectedRoute({
                     requested: (countResult.data?.count ?? 0) + 1
                 };
             }
+        });
+        // HOS-2589 D-4: «Solo VIP» needs `vip_only_promotions` in the owner's vertical.
+        await enforceVipOnlyPromotionGate({
+            userId: actor.id,
+            vertical: VerticalEnum.ACCOMMODATION,
+            body
         });
         // Inject ownerId from the authenticated session actor so the client
         // cannot supply or forge it. The body is validated against

@@ -42,16 +42,21 @@ describe('TEST:1769:4 entitlements cache is browser-only', () => {
             })
             .map((relativePath) => relativePath.split(path.sep).join('/'))
             .sort();
-        expect(expected).toEqual([
-            // HOS-2599: the price-alerts island tells an empty list from a missing entitlement.
-            'components/account/AlertsList.client.tsx',
-            'components/host/AnalyticsSection.client.tsx',
-            'components/host/PromotionForm.client.tsx',
-            'components/host/PromotionList.client.tsx',
-            'hooks/use-price-alert-gate-state.ts',
-            'hooks/useListingPlanGate.ts',
-            'hooks/useMyEntitlements.ts'
-        ]);
+        expect(expected).toEqual(
+            [
+                // HOS-2599: the price-alerts island tells an empty list from a missing entitlement.
+                'components/account/AlertsList.client.tsx',
+                'components/account/PreferenceToggles.client.tsx',
+                'components/host/AnalyticsSection.client.tsx',
+                'components/host/PromotionForm.client.tsx',
+                'components/host/PromotionList.client.tsx',
+                'hooks/use-price-alert-gate-state.ts',
+                'hooks/useListingPlanGate.ts',
+                'hooks/useMyEntitlements.ts',
+                // HOS-2589: the venue audience radio reads vip_only_promotions.
+                'components/venue/VenuePromotionsManager.client.tsx'
+            ].sort()
+        );
         expect(expected).not.toHaveLength(0);
         expect(findCacheImporters(sourceRoot)).toEqual([]);
     });
