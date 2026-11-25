@@ -183,6 +183,7 @@ test.describe('LISTING-OWNER-01: venue or experience owner edits listings — bo
         // lookup is scoped to the page's listing list («Mis locales» /
         // «Mis experiencias»): other widgets on the page (the menu-QR card)
         // also carry the listing name as a heading.
+        // HOS-2626: the list is split by state (one list per state), so several match.
         const listingList = () => page.getByRole('list', { name: /^mis (locales|experiencias)/i });
         const listingHeading = (name: string) =>
             listingList().getByRole('heading', { level: 3, name, exact: true });
@@ -191,7 +192,7 @@ test.describe('LISTING-OWNER-01: venue or experience owner edits listings — bo
                 .getByRole('listitem')
                 .filter({ has: page.getByRole('heading', { level: 3, name, exact: true }) });
 
-        await expect(listingList()).toBeVisible();
+        await expect(listingList().first()).toBeVisible();
         await expect(listingHeading('La Parrilla del Puerto')).toBeVisible();
 
         // The edit link for the venue must be present (href carries the
@@ -216,7 +217,7 @@ test.describe('LISTING-OWNER-01: venue or experience owner edits listings — bo
         await page.goto(`${WEB_URL}/es/mi-cuenta/comercio/?vertical=experience`, {
             waitUntil: 'domcontentloaded'
         });
-        await expect(listingList()).toBeVisible();
+        await expect(listingList().first()).toBeVisible();
         await expect(listingHeading('La Parrilla del Puerto')).toHaveCount(0);
 
         // Experience listing appears in its own list.
