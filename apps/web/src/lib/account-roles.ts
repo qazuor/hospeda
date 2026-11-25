@@ -1,259 +1,55 @@
-/**
- * @file account-roles.ts
- * @description Role-set helpers for the account dashboard.
- *
- * HOS-296: an account holds a SET of roles, not a scalar. Every predicate
- * here therefore asks "does the user hold a role that grants X" over the
- * whole set — accumulating hats can only ever ADD access.
- *
- * The gating decision itself lives in `nav-gating.ts` (`PERMISSION_ROLE_MAP`
- * + {@link hasAccommodationsNavAccess}), which is the single gating mechanism
- * for `apps/web` since HOS-296 §6.5. This module keeps only the role-set
- * documentation constants (mirrored by the map, asserted by
- * `test/lib/nav-gating.test.ts`) and the pricing-page router below.
- */
-
-import { hasAccommodationsNavAccess } from '@/lib/nav-gating';
+/** Pricing destinations and copy-only audience helpers; never publisher authorization. */
+import { canAccessPublisherArea } from '@/lib/account/publisher-access';
 import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 
-/**
- * Set of roles that grant access to property-management navigation
- * (sidebar "Mis propiedades" entry, host dashboard, owner inbox, etc.).
- *
- * Mirrored by `PERMISSION_ROLE_MAP[ACCOMMODATION_CREATE]` in `nav-gating.ts`
- * — that map is what actually evaluates the gate; this constant documents the
- * intent and anchors the drift test.
- *
- * Roles:
- * - HOST: regular property owner managing their own listings.
- * - ADMIN / SUPER_ADMIN: platform staff.
- *
- * A plain USER (tourist who browses/saves favorites) does NOT have
- * host-level access. Neither does EDITOR: editorial rights are about posts and
- * events, and the seed never grants an editor `ACCOMMODATION_CREATE`. It was
- * listed here (and in the mirrored map) until the sidebar was found offering
- * an editor a host area that every underlying endpoint refused.
- *
- * Nor does CLIENT_MANAGER, removed for the identical reason once H-20 found it
- * still here after the EDITOR fix: the seed grants that role
- * `ACCOMMODATION_VIEW_ALL`/`_VIEW_PRIVATE` and nothing that creates. Because
- * this constant and the mirrored map are BOTH hand-maintained, the drift test
- * between them stays green while the two agree on a wrong answer — which is
- * why the role membership itself is asserted in `nav-gating.test.ts`.
- */
-export const ROLES_WITH_ACCOMMODATIONS_NAV = new Set<string>(['HOST', 'ADMIN', 'SUPER_ADMIN']);
-
-/**
- * Owner (host) pricing page, locale-agnostic.
- *
- * HOS-942 pointed both constants one level deeper than they used to be:
- * `suscriptores/planes` became the five-audience INDEX rather than owner
- * pricing, and `suscriptores/turistas` became a 301. Every caller of
- * {@link resolveSubscriptionPlansPath} is answering "which catalogue can this
- * person actually buy from" — a chooser, or a redirect through one, is the wrong
- * answer to that question.
- *
- * HOS-1032 moved the two pages again, into the `/planes/` namespace, and this
- * is now READ from `PRICING_PAGE_PATH_BY_AUDIENCE` instead of spelled here. Two
- * literals were two things to update on a move, and the previous move had
- * already proved they get updated at different times: the URLs are one fact.
- */
-const OWNER_PLANS_PATH = PRICING_PAGE_PATH_BY_AUDIENCE.owner;
-
-/** Tourist pricing page, locale-agnostic. Also the anonymous default. */
-const TOURIST_PLANS_PATH = PRICING_PAGE_PATH_BY_AUDIENCE.tourist;
-
-/**
- * Set of roles that grant access to venue/experience-owner navigation
- * (sidebar "Mi comercio" entry, the listing self-service area).
- *
- * Venue and experience listings (venue, experiences) are a separate domain from
- * accommodation hosting, so this set is intentionally distinct from
- * `ROLES_WITH_ACCOMMODATIONS_NAV` — a plain accommodation HOST does NOT
- * get the listing area, and a plain VENUE_OWNER or EXPERIENCE_OWNER does NOT get the host
- * nav. Since HOS-296 an account can hold both hats at once and then gets
- * BOTH areas (AC-1).
- *
- * Mirrored by the two vertical EDIT_OWN entries in `PERMISSION_ROLE_MAP`.
- *
- * Roles:
- * - VENUE_OWNER / EXPERIENCE_OWNER: the per-vertical replacements
- *   (HOS-1077). Both reach the same `/mi-cuenta/comercio` area; which listings
- *   they can actually edit is decided per listing by the API, not by this set.
- *   Listing them here is what stops an account holding ONLY a vertical role
- *   from losing the nav when the account holds only one vertical role.
- * - ADMIN / SUPER_ADMIN: platform staff (can reach every area).
- */
-export const ROLES_WITH_LISTING_NAV = new Set<string>([
-    'VENUE_OWNER',
-    'EXPERIENCE_OWNER',
-    'ADMIN',
-    'SUPER_ADMIN'
-]);
-
-/**
- * Which per-vertical pricing page a venue/experience-only account (no
- * accommodation "host" hat) belongs on, or `null` when it holds neither
- * venue/experience role (HOS-1293).
- *
- * Checked only AFTER {@link hasAccommodationsNavAccess} has already failed in
- * both callers below — a dual-hat host who also runs a restaurant still lands
- * on the owner plans page, same precedence HOS-296 established for
- * host-vs-tourist.
- *
- * `VENUE_OWNER` wins over `EXPERIENCE_OWNER` when an account somehow
- * holds both with no host role — an arbitrary but deterministic tie-break,
- * documented rather than silent, since a single pricing-page redirect cannot
- * name two verticals at once.
- *
- * @param params.roles - Every role the user holds, or `null` for
- *   unauthenticated visitors.
- * @returns `'venue'` or `'experience'`, or `null` when the account holds
- *   no venue/experience role.
- */
-function resolveListingPricingAudience({
-    roles
-}: {
-    readonly roles: readonly string[] | null;
-}): 'venue' | 'experience' | null {
-    if (!roles || roles.length === 0) {
-        return null;
-    }
-    const roleSet = new Set(roles);
-    if (roleSet.has('VENUE_OWNER')) {
-        return 'venue';
-    }
-    if (roleSet.has('EXPERIENCE_OWNER')) {
-        return 'experience';
-    }
-    return null;
-}
-
-/**
- * Resolves which subscription pricing page a role-aware upsell or redirect
- * should target: a user holding any host-level hat belongs on the owner plans
- * page, a venue/experience-only owner (venue or experience, HOS-1293) belongs on
- * their own vertical's plans page, and tourists / unauthenticated visitors
- * belong on the tourist plans page.
- *
- * Centralizes the audience pricing decision shared across role-aware surfaces
- * (BETA-165 dashboard/addons, BETA-201 checkout return pages). An empty or
- * `null` role set (anonymous, e.g. a MercadoPago redirect without a session
- * cookie) resolves to the tourist page — the safe default.
- *
- * HOS-296: a user who is BOTH a host and a tourist-tier subscriber lands on
- * the owner page, because holding the host hat is the stronger signal about
- * which catalog they can actually buy from. HOS-1293 extends the same
- * precedence one level: host beats venue/experience beats tourist — before this fix a
- * venue/experience-only owner (`VENUE_OWNER`/`EXPERIENCE_OWNER`, no `HOST` role)
- * fell all the way through to the tourist page from `/mi-cuenta/addons/` and
- * the bare `/suscriptores/checkout/` root, because this function recognized
- * only the host-vs-everyone-else split.
- *
- * @param params.roles - Every role the user holds, or `null` for
- *   unauthenticated visitors.
- * @returns The locale-agnostic path segment: the owner, venue,
- *          experience, or tourist plans page — see
- *          {@link PRICING_PAGE_PATH_BY_AUDIENCE}.
- */
+/** Resolves pricing from effective publisher authority, preserving host-first precedence. */
 export function resolveSubscriptionPlansPath({
-    roles
+    permissions
 }: {
-    readonly roles: readonly string[] | null;
+    readonly permissions: readonly string[];
 }): string {
-    if (hasAccommodationsNavAccess({ roles })) {
-        return OWNER_PLANS_PATH;
-    }
-    const listingAudience = resolveListingPricingAudience({ roles });
-    if (listingAudience !== null) {
-        return PRICING_PAGE_PATH_BY_AUDIENCE[listingAudience];
-    }
-    return TOURIST_PLANS_PATH;
+    if (canAccessPublisherArea({ area: 'host', permissions }))
+        return PRICING_PAGE_PATH_BY_AUDIENCE.owner;
+    if (canAccessPublisherArea({ area: 'venue', permissions }))
+        return PRICING_PAGE_PATH_BY_AUDIENCE.venue;
+    if (canAccessPublisherArea({ area: 'experience', permissions }))
+        return PRICING_PAGE_PATH_BY_AUDIENCE.experience;
+    return PRICING_PAGE_PATH_BY_AUDIENCE.tourist;
 }
 
-/**
- * Same decision as {@link resolveSubscriptionPlansPath}, but driven by an
- * explicit audience the caller already knows (e.g. the `upgradeAudience` the
- * API attaches to an entitlement error, or an add-on's own `productDomain`)
- * instead of by the caller's own roles.
- *
- * **How much to trust an API-sourced `'host' | 'tourist'` value depends on
- * which gate sent it.** On a `LIMIT_REACHED` 403 it is computed per limit, so
- * it really is the server's verdict. On an `ENTITLEMENT_REQUIRED` 402 it is
- * not: `trialMiddleware` hardcodes `'host'` on its trial-expired throws and
- * omits the field entirely on `NO_BILLING_ACCOUNT` / `NO_ACTIVE_SUBSCRIPTION`.
- * Callers on the 402 path should treat it as a hint and keep a default that
- * suits their own surface (HOS-283).
- *
- * `'venue'` / `'experience'` (HOS-1293) exist for callers that already
- * know the vertical directly — e.g. `AddonsPurchasePanel.client.tsx` resolving
- * one CTA per add-on card from that add-on's own `productDomain` — and were
- * never reachable from the API's `upgradeAudience` field above, which only
- * ever sends `'host'` or `'tourist'`.
- *
- * @param params.audience - `'host'`, `'tourist'`, `'venue'`, or
- *   `'experience'`.
- * @returns The locale-agnostic path segment for the matching pricing page.
- */
+/** Resolves pricing for a caller that already knows the product audience. */
 export function resolveSubscriptionPlansPathForAudience({
     audience
 }: {
-    audience: 'host' | 'tourist' | 'venue' | 'experience';
+    readonly audience: 'host' | 'tourist' | 'venue' | 'experience';
 }): string {
-    if (audience === 'host') {
-        return OWNER_PLANS_PATH;
-    }
-    if (audience === 'tourist') {
-        return TOURIST_PLANS_PATH;
-    }
-    return PRICING_PAGE_PATH_BY_AUDIENCE[audience];
+    return PRICING_PAGE_PATH_BY_AUDIENCE[audience === 'host' ? 'owner' : audience];
 }
 
-/** The roles that each map to exactly one owner vertical's plans page. */
+/** Copy-only role-to-catalog map. This never grants publisher access. */
 const OWNER_VERTICAL_PLANS_PATH_BY_ROLE = {
     HOST: PRICING_PAGE_PATH_BY_AUDIENCE.owner,
     VENUE_OWNER: PRICING_PAGE_PATH_BY_AUDIENCE.venue,
     EXPERIENCE_OWNER: PRICING_PAGE_PATH_BY_AUDIENCE.experience
 } as const satisfies Readonly<Record<string, string>>;
 
-/** Where an account goes when its owner vertical cannot be told from its roles. */
+/** Existing chooser destination when copy-only audience is ambiguous. */
 export const OWNER_PLANS_FALLBACK_PATH = 'mi-cuenta/publica';
 
-/**
- * Where a «Ver planes» CTA for an account WITHOUT any subscription points
- * (owner decision 2, Mi cuenta UI epic): the public plans page of the one owner
- * vertical the account's roles name — `HOST` → accommodation, `VENUE_OWNER` →
- * venue, `EXPERIENCE_OWNER` → experience. When the roles name several of those
- * verticals, or none, there is no single right catalogue, so the account goes
- * to `/mi-cuenta/publica`, which lets it choose.
- *
- * Unlike {@link resolveSubscriptionPlansPath} there is no precedence between
- * hats and no tourist fallback: staff roles (`ADMIN`, `SUPER_ADMIN`) name no
- * vertical and are ignored.
- *
- * @param params.roles - Every role the user holds, or `null`.
- * @returns The locale-agnostic path segment of the plans destination.
- */
+/** Chooses an empty-subscription CTA, not an authorization decision. */
 export function resolveEmptySubscriptionPlansPath({
     roles
 }: {
     readonly roles: readonly string[] | null;
 }): string {
-    const roleSet = new Set(roles ?? []);
+    const held = new Set(roles ?? []);
     const paths = Object.entries(OWNER_VERTICAL_PLANS_PATH_BY_ROLE)
-        .filter(([role]) => roleSet.has(role))
+        .filter(([role]) => held.has(role))
         .map(([, path]) => path);
     return paths.length === 1 && paths[0] ? paths[0] : OWNER_PLANS_FALLBACK_PATH;
 }
 
-/**
- * Whether an account reads the owner side of the billing pages: it holds a role
- * that names an owner vertical (`HOST`, `VENUE_OWNER`, `EXPERIENCE_OWNER`).
- * Used only to pick copy (HOS-2610 F-40); it never gates anything.
- *
- * @param params.roles - Every role the user holds, or `null`.
- * @returns `true` when at least one owner-vertical role is held.
- */
+/** Selects owner wording only; never use this to admit a route or resource. */
 export function isOwnerAudience({ roles }: { readonly roles: readonly string[] | null }): boolean {
     return (roles ?? []).some((role) => role in OWNER_VERTICAL_PLANS_PATH_BY_ROLE);
 }

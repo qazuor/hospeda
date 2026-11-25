@@ -10,8 +10,10 @@
  * @module lib/account/general-dashboard
  */
 
-import { PermissionEnum, type TrialSummaryResponse, type UserStatsResponse } from '@repo/schemas';
+import type { TrialSummaryResponse, UserStatsResponse } from '@repo/schemas';
+import { PROVIDER_NAV_GROUP } from '@/config/navigation';
 import type { DashboardRow } from '@/lib/account/dashboard-rows';
+import { canAccessPublisherArea } from '@/lib/account/publisher-access';
 import {
     type DashboardActionStatusKey,
     type DashboardStatusKey,
@@ -20,7 +22,6 @@ import {
     resolveDashboardPlanStat
 } from '@/lib/billing/dashboard-plan-stat';
 import type { TranslationFn } from '@/lib/i18n';
-import { hasAccommodationsNavAccess, isVisibleByRoles } from '@/lib/nav-gating';
 
 /** Stable ids of the general dashboard's widgets (`data-widget`). */
 export const GENERAL_DASHBOARD_WIDGETS = ['favorites', 'reviews', 'subscription'] as const;
@@ -29,32 +30,28 @@ export const GENERAL_DASHBOARD_WIDGETS = ['favorites', 'reviews', 'subscription'
 export type GeneralDashboardWidget = (typeof GENERAL_DASHBOARD_WIDGETS)[number];
 
 /**
- * The entry points the general dashboard offers, by the roles the user holds.
+ * The entry points the general dashboard offers, by effective permissions.
  *
- * Gated over the whole role SET through the shared predicates (HOS-296), never
- * by comparing a role literal. Host and venue/experience entries are separate
+ * Gated through shared publisher policies, never roles. Host and venue/experience entries are separate
  * conditions: one account can hold both hats. «Editar perfil» is not here: it
  * is the page header's one action, and listing it twice is what this page
  * used to do.
  *
- * @param input - `{ roles }`: every role the user holds.
+ * @param input - The account's effective permissions.
  * @returns The links, in display order.
  */
 export function buildGeneralDashboardLinks({
-    roles
+    permissions,
+    ownsHostTradeListing = false
 }: {
-    readonly roles: readonly string[];
+    readonly permissions: readonly string[];
+    readonly ownsHostTradeListing?: boolean;
 }): readonly DashboardRow[] {
-    const isHost = hasAccommodationsNavAccess({ roles });
-    const ownsVenues = isVisibleByRoles(
-        { requiredPermission: PermissionEnum.VENUE_EDIT_OWN },
-        roles
-    );
-    const ownsExperiences = isVisibleByRoles(
-        { requiredPermission: PermissionEnum.EXPERIENCE_EDIT_OWN },
-        roles
-    );
-    const isOwner = ownsVenues || ownsExperiences;
+    const isHost = canAccessPublisherArea({ area: 'host', permissions });
+    const ownsVenues = canAccessPublisherArea({ area: 'venue', permissions });
+    const ownsExperiences = canAccessPublisherArea({ area: 'experience', permissions });
+    const isOwner = canAccessPublisherArea({ area: 'commerce', permissions });
+    const provider = PROVIDER_NAV_GROUP.items[0];
 
     return [
         ...(isHost
@@ -82,7 +79,7 @@ export function buildGeneralDashboardLinks({
                       labelKey: 'account.nav.venueDashboard',
                       descriptionKey: 'account.pages.dashboard.nav.venueDashboardDesc',
                       path: 'mi-cuenta/tablero-locales',
-                      icon: 'dashboard' as const
+                      icon: 'venue' as const
                   }
               ]
             : []),
@@ -93,7 +90,7 @@ export function buildGeneralDashboardLinks({
                       labelKey: 'account.nav.experienceDashboard',
                       descriptionKey: 'account.pages.dashboard.nav.experienceDashboardDesc',
                       path: 'mi-cuenta/tablero-experiencias',
-                      icon: 'dashboard' as const
+                      icon: 'compass' as const
                   }
               ]
             : []),
@@ -106,6 +103,16 @@ export function buildGeneralDashboardLinks({
                       descriptionKey: 'account.pages.dashboard.nav.myListingDesc',
                       path: 'mi-cuenta/comercio',
                       icon: 'briefcase' as const
+                  }
+              ]
+            : []),
+        ...(ownsHostTradeListing && provider
+            ? [
+                  {
+                      id: provider.id,
+                      labelKey: provider.i18nKey,
+                      path: provider.href,
+                      icon: 'wrench' as const
                   }
               ]
             : []),

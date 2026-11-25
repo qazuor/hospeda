@@ -8,9 +8,8 @@
  *
  * Gating (HOS-131 D-4): each group/item declares its own `requiredPermission`
  * (`PermissionEnum`) as the single source of gating semantics. Evaluation is
- * asymmetric by surface — see `src/lib/nav-gating.ts` for the two evaluators
- * (`isVisibleByPermissions` for client surfaces, `isVisibleByRoles` for the
- * server-rendered sidebar) that consume these declarations.
+ * identical across surfaces: `isVisibleByPermissions` evaluates effective
+ * permissions for both SSR and client navigation.
  *
  * Labels are stored as i18n **keys** (not resolved text) — surfaces resolve
  * them via `t()` at render time. Icons are `@repo/icons` component references,
@@ -44,13 +43,10 @@ import {
     VenueIcon,
     WrenchIcon
 } from '@repo/icons';
-import { PermissionEnum } from '@repo/schemas';
+import type { PermissionEnum } from '@repo/schemas';
 import type { ComponentType } from 'react';
-import {
-    OWNER_LIST_LABEL_KEYS,
-    OWNER_LIST_VERTICAL_PERMISSION,
-    ownerListPath
-} from '@/lib/listing/owner-list-vertical';
+import { PUBLISHER_ACCESS } from '@/lib/account/publisher-access';
+import { OWNER_LIST_LABEL_KEYS, ownerListPath } from '@/lib/listing/owner-list-vertical';
 import { AI_ASSISTANTS_PATH } from '@/lib/routes';
 
 /**
@@ -75,7 +71,7 @@ export interface NavItem {
     readonly icon: ComponentType<IconProps>;
     /**
      * Gating declaration (HOS-131 D-4). Omitted means "always visible" —
-     * evaluated by `isVisibleByPermissions` / `isVisibleByRoles`.
+     * evaluated by `isVisibleByPermissions` on every surface.
      */
     readonly requiredPermission?: PermissionEnum;
     /** Any one of these permissions makes this navigation node visible. */
@@ -227,10 +223,10 @@ export const ACCOUNT_NAV_GROUPS: readonly NavGroup[] = [
     {
         id: 'anfitrion',
         i18nKey: 'account.nav.groupHost',
-        requiredPermission: PermissionEnum.ACCOMMODATION_CREATE,
         items: [
             {
                 id: 'hostDashboard',
+                ...PUBLISHER_ACCESS.host,
                 i18nKey: 'account.nav.hostDashboard',
                 href: 'mi-cuenta/host-dashboard',
                 icon: DashboardIcon,
@@ -239,6 +235,7 @@ export const ACCOUNT_NAV_GROUPS: readonly NavGroup[] = [
             },
             {
                 id: 'properties',
+                ...PUBLISHER_ACCESS.host,
                 i18nKey: 'account.nav.properties',
                 href: 'mi-cuenta/propiedades',
                 icon: BuildingIcon,
@@ -247,6 +244,7 @@ export const ACCOUNT_NAV_GROUPS: readonly NavGroup[] = [
             },
             {
                 id: 'ownerMessages',
+                ...PUBLISHER_ACCESS.inbox,
                 i18nKey: 'conversations.inbox.ownerInboxTitle',
                 href: 'mi-cuenta/consultas-propietario',
                 icon: ChatIcon,
@@ -255,6 +253,7 @@ export const ACCOUNT_NAV_GROUPS: readonly NavGroup[] = [
             },
             {
                 id: 'promotions',
+                ...PUBLISHER_ACCESS.promotions,
                 i18nKey: 'account.nav.promotions',
                 href: 'mi-cuenta/promociones',
                 icon: MegaphoneIcon,
@@ -263,6 +262,7 @@ export const ACCOUNT_NAV_GROUPS: readonly NavGroup[] = [
             },
             {
                 id: 'providerDirectory',
+                ...PUBLISHER_ACCESS.directory,
                 i18nKey: 'account.nav.tradeDirectory',
                 href: 'mi-cuenta/directorio-proveedores',
                 icon: WrenchIcon,
@@ -270,6 +270,7 @@ export const ACCOUNT_NAV_GROUPS: readonly NavGroup[] = [
             },
             {
                 id: 'benefitUsages',
+                ...PUBLISHER_ACCESS.host,
                 i18nKey: 'account.nav.benefitUsages',
                 href: 'mi-cuenta/usos-de-beneficio',
                 icon: ReceiptIcon,
@@ -284,7 +285,7 @@ export const ACCOUNT_NAV_GROUPS: readonly NavGroup[] = [
     {
         id: VENUE_LISTINGS_GROUP_ID,
         i18nKey: 'account.nav.groupVenues',
-        requiredPermission: OWNER_LIST_VERTICAL_PERMISSION.venue,
+        ...PUBLISHER_ACCESS.venue,
         items: [
             {
                 // HOS-2475: the venue owner dashboard, mirroring `hostDashboard`.
@@ -307,7 +308,7 @@ export const ACCOUNT_NAV_GROUPS: readonly NavGroup[] = [
     {
         id: EXPERIENCE_LISTINGS_GROUP_ID,
         i18nKey: 'account.nav.groupExperiences',
-        requiredPermission: OWNER_LIST_VERTICAL_PERMISSION.experience,
+        ...PUBLISHER_ACCESS.experience,
         items: [
             {
                 // HOS-2476: the experience owner dashboard.
@@ -337,8 +338,7 @@ export const ACCOUNT_NAV_GROUPS: readonly NavGroup[] = [
         // Unlike every other group here, this one declares NO group-level
         // `requiredPermission`, on purpose. Posts and events are separate
         // content domains with separate permissions server-side (see the
-        // `EVENT_CREATE` entry in `PERMISSION_ROLE_MAP`, kept distinct from
-        // `POST_CREATE` precisely so the two may diverge). Gating the group on
+        // operation-specific publisher policies). Gating the group on
         // either one would hide the other's item the day they do. Instead each
         // item carries its own gate and `getNavForSurface` drops the group when
         // both fall away — so a role holding only one of the two still gets the
@@ -351,7 +351,7 @@ export const ACCOUNT_NAV_GROUPS: readonly NavGroup[] = [
                 i18nKey: 'account.nav.myPosts',
                 href: 'mi-cuenta/publicaciones',
                 icon: PostIcon,
-                requiredPermission: PermissionEnum.POST_CREATE,
+                ...PUBLISHER_ACCESS.posts,
                 surfaces: FULL_SURFACES,
                 tourTarget: 'my-posts'
             },
@@ -360,7 +360,7 @@ export const ACCOUNT_NAV_GROUPS: readonly NavGroup[] = [
                 i18nKey: 'account.nav.myEvents',
                 href: 'mi-cuenta/eventos',
                 icon: EventIcon,
-                requiredPermission: PermissionEnum.EVENT_CREATE,
+                ...PUBLISHER_ACCESS.events,
                 surfaces: FULL_SURFACES,
                 tourTarget: 'my-events'
             }
@@ -440,7 +440,7 @@ export const ACCOUNT_NAV_GROUPS: readonly NavGroup[] = [
  * The provider self-service management nav entry ("Mi ficha de proveedor",
  * H-158). Deliberately kept OUTSIDE `ACCOUNT_NAV_GROUPS`: every group in that
  * catalog is gated by `requiredPermission` (evaluated by
- * `isVisibleByPermissions` / `isVisibleByRoles`), but an approved service
+ * `isVisibleByPermissions`), but an approved service
  * provider holds NO permission and NO role change (HOS-278 AC-7 — see
  * `src/config/discovery-doors.ts`'s `serviceProvider` option doc). There is
  * no `PermissionEnum` value this group could declare without inventing a
@@ -473,7 +473,7 @@ export const PROVIDER_NAV_GROUP: NavGroup = {
 /**
  * A predicate that decides whether a gated node (a `NavGroup` or `NavItem`)
  * should be visible, given its `requiredPermission` declaration. Implemented
- * by `isVisibleByPermissions` and `isVisibleByRoles` in `src/lib/nav-gating.ts`.
+ * by `isVisibleByPermissions` in `src/lib/nav-gating.ts`.
  */
 export type NavVisibilityPredicate = (node: {
     readonly requiredPermission?: PermissionEnum;
@@ -487,7 +487,7 @@ export interface GetNavForSurfaceParams {
     readonly surface: NavSurface;
     /**
      * Gating predicate — pass `isVisibleByPermissions(permissions)` on client
-     * surfaces or `isVisibleByRoles(roles)` on the server-rendered sidebar.
+     * surfaces and on the server-rendered sidebar.
      */
     readonly visibility: NavVisibilityPredicate;
 }

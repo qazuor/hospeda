@@ -205,6 +205,11 @@ describe('Header.astro — UserMenu island', () => {
     it('sets initialUserMenuUser to null when no session', () => {
         expect(src).toContain('initialUserMenuUser = serverUser\n    ?');
     });
+    it('mounts one client-side account sheet before the hamburger without probing MCP', () => {
+        expect(src.match(/<AccountSheet\b/g)).toHaveLength(1);
+        expect(src.indexOf('<AccountSheet')).toBeLessThan(src.indexOf('class="header__hamburger"'));
+        expect(src).not.toContain('getConfiguredMcpUrl');
+    });
 });
 
 // ─── Mobile hamburger ─────────────────────────────────────────────────────────

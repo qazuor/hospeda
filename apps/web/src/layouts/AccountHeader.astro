@@ -33,6 +33,7 @@ import { FaqsIcon, HamburgerIcon, SparkleIcon } from '@repo/icons';
 import MobileMenuIsland from '@/components/shared/navigation/MobileMenuIsland.astro';
 import { PublishMenu } from '@/components/shared/navigation/PublishMenu.client';
 import { UserMenu } from '@/components/shared/navigation/UserMenu.client';
+import { AccountSheet } from '@/components/shared/navigation/AccountSheet.client';
 import { WhatsNewCountPill } from '@/components/shared/whats-new/WhatsNewCountPill.client';
 import IconButton from '@/components/shared/ui/IconButton.astro';
 import {
@@ -47,9 +48,10 @@ import logoSrc from '@/assets/images/logo.webp';
 
 interface Props {
 	readonly locale: SupportedLocale;
+	readonly mcpEnabled?: boolean;
 }
 
-const { locale } = Astro.props;
+const { locale, mcpEnabled = false } = Astro.props;
 const { t } = createTranslations(locale);
 
 let menuLogoSrc = logoSrc.src;
@@ -134,12 +136,20 @@ const adminPanelUrl = getAdminUrl();
 			>
 				<FaqsIcon size={22} aria-hidden="true" />
 			</IconButton>
-			<UserMenu
+			<div class="account-header__desktop-user">
+				<UserMenu
+					client:load
+					initialUser={initialUser}
+					locale={locale}
+					currentPath={currentPath}
+					variant="scrolled"
+					adminPanelUrl={adminPanelUrl}
+				/>
+			</div>
+			<AccountSheet
 				client:load
-				initialUser={initialUser}
 				locale={locale}
-				currentPath={currentPath}
-				variant="scrolled"
+				mcpEnabled={mcpEnabled}
 				adminPanelUrl={adminPanelUrl}
 			/>
 			<IconButton
@@ -241,6 +251,11 @@ const adminPanelUrl = getAdminUrl();
 		align-items: center;
 		gap: var(--space-2);
 		margin-inline-start: auto;
+	}
+
+	.account-header__desktop-user { display: none; }
+	@media (min-width: 1025px) {
+		.account-header__desktop-user { display: block; }
 	}
 
 	.account-header__right :global(.account-header__icon) {

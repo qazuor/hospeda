@@ -12,7 +12,7 @@
  *
  * What it computes, in the order the legacy layout did:
  *
- * 1. the sidebar groups, gated by role (`getNavForSurface` + `isVisibleByRoles`);
+ * 1. the sidebar groups, gated by effective permissions;
  * 2. the provider group, placed right before Tourist (`placeProviderGroup`);
  * 3. per group: whether its header is suppressed, whether it holds the active
  *    page and whether it renders open (`resolveGroupDefaultOpen`);
@@ -43,7 +43,7 @@ import {
     buildShellNavModel,
     withShellOpen
 } from '@/lib/account-nav-shell';
-import { isDoorVisible, isVisibleByRoles, resolveDoorLabelKey } from '@/lib/nav-gating';
+import { isDoorVisible, isVisibleByPermissions } from '@/lib/nav-gating';
 
 export { ACTIVE_SECTION_OVERRIDES, getActiveSectionKey } from '@/lib/account-nav-section';
 export type { AccountNavMode, AccountShellNavModel } from '@/lib/account-nav-shell';
@@ -108,7 +108,7 @@ export interface AccountNavGroupModel {
 export interface AccountNavDoorModel {
     /** The door config. */
     readonly door: DiscoveryDoor;
-    /** i18n key of its label (the stateful variant once acquired). */
+    /** i18n key of its fixed label. */
     readonly labelKey: string;
     /** Its section key. */
     readonly sectionKey: string;
@@ -135,15 +135,14 @@ export interface AccountNavModel {
  * @returns The groups, the doors, the active label key and the shell's split view.
  */
 export function buildAccountNavModel({
-    roles,
     permissions = [],
     ownsHostTradeListing,
     ownsPartner = false,
     mcpEnabled,
     activeSection
 }: AccountNavModelInput): AccountNavModel {
-    const visibility = (node: Parameters<typeof isVisibleByRoles>[0]) =>
-        isVisibleByRoles(node, roles);
+    const visibility = (node: Parameters<typeof isVisibleByPermissions>[0]) =>
+        isVisibleByPermissions(node, permissions);
     // HOS-2562: «Asistentes de IA» exists only for a real client, decided by
     // the shared rule from the EFFECTIVE permissions (never the roles), and
     // only while the MCP feature is on.
@@ -184,12 +183,12 @@ export function buildAccountNavModel({
     });
 
     const doors: AccountNavDoorModel[] = ACCOUNT_DISCOVERY_DOORS.filter((door) =>
-        isDoorVisible({ door, visibility })
+        isDoorVisible({ door, permissions, ownsPartner, ownsHostTradeListing })
     ).map((door) => {
         const sectionKey = getActiveSectionKey({ href: door.href });
         return {
             door,
-            labelKey: resolveDoorLabelKey({ door, visibility }),
+            labelKey: door.i18nKey,
             sectionKey,
             active: sectionKey === activeSection
         };

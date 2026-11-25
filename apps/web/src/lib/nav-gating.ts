@@ -1,338 +1,71 @@
-/**
- * @file nav-gating.ts
- * @description Gating engine for the account navigation (HOS-131 D-4).
- *
- * Every `NavGroup`/`NavItem` in `src/config/navigation.ts` declares its gating
- * semantics once, via `requiredPermission` (`PermissionEnum`) — that
- * declaration is the single source of truth. Evaluation is asymmetric by
- * surface because of a real architecture constraint (see spec §6.6 D-4):
- *
- * - **Client surfaces** (avatar dropdown, any React island) have the user's
- *   real effective permission strings from `GET /api/v1/public/auth/me`
- *   (`(role ∪ grants) \ denies`, SPEC-170) — evaluate exactly with
- *   `isVisibleByPermissions`.
- * - **Server SSR** (the `/mi-cuenta/*` sidebar, `AccountLayout.astro`) only
- *   has `Astro.locals.user.roles` — no effective-permissions round-trip is
- *   available without an uncached `/auth/me` call per render (rejected by
- *   D-4 on cost grounds). It approximates via `isVisibleByRoles`, which
- *   consults the centralized `PERMISSION_ROLE_MAP` below.
- *
- * `PERMISSION_ROLE_MAP` is the ONLY place that maps a permission to the
- * roles that grant it for account-nav gating purposes. HOS-296 completed the
- * migration HOS-131 deferred: the scattered `isHostRole` /
- * `isOwnerRole` predicates are gone and every `/mi-cuenta` page gate
- * now evaluates through {@link hasAccommodationsNavAccess} /
- * {@link hasListingNavAccess}, so `apps/web` has ONE gating mechanism.
- *
- * HOS-296: the SSR evaluator takes the actor's whole role SET, not a scalar.
- * A node is visible when ANY held role grants the permission — that is what
- * makes a user who is both HOST and VENUE_OWNER or EXPERIENCE_OWNER see both nav groups
- * (AC-1).
- */
+/** Shared effective-permission navigation and hub-option evaluation. */
+import type { PermissionEnum } from '@repo/schemas';
+import { isRealClient } from '@repo/schemas';
+import { canAccessPublisherArea } from '@/lib/account/publisher-access';
 
-import { PermissionEnum, RoleEnum } from '@repo/schemas';
-
-/**
- * Structural shape shared by `NavGroup` and `NavItem` — the only property the
- * gating helpers need. Kept local (not imported from `src/config/navigation`)
- * to avoid a circular dependency between the config and the gating engine.
- */
+/** A node is admitted by ANY declared permission; an ungated node is public. */
 export interface GatedNavNode {
     readonly requiredPermission?: PermissionEnum;
     readonly requiredPermissions?: readonly PermissionEnum[];
 }
 
-/**
- * Centralized `permission -> roles` approximation map, used ONLY by the
- * server-side SSR evaluator (`isVisibleByRoles`). Client surfaces never
- * consult this map — they evaluate exact permission strings instead.
- *
- * Derived from `apps/web/src/lib/account-roles.ts`:
- * - `ACCOMMODATION_CREATE` ← `ROLES_WITH_ACCOMMODATIONS_NAV`
- *   (HOST, ADMIN, SUPER_ADMIN).
- * - `VENUE_EDIT_OWN` and `EXPERIENCE_EDIT_OWN` together mirror
- *   `ROLES_WITH_LISTING_NAV`.
- *
- * These sets APPROXIMATE the seed, so an entry that names a role the seed does
- * not actually grant is a silent divergence between the two surfaces — the SSR
- * sidebar shows the item while the avatar dropdown (which evaluates the real
- * permission strings from `/auth/me`) hides it. That is exactly what happened
- * with `EDITOR` on `ACCOMMODATION_CREATE`: an editor saw the whole host group
- * in the sidebar and nothing in the dropdown. Verify a new role against
- * `packages/seed/src/required/rolePermissions.seed.ts` before adding it here.
- *
- * Add an entry here whenever a new gated nav group/item is introduced with a
- * `requiredPermission` that the sidebar needs to approximate.
- *
- * Typed as `Partial<Record<PermissionEnum, ...>>` (not `Record<string, ...>`)
- * so a typo'd or wrong-enum key is a compile error, not a silent no-op — see
- * the "exhaustive coverage" regression test in `navigation.test.ts`, which
- * walks every `requiredPermission` actually declared in `ACCOUNT_NAV_GROUPS`
- * and fails if this map is missing an entry for one of them. A missing entry
- * here makes `isVisibleByRoles` silently return `false` for EVERY role
- * (including admin) on that node — `Partial` only guards against typos in
- * the *keys we do write*; it cannot by itself guarantee every permission the
- * config declares has a matching entry, which is exactly what that test is for.
- */
-export const PERMISSION_ROLE_MAP: Partial<Record<PermissionEnum, ReadonlySet<RoleEnum>>> = {
-    // EDITOR is deliberately ABSENT: the seed grants an editor only
-    // `ACCOMMODATION_REVIEW_CREATE`/`_UPDATE`, never `ACCOMMODATION_CREATE`, so
-    // listing it here made the sidebar offer a host area the editor could not
-    // use. An editor is not a host — its own area is the `editorial` nav group.
-    //
-    // CLIENT_MANAGER is ABSENT for exactly the same reason, and was removed for
-    // it much later (H-20): the seed grants it only `ACCOMMODATION_VIEW_ALL` and
-    // `ACCOMMODATION_VIEW_PRIVATE`, and the production database agrees. The roles
-    // that really hold `accommodation.create` in production are ADMIN, HOST and
-    // SUPER_ADMIN. Nobody noticed because no CLIENT_MANAGER exists yet — the
-    // first one created would have seen the whole host group answer 403.
-    [PermissionEnum.ACCOMMODATION_CREATE]: new Set<RoleEnum>([
-        RoleEnum.HOST,
-        RoleEnum.ADMIN,
-        RoleEnum.SUPER_ADMIN
-    ]),
-    [PermissionEnum.VENUE_EDIT_OWN]: new Set<RoleEnum>([
-        RoleEnum.VENUE_OWNER,
-        RoleEnum.ADMIN,
-        RoleEnum.SUPER_ADMIN
-    ]),
-    [PermissionEnum.EXPERIENCE_EDIT_OWN]: new Set<RoleEnum>([
-        RoleEnum.EXPERIENCE_OWNER,
-        RoleEnum.ADMIN,
-        RoleEnum.SUPER_ADMIN
-    ]),
-    // Editors + admins hold POST_CREATE; hosts, tourists, venue owners, or experience owners do
-    // not. This is the editor discovery-door "acquired" signal (HOS-134
-    // §5.3/§5.4) — it drives both the "Ya lo tenés" state on the aliados hub
-    // and the stateful partner-door label.
-    [PermissionEnum.POST_CREATE]: new Set<RoleEnum>([
-        RoleEnum.EDITOR,
-        RoleEnum.ADMIN,
-        RoleEnum.SUPER_ADMIN
-    ]),
-    // Same role set as POST_CREATE (EDITOR, ADMIN, SUPER_ADMIN — verified
-    // against `packages/seed/src/required/rolePermissions.seed.ts`), kept as
-    // its own map entry rather than reused from POST_CREATE: events and posts
-    // are separate content domains with separate permissions server-side, and
-    // a future divergence between the two role sets must not silently change
-    // `hasPostsNavAccess` too. Backs the `/mi-cuenta/eventos` own-content
-    // listing gate (HOS-374 Phase 2 2C-1).
-    [PermissionEnum.EVENT_CREATE]: new Set<RoleEnum>([
-        RoleEnum.EDITOR,
-        RoleEnum.ADMIN,
-        RoleEnum.SUPER_ADMIN
-    ])
-};
-
-/**
- * Exact client-side gating evaluator. Use on the avatar dropdown and any
- * other React island that has the user's real effective permission strings.
- *
- * Loading-state contract: while the effective-permissions fetch is still in
- * flight, callers MUST pass `[]` (never `null`/`undefined`) as `permissions`.
- * A gated node then evaluates to `false` — hidden, fail-closed — until the
- * real list resolves, instead of flashing visible-then-hidden once the
- * fetch settles.
- *
- * @param node - A `NavGroup` or `NavItem` (or any object shaped like one).
- * @param permissions - The user's effective permission strings
- *   (`(role ∪ grants) \ denies`, from `GET /api/v1/public/auth/me`). Pass
- *   `[]` while loading (see loading-state contract above).
- * @returns `true` if `node` has no `requiredPermission`, or if `permissions`
- *   contains it; `false` otherwise.
- */
+/** Evaluates effective permissions; an empty/loading list fails closed for gated nodes. */
 export function isVisibleByPermissions(
     node: GatedNavNode,
     permissions: readonly string[]
 ): boolean {
-    if (node.requiredPermissions) {
+    if (node.requiredPermissions)
         return node.requiredPermissions.some((permission) => permissions.includes(permission));
-    }
     return !node.requiredPermission || permissions.includes(node.requiredPermission);
 }
 
-/**
- * Approximate server-side (SSR) gating evaluator. Use on the `/mi-cuenta/*`
- * sidebar, which only has `Astro.locals.user.roles` — no effective-permissions
- * round-trip (HOS-131 D-4). Consults `PERMISSION_ROLE_MAP` to approximate
- * "does any held role plausibly carry this permission".
- *
- * HOS-296: the second argument is the actor's whole role SET. Visibility is a
- * union — a node is visible as soon as ONE held role grants the permission, so
- * accumulating hats can only ever ADD nav, never remove it. A user holding
- * both `HOST` and `VENUE_OWNER or EXPERIENCE_OWNER` therefore sees both groups (AC-1).
- *
- * @param node - A `NavGroup` or `NavItem` (or any object shaped like one).
- * @param roles - Every role the user holds, from `Astro.locals.user.roles`.
- *   Pass `null` (or an empty array) for unauthenticated visitors. Accepts any
- *   strings (not just `RoleEnum` members) so an unrecognized/legacy role value
- *   fails closed instead of erroring — see the "unknown role" test.
- * @returns `true` if `node` has no `requiredPermission`; `false` for a
- *   `null`/empty role set, an unmapped `requiredPermission`, or a role set
- *   that shares no member with the mapped role set.
- */
-export function isVisibleByRoles(node: GatedNavNode, roles: readonly string[] | null): boolean {
-    const requiredPermissions =
-        node.requiredPermissions ?? (node.requiredPermission ? [node.requiredPermission] : []);
-    if (requiredPermissions.length === 0) {
-        return true;
-    }
-    if (roles === null || roles.length === 0) {
-        return false;
-    }
-    return requiredPermissions.some((permission) => {
-        const rolesForPermission = PERMISSION_ROLE_MAP[permission];
-        return rolesForPermission && roles.some((role) => rolesForPermission.has(role as RoleEnum));
-    });
-}
-
-/**
- * Does the user hold a role that grants the accommodation/host navigation
- * (sidebar "Mis propiedades", host dashboard, owner inbox, property pages)?
- *
- * Thin, named wrapper over {@link isVisibleByRoles} keyed on
- * `ACCOMMODATION_CREATE` — the permission `PERMISSION_ROLE_MAP` already uses
- * to approximate host-tier access for the sidebar. HOS-296 §6.5 routed the
- * page-level guards through it so the sidebar and the pages it links to can
- * never disagree about who is a host.
- *
- * @param params - `{ roles }` (RO-RO): every role the user holds, or `null`
- *   for unauthenticated visitors.
- * @returns `true` when at least one held role carries host-tier access.
- */
+/** Host navigation surface eligibility, not an API action permission. */
 export function hasAccommodationsNavAccess({
-    roles
+    permissions
 }: {
-    readonly roles: readonly string[] | null;
+    readonly permissions: readonly string[];
 }): boolean {
-    return isVisibleByRoles({ requiredPermission: PermissionEnum.ACCOMMODATION_CREATE }, roles);
+    return canAccessPublisherArea({ area: 'host', permissions });
 }
 
-/**
- * Does the user hold a role that grants the venue/experience-owner self-service area
- * (`/mi-cuenta/comercio/*`)?
- *
- * Companion to {@link hasAccommodationsNavAccess}, keyed on
- * on either vertical EDIT_OWN permission. A plain accommodation HOST does not
- * get the listing area, while a vertical owner also holding HOST sees both
- * navigation groups.
- *
- * @param params - `{ roles }` (RO-RO): every role the user holds, or `null`
- *   for unauthenticated visitors.
- * @returns `true` when at least one held role carries venue/experience-owner access.
- */
+/** Venue/experience navigation eligibility. Resource checks remain per vertical. */
 export function hasListingNavAccess({
-    roles
+    permissions
 }: {
-    readonly roles: readonly string[] | null;
+    readonly permissions: readonly string[];
 }): boolean {
-    return isVisibleByRoles(
-        {
-            requiredPermissions: [PermissionEnum.VENUE_EDIT_OWN, PermissionEnum.EXPERIENCE_EDIT_OWN]
-        },
-        roles
-    );
+    return canAccessPublisherArea({ area: 'commerce', permissions });
 }
 
-/**
- * Does the user hold a role that grants the own-posts editorial listing
- * (`/mi-cuenta/publicaciones`, HOS-374 Phase 2 2C-1)?
- *
- * Keyed on `POST_CREATE` — the same permission the HOS-134 editor
- * discovery-door signal already uses, so the two never disagree about who
- * counts as an editor.
- *
- * @param params - `{ roles }` (RO-RO): every role the user holds, or `null`
- *   for unauthenticated visitors.
- * @returns `true` when at least one held role carries editor-tier access.
- */
+/** Own-post navigation admits independently granted create or update authority. */
 export function hasPostsNavAccess({
-    roles
+    permissions
 }: {
-    readonly roles: readonly string[] | null;
+    readonly permissions: readonly string[];
 }): boolean {
-    return isVisibleByRoles({ requiredPermission: PermissionEnum.POST_CREATE }, roles);
+    return canAccessPublisherArea({ area: 'posts', permissions });
 }
 
-/**
- * Does the user hold a role that grants the own-events editorial listing
- * (`/mi-cuenta/eventos`, HOS-374 Phase 2 2C-1)?
- *
- * Keyed on `EVENT_CREATE`, a distinct map entry from `POST_CREATE` — see the
- * comment on that entry in `PERMISSION_ROLE_MAP` for why the two are not
- * collapsed into one shared permission even though they resolve to the same
- * role set today.
- *
- * @param params - `{ roles }` (RO-RO): every role the user holds, or `null`
- *   for unauthenticated visitors.
- * @returns `true` when at least one held role carries editor-tier access.
- */
+/** Own-event navigation admits independently granted create or update authority. */
 export function hasEventsNavAccess({
-    roles
+    permissions
 }: {
-    readonly roles: readonly string[] | null;
+    readonly permissions: readonly string[];
 }): boolean {
-    return isVisibleByRoles({ requiredPermission: PermissionEnum.EVENT_CREATE }, roles);
+    return canAccessPublisherArea({ area: 'events', permissions });
 }
 
-// -----------------------------------------------------------------------------
-// Discovery-door helpers (HOS-131 §6.2/§6.3, OQ-3: acquired signal = permissions)
-// -----------------------------------------------------------------------------
-
-/**
- * Structural shape for a discovery-door option, as needed by the door
- * helpers below. Kept local (not imported from `src/config/navigation`) for
- * the same circular-dependency reason as `GatedNavNode` above.
- */
+/** A hub option can be acquired by permission or an explicit owned-row fact. */
 export interface DoorGatingOption {
-    /**
-     * Stable identifier, matched against `acquiredOptionIds` (see
-     * {@link resolveDoorOptionState}). Optional here only because most
-     * existing callers/tests construct ad hoc option objects that never need
-     * the override; every real `DiscoveryDoorOption` always has one.
-     */
     readonly id?: string;
-    /** The permission that signals "already acquired". Omitted = never acquired via permissions. */
     readonly acquiredPermission?: PermissionEnum;
-    /** `true` = a not-yet-implemented placeholder (sponsor, service provider). */
     readonly comingSoon?: boolean;
 }
 
-/** The three states a discovery-door option can resolve to (spec §6.3). */
+/** Hub option presentation, separate from door navigation eligibility. */
 export type DoorOptionState = 'acquired' | 'unacquired' | 'comingSoon';
 
-/**
- * Resolves a single discovery-door option's state (HOS-131 §6.3), using the
- * SAME visibility predicate as the two nav evaluators above — pass
- * `(node) => isVisibleByPermissions(node, permissions)` on client surfaces or
- * `(node) => isVisibleByRoles(node, roles)` on the server-rendered sidebar/hub
- * pages.
- *
- * An option with no `acquiredPermission` (the sponsor/partner placeholders —
- * HOS-131 NG-2) is NEVER `'acquired'` via the permission mechanism: it
- * resolves to `'comingSoon'` when `comingSoon` is set, or `'unacquired'`
- * otherwise. This is what makes the "Sumate como aliado" door "always shown"
- * fall out of the SAME `isDoorVisible` logic used for the listing door — no
- * `kind`-based branching required.
- *
- * `acquiredOptionIds` (HOS-278) is an explicit, out-of-band override for the
- * ONE option that permissions structurally cannot represent: the
- * `serviceProvider` door option. The door's "acquired" signal is normally
- * PERMISSIONS (HOS-131 OQ-3), but an approved service provider deliberately
- * receives NO permission and NO role change (HOS-278 AC-7 — a provider is an
- * ordinary tourist account; ownership of the `host_trades` row is the real
- * gate). So a permission-only evaluator can never say "acquired" for it, and
- * the page that CAN know (it fetched `GET /host-trades/mine`) supplies the
- * verdict here instead. When `option.id` is present in `acquiredOptionIds`,
- * the option resolves to `'acquired'` unconditionally — the permission/
- * `comingSoon` checks are skipped entirely for that id. Every other option is
- * completely unaffected: an absent/undefined `acquiredOptionIds` (the default
- * for every existing caller) falls straight through to the permission logic
- * below, unchanged.
- *
- * @param params - `{ option, visibility, acquiredOptionIds? }` (RO-RO).
- * @returns The option's resolved state.
- */
+/** Resolves hub acquisition without changing ownership-only partner/provider semantics. */
 export function resolveDoorOptionState({
     option,
     visibility,
@@ -342,75 +75,25 @@ export function resolveDoorOptionState({
     readonly visibility: (node: GatedNavNode) => boolean;
     readonly acquiredOptionIds?: readonly string[];
 }): DoorOptionState {
-    if (option.id !== undefined && acquiredOptionIds?.includes(option.id)) {
-        return 'acquired';
-    }
-    if (!option.acquiredPermission) {
-        return option.comingSoon ? 'comingSoon' : 'unacquired';
-    }
+    if (option.id !== undefined && acquiredOptionIds?.includes(option.id)) return 'acquired';
+    if (!option.acquiredPermission) return option.comingSoon ? 'comingSoon' : 'unacquired';
     return visibility({ requiredPermission: option.acquiredPermission })
         ? 'acquired'
         : 'unacquired';
 }
 
-/**
- * Decides whether a discovery door should be shown (HOS-131 §6.3): a door
- * stays visible while at least one of its options is NOT `'acquired'`, and
- * disappears once every option is. Both the sidebar CTA entries and the hub
- * pages call this with the surface-appropriate `visibility` predicate.
- *
- * @param params - `{ door, visibility }` (RO-RO).
- * @returns `true` if the door has at least one unacquired/coming-soon option.
- */
+/** Shows exactly one door using the unchanged shared business-vertical rule. */
 export function isDoorVisible({
     door,
-    visibility
+    permissions,
+    ownsPartner = false,
+    ownsHostTradeListing = false
 }: {
-    readonly door: { readonly options: readonly DoorGatingOption[] };
-    readonly visibility: (node: GatedNavNode) => boolean;
+    readonly door: { readonly kind: 'listing' | 'partner' };
+    readonly permissions: readonly string[];
+    readonly ownsPartner?: boolean;
+    readonly ownsHostTradeListing?: boolean;
 }): boolean {
-    return door.options.some(
-        (option) => resolveDoorOptionState({ option, visibility }) !== 'acquired'
-    );
-}
-
-/**
- * Structural shape for a discovery door, as needed by
- * {@link resolveDoorLabelKey}. Kept local for the same circular-dependency
- * reason as {@link DoorGatingOption} above.
- */
-export interface DoorLabelNode {
-    /** i18n key for the door's default (non-stateful) label. */
-    readonly i18nKey: string;
-    /** i18n key for the stateful label, shown once ≥1 option is acquired. */
-    readonly statefulI18nKey?: string;
-    readonly options: readonly DoorGatingOption[];
-}
-
-/**
- * Resolves which i18n key to render for a discovery door's CTA/title label
- * (HOS-134 §5.4): the stateful variant ("Sumá otra alianza") once the door
- * declares `statefulI18nKey` AND at least one of its options resolves to
- * `'acquired'`; the base `i18nKey` otherwise. A door with no
- * `statefulI18nKey` (e.g. the listing door) always resolves to `i18nKey` —
- * this is a no-op for it.
- *
- * @param params - `{ door, visibility }` (RO-RO). `visibility` is the same
- *   surface-appropriate predicate passed to `resolveDoorOptionState`.
- * @returns The i18n key to resolve via `t()` for the door's label.
- */
-export function resolveDoorLabelKey({
-    door,
-    visibility
-}: {
-    readonly door: DoorLabelNode;
-    readonly visibility: (node: GatedNavNode) => boolean;
-}): string {
-    if (!door.statefulI18nKey) {
-        return door.i18nKey;
-    }
-    const hasAcquiredOption = door.options.some(
-        (option) => resolveDoorOptionState({ option, visibility }) === 'acquired'
-    );
-    return hasAcquiredOption ? door.statefulI18nKey : door.i18nKey;
+    const realClient = isRealClient({ permissions, ownsPartner, ownsHostTradeListing });
+    return door.kind === 'partner' ? realClient : !realClient;
 }

@@ -25,6 +25,7 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import type { AccountNavModel } from '@/lib/account-nav-model';
 import { AccountBar } from '@/components/account/ui/AccountBar';
+import { AccountZoneSwitch } from '@/components/account/AccountZoneSwitch';
 import { AccountSidebar } from '@/components/account/ui/AccountSidebar';
 import { ACCOUNT_NAV_ICONS } from '@/lib/account-nav-icons';
 import { buildSidebarView } from '@/components/account/ui/account-sidebar-view';
@@ -46,9 +47,10 @@ interface Props {
 	readonly title?: string;
 	readonly description?: string;
 	readonly template?: AccountShellTemplate;
+	readonly mcpEnabled?: boolean;
 }
 
-const { locale, navModel, title, description, template } = Astro.props;
+const { locale, navModel, title, description, template, mcpEnabled = false } = Astro.props;
 
 const { t } = createTranslations(locale);
 const canonicalUrl = new URL(Astro.url.pathname, getSiteUrl()).href;
@@ -57,6 +59,8 @@ const resolvedDescription = description ?? t('account.description');
 const resolvedTemplate = resolveShellTemplate({ template });
 
 const view = buildSidebarView({ model: navModel, locale });
+// The explicit zone switch owns the return door; do not render a second kit door.
+const sidebarView = { ...view, backLink: null };
 
 let footerLogoSrc = logoSrc.src;
 try {
@@ -68,7 +72,7 @@ try {
 ---
 
 <BaseLayout locale={locale} title={resolvedTitle} description={resolvedDescription}>
-	<AccountHeader slot="chrome-header" locale={locale} />
+	<AccountHeader slot="chrome-header" locale={locale} mcpEnabled={mcpEnabled} />
 	<AccountFooter
 		slot="chrome-footer"
 		locale={locale}
@@ -92,7 +96,8 @@ try {
 		</div>
 
 		<aside class={styles.sidebar}>
-			<AccountSidebar view={view} locale={locale} icons={ACCOUNT_NAV_ICONS}>
+			<AccountZoneSwitch links={navModel.shell.zoneLinks} locale={locale} />
+			<AccountSidebar view={sidebarView} locale={locale} icons={ACCOUNT_NAV_ICONS}>
 				<BenefitUsagesCountPill slot="benefitUsagesCount" locale={locale} client:idle />
 			</AccountSidebar>
 		</aside>

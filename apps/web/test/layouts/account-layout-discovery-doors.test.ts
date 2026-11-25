@@ -1,127 +1,55 @@
-/**
- * @file account-layout-discovery-doors.test.ts
- * @description Source-level + engine-integration tests for the discovery-door
- * CTA entries in the `/mi-cuenta` sidebar (HOS-131 §6.2/§6.3). Doors render
- * ONLY on this surface (the sidebar), below the nav groups, gated
- * server-side by `isDoorVisible` + `isVisibleByRoles` (HOS-131 D-4).
- */
-
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { VenueIcon } from '@repo/icons';
-import { RoleEnum } from '@repo/schemas';
+import { PermissionEnum as P } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
-import { ACCOUNT_DISCOVERY_DOORS, type DiscoveryDoor } from '../../src/config/discovery-doors';
-import { isDoorVisible, isVisibleByRoles } from '../../src/lib/nav-gating';
+import { ACCOUNT_DISCOVERY_DOORS } from '@/config/discovery-doors';
+import { buildAccountNavModel } from '@/lib/account-nav-model';
 
-const source = readFileSync(resolve(__dirname, '../../src/layouts/AccountLayout.astro'), 'utf8');
-// HOS-2508: the legacy frame is gone; the doors render in the kit `AccountSidebar`
-// from the view `account-sidebar-view.ts` builds.
-const sidebarSource = readFileSync(
-    resolve(__dirname, '../../src/components/account/ui/AccountSidebar.tsx'),
-    'utf8'
-);
-const sidebarViewSource = readFileSync(
-    resolve(__dirname, '../../src/components/account/ui/account-sidebar-view.ts'),
-    'utf8'
-);
-// HOS-2413 T-017: the nav DATA moved into the model; the layout only renders it.
-const modelSource = readFileSync(resolve(__dirname, '../../src/lib/account-nav-model.ts'), 'utf8');
+const read = (path: string) =>
+    readFileSync(resolve(import.meta.dirname, '../../src', path), 'utf8');
+const sidebar = read('components/account/ui/AccountSidebar.tsx');
+const view = read('components/account/ui/account-sidebar-view.ts');
 
-/** Computes the doors visible in the sidebar exactly as `AccountLayout.astro` does for a given role. */
-function visibleDoorsForRole(role: string | null): readonly DiscoveryDoor[] {
-    return ACCOUNT_DISCOVERY_DOORS.filter((door) =>
-        isDoorVisible({
-            door,
-            visibility: (node) => isVisibleByRoles(node, role === null ? null : [role])
-        })
-    );
-}
-
-describe('venue discovery door icon', () => {
-    it('uses VenueIcon for the venue vertical', () => {
-        const listing = ACCOUNT_DISCOVERY_DOORS.find((door) => door.id === 'listing');
-        const venue = listing?.options.find((option) => option.id === 'venue');
-        expect(venue?.icon).toBe(VenueIcon);
+describe('exclusive account discovery doors', () => {
+    it('preserves the venue icon and hub option content', () => {
+        expect(
+            ACCOUNT_DISCOVERY_DOORS.find((door) => door.id === 'listing')?.options.find(
+                (option) => option.id === 'venue'
+            )?.icon
+        ).toBe(VenueIcon);
     });
-});
-
-describe('AccountLayout — discovery-door wiring (HOS-131 §6.2/§6.3)', () => {
-    it('renders doors from the single-source config via ACCOUNT_DISCOVERY_DOORS + isDoorVisible', () => {
-        expect(modelSource).toContain(
-            "import { ACCOUNT_DISCOVERY_DOORS } from '@/config/discovery-doors';"
-        );
-        expect(modelSource).toContain(
-            "import { isDoorVisible, isVisibleByRoles, resolveDoorLabelKey } from '@/lib/nav-gating';"
-        );
-        expect(modelSource).toContain('isDoorVisible({ door, visibility })');
-        expect(source).toContain('navModel={navModel}');
-        expect(sidebarViewSource).toContain('doors: shell.doors.map((door) => ({');
-    });
-
-    it('renders the doors block AFTER the nav groups, inside the same sidebar nav (visually below management)', () => {
-        const groupsIndex = sidebarSource.indexOf('view.groups.map(');
-        const doorsBlockIndex = sidebarSource.indexOf('view.doors.length > 0');
-        const navCloseIndex = sidebarSource.indexOf('</nav>');
-        expect(groupsIndex).toBeGreaterThan(-1);
-        expect(doorsBlockIndex).toBeGreaterThan(groupsIndex);
-        expect(navCloseIndex).toBeGreaterThan(doorsBlockIndex);
-    });
-
-    it('marks each door row as a door, distinct from a nav link', () => {
-        expect(sidebarSource).toContain("data-door={door ? '' : undefined}");
-        expect(sidebarSource).toMatch(/view\.doors\.map\([\s\S]*?\bdoor\b\s*\/>/);
-    });
-
-    it('links each visible door to its hub page via buildUrl(door.href)', () => {
-        expect(sidebarViewSource).toContain('href: buildUrl({ locale, path: door.door.href })');
-    });
-
-    it('computes the door active-state via the same getActiveSectionKey helper nav items use, and marks it with aria-current', () => {
-        expect(modelSource).toContain(
-            'const sectionKey = getActiveSectionKey({ href: door.href });'
-        );
-        expect(modelSource).toContain('active: sectionKey === activeSection');
-        expect(sidebarViewSource).toContain('active: door.active');
-        expect(sidebarSource).toContain("aria-current={item.active ? 'page' : undefined}");
-    });
-
-    it('renders the door CTA label via resolveDoorLabelKey (HOS-134 stateful label), not a bare t(door.i18nKey)', () => {
-        expect(modelSource).toContain(
-            "import { isDoorVisible, isVisibleByRoles, resolveDoorLabelKey } from '@/lib/nav-gating';"
-        );
-        expect(modelSource).toContain('labelKey: resolveDoorLabelKey({ door, visibility })');
-        expect(sidebarViewSource).toContain('label: t(door.labelKey)');
-        expect(sidebarViewSource).not.toContain('t(door.door.i18nKey)');
-    });
-});
-
-describe('AccountLayout — discovery-door lifecycle by role (HOS-131 §6.3)', () => {
-    it('shows both doors for a plain tourist (USER) — neither listing option is acquired, partner is always shown', () => {
-        const doors = visibleDoorsForRole(RoleEnum.USER);
-        expect(doors.map((door) => door.id)).toEqual(['listing', 'partner']);
-    });
-
-    it('still shows the listing door for a HOST — only one of its two options is acquired', () => {
-        const doors = visibleDoorsForRole(RoleEnum.HOST);
-        expect(doors.map((door) => door.id)).toContain('listing');
-    });
-
-    it('hides the listing door for platform staff (ADMIN) — both listing options are acquired via the role map', () => {
-        const doors = visibleDoorsForRole(RoleEnum.ADMIN);
-        expect(doors.map((door) => door.id)).not.toContain('listing');
-    });
-
-    it('always shows the partner door — its options are coming-soon placeholders that never acquire (NG-2)', () => {
-        for (const role of [
-            null,
-            RoleEnum.USER,
-            RoleEnum.HOST,
-            RoleEnum.VENUE_OWNER,
-            RoleEnum.ADMIN
-        ]) {
-            const doors = visibleDoorsForRole(role);
-            expect(doors.map((door) => door.id)).toContain('partner');
+    it.each([
+        { permissions: [], expected: 'listing', href: 'planes' },
+        { permissions: [P.ACCOMMODATION_CREATE], expected: 'partner', href: 'mi-cuenta/aliados' },
+        { permissions: [], ownsPartner: true, expected: 'partner', href: 'mi-cuenta/aliados' },
+        {
+            permissions: [],
+            ownsHostTradeListing: true,
+            expected: 'partner',
+            href: 'mi-cuenta/aliados'
         }
+    ])('selects the fixed door for %j independently of MCP', ({ expected, href, ...facts }) => {
+        for (const mcpEnabled of [false, true]) {
+            const model = buildAccountNavModel({
+                roles: ['USER'],
+                ownsHostTradeListing: false,
+                activeSection: 'editar',
+                mcpEnabled,
+                ...facts
+            });
+            expect(model.doors.map((entry) => entry.door.id)).toEqual([expected]);
+            expect(model.doors[0]?.door.href).toBe(href);
+            expect(model.doors[0]?.labelKey).toBe(model.doors[0]?.door.i18nKey);
+        }
+    });
+    it('renders normal locale-aware links after management groups', () => {
+        expect(view).toContain('href: buildUrl({ locale, path: door.door.href })');
+        expect(view).toContain('label: t(door.labelKey)');
+        expect(sidebar.indexOf('view.doors.length > 0')).toBeGreaterThan(
+            sidebar.indexOf('view.groups.map(')
+        );
+        expect(sidebar).toContain("data-door={door ? '' : undefined}");
+        expect(sidebar).toContain("aria-current={item.active ? 'page' : undefined}");
     });
 });

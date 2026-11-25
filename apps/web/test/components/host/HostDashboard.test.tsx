@@ -42,6 +42,7 @@ const renderDashboard = () =>
             locale="es"
             planNames={PLAN_NAMES}
             plansHref="/es/propietarios/planes/"
+            canViewInbox={true}
         />
     );
 
@@ -59,6 +60,20 @@ afterEach(() => {
 });
 
 describe('HostDashboard (HOS-2474)', () => {
+    it('keeps unread stats but offers no inbox link without effective inbox authority', async () => {
+        mockHostDashboardGet.mockResolvedValue({ ok: true, data: READY });
+        const { container } = render(
+            <HostDashboard
+                locale="en"
+                planNames={PLAN_NAMES}
+                plansHref="/en/planes/"
+                canViewInbox={false}
+            />
+        );
+        await screen.findByText('5');
+        expect(within(card(container, 'hostUnreadMessages')).getByText('2')).toBeInTheDocument();
+        expect(container.querySelector('a[href*="consultas-propietario"]')).toBeNull();
+    });
     it('shows both cards loading first', () => {
         mockHostDashboardGet.mockReturnValue(new Promise(() => {}));
         const { container } = renderDashboard();

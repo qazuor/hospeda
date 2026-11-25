@@ -41,7 +41,7 @@ if (!optionId) {
     return new Response(null, {
         status: 302,
         headers: {
-            Location: buildUrl({ locale, path: resolveSubscriptionPlansPath({ roles: user?.roles ?? null }) }),
+            Location: buildUrl({ locale, path: resolveSubscriptionPlansPath({ permissions: user?.permissions ?? [] }) }),
             'Cache-Control': 'private, no-store'
         }
     });
@@ -60,7 +60,7 @@ if (!user) {
 const { t } = createTranslations(locale);
 const title = t('billing.checkout.signup.title');
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
-const plansHref = buildUrl({ locale, path: resolveSubscriptionPlansPath({ roles: user.roles }) });
+const plansHref = buildUrl({ locale, path: resolveSubscriptionPlansPath({ permissions: user.permissions }) });
 let trialNotice: SignupTrialNotice | null;
 let touristVipNotice: SignupTouristVipNotice | null;
 let planSummary: SignupPlanSummary | null;

@@ -1,280 +1,53 @@
-/**
- * @file account-roles.test.ts
- * @description Tests for the account dashboard role-set helpers: the
- * venue/experience-owner navigation gate (SPEC-249 T-001, migrated onto `nav-gating`
- * by HOS-296 §6.5) and the roles → subscription-plans-page decision
- * (`resolveSubscriptionPlansPath`, BETA-201).
- *
- * Verifies that `hasListingNavAccess` grants access to VENUE_OWNER and
- * platform staff, denies plain tourists, accommodation-only hosts, and
- * unauthenticated visitors, that the venue/experience set stays distinct from the
- * accommodations set, and that `resolveSubscriptionPlansPath` routes
- * host-level role sets to the owner pricing page, venue/experience-only role sets
- * (`VENUE_OWNER`/`EXPERIENCE_OWNER`/legacy `VENUE_OWNER`, HOS-1293) to
- * their own vertical's pricing page, and everyone else (tourists, anonymous)
- * to the tourist pricing page.
- *
- * HOS-296: every predicate now takes the actor's whole role SET, so the
- * multi-hat cases (HOST + VENUE_OWNER) are asserted explicitly — that
- * combination is the entire point of the change (AC-1).
- */
-
-import { RoleEnum } from '@repo/schemas';
+import { PermissionEnum as P } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import {
-    ROLES_WITH_ACCOMMODATIONS_NAV,
-    ROLES_WITH_LISTING_NAV,
     resolveSubscriptionPlansPath,
     resolveSubscriptionPlansPathForAudience
 } from '../account-roles';
 import { hasAccommodationsNavAccess, hasListingNavAccess } from '../nav-gating';
-import { PRICING_PAGE_PATH_BY_AUDIENCE } from '../pricing-plans';
 
-describe('hasListingNavAccess', () => {
-    it('returns true for VENUE_OWNER', () => {
-        expect(hasListingNavAccess({ roles: [RoleEnum.VENUE_OWNER] })).toBe(true);
+describe('effective pricing and navigation authority', () => {
+    it.each([
+        [[], 'planes/turistas/precios'],
+        [[P.ACCOMMODATION_CREATE], 'planes/anfitriones/precios'],
+        [[P.VENUE_EDIT_OWN], 'planes/comer-y-salir/precios'],
+        [[P.VENUE_EDIT_ALL], 'planes/comer-y-salir/precios'],
+        [[P.EXPERIENCE_EDIT_OWN], 'planes/experiencias/precios'],
+        [[P.VENUE_EDIT_OWN, P.EXPERIENCE_EDIT_OWN], 'planes/comer-y-salir/precios'],
+        [[P.VENUE_EDIT_OWN, P.ACCOMMODATION_CREATE], 'planes/anfitriones/precios']
+    ] as const)('resolves %j to %s', (permissions, path) => {
+        expect(resolveSubscriptionPlansPath({ permissions })).toBe(path);
     });
-
-    it('returns true for platform staff (ADMIN, SUPER_ADMIN)', () => {
-        expect(hasListingNavAccess({ roles: [RoleEnum.ADMIN] })).toBe(true);
-        expect(hasListingNavAccess({ roles: [RoleEnum.SUPER_ADMIN] })).toBe(true);
+    it('fails closed on role names and unknown permissions', () => {
+        expect(hasAccommodationsNavAccess({ permissions: ['HOST', 'ADMIN'] })).toBe(false);
+        expect(hasListingNavAccess({ permissions: ['VENUE_OWNER'] })).toBe(false);
+        expect(resolveSubscriptionPlansPath({ permissions: ['HOST'] })).toBe(
+            'planes/turistas/precios'
+        );
     });
-
-    it('returns false for a plain tourist USER', () => {
-        expect(hasListingNavAccess({ roles: [RoleEnum.USER] })).toBe(false);
-    });
-
-    it('returns false for an accommodation-only HOST', () => {
-        expect(hasListingNavAccess({ roles: [RoleEnum.USER, RoleEnum.HOST] })).toBe(false);
-    });
-
-    it('returns false for null / empty (unauthenticated)', () => {
-        expect(hasListingNavAccess({ roles: null })).toBe(false);
-        expect(hasListingNavAccess({ roles: [] })).toBe(false);
-    });
-
-    it('returns false for an unknown role string', () => {
-        expect(hasListingNavAccess({ roles: ['NOT_A_ROLE'] })).toBe(false);
-    });
-
-    it('returns true when the venue/experience hat is one of several held roles', () => {
-        expect(
-            hasListingNavAccess({
-                roles: [RoleEnum.USER, RoleEnum.HOST, RoleEnum.VENUE_OWNER]
-            })
-        ).toBe(true);
-    });
-});
-
-describe('AC-1 — a HOST who is also a VENUE_OWNER gets BOTH nav groups', () => {
-    // The regression this whole spec exists for: under the old scalar `role`
-    // exactly one of these two could ever be true.
-    const roles = [RoleEnum.USER, RoleEnum.HOST, RoleEnum.VENUE_OWNER];
-
-    it('grants the accommodations/host navigation', () => {
-        expect(hasAccommodationsNavAccess({ roles })).toBe(true);
-    });
-
-    it('grants the listing navigation', () => {
-        expect(hasListingNavAccess({ roles })).toBe(true);
-    });
-
-    it('is order-independent', () => {
-        const reversed = [...roles].reverse();
-        expect(hasAccommodationsNavAccess({ roles: reversed })).toBe(true);
-        expect(hasListingNavAccess({ roles: reversed })).toBe(true);
-    });
-});
-
-describe('ROLES_WITH_LISTING_NAV', () => {
-    it('is distinct from the accommodations nav set (HOST is not a venue/experience role)', () => {
-        expect(ROLES_WITH_LISTING_NAV.has('HOST')).toBe(false);
-        expect(ROLES_WITH_ACCOMMODATIONS_NAV.has('VENUE_OWNER')).toBe(false);
-    });
-});
-
-describe('resolveSubscriptionPlansPath (BETA-201)', () => {
-    // Strong coverage of the roles → pricing-page decision shared by the role-aware
-    // surfaces (BETA-165 dashboard/addons, BETA-201 checkout return pages). The
-    // .astro pages only wire this helper (asserted source-side in
-    // test/pages/checkout-pages.test.ts); the logic lives here.
-    //
-    // These assert against `PRICING_PAGE_PATH_BY_AUDIENCE` rather than against a
-    // URL literal (HOS-1032). What this helper decides is WHICH AUDIENCE'S
-    // catalogue a role can buy from — sending a host to the tourist page is the
-    // bug BETA-201 fixed — and that decision is what these cases must keep
-    // failing on. The URLs themselves have now moved twice, and each move
-    // rewrote every literal here without any of them ever catching a defect.
-    // The literals are frozen once, deliberately, in
-    // `test/lib/pricing-page-paths.test.ts`.
-    it('routes every host-level role to the owner plans page', () => {
-        for (const role of ROLES_WITH_ACCOMMODATIONS_NAV) {
-            expect(resolveSubscriptionPlansPath({ roles: [role] })).toBe(
-                PRICING_PAGE_PATH_BY_AUDIENCE.owner
-            );
+    it('admits independent and combined vertical grants regardless of order', () => {
+        const permissions = [P.ACCOMMODATION_CREATE, P.VENUE_EDIT_OWN];
+        for (const held of [permissions, [...permissions].reverse()]) {
+            expect(hasAccommodationsNavAccess({ permissions: held })).toBe(true);
+            expect(hasListingNavAccess({ permissions: held })).toBe(true);
         }
+        expect(hasListingNavAccess({ permissions: [P.EXPERIENCE_EDIT_ALL] })).toBe(true);
+        expect(hasAccommodationsNavAccess({ permissions: [P.EXPERIENCE_EDIT_OWN] })).toBe(false);
     });
-
-    it('routes a plain USER (tourist) to the tourist plans page', () => {
-        expect(resolveSubscriptionPlansPath({ roles: [RoleEnum.USER] })).toBe(
-            PRICING_PAGE_PATH_BY_AUDIENCE.tourist
+    it.each([
+        'host',
+        'tourist',
+        'venue',
+        'experience'
+    ] as const)('keeps explicit %s pricing', (audience) => {
+        const permission = {
+            host: P.ACCOMMODATION_CREATE,
+            tourist: '',
+            venue: P.VENUE_EDIT_OWN,
+            experience: P.EXPERIENCE_EDIT_OWN
+        }[audience];
+        expect(resolveSubscriptionPlansPathForAudience({ audience })).toBe(
+            resolveSubscriptionPlansPath({ permissions: [permission] })
         );
-    });
-
-    it('routes a VENUE_OWNER (not an accommodation host) to the venue plans page (HOS-1293)', () => {
-        // HOS-1293 regression: before this fix, venue/experience is a separate billing
-        // domain and this function only knew host-vs-everyone-else, so a
-        // venue/experience-only owner fell all the way through to the tourist page —
-        // from `/mi-cuenta/addons/`'s gate CTA and the bare
-        // `/suscriptores/checkout/` root redirect. The legacy VENUE_OWNER
-        // role predates the per-vertical split and carries no vertical of its
-        // own, so it degrades to the venue plans page (an arbitrary but
-        // documented tie-break) rather than to tourist.
-        expect(resolveSubscriptionPlansPath({ roles: [RoleEnum.VENUE_OWNER] })).toBe(
-            PRICING_PAGE_PATH_BY_AUDIENCE.venue
-        );
-    });
-
-    it('routes a VENUE_OWNER (not a host) to the venue plans page (HOS-1293)', () => {
-        expect(resolveSubscriptionPlansPath({ roles: [RoleEnum.VENUE_OWNER] })).toBe(
-            PRICING_PAGE_PATH_BY_AUDIENCE.venue
-        );
-    });
-
-    it('routes an EXPERIENCE_OWNER (not a host) to the experience plans page (HOS-1293)', () => {
-        expect(resolveSubscriptionPlansPath({ roles: [RoleEnum.EXPERIENCE_OWNER] })).toBe(
-            PRICING_PAGE_PATH_BY_AUDIENCE.experience
-        );
-    });
-
-    it('routes a VENUE_OWNER who also holds EXPERIENCE_OWNER (no host) to venue — the documented tie-break', () => {
-        expect(
-            resolveSubscriptionPlansPath({
-                roles: [RoleEnum.VENUE_OWNER, RoleEnum.EXPERIENCE_OWNER]
-            })
-        ).toBe(PRICING_PAGE_PATH_BY_AUDIENCE.venue);
-    });
-
-    it('routes a VENUE_OWNER who is ALSO a HOST to the owner page', () => {
-        // Holding the host hat is the stronger signal about which catalog the
-        // user can actually buy from (HOS-296), and HOS-1293 keeps that
-        // precedence: host beats venue/experience beats tourist.
-        expect(resolveSubscriptionPlansPath({ roles: [RoleEnum.VENUE_OWNER, RoleEnum.HOST] })).toBe(
-            PRICING_PAGE_PATH_BY_AUDIENCE.owner
-        );
-    });
-
-    it('routes a VENUE_OWNER who is ALSO a HOST to the owner page (HOS-1293)', () => {
-        expect(resolveSubscriptionPlansPath({ roles: [RoleEnum.VENUE_OWNER, RoleEnum.HOST] })).toBe(
-            PRICING_PAGE_PATH_BY_AUDIENCE.owner
-        );
-    });
-
-    it('routes a null / empty role set (anonymous / MP return with no session cookie) to the tourist page', () => {
-        expect(resolveSubscriptionPlansPath({ roles: null })).toBe(
-            PRICING_PAGE_PATH_BY_AUDIENCE.tourist
-        );
-        expect(resolveSubscriptionPlansPath({ roles: [] })).toBe(
-            PRICING_PAGE_PATH_BY_AUDIENCE.tourist
-        );
-    });
-
-    it('routes an unknown role to the tourist page (safe default)', () => {
-        expect(resolveSubscriptionPlansPath({ roles: ['NOT_A_ROLE'] })).toBe(
-            PRICING_PAGE_PATH_BY_AUDIENCE.tourist
-        );
-    });
-});
-
-describe('resolveSubscriptionPlansPathForAudience (HOS-283)', () => {
-    // The audience-driven twin of `resolveSubscriptionPlansPath`, used when the
-    // caller has an entitlement error's `details.upgradeAudience` instead of a
-    // role set. Both must land on the same two pages.
-    it('routes a host audience to the owner plans page', () => {
-        expect(resolveSubscriptionPlansPathForAudience({ audience: 'host' })).toBe(
-            PRICING_PAGE_PATH_BY_AUDIENCE.owner
-        );
-    });
-
-    it('routes a tourist audience to the tourist plans page', () => {
-        expect(resolveSubscriptionPlansPathForAudience({ audience: 'tourist' })).toBe(
-            PRICING_PAGE_PATH_BY_AUDIENCE.tourist
-        );
-    });
-
-    it('agrees with the roles-driven helper on both pages', () => {
-        // Guards against the two helpers drifting apart: an upsell reached via a
-        // role and the same upsell reached via an API error must not send the
-        // user to different pricing pages.
-        expect(resolveSubscriptionPlansPathForAudience({ audience: 'host' })).toBe(
-            resolveSubscriptionPlansPath({ roles: [RoleEnum.HOST] })
-        );
-        expect(resolveSubscriptionPlansPathForAudience({ audience: 'tourist' })).toBe(
-            resolveSubscriptionPlansPath({ roles: [RoleEnum.USER] })
-        );
-    });
-
-    // HOS-1293 — the two venue/experience audiences, unreachable from the API's
-    // `upgradeAudience` field (which only ever sends 'host'/'tourist') but
-    // needed by callers that already know the vertical directly, e.g.
-    // `AddonsPurchasePanel.client.tsx` resolving one CTA per add-on card from
-    // that add-on's own `productDomain`.
-    it('routes a venue audience to the venue plans page', () => {
-        expect(resolveSubscriptionPlansPathForAudience({ audience: 'venue' })).toBe(
-            PRICING_PAGE_PATH_BY_AUDIENCE.venue
-        );
-    });
-
-    it('routes an experience audience to the experience plans page', () => {
-        expect(resolveSubscriptionPlansPathForAudience({ audience: 'experience' })).toBe(
-            PRICING_PAGE_PATH_BY_AUDIENCE.experience
-        );
-    });
-});
-
-// ---------------------------------------------------------------------------
-// HOS-1077 — the per-vertical owner roles reach the same listing area
-//
-// The gate is a SET membership check, so the failure mode is silent and total:
-// a role missing from the set makes every `/mi-cuenta/comercio/*` page redirect
-// away with nothing in the sidebar to explain why. These assert the two new
-// roles are in, without disturbing what was already out.
-// ---------------------------------------------------------------------------
-
-describe('HOS-1077 vertical owner roles and the listing nav', () => {
-    it('a VENUE_OWNER holding no other venue/experience hat reaches the listing nav', () => {
-        expect(hasListingNavAccess({ roles: [RoleEnum.USER, RoleEnum.VENUE_OWNER] })).toBe(true);
-    });
-
-    it('an EXPERIENCE_OWNER holding no other venue/experience hat reaches the listing nav', () => {
-        expect(hasListingNavAccess({ roles: [RoleEnum.USER, RoleEnum.EXPERIENCE_OWNER] })).toBe(
-            true
-        );
-    });
-
-    it('neither vertical owner reaches the ACCOMMODATIONS nav', () => {
-        // The venue/experience and accommodation sets stay disjoint for the new roles
-        // exactly as they were for VENUE_OWNER.
-        expect(hasAccommodationsNavAccess({ roles: [RoleEnum.VENUE_OWNER] })).toBe(false);
-        expect(hasAccommodationsNavAccess({ roles: [RoleEnum.EXPERIENCE_OWNER] })).toBe(false);
-    });
-
-    it('ROLES_WITH_LISTING_NAV names both new roles alongside the legacy one', () => {
-        expect(ROLES_WITH_LISTING_NAV.has('VENUE_OWNER')).toBe(true);
-        expect(ROLES_WITH_LISTING_NAV.has('EXPERIENCE_OWNER')).toBe(true);
-        // Expand, not contract: the legacy role must still be in the set, or
-        // every existing venue/experience owner loses the area on deploy.
-        expect(ROLES_WITH_LISTING_NAV.has('VENUE_OWNER')).toBe(true);
-    });
-
-    it('ROLES_WITH_ACCOMMODATIONS_NAV gained neither', () => {
-        expect(ROLES_WITH_ACCOMMODATIONS_NAV.has('VENUE_OWNER')).toBe(false);
-        expect(ROLES_WITH_ACCOMMODATIONS_NAV.has('EXPERIENCE_OWNER')).toBe(false);
-    });
-
-    it('a plain tourist still does not reach the listing nav', () => {
-        // Instrument check: if the set had been widened to everyone, every
-        // assertion above would pass while measuring nothing.
-        expect(hasListingNavAccess({ roles: [RoleEnum.USER] })).toBe(false);
     });
 });

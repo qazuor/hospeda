@@ -37,11 +37,35 @@ import type {
 } from '@/lib/account-nav-model';
 import { getActiveSectionKey } from '@/lib/account-nav-section';
 
+/**
+ * Copy of the personal-zone link to each business vertical («Ir a Alojamientos →»).
+ * One full phrase per vertical, because the group headers («Área anfitrión»)
+ * do not read well after «Ir a».
+ */
+export const ZONE_LINK_LABEL_KEYS: Readonly<Record<(typeof BUSINESS_GROUP_IDS)[number], string>> = {
+    anfitrion: 'account.nav.zoneLink.host',
+    'comercio-venue': 'account.nav.zoneLink.venues',
+    'comercio-experience': 'account.nav.zoneLink.experiences',
+    editorial: 'account.nav.zoneLink.editorial',
+    partner: 'account.nav.zoneLink.partner',
+    proveedor: 'account.nav.zoneLink.provider'
+};
+
 /** Which zone the kit shell shows (HOS-2551). */
 export type AccountNavMode = 'personal' | 'business';
 
+/** A visible door between the personal and business sidebar zones. */
+export interface AccountZoneLink {
+    readonly id: string;
+    readonly href: string;
+    readonly i18nKey: string;
+    readonly direction: 'forward' | 'back';
+}
+
 /** What the kit shell (sidebar and mobile drawer) renders (HOS-2551). */
 export interface AccountShellNavModel {
+    /** Explicit zone doors rendered above the sidebar, never inside the kit. */
+    readonly zoneLinks: readonly AccountZoneLink[];
     /** Which zone is shown. */
     readonly mode: AccountNavMode;
     /** The groups of that zone, in render order. */
@@ -193,10 +217,13 @@ function businessZone({
     const single = verticals.length === 1;
     return {
         mode: 'business',
+        zoneLinks: [
+            { id: 'account', href: 'mi-cuenta', i18nKey: 'account.title', direction: 'back' }
+        ],
         groups: withShellOpen({
             groups: verticals.map((entry) => ({
                 ...entry,
-                suppressHeader: single || entry.suppressHeader
+                suppressHeader: single
             }))
         }),
         doors: []
@@ -243,7 +270,7 @@ function personalZone({
     const zoneGroups = activeInTitledGroup
         ? withShellOpen({ groups: zone })
         : zone.map((entry) => ({ ...entry, shellDefaultOpen: !entry.suppressHeader }));
-    return { mode: 'personal', groups: zoneGroups, doors };
+    return { mode: 'personal', groups: zoneGroups, doors, zoneLinks: [] };
 }
 
 /**
@@ -270,5 +297,51 @@ export function buildShellNavModel({
     ) {
         return businessZone({ groups, activeSection, ownsPartner });
     }
-    return personalZone({ groups, doors });
+    const personal = personalZone({ groups, doors });
+    const business = businessZone({ groups, activeSection, ownsPartner });
+    return {
+        ...personal,
+        zoneLinks: business.groups.flatMap((entry) => {
+            const first = entry.items[0];
+            return first
+                ? [
+                      {
+                          id: entry.group.id,
+                          href: first.item.href,
+                          i18nKey:
+                              ZONE_LINK_LABEL_KEYS[
+                                  entry.group.id as keyof typeof ZONE_LINK_LABEL_KEYS
+                              ] ?? entry.group.i18nKey,
+                          direction: 'forward' as const
+                      }
+                  ]
+                : [];
+        })
+    };
+}
+
+/** Composes the complete avatar sheet from the same personal and business zones. */
+export function buildFullAccountMenu(params: BuildShellNavModelParams): AccountShellNavModel {
+    const personal = personalZone(params);
+    const business = businessZone(params);
+    const home = personal.groups.filter((entry) => entry.group.id === HOME_GROUP_ID);
+    const remainder = personal.groups.filter((entry) => entry.group.id !== HOME_GROUP_ID);
+    return {
+        mode: 'personal',
+        zoneLinks: [],
+        // The business zone hides the header of a lone vertical (the sidebar is
+        // then that vertical alone); in the full sheet it sits among other
+        // groups, so it keeps the header the model gave it.
+        groups: [
+            ...home,
+            ...business.groups.map((entry) => ({
+                ...entry,
+                suppressHeader:
+                    params.groups.find((source) => source.group.id === entry.group.id)
+                        ?.suppressHeader ?? entry.suppressHeader
+            })),
+            ...remainder
+        ],
+        doors: personal.doors
+    };
 }

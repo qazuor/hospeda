@@ -26,7 +26,24 @@ vi.mock('@/lib/api/endpoints-protected', () => ({
 vi.mock('@/lib/entitlements-cache', () => ({ getEntitlementsCached: () => mockGetEffectiveSet() }));
 
 // Import AFTER mock setup
-import { PromotionList } from '../../../src/components/host/PromotionList.client';
+import {
+    PromotionList as PromotionListComponent,
+    type PromotionListProps
+} from '../../../src/components/host/PromotionList.client';
+
+/** Existing fixtures model full operation authority; individual regression cases override it. */
+function PromotionList(
+    props: Omit<PromotionListProps, 'canCreate' | 'canEdit'> &
+        Partial<Pick<PromotionListProps, 'canCreate' | 'canEdit'>>
+) {
+    return (
+        <PromotionListComponent
+            canCreate={true}
+            canEdit={true}
+            {...props}
+        />
+    );
+}
 
 afterEach(() => {
     vi.clearAllMocks();
@@ -93,6 +110,43 @@ function makeListResponse(items: (typeof mockPromo1)[]) {
 // ---------------------------------------------------------------------------
 
 describe('TEST:B13a:25 PromotionList effective-set gate', () => {
+    it('does not expose create or edit controls to a viewer even with an open plan', async () => {
+        mockGetEffectiveSet.mockResolvedValue({
+            entitlements: { create_promotions: 1 },
+            limits: {},
+            failed: false
+        });
+        mockOwnerPromotionList.mockResolvedValue(makeListResponse([mockPromo1]));
+        const { container } = render(
+            <PromotionList
+                locale="en"
+                canCreate={false}
+                canEdit={false}
+            />
+        );
+        await screen.findByText(mockPromo1.title);
+        await waitFor(() => expect(mockGetEffectiveSet).toHaveBeenCalled());
+        expect(container.querySelector('a[href$="/nueva/"]')).toBeNull();
+        expect(container.querySelector('a[href$="/editar/"]')).toBeNull();
+    });
+    it.each([
+        { canCreate: false, canEdit: true },
+        { canCreate: true, canEdit: false }
+    ])('separates independent promotion operation facts %j', async ({ canCreate, canEdit }) => {
+        mockOwnerPromotionList.mockResolvedValue(makeListResponse([mockPromo1]));
+        const { container } = render(
+            <PromotionList
+                locale="en"
+                canCreate={canCreate}
+                canEdit={canEdit}
+            />
+        );
+        await screen.findByText(mockPromo1.title);
+        await waitFor(() =>
+            expect(Boolean(container.querySelector('a[href$="/nueva/"]'))).toBe(canCreate)
+        );
+        expect(Boolean(container.querySelector('a[href$="/editar/"]'))).toBe(canEdit);
+    });
     // Braces matter: a function returned from beforeEach runs as its teardown.
     beforeEach(() => {
         mockGetEffectiveSet.mockResolvedValue({

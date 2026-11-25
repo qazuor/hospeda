@@ -9,14 +9,18 @@ import {
     BriefcaseIcon,
     BuildingIcon,
     ChatIcon,
+    CompassIcon,
     CreditCardIcon,
     DashboardIcon,
     MegaphoneIcon,
     NewsletterIcon,
-    SettingsIcon
+    SettingsIcon,
+    VenueIcon,
+    WrenchIcon
 } from '@repo/icons';
 import type { ReactNode } from 'react';
 import { type HelpAnchor, ListRow, Section } from '@/components/account/ui';
+import { PROVIDER_NAV_GROUP } from '@/config/navigation';
 import type { DashboardRow, DashboardRowIcon } from '@/lib/account/dashboard-rows';
 import { createT, type SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -35,6 +39,7 @@ export interface DashboardLinksSectionProps {
 }
 
 /** Icon element per row icon. */
+const ProviderIcon = PROVIDER_NAV_GROUP.items[0]?.icon ?? WrenchIcon;
 const ICONS: Readonly<Record<DashboardRowIcon, ReactNode>> = {
     dashboard: <DashboardIcon size={20} />,
     building: <BuildingIcon size={20} />,
@@ -43,6 +48,9 @@ const ICONS: Readonly<Record<DashboardRowIcon, ReactNode>> = {
     settings: <SettingsIcon size={20} />,
     newsletter: <NewsletterIcon size={20} />,
     megaphone: <MegaphoneIcon size={20} />,
+    venue: <VenueIcon size={20} />,
+    compass: <CompassIcon size={20} />,
+    wrench: <ProviderIcon size={20} />,
     card: <CreditCardIcon size={20} />
 };
 

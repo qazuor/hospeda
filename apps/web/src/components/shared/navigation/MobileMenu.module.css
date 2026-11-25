@@ -12,6 +12,7 @@
     transition: transform var(--duration-normal) ease-in-out;
     transform: translateX(100%);
     contain: layout style paint;
+    overflow-y: auto;
 }
 
 .overlayOpen {
@@ -19,6 +20,7 @@
 }
 
 .header {
+    flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -40,8 +42,7 @@
 }
 
 .nav {
-    flex: 1;
-    overflow-y: auto;
+    flex-shrink: 0;
     padding-inline: 1.25rem;
     padding-top: 1rem;
 }
@@ -105,6 +106,7 @@
 
 /* Auth section */
 .authSection {
+    flex-shrink: 0;
     padding: 1rem 1.25rem;
     border-top: 1px solid var(--border-a60);
 }
@@ -191,6 +193,20 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+.userSecondary {
+    display: block;
+    color: var(--core-muted-foreground);
+    font: var(--app-ui);
+}
+
+/* The account header keeps its site hamburger at narrow desktop widths,
+   where the desktop avatar already owns account navigation. */
+@media (min-width: 1025px) {
+    .userRow {
+        display: none;
+    }
 }
 
 .userChevron {

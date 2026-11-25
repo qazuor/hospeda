@@ -76,6 +76,10 @@ const LIFECYCLE_TONES: Readonly<Record<string, StatusTone>> = {
 export interface PromotionListProps {
     /** Active UI locale for i18n and URL building. */
     readonly locale: SupportedLocale;
+    /** Effective SSR create authority; the plan gate remains independent. */
+    readonly canCreate: boolean;
+    /** Effective SSR VIEW_OWN AND UPDATE_OWN authority for the editor target. */
+    readonly canEdit: boolean;
     /** Catalog names of the owner plans that include promotions (HOS-2505). */
     readonly lockPlanNames?: readonly string[];
     /** The page «?» (from Astro: `<PageHelpLink slot="help" />`). */
@@ -102,6 +106,8 @@ type ListState =
  */
 export function PromotionList({
     locale,
+    canCreate = false,
+    canEdit = false,
     lockPlanNames = [],
     help
 }: PromotionListProps): JSX.Element {
@@ -287,7 +293,7 @@ export function PromotionList({
                 description={t('host.promotions.pageDescription')}
                 help={help}
                 createAction={
-                    gate === 'open' ? (
+                    canCreate && gate === 'open' ? (
                         <LinkButton href={createHref}>
                             <AddIcon
                                 size="sm"
@@ -351,37 +357,41 @@ export function PromotionList({
                             ]}
                             actions={
                                 <>
-                                    {gate === 'locked' ? (
-                                        <Button
-                                            variant="secondary"
-                                            size="sm"
-                                            disabled
-                                            aria-label={t(
-                                                'host.promotions.kit.editNamed',
-                                                undefined,
-                                                { title: promo.title }
-                                            )}
-                                        >
-                                            {t('host.promotions.actions.edit')}
-                                        </Button>
-                                    ) : (
-                                        <LinkButton
-                                            href={buildUrl({
-                                                locale,
-                                                path: `mi-cuenta/promociones/${promo.id}/editar`
-                                            })}
-                                            variant="secondary"
-                                            size="sm"
-                                            aria-label={t(
-                                                'host.promotions.kit.editNamed',
-                                                undefined,
-                                                { title: promo.title }
-                                            )}
-                                        >
-                                            {t('host.promotions.actions.edit')}
-                                        </LinkButton>
-                                    )}
-                                    {gate === 'locked' && promo.lifecycleState === 'ACTIVE' ? (
+                                    {canEdit ? (
+                                        gate === 'locked' ? (
+                                            <Button
+                                                variant="secondary"
+                                                size="sm"
+                                                disabled
+                                                aria-label={t(
+                                                    'host.promotions.kit.editNamed',
+                                                    undefined,
+                                                    { title: promo.title }
+                                                )}
+                                            >
+                                                {t('host.promotions.actions.edit')}
+                                            </Button>
+                                        ) : (
+                                            <LinkButton
+                                                href={buildUrl({
+                                                    locale,
+                                                    path: `mi-cuenta/promociones/${promo.id}/editar`
+                                                })}
+                                                variant="secondary"
+                                                size="sm"
+                                                aria-label={t(
+                                                    'host.promotions.kit.editNamed',
+                                                    undefined,
+                                                    { title: promo.title }
+                                                )}
+                                            >
+                                                {t('host.promotions.actions.edit')}
+                                            </LinkButton>
+                                        )
+                                    ) : null}
+                                    {canEdit &&
+                                    gate === 'locked' &&
+                                    promo.lifecycleState === 'ACTIVE' ? (
                                         <Button
                                             variant="secondary"
                                             size="sm"

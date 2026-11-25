@@ -27,7 +27,8 @@ const lib = readFileSync(resolve(__dirname, '../../src/lib/account/general-dashb
 const t = (key: string, _fallback?: string, params?: Record<string, unknown>) =>
     params ? `${key}:${JSON.stringify(params)}` : key;
 
-const ids = (roles: string[]) => buildGeneralDashboardLinks({ roles }).map((row) => row.id);
+const ids = (permissions: string[]) =>
+    buildGeneralDashboardLinks({ permissions }).map((row) => row.id);
 
 describe('mi-cuenta/index.astro — wiring (HOS-2473)', () => {
     it('renders the kit header, stat island and links section, with the dashboard template', () => {
@@ -55,21 +56,21 @@ describe('mi-cuenta/index.astro — wiring (HOS-2473)', () => {
 
 describe('general dashboard entry points (H-151, HOS-296)', () => {
     it('gates through the shared predicates, never a role literal', () => {
-        expect(lib).toContain('hasAccommodationsNavAccess');
-        expect(lib).toContain('PermissionEnum.VENUE_EDIT_OWN');
+        expect(lib).toContain("canAccessPublisherArea({ area: 'host', permissions })");
+        expect(lib).toContain("canAccessPublisherArea({ area: 'venue', permissions })");
         expect(lib).not.toMatch(/includes\(\s*['"](HOST|VENUE_OWNER|EXPERIENCE_OWNER)['"]\s*\)/);
     });
 
     it('offers a tourist only the account entries, and no «Editar perfil» duplicate', () => {
-        expect(ids(['USER'])).toEqual(['messages', 'preferences', 'newsletter']);
+        expect(ids([])).toEqual(['messages', 'preferences', 'newsletter']);
     });
 
     it('prepends the host entries for a host', () => {
-        expect(ids(['HOST']).slice(0, 2)).toEqual(['hostDashboard', 'properties']);
+        expect(ids(['accommodation.create']).slice(0, 2)).toEqual(['hostDashboard', 'properties']);
     });
 
     it('offers a venue owner their dashboard and listings, with the merchant inbox copy', () => {
-        const rows = buildGeneralDashboardLinks({ roles: ['VENUE_OWNER'] });
+        const rows = buildGeneralDashboardLinks({ permissions: ['venue.editOwn'] });
         expect(rows.map((row) => row.id)).toContain('venueDashboard');
         expect(rows.map((row) => row.id)).not.toContain('experienceDashboard');
         const listings = rows.find((row) => row.id === 'listings');
@@ -81,7 +82,7 @@ describe('general dashboard entry points (H-151, HOS-296)', () => {
     });
 
     it('keeps both hats for an account that is host AND experience owner', () => {
-        const rowIds = ids(['HOST', 'EXPERIENCE_OWNER']);
+        const rowIds = ids(['accommodation.create', 'experience.editOwn']);
         expect(rowIds).toContain('hostDashboard');
         expect(rowIds).toContain('experienceDashboard');
     });

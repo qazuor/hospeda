@@ -1,17 +1,8 @@
 /**
  * @file nav-avatar.ts
- * @description The account links of the header user menu (`UserMenu.client.tsx`)
- * and of the mobile hamburguesa's account block (`MobileMenu.client.tsx`).
- * Both render the SAME set (HOS-131 §6.5, mobile "option A"), so they can
- * never drift into two divergent lists.
- *
- * HOS-2551 (owner decisions of 22/11): the set is
- * 1. Identity: the `dashboard` item («Mi cuenta», `/mi-cuenta/`).
- * 2. «Administración»: one «Administrar …» shortcut per business vertical the
- *    person has (`resolveBusinessShortcuts`, catalog in `config/account-zones.ts`).
- *
- * Profile entries, favorites and «Asistentes de IA» are NOT in the menu any
- * more: they live in the personal zone of the account sidebar.
+ * @description Desktop avatar navigation (owner decision D2): four registry
+ * quick links, then one management shortcut per eligible business vertical.
+ * The mobile avatar uses the full sidebar model, not these narrower shortcuts.
  */
 
 import { DASHBOARD_NAV_ITEM_ID, getNavForSurface, type NavItem } from '@/config/navigation';
@@ -36,6 +27,8 @@ export interface GetCuratedAccountNavParams {
 
 /** Output of `getCuratedAccountNav`. */
 export interface CuratedAccountNav {
+    /** Account, profile, favorites and subscription, from the sidebar registry. */
+    readonly quickItems: readonly NavItem[];
     /** The identity-zone «Mi cuenta» link, or `null` if unavailable. */
     readonly dashboardItem: NavItem | null;
     /** The «Administración» shortcuts, in catalog order; empty for a pure tourist. */
@@ -43,10 +36,10 @@ export interface CuratedAccountNav {
 }
 
 /**
- * Resolves the account links of the user menu and the mobile account block.
+ * Resolves desktop quick links and the existing business shortcuts.
  *
  * @param params - See {@link GetCuratedAccountNavParams} (RO-RO).
- * @returns `{ dashboardItem, adminItems }`.
+ * @returns `{ quickItems, dashboardItem, adminItems }`.
  */
 export function getCuratedAccountNav({
     permissions,
@@ -55,11 +48,19 @@ export function getCuratedAccountNav({
 }: GetCuratedAccountNavParams): CuratedAccountNav {
     const visibility = (node: Parameters<typeof isVisibleByPermissions>[0]) =>
         isVisibleByPermissions(node, permissions);
-    const { groups } = getNavForSurface({ surface: 'avatar', visibility });
+    const { groups } = getNavForSurface({ surface: 'sidebar', visibility });
+    const items = groups.flatMap((group) => group.items);
+    const quickItems = [DASHBOARD_NAV_ITEM_ID, 'editProfile', 'favorites', 'subscription'].flatMap(
+        (id) => {
+            const item = items.find((entry) => entry.id === id);
+            return item ? [item] : [];
+        }
+    );
     const dashboardItem =
         groups.flatMap((group) => group.items).find((item) => item.id === DASHBOARD_NAV_ITEM_ID) ??
         null;
     return {
+        quickItems,
         dashboardItem,
         adminItems: resolveBusinessShortcuts({ permissions, ownsHostTradeListing, ownsPartner })
     };

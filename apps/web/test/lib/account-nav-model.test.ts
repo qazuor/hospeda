@@ -39,7 +39,11 @@ describe('buildAccountNavModel: groups per role set', () => {
     });
 
     it('a HOST + VENUE_OWNER sees both management groups, still ending in tourist', () => {
-        const model = buildAccountNavModel({ ...BASE, roles: ['HOST', 'VENUE_OWNER'] });
+        const model = buildAccountNavModel({
+            ...BASE,
+            roles: ['HOST', 'VENUE_OWNER'],
+            permissions: permissionsFor(['HOST', 'VENUE_OWNER'])
+        });
         const ids = groupIds(model);
         expect(ids).toContain('anfitrion');
         expect(ids).toContain('comercio-venue');
@@ -82,6 +86,7 @@ describe('buildAccountNavModel: active state', () => {
     it('keeps the legacy default (all open but turista) while the shell opens only the active group', () => {
         const model = buildAccountNavModel({
             roles: ['HOST'],
+            permissions: permissionsFor(['HOST']),
             ownsHostTradeListing: false,
             mcpEnabled: true,
             activeSection: 'editar'
@@ -411,6 +416,7 @@ describe('buildAccountNavModel: zoned shell (HOS-2551)', () => {
         it('adds the partner group when the account owns a partner row', () => {
             const model = buildAccountNavModel({
                 roles: ['HOST'],
+                permissions: permissionsFor(['HOST']),
                 ownsHostTradeListing: false,
                 ownsPartner: true,
                 mcpEnabled: true,

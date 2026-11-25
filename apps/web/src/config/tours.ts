@@ -8,11 +8,15 @@
  * because the web layout is different from the admin panel.
  */
 
+import { canAccessPublisherArea } from '@/lib/account/publisher-access';
+
 export interface TourStepConfig {
     readonly id: string;
     readonly target: string;
     readonly title: string;
     readonly body: string;
+    /** Copy for accounts that receive venue or experience enquiries. */
+    readonly ownerBody?: string;
     /**
      * HOS-2073: alternative body used when `anchor` is absent from the DOM. Lets
      * a step stop naming a feature the viewer does not have (e.g. the menu for a
@@ -38,6 +42,19 @@ export interface TourStepConfig {
  * - `comercio` — `/{lang}/mi-cuenta/comercio/` (both lists, `?vertical=…`, HOS-2559)
  */
 export type TourPage = 'dashboard' | 'comercio';
+
+/** Selects enquiry copy using the same effective-permission policy as the dashboard. */
+export function resolveTourStepBody({
+    step,
+    permissions
+}: {
+    readonly step: TourStepConfig;
+    readonly permissions: readonly string[];
+}): string {
+    return step.ownerBody && canAccessPublisherArea({ area: 'commerce', permissions })
+        ? step.ownerBody
+        : step.body;
+}
 
 export interface TourConfig {
     readonly id: string;
@@ -119,6 +136,7 @@ export const WEB_TOURS: ReadonlyArray<TourConfig> = [
                 target: '[data-tour="inbox"]',
                 title: 'account.welcomeTour.inbox.title',
                 body: 'account.welcomeTour.inbox.body',
+                ownerBody: 'account.welcomeTour.inbox.ownerBody',
                 side: 'right',
                 align: 'start'
             },

@@ -36,7 +36,13 @@ import {
 import { loadListingNoticesItem } from '@/lib/listing/listing-notices-loader';
 import { loadSupportEdits } from '@/lib/listing/support-edits';
 
+import { guardPublisherArea } from '@/lib/account/publisher-access';
+
 export const prerender = false;
+const area = Astro.params.vertical;
+if (area !== 'venue' && area !== 'experience') return new Response(null, { status: 404 });
+const denied = guardPublisherArea({ astro: Astro, area });
+if (denied) return denied;
 
 const resolution = await resolveListingEditorPage({ astro: Astro, sectionSlug: null });
 

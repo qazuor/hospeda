@@ -29,7 +29,7 @@ import {
 } from '@/lib/publish/subscribe-button';
 import { buildUrl } from '@/lib/urls';
 import { buildLoginRedirect } from '@/lib/middleware-helpers';
-import { hasAccommodationsNavAccess } from '@/lib/nav-gating';
+import { guardPublisherArea } from '@/lib/account/publisher-access';
 import { getApiUrl } from '@/lib/env';
 import { webLogger as logger } from '@/lib/logger';
 import { buildUsageBadge, fetchHostUsageBadge } from '@/lib/host/usage-badge';
@@ -81,14 +81,8 @@ if (!user) {
     return Astro.redirect(buildLoginRedirect({ locale, currentUrl: Astro.url.pathname + Astro.url.search }));
 }
 
-// Role gate: only host-level roles may manage properties. A plain tourist
-// reaching this URL directly is redirected back to the account home.
-// HOS-296: gate through the shared `nav-gating` predicate over the role SET,
-// so this page and the sidebar that links to it can never disagree, and a
-// user who holds HOST alongside other hats still passes.
-if (!hasAccommodationsNavAccess({ roles: user.roles })) {
-    return Astro.redirect(buildUrl({ locale, path: 'mi-cuenta' }));
-}
+const denied = guardPublisherArea({ astro: Astro, area: 'host' });
+if (denied) return denied;
 
 // ---------------------------------------------------------------------------
 // Server-side fetch: list owner's accommodations.

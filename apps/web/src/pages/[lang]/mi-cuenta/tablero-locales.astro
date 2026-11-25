@@ -11,12 +11,16 @@ import OwnerDashboardPage from '@/components/account/dashboard/OwnerDashboardPag
 import { resolveOwnerDashboardRedirect } from '@/lib/account/owner-listing-dashboard';
 import type { SupportedLocale } from '@/lib/i18n';
 
+import { guardPublisherArea } from '@/lib/account/publisher-access';
+
 export const prerender = false;
+const denied = guardPublisherArea({ astro: Astro, area: 'venue' });
+if (denied) return denied;
 
 // Auth + permission gate (a component cannot redirect, so it lives here).
 const redirect = resolveOwnerDashboardRedirect({
     vertical: 'venue',
-    roles: Astro.locals.user ? Astro.locals.user.roles : null,
+    permissions: Astro.locals.user ? Astro.locals.user.permissions : null,
     locale: Astro.locals.locale as SupportedLocale,
     currentUrl: Astro.url.pathname + Astro.url.search
 });

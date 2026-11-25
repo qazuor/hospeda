@@ -1,347 +1,110 @@
-/**
- * @file MobileMenu.account.test.tsx
- * @description RTL tests for the curated account block inside the mobile
- * hamburguesa (HOS-131 §6.5 mobile "option A") — same curated set as the
- * avatar dropdown (identity "Mi cuenta" link, Favoritos, ONE business
- * shortcut, Suscripción), gated by permissions resolved via the same
- * `/auth/me` cache-first pattern as `UserMenu.client.tsx`.
- */
-
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+/** Site-to-account handoff, with real menu and sheet rendering. */
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { AccountSheet } from '../../../../src/components/shared/navigation/AccountSheet.client';
 import { MobileMenu } from '../../../../src/components/shared/navigation/MobileMenu.client';
-import { AUTH_ME_CACHE_KEY } from '../../../../src/lib/auth-cache';
+import { onOpenAccountSheet } from '../../../../src/lib/account-sheet-events';
 
-// ─── Module mocks ─────────────────────────────────────────────────────────────
-
-vi.mock('../../../../src/components/shared/navigation/MobileMenu.module.css', () => ({
-    default: new Proxy({} as Record<string, string>, {
-        get: (_target, prop) => String(prop)
+const calls = vi.hoisted(() => ({ order: [] as string[] }));
+const user = { id: 'u1', name: 'Ana García', email: 'ana@example.com' };
+vi.mock('../../../../src/hooks/use-account-permissions', () => ({
+    useAccountPermissions: () => ({
+        user,
+        permissions: ['accommodation.create', 'access.panelAdmin', 'access.apiAdmin'],
+        roles: [],
+        ownsHostTradeListing: false,
+        ownsPartner: false
     })
 }));
-
-vi.mock('../../../../src/components/shared/feedback/LoadingButton.module.css', () => ({
-    default: new Proxy({} as Record<string, string>, {
-        get: (_target, prop) => String(prop)
-    })
+vi.mock('../../../../src/lib/dialog-history', async (original) => ({
+    ...(await original<typeof import('../../../../src/lib/dialog-history')>()),
+    acquireDialogHistoryEntry: () => {
+        calls.order.push('acquire');
+        return { release: () => calls.order.push('release') };
+    }
 }));
-
-vi.mock('../../../../src/components/shared/feedback/Spinner.module.css', () => ({
-    default: new Proxy({} as Record<string, string>, {
-        get: (_target, prop) => String(prop)
-    })
-}));
-
+vi.mock('astro:transitions/client', () => ({ navigate: vi.fn() }));
 vi.mock('../../../../src/components/shared/preferences/LanguageSwitcher.client', () => ({
-    LanguageSwitcher: () => <div data-testid="language-switcher" />
+    LanguageSwitcher: () => null
 }));
-
 vi.mock('../../../../src/components/shared/preferences/ThemeControl.client', () => ({
-    ThemeControl: () => <div data-testid="theme-control" />
+    ThemeControl: () => null
 }));
 
-vi.mock('../../../../src/components/ui/IconButtonReact', () => ({
-    IconButton: ({
-        children,
-        onClick,
-        ariaLabel
-    }: {
-        children: React.ReactNode;
-        onClick?: () => void;
-        ariaLabel: string;
-    }) => (
-        <button
-            type="button"
-            onClick={onClick}
-            aria-label={ariaLabel}
-        >
-            {children}
-        </button>
-    )
-}));
-
-vi.mock('../../../../src/lib/auth-client', () => ({
-    signOut: vi.fn().mockResolvedValue(undefined),
-    // Kept so the module mock stays shape-complete; perpetually-pending and
-    // irrelevant to this file's account-block assertions.
-    useSession: vi.fn(() => ({ data: null, isPending: true }))
-}));
-
-vi.mock('../../../../src/lib/env', () => ({
-    getApiUrl: () => 'https://api.test'
-}));
-
-// ─── Fixtures ─────────────────────────────────────────────────────────────────
-
-const DEFAULT_PROPS = {
-    locale: 'es' as const,
-    navItems: [{ label: 'Inicio', href: '/es/' }],
-    currentPath: '/es/',
-    logoSrc: '/logo.svg',
-    homeHref: '/es/',
-    initialUser: {
-        id: 'u1',
-        name: 'Ana García',
-        email: 'ana@example.com'
-    },
-    initialRoles: [] as readonly string[]
-};
-
-function renderMenu(overrides: Partial<typeof DEFAULT_PROPS> = {}) {
-    return render(
-        <MobileMenu
-            {...DEFAULT_PROPS}
-            {...overrides}
-        />
+function setup() {
+    render(
+        <>
+            <MobileMenu
+                locale="es"
+                navItems={[{ label: 'Destinations', href: '/es/destinos/' }]}
+                currentPath="/es/"
+                logoSrc="/logo.webp"
+                homeHref="/es/"
+                initialUser={user}
+                initialRoles={[]}
+                adminPanelUrl="https://admin.test"
+            />
+            <AccountSheet
+                locale="es"
+                adminPanelUrl="https://admin.test"
+            />
+        </>
     );
+    act(() => window.dispatchEvent(new CustomEvent('mobile-menu:toggle')));
 }
 
-/** Opens the menu by dispatching the custom toggle event. */
-function openMenu() {
-    act(() => {
-        window.dispatchEvent(new CustomEvent('mobile-menu:toggle'));
-    });
-}
-
-/** Opens the menu then expands the account submenu. */
-function openAccountMenu() {
-    openMenu();
-    const userRow = screen.getByRole('button', { name: /Ana García/i });
-    fireEvent.click(userRow);
-}
-
-// ─── Tests ────────────────────────────────────────────────────────────────────
-
-describe('MobileMenu — account block (HOS-131 §6.5, HOS-2551)', () => {
+describe('MobileMenu account handoff', () => {
     beforeEach(() => {
-        sessionStorage.clear();
+        calls.order.length = 0;
     });
-
-    afterEach(() => {
-        vi.restoreAllMocks();
-        sessionStorage.clear();
+    it('shows one account row, no curated accordion, no sign-out and no staff link in the hamburger', () => {
+        setup();
+        const menu = screen.getByRole('dialog');
+        const row = within(menu).getByRole('button', { name: /Mi cuenta Ana García/ });
+        expect(row).toHaveAttribute('aria-haspopup', 'dialog');
+        expect(row).not.toHaveAttribute('aria-expanded');
+        expect(
+            within(menu).queryByRole('link', {
+                name: /Mi cuenta|Favoritos|Administrar|Panel de administración/
+            })
+        ).toBeNull();
+        expect(within(menu).queryByRole('button', { name: 'Cerrar sesión' })).toBeNull();
+        expect(within(menu).getByRole('button', { name: 'Publicar' })).toBeInTheDocument();
     });
-
-    it('shows the identity "Mi cuenta" link while permissions are loading, and no profile or favorites link (HOS-2551)', () => {
-        global.fetch = vi.fn(
-            () =>
-                new Promise(() => {
-                    // Never resolves — simulates pending /auth/me
-                })
-        ) as unknown as typeof fetch;
-
-        renderMenu();
-        openAccountMenu();
-
-        expect(screen.getByRole('link', { name: /mi cuenta/i })).toHaveAttribute(
+    it('unwinds hamburger history and releases scroll lock BEFORE opening the account sheet', async () => {
+        setup();
+        const observed = vi.fn(() => {
+            calls.order.push('open-event');
+            expect(document.documentElement).not.toHaveAttribute('data-mobile-menu-open');
+            expect(document.documentElement.style.overflow).not.toBe('hidden');
+        });
+        const cleanup = onOpenAccountSheet(observed);
+        fireEvent.click(screen.getByRole('button', { name: /Mi cuenta Ana García/ }));
+        expect(calls.order).toEqual(['acquire', 'release']);
+        expect(observed).not.toHaveBeenCalled();
+        act(() => window.dispatchEvent(new PopStateEvent('popstate')));
+        await waitFor(() =>
+            expect(screen.getByRole('dialog', { name: 'Menú de cuenta' })).toBeInTheDocument()
+        );
+        expect(calls.order).toEqual(['acquire', 'release', 'open-event', 'acquire']);
+        expect(screen.getByRole('link', { name: /Panel de administración/ })).toHaveAttribute(
             'href',
-            '/es/mi-cuenta/'
+            'https://admin.test'
         );
-        expect(screen.queryByRole('link', { name: /^favoritos$/i })).not.toBeInTheDocument();
-        expect(screen.queryByRole('link', { name: /^suscripción$/i })).not.toBeInTheDocument();
-        expect(screen.queryByRole('link', { name: /asistentes de ia/i })).not.toBeInTheDocument();
-    });
-
-    it('hides the business shortcut while permissions are loading (fail-closed)', () => {
-        global.fetch = vi.fn(
-            () =>
-                new Promise(() => {
-                    // Never resolves
-                })
-        ) as unknown as typeof fetch;
-
-        renderMenu();
-        openAccountMenu();
-
-        expect(
-            screen.queryByRole('link', { name: /administrar alojamientos/i })
-        ).not.toBeInTheDocument();
-    });
-
-    it('does NOT show non-curated sidebar-only links (reviews, preferences)', () => {
-        global.fetch = vi.fn().mockResolvedValue({
-            ok: true,
-            json: async () => ({
-                data: { actor: { id: 'u1', permissions: [] }, isAuthenticated: true }
-            })
-        }) as unknown as typeof fetch;
-
-        renderMenu();
-        openAccountMenu();
-
-        expect(screen.queryByRole('link', { name: /mis reseñas/i })).not.toBeInTheDocument();
-        expect(screen.queryByRole('link', { name: /^preferencias$/i })).not.toBeInTheDocument();
-    });
-
-    it('shows «Administrar alojamientos» once accommodation.create resolves from the cache', async () => {
-        sessionStorage.setItem(
-            AUTH_ME_CACHE_KEY,
-            JSON.stringify({
-                isAuthenticated: true,
-                user: { id: 'u1', name: 'Ana García', email: 'ana@example.com' },
-                permissions: ['accommodation.create'],
-                roles: ['USER', 'HOST'],
-                cachedAt: Date.now()
-            })
+        expect(screen.getByRole('button', { name: 'Menú de cuenta' })).toHaveAttribute(
+            'aria-expanded',
+            'true'
         );
-        const fetchMock = vi.fn();
-        global.fetch = fetchMock as unknown as typeof fetch;
-
-        renderMenu();
-        openAccountMenu();
-
-        await waitFor(() => {
-            expect(screen.getByRole('link', { name: /administrar alojamientos/i })).toHaveAttribute(
-                'href',
-                '/es/mi-cuenta/host-dashboard/'
-            );
-        });
-        expect(
-            screen.queryByRole('link', { name: /administrar comer y salir/i })
-        ).not.toBeInTheDocument();
-        // Cache was fresh and authenticated — no network round-trip needed.
-        expect(fetchMock).not.toHaveBeenCalled();
+        cleanup();
     });
-
-    it('shows «Administrar Comer y salir» for a venue-only owner', async () => {
-        sessionStorage.setItem(
-            AUTH_ME_CACHE_KEY,
-            JSON.stringify({
-                isAuthenticated: true,
-                user: { id: 'u1', name: 'Ana García', email: 'ana@example.com' },
-                permissions: ['venue.editOwn'],
-                roles: ['USER', 'VENUE_OWNER'],
-                cachedAt: Date.now()
-            })
-        );
-        global.fetch = vi.fn() as unknown as typeof fetch;
-
-        renderMenu();
-        openAccountMenu();
-
-        await waitFor(() => {
-            expect(
-                screen.getByRole('link', { name: /administrar comer y salir/i })
-            ).toHaveAttribute('href', '/es/mi-cuenta/comercio/?vertical=venue');
-        });
-        expect(
-            screen.queryByRole('link', { name: /administrar alojamientos/i })
-        ).not.toBeInTheDocument();
-    });
-
-    it('lists one shortcut per vertical when the user has several (HOS-2551)', async () => {
-        sessionStorage.setItem(
-            AUTH_ME_CACHE_KEY,
-            JSON.stringify({
-                isAuthenticated: true,
-                user: { id: 'u1', name: 'Ana García', email: 'ana@example.com' },
-                permissions: ['accommodation.create', 'venue.editOwn'],
-                roles: ['USER', 'HOST', 'VENUE_OWNER'],
-                cachedAt: Date.now()
-            })
-        );
-        global.fetch = vi.fn() as unknown as typeof fetch;
-
-        renderMenu();
-        openAccountMenu();
-
-        await waitFor(() => {
-            expect(
-                screen.getByRole('link', { name: /administrar alojamientos/i })
-            ).toBeInTheDocument();
-        });
-        expect(
-            screen.getByRole('link', { name: /administrar comer y salir/i })
-        ).toBeInTheDocument();
-    });
-
-    it('shows «Administrar ficha de aliado» for a partner owner (HOS-2551)', async () => {
-        sessionStorage.setItem(
-            AUTH_ME_CACHE_KEY,
-            JSON.stringify({
-                isAuthenticated: true,
-                user: { id: 'u1', name: 'Ana García', email: 'ana@example.com' },
-                permissions: [],
-                roles: ['USER'],
-                ownsPartner: true,
-                cachedAt: Date.now()
-            })
-        );
-        global.fetch = vi.fn() as unknown as typeof fetch;
-
-        renderMenu();
-        openAccountMenu();
-
-        await waitFor(() => {
-            expect(
-                screen.getByRole('link', { name: /administrar ficha de aliado/i })
-            ).toHaveAttribute('href', '/es/mi-cuenta/partner/');
-        });
-    });
-
-    it('fetches permissions from /auth/me when no cache is present', async () => {
-        const fetchMock = vi.fn().mockResolvedValue({
-            ok: true,
-            json: async () => ({
-                data: {
-                    actor: { id: 'u1', permissions: ['accommodation.create'] },
-                    isAuthenticated: true
-                }
-            })
-        });
-        global.fetch = fetchMock as unknown as typeof fetch;
-
-        renderMenu();
-        openAccountMenu();
-
-        await waitFor(() => {
-            expect(
-                screen.getByRole('link', { name: /administrar alojamientos/i })
-            ).toBeInTheDocument();
-        });
-        expect(fetchMock).toHaveBeenCalledTimes(1);
-    });
-
-    // HOS: MobileMenu no longer skips resolution for a guest SSR hint. Since
-    // it no longer runs inside a server:defer island, `initialUser: null` on
-    // most public pages is only a HINT (middleware didn't parse the
-    // session there) — it may be WRONG for an actually-signed-in visitor.
-    // The hook must reconcile against the cache/fetch the same way UserMenu
-    // does, instead of trusting the hint outright (the old `skip: !user`
-    // behavior this test used to assert).
-    it('reconciles a guest hint with no cache present by fetching once (may be a signed-in visitor on an unparsed page)', async () => {
-        const fetchMock = vi.fn().mockResolvedValue({
-            ok: true,
-            json: async () => ({ data: { actor: null, isAuthenticated: false } })
-        });
-        global.fetch = fetchMock as unknown as typeof fetch;
-
-        renderMenu({ initialUser: null });
-        openMenu();
-
-        await waitFor(() => {
-            expect(fetchMock).toHaveBeenCalledTimes(1);
-        });
-    });
-
-    it('does not fetch when a fresh guest cache already agrees with the guest hint (steady state, e.g. after UserMenu already resolved it)', () => {
-        sessionStorage.setItem(
-            AUTH_ME_CACHE_KEY,
-            JSON.stringify({
-                isAuthenticated: false,
-                user: null,
-                permissions: [],
-                roles: [],
-                cachedAt: Date.now()
-            })
-        );
-        const fetchMock = vi.fn();
-        global.fetch = fetchMock as unknown as typeof fetch;
-
-        renderMenu({ initialUser: null });
-        openMenu();
-
-        expect(fetchMock).not.toHaveBeenCalled();
-        expect(screen.queryByRole('link', { name: /iniciar sesión/i })).toBeInTheDocument();
+    it('opens exactly once through the bounded fallback if no popstate arrives', async () => {
+        setup();
+        const observed = vi.fn();
+        const cleanup = onOpenAccountSheet(observed);
+        fireEvent.click(screen.getByRole('button', { name: /Mi cuenta Ana García/ }));
+        await waitFor(() => expect(observed).toHaveBeenCalledTimes(1));
+        act(() => window.dispatchEvent(new PopStateEvent('popstate')));
+        expect(observed).toHaveBeenCalledTimes(1);
+        cleanup();
     });
 });

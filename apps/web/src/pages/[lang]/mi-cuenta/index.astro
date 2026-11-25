@@ -48,7 +48,7 @@ const description = t('account.pages.dashboard.description');
 // handed to the island, since the catalog reader and the translator are server-side.
 const planNames = await readDashboardPlanNames({ t });
 
-const links = buildGeneralDashboardLinks({ roles: user.roles });
+const links = buildGeneralDashboardLinks({ permissions: user.permissions, ownsHostTradeListing: user.ownsHostTradeListing });
 ---
 
 <AccountLayout locale={locale} title={title} description={description} activeSection="mi-cuenta" template="dashboard">
@@ -66,5 +66,5 @@ const links = buildGeneralDashboardLinks({ roles: user.roles });
     </div>
 
     <!-- What's New + Tour: auto-trigger controllers (D12 gate) -->
-    <DashboardController locale={locale} userRoles={user.roles} client:idle />
+    <DashboardController locale={locale} userRoles={user.roles} permissions={user.permissions} client:idle />
 </AccountLayout>

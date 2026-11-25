@@ -15,7 +15,7 @@
  * @rendering SSR + Cloudflare cache (no `prerender`, matches beneficios/nosotros)
  */
 
-import { getImage, Image } from 'astro:assets';
+import { Image } from 'astro:assets';
 import { BrandWordmark } from '@/components/shared/brand/BrandWordmark';
 import { BriefcaseIcon, CheckIcon, HomeIcon, ShieldIcon, UserIcon } from '@repo/icons';
 
@@ -34,12 +34,8 @@ import { getSiteUrl } from '@/lib/env';
 import { buildUrl } from '@/lib/urls';
 import logoSrc from '@/assets/images/logo.webp';
 
-let brandLogoSrc = logoSrc.src;
-try {
-	brandLogoSrc = (await getImage({ src: logoSrc, width: 68, format: 'webp' })).src;
-} catch {
-	// Fall back to the unprocessed asset path.
-}
+// The bundled asset URL: this static page fetches nothing at render (HOS-369).
+const brandLogoSrc = logoSrc.src;
 import {
 	ANFITRIONES_ADDONS,
 	ANFITRIONES_BANNER_ICON,

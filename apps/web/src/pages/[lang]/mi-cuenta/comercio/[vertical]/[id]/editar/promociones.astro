@@ -12,7 +12,13 @@ import {
     resolveVenueUpsellPlans
 } from '@/lib/venue/section-upsell-plan';
 
+import { guardPublisherArea } from '@/lib/account/publisher-access';
+
 export const prerender = false;
+const area = Astro.params.vertical;
+if (area !== 'venue' && area !== 'experience') return new Response(null, { status: 404 });
+const denied = guardPublisherArea({ astro: Astro, area });
+if (denied) return denied;
 const resolution = await resolveListingEditorPage({ astro: Astro, sectionSlug: 'promociones' });
 if (resolution.redirect) return resolution.redirect;
 if (resolution.error) return resolution.error;

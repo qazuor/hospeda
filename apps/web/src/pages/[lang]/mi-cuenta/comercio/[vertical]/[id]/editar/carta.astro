@@ -40,7 +40,13 @@ import { resolveVenueUpsellPlans } from '@/lib/venue/section-upsell-plan';
 import { readLockedSectionCounts } from '@/lib/listing/locked-section-counts';
 import { readListingMenuUrl } from '@/lib/listing/listing-editor-detail';
 
+import { guardPublisherArea } from '@/lib/account/publisher-access';
+
 export const prerender = false;
+const area = Astro.params.vertical;
+if (area !== 'venue' && area !== 'experience') return new Response(null, { status: 404 });
+const denied = guardPublisherArea({ astro: Astro, area });
+if (denied) return denied;
 
 const resolution = await resolveListingEditorPage({ astro: Astro, sectionSlug: 'carta' });
 

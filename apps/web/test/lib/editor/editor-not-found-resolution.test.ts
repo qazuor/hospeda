@@ -38,7 +38,10 @@ function makeAstro({
     roles?: string[];
 }) {
     return {
-        locals: { locale: 'es', user: { id: 'u1', roles, permissions: [] } },
+        locals: {
+            locale: 'es',
+            user: { id: 'u1', roles, permissions: ['accommodation.update.own', 'venue.editOwn'] }
+        },
         params: { id: 'abc', ...(vertical ? { vertical } : {}) },
         url: new URL('https://hospeda.test/es/mi-cuenta/x/abc/editar/'),
         request: { headers: new Headers() },

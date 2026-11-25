@@ -25,7 +25,11 @@ import { buildLoginRedirect } from '@/lib/middleware-helpers';
 import { hasPostsNavAccess } from '@/lib/nav-gating';
 import { buildUrl } from '@/lib/urls';
 
+import { guardPublisherArea } from '@/lib/account/publisher-access';
+
 export const prerender = false;
+const denied = guardPublisherArea({ astro: Astro, area: 'postCreate' });
+if (denied) return denied;
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
@@ -35,7 +39,7 @@ if (!user) {
     return Astro.redirect(buildLoginRedirect({ locale, currentUrl: Astro.url.pathname + Astro.url.search }));
 }
 
-const canCreatePosts = hasPostsNavAccess({ roles: user.roles });
+const canCreatePosts = hasPostsNavAccess({ permissions: user.permissions });
 
 const title = t('account.myContent.posts.create.pageTitle', 'Nueva publicación');
 const subtitle = t(

@@ -23,8 +23,9 @@
  * @module lib/listing/owner-list-vertical
  */
 
-import { PermissionEnum, type VenueOrExperience } from '@repo/schemas';
+import type { VenueOrExperience } from '@repo/schemas';
 import { z } from 'zod';
+import { canAccessPublisherArea } from '@/lib/account/publisher-access';
 
 /** The two owner lists, in the owner's order (venues first). */
 export const OWNER_LIST_VERTICALS = [
@@ -40,12 +41,6 @@ export const OWNER_LIST_BASE_PATH = 'mi-cuenta/comercio';
 
 /** Validates the `vertical` query parameter. */
 export const OwnerListVerticalSchema = z.enum(OWNER_LIST_VERTICALS);
-
-/** The permission that opens each list. */
-export const OWNER_LIST_VERTICAL_PERMISSION: Readonly<Record<VenueOrExperience, PermissionEnum>> = {
-    venue: PermissionEnum.VENUE_EDIT_OWN,
-    experience: PermissionEnum.EXPERIENCE_EDIT_OWN
-};
 
 /**
  * i18n key of each list's name («Mis locales» / «Mis experiencias»): the
@@ -113,7 +108,7 @@ export function resolveOwnerListVerticals({
     readonly permissions: readonly string[];
 }): readonly VenueOrExperience[] {
     return OWNER_LIST_VERTICALS.filter((vertical) =>
-        permissions.includes(OWNER_LIST_VERTICAL_PERMISSION[vertical])
+        canAccessPublisherArea({ area: vertical, permissions })
     );
 }
 

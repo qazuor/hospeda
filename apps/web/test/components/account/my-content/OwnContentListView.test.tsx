@@ -19,6 +19,45 @@ const item = (n: number): OwnContentListItem => ({
 });
 
 describe('OwnContentListView', () => {
+    it.each([
+        'posts',
+        'events'
+    ] as const)('omits create affordances for update-only %s, including empty state', (kind) => {
+        for (const status of ['ready', 'empty'] as const) {
+            const { container, unmount } = render(
+                <OwnContentListView
+                    locale="en"
+                    kind={kind}
+                    status={status}
+                    items={status === 'ready' ? [item(1)] : []}
+                    page={1}
+                    pageCount={1}
+                    canCreate={false}
+                    canEdit={true}
+                />
+            );
+            expect(container.querySelector('a[href$="/nuevo/"]')).toBeNull();
+            if (status === 'ready')
+                expect(container.querySelector('a[href$="/editar/"]')).not.toBeNull();
+            unmount();
+        }
+    });
+    it.each(['posts', 'events'] as const)('omits edit links for create-only %s', (kind) => {
+        const { container } = render(
+            <OwnContentListView
+                locale="en"
+                kind={kind}
+                status="ready"
+                items={[item(1)]}
+                page={1}
+                pageCount={1}
+                canCreate={true}
+                canEdit={false}
+            />
+        );
+        expect(container.querySelector('a[href$="/nuevo/"]')).not.toBeNull();
+        expect(container.querySelector('a[href$="/editar/"]')).toBeNull();
+    });
     it('HOS-2440: more than 50 posts paginate, every page is linked', () => {
         // Arrange: the API reports 60 posts; the page shows the first 20.
         const pageState = resolveAccountPageState({ requestedPage: 1, total: 60 });
@@ -29,6 +68,8 @@ describe('OwnContentListView', () => {
             <OwnContentListView
                 locale="es"
                 kind="posts"
+                canCreate={true}
+                canEdit={true}
                 status="ready"
                 items={items}
                 page={pageState.page}
@@ -51,6 +92,8 @@ describe('OwnContentListView', () => {
             <OwnContentListView
                 locale="es"
                 kind="posts"
+                canCreate={false}
+                canEdit={false}
                 status="locked"
                 items={[]}
                 page={1}
@@ -71,6 +114,8 @@ describe('OwnContentListView', () => {
             <OwnContentListView
                 locale="es"
                 kind="events"
+                canCreate={true}
+                canEdit={true}
                 status="ready"
                 items={[
                     {
@@ -103,6 +148,8 @@ describe('OwnContentListView', () => {
             <OwnContentListView
                 locale="es"
                 kind="events"
+                canCreate={true}
+                canEdit={true}
                 status="empty"
                 items={[]}
                 page={1}
