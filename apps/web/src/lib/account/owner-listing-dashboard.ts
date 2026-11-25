@@ -12,17 +12,12 @@
  * @module lib/account/owner-listing-dashboard
  */
 
-import {
-    type OwnerDashboardVertical,
-    type OwnerListingDashboard,
-    PermissionEnum
-} from '@repo/schemas';
+import type { OwnerDashboardVertical, OwnerListingDashboard } from '@repo/schemas';
 import type { DashboardRow } from '@/lib/account/dashboard-rows';
+import { canAccessPublisherArea, publisherDenyRedirect } from '@/lib/account/publisher-access';
 import { buildLoginRedirect } from '@/lib/auth-redirect';
 import type { SupportedLocale } from '@/lib/i18n';
-import { isVisibleByRoles } from '@/lib/nav-gating';
 import { PUBLISH_PAGE_PATH_BY_VERTICAL } from '@/lib/publish/publish-page-paths';
-import { buildUrl } from '@/lib/urls';
 
 /** Stable widget ids per vertical (`data-widget`). */
 export const OWNER_DASHBOARD_WIDGETS: Readonly<
@@ -38,37 +33,30 @@ export const OWNER_DASHBOARD_PATH: Readonly<Record<OwnerDashboardVertical, strin
     experience: 'mi-cuenta/tablero-experiencias'
 };
 
-/** Own-listing permission each owner dashboard requires (never a role literal). */
-export const OWNER_DASHBOARD_PERMISSION: Readonly<Record<OwnerDashboardVertical, PermissionEnum>> =
-    {
-        venue: PermissionEnum.VENUE_EDIT_OWN,
-        experience: PermissionEnum.EXPERIENCE_EDIT_OWN
-    };
-
 /**
  * Where an owner-dashboard request must be redirected, or `null` to render.
  *
  * Anonymous → login (middleware already does it; this is the safety net).
  * Signed in without the vertical's permission → the account home.
  *
- * @param input - Vertical, the session's roles (`null` when anonymous), locale and current URL.
+ * @param input - Vertical, effective permissions (`null` when anonymous), locale and current URL.
  * @returns A redirect target, or `null`.
  */
 export function resolveOwnerDashboardRedirect({
     vertical,
-    roles,
+    permissions,
     locale,
     currentUrl
 }: {
     readonly vertical: OwnerDashboardVertical;
-    readonly roles: readonly string[] | null;
+    readonly permissions: readonly string[] | null;
     readonly locale: SupportedLocale;
     readonly currentUrl: string;
 }): string | null {
-    if (roles === null) return buildLoginRedirect({ locale, currentUrl });
-    return isVisibleByRoles({ requiredPermission: OWNER_DASHBOARD_PERMISSION[vertical] }, roles)
+    if (permissions === null) return buildLoginRedirect({ locale, currentUrl });
+    return canAccessPublisherArea({ area: vertical, permissions })
         ? null
-        : buildUrl({ locale, path: 'mi-cuenta' });
+        : publisherDenyRedirect({ locale });
 }
 
 /** Quick actions of an owner dashboard. */

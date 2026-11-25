@@ -30,6 +30,7 @@ import { buildUrl } from '@/lib/urls';
 import { buildLoginRedirect } from '@/lib/middleware-helpers';
 import { buildAccountNotFoundTarget } from '@/lib/account-not-found';
 import { resolveOwnerInboxGate } from '@/lib/owner-inbox-gate';
+import { guardPublisherArea } from '@/lib/account/publisher-access';
 import { ownerConversationsApi } from '@/lib/api/endpoints-protected';
 import type { OwnerConversationThreadResponse } from '@/lib/api/endpoints-protected';
 
@@ -44,7 +45,9 @@ if (!user) {
 }
 
 // HOS-2433 / HOS-2482: gate by PERMISSION, never by role name, BEFORE any read.
-const gate = resolveOwnerInboxGate({ roles: user.roles });
+const denied = guardPublisherArea({ astro: Astro, area: 'inbox' });
+if (denied) return denied;
+const gate = resolveOwnerInboxGate({ permissions: user.permissions });
 
 const { conversationId } = Astro.params;
 if (!conversationId) return Astro.rewrite(buildAccountNotFoundTarget({ locale, back: 'ownerMessages' }));

@@ -1,103 +1,48 @@
-/**
- * @file account-layout-owner-nav.test.ts
- * @description Source-level + engine-integration tests for the AccountLayout
- * sidebar navigation (HOS-131 T-007 refactor of SPEC-206 PR2's owner
- * conversations nav coverage).
- *
- * `AccountLayout.astro` no longer hardcodes per-item labels/sections — it
- * renders `getNavForSurface({ surface: 'sidebar' })` gated server-side by
- * `isVisibleByRoles` (HOS-131 D-4). Behavior coverage below (which
- * groups/items a given role sees) exercises those same engine functions the
- * layout calls, instead of string-matching literal labels that no longer
- * live in the Astro source.
- */
-
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { RoleEnum } from '@repo/schemas';
+import { PermissionEnum as P } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
+import { buildAccountNavModel } from '@/lib/account-nav-model';
 
-import { getNavForSurface, type NavGroup } from '../../src/config/navigation';
-import { isVisibleByRoles } from '../../src/lib/nav-gating';
+const read = (path: string) =>
+    readFileSync(resolve(import.meta.dirname, '../../src', path), 'utf8');
+const source = read('layouts/AccountLayout.astro');
+const model = read('lib/account-nav-model.ts');
+const sidebar = read('components/account/ui/AccountSidebar.tsx');
+const view = read('components/account/ui/account-sidebar-view.ts');
 
-const source = readFileSync(resolve(__dirname, '../../src/layouts/AccountLayout.astro'), 'utf8');
-// HOS-2508: the legacy frame is gone; the sidebar markup is the kit `AccountSidebar`.
-const sidebarSource = readFileSync(
-    resolve(__dirname, '../../src/components/account/ui/AccountSidebar.tsx'),
-    'utf8'
-);
-const sidebarViewSource = readFileSync(
-    resolve(__dirname, '../../src/components/account/ui/account-sidebar-view.ts'),
-    'utf8'
-);
-// HOS-2413 T-017: the nav DATA moved into the model; the layout only renders it.
-const modelSource = readFileSync(resolve(__dirname, '../../src/lib/account-nav-model.ts'), 'utf8');
-
-/** Computes the sidebar nav groups exactly as `AccountLayout.astro` does for a given role. */
-function sidebarGroupsForRole(role: string | null): readonly NavGroup[] {
-    return getNavForSurface({
-        surface: 'sidebar',
-        visibility: (node) => isVisibleByRoles(node, role === null ? null : [role])
-    }).groups;
-}
-
-describe('AccountLayout — sidebar wiring (HOS-131 T-007)', () => {
-    it('renders navigation from the single-source config via getNavForSurface', () => {
-        // Also imports PROVIDER_NAV_GROUP (H-158) — see
-        // account-layout-provider-nav.test.ts for that entry's own coverage.
-        expect(modelSource).toContain('getNavForSurface');
-        expect(modelSource).toContain('PROVIDER_NAV_GROUP');
-        expect(modelSource).toContain("surface: 'sidebar'");
+describe('SSR publisher navigation wiring', () => {
+    it('uses the shared model and effective permissions with no extra auth lookup', () => {
+        expect(source).toContain('navModel={navModel}');
+        expect(source).toContain('permissions: userPermissions');
+        expect(source).toContain('Astro.locals.user?.permissions ?? []');
+        expect(model).toContain('isVisibleByPermissions(node, permissions)');
+        expect(model).toContain("surface: 'sidebar'");
+        expect(model).toContain('PROVIDER_NAV_GROUP');
     });
-
-    it('gates server-side via isVisibleByRoles (HOS-131 D-4), not the scattered role helpers', () => {
-        expect(modelSource).toContain(
-            "import { isDoorVisible, isVisibleByRoles, resolveDoorLabelKey } from '@/lib/nav-gating';"
-        );
-        expect(modelSource).not.toContain('isHostRole');
-        expect(modelSource).not.toContain('isOwnerRole');
-        expect(source).not.toContain('isHostRole');
-        expect(source).not.toContain('isOwnerRole');
+    it('keeps tour targets owned by the configuration', () => {
+        expect(view).toContain('tourTarget: item.item.tourTarget');
+        expect(sidebar).toContain('data-tour={item.tourTarget}');
+        expect(sidebar).not.toContain('function getTourTarget');
     });
-
-    it('wires data-tour from the config item, not a local getTourTarget mapping', () => {
-        expect(sidebarViewSource).toContain('tourTarget: item.item.tourTarget');
-        expect(sidebarSource).toContain('data-tour={item.tourTarget}');
-        expect(sidebarSource).not.toContain('function getTourTarget');
-        expect(source).not.toContain('function getTourTarget');
-    });
-});
-
-describe('AccountLayout — sidebar role gating (HOS-131 AC-1/AC-2)', () => {
-    it('a HOST role sees the anfitrion group', () => {
-        const groups = sidebarGroupsForRole(RoleEnum.HOST);
-        expect(groups.map((group) => group.id)).toContain('anfitrion');
-    });
-
-    it('a plain tourist (USER) role does NOT see the anfitrion group', () => {
-        const groups = sidebarGroupsForRole(RoleEnum.USER);
-        expect(groups.map((group) => group.id)).not.toContain('anfitrion');
-    });
-
-    it('"Mis alojamientos" (properties) renders under the anfitrion group for a HOST role (AC-2)', () => {
-        const groups = sidebarGroupsForRole(RoleEnum.HOST);
-        const anfitrion = groups.find((group) => group.id === 'anfitrion');
-        expect(anfitrion?.items.some((item) => item.id === 'properties')).toBe(true);
-    });
-
-    it('the owner conversations entry (ownerMessages) is present under anfitrion for a HOST role', () => {
-        const groups = sidebarGroupsForRole(RoleEnum.HOST);
-        const anfitrion = groups.find((group) => group.id === 'anfitrion');
-        expect(anfitrion?.items.some((item) => item.id === 'ownerMessages')).toBe(true);
-    });
-
-    it('uses i18n keys for every rendered label (no hardcoded strings, AC-8)', () => {
-        const groups = sidebarGroupsForRole(RoleEnum.HOST);
-        for (const group of groups) {
-            expect(group.i18nKey).toMatch(/^[a-zA-Z0-9.]+$/);
-            for (const item of group.items) {
-                expect(item.i18nKey).toMatch(/^[a-zA-Z0-9.]+$/);
-            }
-        }
+    it('admits an independent inbox grant and denies retained roles without permission', () => {
+        const base = {
+            roles: ['HOST'],
+            ownsHostTradeListing: false,
+            mcpEnabled: false,
+            activeSection: 'owner-messages'
+        };
+        const denied = buildAccountNavModel({ ...base, permissions: [] });
+        expect(denied.groups.some((entry) => entry.group.id === 'anfitrion')).toBe(false);
+        const granted = buildAccountNavModel({
+            ...base,
+            roles: ['USER'],
+            permissions: [P.CONVERSATION_VIEW_OWN]
+        });
+        expect(
+            granted.groups
+                .find((entry) => entry.group.id === 'anfitrion')
+                ?.items.map((entry) => entry.item.id)
+        ).toEqual(['ownerMessages']);
     });
 });

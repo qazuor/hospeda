@@ -27,7 +27,12 @@ import { EntitlementKeyEnum } from '@repo/schemas';
 import { fetchPublicPlans, planNamesWithEntitlement } from '@/lib/billing/fetch-plans';
 import { readPromotionPolicy } from '@/lib/promotions/promotion-policy';
 
+import { guardPublisherArea } from '@/lib/account/publisher-access';
+
 export const prerender = false;
+const denied = guardPublisherArea({ astro: Astro, area: 'promotionEdit' })
+    ?? guardPublisherArea({ astro: Astro, area: 'promotions' });
+if (denied) return denied;
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
@@ -35,6 +40,11 @@ const { t } = createTranslations(locale);
 const title = t('host.promotions.actions.edit');
 const description = t('host.promotions.pageDescription');
 const listUrl = buildUrl({ locale, path: 'mi-cuenta/promociones' });
+
+const user = Astro.locals.user;
+if (!user) {
+    return Astro.redirect(buildLoginRedirect({ locale, currentUrl: Astro.url.pathname + Astro.url.search }));
+}
 
 // HOS-2589: the audience texts read X and the VIP plan name from the tourist catalog.
 const { freeQuota, vipPlanName } = readPromotionPolicy({
@@ -47,12 +57,6 @@ const lockPlanNames = planNamesWithEntitlement({
     result: await fetchPublicPlans({ vertical: 'accommodation' }),
     entitlement: EntitlementKeyEnum.CREATE_PROMOTIONS
 });
-
-// Auth guard: middleware protects /mi-cuenta/* automatically, safety net.
-const user = Astro.locals.user;
-if (!user) {
-    return Astro.redirect(buildLoginRedirect({ locale, currentUrl: Astro.url.pathname + Astro.url.search }));
-}
 
 // Extract promotion ID from route params.
 const promotionId = Astro.params.id;

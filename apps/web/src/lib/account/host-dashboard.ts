@@ -10,20 +10,23 @@
  */
 
 import type { DashboardRow } from '@/lib/account/dashboard-rows';
+import { canAccessPublisherArea, type PublisherArea } from '@/lib/account/publisher-access';
 
 /** Stable ids of the host dashboard's widgets (`data-widget`). */
 export const HOST_DASHBOARD_WIDGETS = ['hostProperties', 'hostUnreadMessages'] as const;
 
 /** Quick actions of the host dashboard, as list rows. */
-export const HOST_QUICK_ACTIONS: readonly DashboardRow[] = [
+export const HOST_QUICK_ACTIONS: readonly (DashboardRow & { readonly area: PublisherArea })[] = [
     {
         id: 'properties',
+        area: 'host',
         labelKey: 'host.dashboard.quickActions.properties',
         path: 'mi-cuenta/propiedades',
         icon: 'building'
     },
     {
         id: 'promotions',
+        area: 'promotions',
         labelKey: 'host.dashboard.quickActions.promotions',
         path: 'mi-cuenta/promociones',
         icon: 'megaphone'
@@ -31,11 +34,21 @@ export const HOST_QUICK_ACTIONS: readonly DashboardRow[] = [
     {
         // The OWNER inbox, never the guest one (HOS-2418).
         id: 'ownerMessages',
+        area: 'inbox',
         labelKey: 'host.dashboard.quickActions.messages',
         path: 'mi-cuenta/consultas-propietario',
         icon: 'chat'
     }
 ];
+
+/** Filters dashboard shortcuts through the same policies as their target pages. */
+export function buildHostQuickActions({
+    permissions
+}: {
+    readonly permissions: readonly string[];
+}): readonly DashboardRow[] {
+    return HOST_QUICK_ACTIONS.filter(({ area }) => canAccessPublisherArea({ area, permissions }));
+}
 
 /** Subset of `GET /protected/host/dashboard` this page reads. */
 export interface HostDashboardPayload {

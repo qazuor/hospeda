@@ -44,14 +44,6 @@ vi.mock('@/lib/editor/editor-registry', () => ({
     findEditorSectionBySlug: (args: unknown) => findEditorSectionBySlug(args)
 }));
 
-vi.mock('@/lib/nav-gating', () => ({
-    hasListingNavAccess: () => true
-}));
-
-vi.mock('@/lib/urls', () => ({
-    buildUrl: ({ locale, path }: { locale: string; path: string }) => `/${locale}/${path}`
-}));
-
 const { resolveListingEditorPage } = await import('@/lib/editor/resolve-listing-editor-page');
 
 const COOKIE = 'better-auth.session_token=abc123';
@@ -66,7 +58,7 @@ function createAstro({ sectionSlug = null }: { readonly sectionSlug?: string | n
     return {
         locals: {
             locale: 'es',
-            user: { id: 'user-1', roles: ['VENUE_OWNER'] }
+            user: { id: 'user-1', roles: ['VENUE_OWNER'], permissions: ['venue.editOwn'] }
         },
         url: editorUrl(sectionSlug),
         params: { vertical: 'venue', id: 'listing-1' },
@@ -107,6 +99,34 @@ describe('resolveListingEditorPage — an absent section slug fails to the hub',
             '/es/mi-cuenta/comercio/venue/listing-1/editar/'
         );
         expect(result.detail).toBeUndefined();
+    });
+
+    it('denies a retained owner role without effective permission before loading', async () => {
+        const astro = createAstro();
+        astro.locals.user.permissions = [];
+        const result = await resolveListingEditorPage({ astro: astro as never, sectionSlug: null });
+        expect(result.redirect?.headers.get('Location')).toBe('/es/mi-cuenta/');
+        expect(fetchOwnerListingDetail).not.toHaveBeenCalled();
+        expect(getListingSectionStates).not.toHaveBeenCalled();
+    });
+
+    it('does not let venue authority open the experience editor', async () => {
+        const astro = createAstro();
+        astro.params.vertical = 'experience';
+        const result = await resolveListingEditorPage({ astro: astro as never, sectionSlug: null });
+        expect(result.redirect?.headers.get('Location')).toBe('/es/mi-cuenta/');
+        expect(fetchOwnerListingDetail).not.toHaveBeenCalled();
+    });
+
+    it('accepts effective edit-all without an administrator role', async () => {
+        const astro = createAstro();
+        astro.locals.user.roles = ['USER'];
+        astro.locals.user.permissions = ['venue.editAll'];
+        fetchOwnerListingDetail.mockResolvedValue({ ownerId: 'another-owner' });
+        const result = await resolveListingEditorPage({ astro: astro as never, sectionSlug: null });
+        expect(result.redirect).toBeUndefined();
+        expect(fetchOwnerListingDetail).toHaveBeenCalled();
+        expect(getListingSectionStates).toHaveBeenCalled();
     });
 
     it('renders the direct URL for a locked section and keeps it in the registry', async () => {

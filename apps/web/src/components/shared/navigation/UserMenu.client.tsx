@@ -16,14 +16,13 @@
  * parses the session on routes that explicitly require it; SSG pages would
  * otherwise see every visitor as a guest.
  *
- * Nav items (HOS-2551): the identity "Mi cuenta" link, then an
+ * Nav items (owner decision D2): four quick links from the sidebar registry, then an
  * «Administración» block with one «Administrar …» shortcut per business
  * vertical the user has. They come from `getCuratedAccountNav`
- * (`@/lib/nav-avatar`, shared with `MobileMenu.client.tsx`) — this component
- * is NOT the source of truth for those items, it only renders them. Profile
- * entries, favorites and «Asistentes de IA» live in the account sidebar. The admin-panel session
+ * (`@/lib/nav-avatar`) — this component only renders those registry entries.
+ * The mobile avatar instead renders the complete account sidebar. The admin-panel session
  * link is built by the shared `buildAdminPanelItem` (`@/lib/admin-panel-link`,
- * also used by `MobileMenu.client.tsx`'s session zone).
+ * also used by `AccountSheet.client.tsx`).
  *
  * Composes `LanguageSwitcher` and `ThemeControl` inside the dropdown so users
  * can change locale / theme without leaving the navbar. The same primitives
@@ -403,21 +402,31 @@ export function UserMenu({
                     aria-label={texts.openMenu}
                     className={cn(styles.menu, 'overlay-surface')}
                 >
-                    {/* Identity zone: name/email + "Mi cuenta" link */}
+                    {/* Identity header; quick links follow without a duplicate account link. */}
                     <div className={styles.menuHeader}>
                         <p className={styles.menuHeaderName}>{displayName}</p>
                         {showEmailLine && <p className={styles.menuHeaderEmail}>{user.email}</p>}
-                        {avatarNav.dashboardItem && (
-                            <a
-                                href={buildUrl({ locale, path: avatarNav.dashboardItem.href })}
-                                role="menuitem"
-                                onClick={() => setIsOpen(false)}
-                                className={styles.menuHeaderAccountLink}
-                            >
-                                {t(avatarNav.dashboardItem.i18nKey)}
-                            </a>
-                        )}
                     </div>
+
+                    <ul className={styles.menuList}>
+                        {avatarNav.quickItems.map((item) => (
+                            <li key={item.id}>
+                                <a
+                                    href={buildUrl({ locale, path: item.href })}
+                                    role="menuitem"
+                                    onClick={() => setIsOpen(false)}
+                                    className={styles.menuLink}
+                                >
+                                    <item.icon
+                                        size={18}
+                                        weight="regular"
+                                        aria-hidden="true"
+                                    />
+                                    <span>{t(item.i18nKey)}</span>
+                                </a>
+                            </li>
+                        ))}
+                    </ul>
 
                     {/* «Administración» (HOS-2551): one shortcut per business vertical */}
                     {avatarNav.adminItems.length > 0 && (

@@ -20,7 +20,8 @@
  * reopen handler).
  */
 
-import { Image } from "astro:assets";
+import { getImage } from "astro:assets";
+import { BrandWordmark } from '@/components/shared/brand/BrandWordmark';
 import { NewsletterForm } from "@/components/newsletter/NewsletterForm.client";
 import SocialLinks from "@/components/shared/SocialLinks.astro";
 import { statsApi } from "@/lib/api/endpoints";
@@ -44,6 +45,13 @@ interface Props {
 
 const { locale } = Astro.props;
 const { t, tPlural } = createTranslations(locale);
+
+let brandLogoSrc = logoSrc.src;
+try {
+    brandLogoSrc = (await getImage({ src: logoSrc, width: 96, format: 'webp' })).src;
+} catch {
+    // Fall back to the unprocessed asset path.
+}
 
 // Brand contact phone, single source of truth (HOS-364) — was previously a
 // hand-typed i18n key here that had already drifted from the contact page's
@@ -214,15 +222,7 @@ const noCommissionsLabel = t("footer.trustSignals.noCommissions", "Sin comisione
                     class="footer__logo"
                     aria-label="Hospeda"
                 >
-                    <Image
-                        src={logoSrc}
-                        alt=""
-                        width={48}
-                        height={52}
-                        class="footer__logo-icon"
-                        loading="lazy"
-                    />
-                    <span class="footer__logo-wordmark">Hospeda</span>
+                    <BrandWordmark logoSrc={brandLogoSrc} size="lg" tone="inverse" />
                 </a>
 
                 <p class="footer__brand-desc">
@@ -519,20 +519,6 @@ const noCommissionsLabel = t("footer.trustSignals.noCommissions", "Sin comisione
         text-decoration: none;
         color: var(--footer-fg);
         width: fit-content;
-    }
-
-    .footer__logo-icon {
-        width: 2.5rem;
-        height: auto;
-        object-fit: contain;
-    }
-
-    .footer__logo-wordmark {
-        font-family: var(--font-decorative);
-        font-size: clamp(2rem, 1.5rem + 1.5vw, 2.5rem);
-        font-weight: 700;
-        line-height: 1;
-        color: var(--footer-fg);
     }
 
     .footer__brand-desc {
@@ -1096,14 +1082,6 @@ const noCommissionsLabel = t("footer.trustSignals.noCommissions", "Sin comisione
             grid-column: 1;
             grid-row: 1;
             gap: 0.5rem;
-        }
-
-        .footer__logo-icon {
-            width: 1.75rem;
-        }
-
-        .footer__logo-wordmark {
-            font-size: 1.5rem;
         }
 
         .footer__brand-social {

@@ -39,7 +39,6 @@ import { resolvePartnerTrafficId } from '@/lib/partner-stats-cards';
 import { buildUrl } from '@/lib/urls';
 import { buildLoginRedirect } from '@/lib/middleware-helpers';
 import { getAdminUrl } from '@/lib/env';
-import { isVisibleByRoles, resolveDoorLabelKey } from '@/lib/nav-gating';
 
 export const prerender = false;
 
@@ -57,10 +56,7 @@ if (!door) {
 }
 
 const { t } = createTranslations(locale);
-const labelKey = resolveDoorLabelKey({
-    door,
-    visibility: (node) => isVisibleByRoles(node, user.roles)
-});
+const labelKey = door.i18nKey;
 const title = t(labelKey);
 const description = t(door.subtitleI18nKey);
 
@@ -211,7 +207,7 @@ const hasPendingClaim =
     <DiscoveryDoorHub
         locale={locale}
         door={door}
-        roles={user.roles}
+        permissions={user.permissions}
         adminUrl={getAdminUrl()}
         acquiredOptionIds={acquiredOptionIds}
     />

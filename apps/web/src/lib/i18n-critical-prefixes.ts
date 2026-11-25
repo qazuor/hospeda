@@ -104,6 +104,7 @@ export const CRITICAL_I18N_KEY_PREFIXES = [
     'account.doors.publish',
     'account.nav',
     'account.pages.dashboard',
+    'account.title',
     'account.ui.cancel',
     'account.ui.confirmError',
     'account.ui.dialogClose',

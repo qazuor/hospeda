@@ -39,7 +39,11 @@ import HostTradesAccessDenied from '@/components/host/host-trades/HostTradesAcce
 import { TradesDirectory } from '@/components/host/host-trades/TradesDirectory.client';
 import { BuildingIcon } from '@repo/icons';
 
+import { guardPublisherArea } from '@/lib/account/publisher-access';
+
 export const prerender = false;
+const denied = guardPublisherArea({ astro: Astro, area: 'directory' });
+if (denied) return denied;
 
 // ---------------------------------------------------------------------------
 // Locale — injected by middleware, always a valid SupportedLocale.

@@ -8,6 +8,7 @@
  * floats a popover in the centre when `element` does not resolve.
  */
 
+import { PermissionEnum } from '@repo/schemas';
 import { cleanup, render, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -79,6 +80,24 @@ describe('TourController — listing step copy without a menu (HOS-2073)', () =>
     afterEach(() => {
         cleanup();
         document.body.innerHTML = '';
+    });
+
+    it.each([
+        [[], /conversaciones.*anfitriones/i],
+        [[PermissionEnum.VENUE_EDIT_OWN], /recibí y respondé.*viajeros/i],
+        [[PermissionEnum.EXPERIENCE_EDIT_OWN], /recibí y respondé.*viajeros/i]
+    ] as const)('hands the driver enquiry copy for effective permissions %j', async (permissions, expected) => {
+        document.body.innerHTML = '<a data-tour="inbox"></a>';
+        render(
+            <TourController
+                locale="es"
+                userRoles={['USER']}
+                permissions={permissions}
+                page="dashboard"
+            />
+        );
+        await waitFor(() => expect(driverMock).toHaveBeenCalledTimes(1));
+        expect(driverStepDescription({ selector: '[data-tour="inbox"]' })).toMatch(expected);
     });
 
     it('does not mention the menu in the listing step when the venue-qr anchor is absent', async () => {

@@ -205,6 +205,11 @@ describe('Header.astro — UserMenu island', () => {
     it('sets initialUserMenuUser to null when no session', () => {
         expect(src).toContain('initialUserMenuUser = serverUser\n    ?');
     });
+    it('mounts one client-side account sheet before the hamburger without probing MCP', () => {
+        expect(src.match(/<AccountSheet\b/g)).toHaveLength(1);
+        expect(src.indexOf('<AccountSheet')).toBeLessThan(src.indexOf('class="header__hamburger"'));
+        expect(src).not.toContain('getConfiguredMcpUrl');
+    });
 });
 
 // ─── Mobile hamburger ─────────────────────────────────────────────────────────
@@ -309,8 +314,9 @@ describe('Header.astro — styling', () => {
         expect(src).toContain('var(--brand-primary)');
     });
 
-    it('uses var(--font-decorative) for logo text', () => {
-        expect(src).toContain('var(--font-decorative)');
+    it('delegates the sans brand to the shared static wordmark', () => {
+        expect(src).toContain('<BrandWordmark logoSrc={mobileLogoSrc} size="lg" />');
+        expect(src).not.toContain('var(--font-decorative)');
     });
 
     it('uses var(--font-sans) for nav links', () => {

@@ -43,6 +43,15 @@ describe('resolveShellTemplate', () => {
 });
 
 describe('AccountShell.astro', () => {
+    it('renders explicit zone doors immediately above the unchanged sidebar without a duplicate return link', () => {
+        expect(shell).toContain('<AccountZoneSwitch links={navModel.shell.zoneLinks}');
+        expect(shell.indexOf('<AccountZoneSwitch')).toBeLessThan(shell.indexOf('<AccountSidebar'));
+        expect(shell).toContain('backLink: null');
+        expect(shell).toContain('mcpEnabled={mcpEnabled}');
+        const header = read('layouts/AccountHeader.astro');
+        expect(header.match(/<AccountSheet\b/g)).toHaveLength(1);
+        expect(header).toContain('mcpEnabled={mcpEnabled}');
+    });
     it('applies the remembered nav state before paint with a static inline script (HOS-2549)', () => {
         expect(shell).toContain('<script is:inline data-astro-rerun>');
         expect(shell).toContain(`localStorage.getItem('${ACCOUNT_NAV_STORAGE_KEY}')`);

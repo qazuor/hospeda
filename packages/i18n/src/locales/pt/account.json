@@ -51,7 +51,8 @@
         },
         "inbox": {
             "title": "Suas consultas",
-            "body": "Acompanhe as conversas que você tem com os anfitriões."
+            "body": "Acompanhe as conversas que você tem com os anfitriões.",
+            "ownerBody": "Receba e responda às consultas de viajantes sobre seus estabelecimentos e experiências."
         },
         "greetingHost": {
             "title": "Bem-vindo ao seu painel de hospedagem",
@@ -129,6 +130,14 @@
     },
     "sections": "Seções da conta",
     "nav": {
+        "zoneLink": {
+            "host": "Ir para Hospedagens",
+            "venues": "Ir para Comer e sair",
+            "experiences": "Ir para Experiências",
+            "editorial": "Ir para a área editorial",
+            "partner": "Ir para minha ficha de parceiro",
+            "provider": "Ir para minha ficha de fornecedor"
+        },
         "groupAccount": "Minha conta",
         "groupTourist": "Área do turista",
         "groupHost": "Área do anfitrião",
@@ -191,19 +200,18 @@
                 },
                 "experience": {
                     "title": "Experiências",
-                    "description": "Você oferece passeios, atividades ou experiências para viajantes? Crie sua conta, cadastre os dados da sua experiência e publique pelo seu painel.",
+                    "description": "Gerencie seus passeios, atividades e experiências para viajantes pelo seu painel.",
                     "cta": "Publique sua experiência"
                 },
                 "venue": {
                     "title": "Comer e sair",
-                    "description": "Some seu estabelecimento ao Hospeda: para comer ou sair. Crie sua conta, cadastre os dados do seu estabelecimento e publique pelo seu painel.",
+                    "description": "Gerencie os dados e a publicação do seu estabelecimento para comer ou sair pelo seu painel.",
                     "cta": "Publique seu estabelecimento"
                 }
             }
         },
         "partner": {
             "title": "Seja parceiro",
-            "titleStateful": "Some outra parceria",
             "subtitle": "Seja parceiro do Hospeda: destaque sua marca ou seus serviços para milhares de viajantes e anfitriões.",
             "options": {
                 "sponsor": {
@@ -2010,6 +2018,12 @@
     },
     "description": "Gestioná tu cuenta en Hospeda",
     "menu": "Menu da conta",
+    "sheet": {
+        "title": "Menu da conta",
+        "signOut": "Sair",
+        "signingOut": "Saindo…",
+        "signOutError": "Não foi possível encerrar sua sessão. Tente novamente."
+    },
     "title": "Mi cuenta",
     "changePassword": {
         "title": "Alterar senha",

@@ -10,6 +10,7 @@
  * @module components/account/ui/AccountFooter
  */
 
+import { BrandWordmark } from '@/components/shared/brand/BrandWordmark';
 import { createT, type SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import styles from './AccountFooter.module.css';
@@ -47,17 +48,10 @@ export function AccountFooter({ locale, year, logoSrc }: AccountFooterProps) {
                         href={buildUrl({ locale, path: '/' })}
                         aria-label={t('nav.goHome')}
                     >
-                        {logoSrc !== undefined && (
-                            <img
-                                src={logoSrc}
-                                alt=""
-                                width={22}
-                                height={24}
-                                loading="lazy"
-                                decoding="async"
-                            />
-                        )}
-                        <span className={styles.name}>Hospeda</span>
+                        <BrandWordmark
+                            logoSrc={logoSrc ?? ''}
+                            size="sm"
+                        />
                     </a>
                     <nav
                         className={styles.groups}

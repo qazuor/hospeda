@@ -148,7 +148,7 @@ describe('UserMenu — authenticated render', () => {
         expect(screen.queryByRole('menu')).not.toBeInTheDocument();
     });
 
-    it('a pure tourist sees Mi cuenta, language, theme and sign out only (HOS-2551)', async () => {
+    it('a pure tourist sees four ordered quick links, preferences and sign-out', async () => {
         renderMenu({});
         await waitFor(() => expect(global.fetch).toHaveBeenCalled());
         open();
@@ -158,6 +158,9 @@ describe('UserMenu — authenticated render', () => {
         );
         expect(screen.getAllByRole('menuitem').map((item) => item.textContent?.trim())).toEqual([
             'Mi cuenta',
+            'Editar perfil',
+            'Favoritos',
+            'Suscripción',
             'Cerrar sesión'
         ]);
         expect(screen.queryByText('Administración')).not.toBeInTheDocument();
@@ -165,17 +168,11 @@ describe('UserMenu — authenticated render', () => {
         expect(screen.getByText('Tema')).toBeInTheDocument();
     });
 
-    it('lists no profile entry, favorites or AI assistants (HOS-2551)', () => {
+    it('keeps preferences, newsletter and AI assistants in the full account menu only', async () => {
         renderMenu();
+        await waitFor(() => expect(global.fetch).toHaveBeenCalled());
         open();
-        for (const name of [
-            /editar perfil/i,
-            /^suscripción$/i,
-            /^preferencias$/i,
-            /boletín de novedades/i,
-            /asistentes de ia/i,
-            /^favoritos$/i
-        ]) {
+        for (const name of [/^preferencias$/i, /boletín de novedades/i, /asistentes de ia/i]) {
             expect(screen.queryByRole('menuitem', { name })).not.toBeInTheDocument();
         }
     });
@@ -229,6 +226,12 @@ describe('UserMenu — permission-gated items', () => {
             expect(screen.getByRole('group', { name: 'Administración' })).toBeInTheDocument();
         });
         const group = screen.getByRole('group', { name: 'Administración' });
+        expect(
+            screen
+                .getAllByRole('menuitem')
+                .slice(0, 4)
+                .map((item) => item.textContent?.trim())
+        ).toEqual(['Mi cuenta', 'Editar perfil', 'Favoritos', 'Suscripción']);
         const links = [...group.querySelectorAll('a')].map((link) => [
             link.textContent?.trim(),
             link.getAttribute('href')

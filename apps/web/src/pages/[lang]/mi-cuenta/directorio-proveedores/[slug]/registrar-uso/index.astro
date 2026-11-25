@@ -47,7 +47,11 @@ import { webLogger as logger } from '@/lib/logger';
 import { buildLoginRedirect } from '@/lib/middleware-helpers';
 import { buildUrl } from '@/lib/urls';
 
+import { guardPublisherArea } from '@/lib/account/publisher-access';
+
 export const prerender = false;
+const denied = guardPublisherArea({ astro: Astro, area: 'directory' });
+if (denied) return denied;
 
 const locale = Astro.locals.locale as SupportedLocale;
 

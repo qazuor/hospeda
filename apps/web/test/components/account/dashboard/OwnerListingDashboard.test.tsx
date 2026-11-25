@@ -45,6 +45,22 @@ describe.each([
     ['venue', 'venueListings', 'venueTraffic'],
     ['experience', 'experienceListings', 'experienceTraffic']
 ] as const)('OwnerListingDashboard (%s)', (vertical, listingsId, trafficId) => {
+    it.each([
+        [1, 1, '1 publicada · 1 borrador'],
+        [2, 2, '2 publicadas · 2 borradores']
+    ])('pluralizes each listing count independently (%s, %s)', async (published, draft, expected) => {
+        getStats.mockResolvedValue({
+            ok: true,
+            data: {
+                vertical,
+                listings: { total: published + draft, published, draft, archived: 0 },
+                trafficAccess: 'locked'
+            }
+        });
+        const { container } = renderFor(vertical);
+        expect(await within(card(container, listingsId)).findByText(expected)).toBeInTheDocument();
+    });
+
     it('makes exactly one stats request and renders counts and traffic', async () => {
         getStats.mockResolvedValue({
             ok: true,

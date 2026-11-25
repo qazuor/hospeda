@@ -7,9 +7,9 @@
 
 import { PermissionEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
+import { PUBLISHER_ACCESS } from '@/lib/account/publisher-access';
 import { ACCOUNT_DISCOVERY_DOORS } from '../../src/config/discovery-doors';
 import { ACCOUNT_NAV_GROUPS } from '../../src/config/navigation';
-import { PERMISSION_ROLE_MAP } from '../../src/lib/nav-gating';
 
 describe('ACCOUNT_NAV_GROUPS (config shape)', () => {
     it('defines the baseline groups with turista last (HOS-2124, HOS-2559): cuenta, anfitrion, comercio-venue, comercio-experience, editorial, turista', () => {
@@ -34,11 +34,14 @@ describe('ACCOUNT_NAV_GROUPS (config shape)', () => {
         const anfitrion = ACCOUNT_NAV_GROUPS.find((group) => group.id === 'anfitrion');
         const venues = ACCOUNT_NAV_GROUPS.find((group) => group.id === 'comercio-venue');
         const experiences = ACCOUNT_NAV_GROUPS.find((group) => group.id === 'comercio-experience');
-        expect(anfitrion?.requiredPermission).toBe(PermissionEnum.ACCOMMODATION_CREATE);
-        expect(venues?.requiredPermission).toBe(PermissionEnum.VENUE_EDIT_OWN);
-        expect(experiences?.requiredPermission).toBe(PermissionEnum.EXPERIENCE_EDIT_OWN);
-        expect(venues?.requiredPermissions).toBeUndefined();
-        expect(experiences?.requiredPermissions).toBeUndefined();
+        expect(anfitrion?.requiredPermission).toBeUndefined();
+        expect(
+            anfitrion?.items.find((item) => item.id === 'ownerMessages')?.requiredPermissions
+        ).toEqual(PUBLISHER_ACCESS.inbox.requiredPermissions);
+        expect(venues?.requiredPermissions).toEqual(PUBLISHER_ACCESS.venue.requiredPermissions);
+        expect(experiences?.requiredPermissions).toEqual(
+            PUBLISHER_ACCESS.experience.requiredPermissions
+        );
     });
 
     it('places "Mis alojamientos" (properties) inside the anfitrion group, not a standalone group (AC-2)', () => {
@@ -90,7 +93,7 @@ describe('ACCOUNT_DISCOVERY_DOORS (config shape, HOS-131 §6.2/§6.3)', () => {
     it('routes each door to its internal hub page (OQ-1)', () => {
         const listing = ACCOUNT_DISCOVERY_DOORS.find((door) => door.id === 'listing');
         const partner = ACCOUNT_DISCOVERY_DOORS.find((door) => door.id === 'partner');
-        expect(listing?.href).toBe('mi-cuenta/publica');
+        expect(listing?.href).toBe('planes');
         expect(partner?.href).toBe('mi-cuenta/aliados');
     });
 
@@ -222,9 +225,9 @@ describe('ACCOUNT_DISCOVERY_DOORS (config shape, HOS-131 §6.2/§6.3)', () => {
         }
     });
 
-    it('declares the stateful "Sumá otra alianza" key on the partner door, activated once the editor option is acquired (HOS-134)', () => {
+    it('declares one fixed partner label', () => {
         const partner = ACCOUNT_DISCOVERY_DOORS.find((door) => door.id === 'partner');
-        expect(partner?.statefulI18nKey).toBe('account.doors.partner.titleStateful');
+        expect(partner?.i18nKey).toBe('account.doors.partner.title');
     });
 
     it('keeps every door/option label as an i18n key, never resolved text', () => {
@@ -249,7 +252,7 @@ describe('ACCOUNT_DISCOVERY_DOORS (config shape, HOS-131 §6.2/§6.3)', () => {
     });
 });
 
-describe('PERMISSION_ROLE_MAP exhaustiveness (regression guard)', () => {
+describe('declared permission validity', () => {
     it('has a defined entry for every requiredPermission declared across ACCOUNT_NAV_GROUPS (groups AND items)', () => {
         const declaredPermissions = new Set<PermissionEnum>();
         for (const group of ACCOUNT_NAV_GROUPS) {
@@ -273,14 +276,10 @@ describe('PERMISSION_ROLE_MAP exhaustiveness (regression guard)', () => {
         // gated permission (would make this test vacuously true).
         expect(declaredPermissions.size).toBeGreaterThan(0);
 
-        const missingMapEntries = [...declaredPermissions].filter(
-            (permission) => PERMISSION_ROLE_MAP[permission] === undefined
-        );
-
-        // A missing entry silently makes isVisibleByRoles() return false for
-        // EVERY role (including admin) on that group/item — this must fail
-        // loudly the moment a future gated group (e.g. T-011 Aliados) adds a
-        // requiredPermission without a matching PERMISSION_ROLE_MAP entry.
-        expect(missingMapEntries).toEqual([]);
+        expect(
+            [...declaredPermissions].every((permission) =>
+                Object.values(PermissionEnum).includes(permission)
+            )
+        ).toBe(true);
     });
 });

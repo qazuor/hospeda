@@ -21,10 +21,10 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildLoginRedirect } from '@/lib/auth-redirect';
 import { buildUrl } from '@/lib/urls';
-import { hasAccommodationsNavAccess } from '@/lib/nav-gating';
+import { canAccessPublisherArea, guardPublisherArea } from '@/lib/account/publisher-access';
 import { resolveSubscriptionPlansPathForAudience } from '@/lib/account-roles';
 import { fetchPublicPlans, planNamesWithEntitlement } from '@/lib/billing/fetch-plans';
-import { HOST_QUICK_ACTIONS } from '@/lib/account/host-dashboard';
+import { buildHostQuickActions } from '@/lib/account/host-dashboard';
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import { PageHeader } from '@/components/account/ui';
 import PageHelpLink from '@/components/account/help/PageHelpLink.astro';
@@ -48,11 +48,8 @@ if (!user) {
     );
 }
 
-// Role gate: only host-level roles may reach the host dashboard. A plain
-// tourist reaching this URL directly is redirected back to the account home.
-if (!hasAccommodationsNavAccess({ roles: user.roles })) {
-    return Astro.redirect(buildUrl({ locale, path: 'mi-cuenta' }));
-}
+const denied = guardPublisherArea({ astro: Astro, area: 'host' });
+if (denied) return denied;
 
 // HOS-2214: the lock names the catalog plans that carry the dashboard. The catalog
 // reader is server-only, so the names are read here and handed to the island.
@@ -69,13 +66,13 @@ const plansHref = buildUrl({ locale, path: resolveSubscriptionPlansPathForAudien
             <PageHelpLink slot="help" locale={locale} />
         </PageHeader>
 
-        <HostDashboard client:load locale={locale} planNames={planNames} plansHref={plansHref} />
+        <HostDashboard client:load locale={locale} planNames={planNames} plansHref={plansHref} canViewInbox={canAccessPublisherArea({ area: 'inbox', permissions: user.permissions })} />
 
         <DashboardLinksSection
             locale={locale}
             title={t('host.dashboard.widgets.quickActions')}
             helpId="section:host.dashboard"
-            rows={HOST_QUICK_ACTIONS}
+            rows={buildHostQuickActions({ permissions: user.permissions })}
         />
     </div>
 </AccountLayout>

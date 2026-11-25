@@ -17,8 +17,10 @@
  * absence).
  */
 
+import { PermissionEnum } from '@repo/schemas';
 import type { AstroGlobal } from 'astro';
 import type { DestinationOption } from '@/components/listing/destination-option';
+import { canAccessPublisherArea, publisherDenyRedirect } from '@/lib/account/publisher-access';
 import { buildAccountNotFoundTarget } from '@/lib/account-not-found';
 import { destinationsApi } from '@/lib/api/endpoints';
 import { listingAnalyticsApi } from '@/lib/api/endpoints-protected';
@@ -43,7 +45,6 @@ import {
     type VenueOrExperience
 } from '@/lib/listing/owner-listings';
 import { buildLoginRedirect } from '@/lib/middleware-helpers';
-import { hasListingNavAccess } from '@/lib/nav-gating';
 import { buildUrl } from '@/lib/urls';
 
 /** Extra payloads a page can ask the resolver to load. */
@@ -108,12 +109,6 @@ export async function resolveListingEditorPage({
         };
     }
 
-    // HOS-296: gate through the shared `nav-gating` predicate over the role SET,
-    // so a VENUE_OWNER who is ALSO a HOST keeps venue/experience access (AC-1).
-    if (!hasListingNavAccess({ roles: user.roles })) {
-        return { redirect: astro.redirect(buildUrl({ locale, path: 'mi-cuenta' })) };
-    }
-
     const verticalParam = astro.params.vertical;
     const listingId = astro.params.id;
     if (!isListingEditorVertical(verticalParam) || !listingId) {
@@ -122,6 +117,9 @@ export async function resolveListingEditorPage({
         };
     }
     const vertical = verticalParam;
+    if (!canAccessPublisherArea({ area: vertical, permissions: user.permissions })) {
+        return { redirect: astro.redirect(publisherDenyRedirect({ locale })) };
+    }
 
     const cookieHeader = astro.request.headers.get('cookie') ?? undefined;
     const detail = await fetchOwnerListingDetail({ vertical, id: listingId, cookieHeader });
@@ -132,7 +130,11 @@ export async function resolveListingEditorPage({
     // write path (updateOwn) is the hard gate.
     // HOS-296: staff check over the role SET — an admin who also holds
     // VENUE_OWNER is still staff here.
-    const isStaff = user.roles.includes('ADMIN') || user.roles.includes('SUPER_ADMIN');
+    const editAllPermission = {
+        venue: PermissionEnum.VENUE_EDIT_ALL,
+        experience: PermissionEnum.EXPERIENCE_EDIT_ALL
+    }[vertical];
+    const isStaff = user.permissions.includes(editAllPermission);
     const ownsListing = detail !== null && detail.ownerId === user.id;
     if (!detail || (!ownsListing && !isStaff)) {
         return {

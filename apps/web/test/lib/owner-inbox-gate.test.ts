@@ -10,18 +10,26 @@ import { resolveOwnerInboxGate } from '@/lib/owner-inbox-gate';
 
 describe('resolveOwnerInboxGate', () => {
     it('locks a venue-owner-only user out (no accommodation permission)', () => {
-        expect(resolveOwnerInboxGate({ roles: ['VENUE_OWNER'] })).toEqual({ action: 'locked' });
+        expect(resolveOwnerInboxGate({ permissions: ['venue.editOwn'] })).toEqual({
+            action: 'locked'
+        });
     });
 
     it('locks a plain tourist and a user without roles out', () => {
-        expect(resolveOwnerInboxGate({ roles: ['USER'] }).action).toBe('locked');
-        expect(resolveOwnerInboxGate({ roles: [] }).action).toBe('locked');
-        expect(resolveOwnerInboxGate({ roles: null }).action).toBe('locked');
+        expect(resolveOwnerInboxGate({ permissions: ['accommodation.create'] }).action).toBe(
+            'locked'
+        );
+        expect(resolveOwnerInboxGate({ permissions: [] }).action).toBe('locked');
     });
 
     it('lets a HOST continue, including one who also holds other roles', () => {
-        expect(resolveOwnerInboxGate({ roles: ['HOST'] })).toEqual({ action: 'continue' });
-        expect(resolveOwnerInboxGate({ roles: ['VENUE_OWNER', 'HOST'] }).action).toBe('continue');
+        expect(resolveOwnerInboxGate({ permissions: ['conversation.view.own'] })).toEqual({
+            action: 'continue'
+        });
+        expect(
+            resolveOwnerInboxGate({ permissions: ['venue.editOwn', 'conversation.view.own'] })
+                .action
+        ).toBe('continue');
     });
 });
 
@@ -53,10 +61,13 @@ describe('owner inbox pages decide before any conversation is read', () => {
     it.each([
         'index.astro',
         '[conversationId].astro'
-    ])('%s renders the locked state, never redirects', (file) => {
+    ])('%s redirects missing publisher authority before the fallback lock', (file) => {
         const source = read(file);
         expect(source).toContain("gate.action === 'locked'");
         expect(source).toContain('<OwnerInboxLocked locale={locale} />');
         expect(source).not.toContain('gate.location');
+        expect(source.indexOf('publisherDenyRedirect({ locale })')).toBeLessThan(
+            source.indexOf('const gate =')
+        );
     });
 });

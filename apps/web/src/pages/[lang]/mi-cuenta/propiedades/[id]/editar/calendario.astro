@@ -29,7 +29,11 @@ import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 import { buildUrl } from '@/lib/urls';
 import { resolveUnlockingPlanName } from '@/lib/venue/section-upsell-plan';
 
+import { guardPublisherArea } from '@/lib/account/publisher-access';
+
 export const prerender = false;
+const denied = guardPublisherArea({ astro: Astro, area: 'accommodationEdit' });
+if (denied) return denied;
 
 const resolution = await resolveEditorPage({
 	astro: Astro,

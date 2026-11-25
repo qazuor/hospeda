@@ -27,11 +27,13 @@
  * Session-blind: the badge count is fetched by its island in the browser.
  */
 
-import { getImage, Image } from 'astro:assets';
+import { getImage } from 'astro:assets';
+import { BrandWordmark } from '@/components/shared/brand/BrandWordmark';
 import { FaqsIcon, HamburgerIcon, SparkleIcon } from '@repo/icons';
 import MobileMenuIsland from '@/components/shared/navigation/MobileMenuIsland.astro';
 import { PublishMenu } from '@/components/shared/navigation/PublishMenu.client';
 import { UserMenu } from '@/components/shared/navigation/UserMenu.client';
+import { AccountSheet } from '@/components/shared/navigation/AccountSheet.client';
 import { WhatsNewCountPill } from '@/components/shared/whats-new/WhatsNewCountPill.client';
 import IconButton from '@/components/shared/ui/IconButton.astro';
 import {
@@ -46,9 +48,12 @@ import logoSrc from '@/assets/images/logo.webp';
 
 interface Props {
 	readonly locale: SupportedLocale;
+	readonly mcpEnabled?: boolean;
+	/** HOS-2627: the account holds ≥1 subscription; gates Complementos in the account sheet. */
+	readonly hasSubscription?: boolean;
 }
 
-const { locale } = Astro.props;
+const { locale, mcpEnabled = false, hasSubscription = false } = Astro.props;
 const { t } = createTranslations(locale);
 
 let menuLogoSrc = logoSrc.src;
@@ -89,8 +94,7 @@ const adminPanelUrl = getAdminUrl();
 			class="account-header__logo"
 			aria-label={t('nav.goHome', 'Hospeda - Go to home')}
 		>
-			<Image src={logoSrc} alt="" width={34} height={36} loading="eager" />
-			<span class="account-header__name">Hospeda</span>
+			<BrandWordmark logoSrc={menuLogoSrc} />
 		</a>
 
 		<nav class="account-header__nav" aria-label={t('account.ui.chrome.siteNav')}>
@@ -134,14 +138,25 @@ const adminPanelUrl = getAdminUrl();
 			>
 				<FaqsIcon size={22} aria-hidden="true" />
 			</IconButton>
-			<UserMenu
-				client:load
-				initialUser={initialUser}
-				locale={locale}
-				currentPath={currentPath}
-				variant="scrolled"
-				adminPanelUrl={adminPanelUrl}
-			/>
+			<div class="account-header__desktop-user">
+				<UserMenu
+					client:load
+					initialUser={initialUser}
+					locale={locale}
+					currentPath={currentPath}
+					variant="scrolled"
+					adminPanelUrl={adminPanelUrl}
+				/>
+			</div>
+			<div class="account-header__mobile-user">
+				<AccountSheet
+					client:load
+					locale={locale}
+					mcpEnabled={mcpEnabled}
+					hasSubscription={hasSubscription}
+					adminPanelUrl={adminPanelUrl}
+				/>
+			</div>
 			<IconButton
 				ariaLabel={t('nav.openMenu', 'Open navigation menu')}
 				variant="ghost"
@@ -207,11 +222,6 @@ const adminPanelUrl = getAdminUrl();
 		outline-offset: 2px;
 	}
 
-	.account-header__name {
-		font: var(--app-card-title);
-		color: var(--brand-secondary-foreground);
-	}
-
 	/* The inline site nav exists from 80rem only; below it the hamburger holds it. */
 	.account-header__nav {
 		display: none;
@@ -246,6 +256,15 @@ const adminPanelUrl = getAdminUrl();
 		align-items: center;
 		gap: var(--space-2);
 		margin-inline-start: auto;
+	}
+
+	/* The account zone switches at the closed 64rem breakpoint (HOS-2469):
+	   below it the avatar opens the account sheet, from it the desktop menu. */
+	.account-header__desktop-user { display: none; }
+	.account-header__mobile-user { display: contents; }
+	@media (min-width: 64rem) {
+		.account-header__desktop-user { display: block; }
+		.account-header__mobile-user { display: none; }
 	}
 
 	.account-header__right :global(.account-header__icon) {

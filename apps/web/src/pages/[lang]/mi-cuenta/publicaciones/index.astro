@@ -45,7 +45,11 @@ import {
 } from '@/components/account/my-content/OwnContentListView';
 import { ContentListReloadError } from '@/components/account/my-content/ContentListReloadError.client';
 
+import { canAccessPublisherArea, guardPublisherArea } from '@/lib/account/publisher-access';
+
 export const prerender = false;
+const denied = guardPublisherArea({ astro: Astro, area: 'posts' });
+if (denied) return denied;
 
 const locale = Astro.locals.locale as SupportedLocale;
 
@@ -55,7 +59,7 @@ if (!user) {
 }
 
 // Gate: only editor-tier roles see their own-content dashboard.
-const canManagePosts = hasPostsNavAccess({ roles: user.roles });
+const canManagePosts = hasPostsNavAccess({ permissions: user.permissions });
 
 let posts: readonly PostEditListItem[] = [];
 let fetchError = false;
@@ -117,6 +121,8 @@ const items = posts.map((post) => ({
 
 <AccountLayout locale={locale} title={title} description={subtitle} activeSection="publicaciones">
     <OwnContentListView
+        canCreate={canAccessPublisherArea({ area: 'postCreate', permissions: user.permissions })}
+        canEdit={canAccessPublisherArea({ area: 'postEdit', permissions: user.permissions })}
         locale={locale}
         kind="posts"
         status={status}

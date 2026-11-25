@@ -7,7 +7,7 @@
  * component with a different `door` from `ACCOUNT_DISCOVERY_DOORS` — the
  * per-option state (acquired / unacquired / coming soon) is resolved here,
  * server-side, the same way `AccountLayout.astro`'s sidebar approximates
- * gating: via `isVisibleByRoles` against `Astro.locals.user.roles` (HOS-131
+ * gating: via effective permissions from the authenticated session (HOS-2622,
  * D-4 — no effective-permissions round-trip on SSR).
  *
  * Per option:
@@ -26,7 +26,7 @@ import type { DiscoveryDoor } from '@/config/discovery-doors';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import type { GatedNavNode } from '@/lib/nav-gating';
-import { isVisibleByRoles, resolveDoorOptionState } from '@/lib/nav-gating';
+import { isVisibleByPermissions, resolveDoorOptionState } from '@/lib/nav-gating';
 import { buildUrl } from '@/lib/urls';
 import { CheckCircleIcon } from '@repo/icons';
 import { LinkButton, StatusPill } from '@/components/account/ui';
@@ -39,7 +39,7 @@ interface Props {
      * for guests. HOS-296: a door option counts as acquired when ANY held
      * role grants its permission.
      */
-    readonly roles: readonly string[] | null;
+    readonly permissions: readonly string[];
     /**
      * Admin panel base URL (`getAdminUrl()`), used for `managesInAdminPanel`
      * acquired options (HOS-134). `undefined` when the env var isn't
@@ -58,10 +58,10 @@ interface Props {
     readonly acquiredOptionIds?: readonly string[];
 }
 
-const { locale, door, roles, adminUrl, acquiredOptionIds } = Astro.props;
+const { locale, door, permissions, adminUrl, acquiredOptionIds } = Astro.props;
 const { t } = createTranslations(locale);
 
-const visibility = (node: GatedNavNode) => isVisibleByRoles(node, roles);
+const visibility = (node: GatedNavNode) => isVisibleByPermissions(node, permissions);
 
 const optionRows = door.options.map((option) => {
     const state = resolveDoorOptionState({ option, visibility, acquiredOptionIds });

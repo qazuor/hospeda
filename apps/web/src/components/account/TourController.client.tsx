@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { getNextPendingWelcomeTour, type TourPage } from '@/config/tours';
+import { getNextPendingWelcomeTour, resolveTourStepBody, type TourPage } from '@/config/tours';
 import { useCookieConsentDecided } from '@/hooks/use-cookie-consent-decided';
 import { useTourState } from '@/hooks/use-tour-state';
 import { createTranslations, type SupportedLocale } from '@/lib/i18n';
@@ -9,6 +9,8 @@ interface TourControllerProps {
     readonly locale: SupportedLocale;
     /** Every role the user holds (`Astro.locals.user.roles`) — HOS-296. */
     readonly userRoles: readonly string[];
+    /** Effective permissions select business-aware enquiry copy. */
+    readonly permissions?: readonly string[];
     /** The account page this controller is mounted on (HOS-1856). */
     readonly page: TourPage;
 }
@@ -19,7 +21,7 @@ type DriverInstance = {
     hasNextStep: () => boolean;
 };
 
-export function TourController({ locale, userRoles, page }: TourControllerProps) {
+export function TourController({ locale, userRoles, page, permissions = [] }: TourControllerProps) {
     const { t } = createTranslations(locale);
     const { isLoading, hasSeen, markSeen } = useTourState();
     // HOS-2448: the cookie banner is also a first-visit overlay. Wait for the
@@ -116,7 +118,7 @@ export function TourController({ locale, userRoles, page }: TourControllerProps)
                         step.bodyWhenAnchorAbsent &&
                         document.querySelector(step.bodyWhenAnchorAbsent.anchor) === null
                             ? step.bodyWhenAnchorAbsent.body
-                            : step.body;
+                            : resolveTourStepBody({ step, permissions });
                     const stepDef: Record<string, unknown> = {
                         popover: {
                             title: t(step.title, step.title),
@@ -144,7 +146,7 @@ export function TourController({ locale, userRoles, page }: TourControllerProps)
         return () => {
             cancelled = true;
         };
-    }, [shouldStart, tour, handleComplete, handleSkip, t]);
+    }, [shouldStart, tour, handleComplete, handleSkip, t, permissions]);
 
     // HOS-1856: the driver must survive effect re-runs and only die with the
     // component. Empty deps so this runs on unmount only.

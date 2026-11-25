@@ -42,7 +42,11 @@ import { hasPostsNavAccess } from '@/lib/nav-gating';
 import { resolveAuthoredEditorItem } from '@/lib/editor/resolve-authored-editor-item';
 import { buildUrl } from '@/lib/urls';
 
+import { guardPublisherArea } from '@/lib/account/publisher-access';
+
 export const prerender = false;
+const denied = guardPublisherArea({ astro: Astro, area: 'postEdit' });
+if (denied) return denied;
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
@@ -54,7 +58,7 @@ if (!user) {
     return Astro.redirect(buildLoginRedirect({ locale, currentUrl: Astro.url.pathname + Astro.url.search }));
 }
 
-const canManagePosts = hasPostsNavAccess({ roles: user.roles });
+const canManagePosts = hasPostsNavAccess({ permissions: user.permissions });
 
 let post: ReturnType<typeof transformPostEditDetail> | null = null;
 let destinations: readonly PostDestinationOption[] = [];

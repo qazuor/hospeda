@@ -53,9 +53,9 @@ describe('consultas-propietario pages gate by permission (HOS-2433)', () => {
 
     it.each(
         owner.map((p) => [p.rel, p.source] as const)
-    )('%s locks users without host-tier permission out (HOS-2482)', (_rel, source) => {
-        expect(source).toContain('resolveOwnerInboxGate({ roles: user.roles })');
-        expect(source).toContain('<OwnerInboxLocked locale={locale} />');
+    )('%s sends users without the owner-inbox permission back to the account home (HOS-2622 D1)', (_rel, source) => {
+        expect(source).toContain("guardPublisherArea({ astro: Astro, area: 'inbox' })");
+        expect(source).toContain('if (denied) return denied;');
         expect(source).not.toMatch(/user\.role\s*===/);
     });
 
@@ -66,7 +66,7 @@ describe('consultas-propietario pages gate by permission (HOS-2433)', () => {
             'Astro.redirect(buildLoginRedirect({ locale, currentUrl: Astro.url.pathname + Astro.url.search }))'
         );
         expect(redirectAt).toBeGreaterThan(-1);
-        expect(redirectAt).toBeLessThan(source.indexOf('resolveOwnerInboxGate('));
+        expect(redirectAt).toBeLessThan(source.indexOf('guardPublisherArea('));
     });
 });
 
