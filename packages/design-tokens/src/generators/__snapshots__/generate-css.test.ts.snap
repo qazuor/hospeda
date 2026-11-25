@@ -318,6 +318,8 @@ exports[`buildCSS — snapshot > matches the recorded full output (regression ga
     --surface-overlay: oklch(1 0 0);
     --overlay-ring: oklch(0.2 0.02 220 / 0.12);
     --shadow-overlay: 0 26px 54px -8px oklch(from var(--core-foreground) l c h / 0.28), 0 8px 18px -4px oklch(from var(--core-foreground) l c h / 0.16), 0 0 44px 4px oklch(from var(--core-foreground) l c h / 0.08);
+    --dock-action-surface: oklch(0.95 0.03 250);
+    --shadow-dock: 0 -8px 24px -6px oklch(from var(--core-foreground) l c h / 0.28), 0 -1px 3px oklch(from var(--core-foreground) l c h / 0.12);
     --popover-scrim: oklch(0 0 0 / 0.12);
     --frost-bg-light: oklch(from var(--core-card) l c h / 0.72);
     --frost-bg-dark: oklch(from var(--core-foreground) l c h / 0.7);
@@ -1093,6 +1095,8 @@ exports[`buildCSS — snapshot > matches the recorded full output (regression ga
     --surface-overlay: oklch(0.37 0.045 258);
     --overlay-ring: oklch(0.94 0.02 258 / 0.26);
     --shadow-overlay: 0 28px 64px -12px oklch(0 0 0 / 0.72), 0 8px 22px -4px oklch(0 0 0 / 0.6), 0 0 50px 6px oklch(0 0 0 / 0.38), inset 0 1px 0 oklch(1 0 0 / 0.1);
+    --dock-action-surface: oklch(0.37 0.045 258);
+    --shadow-dock: 0 -10px 28px -6px oklch(0 0 0 / 0.8), inset 0 1px 0 oklch(1 0 0 / 0.14);
     --popover-scrim: oklch(0 0 0 / 0.22);
     --chart-1: oklch(0.68 0.17 259);
     --chart-2: oklch(0.68 0.15 155);

@@ -4,12 +4,19 @@
  * it is the only bar stylesheet that names the channel tokens (HOS-314 guard).
  * The element + attribute selector outranks the outline `.action` rule of the
  * row stylesheet whatever order the two modules load in.
+ *
+ * HOS-2607: the button is a logo-only badge (the brand mark from `@repo/icons`
+ * `WhatsappIcon`, no text; its accessible name is an `aria-label`), so it takes
+ * the white logotype ink `--channel-whatsapp-logo` under the WCAG 1.4.3 logotype
+ * exemption, exactly like the newsletter badge. It must never carry visible
+ * text: white on the green is 1.98:1. `ListingActionBarButtons.test.tsx` fails
+ * if a text node appears inside it.
  */
 
 a.whatsapp[data-action="whatsapp"] {
     border-color: transparent;
     background: var(--channel-whatsapp);
-    color: var(--channel-whatsapp-foreground);
+    color: var(--channel-whatsapp-logo);
 }
 
 a.whatsapp[data-action="whatsapp"]:hover {

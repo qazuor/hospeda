@@ -179,8 +179,9 @@ describe('theme exports', () => {
         // wellness, dining; light only) → 244 / 71.
         // HOS-2413 PR-1 added the Mi Cuenta app tokens (web-account.ts: 84 light,
         // 37 dark) → 328 / 108.
-        expect(Object.keys(webLight)).toHaveLength(328);
-        expect(Object.keys(webDark)).toHaveLength(108);
+        // HOS-2607 added dock-action-surface + shadow-dock (both themes) → 330 / 110.
+        expect(Object.keys(webLight)).toHaveLength(330);
+        expect(Object.keys(webDark)).toHaveLength(110);
         // Admin: 39 was prior count (17 core + 12 brand + 10 per-accommodation-type).
         // Grew to 92 after the same SSOT passes added event-category/post-category/
         // user-role/auth-provider/amenity-type/sponsor-type families to admin-light,
