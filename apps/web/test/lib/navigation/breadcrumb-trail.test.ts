@@ -1,8 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
     buildBreadcrumbListJsonLd,
-    buildBreadcrumbTrail,
-    serializeJsonLd
+    buildBreadcrumbTrail
 } from '../../../src/lib/navigation/breadcrumb-trail';
 
 const input = {
@@ -120,15 +119,5 @@ describe('buildBreadcrumbListJsonLd', () => {
             ['Colón', 2],
             ['Eventos', 3]
         ]);
-    });
-});
-
-describe('serializeJsonLd', () => {
-    it('escapes script terminators, angle brackets, and ampersands while preserving JSON values', () => {
-        const data = { name: '</script><script>alert("x")</script> & café' };
-        const serialized = serializeJsonLd(data);
-        expect(serialized).not.toMatch(/[<>&]/);
-        expect(serialized).toContain('\\u003c/script\\u003e');
-        expect(JSON.parse(serialized)).toEqual(data);
     });
 });

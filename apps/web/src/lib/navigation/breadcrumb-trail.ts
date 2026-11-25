@@ -81,11 +81,3 @@ export function buildBreadcrumbListJsonLd({
         }))
     };
 }
-
-/** Serialize JSON-LD with the HTML-unsafe character escaping used by JsonLd.astro. */
-export function serializeJsonLd(data: Record<string, unknown>): string {
-    return JSON.stringify(data)
-        .replace(/</g, '\\u003c')
-        .replace(/>/g, '\\u003e')
-        .replace(/&/g, '\\u0026');
-}

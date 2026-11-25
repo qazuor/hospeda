@@ -123,3 +123,24 @@ describe('breadcrumb migration guards', () => {
         expect(offenders).toEqual([]);
     });
 });
+
+describe('breadcrumb adapter contract', () => {
+    const adapter = readFileSync(
+        resolve(__dirname, '../../src/components/shared/navigation/Breadcrumbs.astro'),
+        'utf8'
+    );
+
+    it('derives the BreadcrumbList from the same items it renders and escapes via JsonLd', () => {
+        expect(adapter).toContain('buildBreadcrumbListJsonLd');
+        expect(adapter).toContain("import JsonLd from '@/components/seo/JsonLd.astro'");
+        expect(adapter).toContain('items={items}');
+    });
+
+    it('keeps the React component free of raw HTML injection', () => {
+        const component = readFileSync(
+            resolve(__dirname, '../../src/components/shared/navigation/Breadcrumbs.tsx'),
+            'utf8'
+        );
+        expect(component).not.toContain('dangerouslySetInnerHTML');
+    });
+});

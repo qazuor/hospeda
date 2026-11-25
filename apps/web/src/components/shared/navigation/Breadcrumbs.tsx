@@ -1,11 +1,6 @@
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
-import {
-    type BreadcrumbInputItem,
-    buildBreadcrumbListJsonLd,
-    buildBreadcrumbTrail,
-    serializeJsonLd
-} from '@/lib/navigation/breadcrumb-trail';
+import { type BreadcrumbInputItem, buildBreadcrumbTrail } from '@/lib/navigation/breadcrumb-trail';
 import styles from './Breadcrumbs.module.css';
 
 /** Translated, presentational breadcrumb inputs shared by public and account pages. */
@@ -15,18 +10,16 @@ export interface BreadcrumbsProps {
     readonly homeLabel: string;
     readonly ariaLabel: string;
     readonly includeHome?: boolean;
-    readonly jsonLd?: { readonly siteOrigin: string; readonly currentPath: string } | false;
     readonly className?: string;
 }
 
-/** Render linked ancestors and optional structured data without client-side state or i18n. */
+/** Render linked ancestors without client-side state or i18n. */
 export function Breadcrumbs({
     items,
     locale,
     homeLabel,
     ariaLabel,
     includeHome = true,
-    jsonLd = false,
     className
 }: BreadcrumbsProps) {
     const input = { items, locale, homeLabel, includeHome };
@@ -64,15 +57,6 @@ export function Breadcrumbs({
                         ))}
                     </ol>
                 </nav>
-            )}
-            {jsonLd && (
-                <script
-                    type="application/ld+json"
-                    // biome-ignore lint/security/noDangerouslySetInnerHtml: serializeJsonLd escapes HTML-unsafe characters.
-                    dangerouslySetInnerHTML={{
-                        __html: serializeJsonLd(buildBreadcrumbListJsonLd({ ...input, ...jsonLd }))
-                    }}
-                />
             )}
         </>
     );

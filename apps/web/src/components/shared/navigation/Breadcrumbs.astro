@@ -1,8 +1,9 @@
 ---
 /** Thin server-rendered adapter for the shared React breadcrumbs. */
+import JsonLd from '@/components/seo/JsonLd.astro';
 import { Breadcrumbs } from './Breadcrumbs';
 import { createT, type SupportedLocale } from '@/lib/i18n';
-import type { BreadcrumbInputItem } from '@/lib/navigation/breadcrumb-trail';
+import { buildBreadcrumbListJsonLd, type BreadcrumbInputItem } from '@/lib/navigation/breadcrumb-trail';
 
 interface Props {
     readonly locale: SupportedLocale;
@@ -15,14 +16,25 @@ interface Props {
 const { locale, items, class: className, jsonLd = true, includeHome = true } = Astro.props;
 const t = createT(locale);
 const siteOrigin = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
+const homeLabel = t('nav.home');
+const structured = jsonLd
+    ? buildBreadcrumbListJsonLd({
+          items,
+          locale,
+          homeLabel,
+          includeHome,
+          siteOrigin,
+          currentPath: Astro.url.pathname
+      })
+    : null;
 ---
 
 <Breadcrumbs
     items={items}
     locale={locale}
-    homeLabel={t('nav.home')}
+    homeLabel={homeLabel}
     ariaLabel={t('common.breadcrumbs')}
     includeHome={includeHome}
-    jsonLd={jsonLd ? { siteOrigin, currentPath: Astro.url.pathname } : false}
     className={className}
 />
+{structured && <JsonLd data={structured} />}
