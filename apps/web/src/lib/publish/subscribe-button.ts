@@ -7,7 +7,11 @@ import type { ApiResult } from '@/lib/api/types';
 import type { PricingAudience } from '@/lib/billing-i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
-import { PUBLISH_PAGE_PATH_BY_VERTICAL } from './publish-page-paths';
+import {
+    PUBLISH_FROM_PLANS_PARAM,
+    PUBLISH_FROM_PLANS_VALUE,
+    PUBLISH_PAGE_PATH_BY_VERTICAL
+} from './publish-page-paths';
 
 export { NO_PLANS_AVAILABLE_MESSAGE };
 
@@ -36,7 +40,7 @@ export function resolveSubscribeButtonView({
     readonly vertical: PublishVerticalSlug;
     readonly result: ApiResult<SubscribeDestinationResponse>;
 }): SubscribeButtonView {
-    const publishHref = buildUrl({ locale, path: PUBLISH_PAGE_PATH_BY_VERTICAL[vertical] });
+    const publishHref = `${buildUrl({ locale, path: PUBLISH_PAGE_PATH_BY_VERTICAL[vertical] })}?${PUBLISH_FROM_PLANS_PARAM}=${PUBLISH_FROM_PLANS_VALUE}`;
     if (!result.ok) {
         if (result.error.status === 401) {
             return {

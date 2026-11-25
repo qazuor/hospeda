@@ -24,6 +24,12 @@
 
 import type { PublishVerticalSlug } from '@/lib/api/endpoints-protected';
 
+/** Query parameter identifying a publish journey started on the plans pages. */
+export const PUBLISH_FROM_PLANS_PARAM = 'desde';
+
+/** Exact plans-origin marker value; other origins do not select the direct flow. */
+export const PUBLISH_FROM_PLANS_VALUE = 'planes';
+
 /**
  * Each vertical's publish page, as a `buildUrl` path (no locale, no slashes at
  * the ends).

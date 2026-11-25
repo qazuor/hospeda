@@ -63,6 +63,7 @@ import {
 import { publishApi } from '@/lib/api/endpoints-protected';
 import { shouldShowPublishTrialCallout } from '@/lib/host/publish-trial-callout';
 import { resolvePublishPageSlot } from '@/lib/publish/publish-page-slot';
+import { resolvePublishPageFlow } from '@/lib/publish/publish-page-variant';
 import { resolvePublishAffordance, resolveTrialEligibility } from '@/lib/publish/subscribe-button';
 import { buildUrl } from '@/lib/urls';
 
@@ -84,6 +85,15 @@ const slot = await resolvePublishPageSlot({
     pathname: Astro.url.pathname,
     wantsCreate: Astro.url.searchParams.get('create') === '1'
 });
+
+const { variant, redirectUrl } = resolvePublishPageFlow({
+    isAuthenticated,
+    permissions: Astro.locals.user?.permissions ?? [],
+    vertical: VERTICAL,
+    searchParams: Astro.url.searchParams,
+    slot
+});
+if (redirectUrl) return Astro.redirect(redirectUrl);
 
 // The expired-trial banner this page used to render read the visitor's trial
 // from the old billing (`GET /protected/billing/trial/status`), a route the API
@@ -156,6 +166,7 @@ const benefits = [
     description={t('owners.description')}
 >
     <PublishHero
+        variant={variant}
         tagline={t('owners.hero.tagline')}
         title={t('host.landing.heroHeadline', 'Convertí tu propiedad en un ingreso')}
         body={t(
@@ -185,6 +196,8 @@ const benefits = [
     </PublishFormSlot>
 
     <PublishHowItWorks
+        variant={variant}
+        hasRegistrationStep
         stepsTagline={t('owners.steps.tagline')}
         stepsTitle={t('owners.steps.title')}
         steps={steps}
@@ -194,6 +207,7 @@ const benefits = [
     />
 
     <PublishPlanLinks
+        variant={variant}
         locale={locale}
         plansUrl={buildUrl({ locale, path: PLANS_PAGE_PATH_BY_VERTICAL[VERTICAL] })}
         pricingUrl={buildUrl({ locale, path: PRICING_PAGE_PATH_BY_VERTICAL[VERTICAL] })}
