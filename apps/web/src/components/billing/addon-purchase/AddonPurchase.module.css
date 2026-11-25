@@ -4,7 +4,8 @@
 .root {
     display: grid;
     gap: var(--space-6);
-    max-width: 48rem;
+    min-width: 0;
+    width: 100%;
 }
 
 .section {
@@ -42,4 +43,35 @@
 .error {
     margin: 0;
     color: var(--destructive-text);
+}
+
+.offerGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr));
+    gap: var(--space-3);
+}
+
+.offerHeading {
+    display: grid;
+    gap: var(--space-2);
+}
+
+.offerTitle,
+.groupTitle {
+    font: var(--app-card-title);
+    color: var(--core-foreground);
+    margin: 0;
+}
+
+.category {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font: var(--app-meta);
+    color: var(--brand-primary);
+}
+
+.offerPrice {
+    font: var(--app-body);
+    color: var(--core-foreground);
 }

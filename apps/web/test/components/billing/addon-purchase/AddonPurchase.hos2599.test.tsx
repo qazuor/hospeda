@@ -38,7 +38,8 @@ const base = {
     currency: 'ARS',
     validity: 'WHILE_SUBSCRIPTION_ALIVE',
     validityDays: null,
-    freeUnderGrantVerticals: []
+    freeUnderGrantVerticals: [],
+    grantedKeys: ['featured_listing']
 } as const;
 const accommodationPack = {
     ...base,
@@ -90,6 +91,62 @@ beforeEach(() => {
 });
 
 describe('HOS-2599 finding 1: add-ons follow the account verticals', () => {
+    it.each([
+        'LISTING',
+        'VERTICAL_SUBSCRIPTION'
+    ] as const)('keeps a cross-vertical %s offer inside its subscription section', async (scopeType) => {
+        offers.mockResolvedValue({
+            ok: true,
+            data: {
+                items: [
+                    {
+                        ...accommodationPack,
+                        scopeType,
+                        compatibleVerticals: ['accommodation', 'venue']
+                    }
+                ]
+            }
+        });
+        listMineWith([
+            subscription({ vertical: 'accommodation', status: 'ACTIVE' }),
+            {
+                ...subscription({ vertical: 'venue', status: 'ACTIVE' }),
+                plan: { name: 'Venue plan' }
+            }
+        ]);
+        listingNotices.mockResolvedValue({
+            ok: true,
+            data: {
+                items: [
+                    {
+                        listingId: 'listing-a',
+                        name: 'Section listing',
+                        publicationStatus: 'PUBLISHED'
+                    }
+                ]
+            }
+        });
+        render(
+            <AddonPurchaseGate
+                locale="en"
+                returnOrderRequestId={null}
+                accountEmail="owner@example.test"
+                plansPath="planes"
+                onlyVertical="accommodation"
+            />
+        );
+        fireEvent.click(await screen.findByTestId(`addon-offer-${accommodationPack.productId}`));
+        if (scopeType === 'LISTING') {
+            await screen.findByTestId('addon-target-listing-a');
+            expect(listingNotices).toHaveBeenCalledTimes(1);
+            expect(listingNotices).toHaveBeenCalledWith({ vertical: 'accommodation' });
+        } else {
+            const summary = await screen.findByTestId('addon-purchase-summary');
+            expect(summary).toHaveTextContent('Básico');
+            expect(summary).not.toHaveTextContent('Venue plan');
+        }
+    });
+
     it('shows an experience owner only the experience add-ons', async () => {
         listMineWith([subscription({ vertical: 'experience', status: 'ACTIVE' })]);
         render(

@@ -30,6 +30,7 @@ describe('Mi cuenta empty states carry an icon', () => {
     it.each([
         ['components/account/MySubscriptions.astro', /CreditCardIcon slot="icon"/],
         ['components/billing/addon-purchase/AddonPurchaseGate.client.tsx', /<PackageIcon/],
+        ['components/billing/recurring-addons/RecurringAddonWithdrawal.client.tsx', /<PackageIcon/],
         ['components/host/host-trades/BenefitUsagesPanel.client.tsx', /<CheckCircleIcon/],
         ['components/listing/ai-questions/AiQuestionsPanel.client.tsx', /<ChatIcon/],
         ['components/listing/ListingFaqManager.client.tsx', /<FaqsIcon/],

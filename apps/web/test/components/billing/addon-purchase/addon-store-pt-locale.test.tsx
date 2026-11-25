@@ -32,7 +32,8 @@ const offers = [
         scopeType: 'VERTICAL_SUBSCRIPTION',
         validity: 'WHILE_SUBSCRIPTION_ALIVE',
         validityDays: null,
-        freeUnderGrantVerticals: []
+        freeUnderGrantVerticals: [],
+        grantedKeys: ['max_photos_per_accommodation']
     }
 ];
 
@@ -79,6 +80,7 @@ describe('HOS-2298 Portuguese addon store dictionary', () => {
         render(
             <>
                 <AddonOfferList
+                    locale="pt"
                     offers={offers}
                     onSelect={() => undefined}
                     t={t}

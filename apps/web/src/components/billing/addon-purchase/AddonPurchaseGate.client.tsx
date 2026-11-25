@@ -17,6 +17,8 @@ export interface AddonPurchaseGateProps {
     readonly accountEmail: string;
     /** Where «Ver planes» goes (`resolveEmptySubscriptionPlansPath`, owner decision 2). */
     readonly plansPath: string;
+    /** Restrict purchase to a subscription section's vertical without a second gate read. */
+    readonly onlyVertical?: string;
 }
 
 /** What the gate knows about the account's subscriptions. */
@@ -46,14 +48,17 @@ export function AddonPurchaseGate({
     locale,
     returnOrderRequestId,
     accountEmail,
-    plansPath
+    plansPath,
+    onlyVertical
 }: AddonPurchaseGateProps) {
     const { t } = useMemo(() => createTranslations(locale), [locale]);
-    const [state, setState] = useState<GateState>(returnOrderRequestId ? 'SOME' : 'LOADING');
+    const [state, setState] = useState<GateState>(
+        returnOrderRequestId || onlyVertical ? 'SOME' : 'LOADING'
+    );
     const [accountVerticals, setAccountVerticals] = useState<readonly string[] | null>(null);
 
     useEffect(() => {
-        if (returnOrderRequestId) return;
+        if (returnOrderRequestId || onlyVertical) return;
         let alive = true;
         const read = async () => {
             try {
@@ -72,7 +77,7 @@ export function AddonPurchaseGate({
         return () => {
             alive = false;
         };
-    }, [returnOrderRequestId]);
+    }, [returnOrderRequestId, onlyVertical]);
 
     if (state === 'LOADING') {
         return (
@@ -111,7 +116,7 @@ export function AddonPurchaseGate({
             locale={locale}
             returnOrderRequestId={returnOrderRequestId}
             accountEmail={accountEmail}
-            accountVerticals={accountVerticals}
+            accountVerticals={onlyVertical ? [onlyVertical] : accountVerticals}
         />
     );
 }
