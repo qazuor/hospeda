@@ -37,6 +37,14 @@
         "description": "Você não receberá mais e-mails do Hospeda.",
         "resubscribeLink": "Se foi um engano, assinar novamente"
     },
+    "unsubscribeConfirm": {
+        "title": "Você quer cancelar a inscrição na newsletter da Hospeda?",
+        "description": "Você deixará de receber nossos emails. Pode se inscrever novamente quando quiser.",
+        "confirmButton": "Confirmar cancelamento",
+        "confirming": "Processando...",
+        "keepLink": "Não, quero continuar inscrito",
+        "networkError": "Não conseguimos processar o pedido. Tente novamente em instantes."
+    },
     "whatsapp": {
         "title": "Entre no canal do WhatsApp do Hospeda",
         "description": "Receba ofertas exclusivas e novidades do Litoral no seu WhatsApp.",
