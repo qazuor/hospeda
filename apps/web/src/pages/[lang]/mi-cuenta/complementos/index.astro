@@ -1,16 +1,10 @@
 ---
 /**
  * @file mi-cuenta/complementos/index.astro
- * @description The add-ons page (HOS-2485): kit `PageHeader` with the «Plan /
- * Complementos» tabs, the add-on purchase flow (its own island: per-user
- * billing state, a Stepper and catalog-driven OptionCards, a back step on every
- * step) and the recurring add-ons withdrawal as a kit `Section`. It is the second
- * tab of «Suscripción»: same H1, same help «?» and the «Suscripción» sidebar item
- * highlighted (HOS-2610 F-19).
- *
- * Owner decision 3 (Mi cuenta UI epic): `AddonPurchaseGate` shows an account
- * with no subscription «Antes tenés que suscribirte a un plan» and the plans
- * CTA (decision 2) instead of the purchase flow. Its read is client-side too.
+ * @description Active add-on summary with the subscription tabs. A successful
+ * empty subscription read redirects to the account dashboard, except when settling
+ * a Mercado Pago return. New purchases live in each vertical's subscription section;
+ * personal add-on reads and the return settlement stay in browser islands.
  *
  * @route /{lang}/mi-cuenta/complementos/
  * @rendering SSR
@@ -18,13 +12,15 @@
 import { PageHeader, Section } from '@/components/account/ui';
 import PageHelpLink from '@/components/account/help/PageHelpLink.astro';
 import SubscriptionTabs from '@/components/account/SubscriptionTabs.astro';
-import { AddonPurchaseGate } from '@/components/billing/addon-purchase/AddonPurchaseGate.client';
+import { AddonPurchase } from '@/components/billing/addon-purchase/AddonPurchase.client';
 import { RecurringAddonWithdrawal } from '@/components/billing/recurring-addons/RecurringAddonWithdrawal.client';
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import { parseReturnOrderRequestId } from '@/lib/billing/addon-purchase-return';
 import { createTranslations, type SupportedLocale } from '@/lib/i18n';
 import { buildLoginRedirect } from '@/lib/middleware-helpers';
-import { resolveEmptySubscriptionPlansPath } from '@/lib/account-roles';
+import { billingSubscriptionApi } from '@/lib/api/endpoints-protected';
+import { parseOwnSubscriptions } from '@/lib/billing/self-cancel';
+import { buildUrl } from '@/lib/urls';
 
 const locale = Astro.locals.locale as SupportedLocale;
 const user = Astro.locals.user;
@@ -37,6 +33,16 @@ const { t } = createTranslations(locale);
 const title = t('account.pages.subscription.title', 'Suscripción');
 const returnOrderRequestId = parseReturnOrderRequestId({ search: Astro.url.search });
 const listingId = Astro.url.searchParams.get('listing');
+const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
+let ownSubscriptions = null;
+try {
+    ownSubscriptions = parseOwnSubscriptions({ result: await billingSubscriptionApi.listMine({ cookieHeader }) });
+} catch {
+    ownSubscriptions = null;
+}
+if (!returnOrderRequestId && ownSubscriptions?.subscriptions.length === 0) {
+    return Astro.redirect(buildUrl({ locale, path: 'mi-cuenta' }));
+}
 ---
 
 <AccountLayout locale={locale} title={title} activeSection="suscripcion">
@@ -45,13 +51,12 @@ const listingId = Astro.url.searchParams.get('listing');
         <PageHelpLink slot="help" locale={locale} />
         <SubscriptionTabs slot="tabs" locale={locale} current="addons" />
     </PageHeader>
-    <AddonPurchaseGate
+    {returnOrderRequestId && <AddonPurchase
         client:load
         locale={locale}
         returnOrderRequestId={returnOrderRequestId}
         accountEmail={user.email}
-        plansPath={resolveEmptySubscriptionPlansPath({ roles: user.roles })}
-    />
+    />}
     <Section
         id="recurring-addons"
         title={t('billing.addonPurchase.recurringAddons.title')}

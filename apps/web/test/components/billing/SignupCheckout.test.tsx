@@ -92,9 +92,7 @@ describe('SignupCheckout — B3 UI (B3.md:1045-1053)', () => {
                 planSummary={planSummary}
             />
         );
-        expect(screen.getByTestId('signup-checkout-plan-summary')).toHaveTextContent(
-            'Básico · $ 15.000 por mes'
-        );
+        expect(screen.getByTestId('signup-checkout-plan-summary')).toHaveTextContent('Básico');
         expect(screen.getByTestId('signup-checkout-plan-summary')).not.toHaveTextContent('Basic');
         unmount();
         const { unmount: unmountEn } = render(
@@ -125,7 +123,11 @@ describe('SignupCheckout — B3 UI (B3.md:1045-1053)', () => {
             />
         );
         const summary = screen.getByTestId('signup-checkout-plan-summary');
-        expect(summary).toHaveTextContent('Básico · $ 15.000 por mes');
+        expect(summary.querySelector('[data-kit-section]')).toBeInTheDocument();
+        expect(summary.querySelector('dl')).toBeInTheDocument();
+        expect(summary).toHaveTextContent('Básico');
+        expect(summary).toHaveTextContent('$ 15.000');
+        expect(summary).toHaveTextContent('por mes');
         expect(
             summary.compareDocumentPosition(screen.getByTestId('signup-checkout-confirm')) &
                 Node.DOCUMENT_POSITION_FOLLOWING

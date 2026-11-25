@@ -149,6 +149,8 @@
         "hero": {
             "tagline": "Para viajantes",
             "title": "Todo o Litoral, num só lugar",
+            "titleMain": "Todo o Litoral, num só",
+            "titleAccent": "lugar",
             "desc": "Encontre onde dormir, onde comer e o que fazer na costa do Rio Uruguai. Guarde o que gostar e fale direto com quem recebe você."
         },
         "steps": {

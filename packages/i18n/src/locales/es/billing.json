@@ -242,6 +242,14 @@
             "title": "Confirmá tu suscripción",
             "intro": "Vas a autorizar el pago en Mercado Pago.",
             "planSummary": "{{plan}} · {{amount}} {{cycle}}",
+            "back": "Volver",
+            "summary": {
+                "title": "Resumen de la suscripción",
+                "plan": "Plan",
+                "vertical": "Categoría",
+                "period": "Período de facturación",
+                "total": "Total por período"
+            },
             "promo": {
                 "limited_one": "Con el código {{code}}: {{amount}} {{cycle}} durante {{count}} cobro (después {{listAmount}}).",
                 "limited_other": "Con el código {{code}}: {{amount}} {{cycle}} durante {{count}} cobros (después {{listAmount}}).",
@@ -877,6 +885,16 @@
         }
     },
     "addonPurchase": {
+        "verticalTitle": "Complementos de {{vertical}}",
+        "filterCategory": "Filtrar complementos por categoría",
+        "allCategories": "Todos",
+        "category": {
+            "visibility": "Visibilidad",
+            "listings": "Fichas",
+            "media": "Fotos y multimedia",
+            "other": "Otros"
+        },
+        "group": { "packs": "Packs recurrentes", "boosts": "Impulsos y extras para fichas" },
         "title": "Comprar complementos",
         "noSubscription": {
             "title": "Antes tenés que suscribirte a un plan",
@@ -939,18 +957,19 @@
             "annual": "Cada año"
         },
         "recurringAddons": {
-            "title": "Tus destaques recurrentes",
-            "loading": "Cargando destaques recurrentes…",
-            "empty": "No tenés destaques recurrentes activos.",
-            "loadError": "No pudimos cargar tus destaques recurrentes.",
+            "title": "Tus complementos activos",
+            "loading": "Cargando complementos activos…",
+            "empty": "No tenés complementos activos.",
+            "viewSubscriptions": "Ver suscripciones y complementos",
+            "loadError": "No pudimos cargar tus complementos activos.",
             "invalidListing": "La ficha indicada no es válida.",
             "noListing": "Sin ficha asociada",
             "withdraw": "Dar de baja",
-            "confirmText": "Al confirmar, se corta el cobro y el destaque se apaga hoy. No hay reembolso. El proveedor puede enviarte un correo de cancelación.",
+            "confirmText": "Al confirmar, se corta el cobro y el complemento se desactiva hoy. No hay reembolso. El proveedor puede enviarte un correo de cancelación.",
             "confirm": "Confirmar baja",
             "cancel": "Cancelar",
-            "withdrawn": "El destaque fue dado de baja.",
-            "withdrawError": "No pudimos dar de baja el destaque."
+            "withdrawn": "El complemento fue dado de baja.",
+            "withdrawError": "No pudimos dar de baja el complemento."
         },
         "steps": {
             "label": "Pasos de la compra",

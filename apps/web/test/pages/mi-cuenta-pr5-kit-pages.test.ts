@@ -29,10 +29,12 @@ const CLOSURES: Readonly<Record<string, readonly string[]>> = {
     suscripcion: [
         'pages/[lang]/mi-cuenta/suscripcion/index.astro',
         'components/account/MySubscriptions.astro',
-        'components/account/SubscriptionTabs.astro'
+        'components/account/SubscriptionTabs.astro',
+        'components/billing/addon-purchase/AddonOfferList.tsx'
     ],
     complementos: [
         'pages/[lang]/mi-cuenta/complementos/index.astro',
+        'components/billing/recurring-addons/RecurringAddonWithdrawal.client.tsx',
         'components/account/SubscriptionTabs.astro',
         'components/billing/addon-purchase/AddonOfferList.tsx',
         'components/billing/addon-purchase/AddonTargetPicker.tsx',
@@ -91,7 +93,7 @@ describe('«Complementos» (HOS-2485, AC-8)', () => {
 
     it('both pages carry the «Plan / Complementos» NavTabs, each marking itself', () => {
         expect(read('pages/[lang]/mi-cuenta/suscripcion/index.astro')).toContain(
-            '<SubscriptionTabs slot="tabs" locale={locale} current="plan" />'
+            '<SubscriptionTabs slot="tabs" locale={locale} current="plan" showAddons={hasSubscriptions} />'
         );
         expect(read('pages/[lang]/mi-cuenta/complementos/index.astro')).toContain(
             '<SubscriptionTabs slot="tabs" locale={locale} current="addons" />'
@@ -100,5 +102,16 @@ describe('«Complementos» (HOS-2485, AC-8)', () => {
         expect(tabs).toContain('<NavTabs');
         expect(tabs).toContain("current: current === 'plan'");
         expect(tabs).toContain("current: current === 'addons'");
+    });
+
+    it('hides the tab navigation without subscriptions and keeps it on a failed read', () => {
+        const page = read('pages/[lang]/mi-cuenta/suscripcion/index.astro');
+        expect(page).toContain(
+            'const hasSubscriptions = ownSubscriptions === null || ownSubscriptions.subscriptions.length > 0;'
+        );
+        const tabs = read('components/account/SubscriptionTabs.astro');
+        expect(tabs).toContain('readonly showAddons?: boolean');
+        expect(tabs).toContain('showAddons = true');
+        expect(tabs).toMatch(/\{showAddons && <NavTabs[\s\S]*\/>\}/);
     });
 });

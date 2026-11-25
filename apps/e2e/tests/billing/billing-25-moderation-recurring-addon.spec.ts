@@ -175,7 +175,7 @@ test.describe('TEST:B13b:1 AC:B13b:1 AC:B13b:4 moderating a listing with a live 
                 esListing.notices.moderated.withdrawLink
             );
             await notice.getByTestId('listing-notice-withdraw-link').click();
-            const row = page.getByTestId(`recurring-addon-${live.instanceId}`);
+            const row = page.locator(`[data-row="${live.instanceId}"]`);
             await expect(row).toBeVisible();
             await expect(row).toContainText(live.addonName);
             await row.getByTestId(`recurring-addon-withdraw-${live.instanceId}`).click();

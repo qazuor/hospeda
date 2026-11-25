@@ -149,6 +149,8 @@
         "hero": {
             "tagline": "For travellers",
             "title": "The whole Litoral, in one place",
+            "titleMain": "The whole Litoral, in one",
+            "titleAccent": "place",
             "desc": "Find where to sleep, where to eat and what to do along the Río Uruguay coast. Save what you like and talk straight to your host."
         },
         "steps": {

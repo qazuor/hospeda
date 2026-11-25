@@ -7,6 +7,8 @@
  * @rendering SSR; private and uncacheable because the page resolves the session.
  */
 import BaseLayout from '@/layouts/BaseLayout.astro';
+import { SignupNoticeResponseSchema } from '@repo/schemas';
+import { plansPathForVertical } from '@/lib/billing/addon-purchase';
 import SEOHead from '@/components/seo/SEOHead.astro';
 import { SignupCheckout } from '@/components/billing/SignupCheckout.client';
 import { resolveSubscriptionPlansPath } from '@/lib/account-roles';
@@ -60,7 +62,8 @@ if (!user) {
 const { t } = createTranslations(locale);
 const title = t('billing.checkout.signup.title');
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
-const plansHref = buildUrl({ locale, path: resolveSubscriptionPlansPath({ permissions: user.permissions }) });
+let plansHref = buildUrl({ locale, path: resolveSubscriptionPlansPath({ permissions: user.permissions }) });
+let vertical: import('@/components/billing/SignupCheckout.client').SignupCheckoutProps['vertical'] = null;
 let trialNotice: SignupTrialNotice | null;
 let touristVipNotice: SignupTouristVipNotice | null;
 let planSummary: SignupPlanSummary | null;
@@ -71,6 +74,11 @@ try {
         billingOptionId: optionId,
         cookieHeader: cookieHeader ?? undefined
     });
+    const parsed = result.ok ? SignupNoticeResponseSchema.safeParse(result.data) : null;
+    if (parsed?.success) {
+        vertical = parsed.data.vertical;
+        plansHref = buildUrl({ locale, path: plansPathForVertical({ vertical }) });
+    }
     trialNotice = resolveSignupTrialNotice({ result });
     touristVipNotice = resolveSignupTouristVipNotice({ result });
     manualPaymentOnly = resolveSignupManualPaymentOnly({ result });
@@ -93,6 +101,7 @@ try {
         billingOptionId={optionId}
         accountEmail={user.email}
         plansHref={plansHref}
+        vertical={vertical}
         trialNotice={trialNotice}
         touristVipNotice={touristVipNotice}
         planSummary={planSummary}

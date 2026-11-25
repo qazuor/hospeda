@@ -117,6 +117,9 @@ export interface NavGroup {
 /** Id of the AI assistants nav item, which the sidebar gates on the MCP feature. */
 export const AI_ASSISTANTS_NAV_ITEM_ID = 'aiAssistants';
 
+/** Subscription-only active add-ons summary entry. */
+export const ADDONS_NAV_ITEM_ID = 'addons';
+
 /** Id of the «Comer y salir» business area (HOS-2559). */
 export const VENUE_LISTINGS_GROUP_ID = 'comercio-venue';
 
@@ -169,7 +172,7 @@ export const ACCOUNT_NAV_GROUPS: readonly NavGroup[] = [
             },
             {
                 // HOS-2485 (AC-8): the add-ons page highlights its own item.
-                id: 'addons',
+                id: ADDONS_NAV_ITEM_ID,
                 i18nKey: 'account.nav.addons',
                 href: 'mi-cuenta/complementos',
                 icon: PackageIcon,

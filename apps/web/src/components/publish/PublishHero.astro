@@ -16,11 +16,14 @@
 
 import type { IconProps } from '@repo/icons';
 import type { ComponentType } from 'react';
+import type { PublishPageVariant } from '@/lib/publish/publish-page-variant';
 
 /** Any `@repo/icons` component, as the nav/door configs already type them. */
 type IconComponent = ComponentType<IconProps>;
 
 interface Props {
+    /** Direct journeys use only the compact page heading. */
+    readonly variant?: PublishPageVariant;
     /** Handwritten eyebrow above the title. */
     readonly tagline: string;
     /** The page's `<h1>`. */
@@ -33,10 +36,17 @@ interface Props {
     readonly floatingIcons: readonly [IconComponent, IconComponent, IconComponent];
 }
 
-const { tagline, title, body, Icon, floatingIcons } = Astro.props;
+const { tagline, title, body, Icon, floatingIcons, variant = 'guest' } = Astro.props;
 const [FloatOne, FloatTwo, FloatThree] = floatingIcons;
 ---
 
+{variant === 'direct' ? (
+    <header class="publish-heading">
+        <p class="publish-heading__tagline">{tagline}</p>
+        <h1 class="publish-heading__title">{title}</h1>
+        <slot />
+    </header>
+) : (
 <section class="publish-hero section section--warm">
     <div class="publish-hero__decoratives" aria-hidden="true">
         <img
@@ -74,8 +84,29 @@ const [FloatOne, FloatTwo, FloatThree] = floatingIcons;
         </aside>
     </div>
 </section>
+)}
 
 <style>
+    .publish-heading {
+        max-width: var(--container-max);
+        margin: 0 auto;
+        padding: var(--space-6) var(--space-container-x) var(--space-2);
+    }
+
+    .publish-heading__tagline {
+        margin: 0 0 var(--space-2);
+        color: var(--core-muted-foreground);
+        font-size: var(--text-body-sm);
+    }
+
+    .publish-heading__title {
+        margin: 0;
+        color: var(--core-foreground);
+        font-family: var(--font-heading);
+        font-size: var(--text-h2);
+        text-wrap: balance;
+    }
+
     .publish-hero {
         position: relative;
         overflow: hidden;

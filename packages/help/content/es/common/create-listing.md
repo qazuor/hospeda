@@ -44,7 +44,7 @@ covers:
   - "tool:create_listing"
   - "tool:get_listing_creation_guide"
 entryFor: []
-reviewedAt: "2026-11-23"
+reviewedAt: "2026-11-25"
 ---
 
 ## Qué podés hacer
@@ -64,7 +64,7 @@ Un asistente de IA conectado también puede crear el borrador por vos.
 ## Qué esperar
 
 - La publicación nace como borrador y no se ve en el sitio hasta que la publiques.
-- Si ya tenés un borrador, el sitio te ofrece retomarlo antes de crear otro.
+- Si ya tenés un borrador, el sitio te ofrece retomarlo antes de crear otro; si llegás desde la página de planes, te lleva directo a retomarlo.
 - Después completás las secciones en el editor; las fotos se cargan como explica {{article:photos|la ayuda de fotos}}.
 
 ## Qué NO esperar

@@ -1435,12 +1435,14 @@ const selectGroupName = `pricing-select-${audience}`;
 	}
 
 	function initPricingToggle(container: HTMLElement): void {
+		document.documentElement.dataset.pricingBilling = 'monthly';
 		const options = container.querySelectorAll<HTMLButtonElement>(
 			'[data-pricing-toggle]'
 		);
 		if (options.length === 0) return;
 		const setActive = (interval: 'monthly' | 'annual'): void => {
 			container.setAttribute('data-billing', interval);
+			document.documentElement.dataset.pricingBilling = interval;
 			for (const opt of options) {
 				const isActive = opt.dataset.pricingToggle === interval;
 				opt.classList.toggle('pricing-toggle__option--active', isActive);
