@@ -333,6 +333,7 @@
             },
             "unsavedChanges": "Você tem alterações não salvas. Se sair agora, elas serão perdidas. Deseja sair mesmo assim?",
             "media": {
+                "uploadHint": "JPG, PNG, WebP ou HEIC — máx. {{maxSize}}MB",
                 "featured": "Imagem principal",
                 "gallery": "Galeria de fotos",
                 "add": "Adicionar foto",

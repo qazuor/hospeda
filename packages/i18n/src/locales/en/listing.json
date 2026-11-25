@@ -333,6 +333,7 @@
             },
             "unsavedChanges": "You have unsaved changes. If you leave now they will be lost. Leave anyway?",
             "media": {
+                "uploadHint": "JPG, PNG, WebP or HEIC — max {{maxSize}}MB",
                 "featured": "Featured image",
                 "gallery": "Photo gallery",
                 "add": "Add photo",

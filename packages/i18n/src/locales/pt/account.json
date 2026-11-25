@@ -1667,7 +1667,6 @@
             "media": {
                 "sectionTitle": "Fotos",
                 "photoSectionTitle": "Capa e galeria de fotos",
-                "photoFormats": "JPG, PNG, WebP ou HEIC - máx. 10MB",
                 "photoActions": "Ações da foto {{index}}",
                 "featured": "Imagem principal",
                 "gallery": "Galeria de fotos",

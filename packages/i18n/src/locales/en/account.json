@@ -1667,7 +1667,6 @@
             "media": {
                 "sectionTitle": "Photos",
                 "photoSectionTitle": "Cover and photo gallery",
-                "photoFormats": "JPG, PNG, WebP or HEIC - max 10MB",
                 "photoActions": "Photo actions {{index}}",
                 "featured": "Cover image",
                 "gallery": "Photo gallery",
