@@ -1,40 +1,25 @@
 /** State grouping shared by all three owner listing indexes (D6, HOS-2626). */
-import { LifecycleStatusEnum, ModerationStatusEnum, PublicationStatusEnum } from '@repo/schemas';
+import { PublicationStatusEnum } from '@repo/schemas';
 
 /** Stable display order, independent of the order returned by the API. */
 export const OWNER_LISTING_BUCKETS = ['published', 'drafts', 'archived', 'deleted'] as const;
 /** One owner-list section. */
 export type OwnerListingBucket = (typeof OWNER_LISTING_BUCKETS)[number];
-/** Fields available across full entities and compact owner projections. */
+/** The only field the grouping reads: the listing's publication status. */
 export interface OwnerListingState {
     readonly publicationStatus: PublicationStatusEnum;
-    readonly lifecycleState?: LifecycleStatusEnum;
-    readonly moderationState?: ModerationStatusEnum;
 }
 
-/** Consistent pill state, including moderation signalled by older projections. */
+/** Consistent pill state: the publication status itself (moderation is `MODERATED`). */
 export function resolveOwnerListingDisplayStatus({
     listing
 }: {
     readonly listing: OwnerListingState;
 }): PublicationStatusEnum {
-    if (listing.publicationStatus === PublicationStatusEnum.PURGED)
-        return PublicationStatusEnum.PURGED;
-    if (
-        listing.publicationStatus === PublicationStatusEnum.ARCHIVED ||
-        listing.lifecycleState === LifecycleStatusEnum.ARCHIVED
-    )
-        return PublicationStatusEnum.ARCHIVED;
-    if (
-        listing.publicationStatus === PublicationStatusEnum.MODERATED ||
-        listing.moderationState === ModerationStatusEnum.PENDING ||
-        listing.moderationState === ModerationStatusEnum.REJECTED
-    )
-        return PublicationStatusEnum.MODERATED;
     return listing.publicationStatus;
 }
 
-/** Resolve one bucket: deletion wins, then archive, then moderation, then publication. */
+/** Resolve one bucket: deletion, archive, then published; every other state is a draft. */
 export function resolveOwnerListingBucket({
     listing
 }: {

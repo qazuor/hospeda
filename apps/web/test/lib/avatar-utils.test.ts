@@ -7,17 +7,17 @@ import { describe, expect, it } from 'vitest';
 import { getInitials, getInitialsFromName, INITIALS_PLACEHOLDER } from '../../src/lib/avatar-utils';
 
 describe('getInitials', () => {
-    it('returns the first two significant initials for multi-word names', () => {
+    it('returns first + last significant initial for multi-word names', () => {
         expect(getInitials({ name: 'Carlos Ramírez' })).toBe('CR');
-        expect(getInitials({ name: 'Carlos Alberto Ramírez' })).toBe('CA');
+        expect(getInitials({ name: 'Carlos Alberto Ramírez' })).toBe('CR');
         expect(getInitials({ name: 'Host y Comercio' })).toBe('HC');
         expect(getInitials({ name: 'Casa de la Costa' })).toBe('CC');
         expect(getInitials({ name: 'Host and Venue' })).toBe('HV');
         expect(getInitials({ name: 'Casa e Comércio' })).toBe('CC');
     });
 
-    it('returns one initial for single-word names', () => {
-        expect(getInitials({ name: 'carlos' })).toBe('C');
+    it('returns first two letters for single-word names', () => {
+        expect(getInitials({ name: 'carlos' })).toBe('CA');
         expect(getInitials({ name: 'a' })).toBe('A');
     });
 
@@ -61,7 +61,7 @@ describe('getInitials', () => {
 describe('getInitialsFromName', () => {
     it('delegates to getInitials with a positional name', () => {
         expect(getInitialsFromName('Carlos Ramírez')).toBe('CR');
-        expect(getInitialsFromName('carlos')).toBe('C');
+        expect(getInitialsFromName('carlos')).toBe('CA');
     });
 
     it('returns the default placeholder for empty/undefined input', () => {

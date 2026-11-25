@@ -1,13 +1,8 @@
-import {
-    LifecycleStatusEnum as Lifecycle,
-    ModerationStatusEnum as Moderation,
-    PublicationStatusEnum as Publication
-} from '@repo/schemas';
+import { PublicationStatusEnum as Publication } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import {
     bucketOwnerListings,
-    resolveOwnerListingBucket,
-    resolveOwnerListingDisplayStatus
+    resolveOwnerListingBucket
 } from '@/lib/listing/owner-listing-buckets';
 
 describe('owner listing buckets (D6)', () => {
@@ -20,62 +15,6 @@ describe('owner listing buckets (D6)', () => {
         [Publication.PURGED, 'deleted']
     ] as const)('groups publication state %s as %s', (publicationStatus, bucket) => {
         expect(resolveOwnerListingBucket({ listing: { publicationStatus } })).toBe(bucket);
-    });
-
-    it('keeps moderation in drafts, with archive and deletion taking precedence', () => {
-        for (const moderationState of [Moderation.PENDING, Moderation.REJECTED]) {
-            expect(
-                resolveOwnerListingDisplayStatus({
-                    listing: { publicationStatus: Publication.PUBLISHED, moderationState }
-                })
-            ).toBe(Publication.MODERATED);
-            expect(
-                resolveOwnerListingBucket({
-                    listing: { publicationStatus: Publication.PUBLISHED, moderationState }
-                })
-            ).toBe('drafts');
-            expect(
-                resolveOwnerListingBucket({
-                    listing: { publicationStatus: Publication.ARCHIVED, moderationState }
-                })
-            ).toBe('archived');
-            expect(
-                resolveOwnerListingBucket({
-                    listing: {
-                        publicationStatus: Publication.PURGED,
-                        lifecycleState: Lifecycle.ARCHIVED,
-                        moderationState
-                    }
-                })
-            ).toBe('deleted');
-        }
-    });
-
-    it('handles lifecycle archive without mistaking a paused listing for an archive', () => {
-        expect(
-            resolveOwnerListingBucket({
-                listing: {
-                    publicationStatus: Publication.DRAFT,
-                    lifecycleState: Lifecycle.ARCHIVED
-                }
-            })
-        ).toBe('archived');
-        expect(
-            resolveOwnerListingBucket({
-                listing: {
-                    publicationStatus: Publication.DRAFT,
-                    lifecycleState: Lifecycle.INACTIVE
-                }
-            })
-        ).toBe('drafts');
-        expect(
-            resolveOwnerListingBucket({
-                listing: {
-                    publicationStatus: Publication.PUBLISHED,
-                    moderationState: Moderation.APPROVED
-                }
-            })
-        ).toBe('published');
     });
 
     it('preserves order and identity, buckets only the current page, and does not mutate input', () => {

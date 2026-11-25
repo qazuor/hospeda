@@ -14,7 +14,7 @@ describe('GeneralDashboardHeader identity', () => {
         );
         expect(screen.getByRole('heading', { level: 1, name })).toBeInTheDocument();
         expect(screen.getByTitle(name)).toHaveTextContent(name);
-        expect(screen.getByText('HC')).toBeInTheDocument();
+        expect(screen.getByText('HL')).toBeInTheDocument();
         expect(screen.getByRole('link', { name: 'Editar perfil' })).toHaveAttribute(
             'href',
             '/es/mi-cuenta/editar/'

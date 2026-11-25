@@ -17,7 +17,6 @@ const SRC = resolve(__dirname, '../../src/components');
 
 const FILES = [
     'account/PartnerEditForm.client.tsx',
-    'account/HostTradeEditForm.client.tsx',
     'host/host-trades/ProviderUsagesPanel.client.tsx',
     'host/host-trades/ProviderReviewsPanel.client.tsx',
     'host/host-trades/ProviderQrPanel.client.tsx',

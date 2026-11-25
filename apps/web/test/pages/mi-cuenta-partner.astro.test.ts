@@ -164,7 +164,9 @@ describe('mi-cuenta/partner/index.astro (HOS-278 §8 partner self-service)', () 
 
     it('empty-state CTA points at the public /sumate/partner landing, not at its own section (HOS-2450)', () => {
         const emptyState = source.slice(source.indexOf('partner === null'));
-        const ctaHref = emptyState.match(/<a href=\{buildUrl\(\{ locale, path: '([^']+)' \}\)\}>/);
+        const ctaHref = emptyState.match(
+            /<LinkButton href=\{buildUrl\(\{ locale, path: '([^']+)' \}\)\}>/
+        );
         expect(ctaHref?.[1]).toBe('sumate/partner');
         expect(ctaHref?.[1]).not.toBe('mi-cuenta/aliados');
         // The target page really exists.

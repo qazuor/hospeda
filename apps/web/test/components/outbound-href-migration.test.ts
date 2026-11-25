@@ -119,7 +119,7 @@ const MIGRATED: readonly MigratedLink[] = [
     {
         // Not in the original report — found by the guard's "one scheme
         // allow-list" prong, which flagged its local `startsWith('https://')`.
-        file: 'components/host/host-trades/TradeCard.tsx',
+        file: 'components/host/host-trades/resolve-contact-href.ts',
         renders: ['resolveSafeExternalUrl(trimmed)'],
         neverRenders: ["trimmed.startsWith('https://')"]
     },
