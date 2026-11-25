@@ -16,11 +16,11 @@
 
 import DetailLayout from '@/layouts/DetailLayout.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import { breadcrumbLabel } from '@/lib/navigation/breadcrumb-labels';
 import { ImageGallery } from '@/components/ImageGallery.client';
 import GalleryTapBridge from '@/components/gallery/GalleryTapBridge.astro';
 import ListingVideoSection from '@/components/listing/ListingVideoSection.astro';
 import VenueJsonLd from '@/components/seo/VenueJsonLd.astro';
-import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
 import ListingHeader from '@/components/listing/header/ListingHeader.astro';
 import { buildVenueHeader } from '@/lib/listing-header/build-listing-header';
 import { buildVenueContactBlock } from '@/lib/listing-contact/listing-contact-block';
@@ -491,16 +491,7 @@ const seoTitle = venue.seo?.title?.trim() || venue.name;
 const seoDescription =
     venue.seo?.description?.trim() || venue.summary || t('venue.listing.subtitle');
 
-// --- Breadcrumb JSON-LD (HOS-117 T-007) ---
 const siteOrigin = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
-const breadcrumbItems = [
-    { name: t('nav.home', 'Inicio'), url: `${siteOrigin}/${locale}/` },
-    {
-        name: t('venue.listing.title'),
-        url: `${siteOrigin}/${locale}/comer-y-salir/`
-    },
-    { name: venue.name, url: `${siteOrigin}${Astro.url.pathname}` }
-];
 
 // --- Header (HOS-2579): the shared frame, built from the detail data ---
 const headerProps = buildVenueHeader({
@@ -542,22 +533,20 @@ const headerProps = buildVenueHeader({
             reviewCount: venue.reviewsCount,
         } : undefined}
     />
-    <BreadcrumbJsonLd slot="head-extra" items={breadcrumbItems} />
     {faqSections.length > 0 && (
         <FAQPageJsonLd slot="head-extra" sections={faqSections} inLanguage={faqInLanguage} />
     )}
-    <div slot="breadcrumbs" class="venue-detail-breadcrumbs">
-        <Breadcrumbs
-            locale={locale}
-            items={[
-                {
-                    label: t('venue.listing.title'),
-                    path: 'comer-y-salir/'
-                },
-                { label: venue.name }
-            ]}
-        />
-    </div>
+    <Breadcrumbs
+        slot="breadcrumbs"
+        locale={locale}
+        items={[
+            {
+                label: breadcrumbLabel({ t, key: 'eatAndDrink' }),
+                path: 'comer-y-salir/'
+            },
+            { label: venue.name }
+        ]}
+    />
 
     <!-- Header (rendered inside the wave band, like destinos/alojamientos) -->
     <Fragment slot="page-header">
@@ -797,17 +786,6 @@ const headerProps = buildVenueHeader({
 
 <style>
     @media (max-width: 767px) {
-        :global(.wave-header__breadcrumbs:has(.venue-detail-breadcrumbs)) {
-            display: none;
-        }
-
-        /* The hidden breadcrumbs carried the band's top padding, so without this
-           the badges sit flush under the navbar. Expanded state only: the compact
-           state sets its own padding-top. */
-        :global(.wave-header:not(.wave-header--compact) .wave-header__bar:has(.venue-detail-breadcrumbs) .wave-header__content) {
-            padding-top: var(--space-6, 1.5rem);
-        }
-
         /* The full-bleed mobile gallery meets the blue header directly: drop the
            page-background strip DetailLayout leaves above the body. */
         :global(.wave-header .detail-page:has(.venue-detail)) {

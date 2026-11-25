@@ -317,7 +317,7 @@ const metaDescription =
 	  the correct outcome, not a missing level: the trail gains a real step the
 	  day an authors index exists.
 	*/}
-	<Breadcrumbs slot="breadcrumbs" locale={locale} items={[{ label: authorName }]} />
+	<Breadcrumbs slot="breadcrumbs" locale={locale} jsonLd={isIndexable} items={[{ label: authorName }]} />
 
 	<ListingPageHeader
 		slot="page-header"

@@ -13,7 +13,7 @@ import DetailLayout from '@/layouts/DetailLayout.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import EventJsonLd from '@/components/seo/EventJsonLd.astro';
 import type { EventOffer } from '@/components/seo/EventJsonLd.astro';
-import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
+import { breadcrumbLabel } from '@/lib/navigation/breadcrumb-labels';
 import { ShareButtons } from '@/components/ShareButtons.client';
 import { EntityViewTracker } from '@/components/analytics/EntityViewTracker.client';
 import { ImageGallery } from '@/components/ImageGallery.client';
@@ -152,13 +152,6 @@ const eventOffersBlock: EventOffer | undefined =
 		    }
 		  : undefined;
 
-// --- Breadcrumb JSON-LD ---
-const breadcrumbItems = [
-	{ name: t('nav.home', 'Inicio'), url: `${siteOrigin}/${locale}/` },
-	{ name: t('events.title', 'Eventos'), url: `${siteOrigin}/${locale}/eventos/` },
-	{ name, url: canonical },
-];
-
 // --- Gallery display logic ---
 // Show ImageGallery when there are gallery images beyond the featured one.
 // When only featuredImage exists, show it as the hero image.
@@ -194,7 +187,6 @@ const featuredIsPlaceholder = featuredImage.url.includes('placeholder');
 		eventStatus={`https://schema.org/${eventStatus}`}
 		offers={eventOffersBlock}
 	/>
-	<BreadcrumbJsonLd slot="head-extra" items={breadcrumbItems} />
 
 	{/* Analytics tracker (headless, SPEC-159 T-013) */}
 	{eventId && (
@@ -211,7 +203,7 @@ const featuredIsPlaceholder = featuredImage.url.includes('placeholder');
 		slot="breadcrumbs"
 		locale={locale}
 		items={[
-			{ label: t('events.title', 'Eventos'), path: 'eventos' },
+			{ label: breadcrumbLabel({ t, key: 'events' }), path: 'eventos' },
 			{ label: name },
 		]}
 	/>

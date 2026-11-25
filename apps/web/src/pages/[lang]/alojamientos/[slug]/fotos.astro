@@ -11,6 +11,7 @@
 
 import DetailLayout from '@/layouts/DetailLayout.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import { breadcrumbLabel } from '@/lib/navigation/breadcrumb-labels';
 import JsonLd from '@/components/seo/JsonLd.astro';
 import { accommodationsApi } from '@/lib/api/endpoints';
 import { toAccommodationDetailPageProps } from '@/lib/api/transforms';
@@ -204,10 +205,11 @@ const jsonLd = {
     <Breadcrumbs
         slot="breadcrumbs"
         locale={locale}
+        jsonLd={false}
         items={[
-            { label: t('accommodations.title'), path: 'alojamientos' },
+            { label: breadcrumbLabel({ t, key: 'accommodations' }), path: 'alojamientos' },
             { label: accommodation.name, path: `alojamientos/${slug}` },
-            { label: t('accommodations.detail.gallery.photosSubpage') }
+            { label: breadcrumbLabel({ t, key: 'photos' }) }
         ]}
     />
 

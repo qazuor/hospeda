@@ -56,7 +56,8 @@ describe('sumate/partner/index.astro', () => {
         // The level count and the matching BreadcrumbList live in
         // `alliance-lead-landings.test.ts`.
         expect(src).toContain('Breadcrumbs');
-        expect(src).toContain('BreadcrumbJsonLd');
+        expect(src).toContain('<Breadcrumbs');
+        expect(src).not.toContain('BreadcrumbJsonLd');
         expect(src).toContain('BaseLayout');
         expect(src).toContain('SEOHead');
     });

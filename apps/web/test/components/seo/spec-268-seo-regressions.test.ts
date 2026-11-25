@@ -58,8 +58,11 @@ describe('SPEC-268 SEO regressions', () => {
         // it. Its own shape is covered by `destinos-atraccion-landing.test.ts`;
         // what SPEC-268 still owns here is that the structured data points at
         // the page's canonical URL rather than at the request URL.
-        expect(attractionLanding).toContain('const canonicalPath = buildUrl(');
-        expect(attractionLanding).toContain('${siteOrigin}${canonicalPath}');
+        // HOS-2623: the BreadcrumbList is emitted by the shared `<Breadcrumbs>`
+        // adapter, which anchors its last item on the canonical page URL, so the
+        // page itself only mounts it; the ItemList keeps absolute card URLs.
+        expect(attractionLanding).toContain('<Breadcrumbs');
+        expect(attractionLanding).toContain('${siteOrigin}${buildUrl(');
     });
 
     it('robots disallows reset-password and verify-email routes', () => {

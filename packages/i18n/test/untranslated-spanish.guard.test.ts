@@ -32,6 +32,18 @@ type TargetLocale = (typeof TARGET_LOCALES)[number];
  */
 const LEGITIMATE_IDENTICAL: Readonly<Record<string, readonly TargetLocale[]>> = {
     Email: ['en', 'pt'],
+    // HOS-2623 breadcrumb labels: same spelling in Brazilian Portuguese / English.
+    'Google Calendar': ['en', 'pt'],
+    Sponsors: ['en'],
+    Autores: ['pt'],
+    Editores: ['pt'],
+    Comparar: ['pt'],
+    Destinos: ['pt'],
+    Eventos: ['pt'],
+    Funcionalidades: ['pt'],
+    Mapa: ['pt'],
+    Turistas: ['pt'],
+    Publicar: ['pt'],
     // HOS-2589 promotion labels: loanwords and same-spelling Portuguese.
     VIP: ['en', 'pt'],
     Promo: ['en', 'pt'],

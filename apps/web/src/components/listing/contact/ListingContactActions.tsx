@@ -1,4 +1,4 @@
-import { WhatsappLogo } from '@repo/icons';
+import { WhatsappIcon } from '@repo/icons';
 import type { MouseEvent } from 'react';
 import { useSyncExternalStore } from 'react';
 import { useListingConversationAction } from '@/hooks/use-listing-conversation-action';
@@ -95,9 +95,8 @@ export function ListingContactActions({
                     aria-haspopup={panelReady ? 'dialog' : undefined}
                     onClick={(event) => activate({ event, focus: 'whatsapp' })}
                 >
-                    <WhatsappLogo
+                    <WhatsappIcon
                         size={22}
-                        weight="fill"
                         aria-hidden="true"
                     />
                 </a>

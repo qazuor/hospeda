@@ -281,8 +281,8 @@ export function KitGalleryFeedback({ locale, openOverlay }: KitGalleryFeedbackPr
                             locale={locale}
                             description="Editá cómo se ve tu local."
                             breadcrumbs={[
-                                { label: 'Mi cuenta', href: '#cuenta' },
-                                { label: 'Locales', href: '#locales' },
+                                { label: 'Mi cuenta', path: 'mi-cuenta' },
+                                { label: 'Locales', path: 'mi-cuenta/locales' },
                                 { label: 'La Casona' }
                             ]}
                             back={{ label: 'Volver a mis locales', href: '#locales' }}

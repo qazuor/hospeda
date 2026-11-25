@@ -48,7 +48,7 @@ export interface EntityCreatePageBaseProps {
  * Differences vs. the legacy `EntityCreateContent`:
  * - Chrome uses the shared `EntityPageHeader` (sticky, mode='create',
  *   Cancel + Create buttons) instead of an inline Card header.
- * - Drops `FormSidebarLayout` + `SmartNavigation` + `SmartBreadcrumbs`. The
+ * - Drops `FormSidebarLayout` + `SmartNavigation` + `SectionProgressNav`. The
  *   minimal-create flow has a single short form; multi-step navigation is
  *   not warranted.
  * - Drops the accordion wrapper. Each visible section renders flat inside a

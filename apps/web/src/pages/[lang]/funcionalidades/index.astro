@@ -24,7 +24,8 @@ import GradientButton from '@/components/shared/ui/GradientButton.astro';
 import SEOHead from '@/components/seo/SEOHead.astro';
 import CollectionPageJsonLd from '@/components/seo/CollectionPageJsonLd.astro';
 import ItemListJsonLd from '@/components/seo/ItemListJsonLd.astro';
-import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
+import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import { breadcrumbLabel } from '@/lib/navigation/breadcrumb-labels';
 import PlanTable from '@/components/features/PlanTable.astro';
 import { FeaturesSubnav } from '@/components/features/FeaturesSubnav.client';
 import { ThemeControl } from '@/components/shared/preferences/ThemeControl.client';
@@ -96,7 +97,6 @@ const trialParams = { trialDays: OWNER_TRIAL_DAYS } as const;
 
 const siteBase = getSiteUrl();
 const canonicalUrl = new URL(Astro.url.pathname, siteBase).href;
-const homeUrl = new URL(buildUrl({ locale, path: '' }), siteBase).href;
 
 const pageTitle = t('features.meta.title', 'Todo lo que Hospeda hace por vos');
 const pageDescription = t(
@@ -119,10 +119,6 @@ const itemListEntries = SUBNAV_LINKS.filter((link) => link.id !== 'ademas').map(
 	name: t(link.labelKey)
 }));
 
-const breadcrumbItems = [
-	{ name: t('features.seo.breadcrumbHome', 'Inicio'), url: homeUrl },
-	{ name: t('features.seo.breadcrumbCurrent', 'Funcionalidades'), url: canonicalUrl }
-];
 
 const subnavSectionIds = SUBNAV_LINKS.map((link) => link.id);
 ---
@@ -146,9 +142,9 @@ const subnavSectionIds = SUBNAV_LINKS.map((link) => link.id);
 		name={t('features.seo.collectionName', pageTitle)}
 		items={itemListEntries}
 	/>
-	<BreadcrumbJsonLd slot="head" items={breadcrumbItems} />
 
 	<div class="fx-page" id="top">
+        <Breadcrumbs locale={locale} items={[{ label: breadcrumbLabel({ t, key: 'features' }) }]} />
 		<!-- ===== TOP BAR (this page's own chrome — no site Header) ===== -->
 		<div class="fx-topbar">
 			<div class="fx-container fx-topbar__in">

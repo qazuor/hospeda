@@ -1402,3 +1402,12 @@ Files in `src/lib/` come from the previous web app iteration with varying levels
 - [API Route Architecture](../api/docs/route-architecture.md) - API tier reference
 - [i18n Guide](../../packages/i18n/docs/guides/usage.md) - Translation system
 - [Dependency Policy](../../docs/guides/dependency-policy.md) - What to use for what
+
+### Breadcrumbs (HOS-2623)
+
+One component: `components/shared/navigation/Breadcrumbs.tsx` (React, no client directive), mounted from Astro through the thin adapter `Breadcrumbs.astro` and from the account kit through `PageHeader`'s `breadcrumbs` prop.
+
+- Pass the FULL trail excluding home, current page LAST (`{ label, path? }`). The visible trail is ancestors only; when Inicio would be the only ancestor nothing is rendered. The same items produce the `BreadcrumbList` JSON-LD (current page last, canonical URL). Never call a separate JSON-LD component; use `jsonLd={false}` for noindex pages.
+- Labels come from `nav.breadcrumbLabels.*` through `lib/navigation/breadcrumb-labels.ts` (<= 24 chars, tested). Never use a hero/marketing title as a crumb label. Levels without a page do not exist.
+- Below 640px only the parent shows, as `‹ Parent`.
+- Mi cuenta: top-level sections have no breadcrumb; nested pages pass `buildAccountBreadcrumbs` (`Mi cuenta > section > ...`) instead of a `back` link.

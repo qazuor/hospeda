@@ -5,7 +5,7 @@ import { Suspense, useMemo, useState } from 'react';
 import type { ZodSchema } from 'zod';
 import { EntityFormProvider, EntityFormSection, FormModeEnum } from '@/components/entity-form';
 import { FormSidebarLayout } from '@/components/entity-form/layouts';
-import { SmartBreadcrumbs, SmartNavigation } from '@/components/entity-form/navigation';
+import { SectionProgressNav, SmartNavigation } from '@/components/entity-form/navigation';
 import { LazySectionWrapper } from '@/components/entity-form/sections/LazySectionWrapper';
 import type { SectionConfig } from '@/components/entity-form/types/section-config.types';
 import { filterSectionsByMode } from '@/components/entity-form/utils/section-filter.utils';
@@ -322,9 +322,9 @@ export function EntityCreateContent({
                                 zodSchema={zodSchema}
                             >
                                 <div className="space-y-6">
-                                    {/* Smart Breadcrumbs */}
+                                    {/* Section progress navigation */}
                                     <div className="sticky top-0 z-20 border-border border-b bg-background pb-4">
-                                        <SmartBreadcrumbs
+                                        <SectionProgressNav
                                             sections={sectionProgress}
                                             activeSectionId={activeSection}
                                             onSectionSelect={navigateToSection}

@@ -307,7 +307,11 @@ const INVENTORY = [
         'not-a-gate',
         'U1 removed the billing-customer sync after host promotion; not a gate'
     ],
-    ['apps/api/src/routes/host/protected/dashboard.ts', 'restored', 'enforceUserGate'],
+    [
+        'apps/api/src/routes/host/protected/dashboard.ts',
+        'not-a-gate',
+        'HOS-2214: counts and unread conversations are not statistics; open to any host without a plan'
+    ],
     ['apps/api/src/routes/media/admin/upload.ts', 'restored', 'effectiveSet'],
     ['apps/api/src/routes/owner-promotion/protected/create.ts', 'restored', 'enforceUserGate'],
     [

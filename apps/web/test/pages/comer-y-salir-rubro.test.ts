@@ -176,15 +176,14 @@ describe('comer-y-salir/rubro/[rubro]/index.astro', () => {
 
     describe('structured data', () => {
         it('mounts CollectionPage, ItemList and Breadcrumb JSON-LD', () => {
-            for (const component of [
-                'CollectionPageJsonLd',
-                'ItemListJsonLd',
-                'BreadcrumbJsonLd'
-            ]) {
+            for (const component of ['CollectionPageJsonLd', 'ItemListJsonLd', 'Breadcrumbs']) {
                 expect(src).toContain(`import ${component}`);
                 expect(src).toContain(`<${component}`);
             }
             expect(src).toContain('slot="head-extra"');
+            expect(src).not.toContain('BreadcrumbJsonLd');
+            expect(src).toContain("breadcrumbLabel({ t, key: 'eatAndDrink' })");
+            expect(src).toContain('jsonLd={!isEmptyCollection}');
         });
     });
 
@@ -210,8 +209,8 @@ describe('comer-y-salir/rubro/[rubro]/page/[page].astro', () => {
     });
 
     it('uses the collection path as its base', () => {
-        // biome-ignore lint/suspicious/noTemplateCurlyInString: asserting the shim's literal base path
         expect(shim).toContain(
+            // biome-ignore lint/suspicious/noTemplateCurlyInString: asserting the shim's literal base path
             'basePath: `/${Astro.params.lang}/comer-y-salir/rubro/${Astro.params.rubro}/`'
         );
     });

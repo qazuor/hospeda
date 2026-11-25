@@ -137,7 +137,8 @@ describe('mi-cuenta/eventos/[id]/editar.astro — what it renders', () => {
     });
 
     it('always offers a way back to the listing, including under the edit lock', () => {
-        // HOS-2505: the kit PageHeader's back link, outside the editor island.
-        expect(template).toMatch(/back=\{\{[^}]*href: listUrl \}\}/);
+        // The shared account breadcrumb lives outside the editor island.
+        expect(template).toContain('breadcrumbs={buildAccountBreadcrumbs(');
+        expect(template).not.toMatch(/\bback=\{/);
     });
 });

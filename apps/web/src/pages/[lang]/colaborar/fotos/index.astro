@@ -22,6 +22,8 @@
 import ContributionBackLink from '@/components/contributions/ContributionBackLink.astro';
 import { ContributionForm } from '@/components/contributions/ContributionForm.client';
 import DefaultLayout from '@/layouts/DefaultLayout.astro';
+import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import { breadcrumbLabel } from '@/lib/navigation/breadcrumb-labels';
 import SectionHeader from '@/components/shared/layout/SectionHeader.astro';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -96,6 +98,10 @@ const termsItems = [
 >
     <section class="fotos section">
         <div class="fotos__container">
+            <Breadcrumbs locale={locale} items={[
+                { label: breadcrumbLabel({ t, key: 'collaborate' }), path: 'colaborar' },
+                { label: breadcrumbLabel({ t, key: 'collaboratePhotos' }) }
+            ]} />
             <ContributionBackLink locale={locale} />
 
             <div data-reveal="up">

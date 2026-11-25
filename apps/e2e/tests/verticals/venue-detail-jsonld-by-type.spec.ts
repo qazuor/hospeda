@@ -219,7 +219,7 @@ test.describe('AC:6:5 venue detail JSON-LD type and hasMenu by venue type @p0 @v
         // ── Visible breadcrumb: no retired place name ───────────────────────
         for (const url of [bolicheUrl, restaurantUrl]) {
             await page.goto(url, { waitUntil: 'domcontentloaded' });
-            const breadcrumb = page.locator('nav[aria-label="Breadcrumb"]');
+            const breadcrumb = page.getByRole('navigation', { name: 'Ruta de navegación' });
             await expect(breadcrumb).toContainText('Comer y salir');
             await expect(breadcrumb).not.toContainText('Gastronomía');
         }

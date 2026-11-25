@@ -23,9 +23,13 @@
  * `event` field outside the SPEC-101 §4.4 whitelist are silently skipped
  * — Brevo emits "request", "proxy_open", etc. that we don't care about.
  *
- * Opens (HOS-2583): an `opened` event is also reported to Umami as `email-open`
- * (see `resolveEmailOpen`, emitted only when the batch answers 200). The email carries no pixel of ours, so this is the only open
- * measurement. A transactional open is attributed through the `template:<catalog key>`
+ * Opens (HOS-2583): Brevo sends `unique_opened` on the FIRST open of a message and
+ * `opened` only on later re-opens. A `unique_opened` is reported to Umami as `email-open`
+ * (see `resolveEmailOpen`, emitted only when the batch answers 200) and written as
+ * `opened_at` (forwarded to the tracking service as its `opened` event). A re-open
+ * (`opened`) is still forwarded to the tracking service, which no-ops when `opened_at`
+ * is already set, but is never reported to Umami, so each mail counts once. The email
+ * carries no pixel of ours, so this is the only open measurement. A transactional open is attributed through the `template:<catalog key>`
  * tag Brevo echoes back in the event's `tags` array.
  *
  * Hard bounces (HOS-1627, AC:U2:12): a `hard_bounce` event is ALSO written as
@@ -125,6 +129,7 @@ const FORWARDED_EVENTS = new Set([
     'unsubscribed',
     'invalid_email',
     'opened',
+    'unique_opened',
     'click'
 ]);
 
@@ -225,7 +230,7 @@ async function recordHardBounce(input: {
 }
 
 /**
- * Resolves what an `opened` event reports to Umami as `email-open` (HOS-2583).
+ * Resolves what a `unique_opened` event (the first open) reports to Umami as `email-open` (HOS-2583).
  *
  * A newsletter delivery is recognised by the tracking service (it matched the message id
  * to a delivery row), which also names the campaign. Anything else is a transactional
@@ -251,14 +256,14 @@ function resolveEmailOpen(input: {
         if (!templateKey) {
             apiLogger.warn(
                 { hasMessageId: Boolean(input.messageId) },
-                'Brevo webhook: opened event has no template tag, not reported to analytics'
+                'Brevo webhook: unique_opened event has no template tag, not reported to analytics'
             );
             return null;
         }
         if (!findEmailCatalogEntry({ key: templateKey })) {
             apiLogger.warn(
                 { templateKey },
-                'Brevo webhook: opened event names a template that is not in the email catalog, not reported to analytics'
+                'Brevo webhook: unique_opened event names a template that is not in the email catalog, not reported to analytics'
             );
             return null;
         }
@@ -391,7 +396,9 @@ async function brevoWebhookHandler(c: Context): Promise<Response> {
 
         try {
             const result = await tracking.processBrevoWebhookEvent({
-                event: eventType as
+                // The tracking service knows one open event; a first open and a re-open
+                // both feed it (`opened_at` only takes the first, WHERE opened_at IS NULL).
+                event: (eventType === 'unique_opened' ? 'opened' : eventType) as
                     | 'delivered'
                     | 'hard_bounce'
                     | 'soft_bounce'
@@ -414,7 +421,7 @@ async function brevoWebhookHandler(c: Context): Promise<Response> {
             } else {
                 processed += 1;
             }
-            if (eventType === 'opened') {
+            if (eventType === 'unique_opened') {
                 const open = resolveEmailOpen({
                     raw,
                     messageId,

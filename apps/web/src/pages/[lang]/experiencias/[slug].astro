@@ -19,7 +19,7 @@ import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import { ImageGallery } from '@/components/ImageGallery.client';
 import GalleryTapBridge from '@/components/gallery/GalleryTapBridge.astro';
 import TouristAttractionJsonLd from '@/components/seo/TouristAttractionJsonLd.astro';
-import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
+import { breadcrumbLabel } from '@/lib/navigation/breadcrumb-labels';
 import ListingHeader from '@/components/listing/header/ListingHeader.astro';
 import { buildExperienceHeader } from '@/lib/listing-header/build-listing-header';
 import { buildExperienceContactBlock } from '@/lib/listing-contact/listing-contact-block';
@@ -207,16 +207,7 @@ const barPhoneHref = resolveListingBarPhoneHref({
     phones: [experience.contactInfo?.mobilePhone, experience.contactInfo?.workPhone]
 }).href;
 
-// --- Breadcrumb JSON-LD (HOS-117 T-007) ---
 const siteOrigin = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
-const breadcrumbItems = [
-    { name: t('nav.home', 'Inicio'), url: `${siteOrigin}/${locale}/` },
-    {
-        name: t('experience.listing.title', 'Experiencias'),
-        url: `${siteOrigin}/${locale}/experiencias/`
-    },
-    { name: experience.name, url: `${siteOrigin}${Astro.url.pathname}` }
-];
 
 /**
  * HOS-2579 §6.5: the meeting point (free) and, only with
@@ -312,22 +303,20 @@ const headerProps = buildExperienceHeader({
         isPriceOnRequest={experience.isPriceOnRequest}
         destinationName={experience.destinationName}
     />
-    <BreadcrumbJsonLd slot="head-extra" items={breadcrumbItems} />
     {faqSections.length > 0 && (
         <FAQPageJsonLd slot="head-extra" sections={faqSections} inLanguage={faqInLanguage} />
     )}
-    <div slot="breadcrumbs" class="exp-detail-breadcrumbs">
-        <Breadcrumbs
-            locale={locale}
-            items={[
-                {
-                    label: t('experience.listing.title', 'Experiencias'),
-                    path: 'experiencias/'
-                },
-                { label: experience.name }
-            ]}
-        />
-    </div>
+    <Breadcrumbs
+        slot="breadcrumbs"
+        locale={locale}
+        items={[
+            {
+                label: breadcrumbLabel({ t, key: 'experiences' }),
+                path: 'experiencias/'
+            },
+            { label: experience.name }
+        ]}
+    />
 
     <!-- Hero (rendered inside the wave band, like destinos/alojamientos) -->
     <Fragment slot="page-header">
@@ -561,17 +550,6 @@ const headerProps = buildExperienceHeader({
 
 <style>
     @media (max-width: 767px) {
-        :global(.wave-header__breadcrumbs:has(.exp-detail-breadcrumbs)) {
-            display: none;
-        }
-
-        /* The hidden breadcrumbs carried the band's top padding, so without this
-           the badges sit flush under the navbar. Expanded state only: the compact
-           state sets its own padding-top. */
-        :global(.wave-header:not(.wave-header--compact) .wave-header__bar:has(.exp-detail-breadcrumbs) .wave-header__content) {
-            padding-top: var(--space-6, 1.5rem);
-        }
-
         /* The full-bleed mobile gallery meets the blue header directly: drop the
            page-background strip DetailLayout leaves above the body. */
         :global(.wave-header .detail-page:has(.exp-detail)) {

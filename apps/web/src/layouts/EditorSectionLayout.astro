@@ -4,7 +4,7 @@
  * @description The ACCOMMODATION editor's shell (HOS-318 T-010).
  *
  * Since HOS-1080 this is a thin adapter over `EditorShellLayout.astro`, which
- * carries the geometry, the breadcrumbs and the route nav for every vertical.
+ * carries the geometry, account/list/entity breadcrumbs and route nav for every vertical.
  * What is left here is the accommodation-specific vocabulary — its registry, the
  * `propiedades` sidebar entry, and the single `hasTranslations` flag the eleven
  * accommodation pages already pass.
@@ -29,7 +29,7 @@ interface Props {
 	readonly accommodationName: string;
 	/** `null` on the hub, where no section is active. */
 	readonly currentSectionId: string | null;
-	/** `null` on the hub. Drives the last breadcrumb. */
+	/** `null` on the hub. Drives the section help anchor. */
 	readonly currentSectionSlug: string | null;
 	readonly hasTranslations: boolean;
 	readonly title: string;

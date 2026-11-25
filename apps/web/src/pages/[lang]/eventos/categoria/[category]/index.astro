@@ -33,7 +33,7 @@ import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
 import Pagination from '@/components/shared/feedback/Pagination.astro';
 import ItemListJsonLd from '@/components/seo/ItemListJsonLd.astro';
 import CollectionPageJsonLd from '@/components/seo/CollectionPageJsonLd.astro';
-import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
+import { breadcrumbLabel } from '@/lib/navigation/breadcrumb-labels';
 import { FilterSidebar } from '@/components/shared/filters/FilterSidebar.client';
 import { buildEventsFilterGroups } from '@/lib/filters/events-filter-groups';
 import {
@@ -268,16 +268,7 @@ const itemListEntries = cards.map((card) => ({
 	name: card.name
 }));
 
-// Breadcrumb JSON-LD — Inicio / Eventos / {category}.
 const siteOrigin = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
-const breadcrumbJsonLdItems = [
-	{ name: t('events.categoryPage.labels.breadcrumbHome', 'Inicio'), url: `${siteOrigin}/${locale}/` },
-	{
-		name: t('events.categoryPage.labels.breadcrumbEvents', 'Eventos'),
-		url: `${siteOrigin}${buildUrl({ locale, path: 'eventos' })}`
-	},
-	{ name: categoryName, url: `${siteOrigin}${baseUrl}` }
-];
 
 const collectionPageUrl = `${siteOrigin}${canonicalPath}`;
 ---
@@ -306,13 +297,12 @@ const collectionPageUrl = `${siteOrigin}${canonicalPath}`;
 		startPosition={(page - 1) * pageSize + 1}
 	/>
 
-	<BreadcrumbJsonLd slot="head-extra" items={breadcrumbJsonLdItems} />
 
 	<Breadcrumbs
 		slot="breadcrumbs"
 		locale={locale}
 		items={[
-			{ label: t('events.categoryPage.labels.breadcrumbEvents', 'Eventos'), path: 'eventos' },
+			{ label: breadcrumbLabel({ t, key: 'events' }), path: 'eventos' },
 			{ label: categoryName }
 		]}
 	/>

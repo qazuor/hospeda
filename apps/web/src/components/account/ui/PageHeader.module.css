@@ -1,27 +1,15 @@
 /* PageHeader.module.css — one page anatomy (HOS-2413 T-022). */
 
 .root {
+    --breadcrumbs-color: var(--core-muted-foreground);
+    --breadcrumbs-hover-color: var(--core-foreground);
+    --breadcrumbs-focus-color: var(--focus-ring);
+    --breadcrumbs-font: var(--app-meta);
     container-type: inline-size;
     display: flex;
     flex-direction: column;
     gap: var(--space-3);
     margin-block-end: var(--space-6);
-}
-
-.crumbs {
-    margin: 0;
-    padding: 0;
-    list-style: none;
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--space-1) var(--space-2);
-    font: var(--app-meta);
-    color: var(--core-muted-foreground);
-}
-
-.crumbSeparator {
-    color: var(--control-border);
 }
 
 .top {

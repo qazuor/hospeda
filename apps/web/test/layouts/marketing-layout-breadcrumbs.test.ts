@@ -62,7 +62,7 @@ describe('MarketingLayout breadcrumbs slot', () => {
         });
         const trailTop = baseValue({
             rules,
-            selector: '.marketing-breadcrumbs .breadcrumbs',
+            selector: '.marketing-breadcrumbs nav',
             prop: 'padding-top'
         });
 

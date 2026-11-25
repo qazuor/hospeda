@@ -18,7 +18,7 @@
  * module doc for the full rationale (`organizerId` is a required UUID with no
  * other way to satisfy it from `/mi-cuenta`).
  *
- * HOS-2505: kit `PageHeader` (back link + page «?») and the form inside a
+ * HOS-2505: kit `PageHeader` (account breadcrumbs + page «?») and the form inside a
  * kit `Section`; without the role, a `LockedState` (`kind: 'permission'`).
  *
  * @route     /[lang]/mi-cuenta/eventos/nuevo/
@@ -32,6 +32,8 @@ import { EventCreateForm } from '@/components/event/editor/EventCreateForm.clien
 import { eventOrganizersApi } from '@/lib/api/endpoints';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { buildAccountBreadcrumbs } from '@/lib/account/account-breadcrumbs';
+import { getAccountSectionLabel } from '@/lib/account-nav-model';
 import { buildLoginRedirect } from '@/lib/middleware-helpers';
 import { hasEventsNavAccess } from '@/lib/nav-gating';
 import { webLogger as logger } from '@/lib/logger';
@@ -82,10 +84,11 @@ const subtitle = t(
         title={title}
         description={subtitle}
         locale={locale}
-        back={{
-            label: t('account.myContent.events.editor.backToList', 'Volver a mis eventos'),
-            href: buildUrl({ locale, path: 'mi-cuenta/eventos' })
-        }}
+        breadcrumbs={buildAccountBreadcrumbs({
+            t,
+            parents: [{ label: getAccountSectionLabel({ t, section: 'eventos' }), path: 'mi-cuenta/eventos' }],
+            current: title
+        })}
     >
         <PageHelpLink slot="help" locale={locale} />
     </PageHeader>

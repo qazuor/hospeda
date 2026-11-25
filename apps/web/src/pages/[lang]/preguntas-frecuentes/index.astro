@@ -10,6 +10,8 @@
  */
 
 import DefaultLayout from '@/layouts/DefaultLayout.astro';
+import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import { breadcrumbLabel } from '@/lib/navigation/breadcrumb-labels';
 import SectionHeader from '@/components/shared/layout/SectionHeader.astro';
 import FAQPageJsonLd from '@/components/seo/FAQPageJsonLd.astro';
 import { OWNER_TRIAL_DAYS } from '@/lib/billing/owner-trial-days';
@@ -236,6 +238,7 @@ const stillHeading = splitLastWord(t('faq.stillNeedHelp.title'));
 			<span class="faq-hero__dot faq-hero__dot--3"></span>
 		</div>
 		<div class="faq-hero__container" data-reveal="up">
+            <Breadcrumbs locale={locale} items={[{ label: breadcrumbLabel({ t, key: 'faq' }) }]} />
 			<p class="faq-hero__tagline">{t('faq.hero.tagline')}</p>
 			<h1 class="faq-hero__title">
 				{heroHeading.main && <>{heroHeading.main}{' '}</>}

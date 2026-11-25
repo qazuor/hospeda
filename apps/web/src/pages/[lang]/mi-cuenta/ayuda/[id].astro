@@ -5,18 +5,15 @@
  * @route /{lang}/mi-cuenta/ayuda/{id}/
  * @rendering SSR
  *
- * Breadcrumb, title, summary, audience chips and review date; the five
- * sections with their fixed anchors; the generated «Relacionados»; a side
- * index (a `details` on narrow screens); a «Páginas» box. Content comes from
- * `@repo/help`, already rendered by `buildHelpArticleView`, and is the same for
- * every reader (D-H4). A page locale with no translation renders the es
- * article inside `lang="es"` with a notice (AC-11). An unknown id answers 404
- * (AC-10). The `HelpLimitValues` island loads only when the article has a
- * `{{limit}}` token.
+ * Shared breadcrumbs, article sections and audience-aware related links come
+ * from `@repo/help` through `buildHelpArticleView` (D-H4). Missing translations
+ * render the Spanish article with a notice (AC-11); unknown ids answer 404
+ * (AC-10). `HelpLimitValues` loads only for articles with a `{{limit}}` token.
  */
 
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import { PageHeader } from '@/components/account/ui';
+import { Breadcrumbs } from '@/components/shared/navigation/Breadcrumbs';
 import PageHelpLink from '@/components/account/help/PageHelpLink.astro';
 import { HelpLimitValues } from '@/components/account/help/HelpLimitValues.client';
 import type { VerticalEnum } from '@repo/schemas';
@@ -73,17 +70,20 @@ const pageTitle = t('account.help.article.title', undefined, { title: article.ti
 ---
 
 <AccountLayout locale={locale} title={pageTitle} description={article.summary} activeSection="ayuda">
-	<nav class="help-crumbs" aria-label={t('account.help.article.breadcrumbLabel')}>
-		<ol class="help-crumbs__list">
-			<li><a href={landingPath}>{t('account.help.article.breadcrumbRoot')}</a></li>
-			{crumbAudience !== undefined && (
-				<li>
-					<a href={`${landingPath}?para=${crumbAudience}`}>{t(HELP_AUDIENCE_LABEL_KEYS[crumbAudience])}</a>
-				</li>
-			)}
-			<li aria-current="page">{article.title}</li>
-		</ol>
-	</nav>
+	<Breadcrumbs
+		locale={locale}
+		homeLabel=""
+		ariaLabel={t('account.help.article.breadcrumbLabel')}
+		includeHome={false}
+		items={[
+			{ label: t('account.help.article.breadcrumbRoot'), path: 'mi-cuenta/ayuda' },
+			...(crumbAudience !== undefined ? [{
+				label: t(HELP_AUDIENCE_LABEL_KEYS[crumbAudience]),
+				path: `mi-cuenta/ayuda?para=${crumbAudience}`
+			}] : []),
+			{ label: article.title }
+		]}
+	/>
 
 	{isFallback && <p class="help-article__notice" role="note">{t('account.help.article.onlySpanish')}</p>}
 
@@ -187,27 +187,6 @@ const pageTitle = t('account.help.article.title', undefined, { title: article.ti
 </script>
 
 <style>
-	.help-crumbs__list {
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--space-2);
-		list-style: none;
-		margin: 0 0 var(--space-3);
-		padding: 0;
-		font-family: var(--font-sans);
-		font-size: var(--text-body-sm);
-		color: var(--core-muted-foreground);
-	}
-
-	.help-crumbs__list li + li::before {
-		content: '›';
-		margin-right: var(--space-2);
-	}
-
-	.help-crumbs__list a {
-		color: var(--brand-primary);
-	}
-
 	.help-article__notice {
 		margin: 0 0 var(--space-4);
 		padding: var(--space-3) var(--space-4);
@@ -387,15 +366,9 @@ const pageTitle = t('account.help.article.title', undefined, { title: article.ti
 	}
 
 	/*
-	 * Anchor jumps land below the sticky navbar through the global
-	 * `html { scroll-padding-top }` (navbar + 8px of air); no extra scroll-margin
-	 * from 64rem up, or the two add up and the heading lands ~200px down
-	 * (HOS-2552). Below 64rem the account bar (AccountBar, 3rem) also sticks under
-	 * the navbar, so headings add exactly its height (HOS-2563). Keep the value in
-	 * step with `block-size` in `AccountBar.module.css` (pinned by
-	 * test/pages/help-pages.test.ts); the bar is border-box, so 3rem is the
-	 * rendered height, border included.
-	 * Mobile-first: the closed breakpoint list (HOS-2469) only allows min-width.
+	 * Global scroll-padding clears the navbar (HOS-2552). Below 64rem, add only
+	 * the AccountBar's border-box height (HOS-2563), kept in sync with its CSS
+	 * by test/pages/help-pages.test.ts. Use mobile-first min-width (HOS-2469).
 	 */
 	.help-article {
 		--help-account-bar-height: 3rem;
@@ -407,10 +380,6 @@ const pageTitle = t('account.help.article.title', undefined, { title: article.ti
 	}
 
 	/* Small screens: a tighter header so the article starts higher (HOS-2552). */
-	.help-crumbs__list {
-		margin-bottom: var(--space-2);
-	}
-
 	.help-article__search-form {
 		margin-bottom: var(--space-4);
 	}
@@ -439,10 +408,6 @@ const pageTitle = t('account.help.article.title', undefined, { title: article.ti
 		.help-article__h2,
 		.help-article__prose :global(h3) {
 			scroll-margin-top: 0;
-		}
-
-		.help-crumbs__list {
-			margin-bottom: var(--space-3);
 		}
 
 		.help-article__search-form {

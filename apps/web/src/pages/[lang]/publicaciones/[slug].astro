@@ -12,7 +12,7 @@
 import DetailLayout from '@/layouts/DetailLayout.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import ArticleJsonLd from '@/components/seo/ArticleJsonLd.astro';
-import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
+import { breadcrumbLabel } from '@/lib/navigation/breadcrumb-labels';
 import { ShareButtons } from '@/components/ShareButtons.client';
 import PostDetailHeader from '@/components/post/PostDetailHeader.astro';
 import PostContent from '@/components/post/PostContent.astro';
@@ -362,12 +362,6 @@ const speakableSelectors: ReadonlyArray<string> = [
 	...(summary ? ['.post-header__summary'] : []),
 ];
 
-const siteOriginClean = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
-const breadcrumbItems = [
-	{ name: t('nav.home', 'Inicio'), url: `${siteOriginClean}/${locale}/` },
-	{ name: t('blog.title', 'Publicaciones'), url: `${siteOriginClean}/${locale}/publicaciones/` },
-	{ name: title, url: `${siteOriginClean}${Astro.url.pathname}` },
-];
 ---
 
 <DetailLayout
@@ -382,12 +376,6 @@ const breadcrumbItems = [
 	showBreadcrumbs={true}
 	showSidebar={true}
 >
-	{/*
-	  These two must stay PLAIN siblings, never wrapped in a `{cond ? … : …}`
-	  expression: when the first contributor to a named slot comes from an
-	  expression, Astro drops the plain siblings that follow it — which is how
-	  this page silently shipped without its BreadcrumbList for so long.
-	*/}
 	<ArticleJsonLd
 		slot="head-extra"
 		headline={title}
@@ -400,7 +388,6 @@ const breadcrumbItems = [
 		articleType="BlogPosting"
 		speakableCssSelectors={speakableSelectors}
 	/>
-	<BreadcrumbJsonLd slot="head-extra" items={breadcrumbItems} />
 
 	<ReadingProgressBar client:idle />
 
@@ -419,7 +406,7 @@ const breadcrumbItems = [
 		slot="breadcrumbs"
 		locale={locale}
 		items={[
-			{ label: t('blog.title', 'Publicaciones'), path: 'publicaciones' },
+			{ label: breadcrumbLabel({ t, key: 'posts' }), path: 'publicaciones' },
 			{ label: title },
 		]}
 	/>

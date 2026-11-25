@@ -33,18 +33,16 @@ describe('attraction landing page', () => {
     });
 
     it('emits BreadcrumbList and ItemList structured data', () => {
-        expect(pageSrc).toContain('<BreadcrumbJsonLd');
+        expect(pageSrc).toContain('<Breadcrumbs');
+        expect(pageSrc).not.toContain('BreadcrumbJsonLd');
         expect(pageSrc).toContain('<ItemListJsonLd');
     });
 
-    it('keeps both head-extra contributors as plain siblings', () => {
-        // A `{cond ? … : …}` wrapper on the FIRST contributor makes Astro drop
-        // the plain ones after it; the guard for this lives in
-        // test/integration/json-ld-coverage.test.ts.
-        const breadcrumbAt = pageSrc.indexOf('<BreadcrumbJsonLd');
-        const itemListAt = pageSrc.indexOf('<ItemListJsonLd');
-        expect(breadcrumbAt).toBeGreaterThan(-1);
-        expect(breadcrumbAt).toBeLessThan(itemListAt);
+    it('mounts the complete breadcrumb trail through the layout slot', () => {
+        expect(pageSrc).toMatch(/<Breadcrumbs\s+slot="breadcrumbs"/);
+        expect(pageSrc).toContain("breadcrumbLabel({ t, key: 'destinations' })");
+        expect(pageSrc).toContain("path: 'destinos'");
+        expect(pageSrc).toContain('{ label: name }');
     });
 
     it('stays indexable — it carries real data, unlike the amenity stub', () => {
@@ -63,6 +61,7 @@ describe('attraction landing page', () => {
 
 describe('inbound links from the destination header', () => {
     it('links each attraction badge to its landing', () => {
+        // biome-ignore lint/suspicious/noTemplateCurlyInString: asserting the Astro source expression
         expect(headerSrc).toContain('destinos/atraccion/${a.slug}');
     });
 

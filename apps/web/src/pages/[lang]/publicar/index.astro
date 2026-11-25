@@ -52,6 +52,8 @@ import PublishHero from '@/components/publish/PublishHero.astro';
 import PublishHowItWorks from '@/components/publish/PublishHowItWorks.astro';
 import PublishPlanLinks from '@/components/publish/PublishPlanLinks.astro';
 import MarketingLayout from '@/layouts/MarketingLayout.astro';
+import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import { breadcrumbLabel } from '@/lib/navigation/breadcrumb-labels';
 import { resolveGenericOwnerTrialDays } from '@/lib/billing/generic-trial-days';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -164,6 +166,7 @@ const benefits = [
     title={t('host.landing.heroHeadline', 'Convertí tu propiedad en un ingreso')}
     description={t('owners.description')}
 >
+    <Breadcrumbs slot="breadcrumbs" locale={locale} items={[{ label: breadcrumbLabel({ t, key: 'publish' }) }]} />
     <PublishHero
         variant={variant}
         tagline={t('owners.hero.tagline')}

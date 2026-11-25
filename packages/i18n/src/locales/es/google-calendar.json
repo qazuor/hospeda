@@ -3,10 +3,6 @@
         "title": "Integración con Google Calendar",
         "description": "Conocé cómo Hospeda usa acceso de solo lectura a Google Calendar para sincronizar disponibilidad y evitar reservas superpuestas."
     },
-    "breadcrumb": {
-        "home": "Inicio",
-        "current": "Integración con Google Calendar"
-    },
     "hero": {
         "tagline": "Sincronización para anfitriones",
         "titleMain": "Google Calendar en",

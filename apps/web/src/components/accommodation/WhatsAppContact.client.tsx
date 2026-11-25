@@ -24,7 +24,7 @@
  * number to an unentitled caller — so nothing is re-checked here.
  */
 
-import { WhatsappLogo } from '@repo/icons';
+import { WhatsappIcon } from '@repo/icons';
 import { useEffect, useState } from 'react';
 import { useAccountPermissions } from '@/hooks/use-account-permissions';
 import { WebEvents } from '@/lib/analytics/events';
@@ -207,18 +207,16 @@ export function WhatsAppContact({
                         })
                     }
                 >
-                    <WhatsappLogo
+                    <WhatsappIcon
                         size={20}
-                        weight="fill"
                         aria-hidden="true"
                     />
                     <span>{ctaLabel}</span>
                 </a>
             ) : (
                 <p className={styles.number}>
-                    <WhatsappLogo
+                    <WhatsappIcon
                         size={18}
-                        weight="fill"
                         aria-hidden="true"
                     />
                     {/* The label used to be an `aria-label` on this <p>. A <p>

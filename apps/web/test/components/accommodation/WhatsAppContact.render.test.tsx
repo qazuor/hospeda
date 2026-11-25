@@ -51,6 +51,9 @@ const PROPS = {
 
 const NUMBER = '+5493442123456';
 
+/** First segment of the simpleicons WhatsApp path (`WhatsappIcon`), the mark the listing bar uses (HOS-2629). */
+const BRAND_PATH_PREFIX = 'M17.472 14.382';
+
 describe('WhatsAppContact island', () => {
     beforeEach(() => {
         mockReadCachedAuthMe.mockReset();
@@ -91,6 +94,9 @@ describe('WhatsAppContact island', () => {
 
         const number = await screen.findByText(NUMBER);
         expect(number.closest('p')?.querySelector('svg')).toHaveAttribute('fill', 'currentColor');
+        expect(number.closest('p')?.querySelector('svg path')?.getAttribute('d')).toMatch(
+            new RegExp(`^${BRAND_PATH_PREFIX}`)
+        );
         expect(screen.queryByRole('link', { name: /WhatsApp/i })).not.toBeInTheDocument();
         expect(mockGetWhatsApp).toHaveBeenCalledWith({ id: 'acc-1' });
     });
@@ -118,6 +124,9 @@ describe('WhatsAppContact island', () => {
         // not resolve the recipient (HOS-289).
         expect(link.getAttribute('href')).not.toContain('+');
         expect(link.querySelector('svg')).toHaveAttribute('fill', 'currentColor');
+        expect(link.querySelector('svg path')?.getAttribute('d')).toMatch(
+            new RegExp(`^${BRAND_PATH_PREFIX}`)
+        );
         expect(trackEvent).not.toHaveBeenCalled();
 
         link.addEventListener('click', (event) => event.preventDefault(), { once: true });

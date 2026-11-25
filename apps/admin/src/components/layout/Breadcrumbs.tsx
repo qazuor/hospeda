@@ -9,6 +9,7 @@ import {
 } from '@/lib/breadcrumb-labels';
 import { getRoutePaths, isRegisteredPath, matchesRoutePattern } from '@/lib/breadcrumb-routes';
 import { menuTree } from '@/lib/menu';
+import { adminLogger } from '@/utils/logger';
 
 /**
  * Entity context for breadcrumb customization
@@ -23,6 +24,8 @@ export type EntityBreadcrumbContext = {
 };
 
 type LabelResult = { type: 'i18n'; key: string } | { type: 'text'; value: string };
+
+const warnedSegments = new Set<string>();
 
 const getLabelForPath = (path: string, entityContext?: EntityBreadcrumbContext): LabelResult => {
     // Check if this is an entity detail path (contains an ID-like segment)
@@ -67,7 +70,12 @@ const getLabelForPath = (path: string, entityContext?: EntityBreadcrumbContext):
         return { type: 'i18n', key: breadcrumbSegmentLabels[seg] };
     }
 
-    // Default: capitalize the last segment
+    if (import.meta.env.DEV && !warnedSegments.has(seg)) {
+        warnedSegments.add(seg);
+        adminLogger.warn('Missing breadcrumb label for segment', { segment: seg });
+    }
+
+    // Preserve the existing fallback while making missing labels visible in development.
     return { type: 'text', value: seg.charAt(0).toUpperCase() + seg.slice(1) };
 };
 
@@ -92,6 +100,7 @@ type BreadcrumbsProps = {
     entityContext?: EntityBreadcrumbContext;
 };
 
+/** Render the route hierarchy with a non-linked current page. */
 export const Breadcrumbs = ({ entityContext }: BreadcrumbsProps = {}) => {
     const { t } = useTranslations();
     const { location } = useRouterState();
@@ -107,38 +116,64 @@ export const Breadcrumbs = ({ entityContext }: BreadcrumbsProps = {}) => {
     return (
         <nav
             aria-label={t('ui.accessibility.breadcrumb')}
-            className="flex items-center text-muted-foreground text-sm"
+            className="min-w-0 truncate text-muted-foreground text-sm"
         >
-            <Link
-                to="/dashboard"
-                className="hover:underline"
-            >
-                {t('ui.navigation.home')}
-            </Link>
-            {paths.map((p) => {
-                const label = getLabelForPath(p, entityContext);
-                const displayText =
-                    label.type === 'i18n' ? t(label.key as TranslationKey) : label.value;
-                const registered = isRegisteredPath({ path: p, routePaths });
-                return (
-                    <span
-                        key={p}
-                        className="inline-flex items-center"
-                    >
-                        <BreadcrumbsIcon className="mx-2 h-4 w-4" />
-                        {registered ? (
-                            <Link
-                                to={p}
-                                className="hover:underline"
-                            >
-                                {displayText}
-                            </Link>
-                        ) : (
-                            <span className="text-muted-foreground">{displayText}</span>
-                        )}
-                    </span>
-                );
-            })}
+            <ol className="flex min-w-0 flex-nowrap items-center truncate">
+                <li className="min-w-0 truncate">
+                    {paths.length === 0 ? (
+                        <span
+                            aria-current="page"
+                            className="block max-w-[24ch] truncate"
+                            title={t('ui.navigation.home')}
+                        >
+                            {t('ui.navigation.home')}
+                        </span>
+                    ) : (
+                        <Link
+                            to="/dashboard"
+                            className="block max-w-[24ch] truncate hover:underline"
+                            title={t('ui.navigation.home')}
+                        >
+                            {t('ui.navigation.home')}
+                        </Link>
+                    )}
+                </li>
+                {paths.map((p, index) => {
+                    const label = getLabelForPath(p, entityContext);
+                    const displayText =
+                        label.type === 'i18n' ? t(label.key as TranslationKey) : label.value;
+                    const registered = isRegisteredPath({ path: p, routePaths });
+                    const isLast = index === paths.length - 1;
+                    return (
+                        <li
+                            key={p}
+                            className="flex min-w-0 items-center truncate"
+                        >
+                            <BreadcrumbsIcon
+                                aria-hidden="true"
+                                className="mx-2 h-4 w-4 shrink-0"
+                            />
+                            {registered && !isLast ? (
+                                <Link
+                                    to={p}
+                                    className="max-w-[24ch] truncate hover:underline"
+                                    title={displayText}
+                                >
+                                    {displayText}
+                                </Link>
+                            ) : (
+                                <span
+                                    aria-current={isLast ? 'page' : undefined}
+                                    className="max-w-[24ch] truncate text-muted-foreground"
+                                    title={displayText}
+                                >
+                                    {displayText}
+                                </span>
+                            )}
+                        </li>
+                    );
+                })}
+            </ol>
         </nav>
     );
 };

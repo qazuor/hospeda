@@ -139,7 +139,7 @@ function buildSectionErrorMap(
 /**
  * Component for rendering entity content in edit mode using a SectionAccordion.
  *
- * Replaces SmartNavigation / SmartBreadcrumbs / FormSidebarLayout with a single
+ * Replaces SmartNavigation / SectionProgressNav / FormSidebarLayout with a single
  * accordion. Key behaviours:
  * - First section starts expanded; others collapsed.
  * - On submit validation failure, sections with errors expand automatically

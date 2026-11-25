@@ -23,8 +23,9 @@ const page = readFileSync(
 );
 
 describe('mi-cuenta provider detail page', () => {
-    it('uses the kit PageHeader with a back link', () => {
-        expect(page).toMatch(/<PageHeader[\s\S]*?back=\{\{/);
+    it('uses the kit PageHeader with shared account breadcrumbs', () => {
+        expect(page).toMatch(/<PageHeader[\s\S]*?breadcrumbs=\{buildAccountBreadcrumbs\(/);
+        expect(page).not.toMatch(/\bback=\{/);
     });
 
     it('keeps the HOST_TRADE_VIEW 403 gate rendering HostTradesAccessDenied', () => {

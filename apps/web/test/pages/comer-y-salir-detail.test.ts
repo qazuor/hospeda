@@ -139,7 +139,10 @@ describe('comer-y-salir/[slug].astro', () => {
         });
 
         it('uses Breadcrumbs with the comer-y-salir link', () => {
-            expect(src).toContain('Breadcrumbs');
+            expect(src).toMatch(/<Breadcrumbs\s+slot="breadcrumbs"/);
+            expect(src).toContain("breadcrumbLabel({ t, key: 'eatAndDrink' })");
+            expect(src).not.toContain('BreadcrumbJsonLd');
+            expect(src).not.toContain('venue-detail-breadcrumbs');
             expect(src).toContain('comer-y-salir/');
         });
     });

@@ -3,7 +3,7 @@
  * @description Behavior of the collection detail island (HOS-2480).
  *
  * Covers:
- * - PageHeader with the back link (replaces Breadcrumbs) and Edit/Delete.
+ * - PageHeader with account breadcrumbs and Edit/Delete.
  * - Type tabs as URL links for every collection type, ATTRACTION included
  *   (HOS-2423), the active one marked.
  * - Cards for VENUE/EXPERIENCE/ATTRACTION bookmarks.
@@ -79,13 +79,19 @@ describe('CollectionDetailView (HOS-2480)', () => {
         Object.defineProperty(window, 'location', { configurable: true, value: originalLocation });
     });
 
-    it('renders the header with the back link and the actions', () => {
+    it('renders the header with linked ancestors and the actions', () => {
         renderView();
         expect(screen.getByRole('heading', { level: 1, name: 'Verano' })).toBeInTheDocument();
-        expect(screen.getByRole('link', { name: /Volver a mis favoritos/ })).toHaveAttribute(
+        const nav = screen.getByRole('navigation', { name: 'Ruta de navegación' });
+        expect(within(nav).getByRole('link', { name: 'Mi cuenta' })).toHaveAttribute(
+            'href',
+            '/es/mi-cuenta/'
+        );
+        expect(within(nav).getByRole('link', { name: 'Favoritos' })).toHaveAttribute(
             'href',
             '/es/mi-cuenta/favoritos/'
         );
+        expect(within(nav).queryByText('Verano')).not.toBeInTheDocument();
         expect(screen.getByTestId('collection-actions-edit')).toBeInTheDocument();
         expect(screen.getByTestId('collection-actions-delete')).toBeInTheDocument();
     });

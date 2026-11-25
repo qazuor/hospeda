@@ -7,6 +7,8 @@
  */
 
 import DefaultLayout from '@/layouts/DefaultLayout.astro';
+import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import { breadcrumbLabel } from '@/lib/navigation/breadcrumb-labels';
 import GradientButton from '@/components/shared/ui/GradientButton.astro';
 import AboutPageJsonLd from '@/components/seo/AboutPageJsonLd.astro';
 import { createTranslations } from '@/lib/i18n';
@@ -70,6 +72,7 @@ const inLanguageMap: Record<SupportedLocale, string> = {
 	/>
 	<!-- Hero -->
 	<section class="about-hero section section--warm">
+        <Breadcrumbs locale={locale} items={[{ label: breadcrumbLabel({ t, key: 'about' }) }]} />
 		<div class="about-hero__decoratives" aria-hidden="true">
 			<div class="about-hero__blob"></div>
 			<svg

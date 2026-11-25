@@ -148,7 +148,7 @@ export {
     type OptionCardGridProps,
     type OptionCardProps
 } from './OptionCard';
-export { type Breadcrumb, PageHeader, type PageHeaderProps } from './PageHeader';
+export { PageHeader, type PageHeaderProps } from './PageHeader';
 export { type LoadMoreResult, Pagination, type PaginationProps } from './Pagination';
 export { PhoneField, type PhoneFieldProps } from './PhoneField';
 export { PlanSummary, type PlanSummaryProps } from './PlanSummary';
