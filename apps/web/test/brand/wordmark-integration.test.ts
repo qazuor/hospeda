@@ -27,14 +27,19 @@ describe('wordmark caller integration', () => {
             'layouts/Header.astro',
             'layouts/Footer.astro',
             'layouts/AccountHeader.astro',
-            'layouts/FocusShell.astro',
-            'pages/[lang]/funcionalidades/index.astro'
+            'layouts/FocusShell.astro'
         ]) {
             const source = readSource({ file });
             expect(source).toContain('= logoSrc.src');
             expect(source).toContain('await getImage(');
             expect(source).toContain('catch {');
         }
+    });
+
+    it('feeds funcionalidades the bundled asset URL, because that static page awaits nothing (HOS-369)', () => {
+        const features = readSource({ file: 'pages/[lang]/funcionalidades/index.astro' });
+        expect(features).toContain('const brandLogoSrc = logoSrc.src;');
+        expect(features).not.toContain('await getImage(');
     });
 
     it('keeps the funcionalidades hero image separate and the marketing footer inverse', () => {
