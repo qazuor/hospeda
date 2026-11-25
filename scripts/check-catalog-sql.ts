@@ -321,6 +321,7 @@ export function compareLoad({
                 code: row[idx] ?? null,
                 sql: found.values[column] ?? null
             }))
+            .filter((cell) => !load.cosmeticColumns?.includes(cell.column))
             .filter((cell) => cell.code !== cell.sql);
         if (differing.length > 0) {
             violations.push({

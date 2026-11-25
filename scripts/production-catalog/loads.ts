@@ -18,6 +18,7 @@ export function buildPlanCatalogLoads(
             table: 'plan',
             label: 'production catalog plan',
             columns: ['id', 'vertical', 'slug', 'name', 'pricing_order', 'role'],
+            cosmeticColumns: ['name'],
             rows: catalog.map((plan) => [
                 catalogId(`plan:${plan.vertical}:${plan.slug}`),
                 plan.vertical,
