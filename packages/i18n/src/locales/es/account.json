@@ -1141,6 +1141,16 @@
                 "unavailable": "No disponible",
                 "reviewsDesc": "Reseñas publicadas",
                 "subscriptionDesc": "Plan actual",
+                "favoritesEmpty": "Tus lugares favoritos estarán aquí.",
+                "favoritesNext_one": "Volvé a visitar tu lugar guardado.",
+                "favoritesNext_other": "Explorá tus {{count}} lugares guardados.",
+                "reviewsEmpty": "Compartí la experiencia de tu próximo viaje.",
+                "reviewsNext_one": "Revisá la reseña que compartiste.",
+                "reviewsNext_other": "Revisá tus {{count}} reseñas compartidas.",
+                "planContext": "Consultá los beneficios de tu plan.",
+                "trialEndsToday": "Tu prueba termina hoy. Elegí cómo continuar.",
+                "trialNext_one": "Tu prueba termina en {{count}} día.",
+                "trialNext_other": "Tu prueba termina en {{count}} días.",
                 "subscriptionStatus": "Estado de la suscripción",
                 "activeStatus": "Activo",
                 "trialStatus": "En prueba",
@@ -1400,7 +1410,6 @@
         "contextOAuth": "Agregá una contraseña a tu cuenta para poder iniciar sesión también con email y contraseña.",
         "fields": {
             "password": "Contraseña",
-            "passwordPlaceholder": "Mínimo 8 caracteres",
             "passwordHint": "Mínimo 8 caracteres.",
             "confirmPassword": "Confirmá la contraseña",
             "confirmPasswordPlaceholder": "Repetí la contraseña"
@@ -1873,7 +1882,7 @@
             "benefitSection": "Beneficio para hosts",
             "benefitNote": "Un cambio en el beneficio pasa a revisión del equipo de Hospeda antes de publicarse. Mientras tanto, el beneficio actual sigue visible en el directorio.",
             "liveBenefitLabel": "Beneficio publicado actualmente",
-            "noBenefit": "Sin beneficio estructurado cargado",
+            "noBenefit": "Todavía no hay un beneficio publicado",
             "pendingLabel": "Esperando revisión",
             "noChanges": "No hay cambios para guardar",
             "success": "Cambios guardados",
@@ -1902,7 +1911,7 @@
         "pageTitle": "Mi ficha de aliado",
         "pageSubtitle": "Gestioná tu presencia como aliado de Hospeda",
         "empty": {
-            "text": "Todavía no tenés una ficha de aliado. Postulate desde \"Sumate como aliado\" y, una vez aprobada tu solicitud, tu ficha va a aparecer acá.",
+            "text": "Todavía no tenés una ficha de aliado. Postulate desde «Sumate como aliado» y, una vez aprobada tu solicitud, tu ficha va a aparecer acá.",
             "cta": "Ir a Sumate como aliado",
             "title": "Tu ficha de aliado"
         },

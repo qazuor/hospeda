@@ -22,6 +22,43 @@ import {
 const card = (container: HTMLElement) => container.querySelector('[data-widget]') as HTMLElement;
 
 describe('StatCard', () => {
+    it('prefers the next step and preserves the full clamped details in its title', () => {
+        render(
+            <StatCard
+                id="plan"
+                label="Plan"
+                locale="en"
+                state={{
+                    status: 'ready',
+                    data: {
+                        value: 'Pro',
+                        hint: 'Old hint',
+                        nextStep: 'Update payment',
+                        detail: 'Charge declined. Update your payment method.'
+                    }
+                }}
+            />
+        );
+        expect(screen.getByText('Update payment')).toHaveAttribute(
+            'title',
+            'Charge declined. Update your payment method.'
+        );
+        expect(screen.queryByText('Old hint')).toBeNull();
+    });
+
+    it('provides context without a numeric value when the metric does not apply', () => {
+        const { container } = render(
+            <StatCard
+                id="na"
+                label="Views"
+                locale="en"
+                state={{ status: 'empty' }}
+                context="No public page"
+            />
+        );
+        expect(screen.getByText('No public page')).toHaveAttribute('title', 'No public page');
+        expect(card(container).textContent).not.toMatch(/\d/);
+    });
     it('renders the value, hint and link when ready', () => {
         // Arrange / Act
         const { container } = render(
@@ -179,8 +216,13 @@ describe('ListRow', () => {
 });
 
 describe('Avatar', () => {
+    it('agrees with the shared helper for business display names', () => {
+        render(<Avatar name="Host y Comercio" />);
+        expect(screen.getByText('HC')).toBeInTheDocument();
+        expect(avatarInitials({ name: 'Host y Comercio' })).toBe('HC');
+    });
     it('derives up to two initials and a stable palette', () => {
-        expect(avatarInitials({ name: '  ana   maría pérez ' })).toBe('AM');
+        expect(avatarInitials({ name: '  ana   maría pérez ' })).toBe('AP');
         expect(avatarInitials({ name: '' })).toBe('');
         expect(avatarPalette({ name: 'Ana' })).toBe(avatarPalette({ name: 'Ana' }));
         expect([1, 2, 3, 4]).toContain(avatarPalette({ name: 'Bruno' }));

@@ -1,6 +1,9 @@
 /** Owner-only advanced venue listing metrics panel (HOS-2261). */
 
 import { type JSX, useEffect, useState } from 'react';
+import { KeyValueList } from '@/components/account/ui/KeyValueList';
+import { Section } from '@/components/account/ui/Section';
+import { Skeleton } from '@/components/account/ui/Skeleton';
 import { listingAnalyticsApi } from '@/lib/api/endpoints-protected';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -133,145 +136,155 @@ export function VenueListingStatsPanel({
     const history = tPlural('listing.owner.list.venueStats.historyDays', 90);
 
     return (
-        <section
-            className={styles.panel}
-            data-testid="venue-listing-stats-panel"
-        >
-            <header className={styles.header}>
-                <div>
-                    <h2 className={styles.title}>
-                        {t('listing.owner.list.venueStats.title', 'Métricas de tu ficha')}
-                    </h2>
-                    {listings.length > 1 && (
-                        <label className={styles.selectorLabel}>
-                            {t('listing.owner.list.venueStats.venue', 'Local')}
-                            <select
-                                value={selectedId}
-                                onChange={(event) => setSelectedId(event.currentTarget.value)}
+        <div data-testid="venue-listing-stats-panel">
+            <Section
+                title={t('listing.owner.list.venueStats.title', 'Métricas de tu ficha')}
+                helpId="section:comercio.metricas"
+            >
+                <header className={styles.header}>
+                    <div>
+                        {listings.length > 1 && (
+                            <label className={styles.selectorLabel}>
+                                {t('listing.owner.list.venueStats.venue', 'Local')}
+                                <select
+                                    value={selectedId}
+                                    onChange={(event) => setSelectedId(event.currentTarget.value)}
+                                >
+                                    {listings.map((listing) => (
+                                        <option
+                                            key={listing.id}
+                                            value={listing.id}
+                                        >
+                                            {listing.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </label>
+                        )}
+                    </div>
+                    <fieldset
+                        className={styles.toggle}
+                        aria-label={t('common.window.ariaLabel', 'Período de tiempo')}
+                    >
+                        {WINDOWS.map((value) => (
+                            <button
+                                key={value}
+                                type="button"
+                                className={
+                                    windowValue === value
+                                        ? styles.toggleActive
+                                        : styles.toggleButton
+                                }
+                                onClick={() => setWindowValue(value)}
+                                aria-pressed={windowValue === value}
                             >
-                                {listings.map((listing) => (
-                                    <option
-                                        key={listing.id}
-                                        value={listing.id}
-                                    >
-                                        {listing.name}
-                                    </option>
-                                ))}
-                            </select>
-                        </label>
-                    )}
-                </div>
-                <fieldset
-                    className={styles.toggle}
-                    aria-label={t('common.window.ariaLabel', 'Período de tiempo')}
-                >
-                    {WINDOWS.map((value) => (
-                        <button
-                            key={value}
-                            type="button"
-                            className={
-                                windowValue === value ? styles.toggleActive : styles.toggleButton
-                            }
-                            onClick={() => setWindowValue(value)}
-                            aria-pressed={windowValue === value}
-                        >
-                            {t(
-                                `common.window.${value}`,
-                                value === '90d' ? '90 días' : value === '30d' ? '30 días' : '7 días'
-                            )}
-                        </button>
-                    ))}
-                </fieldset>
-            </header>
+                                {t(
+                                    `common.window.${value}`,
+                                    value === '90d'
+                                        ? '90 días'
+                                        : value === '30d'
+                                          ? '30 días'
+                                          : '7 días'
+                                )}
+                            </button>
+                        ))}
+                    </fieldset>
+                </header>
 
-            {state.status === 'loading' && (
-                <p
-                    className={styles.muted}
-                    role="status"
-                >
-                    {t('listing.owner.list.venueStats.loading', 'Cargando métricas…')}
-                </p>
-            )}
-            {state.status === 'error' && (
-                <p
-                    className={styles.error}
-                    role="alert"
-                >
-                    {t(
-                        'listing.owner.list.venueStats.error',
-                        'No pudimos cargar las métricas. Probá de nuevo más tarde.'
-                    )}
-                </p>
-            )}
-            {lockedNoticeVisible && (
-                <div
-                    className={styles.locked}
-                    data-testid="venue-stats-upgrade-notice"
-                >
-                    <p>
+                {state.status === 'loading' && (
+                    <Skeleton
+                        locale={locale}
+                        lines={3}
+                    />
+                )}
+                {state.status === 'error' && (
+                    <p
+                        className={styles.error}
+                        role="alert"
+                    >
                         {t(
-                            'listing.owner.list.venueStats.lockedWithPlan',
-                            'Desbloqueá el gráfico diario, los clics por canal, la tasa de clics y {{history}} de datos con {{plan}}.',
-                            { history, plan: unlockingPlanName }
+                            'listing.owner.list.venueStats.error',
+                            'No pudimos cargar las métricas. Probá de nuevo más tarde.'
                         )}
                     </p>
-                    <a href={buildUrl({ locale, path: PRICING_PAGE_PATH_BY_AUDIENCE.venue })}>
-                        {t('listing.owner.list.venueStats.seePlans', 'Ver planes')}
-                    </a>
-                </div>
-            )}
-            {state.status === 'ready' && (
-                <>
-                    <div className={styles.summary}>
-                        <div>
-                            <strong>{state.stats.views.total}</strong>
-                            <span>{t('listing.owner.list.venueStats.views', 'visitas')}</span>
-                        </div>
-                        <div>
-                            <strong>{state.stats.clicks.total}</strong>
-                            <span>
-                                {t('listing.owner.list.venueStats.clicks', 'clics de contacto')}
-                            </span>
-                        </div>
-                        <div>
-                            <strong>
-                                {state.stats.clickRate === null
-                                    ? '—'
-                                    : `${Math.round(state.stats.clickRate * 100)}%`}
-                            </strong>
-                            <span>
-                                {t('listing.owner.list.venueStats.clickRate', 'tasa de clics')}
-                            </span>
-                            <small>
-                                {t(
-                                    'listing.owner.list.venueStats.clickRateHelp',
-                                    'De cada 100 visitas, cuántas tocaron algún contacto.'
-                                )}
-                            </small>
-                        </div>
-                    </div>
-                    {state.stats.views.total === 0 ? (
-                        <p className={styles.muted}>
+                )}
+                {lockedNoticeVisible && (
+                    <div
+                        className={styles.locked}
+                        data-testid="venue-stats-upgrade-notice"
+                    >
+                        <p>
                             {t(
-                                'listing.owner.list.venueStats.empty',
-                                'Todavía no hay visitas en este período.'
+                                'listing.owner.list.venueStats.lockedWithPlan',
+                                'Desbloqueá el gráfico diario, los clics por canal, la tasa de clics y {{history}} de datos con {{plan}}.',
+                                { history, plan: unlockingPlanName }
                             )}
                         </p>
-                    ) : (
-                        <DailyViews items={state.stats.dailyViews} />
-                    )}
-                    <ul className={styles.channels}>
-                        {CHANNELS.map(([kind, label]) => (
-                            <li key={kind}>
-                                <span>
-                                    {t(`listing.owner.list.venueStats.channel.${label}`, label)}
-                                </span>
-                                <strong>{state.stats.clicks.byKind[kind].total}</strong>
-                            </li>
-                        ))}
-                    </ul>
-                </>
-            )}
-        </section>
+                        <a href={buildUrl({ locale, path: PRICING_PAGE_PATH_BY_AUDIENCE.venue })}>
+                            {t('listing.owner.list.venueStats.seePlans', 'Ver planes')}
+                        </a>
+                    </div>
+                )}
+                {state.status === 'ready' && (
+                    <>
+                        <KeyValueList
+                            items={[
+                                {
+                                    key: 'views',
+                                    label: t('listing.owner.list.venueStats.views', 'visitas'),
+                                    value: state.stats.views.total.toLocaleString(locale)
+                                },
+                                {
+                                    key: 'clicks',
+                                    label: t(
+                                        'listing.owner.list.venueStats.clicks',
+                                        'clics de contacto'
+                                    ),
+                                    value: state.stats.clicks.total.toLocaleString(locale)
+                                },
+                                {
+                                    key: 'rate',
+                                    label: (
+                                        <>
+                                            {t(
+                                                'listing.owner.list.venueStats.clickRate',
+                                                'tasa de clics'
+                                            )}
+                                            <p className={styles.muted}>
+                                                {t(
+                                                    'listing.owner.list.venueStats.clickRateHelp',
+                                                    'De cada 100 visitas, cuántas tocaron algún contacto.'
+                                                )}
+                                            </p>
+                                        </>
+                                    ),
+                                    value:
+                                        state.stats.clickRate === null
+                                            ? '—'
+                                            : `${Math.round(state.stats.clickRate * 100)}%`
+                                }
+                            ]}
+                        />
+                        {state.stats.views.total === 0 ? (
+                            <p className={styles.muted}>
+                                {t(
+                                    'listing.owner.list.venueStats.empty',
+                                    'Todavía no hay visitas en este período.'
+                                )}
+                            </p>
+                        ) : (
+                            <DailyViews items={state.stats.dailyViews} />
+                        )}
+                        <KeyValueList
+                            items={CHANNELS.map(([kind, label]) => ({
+                                key: kind,
+                                label: t(`listing.owner.list.venueStats.channel.${label}`, label),
+                                value: state.stats.clicks.byKind[kind].total.toLocaleString(locale)
+                            }))}
+                        />
+                    </>
+                )}
+            </Section>
+        </div>
     );
 }

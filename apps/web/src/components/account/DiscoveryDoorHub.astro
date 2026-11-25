@@ -113,7 +113,7 @@ const optionRows = door.options.map((option) => {
                                 {t('account.doors.common.acquiredLabel')}
                             </StatusPill>
                             {manageHref && (
-                                <LinkButton href={manageHref} variant="secondary" size="sm">
+                                <LinkButton href={manageHref} variant="secondary">
                                     {t('account.doors.common.manageCta')}
                                 </LinkButton>
                             )}
@@ -127,7 +127,6 @@ const optionRows = door.options.map((option) => {
                             <LinkButton
                                 href={buildUrl({ locale, path: option.href })}
                                 variant="secondary"
-                                size="sm"
                             >
                                 {t(option.ctaI18nKey)}
                             </LinkButton>
@@ -137,7 +136,6 @@ const optionRows = door.options.map((option) => {
                         <LinkButton
                             href={buildUrl({ locale, path: option.href })}
                             variant="accent"
-                            size="sm"
                         >
                             {t(option.ctaI18nKey)}
                         </LinkButton>

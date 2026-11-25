@@ -1,0 +1,10 @@
+/* Shared account/focus document frame: short pages keep the footer at the bottom. */
+body:has([data-account-shell], [data-focus-content]) {
+    display: flex;
+    flex-direction: column;
+    min-block-size: 100dvh;
+}
+
+body:has([data-account-shell], [data-focus-content]) > main {
+    flex: 1;
+}

@@ -169,6 +169,7 @@ export function TradesDirectory({
         <div className={styles.container}>
             {/* ── Category filter chips: "Todos" + one per category, in catalog order ── */}
             <FilterChips
+                className={styles.filters}
                 mode="multiple"
                 label={t('host-trades.filter.label', 'Filtrar por rubro')}
                 items={chipItems}

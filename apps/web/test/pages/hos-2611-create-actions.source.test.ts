@@ -59,7 +59,7 @@ describe('create actions use the kit primary button with a «+» icon', () => {
 describe('one solid primary per screen: the header hides its create action when empty', () => {
     it('comercio list renders the header action only with listings', () => {
         expect(read('pages/[lang]/mi-cuenta/comercio/index.astro')).toMatch(
-            /\{listings\.length > 0 && !listingsLoadFailed && \(\s*<LinkButton slot="actions"/
+            /\{listings\.length > 0 && !listingsLoadFailed && !usageBadges\.some\(\(usage\) => usage\.currentUsage >= usage\.maxAllowed\) && \(\s*<LinkButton slot="actions"/
         );
     });
 

@@ -102,6 +102,16 @@ function renderForm(trade: MyHostTrade = BASE_TRADE) {
     );
 }
 
+describe('provider form presentation', () => {
+    it('uses three subheadings and shows legacy benefit text without internal schema jargon', () => {
+        renderForm({ ...BASE_TRADE, benefitType: null, benefitValue: null });
+        expect(screen.getAllByRole('heading', { level: 3 })).toHaveLength(3);
+        expect(screen.queryByText(/Sin beneficio estructurado/)).not.toBeInTheDocument();
+        expect(screen.getByText(BASE_TRADE.benefit, { selector: 'p' })).toBeInTheDocument();
+        expect(screen.getByLabelText('Horario de atención').tagName).toBe('TEXTAREA');
+    });
+});
+
 // ─── Pure helper tests ────────────────────────────────────────────────────────
 
 describe('buildHostTradeOwnerPatch (pure)', () => {

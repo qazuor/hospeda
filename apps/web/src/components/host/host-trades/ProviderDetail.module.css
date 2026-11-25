@@ -6,15 +6,6 @@
     gap: var(--space-5);
 }
 
-.pills {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-2);
-    margin: 0;
-    padding: 0;
-    list-style: none;
-}
-
 .benefit {
     margin: 0;
     font: var(--app-body);

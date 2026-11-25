@@ -25,3 +25,8 @@
     margin-block-start: var(--space-4);
     padding-block-end: var(--space-3);
 }
+
+/* Align the send action with the bottom of the textarea and its counter. */
+.panel .composer > div:last-child {
+    align-items: flex-end;
+}

@@ -207,8 +207,8 @@
             }
         },
         "usage": {
-            "label_one": "{{current}} of {{max}} property",
-            "label_other": "{{current}} of {{max}} properties",
+            "label_one": "Publishing capacity: {{current}} of {{max}} accommodation",
+            "label_other": "Publishing capacity: {{current}} of {{max}} accommodations",
             "unlimited": "Unlimited properties",
             "upgrade": "Upgrade plan"
         },

@@ -5,7 +5,7 @@
  * HOS-2424), and the subscription card names the plan from the catalog map.
  */
 
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -37,6 +37,33 @@ afterEach(() => {
 });
 
 describe('GeneralDashboardStats (HOS-2473)', () => {
+    it('always renders one context line for a free plan and empty activity', async () => {
+        getStats.mockResolvedValue({
+            ok: true,
+            data: { ...STATS, plan: null, activeSubscriptionsCount: 0, bookmarkCount: 0 }
+        });
+        getReviews.mockResolvedValue({ ok: true, data: { totals: { total: 0 } } });
+        trialSummary.mockResolvedValue({ ok: true, data: { status: 'NONE' } });
+        const { container } = render(
+            <GeneralDashboardStats
+                locale="es"
+                planNames={{}}
+            />
+        );
+        await screen.findByText('Plan Gratuito');
+        expect(
+            within(card(container, 'subscription')).getByText('Consultá los beneficios de tu plan.')
+        ).toBeInTheDocument();
+        expect(
+            within(card(container, 'favorites')).getByText('Tus lugares favoritos estarán aquí.')
+        ).toBeInTheDocument();
+        expect(
+            within(card(container, 'reviews')).getByText(
+                'Compartí la experiencia de tu próximo viaje.'
+            )
+        ).toBeInTheDocument();
+    });
+
     it('renders favorites, reviews and the catalog plan name', async () => {
         getStats.mockResolvedValue({ ok: true, data: STATS });
         getReviews.mockResolvedValue({ ok: true, data: { totals: { total: 9 } } });
@@ -110,13 +137,13 @@ describe('GeneralDashboardStats (HOS-2473)', () => {
         await screen.findByText('Pro anfitrión');
         // Assert
         const sub = card(container, 'subscription');
-        expect(within(sub).getByText('Cobro rechazado')).toBeInTheDocument();
-        expect(within(sub).getByTestId('subscription-action').textContent).toMatch(
+        expect(within(sub).getByTitle(/Cobro rechazado/)).toBeInTheDocument();
+        expect(within(sub).getByTitle(/Cobro rechazado/).textContent).toMatch(
             /Mercado Pago no aprobó el pago/
         );
     });
 
-    it('HOS-2553 two or more subscriptions are listed with their status, max three, and «Ver todas»', async () => {
+    it('keeps multiple subscription details on the single clamped action line and «Ver todas»', async () => {
         // Arrange
         const row = (slug: string, status: string) => ({
             slug,
@@ -146,19 +173,17 @@ describe('GeneralDashboardStats (HOS-2473)', () => {
                 planNames={{ 'owner-pro': 'Pro anfitrión' }}
             />
         );
-        await screen.findByText('Pro anfitrión');
+        await waitFor(() =>
+            expect(card(container, 'subscription')).toHaveAttribute('data-state', 'ready')
+        );
         // Assert
         const sub = card(container, 'subscription');
-        const rows = within(sub).getAllByTestId('subscription-row');
-        expect(rows.map((el) => el.textContent)).toEqual([
-            'Pro anfitrión · Activo',
-            'VENUE-PRO · Esperando autorización',
-            'EXPERIENCE-PRO · Cobro rechazado'
-        ]);
+        const detail = within(sub).getByTitle(/Pro anfitrión · Activo/);
+        expect(detail.title).toContain('VENUE-PRO · Esperando autorización');
+        expect(detail.title).toContain('EXPERIENCE-PRO · Cobro rechazado');
+        expect(detail.title).not.toContain('PARTNER-GOLD');
         // The first row that needs action decides the line.
-        expect(within(sub).getByTestId('subscription-action').textContent).toMatch(
-            /autorices el pago/
-        );
+        expect(detail.textContent).toMatch(/autorices el pago/);
         expect(within(sub).getByRole('link', { name: 'Ver todas' })).toBeInTheDocument();
         expect(trialSummary).not.toHaveBeenCalled();
     });

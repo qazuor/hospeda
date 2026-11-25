@@ -15,6 +15,7 @@ vi.mock('../../../src/lib/api/endpoints-protected', () => ({
     publishApi: { publish: publishMock }
 }));
 vi.mock('../../../src/lib/i18n', () => ({
+    createT: () => (key: string) => key,
     createTranslations: () => ({
         t: (key: string, fallback?: string) => fallback ?? key,
         tPlural: (_key: string, count: number) =>
@@ -65,6 +66,28 @@ beforeEach(() => {
 });
 
 describe('ListingActions publish — TEST:1729:5 and TEST:1729:7', () => {
+    it('lets the shared card own the badge and publish action while retaining the incomplete checklist', () => {
+        const { container, rerender } = render(
+            <ListingActions
+                listing={listing('venue')}
+                locale="es"
+                publishAffordance={PUBLISH}
+                cardBody
+            />
+        );
+        expect(container.querySelector('button')).toBeNull();
+        expect(container.querySelector('.badge')).toBeNull();
+        rerender(
+            <ListingActions
+                listing={listing('venue', { completeness: { complete: false, missing: ['name'] } })}
+                locale="es"
+                publishAffordance={PUBLISH}
+                cardBody
+            />
+        );
+        expect(screen.getByTestId('listing-checklist')).toHaveTextContent('Nombre');
+        expect(container.querySelector('.badge')).toBeNull();
+    });
     it.each([
         'venue',
         'experience'

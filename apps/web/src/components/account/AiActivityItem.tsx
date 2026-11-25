@@ -11,7 +11,7 @@
  * adds the action and the date: a screen-reader links list can tell them apart.
  */
 
-import { ListRow, StatusPill, type StatusTone } from '@/components/account/ui';
+import { ListRow, StatusPill, type StatusTone, TextLink } from '@/components/account/ui';
 import {
     type AiActivityItem as AiActivityItemData,
     normalizeAiActivityStep,
@@ -79,7 +79,7 @@ export function AiActivityItem({ item, locale, t }: AiActivityItemProps) {
     const targetNode =
         target?.kind === 'listing' ? (
             target.url ? (
-                <a href={target.url}>{target.label}</a>
+                <TextLink href={target.url}>{target.label}</TextLink>
             ) : (
                 <span>{target.label}</span>
             )
@@ -87,7 +87,7 @@ export function AiActivityItem({ item, locale, t }: AiActivityItemProps) {
             <span>{t(`${KEY}.target.unavailable`, 'Publicación que ya no está disponible')}</span>
         ) : target?.kind === 'conversation' ? (
             target.url ? (
-                <a
+                <TextLink
                     href={target.url}
                     aria-label={t(
                         `${KEY}.target.conversationAria`,
@@ -96,7 +96,7 @@ export function AiActivityItem({ item, locale, t }: AiActivityItemProps) {
                     )}
                 >
                     {t(`${KEY}.target.conversation`, 'Consulta de huésped')}
-                </a>
+                </TextLink>
             ) : (
                 <span>{t(`${KEY}.target.conversation`, 'Consulta de huésped')}</span>
             )

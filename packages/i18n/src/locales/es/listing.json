@@ -9,6 +9,12 @@
         "premiumBadge": "Premium"
     },
     "owner": {
+        "downloads": {
+            "label": "Descargar",
+            "forListing": "Descargar archivos de {{name}}",
+            "viewQr": "Ver código QR",
+            "qrTitle": "Código QR: {{name}}"
+        },
         "nav": "Mi comercio",
         "purgeAddons": {
             "title": "Se pierden con la ficha, sin devolución:",
@@ -25,6 +31,12 @@
             "retry": "Reintentar"
         },
         "list": {
+            "buckets": {
+                "published": "Publicadas",
+                "drafts": "Borradores",
+                "archived": "Archivadas",
+                "deleted": "Borradas"
+            },
             "title": "Mi comercio",
             "subtitle": {
                 "venue": "Gestioná la información de tus comercios publicados.",
@@ -60,12 +72,12 @@
             },
             "usage": {
                 "venue": {
-                    "label_one": "{{current}} de {{max}} ficha de Comer y salir",
-                    "label_other": "{{current}} de {{max}} fichas de Comer y salir"
+                    "label_one": "Cupo de publicación: {{current}} de {{max}} ficha de Comer y salir",
+                    "label_other": "Cupo de publicación: {{current}} de {{max}} fichas de Comer y salir"
                 },
                 "experience": {
-                    "label_one": "{{current}} de {{max}} experiencia",
-                    "label_other": "{{current}} de {{max}} experiencias"
+                    "label_one": "Cupo de publicación: {{current}} de {{max}} experiencia",
+                    "label_other": "Cupo de publicación: {{current}} de {{max}} experiencias"
                 },
                 "upgrade": "Ampliar cupo",
                 "atLimit": "Llegaste al tope de tu plan. Para publicar otra ficha, ampliá tu cupo."
@@ -97,7 +109,6 @@
             "venueStats": {
                 "title": "Métricas de tu ficha",
                 "venue": "Local",
-                "loading": "Cargando métricas…",
                 "error": "No pudimos cargar las métricas. Probá de nuevo más tarde.",
                 "lockedPreTrial": "Las métricas avanzadas estarán disponibles cuando publiques tu ficha.",
                 "lockedWithPlan": "Desbloqueá el gráfico diario, los clics por canal, la tasa de clics y {{history}} de datos con {{plan}}.",

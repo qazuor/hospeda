@@ -21,7 +21,7 @@ import { getMediaUrl } from '@repo/media';
 import { describe, expect, it } from 'vitest';
 
 const propertyCardSource = readFileSync(
-    resolve(__dirname, '../../../src/components/host/PropertyCard.astro'),
+    resolve(__dirname, '../../../src/components/account/OwnerListingCard.astro'),
     'utf8'
 );
 
@@ -141,7 +141,7 @@ describe('PropertyCard.astro — HOS-982 printable QR sheet', () => {
 
     it('renders the QR block only when the state allows it (never for PURGED)', () => {
         expect(propertyCardSource).toMatch(
-            /\{actions\.qrBlock && \(\s*<ListingQrSheet\s+slot="footer"/
+            /\{property && actions\.qrBlock && \(\s*<ListingQrSheet\s+slot="footer"/
         );
     });
 });
@@ -156,9 +156,7 @@ describe('PropertyCard.astro — actions per publication state (HOS-1641)', () =
     const menuElement = /<PropertyCardMenu\b[\s\S]*?\/>\s*\)\}/.exec(propertyCardSource)?.[0] ?? '';
 
     it('reads publicationStatus, never the old columns', () => {
-        expect(propertyCardSource).toContain(
-            'const publicationStatus = property.publicationStatus;'
-        );
+        expect(propertyCardSource).toContain('const publicationStatus = entity.publicationStatus;');
         expect(propertyCardSource).toContain(
             'const actions = resolvePropertyCardActions({ publicationStatus });'
         );
@@ -172,7 +170,7 @@ describe('PropertyCard.astro — actions per publication state (HOS-1641)', () =
         expect(propertyCardSource).toContain(
             'const hasAnyAction = hasAnyPropertyCardAction({ actions });'
         );
-        expect(propertyCardSource).toMatch(/\{hasAnyAction && \(\s*<PropertyCardMenu/);
+        expect(propertyCardSource).toMatch(/\{property && hasAnyAction && \(\s*<PropertyCardMenu/);
     });
 
     it('HOS-2483: ONE primary action — Publish when offered, else Edit, else nothing', () => {
@@ -195,9 +193,7 @@ describe('PropertyCard.astro — actions per publication state (HOS-1641)', () =
         expect(propertyCardSource).toContain(
             'const showRepublish = resolveRepublishOffer({ actions, affordance: publishAffordance });'
         );
-        expect(propertyCardSource).toContain(
-            'const showPublish = actions.publish || showRepublish;'
-        );
+        expect(propertyCardSource).toContain(': actions.publish || showRepublish;');
         // The copy switches on the republish flag and uses its own keys.
         expect(propertyCardSource).toContain('const publishCopy = actions.republish');
         expect(propertyCardSource).toContain('host.properties.card.actions.republish');
@@ -244,7 +240,7 @@ describe('PropertyCard.astro — the publish affordance fails closed (HOS-1668)'
     // translated check-failed text.
     it('forwards the affordance and the check-failed text to PublishButton', () => {
         expect(propertyCardSource).toContain(
-            'listingId={property.id}\n            vertical="accommodation"'
+            'listingId={entity.id}\n            vertical={vertical}'
         );
         expect(propertyCardSource).toContain('affordance={publishAffordance}');
         expect(propertyCardSource).toContain(
@@ -263,7 +259,7 @@ describe('PropertyCard.astro — the listing notices and the unpublish lines (HO
             "import ListingNotices from '@/components/listing/ListingNotices.astro';"
         );
         expect(propertyCardSource).toContain(
-            '<ListingNotices locale={locale} vertical="accommodation" listingId={property.id} item={notices} />'
+            '<ListingNotices locale={locale} vertical={vertical} listingId={entity.id} item={notices} />'
         );
     });
 

@@ -1,297 +1,87 @@
 ---
 /**
  * @file PartnerStatsSection.astro
- * @description The partner's own in-platform numbers (HOS-1063 A-5).
- *
- * ## A SIBLING of the mentions log, never part of it (AC-8)
- *
- * `PartnerMentionsSection.astro:16-21` asked for exactly this, by name:
- *
- * > that block must NOT share a heading, a container or a component with this
- * > one, and its copy must live under a DIFFERENT i18n subtree than
- * > `account.partnerMentions`. The two answer different questions ("what did you
- * > do for me?" vs "how did it perform?") and blurring them is exactly how this
- * > section starts implying a measurement it does not have.
- *
- * So: its own `<section>`, its own heading, and every key under
- * `account.partnerStats.*`. The log is *constancia*; this is *medición*, and the
- * commercial presentation sold those as different things.
- *
- * ## Which cards render is derived from `resolvePartnerLogoLink` — never from partner metadata
- *
- * This is the load-bearing decision of the whole section (§7.2, OQ-7 (2)), and
- * it is easy to "simplify" into a bug:
- *
- *  - the VIEWS card renders when the resolver returns an `OWN_PAGE` link, i.e.
- *    when the partner actually has a page at `/partners/<slug>/`;
- *  - the CLICKS card renders when the resolver returns ANY link, since a logo
- *    that links nowhere cannot be clicked.
- *
- * Both read the SAME function the home carousel reads, on the same inputs, so
- * this panel is structurally incapable of contradicting what the home page
- * renders. An independent page availability check here would be a second source of truth about
- * that, and it would drift the moment HOS-1159 makes a silver logo stop being
- * clickable — at which point the clicks card simply stops rendering for silver,
- * with no change to this file.
- *
- * ## A card that does not apply is ABSENT, never zero (G-3, AC-9)
- *
- * "0 visitas" reads as *nobody came to see you*. The true statement for a
- * partner with no page is *this metric does not exist at your level*. So the
- * views card is replaced by an explanatory line carrying NO numeral at all —
- * asserted by a negative match on digits, because asserting the absence of the
- * string "0" passes on a card that renders "cero" in another locale.
- *
- * ## Why a pure Astro component and not an island
- *
- * Read-only, zero interactivity, zero JavaScript — the same as its sibling. That
- * also keeps every key it uses out of `CLIENT_I18N_KEY_PREFIXES`; adding one
- * would FAIL the guard test, which recomputes that list from the real import
- * graph and rejects entries in both directions.
- *
- * `/mi-cuenta/*` is never edge-cached, so reading the session server-side is
- * correct here — the same note the mentions component carries.
+ * @description Server-rendered partner metrics, separate from the mentions log.
+ * Visibility and applicable metrics use the same resolver as the partner carousel.
+ * A metric that does not apply is empty, never a fabricated zero.
  */
-
-import { Section } from '@/components/account/ui';
+import { EyeIcon, LinkIcon } from '@repo/icons';
+import { createElement } from 'react';
+import { Section, StatCard, StatGrid } from '@/components/account/ui';
 import { SectionLoadError } from '@/components/account/SectionLoadError';
 import type { MyPartnerStats } from '@/lib/api/endpoints-protected';
-import type { SupportedLocale } from '@/lib/i18n';
-import { createTranslations } from '@/lib/i18n';
+import { createTranslations, type SupportedLocale } from '@/lib/i18n';
 import { resolvePartnerStatsView } from '@/lib/partner-stats-cards';
 
 interface Props {
-    /** Active locale for i18n. */
     readonly locale: SupportedLocale;
-    /**
-     * The 30-day payload. Load-bearing: it decides whether the panel renders at
-     * all, which cards apply, and the headline figure.
-     */
     readonly stats30: MyPartnerStats | null;
-    /**
-     * The 7-day payload, or null when that read failed. Secondary — its absence
-     * drops one line, never the panel.
-     */
     readonly stats7: MyPartnerStats | null;
-    /**
-     * True when the owner HAS a partner listing but the 30-day read failed. The
-     * section then says so with a retry link instead of vanishing, because a
-     * missing panel reads as «no statistics» when the truth is «we could not load them».
-     */
     readonly loadFailed?: boolean;
-    /** Where the retry link points: the current page. */
     readonly retryHref?: string;
 }
 
 const { locale, stats30, stats7, loadFailed = false, retryHref = '' } = Astro.props;
 const { t } = createTranslations(locale);
-
-/**
- * Card visibility AND both figures live in `resolvePartnerStatsView`, not here.
- *
- * Deliberately extracted: a test over the SOURCE of an `.astro` file cannot
- * tell what is declared from what is rendered, so the two rules that must never
- * silently invert — which cards apply, and which window each number belongs to
- * — would otherwise have had no honest test. They are a pure function there,
- * with real inputs and mutations that turn tests red.
- */
-const {
-    visible,
-    showViews: showViewsCard,
-    showClicks: showClicksCard,
-    views,
-    clicks
-} = resolvePartnerStatsView({ stats30, stats7, locale });
-
+const { visible, showViews, showClicks, views, clicks } = resolvePartnerStatsView({
+    stats30, stats7, locale
+});
 const numberFormatter = new Intl.NumberFormat(locale);
+const window30 = t('account.partnerStats.windows.last30');
+const window7 = t('account.partnerStats.windows.last7');
 ---
 
-{
-    loadFailed && !visible && (
-        <Section
-            title={t('account.partnerStats.title')}
-            description={t('account.partnerStats.subtitle')}
-            helpId="section:partner.stats"
-        >
-            <SectionLoadError locale={locale} retryHref={retryHref} />
-        </Section>
-    )
-}
+{loadFailed && !visible && (
+    <Section title={t('account.partnerStats.title')} description={t('account.partnerStats.subtitle')} helpId="section:partner.stats">
+        <SectionLoadError locale={locale} retryHref={retryHref} />
+    </Section>
+)}
 
-{
-    visible && (
-        <Section
-            title={t('account.partnerStats.title')}
-            description={t('account.partnerStats.subtitle')}
-            helpId="section:partner.stats"
-        >
-            <div class="partner-stats__cards">
-                {showViewsCard ? (
-                    <article class="partner-stats__card" data-card="views">
-                        <p class="partner-stats__card-label">
-                            {t('account.partnerStats.views.label')}
-                        </p>
-                        {/*
-                          Both windows, side by side and static (§7.4). A selector
-                          would be the obvious shape and would put JavaScript on a
-                          section that ships none, plus an interaction to maintain
-                          on a read-only panel. Two figures in markup answer the
-                          same requirement for zero bytes.
-
-                          30 days is the primary figure — it is what the partner
-                          looks at and what the commercial promise is scaled to —
-                          so it gets the size and the 7-day line sits under it as
-                          context. Each number carries its own window label
-                          adjacent to it, because two bare numerals beside each
-                          other is exactly how one gets read as the other.
-                        */}
-                        <p class="partner-stats__card-value">
-                            {numberFormatter.format(views.last30)}
-                        </p>
-                        <p class="partner-stats__card-window">
-                            {t('account.partnerStats.windows.last30')}
-                        </p>
-                        {views.last7 !== null && (
-                            <p class="partner-stats__card-secondary">
-                                <span class="partner-stats__card-secondary-value">
-                                    {numberFormatter.format(views.last7)}
-                                </span>
-                                <span class="partner-stats__card-secondary-window">
-                                    {t('account.partnerStats.windows.last7')}
-                                </span>
-                            </p>
-                        )}
-                        <p class="partner-stats__card-help">
-                            {t('account.partnerStats.views.help')}
-                        </p>
-                    </article>
-                ) : (
-                    /*
-                      No numeral anywhere in this branch — that is the assertion
-                      AC-9 makes. A partner with no page of their own did not get
-                      zero visits; the metric does not exist for them.
-                    */
-                    <article class="partner-stats__card partner-stats__card--na" data-card="views-na">
-                        <p class="partner-stats__card-label">
-                            {t('account.partnerStats.views.label')}
-                        </p>
-                        <p class="partner-stats__card-na">
-                            {t('account.partnerStats.views.notApplicable')}
-                        </p>
-                    </article>
-                )}
-
-                {showClicksCard && (
-                    <article class="partner-stats__card" data-card="clicks">
-                        <p class="partner-stats__card-label">
-                            {t('account.partnerStats.clicks.label')}
-                        </p>
-                        <p class="partner-stats__card-value">
-                            {numberFormatter.format(clicks.last30)}
-                        </p>
-                        <p class="partner-stats__card-window">
-                            {t('account.partnerStats.windows.last30')}
-                        </p>
-                        {clicks.last7 !== null && (
-                            <p class="partner-stats__card-secondary">
-                                <span class="partner-stats__card-secondary-value">
-                                    {numberFormatter.format(clicks.last7)}
-                                </span>
-                                <span class="partner-stats__card-secondary-window">
-                                    {t('account.partnerStats.windows.last7')}
-                                </span>
-                            </p>
-                        )}
-                        <p class="partner-stats__card-help">
-                            {t('account.partnerStats.clicks.help')}
-                        </p>
-                    </article>
-                )}
-            </div>
-
-            {/*
-              The presentation's own sentence, not a paraphrase (§7.3). The
-              partner read it before signing, and a panel that omits it invites
-              the very question it was written to pre-empt — which is also why
-              this block sits next to the appearance log rather than inside it.
-            */}
-            <p class="partner-stats__scope">
-                {t('account.partnerStats.scopeNote')}
-            </p>
-        </Section>
-    )
-}
+{visible && (
+    <Section title={t('account.partnerStats.title')} description={t('account.partnerStats.subtitle')} helpId="section:partner.stats">
+        <StatGrid>
+            <StatCard
+                id="partnerViews"
+                label={t('account.partnerStats.views.label')}
+                locale={locale}
+                icon={createElement(EyeIcon, { size: 20 })}
+                context={t('account.partnerStats.views.notApplicable')}
+                state={showViews ? {
+                    status: 'ready',
+                    data: {
+                        value: numberFormatter.format(views.last30),
+                        nextStep: views.last7 !== null
+                            ? `${window30} · ${numberFormatter.format(views.last7)} ${window7}`
+                            : window30,
+                        detail: t('account.partnerStats.views.help')
+                    }
+                } : { status: 'empty' }}
+            />
+            {showClicks && (
+                <StatCard
+                    id="partnerClicks"
+                    label={t('account.partnerStats.clicks.label')}
+                    locale={locale}
+                    icon={createElement(LinkIcon, { size: 20 })}
+                    state={{
+                        status: 'ready',
+                        data: {
+                            value: numberFormatter.format(clicks.last30),
+                            nextStep: clicks.last7 !== null
+                                ? `${window30} · ${numberFormatter.format(clicks.last7)} ${window7}`
+                                : window30,
+                            detail: t('account.partnerStats.clicks.help')
+                        }
+                    }}
+                />
+            )}
+        </StatGrid>
+        <p class="scope">{t('account.partnerStats.scopeNote')}</p>
+    </Section>
+)}
 
 <style>
-    /* The Section is the only surface: the cards are tiles on it, bordered, never shadowed. */
-    .partner-stats__cards {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
-        gap: var(--space-4);
-    }
-    .partner-stats__card {
-        padding: var(--space-4);
-        border: 1px solid var(--border);
-        border-radius: var(--radius-surface);
-        background-color: var(--core-card);
-    }
-    .partner-stats__card--na {
-        background-color: transparent;
-        border-style: dashed;
-    }
-    .partner-stats__card-label {
-        margin: 0 0 var(--space-1);
-        font: var(--app-meta);
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-        color: var(--core-muted-foreground);
-    }
-    .partner-stats__card-value {
-        margin: 0 0 var(--space-1);
-        font: var(--app-stat);
-        font-variant-numeric: tabular-nums;
-        color: var(--core-foreground);
-    }
-    /*
-      The window label under the headline figure. Deliberately adjacent to the
-      number rather than a single caption for the whole panel: with two figures
-      in one card, a caption that sits apart from them is a caption that gets
-      attached to the wrong one by the reader.
-    */
-    .partner-stats__card-window {
-        margin: 0 0 var(--space-2);
-        font: var(--app-caption);
-        text-transform: uppercase;
-        letter-spacing: 0.03em;
-        color: var(--core-muted-foreground);
-    }
-    /*
-      The 7-day line: context, not a peer of the headline. Same colour as the
-      helper text and smaller than the primary figure, so the hierarchy is
-      visible before either number is read.
-    */
-    .partner-stats__card-secondary {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: baseline;
-        gap: var(--space-1);
-        margin: 0 0 var(--space-2);
-        padding-block-start: var(--space-2);
-        border-block-start: 1px solid var(--border);
-        font: var(--app-meta);
-        color: var(--core-muted-foreground);
-    }
-    .partner-stats__card-secondary-value {
-        font: var(--app-control);
-        color: var(--core-foreground);
-    }
-    .partner-stats__card-help,
-    .partner-stats__card-na {
-        margin: 0;
-        font: var(--app-meta);
-        color: var(--core-muted-foreground);
-    }
-    .partner-stats__scope {
+    .scope {
         margin: var(--space-3) 0 0;
         padding-block-start: var(--space-3);
         border-block-start: 1px solid var(--border);

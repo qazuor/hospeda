@@ -22,6 +22,7 @@ import {
 } from '../../../src/components/listing/ListingViewsWidget.client';
 
 vi.mock('../../../src/lib/i18n', () => ({
+    createT: () => (key: string) => key,
     createTranslations: (_locale: string) => ({
         t: (_key: string, fallback?: string, params?: Record<string, unknown>) =>
             Object.entries(params ?? {}).reduce(
@@ -78,6 +79,20 @@ const EXPERIENCE_LISTING: ListingViewsWidgetListing = {
 };
 
 describe('ListingViewsWidget (HOS-734)', () => {
+    it('reserves the views content with a kit skeleton while the read is pending', () => {
+        mockGetViews.mockReturnValue(new Promise(() => {}));
+        const { container } = render(
+            <ListingViewsWidget
+                locale="es"
+                listings={[GASTRO_LISTING]}
+            />
+        );
+        const section = container.querySelector('[data-kit-section]');
+        expect(section).toHaveAttribute('data-help', 'section:comercio.vistas');
+        expect(
+            section?.querySelector('[aria-busy="true"] [aria-hidden="true"]')
+        ).toBeInTheDocument();
+    });
     beforeEach(() => {
         vi.clearAllMocks();
     });
@@ -121,10 +136,19 @@ describe('ListingViewsWidget (HOS-734)', () => {
         expect(within(list).getByText('La Parrilla del Puerto')).toBeTruthy();
         expect(within(list).getByText('Paseo en Kayak')).toBeTruthy();
         expect(screen.getAllByTestId('listing-views-unique')).toHaveLength(2);
-        expect(screen.getByText(/12 únicos/)).toBeTruthy();
-        expect(screen.getByText(/30 totales/)).toBeTruthy();
-        expect(screen.getByText(/4 únicos/)).toBeTruthy();
-        expect(screen.getByText(/9 totales/)).toBeTruthy();
+        const rows = screen.getAllByTestId('listing-views-row');
+        expect(within(rows[0]!).getByTestId('listing-views-unique')).toHaveTextContent('12');
+        expect(within(rows[0]!).getByTestId('listing-views-total')).toHaveTextContent('30');
+        expect(within(rows[1]!).getByTestId('listing-views-unique')).toHaveTextContent('4');
+        expect(within(rows[1]!).getByTestId('listing-views-total')).toHaveTextContent('9');
+        expect(rows[0]!.querySelector('dt')).toHaveTextContent('únicos');
+        expect(rows[0]!.querySelector('dd')).toHaveTextContent('12');
+        const sections = document.querySelectorAll('[data-kit-section]');
+        expect(sections).toHaveLength(3);
+        for (const section of sections) {
+            expect(section).toHaveAttribute('data-help');
+            expect(section.querySelector('[data-kit-section]')).toBeNull();
+        }
 
         // Both verticals were queried with the default 30d window.
         for (const call of mockGetViews.mock.calls) {
@@ -289,8 +313,8 @@ describe('ListingViewsWidget (HOS-734)', () => {
                 list.compareDocumentPosition(section) & Node.DOCUMENT_POSITION_FOLLOWING
             ).toBeTruthy();
             // Existing cards unchanged.
-            expect(screen.getByText(/12 únicos/)).toBeTruthy();
-            expect(screen.getByText(/30 totales/)).toBeTruthy();
+            expect(screen.getAllByTestId('listing-views-unique')[0]).toHaveTextContent('12');
+            expect(screen.getAllByTestId('listing-views-total')[0]).toHaveTextContent('30');
         });
 
         it('passes the selected window to every island and updates it on toggle WITHOUT remounting', async () => {
