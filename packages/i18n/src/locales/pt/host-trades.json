@@ -108,13 +108,15 @@
         "pending": {
             "title": "Aguardam sua confirmação",
             "empty": "Você não tem usos pendentes de confirmação.",
-            "countLabel": "Aguardando sua confirmação: {{count}}"
+            "countLabel": "Aguardando sua confirmação: {{count}}",
+            "emptyDescription": "Quando um prestador registrar um serviço para o seu anúncio, você poderá confirmá-lo por aqui."
         },
         "history": {
             "title": "Histórico",
             "empty": "Ainda não há usos registrados.",
             "loadMore": "Ver mais",
-            "filterLabel": "Filtrar por status"
+            "filterLabel": "Filtrar por status",
+            "emptyDescription": "Os usos que você confirmar ou rejeitar ficam registrados neste histórico."
         },
         "filters": {
             "ALL": "Todos",

@@ -903,6 +903,45 @@ describe('ContactHost', () => {
             });
         });
 
+        it('Mode A: shows the verification notice after an anonymous send (HOS-2615)', async () => {
+            vi.stubGlobal(
+                'fetch',
+                vi.fn().mockResolvedValue({
+                    ok: true,
+                    status: 200,
+                    headers: { get: () => null },
+                    json: async () => ({ data: { status: 'PENDING_VERIFICATION' } })
+                })
+            );
+
+            render(
+                <ContactHost
+                    accommodation={ACTIVE_ACCOMMODATION}
+                    locale={LOCALE}
+                />
+            );
+
+            fireEvent.change(screen.getByLabelText(/name/i, { exact: false }), {
+                target: { value: 'Ana' }
+            });
+            fireEvent.change(screen.getByLabelText(/email/i, { exact: false }), {
+                target: { value: 'ana@test.com' }
+            });
+            fireEvent.change(screen.getByRole('textbox', { name: /message/i }), {
+                target: { value: 'Hola, quiero reservar' }
+            });
+
+            await act(async () => {
+                fireEvent.submit(document.querySelector('form')!);
+            });
+
+            await waitFor(() => {
+                expect(
+                    screen.getByText('conversations.notifications.verificationSent')
+                ).toBeTruthy();
+            });
+        });
+
         it('Mode A: fires booking_request_sent on successful anonymous send', async () => {
             vi.stubGlobal(
                 'fetch',

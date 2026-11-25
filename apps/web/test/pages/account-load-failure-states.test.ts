@@ -27,13 +27,13 @@ describe('mi-cuenta/comercio/index.astro — API failure (HOS-2421)', () => {
         expect(emptyAt).toBeGreaterThan(errorAt);
         const errorBranch = source.slice(errorAt, emptyAt);
         expect(errorBranch).toContain('<PageLoadError');
-        expect(errorBranch).toContain("'listing.owner.list.loadError.title'");
+        expect(errorBranch).toContain('`listing.owner.list.loadError.title.${listVertical}`');
         expect(errorBranch).not.toContain('EmptyState');
     });
 
     it('keeps the real empty state', () => {
-        expect(source).toContain("'listing.owner.list.empty'");
-        expect(source).toContain("'listing.owner.list.emptyCta'");
+        expect(source).toContain('`listing.owner.list.empty.${listVertical}`');
+        expect(source).toContain('`listing.owner.list.emptyCta.${listVertical}`');
     });
 });
 

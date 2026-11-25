@@ -84,7 +84,12 @@ export interface RepeaterProps<T> {
     /** Whether a row can be added right now. @default true */
     readonly canAdd?: boolean;
     /** Empty state shown instead of the list when there are no rows. */
-    readonly empty?: { readonly title: ReactNode; readonly description?: ReactNode };
+    readonly empty?: {
+        readonly title: ReactNode;
+        readonly description?: ReactNode;
+        /** Decorative icon (an `@repo/icons` element with `aria-hidden`). */
+        readonly icon?: ReactNode;
+    };
     /** Disables every built-in action (while saving, for example). */
     readonly disabled?: boolean;
     /** Help anchor (`data-help`). */
@@ -144,6 +149,7 @@ export function Repeater<T>({
             {items.length === 0 && empty ? (
                 <EmptyState
                     variant="compact"
+                    icon={empty.icon}
                     title={empty.title}
                     description={empty.description}
                 />

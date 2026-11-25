@@ -129,7 +129,7 @@
         "conversationBlocked": "Conversation blocked.",
         "conversationClosed": "Conversation closed.",
         "messageSent": "Your message was sent successfully.",
-        "verificationSent": "We sent you a verification email. Please check your inbox."
+        "verificationSent": "We sent you a verification email. Please check your inbox. Your message reaches the host only after you confirm your email."
     },
     "senderLabels": {
         "guest": "Guest",

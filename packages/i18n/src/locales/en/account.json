@@ -159,7 +159,7 @@
         "favorites": "Favorites",
         "searchHistory": "Search history",
         "alerts": "Price alerts",
-        "exclusiveDeals": "Exclusive deals",
+        "exclusiveDeals": "Promotions",
         "reviews": "My reviews",
         "hostDashboard": "Host dashboard",
         "properties": "My accommodations",
@@ -393,6 +393,10 @@
         "changeInPreferences": "Change in Preferences",
         "searchHistory": {
             "planFallback": "Higher plan"
+        },
+        "vipPromotionsDigest": {
+            "label": "Get the weekly promotions summary",
+            "description": "An email on Mondays with the week's new promotions. If there were none, we don't write."
         }
     },
     "aiAssistants": {
@@ -664,10 +668,11 @@
         "trialSummary": {
             "title": "Your free {{vertical}} trial",
             "endedTitle": "Your free {{vertical}} trial has ended",
-            "endedConverted": "Your trial ended and you now have your plan.",
-            "endedExpired": "Your trial ended on {{end}}.",
+            "endedConverted": "You now have your plan.",
+            "endedExpired": "End date: {{end}}.",
             "activePlanMessage": "When your trial ends, your listing will no longer be visible. Choose a plan to keep it published.",
-            "endedPlanMessage": "Your trial has ended. Choose a plan to publish again.",
+            "endedPlanMessage": "Choose a plan to publish again.",
+            "endedPlanMessageTourist": "Choose a plan to keep enjoying your benefits.",
             "choosePlan": "Choose your plan",
             "vertical": {
                 "accommodation": "accommodation",
@@ -762,7 +767,7 @@
                 "confirmCheckout": "If authorization is needed, you'll go to Mercado Pago checkout; your current plan continues until you authorize.",
                 "confirmScheduled": "If the change is scheduled, you'll see the exact date when the new plan starts.",
                 "payerEmailLabel": "Payer email on Mercado Pago",
-                "payerEmailHint": "It is the email you will pay with on Mercado Pago. You declare it; the provider does not confirm it.",
+                "payerEmailHint": "This is the email of your Mercado Pago account. If you pay with a different account, change it here: if it does not match, the payment is rejected.",
                 "payerEmailInvalid": "Enter a valid payer email.",
                 "confirm": "Confirm change",
                 "back": "Back",
@@ -822,7 +827,8 @@
                 "venue": "Food & nightlife"
             },
             "price": "{{amount}} {{cycle}}",
-            "nextCharge": "Next charge: {{date}}, for {{amount}}."
+            "nextCharge": "Next charge: {{date}}, for {{amount}}.",
+            "emptyDescription": "Pick a plan to publish and manage your listings."
         },
         "cancel": {
             "open": "Cancel subscription",
@@ -1083,7 +1089,7 @@
                 "newsletterDesc": "Manage your newsletter subscription",
                 "whatsNew": "Hospeda updates",
                 "whatsNewDesc": "Platform updates and announcements",
-                "myProperties": "My properties",
+                "myProperties": "My accommodations",
                 "myPropertiesDesc": "Manage your published accommodations",
                 "hostDashboard": "Host dashboard",
                 "hostDashboardDesc": "Summary of your activity as a host",
@@ -1127,7 +1133,7 @@
                 "pendingSubscriptionsPart_one": "{{count}} pending",
                 "pendingSubscriptionsPart_other": "{{count}} pending",
                 "subscriptionsSummary": "{{active}} · {{pending}}",
-                "properties": "My properties",
+                "properties": "My accommodations",
                 "propertiesDesc": "Published accommodations",
                 "messages": "Unread messages",
                 "messagesDesc": "Guest inquiries",
@@ -1210,10 +1216,6 @@
         "alerts": {
             "title": "Price alerts",
             "description": "Manage your price-drop alerts on Hospeda"
-        },
-        "exclusiveDeals": {
-            "title": "Exclusive deals",
-            "description": "Discover exclusive offers and discounts for your plan on Hospeda"
         },
         "recommendations": {
             "title": "Suggestions for you",
@@ -1490,31 +1492,6 @@
         "deleteConfirmTitle": "Delete this alert?",
         "deleteConfirmBody": "You will stop getting price-drop notices for {{name}}.",
         "closedStatus": "Closed"
-    },
-    "exclusiveDeals": {
-        "lock": {
-            "description": "Get discounts and perks that hosts save for travelers on this plan."
-        },
-        "loading": "Loading exclusive deals...",
-        "errorFetch": "Could not load your exclusive deals",
-        "empty": {
-            "title": "No active deals right now",
-            "body": "Check back later for new exclusive deals for your plan."
-        },
-        "upgrade": {
-            "title": "Exclusive deals",
-            "message_one": "Exclusive deals are available on the {{plans}} plan. Upgrade your plan to access this feature.",
-            "message_other": "Exclusive deals are available on the {{plans}} plans. Upgrade your plan to access this feature.",
-            "messageNoPlans": "Exclusive deals are not included in your current plan. Upgrade your plan to access this feature.",
-            "cta": "View plans"
-        },
-        "listLabel": "Your exclusive deals",
-        "item": {
-            "vipBadge": "VIP only",
-            "viewListing": "View listing",
-            "listingUnavailable": "This listing is no longer available.",
-            "validUntil": "Valid until {{date}}"
-        }
     },
     "recommendations": {
         "loading": "Loading recommendations...",

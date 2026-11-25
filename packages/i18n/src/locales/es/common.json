@@ -308,5 +308,48 @@
         "codeLoading": "Cargando el código…",
         "codeError": "No pudimos mostrar el código acá, pero podés descargar la hoja igual.",
         "encodes": "El código lleva a: {{url}}"
+    },
+    "promotions": {
+        "sectionTitle": "Promociones",
+        "vipBadge": "VIP",
+        "badges": {
+            "promo": "Promo",
+            "vip": "VIP"
+        },
+        "lockedVipName": "Promoción solo para VIP",
+        "lockedHiddenName": "Promoción oculta",
+        "discountTypes": {
+            "percentage": "Descuento",
+            "fixed": "Descuento fijo",
+            "free_night": "Noche gratis",
+            "special_offer": "Beneficio especial"
+        },
+        "percentOff": "{{value}}% de descuento",
+        "amountOff": "{{value}} de descuento",
+        "validUntil": "Hasta el {{date}}",
+        "minNights_one": "Mínimo {{count}} noche",
+        "minNights_other": "Mínimo {{count}} noches",
+        "viewPlace": "Ver {{name}}",
+        "dialog": {
+            "title": "Promociones para turistas VIP",
+            "body_one": "Estas promociones son para turistas VIP. Con el plan gratis ves hasta {{count}} promoción que no es VIP por página.",
+            "body_other": "Estas promociones son para turistas VIP. Con el plan gratis ves hasta {{count}} promociones que no son VIP por página.",
+            "bodyNoQuota": "Estas promociones son para turistas VIP. Con el plan gratis ves solo algunas promociones que no son VIP por página.",
+            "plan": "Con el plan {{plan}} ves todas las promociones y te avisamos por correo de las nuevas.",
+            "cta": "Hacete VIP",
+            "close": "Cerrar"
+        },
+        "loadError": "No pudimos cargar las promociones.",
+        "page": {
+            "title": "Promociones",
+            "heading": "Promociones en el Litoral",
+            "description": "Descuentos y beneficios de alojamientos y lugares para comer y salir en Concepción del Uruguay y la región.",
+            "empty": "No hay promociones activas por ahora. Volvé pronto.",
+            "pageStatus": "Página {{page}} de {{total}}",
+            "previous": "Anterior",
+            "next": "Siguiente",
+            "paginationLabel": "Páginas de promociones",
+            "tagline": "Para aprovechar"
+        }
     }
 }

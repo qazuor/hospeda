@@ -53,6 +53,9 @@ const ROWS: readonly KeyRow[] = [
     ['vip_support', 'global', 'MAX', 'NONE', 'COMMERCIAL'],
     ['vip_visibility_access', 'vertical', 'MAX', 'NONE', 'COMMERCIAL'],
     ['vip_promotions_access', 'vertical', 'MAX', 'NONE', 'COMMERCIAL'],
+    // HOS-2589 D-4: may an owner publish a «Solo VIP» promotion. One key for the
+    // accommodation and venue verticals, read from the owner's own vertical.
+    ['vip_only_promotions', 'vertical', 'MAX', 'NONE', 'COMMERCIAL'],
     ['can_compare_accommodations', 'vertical', 'MAX', 'NONE', 'COMMERCIAL'],
     ['can_attach_review_photos', 'vertical', 'MAX', 'NONE', 'COMMERCIAL'],
     ['can_view_search_history', 'vertical', 'MAX', 'NONE', 'COMMERCIAL'],

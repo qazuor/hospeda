@@ -4374,6 +4374,14 @@
             "path": "/api/v1/public/owner-promotions/:id"
         },
         {
+            "method": "GET",
+            "path": "/api/v1/public/owner-promotions/listing"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/public/owner-promotions/visible"
+        },
+        {
             "method": "POST",
             "path": "/api/v1/public/partner-applications"
         },

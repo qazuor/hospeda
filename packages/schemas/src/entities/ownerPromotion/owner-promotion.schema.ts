@@ -183,7 +183,19 @@ export const OwnerPromotionObjectSchema = z.object({
      * 'plus' + 'vip' rows, 'plus' tourists see 'plus' only. Owner self-service
      * (HOS-21 D2) — set directly through create/update, not server-managed.
      */
-    touristAudience: TouristAudienceEnumSchema.default(TouristAudienceEnum.PLUS)
+    touristAudience: TouristAudienceEnumSchema.default(TouristAudienceEnum.PLUS),
+
+    /**
+     * When the promotion first became ACTIVE (HOS-2589 §7.7). Server-managed: set
+     * once by the service, never accepted in a create or update body.
+     */
+    firstActivatedAt: z.coerce.date().nullable().optional(),
+
+    /**
+     * When a «Solo VIP» promotion was paused because the owner's plan stopped
+     * granting `vip_only_promotions` (HOS-2589 D-8). Server-managed; cleared on resume.
+     */
+    vipPausedAt: z.coerce.date().nullable().optional()
 });
 
 /**
@@ -232,6 +244,8 @@ export type OwnerPromotion = z.infer<typeof OwnerPromotionObjectSchema>;
 export const OwnerPromotionCreateInputBaseSchema = OwnerPromotionObjectSchema.omit({
     id: true,
     currentRedemptions: true,
+    firstActivatedAt: true,
+    vipPausedAt: true,
     createdAt: true,
     updatedAt: true,
     deletedAt: true,

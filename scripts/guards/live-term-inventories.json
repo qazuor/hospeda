@@ -293,6 +293,13 @@
             "row": null,
             "subject": "subscription",
             "why": "HOS-2064: hides the declined signup notice when the vertical already has a live principal subscription."
+        },
+        {
+            "file": "apps/api/src/services/vip-promotions-digest.selection.ts",
+            "symbol": "readVipDigestCandidates",
+            "row": null,
+            "subject": "subscription",
+            "why": "HOS-2589 §7.7: the weekly VIP digest pre-selects users holding a live subscription title; each candidate is then confirmed VIP through the effective set (vip_promotions_access), so the live set only narrows the scan."
         }
     ],
     "grant_vivo_ancla_viva": [

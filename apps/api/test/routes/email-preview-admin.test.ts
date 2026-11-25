@@ -104,7 +104,11 @@ describe('admin email preview endpoints (HOS-2519)', () => {
             expect(parsed.entries.map((entry) => entry.key)).toEqual(
                 EMAIL_CATALOG.map((entry) => entry.key)
             );
-            expect(parsed.entries.some((entry) => !entry.wired)).toBe(true);
+            // Every entry reports its wired flag as the catalog declares it. Since HOS-2603
+            // the catalog may have no unwired entry left, so don't require one to exist.
+            expect(parsed.entries.map((entry) => entry.wired)).toEqual(
+                EMAIL_CATALOG.map((entry) => entry.wired !== false)
+            );
         });
 
         it('AC-1.3: carries the audience on every entry, 13 of them staff', async () => {

@@ -248,7 +248,7 @@ test.describe('TEST:B10:16 AC:B10:14 the addon end to end @p0 @billing @clock', 
 
         await page.goto(`${WEB_URL}/es/mi-cuenta/propiedades/`);
         const card = page
-            .getByRole('list', { name: 'Mis propiedades' })
+            .getByRole('list', { name: 'Mis alojamientos' })
             .getByRole('listitem')
             .filter({ hasText: listingName });
         await expect(card).toHaveCount(1);

@@ -18,6 +18,7 @@
  * works: only the account that rejected may reverse it (see `canUndoRejection`).
  */
 
+import { CheckCircleIcon, ReceiptIcon } from '@repo/icons';
 import { useCallback, useState } from 'react';
 import {
     Alert,
@@ -299,10 +300,17 @@ export function BenefitUsagesPanel({
                 {pending.length === 0 ? (
                     <EmptyState
                         variant="compact"
+                        icon={
+                            <CheckCircleIcon
+                                size={28}
+                                aria-hidden={true}
+                            />
+                        }
                         title={t(
                             'host-trades.usages.pending.empty',
                             'No tenés usos pendientes de confirmar.'
                         )}
+                        description={t('host-trades.usages.pending.emptyDescription')}
                     />
                 ) : (
                     <DataList
@@ -343,10 +351,17 @@ export function BenefitUsagesPanel({
                 ) : history.length === 0 ? (
                     <EmptyState
                         variant="compact"
+                        icon={
+                            <ReceiptIcon
+                                size={28}
+                                aria-hidden={true}
+                            />
+                        }
                         title={t(
                             'host-trades.usages.history.empty',
                             'Todavía no hay usos registrados.'
                         )}
+                        description={t('host-trades.usages.history.emptyDescription')}
                     />
                 ) : (
                     <DataList label={t('host-trades.usages.history.title', 'Historial')}>

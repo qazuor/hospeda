@@ -29,6 +29,12 @@ export const CONVERSATION_EMAIL_KEYS = {
     tokenExpiringDay25: 'conversation.token-expiring-day25'
 } as const satisfies Readonly<Record<string, EmailCatalogKey>>;
 
+/** Catalog keys of the newsletter double opt-in emails (HOS-2603). */
+export const NEWSLETTER_EMAIL_KEYS = {
+    verify: 'newsletter.verify',
+    welcome: 'newsletter.welcome'
+} as const satisfies Readonly<Record<string, EmailCatalogKey>>;
+
 /** Email catalog key of each conversation token reminder, by reminder type. */
 export const TOKEN_REMINDER_TEMPLATE_KEYS = {
     day15: CONVERSATION_EMAIL_KEYS.tokenExpiringDay15,

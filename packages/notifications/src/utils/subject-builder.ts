@@ -121,7 +121,10 @@ const SUBJECT_PATTERNS: Record<NotificationType, string> = {
     [NotificationType.AI_QUESTIONS_WEEKLY_DIGEST]: '{digestSubject}',
     // HOS-2192: localised in the template; the payload carries the built subject.
     [NotificationType.LISTING_LOCATION_EXCEPTION_APPROVED]: '{decisionSubject}',
-    [NotificationType.LISTING_LOCATION_EXCEPTION_REJECTED]: '{decisionSubject}'
+    [NotificationType.LISTING_LOCATION_EXCEPTION_REJECTED]: '{decisionSubject}',
+    // HOS-2589: localised in the template; the payload carries the built subject.
+    [NotificationType.VIP_PROMOTIONS_WEEKLY_DIGEST]: '{digestSubject}',
+    [NotificationType.VIP_PROMOTIONS_PAUSED]: '{pausedSubject}'
 };
 
 /**

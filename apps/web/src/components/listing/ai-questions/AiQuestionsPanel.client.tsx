@@ -22,6 +22,7 @@
  * @module components/listing/ai-questions/AiQuestionsPanel
  */
 
+import { ChatIcon } from '@repo/icons';
 import type { AiChatEntityType } from '@repo/schemas';
 import type { JSX, ReactNode } from 'react';
 import { Alert } from '@/components/account/ui/Alert';
@@ -174,6 +175,12 @@ export function AiQuestionsPanel({
                 {overview(
                     <EmptyState
                         variant="compact"
+                        icon={
+                            <ChatIcon
+                                size={28}
+                                aria-hidden={true}
+                            />
+                        }
                         title={t(
                             'host.properties.editor.aiQuestions.notOwner',
                             'Solo el dueño de la ficha puede ver las preguntas que le hicieron al asistente.'
@@ -210,6 +217,17 @@ export function AiQuestionsPanel({
                 {overview(
                     <EmptyState
                         variant="compact"
+                        icon={
+                            <ChatIcon
+                                size={28}
+                                aria-hidden={true}
+                            />
+                        }
+                        description={
+                            hasFilter
+                                ? undefined
+                                : t('host.properties.editor.aiQuestions.emptyDescription')
+                        }
                         title={t(
                             hasFilter
                                 ? 'host.properties.editor.aiQuestions.emptyFiltered'

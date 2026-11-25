@@ -90,8 +90,9 @@ describe('HELP_INDEX', () => {
     });
 
     it('holds exactly the 16 migrated topic ids plus the new ones, sorted by id', () => {
-        // Articles written after the migration (HOS-2410 PR-5: help-center).
-        const added = ['help-center'];
+        // Articles written after the migration (HOS-2410 PR-5: help-center;
+        // HOS-2589: owner-promotions).
+        const added = ['help-center', 'owner-promotions'];
         expect(HELP_ARTICLES.map((article) => article.id)).toEqual(
             [...Object.keys(MIGRATION), ...added].sort()
         );

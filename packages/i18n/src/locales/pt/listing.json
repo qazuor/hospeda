@@ -26,15 +26,27 @@
         },
         "list": {
             "title": "Meu comércio",
-            "subtitle": "Gerencie as informações dos seus comércios publicados.",
-            "empty": "Você ainda não tem comércios. Crie sua primeira ficha para começar.",
+            "subtitle": {
+                "venue": "Gerencie as informações dos seus comércios publicados.",
+                "experience": "Gerencie as informações das suas experiências publicadas."
+            },
+            "empty": {
+                "venue": "Você ainda não tem comércios. Crie sua primeira ficha para começar.",
+                "experience": "Você ainda não tem experiências. Crie sua primeira ficha para começar."
+            },
             "edit": "Editar",
             "badge": {
                 "venue": "Comer e sair",
                 "experience": "Experiência"
             },
-            "emptyCta": "Criar meu primeiro comércio",
-            "createCta": "+ Novo comércio",
+            "emptyCta": {
+                "venue": "Criar meu primeiro comércio",
+                "experience": "Criar minha primeira experiência"
+            },
+            "createCta": {
+                "venue": "+ Novo comércio",
+                "experience": "+ Nova experiência"
+            },
             "state": {
                 "published": "Publicado",
                 "viewPublic": "Ver ficha pública",
@@ -108,7 +120,10 @@
                 }
             },
             "loadError": {
-                "title": "Não conseguimos carregar seus comércios",
+                "title": {
+                    "venue": "Não conseguimos carregar seus comércios",
+                    "experience": "Não conseguimos carregar suas experiências"
+                },
                 "body": "Houve um problema ao ler suas fichas. Elas continuam aí: tente novamente em instantes.",
                 "retry": "Tentar novamente"
             },
@@ -140,7 +155,10 @@
                 "basicInfo": "Identidade e descrição",
                 "practicalInfo": "O prático do passeio",
                 "price": "Quanto custa",
-                "amenities": "O que seu negócio oferece"
+                "amenities": {
+                    "venue": "O que seu negócio oferece",
+                    "experience": "O que sua experiência oferece"
+                }
             },
             "sections": {
                 "type": "Categoria",
@@ -171,7 +189,10 @@
                 "features": "Características",
                 "translations": "Traduções",
                 "faqs": "Perguntas frequentes",
-                "name": "Nome do comércio",
+                "name": {
+                    "venue": "Nome do comércio",
+                    "experience": "Nome da experiência"
+                },
                 "destination": "Cidade / Destino",
                 "description": "Descrição",
                 "destinationLoadError": "Não conseguimos carregar a lista de cidades / destinos. Recarregue a página para tentar novamente.",
@@ -247,7 +268,10 @@
             },
             "translationPanel": {
                 "sectionTitle": "Traduções",
-                "sectionDescription": "Edite as traduções dos campos principais do seu estabelecimento nos três idiomas disponíveis.",
+                "sectionDescription": {
+                    "venue": "Edite as traduções dos campos principais do seu estabelecimento nos três idiomas disponíveis.",
+                    "experience": "Edite as traduções dos campos principais da sua experiência nos três idiomas disponíveis."
+                },
                 "fieldName": "Nome",
                 "fieldSummary": "Resumo",
                 "fieldDescription": "Descrição",
@@ -297,7 +321,8 @@
                 "visibleOnListingLabel": "Visível na página do local",
                 "usableByAiLabel": "Utilizável pela IA",
                 "notVisibleBadge": "Não visível na página",
-                "notAiUsableBadge": "Não utilizável pela IA"
+                "notAiUsableBadge": "Não utilizável pela IA",
+                "emptyDescription": "Responder às dúvidas mais comuns ajuda seus hóspedes e o assistente do anúncio."
             },
             "noChanges": "Não há alterações para salvar",
             "success": "Alterações salvas.",

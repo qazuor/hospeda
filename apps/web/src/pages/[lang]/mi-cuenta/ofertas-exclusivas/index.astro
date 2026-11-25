@@ -1,67 +1,22 @@
 ---
 /**
  * @file mi-cuenta/ofertas-exclusivas/index.astro
- * @description Exclusive-deals listing page (HOS-21 T-011) — shows the
- * authenticated tourist's plan-scoped owner promotions (plus-tier deals,
- * additive vip-only deals for tourist-vip).
+ * @description Permanent redirect to the public `/{lang}/promociones/` page
+ * (HOS-2589 D-2, AC-32). The exclusive-deals list is gone: every tourist now sees
+ * promotions there under the free / VIP model. The locale and the query string are
+ * preserved.
  *
- * Auth protection: middleware redirects unauthenticated visitors. The in-page
- * guard is a safety net for SSR edge cases (mirrors `alertas/index.astro`).
- *
- * The page is a kit `PageHeader` plus the `ExclusiveDealsList` island, which
- * owns the list, the plan lock and the VIP-only badge — this page is a thin SSR
- * shell that only resolves the authenticated user and hands off `apiUrl` +
- * `userId` (HOS-2507).
- *
- * @route    /[lang]/mi-cuenta/ofertas-exclusivas/
- * @rendering SSR (prerender = false — requires authenticated user)
+ * @route     /[lang]/mi-cuenta/ofertas-exclusivas/
+ * @rendering SSR (prerender = false) — emits a 301 and no body.
  */
+import { buildPricingRedirectTarget } from '@/lib/pricing-redirect';
 
-import type { SupportedLocale } from '@/lib/i18n';
-import { createTranslations } from '@/lib/i18n';
-import { buildUrl } from '@/lib/urls';
-import { buildLoginRedirect } from '@/lib/middleware-helpers';
-import { getApiUrl } from '@/lib/env';
-import { EntitlementKeyEnum } from '@repo/schemas';
-import { fetchPublicPlans, planNamesWithEntitlement } from '@/lib/billing/fetch-plans';
-import AccountLayout from '@/layouts/AccountLayout.astro';
-import PageHelpLink from '@/components/account/help/PageHelpLink.astro';
-import { PageHeader } from '@/components/account/ui';
-import { ExclusiveDealsList } from '@/components/account/ExclusiveDealsList.client';
+export const prerender = false;
 
-const locale = Astro.locals.locale as SupportedLocale;
-const user = Astro.locals.user;
+const locale = Astro.locals.locale;
 
-// Auth guard — middleware should have redirected already, this is the safety net.
-if (!user) {
-    return Astro.redirect(buildLoginRedirect({ locale, currentUrl: Astro.url.pathname + Astro.url.search }));
-}
-
-const { t } = createTranslations(locale);
-const title = t('account.pages.exclusiveDeals.title', 'Ofertas exclusivas');
-const description = t(
-    'account.pages.exclusiveDeals.description',
-    'Descubrí ofertas y descuentos exclusivos para tu plan en Hospeda'
+return Astro.redirect(
+    buildPricingRedirectTarget({ locale, path: 'promociones', search: Astro.url.search }),
+    301
 );
-const apiUrl = getApiUrl();
-// HOS-2554: the plan gate names the catalog plans that carry exclusive deals. The catalog
-// reader is server-only, so the names are read here and handed to the island.
-const gatePlanNames = planNamesWithEntitlement({
-    result: await fetchPublicPlans({ vertical: 'tourist' }),
-    entitlement: EntitlementKeyEnum.EXCLUSIVE_DEALS
-});
 ---
-
-<AccountLayout locale={locale} title={title} description={description} activeSection="ofertas-exclusivas">
-    <PageHeader title={title} description={description} locale={locale}>
-        <PageHelpLink slot="help" locale={locale} />
-    </PageHeader>
-
-    <ExclusiveDealsList
-        client:load
-        locale={locale}
-        apiUrl={apiUrl}
-        userId={user.id}
-        gatePlanNames={gatePlanNames}
-    />
-</AccountLayout>

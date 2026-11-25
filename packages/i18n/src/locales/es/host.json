@@ -195,7 +195,7 @@
     },
     "properties": {
         "list": {
-            "title": "Mis propiedades",
+            "title": "Mis alojamientos",
             "subtitle": "Gestioná tus publicaciones",
             "publishAnother": "Publicar otra",
             "needsPlanBanner": {
@@ -480,7 +480,8 @@
                     "body3": "Destildá \"Usable por la IA\" para contenido que preferís que se muestre tal cual, sin que el asistente lo parafrasee — texto legal o condiciones exactas de cancelación, por ejemplo.",
                     "body4": "Importante: una pregunta no visible en la ficha pero usable por la IA no es privada. El asistente se la puede decir a cualquiera que pregunte por chat; solo no aparece publicada en la página."
                 },
-                "rowFallback": "Pregunta {{n}}"
+                "rowFallback": "Pregunta {{n}}",
+                "emptyDescription": "Responder las dudas más comunes ayuda a tus huéspedes y al asistente de la ficha."
             },
             "action": {
                 "save": "Guardar",
@@ -714,7 +715,7 @@
                 "management": "Gestión"
             },
             "breadcrumb": {
-                "properties": "Mis propiedades"
+                "properties": "Mis alojamientos"
             },
             "hub": {
                 "title": "Editar propiedad",
@@ -780,7 +781,8 @@
                 "aiDraftNotEligible": "Esta pregunta ya tiene una respuesta del asistente.",
                 "unansweredCountLabel": "{{count}} sin responder",
                 "dismissedCountLabel": "{{count}} descartadas",
-                "dismissedToggle": "Ver las descartadas"
+                "dismissedToggle": "Ver las descartadas",
+                "emptyDescription": "Cuando un visitante use el asistente de tu ficha, sus preguntas van a aparecer acá."
             },
             "catalog": {
                 "searchLabel": "Buscar en todo el catálogo",
@@ -903,11 +905,7 @@
             "accommodationId": "Propiedad",
             "accommodationIdAll": "Todas mis propiedades",
             "accommodationIdLoading": "Cargando propiedades...",
-            "accommodationIdHint": "Elegí una propiedad o dejá 'Todas mis propiedades' para aplicar la promoción a todas.",
-            "vipOnly": "Exclusiva para plan VIP",
-            "vipOnlyHint_one": "Si la activás, esta promoción solo la van a ver los turistas con plan VIP. Si la dejás apagada, la ven los turistas con el plan {{plans}}.",
-            "vipOnlyHint_other": "Si la activás, esta promoción solo la van a ver los turistas con plan VIP. Si la dejás apagada, la ven los turistas con los planes {{plans}}.",
-            "vipOnlyHintNoPlans": "Si la activás, esta promoción solo la van a ver los turistas con plan VIP. Si la dejás apagada, la ven todos los turistas con acceso a las ofertas exclusivas."
+            "accommodationIdHint": "Elegí una propiedad o dejá 'Todas mis propiedades' para aplicar la promoción a todas."
         },
         "discountTypes": {
             "percentage": "Porcentaje",
@@ -972,6 +970,23 @@
             "loadFailedHint": "Volvé a la lista e intentá de nuevo.",
             "backToList": "Volver a mis promociones",
             "pauseNamed": "Pausar «{{title}}»"
+        },
+        "audience": {
+            "legend": "¿Quién ve esta promoción?",
+            "plusLabel": "Para todos",
+            "plusDescription_one": "Todos los turistas VIP la ven. Los turistas gratis ven hasta {{count}} promoción por página, elegida al azar, así que a veces la ven y a veces no.",
+            "plusDescription_other": "Todos los turistas VIP la ven. Los turistas gratis ven hasta {{count}} promociones por página, elegidas al azar, así que a veces la ven y a veces no.",
+            "plusDescriptionNoQuota": "Todos los turistas VIP la ven. Los turistas gratis ven algunas promociones por página, elegidas al azar, así que a veces la ven y a veces no.",
+            "vipLabel": "Solo VIP",
+            "vipDescription": "Solo la ven los turistas VIP, y les avisamos por correo. Los turistas gratis la ven borrosa, con una invitación a hacerse VIP.",
+            "vipDescriptionPlan": "Solo la ven los turistas con el plan {{plan}}, y les avisamos por correo. Los turistas gratis la ven borrosa, con una invitación a hacerse VIP.",
+            "vipLocked": "Disponible en planes superiores",
+            "vipLockedLink": "Ver planes"
+        },
+        "vipPaused": {
+            "title": "Pausamos tus promociones «Solo VIP»",
+            "body": "Tu plan ya no incluye «Solo VIP», así que estas promociones quedaron pausadas: {{titles}}. Podés reanudarlas como «Para todos» o cambiar de plan.",
+            "badge": "Pausada: tu plan no incluye «Solo VIP»"
         }
     },
     "dashboard": {

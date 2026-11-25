@@ -3756,9 +3756,6 @@
             "min": "El título debe tener al menos {{min}} caracteres",
             "required": "El título es obligatorio"
         },
-        "touristAudience": {
-            "venuePlusOnly": "As promoções de um local só aceitam o público geral"
-        },
         "validFrom": {
             "required": "La fecha de inicio es obligatoria"
         },

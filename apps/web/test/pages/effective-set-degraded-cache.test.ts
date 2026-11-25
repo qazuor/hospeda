@@ -30,14 +30,14 @@ describe('pages reading the effective-set-gated public payload (HOS-2009)', () =
     });
 });
 
-describe('venue detail optional promotion read', () => {
-    it('marks failed or rejected promotion reads degraded before rendering an empty list', () => {
+describe('venue detail promotions (HOS-2589)', () => {
+    it('reads no promotion on the server: the per-visitor island does, so nothing degrades the cache', () => {
         const src = readFileSync(
             resolve(__dirname, '../../src/pages/[lang]/comer-y-salir/[slug].astro'),
             'utf8'
         );
 
-        expect(src).toContain('markResponseDegraded({ locals: Astro.locals })');
-        expect(src).toMatch(/if \(promotionsResult\?\.ok\)[\s\S]*?else \{\s*markResponseDegraded/);
+        expect(src).not.toContain('listPromotions');
+        expect(src).not.toContain('promotionsResult');
     });
 });

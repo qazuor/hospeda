@@ -276,7 +276,24 @@ export enum NotificationType {
      * HOS-2192 — an admin rejected the owner's request for a location exception.
      * Carries the admin's reason. TRANSACTIONAL, same as the approval.
      */
-    LISTING_LOCATION_EXCEPTION_REJECTED = 'listing_location_exception_rejected'
+    LISTING_LOCATION_EXCEPTION_REJECTED = 'listing_location_exception_rejected',
+
+    /**
+     * HOS-2589 — weekly email to a VIP tourist with the promotions first activated
+     * in the previous week.
+     *
+     * REMINDER: opt-out-able. The cron also honours `settings.vipPromotionsDigest
+     * === false` and never sends on a week without new promotions.
+     */
+    VIP_PROMOTIONS_WEEKLY_DIGEST = 'vip_promotions_weekly_digest',
+
+    /**
+     * HOS-2589 D-8 — an owner's «Solo VIP» promotions were paused because their
+     * plan no longer grants `vip_only_promotions`.
+     *
+     * TRANSACTIONAL: it explains a change made to the owner's own content.
+     */
+    VIP_PROMOTIONS_PAUSED = 'vip_promotions_paused'
 }
 
 /**
@@ -1045,6 +1062,54 @@ export interface AiQuestionsWeeklyDigestPayload extends BaseNotificationPayload 
     readonly preferencesUrl: string;
 }
 
+/** One promotion inside a {@link VipPromotionsWeeklyDigestPayload}. */
+export interface VipPromotionsDigestItemPayload {
+    readonly title: string;
+    /** The benefit, already localised. */
+    readonly benefit: string;
+    readonly placeName: string;
+    /** Absolute link to the place's public page. */
+    readonly placeUrl: string;
+    /** `true` for a «Solo VIP» promotion. */
+    readonly vipOnly: boolean;
+    /** Localised «desde …» for a future start, else `null`. */
+    readonly startsLabel: string | null;
+}
+
+/**
+ * Payload for the VIP_PROMOTIONS_WEEKLY_DIGEST notification (HOS-2589 §7.7).
+ * Localised inside the template; the payload carries the locale and the subject.
+ */
+export interface VipPromotionsWeeklyDigestPayload extends BaseNotificationPayload {
+    readonly type: NotificationType.VIP_PROMOTIONS_WEEKLY_DIGEST;
+    readonly locale: 'es' | 'en' | 'pt';
+    /** Localised subject, built by `buildVipPromotionsDigestSubject`. */
+    readonly digestSubject: string;
+    /** Up to ten promotions, never empty. */
+    readonly promotions: readonly VipPromotionsDigestItemPayload[];
+    /** New promotions of the week beyond the listed ones. */
+    readonly moreCount: number;
+    /** Absolute link to `/{lang}/promociones/`. */
+    readonly promotionsUrl: string;
+    /** Absolute link to the account preferences page (opt-out). */
+    readonly preferencesUrl: string;
+}
+
+/**
+ * Payload for the VIP_PROMOTIONS_PAUSED notification (HOS-2589 D-8, AC-36). Names
+ * the owner's own promotions only; never tourist data.
+ */
+export interface VipPromotionsPausedPayload extends BaseNotificationPayload {
+    readonly type: NotificationType.VIP_PROMOTIONS_PAUSED;
+    readonly locale: 'es' | 'en' | 'pt';
+    /** Localised subject, built by `buildVipPromotionsPausedSubject`. */
+    readonly pausedSubject: string;
+    /** Titles of the paused promotions, never empty. */
+    readonly promotionTitles: readonly string[];
+    /** Absolute link to the owner's promotions page. */
+    readonly promotionsUrl: string;
+}
+
 /**
  * Payload of the two location-exception decision notifications (HOS-2192):
  * LISTING_LOCATION_EXCEPTION_APPROVED and LISTING_LOCATION_EXCEPTION_REJECTED.
@@ -1235,4 +1300,6 @@ export type NotificationPayload =
     | AccommodationCalendarFeedBrokenPayload
     | PlanPriceChangeNoticePayload
     | AiQuestionsWeeklyDigestPayload
-    | ListingLocationExceptionDecisionPayload;
+    | ListingLocationExceptionDecisionPayload
+    | VipPromotionsWeeklyDigestPayload
+    | VipPromotionsPausedPayload;

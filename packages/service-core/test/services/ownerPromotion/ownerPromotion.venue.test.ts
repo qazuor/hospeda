@@ -331,8 +331,28 @@ describe('VenuePromotionService', () => {
             request: { lifecycleState: LifecycleStatusEnum.ARCHIVED }
         });
 
-        expect(promotions.update).toHaveBeenCalledWith(actor, PROMOTION, {
-            lifecycleState: LifecycleStatusEnum.ARCHIVED
+        expect(promotions.update).toHaveBeenCalledWith(
+            actor,
+            PROMOTION,
+            { lifecycleState: LifecycleStatusEnum.ARCHIVED },
+            { hookState: { vipOnlyVerified: false } }
+        );
+    });
+
+    it('HOS-2589: forwards the route-verified vip_only_promotions check to the update', async () => {
+        await service.update({
+            actor,
+            venueId: VENUE,
+            promotionId: PROMOTION,
+            request: { lifecycleState: LifecycleStatusEnum.ACTIVE },
+            vipOnlyVerified: true
         });
+
+        expect(promotions.update).toHaveBeenCalledWith(
+            actor,
+            PROMOTION,
+            { lifecycleState: LifecycleStatusEnum.ACTIVE },
+            { hookState: { vipOnlyVerified: true } }
+        );
     });
 });

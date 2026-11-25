@@ -13,7 +13,9 @@
  * 4. 403 `ENTITLEMENT_REQUIRED` without `create_promotions` in the venue vertical, or
  *    without coverage.
  * 5. 403 `LIMIT_REACHED` when the owner holds `max_active_promotions` venue promotions.
- * 6. 400 `VALIDATION_ERROR` when a `special_offer` text is refused by moderation.
+ * 6. 403 `ENTITLEMENT_REQUIRED` (`vip_only_promotions`) for a «Solo VIP» promotion
+ *    when the owner's plan lacks the key (HOS-2589 D-4).
+ * 7. 400 `VALIDATION_ERROR` when a `special_offer` text is refused by moderation.
  *
  * @module routes/venue/protected/createPromotion
  */
@@ -31,6 +33,7 @@ import { z } from 'zod';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
+import { enforceVipOnlyPromotionGate } from '../../owner-promotion/vip-only-gate';
 import { PROMOTIONS_SECTION_ID, promotionCreateLimit } from './promotion-access';
 
 const venuePromotionService = new VenuePromotionService({ logger: apiLogger });
@@ -41,8 +44,11 @@ export async function handleCreateVenuePromotion(
     params: Record<string, unknown>,
     body: Record<string, unknown>
 ) {
+    const actor = getActorFromContext(ctx);
+    // HOS-2589 D-4: «Solo VIP» needs `vip_only_promotions` in the venue vertical.
+    await enforceVipOnlyPromotionGate({ userId: actor.id, vertical: VerticalEnum.VENUE, body });
     const result = await venuePromotionService.create({
-        actor: getActorFromContext(ctx),
+        actor,
         venueId: params.id as string,
         // The route validated the body against `VenuePromotionCreateRequestSchema`.
         request: body as never
@@ -57,7 +63,7 @@ export const protectedCreateVenuePromotionRoute = createProtectedRoute({
     path: '/{id}/promotions',
     summary: 'Create a promotion of a venue listing',
     description:
-        'Creates a promotion that hangs from the venue: a percentage, a fixed amount, or a free-text special offer (moderated). Owner-only. Requires the create_promotions entitlement and room under max_active_promotions in the venue vertical. The owner, the target and the audience are fixed by the route.',
+        'Creates a promotion that hangs from the venue: a percentage, a fixed amount, or a free-text special offer (moderated). Owner-only. Requires the create_promotions entitlement and room under max_active_promotions in the venue vertical. The owner and the target are fixed by the route; a «Solo VIP» audience also needs vip_only_promotions.',
     requiredPermissions: [PermissionEnum.OWNER_PROMOTION_CREATE],
     listingAccess: {
         operation: 'EDIT',

@@ -10,3 +10,4 @@ export * from './owner-promotion.http.schema.js';
 export * from './owner-promotion.query.schema.js';
 export * from './owner-promotion.schema.js';
 export * from './owner-promotion.venue.schema.js';
+export * from './owner-promotion.visibility.schema.js';

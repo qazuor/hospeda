@@ -1,14 +1,13 @@
 /**
  * @file plan-gate-names.hos2554.test.tsx
- * @description HOS-2554: the plan gates of exclusive deals, recommendations and search
- * history (the last two a kit LockedState since HOS-2501) name the plans the SSR page read from the catalog, never a hardcoded "Plus y VIP".
- * A regression to a literal fails every surface, and an empty catalog read must name no plan
- * at all (HOS-2599: nor leave an empty «Está incluida en:» line).
+ * @description HOS-2554: the plan gates of recommendations and search history (a kit
+ * LockedState since HOS-2501; the exclusive-deals list was removed by HOS-2589) name the plans the SSR page read from the catalog, never a hardcoded "Plus y VIP".
+ * Each surface is fed a DIFFERENT plan name so a regression to a literal fails all three,
+ * and an empty catalog read must name no plan at all.
  */
 
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ExclusiveDealsList } from '../../../src/components/account/ExclusiveDealsList.client';
 import { RecommendationsFeed } from '../../../src/components/account/RecommendationsFeed.client';
 import { SearchHistoryList } from '../../../src/components/account/SearchHistoryList.client';
 
@@ -49,24 +48,8 @@ function mockEntitlementRequired(): void {
     } as Response);
 }
 
-/**
- * Surfaces that became a kit LockedState (HOS-2501; exclusive deals since HOS-2599): the
- * catalog plan names are its pills.
- */
+/** Surfaces that became a kit LockedState (HOS-2501): the catalog plan names are its pills. */
 const LOCKED_SURFACES = [
-    {
-        label: 'exclusive deals',
-        feature: 'Ofertas exclusivas',
-        renderIt: (names?: readonly string[]) =>
-            render(
-                <ExclusiveDealsList
-                    locale="es"
-                    apiUrl={API_URL}
-                    userId="u1"
-                    gatePlanNames={names}
-                />
-            )
-    },
     {
         label: 'search history',
         feature: 'Historial de búsquedas',
@@ -120,41 +103,4 @@ describe('LockedState plan gates (HOS-2554, HOS-2501)', () => {
             });
         });
     }
-});
-
-describe('exclusive deals lock (HOS-2599)', () => {
-    beforeEach(() => {
-        mockEntitlementRequired();
-    });
-
-    it('says «Está incluida en:» followed by the catalog plan', async () => {
-        render(
-            <ExclusiveDealsList
-                locale="es"
-                apiUrl={API_URL}
-                userId="u1"
-                gatePlanNames={['Explorador']}
-            />
-        );
-        const feature = await screen.findByRole('heading', { name: 'Ofertas exclusivas' });
-        const state = feature.closest('[data-reason]') as HTMLElement;
-        expect(state).toHaveTextContent(/Está incluida en:\s*Explorador/);
-    });
-
-    it('drops the «Está incluida en:» line and says the plan lacks it without catalog names', async () => {
-        render(
-            <ExclusiveDealsList
-                locale="es"
-                apiUrl={API_URL}
-                userId="u1"
-                gatePlanNames={[]}
-            />
-        );
-        await waitFor(() => {
-            expect(
-                screen.getByText(/ofertas exclusivas no están incluidas en tu plan actual/)
-            ).toBeInTheDocument();
-        });
-        expect(document.body.textContent).not.toContain('Está incluida en:');
-    });
 });

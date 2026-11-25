@@ -52,7 +52,6 @@
         "opensAt": "Abre a las {{time}}",
         "featured": "Destacado",
         "promo": "Promo",
-        "promoVip": "Promo VIP",
         "promoNow": "Ahora"
     },
     "detail": {

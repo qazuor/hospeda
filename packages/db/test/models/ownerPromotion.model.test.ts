@@ -52,6 +52,7 @@ describe('OwnerPromotionModel', () => {
                                 {
                                     entityId: 'venue-plus',
                                     hasPlus: true,
+                                    hasVip: false,
                                     windowWeekdays: [4, 5],
                                     windowStart: '18:00:00',
                                     windowEnd: '20:00:00'
@@ -59,6 +60,7 @@ describe('OwnerPromotionModel', () => {
                                 {
                                     entityId: 'venue-vip',
                                     hasPlus: false,
+                                    hasVip: true,
                                     windowWeekdays: null,
                                     windowStart: null,
                                     windowEnd: null
@@ -77,12 +79,16 @@ describe('OwnerPromotionModel', () => {
             expect(badges.get('venue-plus')).toEqual({
                 hasPromo: true,
                 vipOnly: false,
+                hasFreePromotion: true,
+                hasVipPromotion: false,
                 hasUnscheduled: false,
                 windows: [{ weekdays: [4, 5], startTime: '18:00', endTime: '20:00' }]
             });
             expect(badges.get('venue-vip')).toEqual({
                 hasPromo: true,
                 vipOnly: true,
+                hasFreePromotion: false,
+                hasVipPromotion: true,
                 hasUnscheduled: true,
                 windows: []
             });

@@ -94,7 +94,6 @@ import type { AstroComponentFactory } from 'astro/runtime/server/index.js';
 import { buildEntityCacheTags, CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
 import {
     applyCacheHeaders,
-    markResponseDegraded,
     markResponseDegradedFromApi
 } from '@/lib/cache/response-cache';
 export const prerender = false;
@@ -161,23 +160,16 @@ applyCacheHeaders({
 markResponseDegradedFromApi({ locals: Astro.locals, results: [result] });
 
 // --- Parallel secondary fetches ---
-const [reviewsSettled, faqsSettled, promotionsSettled] = await Promise.allSettled([
+// HOS-2589: promotions are per reader; the cached page reads none (the island does).
+const [reviewsSettled, faqsSettled] = await Promise.allSettled([
     venueApi.getReviews({ id: venue.id, page: 1, pageSize: 5 }),
-    venueApi.getFaqs({ id: venue.id }),
-    venueApi.listPromotions({ venueId: venue.id })
+    venueApi.getFaqs({ id: venue.id })
 ]);
 
 const reviewsResult =
     reviewsSettled.status === 'fulfilled' ? reviewsSettled.value : null;
 const faqsResult =
     faqsSettled.status === 'fulfilled' ? faqsSettled.value : null;
-const promotionsResult = promotionsSettled.status === 'fulfilled' ? promotionsSettled.value : null;
-const promotions = promotionsResult?.ok ? promotionsResult.data.items : [];
-if (promotionsResult?.ok) {
-    markResponseDegradedFromApi({ locals: Astro.locals, results: [promotionsResult] });
-} else {
-    markResponseDegraded({ locals: Astro.locals });
-}
 
 const reviews: readonly VenueReviewPublicItem[] =
     reviewsResult?.ok ? reviewsResult.data.items : [];
@@ -440,7 +432,7 @@ const venueDetailSectionBlocks: Readonly<
         // HOS-2579 D-3: the CTA sits next to the agenda it promotes, in «Lo que ofrece».
         ...(showEventsCta ? [{ Component: VenueEventsCta, props: { locale } }] : [])
     ],
-    promotions: promotions.length > 0 ? [{ Component: VenuePromotions, props: { items: promotions, locale } }] : [],
+    promotions: [{ Component: VenuePromotions, props: { venueId: venue.id, locale } }],
     faqs: faqs.length > 0 ? [{ Component: FaqAccordion, props: { faqs, lang: locale } }] : [],
     nightInfo: [
         { Component: VenueNightInfo, props: { nightInfo: venue.nightInfo, locale } }

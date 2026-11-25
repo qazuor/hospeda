@@ -9,9 +9,9 @@
 
 import { OwnerPromotionDiscountTypeEnum } from '@repo/schemas';
 import type { ChangeEvent } from 'react';
-import { Checkbox, Field, Section, Select, Textarea, TextInput } from '@/components/account/ui';
-import { resolvePromotionAudienceHint } from '@/lib/billing/plan-name-list';
+import { Field, Section, Select, Textarea, TextInput } from '@/components/account/ui';
 import type { SupportedLocale } from '@/lib/i18n';
+import { PromotionAudienceField } from './PromotionAudienceField';
 import styles from './PromotionForm.module.css';
 import {
     PROMOTION_DISCOUNT_TYPE_VALUES,
@@ -33,12 +33,18 @@ export interface PromotionFormFieldsProps {
     readonly fields: PromotionFieldValues;
     readonly errors: PromotionFieldErrors;
     readonly accommodationsLoad: AccommodationsLoad;
-    /** Catalog names of the tourist plans with exclusive deals (HOS-2544). */
-    readonly audiencePlanNames: readonly string[];
+    /** HOS-2589: X, the free quota, read from the catalog by the SSR page. */
+    readonly freeQuota: number | null;
+    /** HOS-2589: the tourist VIP plan name, read from the catalog by the SSR page. */
+    readonly vipPlanName: string | null;
+    /** HOS-2589: whether the owner's plan grants `vip_only_promotions`. */
+    readonly vipOnlyAllowed: boolean;
+    /** The owner plans page, for the locked «Solo VIP» link. */
+    readonly plansHref: string;
     readonly onFieldChange: (
         e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
     ) => void;
-    readonly onVipOnlyChange: (e: ChangeEvent<HTMLInputElement>) => void;
+    readonly onAudienceChange: (value: 'plus' | 'vip') => void;
 }
 
 /** Field id parts for one field name. */
@@ -56,9 +62,12 @@ export function PromotionFormFields({
     fields,
     errors,
     accommodationsLoad,
-    audiencePlanNames,
+    freeQuota,
+    vipPlanName,
+    vipOnlyAllowed,
+    plansHref,
     onFieldChange,
-    onVipOnlyChange
+    onAudienceChange
 }: PromotionFormFieldsProps) {
     return (
         <>
@@ -261,18 +270,17 @@ export function PromotionFormFields({
                             )}
                         </Select>
                     </Field>
-                    {/* VIP-only toggle (HOS-21 T-013) */}
-                    <Checkbox
-                        id={`${PROMOTION_FIELD_PREFIX}-vipOnly`}
-                        name="vipOnly"
-                        checked={fields.vipOnly}
-                        onChange={onVipOnlyChange}
-                        label={t('host.promotions.fields.vipOnly', 'Exclusiva para plan VIP')}
-                        description={resolvePromotionAudienceHint({
-                            locale,
-                            planNames: audiencePlanNames,
-                            t
-                        })}
+                    {/* Who sees it (HOS-2589 M-1; replaced the HOS-21 VIP-only toggle) */}
+                    <PromotionAudienceField
+                        locale={locale}
+                        t={t}
+                        name={`${PROMOTION_FIELD_PREFIX}-touristAudience`}
+                        value={fields.vipOnly ? 'vip' : 'plus'}
+                        onChange={onAudienceChange}
+                        freeQuota={freeQuota}
+                        vipPlanName={vipPlanName}
+                        vipOnlyAllowed={vipOnlyAllowed}
+                        plansHref={plansHref}
                     />
                 </div>
             </Section>

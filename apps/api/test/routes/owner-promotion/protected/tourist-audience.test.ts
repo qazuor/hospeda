@@ -17,10 +17,16 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const ACTOR_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const PROMOTION_ID = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
-const keys = ['create_promotions'];
+/** Effective-set keys of the owner; HOS-2589 tests remove `vip_only_promotions` (O2). */
+const keys: string[] = ['create_promotions', 'vip_only_promotions'];
+/** The stored promotion the routes read before an update. */
+const stored: { touristAudience: string; lifecycleState: string } = {
+    touristAudience: 'plus',
+    lifecycleState: 'DRAFT'
+};
 
 const createCaptures: Array<{ actor: unknown; data: unknown }> = [];
-const updateCaptures: Array<{ actor: unknown; id: unknown; data: unknown }> = [];
+const updateCaptures: Array<{ actor: unknown; id: unknown; data: unknown; ctx?: unknown }> = [];
 
 vi.mock('@repo/service-core', async (importOriginal) => {
     const orig = await importOriginal<typeof import('@repo/service-core')>();
@@ -88,8 +94,7 @@ vi.mock('@repo/service-core', async (importOriginal) => {
                         validUntil: null,
                         maxRedemptions: null,
                         currentRedemptions: 0,
-                        lifecycleState: 'DRAFT',
-                        touristAudience: 'plus',
+                        ...stored,
                         createdAt: new Date('2025-01-01'),
                         updatedAt: new Date('2025-01-01')
                     },
@@ -102,9 +107,10 @@ vi.mock('@repo/service-core', async (importOriginal) => {
             override async update(
                 actor: Parameters<typeof orig.OwnerPromotionService.prototype.update>[0],
                 id: Parameters<typeof orig.OwnerPromotionService.prototype.update>[1],
-                data: Parameters<typeof orig.OwnerPromotionService.prototype.update>[2]
+                data: Parameters<typeof orig.OwnerPromotionService.prototype.update>[2],
+                ctx?: Parameters<typeof orig.OwnerPromotionService.prototype.update>[3]
             ): ReturnType<typeof orig.OwnerPromotionService.prototype.update> {
-                updateCaptures.push({ actor, id, data });
+                updateCaptures.push({ actor, id, data, ctx });
                 return {
                     data: {
                         id: PROMOTION_ID,
@@ -186,6 +192,9 @@ describe('touristAudience on owner-promotion create/update (HOS-21 T-007)', () =
         app = initApp() as unknown as AppOpenAPI;
         createCaptures.length = 0;
         updateCaptures.length = 0;
+        keys.splice(0, keys.length, 'create_promotions', 'vip_only_promotions');
+        stored.touristAudience = 'plus';
+        stored.lifecycleState = 'DRAFT';
     });
 
     it('POST accepts touristAudience="vip" and forwards it to the service', async () => {
@@ -252,5 +261,103 @@ describe('touristAudience on owner-promotion create/update (HOS-21 T-007)', () =
 
         expect(res.status).toBe(200);
         expect((updateCaptures[0]?.data as Record<string, unknown>)?.ownerId).toBeUndefined();
+    });
+
+    describe('HOS-2589 «Solo VIP» needs vip_only_promotions (AC-26, AC-38)', () => {
+        const vipBody = {
+            title: 'VIP Promotion',
+            discountType: 'percentage',
+            discountValue: 10,
+            validFrom: '2025-01-01T00:00:00.000Z',
+            touristAudience: 'vip'
+        };
+
+        async function expectEntitlementRefusal(res: Response): Promise<void> {
+            expect(res.status).toBe(403);
+            const body = (await res.json()) as { error?: { code?: string } };
+            expect(body.error?.code).toBe('ENTITLEMENT_REQUIRED');
+        }
+
+        it('POST without the key refuses a vip promotion and stores nothing', async () => {
+            keys.splice(keys.indexOf('vip_only_promotions'), 1);
+            const res = await app.request(BASE, {
+                method: 'POST',
+                headers: makeHeaders(),
+                body: JSON.stringify(vipBody)
+            });
+            await expectEntitlementRefusal(res);
+            expect(createCaptures).toHaveLength(0);
+        });
+
+        it('POST without the key still accepts «Para todos»', async () => {
+            keys.splice(keys.indexOf('vip_only_promotions'), 1);
+            const res = await app.request(BASE, {
+                method: 'POST',
+                headers: makeHeaders(),
+                body: JSON.stringify({ ...vipBody, touristAudience: 'plus' })
+            });
+            expect(res.status).toBe(201);
+        });
+
+        it.each(['PUT', 'PATCH'])('%s without the key refuses switching to vip', async (method) => {
+            keys.splice(keys.indexOf('vip_only_promotions'), 1);
+            const res = await app.request(`${BASE}/${PROMOTION_ID}`, {
+                method,
+                headers: makeHeaders(),
+                body: JSON.stringify(method === 'PUT' ? vipBody : { touristAudience: 'vip' })
+            });
+            await expectEntitlementRefusal(res);
+            expect(updateCaptures).toHaveLength(0);
+        });
+
+        it('PATCH without the key refuses re-activating a paused vip promotion', async () => {
+            keys.splice(keys.indexOf('vip_only_promotions'), 1);
+            stored.touristAudience = 'vip';
+            stored.lifecycleState = 'INACTIVE';
+            const res = await app.request(`${BASE}/${PROMOTION_ID}`, {
+                method: 'PATCH',
+                headers: makeHeaders(),
+                body: JSON.stringify({ lifecycleState: 'ACTIVE' })
+            });
+            await expectEntitlementRefusal(res);
+            expect(updateCaptures).toHaveLength(0);
+        });
+
+        it('PATCH without the key resumes a paused vip promotion as «Para todos» (AC-37)', async () => {
+            keys.splice(keys.indexOf('vip_only_promotions'), 1);
+            stored.touristAudience = 'vip';
+            stored.lifecycleState = 'INACTIVE';
+            const res = await app.request(`${BASE}/${PROMOTION_ID}`, {
+                method: 'PATCH',
+                headers: makeHeaders(),
+                body: JSON.stringify({ lifecycleState: 'ACTIVE', touristAudience: 'plus' })
+            });
+            expect(res.status).toBe(200);
+            expect(updateCaptures[0]?.ctx).toEqual({ hookState: { vipOnlyVerified: false } });
+        });
+
+        it('PATCH without the key may still pause a live vip promotion', async () => {
+            keys.splice(keys.indexOf('vip_only_promotions'), 1);
+            stored.touristAudience = 'vip';
+            stored.lifecycleState = 'ACTIVE';
+            const res = await app.request(`${BASE}/${PROMOTION_ID}`, {
+                method: 'PATCH',
+                headers: makeHeaders(),
+                body: JSON.stringify({ lifecycleState: 'INACTIVE' })
+            });
+            expect(res.status).toBe(200);
+        });
+
+        it('with the key, a vip re-activation reaches the service marked as verified', async () => {
+            stored.touristAudience = 'vip';
+            stored.lifecycleState = 'INACTIVE';
+            const res = await app.request(`${BASE}/${PROMOTION_ID}`, {
+                method: 'PATCH',
+                headers: makeHeaders(),
+                body: JSON.stringify({ lifecycleState: 'ACTIVE' })
+            });
+            expect(res.status).toBe(200);
+            expect(updateCaptures[0]?.ctx).toEqual({ hookState: { vipOnlyVerified: true } });
+        });
     });
 });

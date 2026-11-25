@@ -53,7 +53,7 @@ import {
 import { getLocalDayWindow } from '@repo/utils';
 import { readListingAccessFacts, resolveResourceStep } from '@repo/verticals';
 import type { AnyColumn, GetColumnData } from 'drizzle-orm';
-import { inArray } from 'drizzle-orm';
+import { inArray, ne } from 'drizzle-orm';
 import { errors as joseErrors, jwtVerify, SignJWT } from 'jose';
 import { z } from 'zod';
 import { BaseService } from '../../base/base.service.js';
@@ -1598,6 +1598,8 @@ export class ConversationService extends BaseService {
                         and(
                             inArray(conversations.accommodationId, validated.accommodationIds),
                             isNull(conversations.deletedAt),
+                            // HOS-2615: unverified anonymous inquiries are invisible to owners.
+                            ne(conversations.status, 'PENDING_VERIFICATION' as const),
                             isNotNull(conversations.lastActivityAt)
                         )
                     );
