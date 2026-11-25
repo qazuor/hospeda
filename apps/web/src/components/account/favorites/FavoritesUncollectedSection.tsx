@@ -21,6 +21,7 @@ import {
 } from '@/components/account/ui';
 import { createTranslations, type SupportedLocale } from '@/lib/i18n';
 import { FavoriteBookmarkCard } from './FavoriteBookmarkCard';
+import styles from './FavoritesView.module.css';
 import type { BookmarkItem } from './favorites-api';
 import { FAVORITES_TABS, tabLabelKey } from './favorites-tabs';
 import type { UseFavoritesListResult } from './use-favorites-list';
@@ -139,6 +140,7 @@ export function FavoritesUncollectedSection({
             helpId="section:favorites.uncollected"
         >
             <Tabs
+                className={styles.typeTabs}
                 items={items}
                 ariaLabel={t('account.favorites.filter.label')}
                 value={tab}

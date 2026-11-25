@@ -7,6 +7,10 @@
     gap: var(--space-6);
 }
 
+.typeTabs > [role="tabpanel"] {
+    margin-block-start: var(--space-5);
+}
+
 .createAction {
     display: flex;
     flex-direction: column;

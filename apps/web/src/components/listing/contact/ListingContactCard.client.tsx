@@ -11,6 +11,7 @@ import { ContactHost } from '@/components/accommodation/ContactHost.client';
 import { WhatsAppContact } from '@/components/accommodation/WhatsAppContact.client';
 import { FieldError } from '@/components/ui/FieldError';
 import { GradientButton } from '@/components/ui/GradientButtonReact';
+import { useListingConversationAction } from '@/hooks/use-listing-conversation-action';
 import { WebEvents } from '@/lib/analytics/events';
 import { trackEvent } from '@/lib/analytics/umami-client';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -56,6 +57,7 @@ export function ListingContactCard({
     locale
 }: ListingContactCardProps) {
     const { t } = createTranslations(locale);
+    const action = useListingConversationAction({ accommodationId: accommodation.id, locale });
     const fieldId = useId();
     const [values, setValues] = useState<FieldValues>(emptyValues);
     const [badInput, setBadInput] = useState<readonly FieldName[]>([]);
@@ -115,52 +117,84 @@ export function ListingContactCard({
 
     return (
         <div className={styles.card}>
-            <div className={styles.fields}>
-                {fieldNames.map((field) => {
-                    const id = `${fieldId}-${field}`;
-                    const guests = field === 'guests';
-                    const error = errors?.[field];
-                    return (
-                        <div
-                            className={`${styles.field}${guests ? ` ${styles.fieldGuests}` : ''}`}
-                            key={field}
-                        >
-                            <label htmlFor={id}>
-                                {t(`accommodations.detail.listingContact.fields.${field}`)}
-                            </label>
-                            <input
-                                id={id}
-                                type={guests ? 'number' : 'date'}
-                                min={guests ? 1 : undefined}
-                                max={guests ? guestLimit : undefined}
-                                value={values[field]}
-                                onChange={(event) =>
-                                    update({
-                                        field,
-                                        value: event.currentTarget.value,
-                                        bad: event.currentTarget.validity.badInput
-                                    })
-                                }
-                                aria-invalid={Boolean(error)}
-                                aria-describedby={error ? `${id}-error` : undefined}
-                            />
-                            <FieldError
-                                id={`${id}-error`}
-                                message={error}
-                            />
-                        </div>
-                    );
-                })}
-            </div>
-            <ContactHost
-                accommodation={accommodation}
-                locale={locale}
-                initialMessage={draft}
-                initialMessageInvalid={Boolean(errors)}
-                inquiry={inquiry}
-                onMessageEdited={() => setMessageEdited(true)}
-                origin="sidebar"
-            />
+            {action.hasConversation ? (
+                <>
+                    <p>{t('accommodations.detail.listingContact.card.existingConversation')}</p>
+                    <GradientButton
+                        href={action.href}
+                        label={action.label}
+                        variant="accent"
+                        flat
+                        size="md"
+                    />
+                </>
+            ) : (
+                <>
+                    <div className={styles.fields}>
+                        {fieldNames.map((field) => {
+                            const id = `${fieldId}-${field}`;
+                            const guests = field === 'guests';
+                            const error = errors?.[field];
+                            return (
+                                <div
+                                    className={`${styles.field}${guests ? ` ${styles.fieldGuests}` : ''}`}
+                                    key={field}
+                                >
+                                    <label htmlFor={id}>
+                                        {t(`accommodations.detail.listingContact.fields.${field}`)}
+                                    </label>
+                                    <input
+                                        id={id}
+                                        type={guests ? 'number' : 'date'}
+                                        min={guests ? 1 : undefined}
+                                        max={guests ? guestLimit : undefined}
+                                        step={guests ? 1 : undefined}
+                                        placeholder={t(
+                                            `accommodations.detail.listingContact.placeholders.${field}`
+                                        )}
+                                        value={values[field]}
+                                        onChange={(event) =>
+                                            update({
+                                                field,
+                                                value: event.currentTarget.value,
+                                                bad: event.currentTarget.validity.badInput
+                                            })
+                                        }
+                                        aria-invalid={Boolean(error)}
+                                        aria-describedby={
+                                            error
+                                                ? `${id}-error`
+                                                : !guests && !values[field]
+                                                  ? `${id}-hint`
+                                                  : undefined
+                                        }
+                                    />
+                                    {!guests && !values[field] && (
+                                        <small id={`${id}-hint`}>
+                                            {t(
+                                                `accommodations.detail.listingContact.placeholders.${field}`
+                                            )}
+                                        </small>
+                                    )}
+                                    <FieldError
+                                        id={`${id}-error`}
+                                        message={error}
+                                    />
+                                </div>
+                            );
+                        })}
+                    </div>
+                    <ContactHost
+                        accommodation={accommodation}
+                        locale={locale}
+                        initialMessage={draft}
+                        initialMessageInvalid={Boolean(errors)}
+                        inquiry={inquiry}
+                        onMessageEdited={() => setMessageEdited(true)}
+                        origin="sidebar"
+                    />
+                </>
+            )}
             {(hasWhatsapp || phoneHref) && (
                 <section
                     className={styles.direct}

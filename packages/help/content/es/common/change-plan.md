@@ -47,7 +47,7 @@ covers:
   - "file:apps/web/src/components/account/PlanChangeOffer.client.tsx"
 entryFor:
   - "page:mi-cuenta/suscripcion"
-reviewedAt: "2026-11-24"
+reviewedAt: "2026-11-25"
 ---
 
 ## Qué podés hacer

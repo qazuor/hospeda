@@ -105,6 +105,7 @@ const CHANNEL_ICONS = { phone: PhoneIcon, email: EmailIcon, website: GlobeIcon }
                 rel="noopener noreferrer"
                 label={menuLink.label}
                 variant="accent"
+                flat
                 size="md"
                 class="venue-contact__menu-btn"
                 data={{ ...trackingData, 'contact-channel': 'menu' }}
@@ -152,6 +153,7 @@ const CHANNEL_ICONS = { phone: PhoneIcon, email: EmailIcon, website: GlobeIcon }
     /* A long email or URL wraps inside its pill instead of being clipped by the
        button's nowrap + overflow. */
     .listing-contact__channels :global(.listing-contact__channel) {
+        min-width: 0;
         max-inline-size: 100%;
         white-space: normal;
     }

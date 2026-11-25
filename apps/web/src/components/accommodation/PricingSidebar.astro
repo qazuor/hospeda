@@ -9,10 +9,11 @@ import type { AccommodationDetailData } from '@/data/types';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { DEFAULT_ACCOMMODATION_CURRENCY } from '@/lib/listing-contact/listing-contact-price';
-import GradientButton from '@/components/shared/ui/GradientButton.astro';
+import { ConversationCta } from './ConversationCta.client';
 import { UsersIcon, MoonIcon, CalendarIcon, ChevronDownIcon } from '@repo/icons';
 
 interface Props {
+  readonly accommodationId: string;
   readonly price: AccommodationDetailData['price'];
   readonly extraInfo?: AccommodationDetailData['extraInfo'];
   /** House rules (HOS-2060): the stay length facts read `policies`. */
@@ -20,7 +21,7 @@ interface Props {
   readonly lang: string;
 }
 
-const { price, extraInfo, policies, lang } = Astro.props;
+const { accommodationId, price, extraInfo, policies, lang } = Astro.props;
 const { t, tPlural } = createTranslations(lang as SupportedLocale);
 
 const hasPrice = price?.price != null && price.price > 0;
@@ -120,16 +121,11 @@ const hasDiscounts = discountEntries.length > 0;
       <span class="pricing-sidebar__period">{t('accommodations.detail.pricing.perNightLabel')}</span>
     </div>
   ) : (
-    <div class="pricing-sidebar__consult">
-      <GradientButton
-        href="#contact"
-        label={t('accommodations.detail.pricing.consult')}
-        variant="accent"
-        size="md"
-        shape="rounded"
-      />
-    </div>
+    <p class="pricing-sidebar__context">{t('accommodations.detail.pricing.consultContext')}</p>
   )}
+  <div class="pricing-sidebar__consult">
+    <ConversationCta client:idle accommodationId={accommodationId} locale={lang as SupportedLocale} />
+  </div>
 
   {(capacity != null || stayMin != null || stayMax != null) && (
     <ul class="pricing-sidebar__facts">
@@ -290,6 +286,11 @@ const hasDiscounts = discountEntries.length > 0;
   .pricing-sidebar__consult {
     text-align: center;
     padding: var(--space-4, 16px) 0;
+  }
+  .pricing-sidebar__context {
+    color: var(--core-muted-foreground);
+    font: var(--app-ui);
+    margin: 0;
   }
   .pricing-sidebar__breakdown-toggle {
     display: flex;

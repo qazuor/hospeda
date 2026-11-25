@@ -18,6 +18,7 @@
 import { GoogleIcon, StarIcon } from '@repo/icons';
 import type { ExternalReviewSnippet } from '@repo/schemas';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { getInitials } from '@/lib/avatar-utils';
 import { cn } from '@/lib/cn';
 import { formatRelativeTime } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -85,6 +86,7 @@ function ReviewCard({
     const textRef = useRef<HTMLParagraphElement>(null);
     const [isClamped, setIsClamped] = useState(false);
     const [expanded, setExpanded] = useState(false);
+    const [photoBroken, setPhotoBroken] = useState(false);
 
     /*
      * The author's profile URL comes from an outside platform through the API
@@ -136,7 +138,7 @@ function ReviewCard({
     return (
         <li className={styles.card}>
             <div className={styles.cardHeader}>
-                {snippet.profilePhoto ? (
+                {snippet.profilePhoto && !photoBroken ? (
                     <img
                         src={snippet.profilePhoto}
                         alt={snippet.author}
@@ -145,13 +147,14 @@ function ReviewCard({
                         height={36}
                         loading="lazy"
                         referrerPolicy="no-referrer"
+                        onError={() => setPhotoBroken(true)}
                     />
                 ) : (
                     <span
                         className={styles.avatarFallback}
                         aria-hidden="true"
                     >
-                        {snippet.author.slice(0, 1).toUpperCase()}
+                        {getInitials({ name: snippet.author })}
                     </span>
                 )}
 

@@ -22,6 +22,7 @@
 }
 
 .channel {
+    min-width: 0;
     display: flex;
     align-items: center;
     gap: var(--space-2);
@@ -45,6 +46,14 @@
     white-space: nowrap;
     color: var(--core-muted-foreground);
     font-size: var(--text-sm);
+}
+
+@media (max-width: 767px) {
+    .channel[data-contact-channel="email"] .value {
+        overflow: visible;
+        white-space: normal;
+        overflow-wrap: anywhere;
+    }
 }
 
 .whatsapp {

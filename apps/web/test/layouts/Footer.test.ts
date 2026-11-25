@@ -14,6 +14,16 @@ import { describe, expect, it } from 'vitest';
 const src = readFileSync(resolve(__dirname, '../../src/layouts/Footer.astro'), 'utf8');
 
 describe('Footer.astro', () => {
+    it('keeps legal separators in flow inside each wrapping item', () => {
+        const item = src.match(/\.footer__legal li\s*\{([^}]+)\}/)?.[1];
+        const separator = src.match(/\.footer__legal li \+ li::before\s*\{([^}]+)\}/)?.[1];
+        expect(item).toContain('display: inline-flex');
+        expect(separator).toContain('content: "·"');
+        expect(separator).not.toContain('position: absolute');
+        expect(src).toMatch(
+            /@media \(max-width: 639px\)\s*\{\s*\.footer__legal li \+ li::before\s*\{\s*display: none/
+        );
+    });
     describe('file structure', () => {
         it('has a JSDoc file header', () => {
             expect(src).toContain('@file Footer.astro');
@@ -186,7 +196,7 @@ describe('Footer.astro', () => {
             // The inert static form was replaced by the live double opt-in
             // island so we no longer assert on type="email" / button copy.
             expect(src).toContain('@/components/newsletter/NewsletterForm.client');
-            expect(src).toMatch(/<NewsletterForm[\s\S]+client:visible/);
+            expect(src).toMatch(/<NewsletterForm\s+client:load/);
         });
 
         it('passes auth state, email, apiUrl and locale to the island', () => {
