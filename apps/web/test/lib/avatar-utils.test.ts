@@ -12,7 +12,7 @@ describe('getInitials', () => {
         expect(getInitials({ name: 'Carlos Alberto Ramírez' })).toBe('CA');
         expect(getInitials({ name: 'Host y Comercio' })).toBe('HC');
         expect(getInitials({ name: 'Casa de la Costa' })).toBe('CC');
-        expect(getInitials({ name: 'Host and Commerce' })).toBe('HC');
+        expect(getInitials({ name: 'Host and Venue' })).toBe('HV');
         expect(getInitials({ name: 'Casa e Comércio' })).toBe('CC');
     });
 
