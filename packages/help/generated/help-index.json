@@ -1,5 +1,5 @@
 {
-  "contentHash": "b54f94b8e004eb9afd06eb81030f53a4af42927e0a39f0ce8f759e8ff499e7b5",
+  "contentHash": "ebaa18f804a9a7b9dbae65a779079f1c015e83d0e75c99b78af95746e4c9e312",
   "locales": {
     "es": [
       {
@@ -13,10 +13,6 @@
           "page:mi-cuenta/suscripcion"
         ],
         "destinations": [
-          {
-            "kind": "subscription",
-            "label": "Suscripción"
-          },
           {
             "kind": "addons",
             "label": "Complementos"
@@ -573,7 +569,7 @@
             "after": "",
             "steps": [
               "Entrá a la página de publicar del rubro que querés: alojamiento, comer y salir o experiencias.",
-              "Completá el formulario de alta con los datos básicos. Si ya tenés un borrador, el sitio te ofrece retomarlo antes de crear otro; si llegás desde la página de planes, te lleva directo a retomarlo.",
+              "Completá el formulario de alta con los datos básicos. Si ya tenés un borrador, el sitio te ofrece retomarlo antes de crear otro.",
               "La publicación se crea como borrador: todavía no se ve en el sitio.",
               "Abrila desde «Mis alojamientos» o «Mi comercio»: en un borrador, «Editar» está en el menú «Más acciones» de la tarjeta. Completá sus secciones. El editor marca lo que falta.",
               "Cuando cumpla los requisitos, tocá «Publicar» en su tarjeta."

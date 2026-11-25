@@ -21,8 +21,6 @@ keywords:
   - "promocionar"
   - "comprar complemento"
 destinations:
-  - kind: subscription
-    label: "Suscripción"
   - kind: addons
     label: "Complementos"
 faqKey: owners.featured
