@@ -1,8 +1,7 @@
 ---
 /**
  * @file PublishPlanLinks.astro
- * @description The last band of every publish page: the two links a visitor who
- * has not decided yet needs (HOS-1156 §6 point 4, AC-4).
+ * @description One pricing link for visitors comparing plans before creating.
  *
  * ## Why links and not a price
  *
@@ -26,13 +25,11 @@ interface Props {
     /** Only guests need links back to the plans introduction. */
     readonly variant?: PublishPageVariant;
     readonly locale: SupportedLocale;
-    /** This vertical's sales page. */
-    readonly plansUrl: string;
     /** This vertical's price grid. */
     readonly pricingUrl: string;
 }
 
-const { locale, plansUrl, pricingUrl, variant = 'guest' } = Astro.props;
+const { locale, pricingUrl, variant = 'guest' } = Astro.props;
 const { t } = createTranslations(locale);
 ---
 
@@ -52,14 +49,8 @@ const { t } = createTranslations(locale);
         </p>
 
         <div class="publish-plan-links__actions">
-            <a href={plansUrl} class="publish-plan-links__link">
-                {t('publish.plans.plansCta', 'Ver planes')}
-                <span aria-hidden="true">
-                    <ArrowRightIcon size={16} weight="bold" />
-                </span>
-            </a>
             <a href={pricingUrl} class="publish-plan-links__link">
-                {t('publish.plans.pricingCta', 'Ver precios')}
+                {t('publish.plans.plansCta', 'Ver planes')}
                 <span aria-hidden="true">
                     <ArrowRightIcon size={16} weight="bold" />
                 </span>

@@ -66,8 +66,8 @@ describe('getCharacterCounterState', () => {
             'normal'
         );
 
-        // A required field with the same numbers still flags the empty case.
-        expect(getCharacterCounterState({ current: 0, min: 30, max: 60 })).toBe('under-minimum');
+        // Requiredness belongs to validation, not an untouched length counter.
+        expect(getCharacterCounterState({ current: 0, min: 30, max: 60 })).toBe('normal');
     });
 });
 
@@ -83,7 +83,7 @@ describe('CharacterCounter', () => {
             />
         );
 
-        expect(screen.getByTestId('counter')).toHaveTextContent('85/100');
+        expect(screen.getByTestId('counter')).toHaveTextContent('85 de 100 caracteres');
         expect(screen.getByTestId('counter')).toHaveAttribute('data-state', 'warning');
     });
 
@@ -99,7 +99,7 @@ describe('CharacterCounter', () => {
             />
         );
 
-        expect(screen.getByTestId('counter')).toHaveTextContent('2/100 · mín. 3');
+        expect(screen.getByTestId('counter')).toHaveTextContent('2 de 100 caracteres · mín. 3');
         expect(screen.getByTestId('counter')).toHaveAttribute('data-state', 'under-minimum');
     });
 

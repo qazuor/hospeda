@@ -88,10 +88,7 @@ const VENUE_FORM_SCHEMA = VenueOwnerCreateInputSchema.pick({
     type: true,
     summary: true,
     description: true,
-    destinationId: true,
-    businessLines: true,
-    // HOS-2060: the minimum age is `policies.minAge` (the BOLICHE default).
-    policies: true
+    destinationId: true
 });
 
 /**

@@ -444,7 +444,9 @@ describe('BasicInfoSection — character counters (HOS-783 B5)', () => {
     ])('renders %s with its range', (testId, used, min, max, state) => {
         render(<BasicInfoSection {...buildProps()} />);
 
-        expect(screen.getByTestId(testId)).toHaveTextContent(`${used}/${max} · mín. ${min}`);
+        expect(screen.getByTestId(testId)).toHaveTextContent(
+            `${used} de ${max} caracteres · mín. ${min}`
+        );
         expect(screen.getByTestId(testId)).toHaveAttribute('data-state', state);
     });
 
@@ -453,7 +455,9 @@ describe('BasicInfoSection — character counters (HOS-783 B5)', () => {
             <BasicInfoSection {...buildProps({ data: { ...MOCK_DATA, name: 'x'.repeat(80) } })} />
         );
 
-        expect(screen.getByTestId('name-char-counter')).toHaveTextContent('80/100 · mín. 3');
+        expect(screen.getByTestId('name-char-counter')).toHaveTextContent(
+            '80 de 100 caracteres · mín. 3'
+        );
         expect(screen.getByTestId('name-char-counter')).toHaveAttribute('data-state', 'warning');
     });
 
@@ -464,7 +468,9 @@ describe('BasicInfoSection — character counters (HOS-783 B5)', () => {
             />
         );
 
-        expect(screen.getByTestId('summary-char-counter')).toHaveTextContent('300/300 · mín. 10');
+        expect(screen.getByTestId('summary-char-counter')).toHaveTextContent(
+            '300 de 300 caracteres · mín. 10'
+        );
         expect(screen.getByTestId('summary-char-counter')).toHaveAttribute('data-state', 'danger');
     });
 
@@ -476,7 +482,7 @@ describe('BasicInfoSection — character counters (HOS-783 B5)', () => {
         );
 
         expect(screen.getByTestId('description-char-counter')).toHaveTextContent(
-            '2000/2000 · mín. 30'
+            '2000 de 2000 caracteres · mín. 30'
         );
         expect(screen.getByTestId('description-char-counter')).toHaveAttribute(
             'data-state',

@@ -293,18 +293,22 @@ describe('SeoSection', () => {
             render(<SeoSection {...buildProps()} />);
 
             expect(screen.getByTestId('seo-title-char-counter')).toHaveTextContent(
-                '0/60 · mín. 30'
+                '0 de 60 caracteres · mín. 30'
             );
             expect(screen.getByTestId('seo-description-char-counter')).toHaveTextContent(
-                '0/160 · mín. 70'
+                '0 de 160 caracteres · mín. 70'
             );
         });
 
         it('should count the authored value, never the default behind it', () => {
             render(<SeoSection {...buildProps({ data: { ...MOCK_DATA, seoTitle: 'Hola' } })} />);
 
-            expect(screen.getByTestId('seo-title-char-counter')).toHaveTextContent('4/60');
-            expect(screen.queryByText(new RegExp(`${NAME.length}/60`))).not.toBeInTheDocument();
+            expect(screen.getByTestId('seo-title-char-counter')).toHaveTextContent(
+                '4 de 60 caracteres'
+            );
+            expect(
+                screen.queryByText(new RegExp(`${NAME.length} de 60 caracteres`))
+            ).not.toBeInTheDocument();
         });
 
         it('should leave an empty field unflagged — empty is a valid "no override"', () => {

@@ -356,8 +356,8 @@
             "cta": "Ver mi suscripción",
             "atLimitPanel": {
                 "title": "Llegaste al límite de tu plan",
-                "body_one": "Estás usando {{currentCount}} de {{maxAllowed}} propiedad. Para publicar otra, actualizá tu plan.",
-                "body_other": "Estás usando {{currentCount}} de {{maxAllowed}} propiedades. Para publicar otra, actualizá tu plan.",
+                "body_one": "Tenés {{currentCount}} de {{maxAllowed}} propiedad publicada. Los borradores no cuentan para este límite. Para publicar otra, actualizá tu plan.",
+                "body_other": "Tenés {{currentCount}} de {{maxAllowed}} propiedades publicadas. Los borradores no cuentan para este límite. Para publicar otra, actualizá tu plan.",
                 "primaryCta": "Ver mi suscripción",
                 "secondaryCta": "Ver mis propiedades"
             }
@@ -369,8 +369,8 @@
             "cta": "Ver mi suscripción",
             "atLimitPanel": {
                 "title": "Llegaste al límite de tu plan",
-                "body_one": "Estás usando {{currentCount}} de {{maxAllowed}} ficha de Comer y salir. Para publicar otra, actualizá tu plan.",
-                "body_other": "Estás usando {{currentCount}} de {{maxAllowed}} fichas de Comer y salir. Para publicar otra, actualizá tu plan.",
+                "body_one": "Tenés {{currentCount}} de {{maxAllowed}} ficha de Comer y salir publicada. Los borradores no cuentan para este límite. Para publicar otra, actualizá tu plan.",
+                "body_other": "Tenés {{currentCount}} de {{maxAllowed}} fichas de Comer y salir publicadas. Los borradores no cuentan para este límite. Para publicar otra, actualizá tu plan.",
                 "primaryCta": "Ver mi suscripción",
                 "secondaryCta": "Ver mis fichas"
             }
@@ -382,8 +382,8 @@
             "cta": "Ver mi suscripción",
             "atLimitPanel": {
                 "title": "Llegaste al límite de tu plan",
-                "body_one": "Estás usando {{currentCount}} de {{maxAllowed}} experiencia. Para publicar otra, actualizá tu plan.",
-                "body_other": "Estás usando {{currentCount}} de {{maxAllowed}} experiencias. Para publicar otra, actualizá tu plan.",
+                "body_one": "Tenés {{currentCount}} de {{maxAllowed}} experiencia publicada. Los borradores no cuentan para este límite. Para publicar otra, actualizá tu plan.",
+                "body_other": "Tenés {{currentCount}} de {{maxAllowed}} experiencias publicadas. Los borradores no cuentan para este límite. Para publicar otra, actualizá tu plan.",
                 "primaryCta": "Ver mi suscripción",
                 "secondaryCta": "Ver mis experiencias"
             }

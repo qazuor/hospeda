@@ -356,8 +356,8 @@
             "cta": "View my subscription",
             "atLimitPanel": {
                 "title": "You've reached your plan limit",
-                "body_one": "You're using {{currentCount}} of {{maxAllowed}} property. To publish another, upgrade your plan.",
-                "body_other": "You're using {{currentCount}} of {{maxAllowed}} properties. To publish another, upgrade your plan.",
+                "body_one": "You have {{currentCount}} of {{maxAllowed}} property published. Drafts do not count towards this limit. Upgrade your plan to publish another one.",
+                "body_other": "You have {{currentCount}} of {{maxAllowed}} properties published. Drafts do not count towards this limit. Upgrade your plan to publish another one.",
                 "primaryCta": "View my subscription",
                 "secondaryCta": "View my properties"
             }
@@ -369,8 +369,8 @@
             "cta": "View my subscription",
             "atLimitPanel": {
                 "title": "You've reached your plan's limit",
-                "body_one": "You're using {{currentCount}} of {{maxAllowed}} Food & nightlife listing. Upgrade your plan to publish another one.",
-                "body_other": "You're using {{currentCount}} of {{maxAllowed}} Food & nightlife listings. Upgrade your plan to publish another one.",
+                "body_one": "You have {{currentCount}} of {{maxAllowed}} Food & nightlife listing published. Drafts do not count towards this limit. Upgrade your plan to publish another one.",
+                "body_other": "You have {{currentCount}} of {{maxAllowed}} Food & nightlife listings published. Drafts do not count towards this limit. Upgrade your plan to publish another one.",
                 "primaryCta": "View my subscription",
                 "secondaryCta": "View my listings"
             }
@@ -382,8 +382,8 @@
             "cta": "View my subscription",
             "atLimitPanel": {
                 "title": "You've reached your plan's limit",
-                "body_one": "You're using {{currentCount}} of {{maxAllowed}} experience. Upgrade your plan to publish another one.",
-                "body_other": "You're using {{currentCount}} of {{maxAllowed}} experiences. Upgrade your plan to publish another one.",
+                "body_one": "You have {{currentCount}} of {{maxAllowed}} experience published. Drafts do not count towards this limit. Upgrade your plan to publish another one.",
+                "body_other": "You have {{currentCount}} of {{maxAllowed}} experiences published. Drafts do not count towards this limit. Upgrade your plan to publish another one.",
                 "primaryCta": "View my subscription",
                 "secondaryCta": "View my experiences"
             }

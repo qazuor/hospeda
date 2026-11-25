@@ -480,6 +480,21 @@
             "publishCtaTrialNoCount": "Publicar gratis"
         },
         "create": {
+            "sectionTitle": "Datos para empezar",
+            "sectionHint": "Creá el borrador con estos datos. Después vas a poder completar tu ficha en el editor.",
+            "hint": {
+                "name": "Usá el nombre con el que te conocen tus clientes.",
+                "type": "Elegí la categoría que mejor describa lo que ofrecés.",
+                "summary": "Contá lo esencial en una frase. Se muestra en los listados.",
+                "description": "Describí qué ofrecés. Después vas a poder ampliar los detalles.",
+                "destination": "Elegí la ciudad de tu ficha. Podés completarla después en el editor.",
+                "price": "Ingresá el importe en pesos argentinos o marcá Precio a consultar."
+            },
+            "placeholder": {
+                "type": "Elegí una categoría",
+                "destination": "Elegí una ciudad o destino",
+                "priceUnit": "Elegí una unidad de precio"
+            },
             "fields": {
                 "name": {
                     "venue": "Nombre del comercio",

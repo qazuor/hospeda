@@ -32,7 +32,6 @@ import { destinationsApi } from '@/lib/api/endpoints';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import {
-    PLANS_PAGE_PATH_BY_VERTICAL,
     PRICING_PAGE_PATH_BY_VERTICAL
 } from '@/lib/publish/publish-page-paths';
 import { resolvePublishPageSlot } from '@/lib/publish/publish-page-slot';
@@ -182,7 +181,6 @@ const benefits = [
     <PublishPlanLinks
         variant={variant}
         locale={locale}
-        plansUrl={buildUrl({ locale, path: PLANS_PAGE_PATH_BY_VERTICAL[VERTICAL] })}
         pricingUrl={buildUrl({ locale, path: PRICING_PAGE_PATH_BY_VERTICAL[VERTICAL] })}
     />
 </MarketingLayout>

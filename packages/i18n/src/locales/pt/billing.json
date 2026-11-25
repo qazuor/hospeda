@@ -356,8 +356,8 @@
             "cta": "Ver minha assinatura",
             "atLimitPanel": {
                 "title": "Você atingiu o limite do seu plano",
-                "body_one": "Você está usando {{currentCount}} de {{maxAllowed}} propriedade. Para publicar outra, faça upgrade do seu plano.",
-                "body_other": "Você está usando {{currentCount}} de {{maxAllowed}} propriedades. Para publicar outra, faça upgrade do seu plano.",
+                "body_one": "Você tem {{currentCount}} de {{maxAllowed}} propriedade publicada. Rascunhos não contam para esse limite. Mude de plano para publicar outra.",
+                "body_other": "Você tem {{currentCount}} de {{maxAllowed}} propriedades publicadas. Rascunhos não contam para esse limite. Mude de plano para publicar outra.",
                 "primaryCta": "Ver minha assinatura",
                 "secondaryCta": "Ver minhas propriedades"
             }
@@ -369,8 +369,8 @@
             "cta": "Ver minha assinatura",
             "atLimitPanel": {
                 "title": "Você atingiu o limite do seu plano",
-                "body_one": "Você está usando {{currentCount}} de {{maxAllowed}} ficha de Comer e sair. Faça um upgrade do plano para publicar outra.",
-                "body_other": "Você está usando {{currentCount}} de {{maxAllowed}} fichas de Comer e sair. Faça um upgrade do plano para publicar outra.",
+                "body_one": "Você tem {{currentCount}} de {{maxAllowed}} ficha de Comer e sair publicada. Rascunhos não contam para esse limite. Mude de plano para publicar outra.",
+                "body_other": "Você tem {{currentCount}} de {{maxAllowed}} fichas de Comer e sair publicadas. Rascunhos não contam para esse limite. Mude de plano para publicar outra.",
                 "primaryCta": "Ver minha assinatura",
                 "secondaryCta": "Ver minhas fichas"
             }
@@ -382,8 +382,8 @@
             "cta": "Ver minha assinatura",
             "atLimitPanel": {
                 "title": "Você atingiu o limite do seu plano",
-                "body_one": "Você está usando {{currentCount}} de {{maxAllowed}} experiência. Faça um upgrade do plano para publicar outra.",
-                "body_other": "Você está usando {{currentCount}} de {{maxAllowed}} experiências. Faça um upgrade do plano para publicar outra.",
+                "body_one": "Você tem {{currentCount}} de {{maxAllowed}} experiência publicada. Rascunhos não contam para esse limite. Mude de plano para publicar outra.",
+                "body_other": "Você tem {{currentCount}} de {{maxAllowed}} experiências publicadas. Rascunhos não contam para esse limite. Mude de plano para publicar outra.",
                 "primaryCta": "Ver minha assinatura",
                 "secondaryCta": "Ver minhas experiências"
             }

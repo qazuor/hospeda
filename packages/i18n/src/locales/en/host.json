@@ -1094,8 +1094,8 @@
             "subtitle": "We'll create the draft with this information. Photos, pricing and the rest go in step 2, from the panel.",
             "precheck": {
                 "pickDraftDeleteOrUpgrade": {
-                    "body_one": "You're using {{currentCount}} property and your plan allows {{maxAllowed}}. Edit one of your existing drafts or upgrade your plan to create a new one.",
-                    "body_other": "You're using {{currentCount}} properties and your plan allows {{maxAllowed}}. Edit one of your existing drafts or upgrade your plan to create a new one.",
+                    "body_one": "You have {{currentCount}} published property and your plan allows {{maxAllowed}}. Drafts do not count towards this limit. You can keep editing them; upgrade your plan to publish another property.",
+                    "body_other": "You have {{currentCount}} published properties and your plan allows {{maxAllowed}}. Drafts do not count towards this limit. You can keep editing them; upgrade your plan to publish another property.",
                     "pickCta": "Edit an existing draft",
                     "title": "You have several drafts, but you've reached your plan's limit",
                     "upgradeCta": "Upgrade plan"
@@ -1107,10 +1107,10 @@
                     "title": "You have several unpublished drafts"
                 },
                 "resumeDeleteOrUpgrade": {
-                    "body_one": "You're using {{currentCount}} property and your plan allows {{maxAllowed}}. You can resume your draft, delete it to free up space, or upgrade your plan.",
-                    "body_other": "You're using {{currentCount}} properties and your plan allows {{maxAllowed}}. You can resume your draft, delete it to free up space, or upgrade your plan.",
-                    "deleteConfirm": "¿Borrar este borrador? Vas a poder crear una propiedad nueva.",
-                    "deleteCta": "Borrar borrador",
+                    "body_one": "You have {{currentCount}} published property and your plan allows {{maxAllowed}}. Drafts do not count towards this limit. You can resume or delete your draft; upgrade your plan to publish another property.",
+                    "body_other": "You have {{currentCount}} published properties and your plan allows {{maxAllowed}}. Drafts do not count towards this limit. You can resume or delete your draft; upgrade your plan to publish another property.",
+                    "deleteConfirm": "Delete this draft? This does not free up a publication slot.",
+                    "deleteCta": "Delete draft",
                     "resumeCta": "Resume draft",
                     "title": "You have a draft, but you've reached your plan's limit",
                     "upgradeCta": "Upgrade plan"

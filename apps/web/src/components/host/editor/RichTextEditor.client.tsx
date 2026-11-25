@@ -92,6 +92,10 @@ export interface RichTextEditorProps {
      * the field silently loses its accessible name.
      */
     readonly ariaLabel?: string;
+    /** Hint, counter and external error ids supplied by the enclosing field. */
+    readonly ariaDescribedBy?: string;
+    /** Required-field semantics for the contenteditable surface. */
+    readonly required?: boolean;
     /**
      * DOM id for the editing surface (HOS-373).
      *
@@ -139,6 +143,8 @@ export function RichTextEditor({
     hasError = false,
     errorMessage,
     ariaLabel,
+    ariaDescribedBy,
+    required = false,
     id,
     locale = DEFAULT_LOCALE
 }: RichTextEditorProps) {
@@ -167,6 +173,8 @@ export function RichTextEditor({
                 role: 'textbox',
                 'aria-multiline': 'true',
                 'aria-invalid': hasError ? 'true' : 'false',
+                'aria-required': required ? 'true' : 'false',
+                ...(ariaDescribedBy ? { 'aria-describedby': ariaDescribedBy } : {}),
                 ...(ariaLabel ? { 'aria-label': ariaLabel } : {}),
                 ...(id ? { id } : {}),
                 class: styles.editorContent
@@ -217,6 +225,23 @@ export function RichTextEditor({
         if (!editor) return;
         editor.setEditable(!disabled, false);
     }, [editor, disabled]);
+
+    // Validation changes after mount must reach the contenteditable, including
+    // external kit Field error descriptions (not just the surrounding surface).
+    useEffect(() => {
+        if (!editor) return;
+        editor.setOptions({
+            editorProps: {
+                ...editor.options.editorProps,
+                attributes: {
+                    ...editor.options.editorProps.attributes,
+                    'aria-invalid': hasError ? 'true' : 'false',
+                    'aria-required': required ? 'true' : 'false',
+                    'aria-describedby': ariaDescribedBy ?? ''
+                }
+            }
+        });
+    }, [editor, hasError, required, ariaDescribedBy]);
 
     // Loading placeholder while editor initializes
     if (!editor) {

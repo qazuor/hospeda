@@ -92,7 +92,7 @@
         },
         "hero": {
             "tagline": "For experience providers",
-            "title": "List your experience and fill it up",
+            "title": "List your experience and reach more travellers",
             "body": "Start here with the basics: what you offer, what kind it is and which destination you set off from. Photos, meeting point and schedules come later, from your dashboard."
         },
         "trialCallout_one": "Try Hospeda free for {{trialDays}} day, no card needed. The trial starts on its own when you publish your first experience.",
@@ -137,11 +137,11 @@
             },
             "resumeDeleteOrUpgrade": {
                 "title": "You have a listing in progress, but you've reached your plan's limit",
-                "body_one": "You're using {{currentCount}} listing and your plan allows {{maxAllowed}}. You can resume the one you started, delete it to free up room, or upgrade your plan.",
-                "body_other": "You're using {{currentCount}} listings and your plan allows {{maxAllowed}}. You can resume the one you started, delete it to free up room, or upgrade your plan.",
+                "body_one": "You have {{currentCount}} published listing and your plan allows {{maxAllowed}}. Drafts do not count towards this limit. You can resume or delete your draft; upgrade your plan to publish another listing.",
+                "body_other": "You have {{currentCount}} published listings and your plan allows {{maxAllowed}}. Drafts do not count towards this limit. You can resume or delete your draft; upgrade your plan to publish another listing.",
                 "resumeCta": "Resume the listing",
                 "deleteCta": "Delete the listing",
-                "deleteConfirm": "Delete this unpublished listing? You'll be able to create a new one.",
+                "deleteConfirm": "Delete this draft? This does not free up a publication slot.",
                 "upgradeCta": "Upgrade plan"
             },
             "pickDraftOrCreate": {
@@ -152,8 +152,8 @@
             },
             "pickDraftDeleteOrUpgrade": {
                 "title": "You have several listings in progress, but you've reached your plan's limit",
-                "body_one": "You're using {{currentCount}} listing and your plan allows {{maxAllowed}}. Edit one of the ones you already started, or upgrade your plan to create another.",
-                "body_other": "You're using {{currentCount}} listings and your plan allows {{maxAllowed}}. Edit one of the ones you already started, or upgrade your plan to create another.",
+                "body_one": "You have {{currentCount}} published listing and your plan allows {{maxAllowed}}. Drafts do not count towards this limit. You can keep editing them; upgrade your plan to publish another listing.",
+                "body_other": "You have {{currentCount}} published listings and your plan allows {{maxAllowed}}. Drafts do not count towards this limit. You can keep editing them; upgrade your plan to publish another listing.",
                 "pickCta": "Edit a listing in progress",
                 "upgradeCta": "Upgrade plan"
             }
@@ -167,11 +167,11 @@
             },
             "resumeDeleteOrUpgrade": {
                 "title": "You have an experience in progress, but you've reached your plan's limit",
-                "body_one": "You're using {{currentCount}} experience and your plan allows {{maxAllowed}}. You can resume the one you started, delete it to free up room, or upgrade your plan.",
-                "body_other": "You're using {{currentCount}} experiences and your plan allows {{maxAllowed}}. You can resume the one you started, delete it to free up room, or upgrade your plan.",
+                "body_one": "You have {{currentCount}} published experience and your plan allows {{maxAllowed}}. Drafts do not count towards this limit. You can resume or delete your draft; upgrade your plan to publish another experience.",
+                "body_other": "You have {{currentCount}} published experiences and your plan allows {{maxAllowed}}. Drafts do not count towards this limit. You can resume or delete your draft; upgrade your plan to publish another experience.",
                 "resumeCta": "Resume the experience",
                 "deleteCta": "Delete the experience",
-                "deleteConfirm": "Delete this unpublished experience? You'll be able to create a new one.",
+                "deleteConfirm": "Delete this draft? This does not free up a publication slot.",
                 "upgradeCta": "Upgrade plan"
             },
             "pickDraftOrCreate": {
@@ -182,8 +182,8 @@
             },
             "pickDraftDeleteOrUpgrade": {
                 "title": "You have several experiences in progress, but you've reached your plan's limit",
-                "body_one": "You're using {{currentCount}} experience and your plan allows {{maxAllowed}}. Edit one of the ones you already started, or upgrade your plan to create another.",
-                "body_other": "You're using {{currentCount}} experiences and your plan allows {{maxAllowed}}. Edit one of the ones you already started, or upgrade your plan to create another.",
+                "body_one": "You have {{currentCount}} published experience and your plan allows {{maxAllowed}}. Drafts do not count towards this limit. You can keep editing them; upgrade your plan to publish another experience.",
+                "body_other": "You have {{currentCount}} published experiences and your plan allows {{maxAllowed}}. Drafts do not count towards this limit. You can keep editing them; upgrade your plan to publish another experience.",
                 "pickCta": "Edit an experience in progress",
                 "upgradeCta": "Upgrade plan"
             }

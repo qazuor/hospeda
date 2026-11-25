@@ -6,7 +6,7 @@ import { expect, type Page } from '@playwright/test';
  * The create form's controls are server-rendered, so a `load` event does not
  * mean React is listening: a `selectOption` sent before hydration changes the
  * native select, React then hydrates with its own empty state, and anything
- * driven by that state (the business-lines field) never renders (HOS-2372).
+ * held in React state is lost (HOS-2372).
  * The form sets `data-hydrated="true"` from a mount effect, absent from SSR.
  *
  * @param params.page - The Playwright page sitting on a create form route
@@ -20,7 +20,9 @@ export async function waitForListingCreateFormHydration({
     readonly timeout?: number;
 }): Promise<void> {
     await expect(
-        page.locator('form[data-hydrated="true"]'),
+        page
+            .locator('[data-kit-section] form[data-hydrated="true"]')
+            .filter({ has: page.locator('#cc-name') }),
         'The listing create form island never hydrated.'
     ).toBeVisible({ timeout });
 }

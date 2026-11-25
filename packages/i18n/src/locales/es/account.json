@@ -1589,6 +1589,8 @@
             },
             "create": {
                 "pageTitle": "Nueva publicación",
+                "sectionTitle": "Datos de la nota",
+                "placeholder": { "category": "Elegí una categoría" },
                 "subtitle": "Completá lo básico ahora — vas a poder sumar fotos y más detalles después en el editor.",
                 "field": {
                     "title": "Título",
@@ -1597,6 +1599,8 @@
                     "category": "Categoría"
                 },
                 "hint": {
+                    "title": "Elegí un título claro para tu nota.",
+                    "category": "Elegí el tema principal de la publicación.",
                     "summary": "Entre 10 y 500 caracteres. Se muestra en el listado del blog.",
                     "content": "Mínimo 100 caracteres. Vas a poder seguir editándolo en el editor completo."
                 },
@@ -1688,6 +1692,11 @@
             },
             "create": {
                 "pageTitle": "Nuevo evento",
+                "sectionTitle": "Datos del evento",
+                "placeholder": {
+                    "category": "Elegí una categoría",
+                    "organizer": "Elegí un organizador"
+                },
                 "subtitle": "Completá lo básico ahora — vas a poder sumar fotos y más detalles después en el editor.",
                 "noAccess": {
                     "title": "Crear eventos es una función de los editores",
@@ -1703,6 +1712,11 @@
                     "organizerId": "Organiza"
                 },
                 "hint": {
+                    "name": "Ingresá el nombre con el que se anuncia el evento.",
+                    "category": "Elegí la categoría que mejor describa el evento.",
+                    "startDate": "Indicá la fecha y hora local de inicio.",
+                    "endDate": "Indicá la fecha y hora local de finalización.",
+                    "organizerId": "Elegí quién organiza el evento o creá un organizador.",
                     "description": "Entre 50 y 2000 caracteres. El resumen del listado sale de acá."
                 },
                 "organizer": {

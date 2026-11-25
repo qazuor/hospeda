@@ -1094,8 +1094,8 @@
             "subtitle": "Creamos el borrador con estos datos. Las fotos, los precios y el resto los cargás en el paso 2, desde el panel.",
             "precheck": {
                 "pickDraftDeleteOrUpgrade": {
-                    "body_one": "Estás usando {{currentCount}} propiedad y tu plan permite {{maxAllowed}}. Editá uno de tus borradores existentes o subí de plan para crear uno nuevo.",
-                    "body_other": "Estás usando {{currentCount}} propiedades y tu plan permite {{maxAllowed}}. Editá uno de tus borradores existentes o subí de plan para crear uno nuevo.",
+                    "body_one": "Tenés {{currentCount}} propiedad publicada y tu plan permite {{maxAllowed}}. Los borradores no cuentan para este límite. Podés seguir editándolos; para publicar otra propiedad, subí de plan.",
+                    "body_other": "Tenés {{currentCount}} propiedades publicadas y tu plan permite {{maxAllowed}}. Los borradores no cuentan para este límite. Podés seguir editándolos; para publicar otra propiedad, subí de plan.",
                     "pickCta": "Editar un borrador existente",
                     "title": "Tenés varios borradores, pero llegaste al límite de tu plan",
                     "upgradeCta": "Subir de plan"
@@ -1107,9 +1107,9 @@
                     "title": "Tenés varios borradores sin publicar"
                 },
                 "resumeDeleteOrUpgrade": {
-                    "body_one": "Estás usando {{currentCount}} propiedad y tu plan permite {{maxAllowed}}. Podés retomar tu borrador, borrarlo para liberar lugar, o subir de plan.",
-                    "body_other": "Estás usando {{currentCount}} propiedades y tu plan permite {{maxAllowed}}. Podés retomar tu borrador, borrarlo para liberar lugar, o subir de plan.",
-                    "deleteConfirm": "¿Borrar este borrador? Vas a poder crear una propiedad nueva.",
+                    "body_one": "Tenés {{currentCount}} propiedad publicada y tu plan permite {{maxAllowed}}. Los borradores no cuentan para este límite. Podés retomar o borrar tu borrador; para publicar otra propiedad, subí de plan.",
+                    "body_other": "Tenés {{currentCount}} propiedades publicadas y tu plan permite {{maxAllowed}}. Los borradores no cuentan para este límite. Podés retomar o borrar tu borrador; para publicar otra propiedad, subí de plan.",
+                    "deleteConfirm": "¿Borrar este borrador? Esta acción no libera cupo de publicación.",
                     "deleteCta": "Borrar borrador",
                     "resumeCta": "Retomar borrador",
                     "title": "Tenés un borrador, pero llegaste al límite de tu plan",

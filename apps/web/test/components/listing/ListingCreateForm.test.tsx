@@ -1,507 +1,198 @@
-/**
- * @file ListingCreateForm.test.tsx
- * @description RTL tests for the owner self-service listing create form
- * island (HOS-166 §7.2, §8 point 2).
- *
- * Covers: the form renders empty (HOS-693 §6.2 removed the HOS-257 `prefill`
- * prop), successful submit calls the create endpoint and redirects to the
- * editor, validation blocks submit on missing required fields, and the
- * experience vertical additionally requires priceFrom/priceUnit.
- */
-
+/** Minimal draft creation: kit semantics, pricing, validation and redirects. */
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ListingCreateForm } from '../../../src/components/listing/ListingCreateForm.client';
-import type { ListingDetail } from '../../../src/lib/listing/owner-listings';
+import { ListingCreateForm } from '@/components/listing/ListingCreateForm.client';
+import { createOwnerListing, type ListingDetail } from '@/lib/listing/owner-listings';
 
-vi.mock('../../../src/lib/i18n', async (importOriginal) => ({
-    ...(await importOriginal<typeof import('@/lib/i18n')>()),
-    createTranslations: (_locale: string) => ({
-        t: (key: string, fallback?: string) =>
-            key === 'venue.typeDescriptions.BOLICHE'
-                ? 'Nightclub description'
-                : key === 'venue.typeDescriptions.PUB'
-                  ? 'Pub description'
-                  : key === 'validation.venue.businessLines.NOT_ALLOWED_FOR_TYPE'
-                    ? 'Este tipo de comercio no admite ese rubro'
-                    : (fallback ?? key)
-    })
-}));
+vi.mock('@/lib/listing/owner-listings', () => ({ createOwnerListing: vi.fn() }));
+const create = vi.mocked(createOwnerListing);
+const destinations = [{ id: '11111111-1111-4111-8111-111111111111', name: 'Colón' }];
+const field = (label: string) => screen.getByLabelText(new RegExp(`^${label}`));
+const change = (label: string, value: string) =>
+    fireEvent.change(field(label), { target: { value } });
 
-vi.mock('../../../src/components/listing/ListingCreateForm.module.css', () => ({
-    default: new Proxy({} as Record<string, string>, { get: (_t, prop) => String(prop) })
-}));
-
-vi.mock('../../../src/components/listing/editor/BusinessLinesField.module.css', () => ({
-    default: new Proxy({} as Record<string, string>, { get: (_t, prop) => String(prop) })
-}));
-
-vi.mock('../../../src/lib/urls', () => ({
-    buildUrl: ({ locale, path = '' }: { locale: string; path?: string }) => `/${locale}/${path}/`
-}));
-
-vi.mock('../../../src/lib/listing/owner-listings', () => ({
-    createOwnerListing: vi.fn()
-}));
-
-import { createOwnerListing } from '../../../src/lib/listing/owner-listings';
-
-const mockCreate = vi.mocked(createOwnerListing);
-
-const destinations = [{ id: 'dest-1', name: 'Concepción del Uruguay' }];
-
-/**
- * Builds a minimal fake `createOwnerListing` success response. Only `id` is
- * read by the component (to build the editor redirect URL); the rest of
- * `ListingDetail`'s many required fields are irrelevant to these
- * tests.
- *
- * TYPE-WORKAROUND: a real `ListingDetail` (Venue|Experience
- * union) has dozens of required fields unrelated to this test's assertions;
- * a double-cast keeps the fixture minimal instead of hand-filling every one.
- */
-function fakeCreatedListing(id: string): ListingDetail {
-    return { id } as unknown as ListingDetail;
+function fill(vertical: 'venue' | 'experience' = 'venue') {
+    change('Nombre', 'Una ficha de prueba');
+    change('Categoría', vertical === 'venue' ? 'BAR' : 'EXCURSION');
+    change('Resumen', 'Un resumen de nuestra propuesta');
+    change('Descripción', 'Una descripción suficientemente larga de nuestra propuesta.');
 }
 
 beforeEach(() => {
-    mockCreate.mockReset();
-    Object.defineProperty(window, 'location', {
-        value: { href: '' },
-        writable: true,
-        configurable: true
-    });
+    create.mockReset();
+    create.mockResolvedValue({ ok: true, data: { id: 'listing-1' } as ListingDetail });
+    Object.defineProperty(window, 'location', { value: { href: '' }, configurable: true });
 });
 
 describe('ListingCreateForm', () => {
-    it('announces hydration after mount', () => {
+    it('renders a named kit Section, required controls, hints, counters and a hydration marker', () => {
         const { container } = render(
             <ListingCreateForm
-                vertical="venue"
                 locale="es"
-                destinations={[]}
+                vertical="venue"
+                destinations={destinations}
             />
         );
-
+        expect(screen.getByRole('region', { name: 'Datos para empezar' })).toHaveAttribute(
+            'data-kit-section'
+        );
         expect(container.querySelector('form')).toHaveAttribute('data-hydrated', 'true');
+        expect(field('Nombre')).toHaveAttribute('aria-required', 'true');
+        expect(field('Nombre')).toHaveAttribute('aria-describedby', 'cc-name-hint cc-name-counter');
+        expect(field('Nombre')).toHaveValue('');
+        expect(field('Ciudad / Destino')).toHaveValue('');
+        expect(screen.getByRole('option', { name: 'Elegí una categoría' })).toHaveValue('');
+        expect(screen.getByTestId('listing-create-submit')).toHaveClass('primary');
+        change('Resumen', 'Un resumen');
+        expect(container.querySelector('#cc-summary-counter')).toHaveTextContent(
+            '10 de 300 caracteres'
+        );
     });
 
-    it('shows the selected venue type description and updates it when the type changes', () => {
+    it.each([
+        'BAR',
+        'BOLICHE',
+        'HELADERIA'
+    ])('leaves business lines and age to the server/editor for %s', async (type) => {
         render(
             <ListingCreateForm
+                locale="es"
                 vertical="venue"
-                locale="en"
-                destinations={[]}
+                destinations={destinations}
             />
         );
-        const typeSelect = screen.getByLabelText('Categoría');
-        fireEvent.change(typeSelect, { target: { value: 'BOLICHE' } });
-        expect(screen.getByText('Nightclub description')).toBeInTheDocument();
-        fireEvent.change(typeSelect, { target: { value: 'PUB' } });
-        expect(screen.getByText('Pub description')).toBeInTheDocument();
-        expect(screen.queryByText('Nightclub description')).not.toBeInTheDocument();
-    });
-    describe('always renders empty (HOS-693 §6.2 removed the HOS-257 prefill prop)', () => {
-        it('renders a fully empty, usable form', () => {
-            render(
-                <ListingCreateForm
-                    vertical="venue"
-                    locale="es"
-                    destinations={destinations}
-                />
-            );
-
-            expect(screen.getByLabelText('Nombre del comercio')).toHaveValue('');
-            expect(screen.getByLabelText('Ciudad / Destino')).toHaveValue('');
+        fill();
+        change('Categoría', type);
+        expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
+        expect(screen.queryByLabelText(/Edad mínima/)).not.toBeInTheDocument();
+        fireEvent.click(screen.getByTestId('listing-create-submit'));
+        await waitFor(() => expect(create).toHaveBeenCalledOnce());
+        expect(create.mock.calls[0]?.[0]).toEqual({
+            vertical: 'venue',
+            data: {
+                name: 'Una ficha de prueba',
+                type,
+                summary: 'Un resumen de nuestra propuesta',
+                description: 'Una descripción suficientemente larga de nuestra propuesta.',
+                destinationId: undefined
+            }
         });
-
-        it('lets the owner type freely into the name field', () => {
-            render(
-                <ListingCreateForm
-                    vertical="venue"
-                    locale="es"
-                    destinations={destinations}
-                />
-            );
-
-            const input = screen.getByLabelText('Nombre del comercio');
-            fireEvent.change(input, { target: { value: 'La Parrilla de Juan' } });
-
-            expect(input).toHaveValue('La Parrilla de Juan');
-        });
+        expect(window.location.href).toBe('/es/mi-cuenta/comercio/venue/listing-1/editar/');
     });
 
-    describe('business lines (HOS-1787 leaf 5.6)', () => {
-        it('preselects the type lines and sends the BOLICHE minAge (TEST:5.6:5)', async () => {
-            mockCreate.mockResolvedValue({ ok: true, data: fakeCreatedListing('listing-bl') });
+    it('includes the selected destination and updates the type hint', async () => {
+        render(
+            <ListingCreateForm
+                locale="es"
+                vertical="venue"
+                destinations={destinations}
+            />
+        );
+        fill();
+        const previousHint = document.getElementById('cc-type-hint')?.textContent;
+        change('Categoría', 'BOLICHE');
+        expect(document.getElementById('cc-type-hint')?.textContent).not.toBe(previousHint);
+        change('Ciudad / Destino', destinations[0].id);
+        fireEvent.click(screen.getByTestId('listing-create-submit'));
+        await waitFor(() => expect(create).toHaveBeenCalledOnce());
+        expect(create.mock.calls[0]?.[0].data.destinationId).toBe(destinations[0].id);
+    });
 
-            render(
-                <ListingCreateForm
-                    vertical="venue"
-                    locale="es"
-                    destinations={destinations}
-                />
-            );
+    it('blocks an empty form and associates validation errors with the fields', () => {
+        render(
+            <ListingCreateForm
+                locale="es"
+                vertical="venue"
+                destinations={destinations}
+            />
+        );
+        fireEvent.click(screen.getByTestId('listing-create-submit'));
+        expect(create).not.toHaveBeenCalled();
+        expect(field('Nombre')).toHaveAttribute('aria-invalid', 'true');
+        expect(field('Nombre')).toHaveAttribute(
+            'aria-describedby',
+            expect.stringContaining('cc-name-error')
+        );
+    });
 
-            fireEvent.change(screen.getByLabelText('Categoría'), {
-                target: { value: 'BAR' }
-            });
+    it.each([true, false])('surfaces an unavailable destination catalog (failed=%s)', (failed) => {
+        render(
+            <ListingCreateForm
+                locale="es"
+                vertical="venue"
+                destinations={[]}
+                destinationsLoadFailed={failed}
+            />
+        );
+        expect(screen.getByRole('alert')).toHaveTextContent(
+            failed ? /No pudimos cargar/ : /Todavía no hay/
+        );
+    });
 
-            expect(screen.getByRole('checkbox', { name: /food/ })).toBeChecked();
-            expect(screen.getByRole('checkbox', { name: /nightlife/ })).toBeChecked();
-
-            fireEvent.change(screen.getByLabelText('Categoría'), {
-                target: { value: 'BOLICHE' }
-            });
-
-            expect(screen.queryByRole('checkbox', { name: /food/ })).toBeNull();
-            expect(screen.getByRole('checkbox', { name: /nightlife/ })).toBeChecked();
-            expect(screen.getByLabelText('Edad mínima')).toHaveValue(18);
-
-            fireEvent.change(screen.getByLabelText('Nombre del comercio'), {
-                target: { value: 'Boliche del Puerto' }
-            });
-            fireEvent.change(screen.getByLabelText('Resumen'), {
-                target: { value: 'Noche y música en el puerto' }
-            });
-            fireEvent.change(screen.getByLabelText('Descripción'), {
-                target: { value: 'Un boliche con música en vivo todos los fines de semana.' }
-            });
-
-            fireEvent.click(screen.getByTestId('listing-create-submit'));
-
-            await waitFor(() => {
-                expect(mockCreate).toHaveBeenCalledTimes(1);
-            });
-
-            const call = mockCreate.mock.calls[0]?.[0];
-            expect(call?.data).toMatchObject({
-                businessLines: ['nightlife'],
-                // HOS-2060: the boliche default lands in `policies`.
-                policies: { minAge: 18 }
-            });
-            expect(call?.data).not.toHaveProperty('minAge');
-        });
-
-        it('shows the 400 business-line reason inside the selector (TEST:5.6:4)', async () => {
-            mockCreate.mockResolvedValue({
-                ok: false,
-                error: {
-                    status: 400,
-                    code: 'VALIDATION_ERROR',
-                    message: 'Invalid business lines',
-                    details: { field: 'businessLines', reason: 'NOT_ALLOWED_FOR_TYPE' }
-                }
-            } as unknown as Awaited<ReturnType<typeof createOwnerListing>>);
-
-            render(
-                <ListingCreateForm
-                    vertical="venue"
-                    locale="es"
-                    destinations={destinations}
-                />
-            );
-
-            fireEvent.change(screen.getByLabelText('Nombre del comercio'), {
-                target: { value: 'Heladería del Puerto' }
-            });
-            fireEvent.change(screen.getByLabelText('Categoría'), {
-                target: { value: 'HELADERIA' }
-            });
-            fireEvent.change(screen.getByLabelText('Resumen'), {
-                target: { value: 'Helados artesanales del puerto' }
-            });
-            fireEvent.change(screen.getByLabelText('Descripción'), {
-                target: { value: 'Una heladería artesanal con sabores de la región.' }
-            });
-
-            fireEvent.click(screen.getByTestId('listing-create-submit'));
-
-            // HOS-2488: the kit group describes itself by its error paragraph.
-            await waitFor(() => {
-                expect(screen.getByRole('group', { name: 'Rubros' })).toHaveAccessibleDescription(
-                    expect.stringContaining('Este tipo de comercio no admite ese rubro')
-                );
-            });
-        });
-
-        it('does not render the business-line fieldset for an experience (AC:5:9)', () => {
-            render(
-                <ListingCreateForm
-                    vertical="experience"
-                    locale="es"
-                    destinations={destinations}
-                />
-            );
-
-            expect(document.getElementById('ce-businessLines')).toBeNull();
-            expect(screen.queryByRole('checkbox', { name: 'food' })).toBeNull();
+    it('requires experience pricing and converts pesos to cents', async () => {
+        render(
+            <ListingCreateForm
+                locale="es"
+                vertical="experience"
+                destinations={destinations}
+            />
+        );
+        fill('experience');
+        fireEvent.click(screen.getByTestId('listing-create-submit'));
+        expect(create).not.toHaveBeenCalled();
+        change('Precio desde', '15000');
+        change('Unidad de precio', 'per_person');
+        fireEvent.click(screen.getByTestId('listing-create-submit'));
+        await waitFor(() => expect(create).toHaveBeenCalledOnce());
+        expect(create.mock.calls[0]?.[0].data).toMatchObject({
+            priceFrom: 1500000,
+            priceUnit: 'per_person',
+            isPriceOnRequest: false
         });
     });
 
-    describe('venue submit', () => {
-        it('submits a DRAFT create payload and redirects to the editor on success', async () => {
-            mockCreate.mockResolvedValue({ ok: true, data: fakeCreatedListing('listing-1') });
-
-            render(
-                <ListingCreateForm
-                    vertical="venue"
-                    locale="es"
-                    destinations={destinations}
-                />
-            );
-
-            fireEvent.change(screen.getByLabelText('Nombre del comercio'), {
-                target: { value: 'La Parrilla de Juan' }
-            });
-            fireEvent.change(screen.getByLabelText('Categoría'), {
-                target: { value: 'RESTAURANT' }
-            });
-            fireEvent.change(screen.getByLabelText('Resumen'), {
-                target: { value: 'Parrilla tradicional a orillas del río' }
-            });
-            fireEvent.change(screen.getByLabelText('Descripción'), {
-                target: {
-                    value: 'Una parrilla familiar con más de 20 años de historia en la ciudad.'
-                }
-            });
-
-            fireEvent.click(screen.getByTestId('listing-create-submit'));
-
-            await waitFor(() => {
-                expect(mockCreate).toHaveBeenCalledTimes(1);
-            });
-
-            const call = mockCreate.mock.calls[0]?.[0];
-            expect(call?.vertical).toBe('venue');
-            expect(call?.data).toMatchObject({ name: 'La Parrilla de Juan', type: 'RESTAURANT' });
-
-            await waitFor(() => {
-                expect(window.location.href).toContain(
-                    '/mi-cuenta/comercio/venue/listing-1/editar'
-                );
-            });
+    it('submits null price and unit when the price is on request', async () => {
+        render(
+            <ListingCreateForm
+                locale="es"
+                vertical="experience"
+                destinations={destinations}
+            />
+        );
+        fill('experience');
+        fireEvent.click(field('Precio a consultar'));
+        expect(field('Precio desde')).toBeDisabled();
+        expect(field('Unidad de precio')).toBeDisabled();
+        fireEvent.click(screen.getByTestId('listing-create-submit'));
+        await waitFor(() => expect(create).toHaveBeenCalledOnce());
+        expect(create.mock.calls[0]?.[0].data).toMatchObject({
+            priceFrom: null,
+            priceUnit: null,
+            isPriceOnRequest: true
         });
-
-        it('does not submit when required fields are missing', async () => {
-            render(
-                <ListingCreateForm
-                    vertical="venue"
-                    locale="es"
-                    destinations={destinations}
-                />
-            );
-
-            fireEvent.click(screen.getByTestId('listing-create-submit'));
-
-            await waitFor(() => {
-                expect(mockCreate).not.toHaveBeenCalled();
-            });
-        });
+        expect(create.mock.calls[0]?.[0].data).not.toHaveProperty('businessLines');
+        expect(window.location.href).toBe('/es/mi-cuenta/comercio/experience/listing-1/editar/');
     });
 
-    describe('destinationsLoadFailed (judgment-day fix)', () => {
-        it('shows an error message instead of silently hiding the destination select', () => {
-            render(
-                <ListingCreateForm
-                    vertical="venue"
-                    locale="es"
-                    destinations={[]}
-                    destinationsLoadFailed
-                />
-            );
-
-            expect(screen.getByRole('alert')).toHaveTextContent(
-                'No pudimos cargar el listado de ciudades / destinos.'
-            );
-            expect(screen.queryByLabelText('Ciudad / Destino')).not.toBeInTheDocument();
+    it('shows API errors and retires the old banner before a retry', async () => {
+        create.mockResolvedValueOnce({
+            ok: false,
+            error: { code: 'INTERNAL_ERROR', message: 'boom' }
         });
-
-        it('shows an empty-catalog message (not the load-failed one) when destinations legitimately loaded empty', () => {
-            render(
-                <ListingCreateForm
-                    vertical="venue"
-                    locale="es"
-                    destinations={[]}
-                />
-            );
-
-            // HOS-260: a genuinely empty catalog must not leave the required
-            // destinationId field silently missing with zero explanation.
-            expect(screen.getByRole('alert')).toHaveTextContent(
-                'Todavía no hay ciudades / destinos cargados.'
-            );
-            expect(screen.queryByLabelText('Ciudad / Destino')).not.toBeInTheDocument();
-        });
-    });
-
-    describe('experience vertical', () => {
-        it('renders the priceFrom/priceUnit fields (required at create for experience)', () => {
-            render(
-                <ListingCreateForm
-                    vertical="experience"
-                    locale="es"
-                    destinations={destinations}
-                />
-            );
-
-            expect(screen.getByLabelText('Precio desde')).toBeInTheDocument();
-            expect(screen.getByLabelText('Unidad de precio')).toBeInTheDocument();
-        });
-
-        it('names the thing being created an experience, not a comercio (HOS-820)', () => {
-            render(
-                <ListingCreateForm
-                    vertical="experience"
-                    locale="es"
-                    destinations={destinations}
-                />
-            );
-
-            expect(screen.getByLabelText('Nombre de la experiencia')).toBeInTheDocument();
-            expect(screen.getByTestId('listing-create-submit')).toHaveTextContent(
-                'Crear experiencia'
-            );
-            // The internal module name must not reach the screen on this form.
-            expect(screen.queryByLabelText(/comercio/i)).toBeNull();
-            expect(screen.queryByText(/comercio/i)).toBeNull();
-        });
-
-        it('surfaces a create failure in experience words (HOS-820)', async () => {
-            // No `message` and no `code`: the shapeless failure (a dropped
-            // connection) is exactly when the form's own fallback copy shows.
-            // An API error that carries its own message renders THAT instead.
-            mockCreate.mockResolvedValue({ ok: false, error: {} } as unknown as Awaited<
-                ReturnType<typeof createOwnerListing>
-            >);
-
-            render(
-                <ListingCreateForm
-                    vertical="experience"
-                    locale="es"
-                    destinations={destinations}
-                />
-            );
-
-            fireEvent.change(screen.getByLabelText('Nombre de la experiencia'), {
-                target: { value: 'Kayak Aventura' }
-            });
-            fireEvent.change(screen.getByLabelText('Categoría'), {
-                target: { value: 'TOUR_GUIDE' }
-            });
-            fireEvent.change(screen.getByLabelText('Resumen'), {
-                target: { value: 'Salidas en kayak por el río Uruguay' }
-            });
-            fireEvent.change(screen.getByLabelText('Descripción'), {
-                target: { value: 'Una salida guiada en kayak de dos horas por el río Uruguay.' }
-            });
-            fireEvent.change(screen.getByLabelText('Unidad de precio'), {
-                target: { value: 'per_person' }
-            });
-            fireEvent.change(screen.getByLabelText('Precio desde'), {
-                target: { value: '15000' }
-            });
-
-            fireEvent.click(screen.getByTestId('listing-create-submit'));
-
-            expect(await screen.findByRole('alert')).toHaveTextContent(
-                'No pudimos crear la experiencia. Probá de nuevo.'
-            );
-        });
-
-        it('does not expose the internal centavo unit in the price label (HOS-809)', () => {
-            render(
-                <ListingCreateForm
-                    vertical="experience"
-                    locale="es"
-                    destinations={destinations}
-                />
-            );
-
-            expect(screen.queryByLabelText(/centavos/i)).toBeNull();
-        });
-
-        it('converts the price typed in pesos into centavos before creating (HOS-809)', async () => {
-            mockCreate.mockResolvedValue({ ok: true, data: fakeCreatedListing('listing-3') });
-
-            render(
-                <ListingCreateForm
-                    vertical="experience"
-                    locale="es"
-                    destinations={destinations}
-                />
-            );
-
-            fireEvent.change(screen.getByLabelText('Nombre de la experiencia'), {
-                target: { value: 'Kayak Aventura' }
-            });
-            fireEvent.change(screen.getByLabelText('Categoría'), {
-                target: { value: 'TOUR_GUIDE' }
-            });
-            fireEvent.change(screen.getByLabelText('Resumen'), {
-                target: { value: 'Salidas en kayak por el río Uruguay' }
-            });
-            fireEvent.change(screen.getByLabelText('Descripción'), {
-                target: { value: 'Una salida guiada en kayak de dos horas por el río Uruguay.' }
-            });
-            fireEvent.change(screen.getByLabelText('Unidad de precio'), {
-                target: { value: 'per_person' }
-            });
-            // Fifteen thousand PESOS — the amount the bug published as $ 150.
-            fireEvent.change(screen.getByLabelText('Precio desde'), {
-                target: { value: '15000' }
-            });
-
-            fireEvent.click(screen.getByTestId('listing-create-submit'));
-
-            await waitFor(() => {
-                expect(mockCreate).toHaveBeenCalledTimes(1);
-            });
-
-            const call = mockCreate.mock.calls[0]?.[0];
-            expect(call?.data).toMatchObject({ priceFrom: 1500000, isPriceOnRequest: false });
-        });
-
-        it('does not require priceFrom when isPriceOnRequest is checked', async () => {
-            mockCreate.mockResolvedValue({ ok: true, data: fakeCreatedListing('listing-2') });
-
-            render(
-                <ListingCreateForm
-                    vertical="experience"
-                    locale="es"
-                    destinations={destinations}
-                />
-            );
-
-            fireEvent.change(screen.getByLabelText('Nombre de la experiencia'), {
-                target: { value: 'City Tour CdU' }
-            });
-            fireEvent.change(screen.getByLabelText('Categoría'), {
-                target: { value: 'TOUR_GUIDE' }
-            });
-            fireEvent.change(screen.getByLabelText('Resumen'), {
-                target: { value: 'Recorré la ciudad con guías locales' }
-            });
-            fireEvent.change(screen.getByLabelText('Descripción'), {
-                target: { value: 'Un tour guiado por el casco histórico de la ciudad, dos horas.' }
-            });
-            // priceUnit stays REQUIRED even when isPriceOnRequest is checked (the
-            // create schema is not `.partial()` — see the component's inline
-            // comment on the priceUnit select for why it is not disabled here).
-            fireEvent.change(screen.getByLabelText('Unidad de precio'), {
-                target: { value: 'per_day' }
-            });
-            fireEvent.click(screen.getByText('Precio a consultar'));
-
-            fireEvent.click(screen.getByTestId('listing-create-submit'));
-
-            await waitFor(() => {
-                expect(mockCreate).toHaveBeenCalledTimes(1);
-            });
-
-            const call = mockCreate.mock.calls[0]?.[0];
-            // HOS-1943: "a consultar" stores no price — null, never a fake 0.
-            expect(call?.data).toMatchObject({ priceFrom: null, isPriceOnRequest: true });
-        });
+        render(
+            <ListingCreateForm
+                locale="es"
+                vertical="venue"
+                destinations={destinations}
+            />
+        );
+        fill();
+        fireEvent.click(screen.getByTestId('listing-create-submit'));
+        expect(await screen.findByRole('alert')).toHaveTextContent('Algo salió mal');
+        expect(window.location.href).toBe('');
+        change('Nombre', '');
+        fireEvent.click(screen.getByTestId('listing-create-submit'));
+        expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+        expect(create).toHaveBeenCalledOnce();
     });
 });

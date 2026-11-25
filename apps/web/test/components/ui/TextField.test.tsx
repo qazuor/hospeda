@@ -308,7 +308,7 @@ describe('TextField', () => {
         const control = screen.getByLabelText('Nombre');
         const counter = screen.getByTestId('name-counter');
 
-        expect(counter).toHaveTextContent('2/100 · mín. 3');
+        expect(counter).toHaveTextContent('2 de 100 caracteres · mín. 3');
         expect(counter).toHaveAttribute('data-state', 'under-minimum');
         expect(control.getAttribute('aria-describedby')).toBe(counter.id);
     });

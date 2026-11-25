@@ -92,7 +92,7 @@
         },
         "hero": {
             "tagline": "Para quem oferece experiências",
-            "title": "Publique sua experiência e lote as vagas",
+            "title": "Publique sua experiência e alcance mais viajantes",
             "body": "Comece aqui pelo básico: o que você oferece, de que tipo é e de qual destino sai. As fotos, o ponto de encontro e os horários você preenche depois, no seu painel."
         },
         "trialCallout_one": "Experimente o Hospeda grátis por {{trialDays}} dia, sem cartão. O teste começa sozinho quando você publica sua primeira experiência.",
@@ -137,11 +137,11 @@
             },
             "resumeDeleteOrUpgrade": {
                 "title": "Você tem uma ficha começada, mas atingiu o limite do seu plano",
-                "body_one": "Você está usando {{currentCount}} ficha e seu plano permite {{maxAllowed}}. Pode retomar a que começou, apagá-la para liberar espaço ou fazer um upgrade do plano.",
-                "body_other": "Você está usando {{currentCount}} fichas e seu plano permite {{maxAllowed}}. Pode retomar a que começou, apagá-la para liberar espaço ou fazer um upgrade do plano.",
+                "body_one": "Você tem {{currentCount}} ficha publicada e seu plano permite {{maxAllowed}}. Rascunhos não contam para esse limite. Você pode retomar ou apagar seu rascunho; para publicar outra ficha, mude de plano.",
+                "body_other": "Você tem {{currentCount}} fichas publicadas e seu plano permite {{maxAllowed}}. Rascunhos não contam para esse limite. Você pode retomar ou apagar seu rascunho; para publicar outra ficha, mude de plano.",
                 "resumeCta": "Retomar a ficha",
                 "deleteCta": "Apagar a ficha",
-                "deleteConfirm": "Apagar esta ficha sem publicar? Você vai poder criar uma nova.",
+                "deleteConfirm": "Apagar este rascunho? Isso não libera uma vaga de publicação.",
                 "upgradeCta": "Fazer upgrade do plano"
             },
             "pickDraftOrCreate": {
@@ -152,8 +152,8 @@
             },
             "pickDraftDeleteOrUpgrade": {
                 "title": "Você tem várias fichas começadas, mas atingiu o limite do seu plano",
-                "body_one": "Você está usando {{currentCount}} ficha e seu plano permite {{maxAllowed}}. Edite uma das que já começou ou faça um upgrade do plano para criar outra.",
-                "body_other": "Você está usando {{currentCount}} fichas e seu plano permite {{maxAllowed}}. Edite uma das que já começou ou faça um upgrade do plano para criar outra.",
+                "body_one": "Você tem {{currentCount}} ficha publicada e seu plano permite {{maxAllowed}}. Rascunhos não contam para esse limite. Você pode continuar editando seus rascunhos; para publicar outra ficha, mude de plano.",
+                "body_other": "Você tem {{currentCount}} fichas publicadas e seu plano permite {{maxAllowed}}. Rascunhos não contam para esse limite. Você pode continuar editando seus rascunhos; para publicar outra ficha, mude de plano.",
                 "pickCta": "Editar uma ficha começada",
                 "upgradeCta": "Fazer upgrade do plano"
             }
@@ -167,11 +167,11 @@
             },
             "resumeDeleteOrUpgrade": {
                 "title": "Você tem uma experiência começada, mas atingiu o limite do seu plano",
-                "body_one": "Você está usando {{currentCount}} experiência e seu plano permite {{maxAllowed}}. Pode retomar a que começou, apagá-la para liberar espaço ou fazer um upgrade do plano.",
-                "body_other": "Você está usando {{currentCount}} experiências e seu plano permite {{maxAllowed}}. Pode retomar a que começou, apagá-la para liberar espaço ou fazer um upgrade do plano.",
+                "body_one": "Você tem {{currentCount}} experiência publicada e seu plano permite {{maxAllowed}}. Rascunhos não contam para esse limite. Você pode retomar ou apagar seu rascunho; para publicar outra experiência, mude de plano.",
+                "body_other": "Você tem {{currentCount}} experiências publicadas e seu plano permite {{maxAllowed}}. Rascunhos não contam para esse limite. Você pode retomar ou apagar seu rascunho; para publicar outra experiência, mude de plano.",
                 "resumeCta": "Retomar a experiência",
                 "deleteCta": "Apagar a experiência",
-                "deleteConfirm": "Apagar esta experiência sem publicar? Você vai poder criar uma nova.",
+                "deleteConfirm": "Apagar este rascunho? Isso não libera uma vaga de publicação.",
                 "upgradeCta": "Fazer upgrade do plano"
             },
             "pickDraftOrCreate": {
@@ -182,8 +182,8 @@
             },
             "pickDraftDeleteOrUpgrade": {
                 "title": "Você tem várias experiências começadas, mas atingiu o limite do seu plano",
-                "body_one": "Você está usando {{currentCount}} experiência e seu plano permite {{maxAllowed}}. Edite uma das que já começou ou faça um upgrade do plano para criar outra.",
-                "body_other": "Você está usando {{currentCount}} experiências e seu plano permite {{maxAllowed}}. Edite uma das que já começou ou faça um upgrade do plano para criar outra.",
+                "body_one": "Você tem {{currentCount}} experiência publicada e seu plano permite {{maxAllowed}}. Rascunhos não contam para esse limite. Você pode continuar editando seus rascunhos; para publicar outra experiência, mude de plano.",
+                "body_other": "Você tem {{currentCount}} experiências publicadas e seu plano permite {{maxAllowed}}. Rascunhos não contam para esse limite. Você pode continuar editando seus rascunhos; para publicar outra experiência, mude de plano.",
                 "pickCta": "Editar uma experiência começada",
                 "upgradeCta": "Fazer upgrade do plano"
             }
