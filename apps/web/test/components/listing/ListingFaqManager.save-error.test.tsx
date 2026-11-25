@@ -14,9 +14,6 @@ vi.mock('@/hooks/use-faq-ai-draft', () => ({
 vi.mock('@/components/host/editor/PlanEntitlementGate.client', () => ({
     PlanEntitlementGate: ({ children }: { children: React.ReactNode }) => <>{children}</>
 }));
-vi.mock('../../../src/components/listing/ListingFaqManager.module.css', () => ({
-    default: new Proxy({} as Record<string, string>, { get: (_t, prop) => String(prop) })
-}));
 vi.mock('../../../src/lib/api/client', () => ({
     apiClient: {
         post: vi.fn(),

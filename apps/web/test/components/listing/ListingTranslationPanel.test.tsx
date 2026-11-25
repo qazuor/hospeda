@@ -27,10 +27,6 @@ import {
 // Module mocks
 // ---------------------------------------------------------------------------
 
-vi.mock('../../../src/components/listing/ListingTranslationPanel.module.css', () => ({
-    default: new Proxy({} as Record<string, string>, { get: (_t, prop) => String(prop) })
-}));
-
 vi.mock('../../../src/lib/i18n', async (importOriginal) => ({
     // The kit pieces the panel renders (Field, Alert, Tabs) read the real
     // module's other exports, so only `createTranslations` is replaced.
@@ -101,6 +97,14 @@ function renderPanel(
 // ---------------------------------------------------------------------------
 
 describe('ListingTranslationPanel', () => {
+    it('uses a distinct help-anchored kit section and a single-line name control', () => {
+        const { container } = renderPanel();
+        expect(container.querySelectorAll('[data-kit-section]')).toHaveLength(1);
+        expect(container.querySelector('[data-help="section:venue.traducciones"]')).not.toBeNull();
+        expect(screen.getByRole('textbox', { name: 'Nombre (ES)' }).tagName).toBe('INPUT');
+        expect(screen.queryByRole('heading', { name: 'Traducciones' })).toBeNull();
+    });
+
     it('interpolates the active locale into the placeholder instead of printing the template', () => {
         renderPanel();
 

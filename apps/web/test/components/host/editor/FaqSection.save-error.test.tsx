@@ -17,9 +17,6 @@ vi.mock('@/hooks/use-faq-ai-draft', () => ({
 vi.mock('@/components/host/editor/PlanEntitlementGate.client', () => ({
     PlanEntitlementGate: ({ children }: { children: React.ReactNode }) => <>{children}</>
 }));
-vi.mock('@/components/host/editor/FaqSection.module.css', () => ({
-    default: new Proxy({} as Record<string, string>, { get: (_t, prop) => String(prop) })
-}));
 vi.mock('@/lib/logger', () => ({
     webLogger: { warn: vi.fn(), error: vi.fn(), info: vi.fn() }
 }));
