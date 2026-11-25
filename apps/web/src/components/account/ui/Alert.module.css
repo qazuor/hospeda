@@ -3,6 +3,7 @@
 
 .alert {
     display: flex;
+    flex-wrap: wrap;
     align-items: flex-start;
     gap: var(--space-3);
     box-sizing: border-box;
@@ -50,7 +51,7 @@
 
 .body {
     display: flex;
-    flex: 1 1 auto;
+    flex: 1 1 14rem;
     flex-direction: column;
     gap: var(--space-1);
     min-inline-size: 0;
@@ -68,6 +69,7 @@
 
 .action {
     flex: none;
+    margin-inline-start: auto;
 }
 
 .visuallyHidden {

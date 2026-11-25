@@ -8,11 +8,14 @@
  * the amenity-name resolver is stubbed, to keep tile labels deterministic.
  */
 
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ComponentProps } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { AmenityCatalogBrowser } from '@/components/host/editor/amenity-catalog/AmenityCatalogBrowser.client';
+import styles from '@/components/host/editor/amenity-catalog/AmenityCatalogBrowser.module.css';
 import type { AmenityData } from '@/lib/api/types';
 
 vi.mock('@/lib/catalog-names', () => ({
@@ -229,6 +232,91 @@ describe('AmenityCatalogBrowser — toggling', () => {
 });
 
 describe('AmenityCatalogBrowser — details dialog', () => {
+    it('gives summary rows the full grid width without reordering tiles', () => {
+        const css = readFileSync(
+            resolve(
+                __dirname,
+                '../../../../../src/components/host/editor/amenity-catalog/AmenityCatalogBrowser.module.css'
+            ),
+            'utf8'
+        );
+        expect(css).toMatch(/\.tileItemWithDetails\s*\{\s*grid-column: 1 \/ -1;/);
+        expect(css).not.toMatch(/grid-auto-flow:\s*[^;]*dense/);
+        expect(css).not.toMatch(/\border:\s*\d/);
+    });
+
+    it.each([
+        { selected: true, value: { scope: 'shared' as const }, spans: true },
+        { selected: true, value: { availability: 'seasonal' as const }, spans: true },
+        { selected: true, value: { extraCharge: true }, spans: true },
+        {
+            selected: true,
+            value: { scope: null, availability: null, extraCharge: false },
+            spans: false
+        },
+        { selected: true, value: undefined, spans: false },
+        { selected: false, value: { scope: 'shared' as const }, spans: false }
+    ])('spans only selected amenities with declared details: $selected / $value', ({
+        selected,
+        value,
+        spans
+    }) => {
+        renderBrowser({
+            selectedAmenityIds: new Set(selected ? ['am-wifi'] : []),
+            amenityAttributes: value ? { 'am-wifi': value } : {}
+        });
+
+        const tile = screen.getByRole('button', { name: 'Wifi', pressed: selected }).closest('li');
+        if (spans) {
+            expect(tile).toHaveClass(styles.tileItemWithDetails);
+        } else {
+            expect(tile).not.toHaveClass(styles.tileItemWithDetails);
+        }
+    });
+
+    it('keeps selected features compact even when stale amenity attributes share their id', async () => {
+        const user = userEvent.setup();
+        renderBrowser({
+            selectedFeatureIds: new Set(['ft-river']),
+            amenityAttributes: { 'ft-river': { scope: 'shared' } }
+        });
+        await user.click(categoryButtons()[2] as HTMLElement);
+
+        expect(screen.getByRole('button', { name: 'zz-riverside' }).closest('li')).not.toHaveClass(
+            styles.tileItemWithDetails
+        );
+    });
+
+    it('preserves catalog order while a selected item gains and loses a full-row summary', () => {
+        const { props, rerender } = renderBrowser({
+            amenities: AMENITIES.map((item) => ({ ...item, category: 'CONNECTIVITY' })),
+            selectedAmenityIds: new Set(['am-pool'])
+        });
+        const originalOrder = tileNames();
+
+        rerender(
+            <AmenityCatalogBrowser
+                {...props}
+                amenityAttributes={{ 'am-pool': { scope: 'shared' } }}
+            />
+        );
+        expect(screen.getByRole('button', { name: 'Pileta' }).closest('li')).toHaveClass(
+            styles.tileItemWithDetails
+        );
+        expect(tileNames()).toEqual(originalOrder);
+
+        rerender(
+            <AmenityCatalogBrowser
+                {...props}
+                amenityAttributes={{}}
+            />
+        );
+        expect(screen.getByRole('button', { name: 'Pileta' }).closest('li')).not.toHaveClass(
+            styles.tileItemWithDetails
+        );
+        expect(tileNames()).toEqual(originalOrder);
+    });
+
     it('offers "Agregar detalles" only on selected amenities, never on features', async () => {
         const user = userEvent.setup();
         renderBrowser({

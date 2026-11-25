@@ -237,7 +237,7 @@ export function AiQuestionsPanel({
                                 : 'Todavía nadie le hizo preguntas al asistente de esta ficha.'
                         )}
                     />,
-                    true
+                    hasFilter
                 )}
             </>
         );
@@ -279,23 +279,24 @@ export function AiQuestionsPanel({
 
             {unanswered.length > 0 && (
                 <Section
-                    title={unansweredTitle}
+                    title={
+                        <span className={styles.headingCount}>
+                            {unansweredTitle}
+                            <CountPill
+                                count={data.unansweredCount}
+                                variant="solid"
+                                label={t(
+                                    'host.properties.editor.aiQuestions.unansweredCountLabel',
+                                    undefined,
+                                    { count: data.unansweredCount }
+                                )}
+                            />
+                        </span>
+                    }
                     description={t(
                         'host.properties.editor.aiQuestions.unansweredHint',
                         'El asistente no encontró la respuesta en tu ficha. Sumarlas como preguntas frecuentes lo ayuda a responder la próxima vez.'
                     )}
-                    actions={
-                        <CountPill
-                            count={data.unansweredCount}
-                            variant="solid"
-                            label={t(
-                                'host.properties.editor.aiQuestions.unansweredCountLabel',
-                                '{{count}} sin responder',
-                                { count: data.unansweredCount }
-                            )}
-                        />
-                    }
-                    flush
                     helpId={helpId}
                 >
                     <DataList label={unansweredTitle}>
