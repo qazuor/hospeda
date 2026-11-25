@@ -82,7 +82,11 @@ export function KitGalleryData({ locale }: GalleryGroupProps) {
                                 locale={locale}
                                 state={{
                                     status: 'ready',
-                                    data: { value: 5, hint: '3 publicadas' }
+                                    data: {
+                                        value: 5,
+                                        nextStep: '3 publicadas',
+                                        detail: '3 publicadas · 2 borradores'
+                                    }
                                 }}
                                 link={{ href: '#kit', label: 'Gestionar' }}
                             />
@@ -103,6 +107,7 @@ export function KitGalleryData({ locale }: GalleryGroupProps) {
                                 label="Reseñas"
                                 locale={locale}
                                 state={{ status: 'empty' }}
+                                context="Todavía no hay reseñas"
                             />
                         </StatGrid>
                     </div>

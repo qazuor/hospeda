@@ -37,6 +37,7 @@ export function GeneralDashboardHeader({
     const t = createT(locale);
     return (
         <PageHeader
+            className={styles.identityHeader}
             locale={locale}
             helpId="section:account.dashboard"
             title={
@@ -47,7 +48,12 @@ export function GeneralDashboardHeader({
                         size="lg"
                         decorative
                     />
-                    {name}
+                    <span
+                        className={styles.identityName}
+                        title={name}
+                    >
+                        {name}
+                    </span>
                 </span>
             }
             description={email}

@@ -44,7 +44,7 @@
  */
 
 import AccountLayout from '@/layouts/AccountLayout.astro';
-import { Alert, PageHeader, Section, StatusPill, type StatusTone } from '@/components/account/ui';
+import { Alert, EmptyState, LinkButton, PageHeader, Section, StatusPill, type StatusTone } from '@/components/account/ui';
 import PageHelpLink from '@/components/account/help/PageHelpLink.astro';
 import { PartnerEditForm } from '@/components/account/PartnerEditForm.client';
 import { PartnerStatsGrid } from '@/components/account/dashboard/PartnerStatsGrid.client';
@@ -186,17 +186,16 @@ try {
                 </p>
             </Alert>
         ) : partner === null ? (
-            <Section title={t('account.partner.empty.title')} helpId="section:partner.empty">
-                <p>
-                    {t(
-                        'account.partner.empty.text',
-                        'Todavía no tenés una ficha de aliado. Postulate desde "Sumate como aliado" y, una vez aprobada tu solicitud, tu ficha va a aparecer acá.'
-                    )}
-                </p>
-                <a href={buildUrl({ locale, path: 'sumate/partner' })}>
-                    {t('account.partner.empty.cta', 'Ir a Sumate como aliado')}
-                </a>
-            </Section>
+            <EmptyState
+                helpId="section:partner.empty"
+                title={t('account.partner.empty.title')}
+                description={t('account.partner.empty.text')}
+                action={
+                    <LinkButton href={buildUrl({ locale, path: 'sumate/partner' })}>
+                        {t('account.partner.empty.cta')}
+                    </LinkButton>
+                }
+            />
         ) : (
             <>
                 <Alert locale={locale} tone={ALERT_TONE[listingState]} title={t('account.partner.nextAction.title')} helpId="section:partner.next-action">

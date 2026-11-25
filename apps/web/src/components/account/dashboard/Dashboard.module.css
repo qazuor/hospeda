@@ -17,23 +17,35 @@
     border-block-start: 1px solid var(--border);
 }
 
+.identityHeader > div > div:first-child {
+    flex: 1 1 18rem;
+    max-inline-size: 100%;
+}
+
+.identityHeader h1 {
+    min-inline-size: 0;
+    max-inline-size: 100%;
+}
+
+.identityHeader p {
+    overflow-wrap: anywhere;
+}
+
 .identity {
     display: inline-flex;
     align-items: center;
     gap: var(--space-3);
+    min-inline-size: 0;
+    max-inline-size: 100%;
 }
 
-/* Subscription StatCard rows (HOS-2553): one line per live subscription,
-   drawn inside the card's hint paragraph, so they are block-level spans. */
-.subRow {
-    display: block;
+.identityName {
+    min-inline-size: 0;
+    overflow-wrap: anywhere;
 }
 
-.subPlan {
-    font-weight: var(--app-card-title-weight);
-}
-
-.subAction {
-    display: block;
-    margin-block-start: var(--space-2);
+@media (width < 40rem) {
+    .identityName {
+        font: var(--app-card-title);
+    }
 }

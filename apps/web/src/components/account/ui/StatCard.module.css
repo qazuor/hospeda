@@ -27,9 +27,10 @@
 .card {
     display: flex;
     flex-direction: column;
-    gap: var(--space-2);
+    gap: var(--space-1);
     box-sizing: border-box;
     min-inline-size: 0;
+    min-block-size: calc(var(--space-10) * 3.75);
     padding: var(--space-4);
     background-color: var(--core-card);
     border: 1px solid var(--border);
@@ -40,7 +41,6 @@
 .head {
     display: flex;
     align-items: center;
-    justify-content: space-between;
     gap: var(--space-2);
 }
 
@@ -52,7 +52,14 @@
 
 .icon {
     display: inline-flex;
-    color: var(--core-muted-foreground);
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 var(--space-9);
+    inline-size: var(--space-9);
+    block-size: var(--space-9);
+    border-radius: var(--radius-pill);
+    color: var(--brand-primary);
+    background-color: oklch(from var(--brand-primary) l c h / 0.1);
 }
 
 .value {
@@ -60,7 +67,9 @@
     font: var(--app-stat);
     font-variant-numeric: tabular-nums;
     color: var(--core-foreground);
-    overflow-wrap: anywhere;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .dash {
@@ -71,6 +80,9 @@
     margin: 0;
     font: var(--app-meta);
     color: var(--core-muted-foreground);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .error {
@@ -82,7 +94,16 @@
 
 .link {
     margin-block-start: auto;
+    padding-block-start: var(--space-1);
     font: var(--app-ui);
+}
+
+/* Compact desktop rows; error/locked content must remain free to grow. */
+@container (width >= 30rem) {
+    .card[data-state="ready"],
+    .card[data-state="empty"] {
+        block-size: calc(var(--space-10) * 4);
+    }
 }
 
 .visuallyHidden {

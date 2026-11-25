@@ -19,12 +19,12 @@ import {
     type StatValue,
     settleAsync
 } from '@/components/account/ui';
+import { resolveDashboardNextStep } from '@/lib/account/dashboard-next-step';
 import { resolveSubscriptionStatText } from '@/lib/account/general-dashboard';
 import { publishApi, userApi } from '@/lib/api/endpoints-protected';
 import { createT, type SupportedLocale } from '@/lib/i18n';
 import { formatNoticeInstant } from '@/lib/listing/listing-notices';
 import { buildUrl } from '@/lib/urls';
-import styles from './Dashboard.module.css';
 
 /** Props of {@link GeneralDashboardStats}. */
 export interface GeneralDashboardStatsProps {
@@ -103,37 +103,26 @@ export function GeneralDashboardStats({ locale, planNames }: GeneralDashboardSta
             t,
             formatDate: (iso) => formatNoticeInstant({ iso, locale })
         });
-        // HOS-2553: the subscription rows and the what-to-do line ride in the hint.
-        const hasDetail = text.rows.length > 0 || text.action !== null;
         setPlanViewAll(text.viewAll);
         setPlanState({
             status: 'ready',
             data: {
                 value: text.value,
-                hint: hasDetail ? (
-                    <>
-                        {text.hint ? <span className={styles.subRow}>{text.hint}</span> : null}
-                        {text.rows.map((row) => (
-                            <span
-                                key={`${row.plan}:${row.status}`}
-                                className={styles.subRow}
-                                data-testid="subscription-row"
-                            >
-                                <span className={styles.subPlan}>{row.plan}</span> · {row.status}
-                            </span>
-                        ))}
-                        {text.action ? (
-                            <span
-                                className={styles.subAction}
-                                data-testid="subscription-action"
-                            >
-                                {text.action}
-                            </span>
-                        ) : null}
-                    </>
-                ) : (
-                    (text.hint ?? undefined)
-                )
+                nextStep: resolveDashboardNextStep({
+                    kind: 'subscription',
+                    locale,
+                    text,
+                    trialSummaries,
+                    now: Date.now()
+                }),
+                detail:
+                    [
+                        text.hint,
+                        ...text.rows.map((row) => `${row.plan} · ${row.status}`),
+                        text.action
+                    ]
+                        .filter(Boolean)
+                        .join('; ') || undefined
             }
         });
     }, [planNames, locale, t]);
@@ -156,11 +145,31 @@ export function GeneralDashboardStats({ locale, planNames }: GeneralDashboardSta
 
     const favoritesState: AsyncResult<StatValue> =
         statsState.status === 'ready'
-            ? { status: 'ready', data: { value: statsState.data.bookmarkCount } }
+            ? {
+                  status: 'ready',
+                  data: {
+                      value: statsState.data.bookmarkCount,
+                      nextStep: resolveDashboardNextStep({
+                          kind: 'favorites',
+                          count: statsState.data.bookmarkCount,
+                          locale
+                      })
+                  }
+              }
             : statsState;
     const reviewsValue: AsyncResult<StatValue> =
         reviewsState.status === 'ready'
-            ? { status: 'ready', data: { value: reviewsState.data } }
+            ? {
+                  status: 'ready',
+                  data: {
+                      value: reviewsState.data,
+                      nextStep: resolveDashboardNextStep({
+                          kind: 'reviews',
+                          count: reviewsState.data,
+                          locale
+                      })
+                  }
+              }
             : reviewsState;
 
     return (

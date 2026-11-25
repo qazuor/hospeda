@@ -38,11 +38,10 @@ interface GetInitialsInput {
  *
  * Rules (in order):
  *
- * 1. If `name` has two or more whitespace-separated tokens, return the first
- *    letter of the first token + first letter of the last token. Example:
- *    `"Carlos Alberto Ramírez"` → `"CR"`.
- * 2. If `name` has a single token, return its first two characters, uppercased.
- *    Example: `"carlos"` → `"CA"`.
+ * 1. Use the first letters of the first two significant words, ignoring
+ *    standalone connectors in Spanish, English and Portuguese.
+ *    `"Host y Comercio"` → `"HC"`; `"Carlos Alberto Ramírez"` → `"CA"`.
+ * 2. A single significant word contributes its first letter.
  * 3. If `name` is empty/undefined and `email` is provided, return the first
  *    character of the local part (before `@`), uppercased. Example:
  *    `"jane.doe@example.com"` → `"J"`.
@@ -55,7 +54,7 @@ interface GetInitialsInput {
  *
  * @example
  * getInitials({ name: 'Carlos Ramírez' });          // 'CR'
- * getInitials({ name: 'carlos' });                  // 'CA'
+ * getInitials({ name: 'carlos' });                  // 'C'
  * getInitials({ name: '', email: 'j@x.com' });      // 'J'
  * getInitials({ name: '', email: '', placeholder: '' }); // ''
  * getInitials({});                                  // '?'
@@ -65,13 +64,16 @@ export function getInitials(input: GetInitialsInput = {}): string {
 
     const trimmedName = name?.trim() ?? '';
     if (trimmedName.length > 0) {
-        const parts = trimmedName.split(/\s+/);
-        if (parts.length === 1) {
-            return (parts[0] ?? '').slice(0, 2).toUpperCase();
-        }
-        const first = parts[0] ?? '';
-        const last = parts[parts.length - 1] ?? '';
-        return `${first.charAt(0)}${last.charAt(0)}`.toUpperCase();
+        const words = trimmedName.match(/[\p{L}\p{N}]+/gu) ?? [];
+        const significant = words.filter(
+            (word) => !/^(y|e|and|de|del|la|las|los|el|do|da|dos|das|o|a|os|as|the)$/iu.test(word)
+        );
+        const initials = (significant.length > 0 ? significant : words)
+            .slice(0, 2)
+            .map((word) => Array.from(word)[0] ?? '')
+            .join('')
+            .toUpperCase();
+        if (initials) return initials;
     }
 
     const trimmedEmail = email?.trim() ?? '';
