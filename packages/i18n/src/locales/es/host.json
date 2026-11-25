@@ -207,8 +207,8 @@
             }
         },
         "usage": {
-            "label_one": "{{current}} de {{max}} propiedad",
-            "label_other": "{{current}} de {{max}} propiedades",
+            "label_one": "Cupo de publicación: {{current}} de {{max}} alojamiento",
+            "label_other": "Cupo de publicación: {{current}} de {{max}} alojamientos",
             "unlimited": "Propiedades ilimitadas",
             "upgrade": "Mejorar plan"
         },

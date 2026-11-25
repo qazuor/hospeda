@@ -18,6 +18,7 @@
  */
 
 import { useState } from 'react';
+import { Avatar, StatusPill } from '@/components/account/ui';
 import { Button } from '@/components/account/ui/Button';
 import type {
     OwnerReviewReply,
@@ -112,10 +113,23 @@ export function ProviderReviewsPanel({
                             key={review.id}
                         >
                             <div className={styles.rowHeader}>
+                                <Avatar
+                                    src={author?.image}
+                                    name={
+                                        author?.displayName ??
+                                        t('host-trades.provider.reviews.anonymous')
+                                    }
+                                    decorative
+                                />
                                 <p className={styles.rowTitle}>
                                     {author?.displayName ??
                                         t('host-trades.provider.reviews.anonymous', 'Un anfitrión')}
                                 </p>
+                                <StatusPill
+                                    domain="moderation"
+                                    status={review.moderationState}
+                                    locale={locale}
+                                />
                                 <span
                                     className={styles.stars}
                                     aria-hidden="true"

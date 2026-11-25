@@ -1,26 +1,10 @@
-.panel {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-3, 0.75rem);
-    padding: var(--space-4, 1rem);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    background: var(--core-card, var(--core-background));
-}
-
 .header {
     display: flex;
     align-items: center;
     justify-content: space-between;
     flex-wrap: wrap;
     gap: var(--space-3, 0.75rem);
-}
-
-.title {
-    margin: 0;
-    color: var(--core-foreground);
-    font-size: var(--text-body);
-    font-weight: 600;
+    margin-bottom: var(--space-4);
 }
 
 .selectorLabel {
@@ -71,32 +55,7 @@
     box-shadow: var(--shadow-card);
 }
 
-.summary {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
-    gap: var(--space-3, 0.75rem);
-}
-
-.summary > div {
-    display: flex;
-    flex-direction: column;
-    gap: 0.125rem;
-    color: var(--core-muted-foreground);
-    font-size: var(--text-caption);
-}
-
-.summary strong {
-    color: var(--core-foreground);
-    font-size: var(--text-body-lg);
-}
-
-.summary small {
-    max-width: 18rem;
-    line-height: 1.4;
-}
-
-.series,
-.channels {
+.series {
     display: flex;
     flex-direction: column;
     gap: var(--space-2, 0.5rem);
@@ -114,7 +73,7 @@
 
 .seriesDate,
 .seriesValue {
-    color: var(--core-muted-foreground);
+    color: var(--core-foreground);
     font-size: var(--text-caption);
     font-variant-numeric: tabular-nums;
 }
@@ -135,27 +94,6 @@
     height: 100%;
     border-radius: inherit;
     background: var(--brand-primary);
-}
-
-.channels {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
-    gap: var(--space-2, 0.5rem);
-}
-
-.channels li {
-    display: flex;
-    justify-content: space-between;
-    gap: var(--space-2, 0.5rem);
-    border-top: 1px solid var(--border);
-    padding-top: var(--space-2, 0.5rem);
-    color: var(--core-muted-foreground);
-    font-size: var(--text-body-sm);
-}
-
-.channels strong {
-    color: var(--core-foreground);
-    font-variant-numeric: tabular-nums;
 }
 
 .muted,

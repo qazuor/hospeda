@@ -19,7 +19,6 @@
 import type { JSX } from 'react';
 import { ExperienceCertificatePanel } from '@/components/experience/ExperienceCertificatePanel.client';
 import { PublishButton } from '@/components/host/PublishButton.client';
-import { ListingQrSheet } from '@/components/shared/qr/ListingQrSheet.client';
 import type { PublishVerticalSlug } from '@/lib/api/endpoints-protected';
 import {
     resolvePropertyCardActions,
@@ -36,8 +35,8 @@ import {
 import type { OwnerListingSummaryWithState } from '@/lib/listing/owner-listings';
 import { type PublishAffordance, UNKNOWN_PUBLISH_AFFORDANCE } from '@/lib/publish/subscribe-button';
 import { buildUrl } from '@/lib/urls';
-import { BrochureDownloadButton } from './BrochureDownloadButton.client';
 import styles from './ListingActions.module.css';
+import { ListingDownloads } from './ListingDownloads.client';
 
 export interface ListingActionsProps {
     /** The listing summary + completeness preview to render actions for. */
@@ -46,6 +45,8 @@ export interface ListingActionsProps {
     readonly locale: SupportedLocale;
     /** Server-derived publish decision; missing data fails closed. */
     readonly publishAffordance?: PublishAffordance;
+    /** The owner card supplies the status and primary-action slots itself. */
+    readonly cardBody?: boolean;
 }
 
 /** Public detail path segment per vertical (mirrors the `[slug].astro` routes). */
@@ -79,7 +80,8 @@ const PUBLISH_CHOOSE_PLAN_KEY: Readonly<Record<PublishVerticalSlug, string>> = {
 export function ListingActions({
     listing,
     locale,
-    publishAffordance = UNKNOWN_PUBLISH_AFFORDANCE
+    publishAffordance = UNKNOWN_PUBLISH_AFFORDANCE,
+    cardBody = false
 }: ListingActionsProps): JSX.Element | null {
     const { t, tPlural } = createTranslations(locale);
 
@@ -102,9 +104,11 @@ export function ListingActions({
         });
         return (
             <div className={styles.actions}>
-                <span className={`${styles.badge} ${styles.badgePublished}`}>
-                    {t('listing.owner.list.state.published', 'Publicado')}
-                </span>
+                {!cardBody && (
+                    <span className={`${styles.badge} ${styles.badgePublished}`}>
+                        {t('listing.owner.list.state.published', 'Publicado')}
+                    </span>
+                )}
                 <a
                     className={styles.link}
                     href={publicUrl}
@@ -117,41 +121,15 @@ export function ListingActions({
                  * a draft has nothing to print and its QR would lead to a 404.
                  * The API enforces the same rule; this just avoids offering a
                  * button that could only ever answer 404.
+                 * The QR remains ungated by plan, but trusts `hasPublicPage`
+                 * (absent means false), never a legacy `isPublic` fallback.
                  */}
-                <BrochureDownloadButton
+                <ListingDownloads
                     vertical={listing.vertical}
                     listingId={listing.id}
                     slug={listing.slug}
                     locale={locale}
-                />
-                {/*
-                 * HOS-982. Sibling of the brochure and NOT the same document: the
-                 * brochure is handed to a person and carries the photo, the hours
-                 * and the contact block; this is a code taped to a door, meant to
-                 * be scanned from across a room. It also has NO entitlement gate
-                 * (owner decision) — a QR on a door brings people to the platform,
-                 * so restricting it would cost us rather than the subscriber.
-                 *
-                 * `isPublished` is `hasPublicPage` and NOT `isPublic`, even though
-                 * this branch only renders when `isPublic` is true. Since HOS-1641
-                 * both are `publicationStatus === PUBLISHED`; before it they were
-                 * derived from separate old columns, and a staff PATCH that left
-                 * one standing produced a row where the two disagreed. Passing
-                 * `isPublic` here then put three contradictory
-                 * sentences on one card for that row — the panel mounted, asked for
-                 * the code, got the anti-enumeration 404, said "we could not show
-                 * the code but you can download the sheet anyway", and the download
-                 * then said "check that your listing is still published". None of
-                 * the three was actionable.
-                 *
-                 * Absent (an older API answer) is treated as NOT published rather
-                 * than falling back to `isPublic`, which would restore exactly that.
-                 */}
-                <ListingQrSheet
-                    vertical={listing.vertical}
-                    listingId={listing.id}
-                    slug={listing.slug}
-                    locale={locale}
+                    name={listing.name}
                     isPublished={listing.hasPublicPage ?? false}
                 />
                 {/*
@@ -186,6 +164,7 @@ export function ListingActions({
     });
 
     if (state.kind === 'unknown' && !showRepublish) {
+        if (cardBody) return null;
         return (
             <div className={styles.actions}>
                 <span className={styles.badge}>
@@ -202,21 +181,23 @@ export function ListingActions({
 
     return (
         <div className={styles.actions}>
-            <span className={`${styles.badge} ${styles.badgeDraft}`}>
-                {cardActions.republish
-                    ? t(
-                          'host.properties.card.status.UNPUBLISHED_BY_BILLING',
-                          'Sin publicar por tu plan'
-                      )
-                    : isComplete
-                      ? t(
-                            'listing.owner.list.state.draftComplete',
-                            'Borrador — listo para publicar'
-                        )
-                      : t('listing.owner.list.state.draftIncomplete', 'Borrador — incompleto')}
-            </span>
+            {!cardBody && (
+                <span className={`${styles.badge} ${styles.badgeDraft}`}>
+                    {cardActions.republish
+                        ? t(
+                              'host.properties.card.status.UNPUBLISHED_BY_BILLING',
+                              'Sin publicar por tu plan'
+                          )
+                        : isComplete
+                          ? t(
+                                'listing.owner.list.state.draftComplete',
+                                'Borrador — listo para publicar'
+                            )
+                          : t('listing.owner.list.state.draftIncomplete', 'Borrador — incompleto')}
+                </span>
+            )}
 
-            {((isComplete && cardActions.publish) || showRepublish) && (
+            {!cardBody && ((isComplete && cardActions.publish) || showRepublish) && (
                 <PublishButton
                     listingId={listing.id}
                     vertical={listing.vertical}

@@ -155,8 +155,12 @@ describe('ListingCard layout (HOS-2600)', () => {
         return css.slice(start, css.indexOf('}', start));
     };
 
-    it('keeps each card at its own height instead of stretching it to the row', () => {
-        expect(ruleOf('.grid')).toMatch(/align-items:\s*start;/);
+    it('stretches cards equally while keeping spare space in the body, above actions', () => {
+        expect(ruleOf('.grid')).toMatch(/align-items:\s*stretch;/);
+        expect(ruleOf('.card')).toMatch(/flex-direction:\s*column;/);
+        expect(ruleOf('.body')).toMatch(/flex:\s*1;/);
+        expect(ruleOf('.withTile')).toMatch(/grid-template-rows:\s*1fr auto auto;/);
+        expect(ruleOf('.heading')).toMatch(/flex-direction:\s*column;/);
     });
 
     it('does not clip the menu: the card has no overflow hidden, the photo rounds itself', () => {

@@ -37,7 +37,7 @@ export interface AvatarProps {
 }
 
 /**
- * Shared avatar initials, with an empty fallback for a blank name.
+ * Compatibility export delegating to the shared significant-word helper.
  *
  * @param input - Options object.
  * @param input.name - The display name.

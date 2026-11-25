@@ -33,8 +33,22 @@ describe('resolveProviderContact', () => {
         const result = resolveProviderContact({ contact: 'wa.me/5493442567890' });
         expect(result).toMatchObject({
             channel: 'whatsapp',
-            href: 'https://wa.me/5493442567890'
+            href: 'https://wa.me/5493442567890',
+            display: '+54 9 3442 567890'
         });
+    });
+
+    it('formats query-string recipients but keeps invitation URLs intact', () => {
+        expect(resolveProviderContact({ contact: 'wa.me/5491155555555' }).display).toBe(
+            '+54 9 11 5555-5555'
+        );
+        expect(
+            resolveProviderContact({ contact: 'https://api.whatsapp.com/send?phone=5493442567890' })
+                .display
+        ).toBe('+54 9 3442 567890');
+        expect(
+            resolveProviderContact({ contact: 'https://chat.whatsapp.com/InviteCode' }).display
+        ).toBe('https://chat.whatsapp.com/InviteCode');
     });
 
     it('resolves any other https link to the web channel', () => {

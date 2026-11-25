@@ -10,12 +10,13 @@
  */
 
 import { PublicationStatusEnum } from '@repo/schemas';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ListingActions } from '../../../src/components/listing/ListingActions.client';
 import type { OwnerListingSummaryWithState } from '../../../src/lib/listing/owner-listings';
 
 vi.mock('../../../src/lib/i18n', () => ({
+    createT: () => (key: string) => key,
     createTranslations: (_locale: string) => ({
         t: (_key: string, fallback?: string) => fallback ?? _key,
         tPlural: (_key: string, count: number) => `trial ${count}`
@@ -134,8 +135,13 @@ describe('ListingActions', () => {
                 />
             );
 
-            expect(screen.getByTestId('listing-qr-sheet')).toBeInTheDocument();
-            expect(screen.getByTestId('listing-qr-sheet-download')).toBeInTheDocument();
+            expect(screen.queryByTestId('listing-qr-sheet')).not.toBeInTheDocument();
+            fireEvent.click(
+                screen.getByRole('button', { name: 'listing.owner.downloads.forListing' })
+            );
+            expect(
+                screen.getByRole('menuitem', { name: 'common.qrSheet.download' })
+            ).not.toHaveAttribute('aria-disabled');
         });
 
         /*
@@ -164,8 +170,12 @@ describe('ListingActions', () => {
                 />
             );
 
-            expect(screen.getByTestId('listing-qr-sheet-unpublished')).toBeInTheDocument();
-            expect(screen.queryByTestId('listing-qr-sheet-download')).not.toBeInTheDocument();
+            fireEvent.click(
+                screen.getByRole('button', { name: 'listing.owner.downloads.forListing' })
+            );
+            expect(
+                screen.getByRole('menuitem', { name: 'common.qrSheet.download' })
+            ).toHaveAttribute('aria-disabled', 'true');
             // And nothing was asked of the API: the panel does not learn this
             // from a 404, it is told.
             expect(fetchMock).not.toHaveBeenCalled();
@@ -181,8 +191,12 @@ describe('ListingActions', () => {
                 />
             );
 
-            expect(screen.getByTestId('listing-qr-sheet-unpublished')).toBeInTheDocument();
-            expect(screen.queryByTestId('listing-qr-sheet-download')).not.toBeInTheDocument();
+            fireEvent.click(
+                screen.getByRole('button', { name: 'listing.owner.downloads.forListing' })
+            );
+            expect(
+                screen.getByRole('menuitem', { name: 'common.qrSheet.download' })
+            ).toHaveAttribute('aria-disabled', 'true');
         });
     });
 

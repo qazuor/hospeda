@@ -11,6 +11,7 @@ vi.mock('../../../src/lib/api/endpoints-protected', () => ({
     listingAnalyticsApi: { getVenueStats: mockGetVenueStats }
 }));
 vi.mock('../../../src/lib/i18n', () => ({
+    createT: () => (key: string) => key,
     createTranslations: () => ({
         t: (_key: string, fallback?: string, params?: Record<string, unknown>) =>
             Object.entries(params ?? {}).reduce(
@@ -61,6 +62,20 @@ const LOCKED = {
 };
 
 describe('VenueListingStatsPanel (HOS-2261)', () => {
+    it('uses a kit skeleton while metrics are pending', () => {
+        mockGetVenueStats.mockReturnValue(new Promise(() => {}));
+        const { container } = render(
+            <VenueListingStatsPanel
+                locale="es"
+                listings={LISTINGS}
+                unlockingPlanName="Premium"
+            />
+        );
+        expect(
+            container.querySelector('[aria-busy="true"] [aria-hidden="true"]')
+        ).toBeInTheDocument();
+        expect(screen.queryByText('Cargando métricas…')).toBeNull();
+    });
     beforeEach(() => {
         vi.clearAllMocks();
         mockGetVenueStats.mockResolvedValue(READY);
@@ -113,6 +128,11 @@ describe('VenueListingStatsPanel (HOS-2261)', () => {
         expect(await screen.findByTestId('venue-stats-daily-views')).toBeInTheDocument();
         expect(screen.getByText('50%')).toBeVisible();
         expect(screen.getByTestId('venue-listing-stats-panel')).toBeVisible();
+        const section = screen
+            .getByTestId('venue-listing-stats-panel')
+            .querySelector('[data-kit-section]');
+        expect(section).toHaveAttribute('data-help', 'section:comercio.metricas');
+        expect(section?.querySelector('dl')).toBeInTheDocument();
     });
 
     it('shows daily views, channel totals and the click-rate explanation', async () => {

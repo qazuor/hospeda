@@ -1141,6 +1141,16 @@
                 "unavailable": "Not available",
                 "reviewsDesc": "Published reviews",
                 "subscriptionDesc": "Current plan",
+                "favoritesEmpty": "Your favorite places will appear here.",
+                "favoritesNext_one": "Visit your saved place again.",
+                "favoritesNext_other": "Explore your {{count}} saved places.",
+                "reviewsEmpty": "Share the experience of your next trip.",
+                "reviewsNext_one": "Revisit the review you shared.",
+                "reviewsNext_other": "Revisit your {{count}} shared reviews.",
+                "planContext": "Explore the benefits of your plan.",
+                "trialEndsToday": "Your trial ends today. Choose how to continue.",
+                "trialNext_one": "Your trial ends in {{count}} day.",
+                "trialNext_other": "Your trial ends in {{count}} days.",
                 "subscriptionStatus": "Subscription status",
                 "activeStatus": "Active",
                 "trialStatus": "On trial",
@@ -1400,7 +1410,6 @@
         "contextOAuth": "Add a password to your account so you can also sign in with email and password.",
         "fields": {
             "password": "Password",
-            "passwordPlaceholder": "Minimum 8 characters",
             "passwordHint": "Minimum 8 characters.",
             "confirmPassword": "Confirm password",
             "confirmPasswordPlaceholder": "Repeat your password"
@@ -1887,7 +1896,7 @@
             "benefitSection": "Benefit for hosts",
             "benefitNote": "A benefit change goes to the Hospeda team for review before it's published. In the meantime, the current benefit stays visible in the directory.",
             "liveBenefitLabel": "Currently published benefit",
-            "noBenefit": "No structured benefit set",
+            "noBenefit": "No benefit has been published yet",
             "pendingLabel": "Awaiting review",
             "noChanges": "There are no changes to save",
             "success": "Changes saved",
@@ -1916,7 +1925,7 @@
         "pageTitle": "My partner listing",
         "pageSubtitle": "Manage your presence as a Hospeda partner",
         "empty": {
-            "text": "You don't have a partner listing yet. Apply from \"Become a partner\" and, once your application is approved, your listing will show up here.",
+            "text": "You don't have a partner listing yet. Apply from “Become a partner” and, once your application is approved, your listing will show up here.",
             "cta": "Go to Become a partner",
             "title": "Your partner listing"
         },

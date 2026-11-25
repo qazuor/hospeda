@@ -178,9 +178,9 @@ export function HostTradeEditForm({ locale, trade: initialTrade }: HostTradeEdit
         >
             {/* Identity — admin-managed, display-only (never enters the payload) */}
             <section className={styles.section}>
-                <h2 className={styles.sectionTitle}>
+                <h3 className={styles.sectionTitle}>
                     {t('account.provider.form.identitySection', 'Datos administrados por Hospeda')}
-                </h2>
+                </h3>
                 <p className={styles.hint}>
                     {t(
                         'account.provider.form.identityNote',
@@ -236,9 +236,9 @@ export function HostTradeEditForm({ locale, trade: initialTrade }: HostTradeEdit
 
             {/* Operational — applies immediately */}
             <section className={styles.section}>
-                <h2 className={styles.sectionTitle}>
+                <h3 className={styles.sectionTitle}>
                     {t('account.provider.form.operationalSection', 'Contacto y disponibilidad')}
-                </h2>
+                </h3>
                 <p className={styles.hint}>
                     {t(
                         'account.provider.form.operationalNote',
@@ -276,10 +276,10 @@ export function HostTradeEditForm({ locale, trade: initialTrade }: HostTradeEdit
                         >
                             {t('account.provider.form.fields.scheduleText', 'Horario de atención')}
                         </label>
-                        <input
+                        <textarea
                             id="htf-scheduleText"
-                            type="text"
-                            className={styles.input}
+                            rows={2}
+                            className={styles.textarea}
                             value={scheduleText}
                             onChange={(e) => setScheduleText(e.target.value)}
                             disabled={submitting}
@@ -294,9 +294,9 @@ export function HostTradeEditForm({ locale, trade: initialTrade }: HostTradeEdit
 
             {/* Benefit — goes to review, live benefit stays published meanwhile */}
             <section className={styles.section}>
-                <h2 className={styles.sectionTitle}>
+                <h3 className={styles.sectionTitle}>
                     {t('account.provider.form.benefitSection', 'Beneficio para hosts')}
-                </h2>
+                </h3>
                 <p className={styles.hint}>
                     {t(
                         'account.provider.form.benefitNote',
@@ -311,18 +311,22 @@ export function HostTradeEditForm({ locale, trade: initialTrade }: HostTradeEdit
                             'Beneficio publicado actualmente'
                         )}
                     </span>
-                    <p className={styles.liveBoxText}>
-                        {currentTrade.benefitType
-                            ? t(
-                                  `alliance-leads.form.benefitTypeOptions.${currentTrade.benefitType}`,
-                                  currentTrade.benefitType
-                              )
-                            : t(
-                                  'account.provider.form.noBenefit',
-                                  'Sin beneficio estructurado cargado'
-                              )}
-                        {currentTrade.benefitValue == null ? '' : ` — ${currentTrade.benefitValue}`}
-                    </p>
+                    {(currentTrade.benefitType || !currentTrade.benefit) && (
+                        <p className={styles.liveBoxText}>
+                            {currentTrade.benefitType
+                                ? t(
+                                      `alliance-leads.form.benefitTypeOptions.${currentTrade.benefitType}`,
+                                      currentTrade.benefitType
+                                  )
+                                : t(
+                                      'account.provider.form.noBenefit',
+                                      'Todavía no hay un beneficio publicado'
+                                  )}
+                            {currentTrade.benefitValue == null
+                                ? ''
+                                : ` — ${currentTrade.benefitValue}`}
+                        </p>
+                    )}
                     {currentTrade.benefit && (
                         <p className={styles.liveBoxText}>{currentTrade.benefit}</p>
                     )}
@@ -344,7 +348,7 @@ export function HostTradeEditForm({ locale, trade: initialTrade }: HostTradeEdit
                                   )
                                 : t(
                                       'account.provider.form.noBenefit',
-                                      'Sin beneficio estructurado cargado'
+                                      'Todavía no hay un beneficio publicado'
                                   )}
                             {currentTrade.pendingBenefitValue == null
                                 ? ''

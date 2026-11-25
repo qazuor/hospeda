@@ -15,7 +15,14 @@ describe('comercio index publish affordance — TEST:1729:6', () => {
             /const affordance =\s*publishAffordances\.get\(listing\.vertical\) \?\? UNKNOWN_PUBLISH_AFFORDANCE;/
         );
         expect(source).toContain('publishAffordance={affordance}');
-        expect(source).toContain('resolveOwnerListingPrimaryAction({ listing, affordance })');
+        expect(source).toContain('<OwnerListingCard listing={listing}');
+        const card = readFileSync(
+            resolve(__dirname, '../../src/components/account/OwnerListingCard.astro'),
+            'utf8'
+        );
+        expect(card).toContain(
+            'resolveOwnerListingPrimaryAction({ listing, affordance: publishAffordance })'
+        );
         expect(source).toContain('UNKNOWN_PUBLISH_AFFORDANCE');
         expect(source).not.toContain('canPublish = true');
     });

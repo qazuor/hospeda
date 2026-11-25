@@ -73,17 +73,15 @@ function filenameFrom(input: { disposition: string | null; slug: string }): stri
 }
 
 /**
- * Renders the "download PDF sheet" action for one published listing.
+ * Shared brochure controller for the standalone button and compact card menu.
  */
-export function BrochureDownloadButton({
+export function useBrochureDownload({
     vertical,
     listingId,
     slug,
     locale
-}: BrochureDownloadButtonProps): JSX.Element {
-    const { t } = createTranslations(locale);
+}: BrochureDownloadButtonProps) {
     const [state, setState] = useState<DownloadState>('idle');
-    const hintId = useId();
     const { gate } = useListingPlanGate({ vertical, entitlementKey: BROCHURE_ENTITLEMENT });
 
     async function handleDownload(): Promise<void> {
@@ -131,9 +129,19 @@ export function BrochureDownloadButton({
         }
     }
 
+    return { state, handleDownload, locked: gate !== 'open' || state === 'locked' };
+}
+
+/** Renders the standalone brochure action using the shared download controller. */
+export function BrochureDownloadButton(props: BrochureDownloadButtonProps): JSX.Element {
+    const { locale, vertical } = props;
+    const { t } = createTranslations(locale);
+    const hintId = useId();
+    const { state, handleDownload, locked } = useBrochureDownload(props);
+
     // Any answer but `open` means the click could only be refused: show the
     // upsell. A server-side 403 (`locked`) joins it, for the fail-open cases.
-    if (gate !== 'open' || state === 'locked') {
+    if (locked) {
         return (
             <>
                 <a

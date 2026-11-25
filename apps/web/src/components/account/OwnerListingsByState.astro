@@ -1,0 +1,44 @@
+---
+/** Shared SSR sections. The render slot supplies the page's cards for a bucket. */
+import { Disclosure, ListingCardGrid, Section } from './ui';
+import type { HelpAnchor } from './ui/help-anchor';
+import { OWNER_LISTING_BUCKETS, type OwnerListingBucket } from '@/lib/listing/owner-listing-buckets';
+import { createTranslations, type SupportedLocale } from '@/lib/i18n';
+import styles from './OwnerListingsByState.module.css';
+
+interface Props {
+    readonly locale: SupportedLocale;
+    readonly counts: Readonly<Record<OwnerListingBucket, number>>;
+    readonly helpId: HelpAnchor;
+    /** The page title: every list is named after it, then the state (e.g. «Mis alojamientos: Publicadas (2)»). */
+    readonly listLabel: string;
+}
+const { locale, counts, helpId, listLabel } = Astro.props;
+const { t } = createTranslations(locale);
+const sections = await Promise.all(OWNER_LISTING_BUCKETS.filter((bucket) => counts[bucket] > 0).map(async (bucket) => ({
+    bucket,
+    // Only compiler-rendered slot HTML, never user-provided markup.
+    html: await Astro.slots.render('default', [bucket])
+})));
+---
+<div class={styles.sections}>
+    {sections.map(({ bucket, html }) => {
+        const label = t(`listing.owner.list.buckets.${bucket}`);
+        const title = `${label} (${counts[bucket]})`;
+        return bucket === 'archived' || bucket === 'deleted' ? (
+            <Section title={label} helpId={helpId}>
+                <Disclosure summary={title}>
+                    <ListingCardGrid label={`${listLabel}: ${title}`} helpId={helpId}>
+                        <Fragment set:html={html} />
+                    </ListingCardGrid>
+                </Disclosure>
+            </Section>
+        ) : (
+            <Section title={title} helpId={helpId}>
+                <ListingCardGrid label={`${listLabel}: ${title}`} helpId={helpId}>
+                    <Fragment set:html={html} />
+                </ListingCardGrid>
+            </Section>
+        );
+    })}
+</div>

@@ -59,6 +59,7 @@
         }
     },
     "registerUsage": {
+        "backToProvider": "Voltar à ficha do fornecedor",
         "title": "Registrar uso do benefício",
         "subtitle": "Registre que você usou o benefício de {{name}}. Vamos pedir que confirme.",
         "subtitleFallback": "Registro de uso de um benefício do diretório de fornecedores.",
@@ -283,7 +284,7 @@
             "title": "Seu código QR",
             "help": "Imprima ou mostre no celular. O anfitrião escaneia com a câmera e registra o uso sozinho: você não precisa pedir dados nem registrar por ele.",
             "alt": "Código QR que leva à página para registrar um uso do seu benefício",
-            "encodes": "Leva a: {{url}}",
+            "targetLabel": "Destino do código QR",
             "download": "Baixar o QR",
             "downloaded": "Pronto, baixamos como SVG."
         }

@@ -46,20 +46,15 @@
     border-radius: var(--radius-control);
 }
 
-.badge24h {
-    display: inline-flex;
+.badges {
+    display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    align-self: flex-start;
-    padding: var(--space-1) var(--space-2);
-    border: 1px solid var(--status-success-border);
-    border-radius: var(--radius-pill);
-    background-color: var(--status-success-bg);
-    color: var(--status-success-fg);
-    font: var(--app-caption);
-    white-space: nowrap;
+    gap: var(--space-2);
 }
 
 .scheduleText {
+    min-block-size: 1lh;
     margin: 0;
     font: var(--app-meta);
     color: var(--core-muted-foreground);
@@ -108,4 +103,5 @@
 
 .contactButton {
     margin-top: auto;
+    align-self: flex-start;
 }

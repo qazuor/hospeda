@@ -13,21 +13,14 @@
  * {@link resolveProviderContact}. No other contact field is read.
  */
 
-import { useState } from 'react';
-import {
-    Button,
-    Dialog,
-    KeyValueList,
-    LinkButton,
-    Section,
-    StatusPill
-} from '@/components/account/ui';
+import { KeyValueList, LinkButton, Section, TextLink } from '@/components/account/ui';
 import type { DirectoryProvider } from '@/lib/api/endpoints-protected';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createT } from '@/lib/i18n';
-import { splitTradeCategoryBadges } from '@/lib/trade-category-labels';
+import { ProviderContactButton } from './ProviderContactButton';
 import styles from './ProviderDetail.module.css';
 import { resolveProviderContact } from './resolve-provider-contact';
+import { TradeCategoryBadges } from './TradeCategoryBadges';
 
 /** Props for {@link ProviderDetail}. */
 export interface ProviderDetailProps {
@@ -50,36 +43,38 @@ export interface ProviderDetailProps {
  */
 export function ProviderDetail({ provider, locale, registerUsageHref }: ProviderDetailProps) {
     const t = createT(locale);
-    const [contactOpen, setContactOpen] = useState(false);
-
-    const { visible } = splitTradeCategoryBadges({
-        categories: provider.categories,
-        locale,
-        max: Number.POSITIVE_INFINITY
-    });
     const contact = resolveProviderContact({ contact: provider.contact });
     const schedule = provider.is24h ? t('host-trades.card.is24h') : provider.scheduleText;
 
     const items = [
-        visible.length > 0
+        provider.categories.length > 0
             ? {
                   key: 'categories',
                   label: t('host-trades.card.categoriesLabel'),
                   value: (
-                      <ul className={styles.pills}>
-                          {visible.map((badge) => (
-                              <li key={badge.slug}>
-                                  <StatusPill tone="neutral">{badge.label}</StatusPill>
-                              </li>
-                          ))}
-                      </ul>
+                      <TradeCategoryBadges
+                          categories={provider.categories}
+                          locale={locale}
+                      />
                   )
               }
             : null,
         schedule
             ? { key: 'schedule', label: t('host-trades.detail.schedule'), value: schedule }
             : null,
-        { key: 'contact', label: t('host-trades.detail.contact'), value: contact.display }
+        {
+            key: 'contact',
+            label: t('host-trades.detail.contact'),
+            value: (
+                <TextLink
+                    href={contact.href}
+                    external={contact.channel === 'web' || contact.channel === 'whatsapp'}
+                    locale={locale}
+                >
+                    {contact.display}
+                </TextLink>
+            )
+        }
     ].filter((item) => item !== null);
 
     return (
@@ -88,13 +83,11 @@ export function ProviderDetail({ provider, locale, registerUsageHref }: Provider
                 title={t('host-trades.detail.dataTitle')}
                 helpId="section:hosttrade.datos"
                 actions={
-                    <Button
-                        variant="primary"
-                        onClick={() => setContactOpen(true)}
-                        aria-haspopup="dialog"
-                    >
-                        {t('host-trades.card.contact')}
-                    </Button>
+                    <ProviderContactButton
+                        name={provider.name}
+                        contact={provider.contact}
+                        locale={locale}
+                    />
                 }
             >
                 <KeyValueList items={items} />
@@ -114,29 +107,6 @@ export function ProviderDetail({ provider, locale, registerUsageHref }: Provider
             >
                 <p className={styles.benefit}>{provider.benefit}</p>
             </Section>
-
-            <Dialog
-                open={contactOpen}
-                onOpenChange={setContactOpen}
-                locale={locale}
-                size="sm"
-                title={t('host-trades.detail.contactDialogTitle', undefined, {
-                    name: provider.name
-                })}
-                description={t('host-trades.detail.contactDialogDescription')}
-            >
-                <div className={styles.channel}>
-                    <p className={styles.channelValue}>{contact.display}</p>
-                    <LinkButton
-                        href={contact.href}
-                        variant="primary"
-                        external={contact.channel === 'web' || contact.channel === 'whatsapp'}
-                        locale={locale}
-                    >
-                        {t(`host-trades.detail.channel.${contact.channel}`)}
-                    </LinkButton>
-                </div>
-            </Dialog>
         </div>
     );
 }

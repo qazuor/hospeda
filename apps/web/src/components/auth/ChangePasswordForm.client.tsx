@@ -289,10 +289,15 @@ export function ChangePasswordForm({
             <PageHeader
                 title={t('account.changePassword.title', 'Cambiar contraseña')}
                 description={forced ? undefined : t('account.changePassword.subtitleVoluntary')}
-                back={
-                    forced
-                        ? undefined
-                        : { label: t('account.changePassword.back'), href: returnUrl }
+                actions={
+                    forced ? undefined : (
+                        <LinkButton
+                            href={returnUrl}
+                            variant="secondary"
+                        >
+                            {t('account.changePassword.back')}
+                        </LinkButton>
+                    )
                 }
                 locale={locale}
             />

@@ -31,7 +31,9 @@ describe('ListingNotices.astro — renders the read, decides nothing', () => {
         expect(SOURCE).toContain(
             'const views = buildListingNoticeViews({ locale, t, tPlural, item });'
         );
-        expect(SOURCE).toContain('{view.title}');
+        expect(SOURCE).toContain('title={view.title}');
+        expect(SOURCE).toContain('tone={KIT_TONE[view.tone]}');
+        expect(SOURCE).toContain('<Alert locale={locale}');
         expect(SOURCE).toContain('view.lines.map((line)');
         expect(SOURCE).toContain('data-notice-kind={view.kind}');
     });
@@ -81,8 +83,8 @@ describe('mi-cuenta/comercio — the notices of each venue or experience listing
 
     it('mounts the notices on each listing with its own entry', () => {
         expect(COMERCIO_PAGE).toContain(
-            'item={noticesByVertical.get(listing.vertical)?.byListingId.get(listing.id)}'
+            'notices={noticesByVertical.get(listing.vertical)?.byListingId.get(listing.id)}'
         );
-        expect(COMERCIO_PAGE).toContain('vertical={listing.vertical}');
+        expect(COMERCIO_PAGE).toContain('<OwnerListingCard listing={listing}');
     });
 });

@@ -17,6 +17,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TrafficStatsCards } from '../../../src/components/listing/TrafficStatsCards.client';
 
 vi.mock('../../../src/lib/i18n', () => ({
+    createT: () => (key: string) => key,
     createTranslations: (_locale: string) => ({
         t: (key: string) => key,
         tPlural: (key: string, count: number) => `${key}:${count}`
@@ -207,6 +208,12 @@ describe('TrafficStatsCards (HOS-2119)', () => {
         renderCards();
         expect(screen.getByTestId('traffic-stats-loading')).toHaveAttribute('aria-busy', 'true');
         expect(screen.getByRole('status')).toBe(screen.getByTestId('traffic-stats-loading'));
+        expect(
+            screen.getByTestId('traffic-stats-loading').querySelectorAll('[aria-busy="true"]')
+        ).toHaveLength(3);
+        expect(
+            screen.getByTestId('traffic-stats-loading').querySelector('[aria-hidden="true"]')
+        ).toBeInTheDocument();
     });
 
     it('refetches with the new window when the window prop changes', async () => {
@@ -281,7 +288,7 @@ describe('TrafficStatsCards (HOS-2119)', () => {
         );
         renderCards();
         const card = await screen.findByTestId('traffic-card-countries');
-        expect(within(card).getAllByRole('listitem')).toHaveLength(5);
+        expect(within(card).getAllByRole('definition')).toHaveLength(5);
     });
 
     it('shows the funnel when only contactCompleted is non-zero', async () => {
@@ -314,7 +321,7 @@ describe('TrafficStatsCards (HOS-2119)', () => {
         );
         renderCards();
         const card = await screen.findByTestId('traffic-card-devices');
-        expect(within(card).getAllByRole('listitem')).toHaveLength(2);
+        expect(within(card).getAllByRole('definition')).toHaveLength(2);
         const other = within(card).getAllByText('listing.owner.traffic.devices.other');
         expect(other).toHaveLength(1);
         expect(within(card).getByText('listing.owner.traffic.visitors:5')).toBeInTheDocument();

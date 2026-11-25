@@ -25,21 +25,19 @@ import {
     Alert,
     EmptyState,
     LinkButton,
-    ListingCard,
-    ListingCardGrid,
     PageHeader
 } from '@/components/account/ui';
 // Hydrated island: imported from its module, not the barrel, so the island
 // bundle carries the menu and not the whole kit.
-import { Menu } from '@/components/account/ui/Menu';
+import OwnerListingCard from '@/components/account/OwnerListingCard.astro';
+import OwnerListingsByState from '@/components/account/OwnerListingsByState.astro';
+import { bucketOwnerListings, type OwnerListingBucket } from '@/lib/listing/owner-listing-buckets';
 import PageHelpLink from '@/components/account/help/PageHelpLink.astro';
 import { PageLoadError } from '@/components/account/PageLoadError.client';
-import { ListingActions } from '@/components/listing/ListingActions.client';
 import { ListingViewsWidget } from '@/components/listing/ListingViewsWidget.client';
 import { TourController } from '@/components/account/TourController.client';
 import { VenueMenuQrWidget } from '@/components/venue/VenueMenuQrWidget.client';
 import { VenueListingStatsPanel } from '@/components/venue/VenueListingStatsPanel.client';
-import ListingNotices from '@/components/listing/ListingNotices.astro';
 import { listingAnalyticsApi, publishApi } from '@/lib/api/endpoints-protected';
 import {
     EMPTY_LISTING_NOTICES_INDEX,
@@ -55,7 +53,6 @@ import {
     VENUE_VERTICAL
 } from '@/lib/listing/owner-listings';
 import { resolveListingPublishAffordances } from '@/lib/listing/listing-publish-affordance';
-import { resolveOwnerListingPrimaryAction } from '@/lib/listing/owner-listing-primary-action';
 import { resolveUsageAlertTone } from '@/lib/listing/usage-alert-tone';
 import {
     filterOwnerListingsByVertical,
@@ -246,9 +243,9 @@ const venueStatsUnlockingPlanName =
 // landing for an old inbound link and the wrong one for this button, which a
 // venue/experience owner presses expecting to choose a vertical.
 const createUrl = buildUrl({ locale, path: 'mi-cuenta/publica' });
-const editUrl = (listing: OwnerListingSummaryWithState): string =>
-    buildUrl({ locale, path: `mi-cuenta/comercio/${listing.vertical}/${listing.id}/editar` });
 const listHelpId = 'section:comercio.listado' as const;
+const buckets = bucketOwnerListings({ listings });
+const bucketCounts = Object.fromEntries(Object.entries(buckets).map(([key, rows]) => [key, rows.length])) as Record<keyof typeof buckets, number>;
 ---
 
 <AccountLayout
@@ -267,7 +264,7 @@ const listHelpId = 'section:comercio.listado' as const;
         {/* HOS-2611: one solid primary per screen. The empty state owns the
             «create» call to action, so the header hides it there (and on a
             load failure, like the properties list). */}
-        {listings.length > 0 && !listingsLoadFailed && (
+        {listings.length > 0 && !listingsLoadFailed && !usageBadges.some((usage) => usage.currentUsage >= usage.maxAllowed) && (
             <LinkButton slot="actions" href={createUrl}>
                 <AddIcon size="sm" aria-hidden="true" />
                 {t(`listing.owner.list.createCta.${listVertical}`)}
@@ -326,57 +323,18 @@ const listHelpId = 'section:comercio.listado' as const;
                     </LinkButton>
                 </EmptyState>
             ) : (
-                <ListingCardGrid label={title} helpId={listHelpId}>
-                    {listings.map((listing) => {
+                <OwnerListingsByState locale={locale} counts={bucketCounts} helpId={listHelpId} listLabel={title}>
+                    {(bucket: OwnerListingBucket) => buckets[bucket].map((listing) => {
                         const affordance =
                             publishAffordances.get(listing.vertical) ?? UNKNOWN_PUBLISH_AFFORDANCE;
-                        const primary = resolveOwnerListingPrimaryAction({ listing, affordance });
                         return (
-                            <ListingCard
-                                title={listing.name}
-                                vertical={listing.vertical}
-                                href={isPurged(listing) ? undefined : editUrl(listing)}
-                                meta={[t(`listing.owner.list.badge.${listing.vertical}`, listing.vertical)]}
-                            >
-                                {/* The state block: badge, checklist, downloads, and in
-                                    the publishable states the ONE primary action
-                                    (the publish button). */}
-                                <ListingActions
-                                    client:visible
-                                    listing={listing}
-                                    locale={locale}
-                                    publishAffordance={affordance}
-                                />
-                                <ListingNotices
-                                    locale={locale}
-                                    vertical={listing.vertical}
-                                    listingId={listing.id}
-                                    item={noticesByVertical.get(listing.vertical)?.byListingId.get(listing.id)}
-                                />
-                                {primary === 'edit' && (
-                                    <LinkButton slot="primaryAction" href={editUrl(listing)} variant="secondary">
-                                        {t('listing.owner.list.edit', 'Editar')}
-                                    </LinkButton>
-                                )}
-                                {primary === 'publish' && (
-                                    <Menu
-                                        slot="menu"
-                                        client:visible
-                                        locale={locale}
-                                        label={t('listing.owner.list.moreActions', undefined, { name: listing.name })}
-                                        items={[
-                                            {
-                                                id: 'edit',
-                                                label: t('listing.owner.list.edit', 'Editar'),
-                                                href: editUrl(listing)
-                                            }
-                                        ]}
-                                    />
-                                )}
-                            </ListingCard>
+                            <OwnerListingCard listing={listing} locale={locale}
+                                publishAffordance={affordance}
+                                notices={noticesByVertical.get(listing.vertical)?.byListingId.get(listing.id)}
+                            />
                         );
                     })}
-                </ListingCardGrid>
+                </OwnerListingsByState>
             )
         }
     </div>

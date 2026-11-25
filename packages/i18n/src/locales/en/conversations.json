@@ -104,6 +104,8 @@
         }
     },
     "inbox": {
+        "guestSubtitle": "Follow your conversations with hosts and read their replies.",
+        "ownerSubtitle": "Review guest inquiries and reply about your accommodations.",
         "accommodation": "Accommodation",
         "guest": "Guest",
         "guestInboxTitle": "My inquiries",

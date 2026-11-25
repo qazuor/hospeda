@@ -6,3 +6,7 @@
     flex-direction: column;
     gap: var(--space-4);
 }
+
+.form > button[type="submit"] {
+    align-self: flex-start;
+}

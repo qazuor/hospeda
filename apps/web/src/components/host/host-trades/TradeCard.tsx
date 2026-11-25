@@ -22,13 +22,13 @@
 
 import type { HostTradePublic } from '@repo/schemas';
 import type { JSX } from 'react';
-import { LinkButton, RatingStars } from '@/components/account/ui';
+import { RatingStars, StatusPill } from '@/components/account/ui';
 import { formatNumber } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { resolveSafeExternalUrl } from '@/lib/safe-external-url';
 import { TRADE_CARD_MAX_BADGES } from '@/lib/trade-category-labels';
 import { buildUrl } from '@/lib/urls';
+import { ProviderContactButton } from './ProviderContactButton';
 import { resolveTradeStats } from './resolve-trade-stats';
 import styles from './TradeCard.module.css';
 import { TradeCategoryBadges } from './TradeCategoryBadges';
@@ -44,53 +44,7 @@ export interface TradeCardProps {
     readonly locale: SupportedLocale;
 }
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-/**
- * Resolves the contact string to a safe href.
- *
- * Rules (applied in order, first match wins):
- * 1. An `http(s)` URL the scheme allow-list accepts → pass through.
- * 2. tel: value → pass through.
- * 3. Bare wa.me/... or wa.me?... (no scheme) → prepend https://.
- * 4. Anything else (raw phone, digits) → wrap in `tel:` with spaces/dashes stripped.
- *
- * Rule 1 asks {@link resolveSafeExternalUrl} rather than testing the string's
- * prefix itself (HOS-592 / F-02). `contact` is provider-authored, and a local
- * `startsWith('https://')` is a second copy of the rule that decides which
- * schemes may be linked — the kind of copy this codebase has already let drift
- * three times. The `tel:` fallback below is what an unsafe value degrades to,
- * so nothing here can produce an executable href.
- *
- * Exported for unit testing.
- */
-export function resolveContactHref(contact: string): string {
-    const trimmed = contact.trim();
-
-    // Already a fully-qualified URL with a linkable scheme
-    const externalHref = resolveSafeExternalUrl(trimmed);
-    if (externalHref) {
-        return externalHref;
-    }
-
-    // Already a tel: link
-    if (trimmed.startsWith('tel:')) {
-        return trimmed;
-    }
-
-    // Bare wa.me path (e.g. "wa.me/5493442567890" or "wa.me?phone=...")
-    if (trimmed.startsWith('wa.me/') || trimmed.startsWith('wa.me?')) {
-        const waHref = resolveSafeExternalUrl(`https://${trimmed}`);
-        if (waHref) {
-            return waHref;
-        }
-    }
-
-    // Fallback: treat as raw phone number
-    return `tel:${trimmed.replace(/[\s\-()]/g, '')}`;
-}
+export { resolveContactHref } from './resolve-contact-href';
 
 // ---------------------------------------------------------------------------
 // Component
@@ -107,7 +61,6 @@ export function resolveContactHref(contact: string): string {
 export function TradeCard({ trade, locale }: TradeCardProps): JSX.Element {
     const { t, tPlural } = createTranslations(locale);
 
-    const contactHref = resolveContactHref(trade.contact);
     const detailHref = buildUrl({
         locale,
         path: `mi-cuenta/directorio-proveedores/${trade.slug}`
@@ -144,23 +97,28 @@ export function TradeCard({ trade, locale }: TradeCardProps): JSX.Element {
             </div>
 
             {/* ── Category badges: up to 3 plus «+N», in catalog order (HOS-919) ── */}
-            <TradeCategoryBadges
-                categories={trade.categories}
-                locale={locale}
-                max={TRADE_CARD_MAX_BADGES}
-            />
+            <div className={styles.badges}>
+                <TradeCategoryBadges
+                    categories={trade.categories}
+                    locale={locale}
+                    max={TRADE_CARD_MAX_BADGES}
+                />
 
-            {/* ── is24h badge ── */}
-            {trade.is24h && (
-                <div className={styles.badge24h}>
-                    {t('host-trades.card.is24h', 'Disponible 24hs')}
-                </div>
-            )}
+                {/* ── is24h badge ── */}
+                {trade.is24h && (
+                    <StatusPill tone="success">
+                        {t('host-trades.card.is24h', 'Disponible 24hs')}
+                    </StatusPill>
+                )}
+            </div>
 
             {/* ── Schedule text (when present and not 24h) ── */}
-            {!trade.is24h && trade.scheduleText != null && trade.scheduleText.length > 0 && (
-                <p className={styles.scheduleText}>{trade.scheduleText}</p>
-            )}
+            <p
+                className={styles.scheduleText}
+                aria-hidden={trade.is24h || !trade.scheduleText ? true : undefined}
+            >
+                {trade.is24h ? null : trade.scheduleText}
+            </p>
 
             {/* ── Benefit text ── */}
             <div className={styles.benefitRow}>
@@ -228,24 +186,12 @@ export function TradeCard({ trade, locale }: TradeCardProps): JSX.Element {
             )}
 
             {/* ── Contact button ── */}
-            {contactHref.startsWith('http') ? (
-                // `external` opens a new tab with a safe rel and says so to screen readers
-                <LinkButton
-                    href={contactHref}
-                    className={styles.contactButton}
-                    external
-                    locale={locale}
-                >
-                    {t('host-trades.card.contact', 'Contactar')}
-                </LinkButton>
-            ) : (
-                <LinkButton
-                    href={contactHref}
-                    className={styles.contactButton}
-                >
-                    {t('host-trades.card.contact', 'Contactar')}
-                </LinkButton>
-            )}
+            <ProviderContactButton
+                name={trade.name}
+                contact={trade.contact}
+                locale={locale}
+                className={styles.contactButton}
+            />
         </article>
     );
 }
