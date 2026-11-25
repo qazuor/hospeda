@@ -182,43 +182,45 @@ export function BusinessLinesField({
                 legend={t('venue.owner.businessLines.legend', 'Rubros')}
                 error={error}
             >
-                {options.map((option, index) => {
-                    if (option.reason === 'NOT_ALLOWED_FOR_TYPE') return null;
+                <div className={styles.options}>
+                    {options.map((option, index) => {
+                        if (option.reason === 'NOT_ALLOWED_FOR_TYPE') return null;
 
-                    const lastSelected = option.selected && selectedCount === 1;
-                    const disabled =
-                        !option.selectable ||
-                        lastSelected ||
-                        (option.selected && !option.removable);
-                    const hint = option.reason
-                        ? t(`venue.owner.businessLines.reason.${option.reason}`)
-                        : lastSelected
-                          ? t(
-                                'venue.owner.businessLines.keepOne',
-                                'Dejá al menos un rubro seleccionado.'
-                            )
-                          : option.selected && !option.removable && option.removeReason
-                            ? resolveValidationMessage({
-                                  key: `zodError.venue.businessLines.${option.removeReason}`,
-                                  t: (key, params) => t(key, undefined, params)
-                              })
-                            : null;
+                        const lastSelected = option.selected && selectedCount === 1;
+                        const disabled =
+                            !option.selectable ||
+                            lastSelected ||
+                            (option.selected && !option.removable);
+                        const hint = option.reason
+                            ? t(`venue.owner.businessLines.reason.${option.reason}`)
+                            : lastSelected
+                              ? t(
+                                    'venue.owner.businessLines.keepOne',
+                                    'Dejá al menos un rubro seleccionado.'
+                                )
+                              : option.selected && !option.removable && option.removeReason
+                                ? resolveValidationMessage({
+                                      key: `zodError.venue.businessLines.${option.removeReason}`,
+                                      t: (key, params) => t(key, undefined, params)
+                                  })
+                                : null;
 
-                    return (
-                        <Checkbox
-                            key={option.value}
-                            data-testid={`business-line-${option.value}`}
-                            checked={option.selected}
-                            disabled={disabled}
-                            onChange={(event) => toggle(index, event.target.checked)}
-                            label={t(
-                                `venue.owner.businessLines.${option.value}.label`,
-                                option.value
-                            )}
-                            description={hint ?? undefined}
-                        />
-                    );
-                })}
+                        return (
+                            <Checkbox
+                                key={option.value}
+                                data-testid={`business-line-${option.value}`}
+                                checked={option.selected}
+                                disabled={disabled}
+                                onChange={(event) => toggle(index, event.target.checked)}
+                                label={t(
+                                    `venue.owner.businessLines.${option.value}.label`,
+                                    option.value
+                                )}
+                                description={hint ?? undefined}
+                            />
+                        );
+                    })}
+                </div>
             </CheckboxGroup>
             {selectionError && suggested.length > 0 ? (
                 <Button

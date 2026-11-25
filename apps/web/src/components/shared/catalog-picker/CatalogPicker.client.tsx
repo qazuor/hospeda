@@ -40,6 +40,7 @@ import {
     type CatalogLabeler,
     type CatalogPickerView
 } from '@/lib/catalog-picker';
+import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import {
@@ -205,7 +206,10 @@ export function CatalogPicker({
         return (
             <div
                 key={amenity.id}
-                className={styles.item}
+                className={cn(
+                    styles.item,
+                    isChecked && onChangeAmenityAttribute && styles.itemWithAttributes
+                )}
             >
                 <label className={styles.checkboxLabel}>
                     <input

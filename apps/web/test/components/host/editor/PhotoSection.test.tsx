@@ -315,7 +315,9 @@ describe('PhotoSection (SPEC-204 — self-contained)', () => {
     describe('section structure', () => {
         it('renders section title', async () => {
             render(<PhotoSection {...defaultProps} />);
-            await waitFor(() => expect(screen.getByText('Fotos')).toBeInTheDocument());
+            await waitFor(() =>
+                expect(screen.getByText('Portada y galería de fotos')).toBeInTheDocument()
+            );
         });
 
         it('renders section description', async () => {
@@ -816,11 +818,15 @@ describe('PhotoSection (SPEC-204 — self-contained)', () => {
             render(<PhotoSection {...defaultProps} />);
             await waitFor(() => expect(mockListMedia).toHaveBeenCalled());
 
-            const hint = screen.getByText(
+            // The cover dropzone and the gallery Field each state the cap.
+            const hints = screen.getAllByText(
                 (content) => content.includes('máx.') && content.includes('MB')
             );
-            expect(hint.textContent).toContain(String(DEFAULT_ENTITY_MAX_FILE_SIZE_MB));
-            expect(hint.textContent).not.toContain('{{');
+            expect(hints.length).toBeGreaterThan(0);
+            for (const hint of hints) {
+                expect(hint.textContent).toContain(String(DEFAULT_ENTITY_MAX_FILE_SIZE_MB));
+                expect(hint.textContent).not.toContain('{{');
+            }
         });
 
         it('states the real limit in the rejection message', async () => {

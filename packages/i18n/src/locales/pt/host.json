@@ -600,8 +600,6 @@
                 "sourceEmpty": "Você ainda não escreveu este conteúdo.",
                 "translationEmpty": "Esta tradução ainda não foi gerada.",
                 "textUnavailable": "Foi gerada agora. Atualize a página para lê-la.",
-                "expandText": "Ver completo",
-                "collapseText": "Ver menos",
                 "missingCount": "Campos sem tradução: {{count}}",
                 "missingNotice": "Faltam traduções em {{locales}}."
             },
@@ -657,6 +655,8 @@
                 "legend": {
                     "title": "Legenda",
                     "free": "Livre",
+                    "past": "Dias passados",
+                    "outside": "Fora do mês",
                     "manual": "Bloqueado manualmente",
                     "google": "Sincronizado — Google Calendar",
                     "airbnb": "Sincronizado — Airbnb",
@@ -721,20 +721,20 @@
                 "title": "Editar propriedade",
                 "subtitle": "Escolha o que você quer editar",
                 "status": {
-                    "missingDescription": "⚠ Falta a descrição",
-                    "missingPrice": "⚠ Sem preço",
+                    "missingDescription": "Falta a descrição",
+                    "missingPrice": "Sem preço",
                     "guests_one": "Até {{count}} hóspede",
                     "guests_other": "Até {{count}} hóspedes",
-                    "missingCoordinates": "⚠ Sem localização no mapa",
+                    "missingCoordinates": "Sem localização no mapa",
                     "selected_one": "{{count}} selecionado",
                     "selected_other": "{{count}} selecionados",
                     "photos_one": "{{count}} foto",
                     "photos_other": "{{count}} fotos",
-                    "missingPhotos": "⚠ Sem fotos",
+                    "missingPhotos": "Sem fotos",
                     "faqs_one": "{{count}} pergunta",
                     "faqs_other": "{{count}} perguntas",
-                    "missingContact": "⚠ Sem dados de contato",
-                    "blockedFromPublishing": "⛔ Falta para publicar: {{fields}}"
+                    "missingContact": "Sem dados de contato",
+                    "blockedFromPublishing": "Falta para publicar: {{fields}}"
                 }
             },
             "publishRequirement": {

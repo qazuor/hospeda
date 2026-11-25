@@ -321,10 +321,11 @@ describe('the venue/experience editor states ONE address rule (HOS-834)', () => 
      */
     function readNoticeElement(): string {
         const source = readFileSync(EDITOR_PAGE, 'utf-8');
-        const start = source.indexOf('class="ce-identity__notice"');
+        // The notice is a kit `Alert` (HOS-2624) instead of a hand-made <p>.
+        const start = source.indexOf('<Alert tone="info"');
         expect(start, 'notice element not found').toBeGreaterThan(-1);
 
-        const end = source.indexOf('</p>', start);
+        const end = source.indexOf('</Alert>', start);
         expect(end, 'notice element is unterminated').toBeGreaterThan(start);
 
         return source.slice(start, end);

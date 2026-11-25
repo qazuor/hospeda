@@ -5,21 +5,7 @@
  */
 
 .grid {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: var(--space-4);
-}
-
-@container (min-width: 40rem) {
-    .grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-}
-
-@container (min-width: 60rem) {
-    .grid {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
+    composes: grid from "../../account/editor/EditorFieldLayout.module.css";
 }
 
 /* A field that needs the whole row (long text, groups of choices). */

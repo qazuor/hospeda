@@ -45,6 +45,7 @@
  */
 
 import { type JSX, useCallback, useState } from 'react';
+import { Button } from '@/components/account/ui/Button';
 import type {
     ApiResult,
     EditorContentLifecycleState,
@@ -284,48 +285,44 @@ export function PublicationSection({
             {(canPublish || canDelete) && (
                 <div className={styles.actions}>
                     {canPublish && (
-                        <button
-                            type="button"
-                            className={styles.publishButton}
+                        <Button
+                            variant="primary"
                             onClick={handlePrimaryAction}
                             disabled={isPublishing || hasUnsavedChanges}
                             data-testid="content-publish-toggle"
                         >
                             {isLive ? labels.unpublish : labels.publish}
-                        </button>
+                        </Button>
                     )}
 
                     {canDelete && deleteState === 'idle' && (
-                        <button
-                            type="button"
-                            className={styles.deleteButton}
+                        <Button
+                            variant="danger"
                             onClick={() => setDeleteState('confirming')}
                             data-testid="content-delete"
                         >
                             {labels.delete}
-                        </button>
+                        </Button>
                     )}
 
                     {canDelete && deleteState !== 'idle' && (
                         <span className={styles.confirm}>
                             <span className={styles.confirmText}>{labels.deleteConfirm}</span>
-                            <button
-                                type="button"
-                                className={styles.deleteButton}
+                            <Button
+                                variant="danger"
                                 onClick={handleDelete}
                                 disabled={deleteState === 'pending'}
                                 data-testid="content-delete-confirm"
                             >
                                 {labels.deleteYes}
-                            </button>
-                            <button
-                                type="button"
-                                className={styles.cancelButton}
+                            </Button>
+                            <Button
+                                variant="secondary"
                                 onClick={() => setDeleteState('idle')}
                                 disabled={deleteState === 'pending'}
                             >
                                 {labels.deleteNo}
-                            </button>
+                            </Button>
                         </span>
                     )}
                 </div>

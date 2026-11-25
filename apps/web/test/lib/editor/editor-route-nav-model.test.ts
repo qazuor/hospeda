@@ -11,7 +11,8 @@ import {
 import {
     buildEditorNavModel,
     countActiveLinks,
-    type EditorNavGroup
+    type EditorNavGroup,
+    toEditorNavStatus
 } from '@/lib/editor/editor-route-nav-model';
 
 /** Builds the model with sensible defaults for the case under test. */
@@ -37,6 +38,22 @@ function allLinks(groups: readonly EditorNavGroup[]) {
 }
 
 describe('buildEditorNavModel — structure', () => {
+    it('does not treat recommendations or unmeasured neutral facts as required completion', () => {
+        expect(
+            toEditorNavStatus({
+                status: { labelKey: 'recommended', tone: 'warning', completion: 'complete' }
+            })
+        ).toBe('complete');
+        expect(
+            toEditorNavStatus({ status: { labelKey: 'count', tone: 'neutral' } })
+        ).toBeUndefined();
+        expect(
+            toEditorNavStatus({ status: { labelKey: 'recommended', tone: 'warning' } })
+        ).toBeUndefined();
+        expect(toEditorNavStatus({ status: { labelKey: 'required', tone: 'blocking' } })).toBe(
+            'incomplete'
+        );
+    });
     it('should render three groups', () => {
         expect(build()).toHaveLength(3);
     });

@@ -32,7 +32,12 @@ describe('buildEditorCompleteness', () => {
         const result = buildEditorCompleteness({ requirements, missingIds: ['b', 'c', 'd'] });
 
         // Assert
-        expect(result).toEqual({ done: 1, total: 3, missing: ['two', 'three'] });
+        expect(result).toEqual({
+            done: 1,
+            total: 3,
+            missing: ['two', 'three'],
+            requiredSections: ['one', 'two', 'three']
+        });
     });
 
     it('ignores an unmet id that no requirement declares', () => {
@@ -41,7 +46,7 @@ describe('buildEditorCompleteness', () => {
             missingIds: ['ghost']
         });
 
-        expect(result).toEqual({ done: 1, total: 1, missing: [] });
+        expect(result).toEqual({ done: 1, total: 1, missing: [], requiredSections: ['one'] });
     });
 });
 

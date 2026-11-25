@@ -4,10 +4,8 @@
  * (HOS-1043), extracted out of `VenueMenuManager.client.tsx` to keep that
  * file's growth in check.
  *
- * Native `<details>`/`<summary>` for the collapse, not a `useState` toggle: a
- * carta editor with thirty sections of a hundred dishes each would otherwise
- * carry one boolean per row for a purely cosmetic affordance, and the
- * platform's own rule for `apps/web` is minimal client JS.
+ * The kit Disclosure supplies the native collapse and a visible chevron.
+ * A refused save opens it so translations can still be cleared for recovery.
  *
  * The ES leg of each translated field is never edited here — it is the
  * section/item's own `name`/`description` input, already rendered by the
@@ -19,6 +17,7 @@
  */
 
 import type { JSX } from 'react';
+import { Disclosure } from '@/components/account/ui/Disclosure';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import styles from './VenueMenuManager.module.css';
@@ -53,7 +52,7 @@ export interface MenuTranslationFieldsProps {
 
 /**
  * Renders the EN/PT input pair for a name and (optionally) a description,
- * behind a collapsed `<details>`.
+ * behind the kit Disclosure.
  *
  * @param props - See {@link MenuTranslationFieldsProps}.
  * @returns The translation fields block.
@@ -72,13 +71,11 @@ export function VenueMenuTranslationFields({
     const { t } = createTranslations(locale);
 
     return (
-        <details
+        <Disclosure
             className={styles.translationsBlock}
-            open={locked}
+            defaultOpen={locked}
+            summary={t('venue.owner.editor.menuManager.translations', 'Traducciones (EN/PT)')}
         >
-            <summary className={styles.translationsSummary}>
-                {t('venue.owner.editor.menuManager.translations', 'Traducciones (EN/PT)')}
-            </summary>
             {locked && (
                 <p className={styles.translationsLockedHint}>
                     {planName
@@ -157,6 +154,6 @@ export function VenueMenuTranslationFields({
                     </>
                 )}
             </div>
-        </details>
+        </Disclosure>
     );
 }

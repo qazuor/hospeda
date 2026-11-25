@@ -172,18 +172,16 @@
 
 /* ── Items ────────────────────────────────────────────────────────────── */
 
-/*
- * Each item spans two rows of the parent grid and adopts them as a subgrid, so
- * every label in a visual row shares one track and every "Detalles" disclosure
- * starts at the same height (HOS-2058). Opening a disclosure only grows the
- * second track, never the cards above it.
- */
+/* Selected attributes own the whole row rather than shifting one grid column. */
 .item {
     display: grid;
-    grid-row: span 2;
-    grid-template-rows: subgrid;
-    row-gap: 0.25rem;
+    align-content: start;
+    row-gap: var(--space-1);
     min-width: 0;
+}
+
+.itemWithAttributes {
+    grid-column: 1 / -1;
 }
 
 .checkboxLabel {
@@ -200,9 +198,20 @@
         background-color 150ms ease-out;
 }
 
-.checkboxLabel:hover {
+@media (hover: hover) {
+    .checkboxLabel:hover {
+        background-color: var(--surface-warm);
+    }
+}
+
+.checkboxLabel:has(:checked) {
     border-color: var(--brand-primary);
     background-color: var(--surface-warm);
+}
+
+.checkboxLabel:has(:focus-visible) {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
 }
 
 .checkboxInput {

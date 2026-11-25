@@ -22,7 +22,10 @@ const read = (path: string) => readFileSync(path, 'utf8');
 
 const fieldsCss = read(resolve(EDITOR_DIR, 'editor-fields.module.css'));
 const editorCss = read(resolve(LISTING_DIR, 'ListingEditor.module.css'));
-const translationPanelCss = read(resolve(LISTING_DIR, 'ListingTranslationPanel.module.css'));
+const translationPanel = read(resolve(LISTING_DIR, 'ListingTranslationPanel.client.tsx'));
+const sharedTranslationEditor = read(
+    resolve(LISTING_DIR, '../account/editor/TranslationEditor.tsx')
+);
 /**
  * Every route of the listing editor (HOS-1080).
  *
@@ -140,6 +143,14 @@ describe('ListingEditor — per-section cards (HOS-371)', () => {
         for (const file of SECTION_FILES) {
             const code = stripComments(read(resolve(EDITOR_DIR, file)));
 
+            // The concurrent photo extraction owns its kit Section in the shared editor.
+            if (code.includes('<PhotoEditor')) {
+                expect(read(resolve(LISTING_DIR, '../account/editor/PhotoEditor.tsx'))).toContain(
+                    '<Section'
+                );
+                continue;
+            }
+
             // A kit `<Section>` (HOS-2415) counts: it renders the card itself.
             expect(code, `${file}: renders no card at all`).toMatch(
                 /<(section|fieldset)\b[^>]*(styles|fieldStyles)\.section|<Section\b/
@@ -160,29 +171,15 @@ describe('ListingEditor — per-section cards (HOS-371)', () => {
     });
 
     it('makes the translation panel its own card instead of a bare fieldset', () => {
-        // It sits among the section cards in the same form, so it has to read as
-        // one of them. Composing the recipe on its own root beats wrapping it in
-        // an extra <section>, which would nest two boxes for one section.
-        expect(sectionRule(translationPanelCss)).toMatch(
-            /composes:\s*card from ["']\.\.\/account\/AccountSection\.module\.css["']/
-        );
-        // BOTH rules, symmetrically with `editor-fields.module.css` above:
-        // dropping the sibling `clear` alone lets the panel's description
-        // paragraph wrap alongside the floated legend.
-        expect(translationPanelCss).toMatch(/\.section\s*>\s*legend\s*\{[^}]*float:\s*left/);
-        expect(translationPanelCss).toMatch(
-            /\.section\s*>\s*legend\s*\+\s*\*\s*\{[^}]*clear:\s*both/
-        );
+        expect(translationPanel).toContain('<TranslationEditor');
+        expect(sharedTranslationEditor).toContain('<Section');
+        expect(sharedTranslationEditor).toContain("slug: 'traducciones'");
     });
 
     it('drops the translation panel resets and margin that would cancel or hollow the card', () => {
-        const rule = sectionRule(translationPanelCss);
-        expect(rule).not.toMatch(/padding:\s*0/);
-        expect(rule).not.toMatch(/border:\s*none/);
-        // The form owns the gap between sections; this margin would render as
-        // dead space INSIDE the card.
-        expect(rule).not.toMatch(/margin:\s*0\s+0\s+var\(--space-5/);
-        expect(rule).toContain('margin: 0;');
+        expect(translationPanel).not.toContain('<fieldset');
+        expect(translationPanel).not.toContain('ListingTranslationPanel.module.css');
+        expect(sharedTranslationEditor).not.toMatch(/<Section[^>]*className=/);
     });
 
     it('no route wraps a section in an outer AccountSectionCard', () => {

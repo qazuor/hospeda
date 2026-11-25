@@ -20,7 +20,7 @@
  * run is reported per FIELD instead of behind one global spinner: each row shows
  * whether it is in flight, translated, or failed and in which locales.
  *
- * The page NEVER reloads on its own. This panel is a `<fieldset>` inside the
+ * The page NEVER reloads on its own. This panel is a kit Section inside the
  * editor's `<form>`, and `apps/web` has no `beforeunload` guard anywhere, so an
  * automatic reload silently discarded whatever the host had typed and not yet
  * saved. A run that wrote something offers an explicit refresh instead, and folds
@@ -37,14 +37,15 @@
  * buttons and the messages around it. Showing is the whole delivery: the panel
  * stays read-only by owner decision, and editing a translation is a later one.
  *
- * HOS-2492 — same look as the venue/experience panel: kit `Tabs` per language
- * (each tab counts its untranslated fields), a `StatusPill` per field, kit
- * `Alert` for the missing-translations notice and the run messages, kit
- * `Button`s. The data model and the run logic are untouched.
+ * HOS-2624 — TranslationEditor owns the shared Section, Tabs and missing hint.
+ * TranslationFieldRow adapts read-only statuses to the shared row presentation.
+ * The data model, per-field outcomes and generation logic remain here.
  */
 
 import { useCallback, useState } from 'react';
-import { Alert, Button, Tabs } from '@/components/account/ui';
+import { TranslationEditor } from '@/components/account/editor/TranslationEditor';
+import styles from '@/components/account/editor/TranslationEditor.module.css';
+import { Alert, Button } from '@/components/account/ui';
 import type { AccommodationTranslationData } from '@/lib/api/types';
 import { visibleApiMessage } from '@/lib/api-errors';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -55,7 +56,6 @@ import {
     LOCALE_LABELS,
     TranslationFieldRow
 } from './TranslationFieldRow.client';
-import styles from './TranslationPanel.module.css';
 import type { GenerationOutcomes, TranslationResultItem } from './translation-status';
 import {
     anyFieldFailed,
@@ -355,18 +355,11 @@ export function TranslationPanel({ locale, accommodationId, translations }: Tran
         .map((entry) => LOCALE_LABELS[entry.locale]);
 
     const tabs = missingByLocale.map(({ locale: panelLocale, count }) => ({
-        id: panelLocale,
-        label: LOCALE_LABELS[panelLocale],
-        ...(count > 0
-            ? {
-                  count,
-                  countLabel: t('host.properties.editor.translation.missingCount', undefined, {
-                      count
-                  })
-              }
-            : {}),
-        panel: (
-            <ul className={styles.fieldList}>
+        locale: panelLocale,
+        count,
+        countLabel: t('host.properties.editor.translation.missingCount', undefined, { count }),
+        content: (
+            <>
                 {rows.map((row) => (
                     <TranslationFieldRow
                         key={row.field}
@@ -378,51 +371,30 @@ export function TranslationPanel({ locale, accommodationId, translations }: Tran
                         t={t}
                     />
                 ))}
-            </ul>
+            </>
         )
     }));
 
     return (
-        <fieldset className={`${styles.section} ${styles.bare}`}>
-            <legend className={styles.sectionTitle}>
-                {t('host.properties.editor.translation.sectionTitle', 'Traducciones')}
-            </legend>
-
-            <p className={styles.sectionDescription}>
-                {t(
-                    'host.properties.editor.translation.sectionDescription',
-                    'Estado de traducción de los campos principales de tu propiedad. Las traducciones faltantes se generan automáticamente con IA a partir del contenido en español.'
-                )}
-            </p>
-
-            {missingLocales.length > 0 && (
-                <Alert
-                    tone="info"
-                    locale={locale}
-                >
-                    {t('host.properties.editor.translation.missingNotice', undefined, {
-                        locales: missingLocales.join(', ')
-                    })}
-                </Alert>
+        <TranslationEditor
+            locale={locale}
+            vertical="accommodation"
+            description={t(
+                'host.properties.editor.translation.sectionDescription',
+                'Estado de traducción de los campos principales de tu propiedad. Las traducciones faltantes se generan automáticamente con IA a partir del contenido en español.'
             )}
-
-            {/* The per-field notes change while the host waits, so the region
-                that holds them is the one that has to be live. `aria-busy`
-                defers the announcement to the FINAL state (HOS-317), and the
-                translated text stays inside on purpose (HOS-797): a live region
-                announces what changed, which is the result itself. */}
-            <div
-                className={styles.region}
-                aria-live="polite"
-                aria-busy={isGenerating}
-            >
-                <Tabs
-                    items={tabs}
-                    ariaLabel={t('host.properties.editor.translation.sectionTitle', 'Traducciones')}
-                    defaultValue={CONTENT_SOURCE_LOCALE}
-                />
-            </div>
-
+            missingNotice={
+                missingLocales.length > 0
+                    ? t('host.properties.editor.translation.missingNotice', undefined, {
+                          locales: missingLocales.join(', ')
+                      })
+                    : undefined
+            }
+            tabs={tabs}
+            ariaLabel={t('host.properties.editor.translation.sectionTitle', 'Traducciones')}
+            defaultLocale={CONTENT_SOURCE_LOCALE}
+            isBusy={isGenerating}
+        >
             <div className={styles.actions}>
                 {canGenerate && (
                     <Button
@@ -474,6 +446,6 @@ export function TranslationPanel({ locale, accommodationId, translations }: Tran
                     {successMessage}
                 </Alert>
             )}
-        </fieldset>
+        </TranslationEditor>
     );
 }

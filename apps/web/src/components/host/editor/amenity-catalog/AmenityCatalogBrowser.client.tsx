@@ -3,11 +3,10 @@
  * @description The accommodation editor's amenity/feature browser (HOS-2123,
  * owner-chosen mockup variant B, with the owner's one change):
  *
- * - **Categories on the left, tiles on the right.** One list of categories
+ * - **Categories above the tiles.** One horizontal list of categories
  *   (amenity categories, then feature categories), each with its selected
  *   count. The panel shows every item of the active category, selected or
- *   not — the whole catalog stays browsable. On narrow screens the list turns
- *   into a horizontal, scrollable chip row above the tiles (CSS only).
+ *   not — the whole catalog stays browsable. The chip row scrolls when needed.
  * - **Search across categories.** The box filters every category at once over
  *   the localized labels (same matcher as the shared picker); results are
  *   listed grouped by category.
@@ -37,6 +36,7 @@ import {
 import type { AmenityAttributeValue, AmenityData } from '@/lib/api/types';
 import { groupAmenitiesByCategory, groupFeaturesByCategory } from '@/lib/catalog-categories';
 import { translateAmenityName } from '@/lib/catalog-names';
+import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import styles from './AmenityCatalogBrowser.module.css';
@@ -127,7 +127,10 @@ export function AmenityCatalogBrowser({
         return (
             <li
                 key={item.id}
-                className={styles.tileItem}
+                className={cn(
+                    styles.tileItem,
+                    selected && kind === 'amenity' && hasDetails && styles.tileItemWithDetails
+                )}
             >
                 <button
                     type="button"

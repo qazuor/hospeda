@@ -76,4 +76,12 @@ describe('ListingLocationSection without a pin (owner decision 12)', () => {
         expect(screen.queryByText('Todavía no marcaste el lugar en el mapa')).toBeNull();
         expect(screen.queryByRole('button', { name: 'Ir al mapa' })).toBeNull();
     });
+
+    it('puts the map action below the body instead of in the Alert action column', () => {
+        renderSection({ lat: '', long: '' });
+        const body = screen.getByText(/Sin pin, tu ficha no muestra en el mapa/);
+        expect(
+            body.parentElement?.contains(screen.getByRole('button', { name: 'Ir al mapa' }))
+        ).toBe(true);
+    });
 });

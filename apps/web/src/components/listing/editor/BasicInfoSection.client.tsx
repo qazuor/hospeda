@@ -125,6 +125,7 @@ export function BasicInfoSection({
                     <Field
                         locale={locale}
                         idParts={idOf('destinationId')}
+                        className={styles.full}
                         label={t('listing.owner.editor.sections.destination', 'Ciudad / Destino')}
                         error={errors.destinationId}
                     >

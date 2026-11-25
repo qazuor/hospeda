@@ -10,12 +10,12 @@
  */
 
 import type { JSX } from 'react';
+import styles from '@/components/account/editor/FaqEditor.module.css';
 import { Button } from '@/components/account/ui/Button';
 import { PlanEntitlementGate } from '@/components/host/editor/PlanEntitlementGate.client';
 import type { FaqAiDraftState } from '@/hooks/use-faq-ai-draft';
 import type { SupportedLocale, TranslationFn } from '@/lib/i18n';
 import type { VenueOrExperience } from '@/lib/listing/owner-listings';
-import styles from './ListingFaqManager.module.css';
 
 /** Props of {@link ListingFaqAiDraft}. */
 export interface ListingFaqAiDraftProps {
@@ -53,7 +53,7 @@ export function ListingFaqAiDraft({
             vertical={vertical}
             fallback={null}
         >
-            <div className={styles.aiDraft}>
+            <div className={styles.stack}>
                 <Button
                     variant="secondary"
                     size="lg"
@@ -71,7 +71,7 @@ export function ListingFaqAiDraft({
                           )}
                 </Button>
                 {isAiDraftContent && (
-                    <p className={styles.aiDraftDisclaimer}>
+                    <p>
                         {t(
                             'host.properties.editor.aiQuestions.aiDraftDisclaimer',
                             'Es un borrador editable. Revisá que coincida con la información de tu ficha antes de guardarlo.'
@@ -79,10 +79,7 @@ export function ListingFaqAiDraft({
                     </p>
                 )}
                 {faqAiDraft.feedback && faqAiDraft.feedback !== 'noData' && (
-                    <p
-                        className={styles.fieldError}
-                        role="alert"
-                    >
+                    <p role="alert">
                         {t(
                             faqAiDraft.feedback === 'notEligible'
                                 ? 'host.properties.editor.aiQuestions.aiDraftNotEligible'

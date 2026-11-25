@@ -227,9 +227,9 @@ describe('ListingFaqManager — persistence round trip (HOS-811 / HOS-841)', () 
         fireEvent.click(within(block).getByRole('button', { name: 'Guardar' }));
 
         await waitFor(() => {
-            expect(within(faqBlock(container)).getByRole('button', { name: 'Editar' }));
+            expect(within(faqBlock(container)).getByRole('button', { name: /Editar/ }));
         });
-        fireEvent.click(within(faqBlock(container)).getByRole('button', { name: 'Editar' }));
+        fireEvent.click(within(faqBlock(container)).getByRole('button', { name: /Editar/ }));
 
         const editing = faqBlock(container);
         fireEvent.change(within(editing).getByLabelText('Pregunta'), {
@@ -273,9 +273,9 @@ describe('ListingFaqManager — persistence round trip (HOS-811 / HOS-841)', () 
         fireEvent.click(within(block).getByRole('button', { name: 'Guardar' }));
 
         await waitFor(() => {
-            expect(within(faqBlock(container)).getByRole('button', { name: 'Editar' }));
+            expect(within(faqBlock(container)).getByRole('button', { name: /Editar/ }));
         });
-        fireEvent.click(within(faqBlock(container)).getByRole('button', { name: 'Editar' }));
+        fireEvent.click(within(faqBlock(container)).getByRole('button', { name: /Editar/ }));
 
         const editing = faqBlock(container);
         fireEvent.change(within(editing).getByLabelText('Pregunta'), {

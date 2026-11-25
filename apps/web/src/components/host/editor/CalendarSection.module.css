@@ -106,7 +106,12 @@
 .pad {
     border-right: 1px solid var(--border);
     border-bottom: 1px solid var(--border);
-    background-color: var(--muted);
+    background-color: var(--surface-warm);
+    background-image: repeating-linear-gradient(
+        135deg,
+        transparent 0 var(--space-2),
+        var(--border) var(--space-2) calc(var(--space-2) + 1px)
+    );
 }
 
 .day {
@@ -303,8 +308,19 @@
 }
 
 .dayPast {
-    background-color: var(--muted);
+    background-color: var(--core-background);
     color: var(--core-muted-foreground);
+    text-decoration: line-through;
+}
+
+.dotPast {
+    background-color: var(--core-background);
+    border: 1px solid var(--core-muted-foreground);
+}
+
+.dotOutside {
+    background-color: var(--surface-warm);
+    border: 1px dashed var(--core-muted-foreground);
 }
 
 .sourceDot {
@@ -337,8 +353,8 @@
 }
 
 .dotFree {
-    background-color: transparent;
-    border: 1px solid var(--border);
+    background-color: var(--core-card);
+    border: 1px solid var(--core-foreground);
 }
 
 /* --- Action bar (range selection) --- */
@@ -388,29 +404,5 @@
         min-width: 0;
         font: var(--app-ui);
         font-weight: 600;
-    }
-}
-
-/* --- Mobile (HOS-316, was the 600px viewport rule) ----------------------- */
-
-@container (width < 37.5rem) {
-    /*
-     * Full-bleed the grid out of the Section's horizontal padding. Seven
-     * columns need 308px to clear the 44px touch-target guideline, and the
-     * padded content box on a 390px screen falls short by exactly the padding,
-     * so reclaiming it is what buys the target size rather than shrinking
-     * anything else.
-     */
-    .grid {
-        margin-inline: calc(-1 * var(--space-6));
-        border-inline: 0;
-        border-radius: 0;
-    }
-}
-
-/* Under 30rem the Section's body padding drops to --space-4: match it. */
-@container (width < 30rem) {
-    .grid {
-        margin-inline: calc(-1 * var(--space-4));
     }
 }

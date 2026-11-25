@@ -143,8 +143,9 @@ const statuses = applyLockedSectionStatuses({
 		entityId={accommodationId}
 		visibility={buildAccommodationEditorVisibility({ hasTranslations: data.translations !== null })}
 		statuses={statuses}
-		sectionStates={sectionStatesResult.ok ? sectionStatesResult.data.sections : {}}
 		completeness={completeness}
+        publicationStatus={accommodation.publicationStatus}
+        slug={accommodation.slug}
 	/>
 </EditorSectionLayout>
 

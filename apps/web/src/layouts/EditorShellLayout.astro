@@ -124,6 +124,7 @@ const saveModel = isHub
 	</PageHeader>
 
 	<div class="editor-shell" data-editor-shell>
+        {!isHub && <p class="editor-shell__identity">{entityName}</p>}
 		<div class:list={['editor-shell__grid', { 'editor-shell__grid--hub': isHub }]}>
 			{
 				!isHub && (
@@ -174,6 +175,14 @@ const saveModel = isHub
 		display: none;
 	}
 
+    .editor-shell__identity {
+        display: none;
+        margin: 0 0 var(--space-4);
+        font: var(--app-section);
+        color: var(--core-muted-foreground);
+        overflow-wrap: anywhere;
+    }
+
 	.editor-shell__switcher {
 		position: sticky;
 		inset-block-start: var(--editor-switcher-top);
@@ -186,6 +195,9 @@ const saveModel = isHub
 	}
 
 	@container (min-width: 60rem) {
+        .editor-shell__identity {
+            display: block;
+        }
 		.editor-shell__grid:not(.editor-shell__grid--hub) {
 			display: grid;
 			grid-template-columns: var(--editor-nav-w) minmax(0, 1fr);

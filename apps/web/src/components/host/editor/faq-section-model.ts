@@ -59,16 +59,3 @@ export function toLabelSnippet(question: string): string {
     }
     return `${trimmed.slice(0, LABEL_SNIPPET_MAX).trimEnd()}…`;
 }
-
-/**
- * Whether a FAQ's channel-visibility flags differ from the default (both
- * `true`). Drives the per-row marker (AC-14): the editor lists every FAQ
- * regardless of its flags, so a non-default state must stay visible at a
- * glance (R-1).
- *
- * @param faq - The FAQ to inspect.
- * @returns `true` when either flag is off.
- */
-export function hasNonDefaultChannelState(faq: AccommodationFaqItem): boolean {
-    return !faq.isVisibleOnListing || !faq.isUsableByAi;
-}

@@ -137,6 +137,7 @@ export function SeoSection({ locale, data, errors, onFieldChange }: SeoSectionPr
                         type="text"
                         value={data.seoTitle}
                         placeholder={titleDefault || undefined}
+                        className={styles.defaultControl}
                         maxLength={SEO_TITLE_MAX}
                         aria-describedby={joinIds(
                             showTitlePreview && SEO_TITLE_PREVIEW_ID,
@@ -183,6 +184,7 @@ export function SeoSection({ locale, data, errors, onFieldChange }: SeoSectionPr
                     <Textarea
                         value={data.seoDescription}
                         placeholder={descriptionDefault || undefined}
+                        className={styles.defaultControl}
                         rows={3}
                         aria-describedby={joinIds(
                             showDescriptionPreview && SEO_DESCRIPTION_PREVIEW_ID,

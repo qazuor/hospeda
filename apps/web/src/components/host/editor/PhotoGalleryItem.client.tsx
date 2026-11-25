@@ -197,7 +197,15 @@ export function PhotoGalleryItem({
                 />
             }
             toolbar={
-                <>
+                <div
+                    role="toolbar"
+                    aria-label={t(
+                        'account.myContent.editor.media.photoActions',
+                        'Photo actions {{index}}',
+                        { index: position }
+                    )}
+                    className={styles.galleryToolbar}
+                >
                     {dragHandle && (
                         <Button
                             variant="secondary"
@@ -269,7 +277,7 @@ export function PhotoGalleryItem({
                             aria-hidden="true"
                         />
                     </Button>
-                </>
+                </div>
             }
         >
             <PhotoMetadataEditor

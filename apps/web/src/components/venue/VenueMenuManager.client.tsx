@@ -95,6 +95,8 @@
 import type { JSX } from 'react';
 import { useId } from 'react';
 import { EditorSaveBar } from '@/components/account/editor-shell/EditorSaveBar';
+import { Section } from '@/components/account/ui/Section';
+import { sectionHelpId } from '@/lib/help/section-help-id';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import type { VenueUpsellPlans } from '@/lib/venue/section-upsell-plan';
@@ -160,107 +162,109 @@ export function VenueMenuManager({
         menu.sections.length > 0 || menu.file !== null || menu.currentMenuUrl !== null;
 
     return (
-        <section
-            className={styles.panel}
+        <Section
             id="editor-menu"
+            helpId={sectionHelpId({ vertical: 'venue', slug: 'carta' })}
+            title={t('venue.owner.editor.menuManager.title', 'Carta')}
         >
-            <h2 className={styles.heading}>{t('venue.owner.editor.menuManager.title', 'Carta')}</h2>
-            <p className={styles.intro}>
-                {isSectionLocked
-                    ? t(
-                          'venue.owner.editor.menuManager.lockedIntro',
-                          'Mostrá tu carta en tu ficha.'
-                      )
-                    : t(
-                          'venue.owner.editor.menuManager.intro',
-                          'Cargá tu carta plato por plato, o subí una foto o un PDF del menú. Podés usar las dos formas, y ninguna es obligatoria.'
-                      )}
-            </p>
+            <div className={styles.panel}>
+                <p className={styles.intro}>
+                    {isSectionLocked
+                        ? t(
+                              'venue.owner.editor.menuManager.lockedIntro',
+                              'Mostrá tu carta en tu ficha.'
+                          )
+                        : t(
+                              'venue.owner.editor.menuManager.intro',
+                              'Cargá tu carta plato por plato, o subí una foto o un PDF del menú. Podés usar las dos formas, y ninguna es obligatoria.'
+                          )}
+                </p>
 
-            {isSectionLocked ? (
-                <VenueSectionLockedPanel
-                    id={planNoticeId}
-                    gate={lockedGate}
-                    locale={locale}
-                    messageKey="venue.owner.editor.menuManager.locked"
-                    messageFallback="Tu carta completa está disponible desde el plan {{plan}}."
-                    noPlanMessageFallback="Tu carta completa está disponible en un plan pago."
-                    planName={upsellPlans?.menu}
-                    preTrialMessageKey="venue.owner.editor.menuManager.lockedPreTrial"
-                    preTrialMessageFallback="La carta se habilita cuando publiques tu ficha."
-                    sectionLabel={t('venue.owner.editor.menuManager.title', 'Carta')}
-                    hasData={lockedHasData}
-                    vaciar={menu.vaciar}
-                >
-                    <VenueMenuLockedView
-                        t={t}
-                        sections={menu.sections}
-                        file={menu.file}
-                        menuUrl={menu.currentMenuUrl}
+                {isSectionLocked ? (
+                    <VenueSectionLockedPanel
+                        id={planNoticeId}
+                        gate={lockedGate}
+                        locale={locale}
+                        messageKey="venue.owner.editor.menuManager.locked"
+                        messageFallback="Tu carta completa está disponible desde el plan {{plan}}."
+                        noPlanMessageFallback="Tu carta completa está disponible en un plan pago."
+                        planName={upsellPlans?.menu}
+                        preTrialMessageKey="venue.owner.editor.menuManager.lockedPreTrial"
+                        preTrialMessageFallback="La carta se habilita cuando publiques tu ficha."
+                        sectionLabel={t('venue.owner.editor.menuManager.title', 'Carta')}
                         hasData={lockedHasData}
-                    />
-                </VenueSectionLockedPanel>
-            ) : (
-                <>
-                    {isMenuGated ? (
-                        <VenueMenuPlanNotice
-                            id={planNoticeId}
-                            gate={lockedGate}
-                            locale={locale}
-                            planName={upsellPlans?.menu}
+                        vaciar={menu.vaciar}
+                    >
+                        <VenueMenuLockedView
+                            t={t}
+                            sections={menu.sections}
+                            file={menu.file}
+                            menuUrl={menu.currentMenuUrl}
+                            hasData={lockedHasData}
                         />
-                    ) : null}
+                    </VenueSectionLockedPanel>
+                ) : (
+                    <>
+                        {isMenuGated ? (
+                            <VenueMenuPlanNotice
+                                id={planNoticeId}
+                                gate={lockedGate}
+                                locale={locale}
+                                planName={upsellPlans?.menu}
+                            />
+                        ) : null}
 
-                    {/* The external link (DEC-FAC-062: its own one-key PATCH). Owner
+                        {/* The external link (DEC-FAC-062: its own one-key PATCH). Owner
                         decision 14 supersedes DEC-FAC-062's separate button: the
                         save bar below tracks, saves and discards it. */}
-                    <VenueMenuLinkField
-                        locale={locale}
-                        value={menu.menuUrlDraft}
-                        onChange={menu.setMenuUrlDraft}
-                        disabled={isMenuGated}
-                    />
+                        <VenueMenuLinkField
+                            locale={locale}
+                            value={menu.menuUrlDraft}
+                            onChange={menu.setMenuUrlDraft}
+                            disabled={isMenuGated}
+                        />
 
-                    <VenueMenuFileBlock
-                        t={t}
-                        file={menu.file}
-                        pickedFileName={menu.pickedFileName}
-                        busy={busy}
-                        gated={isMenuGated}
-                        planNoticeId={planNoticeId}
-                        onUpload={(file) => {
-                            void menu.uploadFile(file);
-                        }}
-                        onDelete={() => {
-                            void menu.deleteFile();
-                        }}
-                    />
+                        <VenueMenuFileBlock
+                            t={t}
+                            file={menu.file}
+                            pickedFileName={menu.pickedFileName}
+                            busy={busy}
+                            gated={isMenuGated}
+                            planNoticeId={planNoticeId}
+                            onUpload={(file) => {
+                                void menu.uploadFile(file);
+                            }}
+                            onDelete={() => {
+                                void menu.deleteFile();
+                            }}
+                        />
 
-                    <VenueMenuCourses
-                        t={t}
-                        locale={locale}
-                        menu={menu}
-                        readOnly={isMenuGated || menu.isLocked}
-                        translationPlanName={upsellPlans?.translations}
-                    />
+                        <VenueMenuCourses
+                            t={t}
+                            locale={locale}
+                            menu={menu}
+                            readOnly={isMenuGated || menu.isLocked}
+                            translationPlanName={upsellPlans?.translations}
+                        />
 
-                    <EditorSaveBar
-                        locale={locale}
-                        isDirty={menu.isDirty}
-                        onSave={menu.saveMenu}
-                        onDiscard={menu.discard}
-                    />
-                </>
-            )}
+                        <EditorSaveBar
+                            locale={locale}
+                            isDirty={menu.isDirty}
+                            onSave={menu.saveMenu}
+                            onDiscard={menu.discard}
+                        />
+                    </>
+                )}
 
-            {menu.message ? (
-                <p
-                    className={styles.message}
-                    role="status"
-                >
-                    {menu.message}
-                </p>
-            ) : null}
-        </section>
+                {menu.message ? (
+                    <p
+                        className={styles.message}
+                        role="status"
+                    >
+                        {menu.message}
+                    </p>
+                ) : null}
+            </div>
+        </Section>
     );
 }

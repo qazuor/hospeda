@@ -144,7 +144,9 @@ export function CalendarDayCell({
               `host.properties.editor.calendar.source.${sourceKeySuffix(row.source)}`,
               sourceFallbackLabel(row.source)
           )}`
-        : t('host.properties.editor.calendar.statusFree', 'Libre');
+        : isPast
+          ? t('host.properties.editor.calendar.legend.past', 'Días pasados')
+          : t('host.properties.editor.calendar.statusFree', 'Libre');
     const ariaLabel = `${formatDate({
         date,
         locale,
@@ -157,15 +159,15 @@ export function CalendarDayCell({
             className={cn(
                 styles.day,
                 barMode && styles.dayBarMode,
-                // In bar mode the spanning bars carry the occupied/source
-                // signal, so suppress the per-cell occupied bg + dashed sync
-                // border to avoid a double indicator.
-                !barMode && isOccupied && styles.dayOccupied,
+                // Keep blocked days distinct in both presentations; bars still
+                // carry the source, so only the dashed source border is omitted.
+                isOccupied && styles.dayOccupied,
                 !barMode && isSyncOrigin && styles.daySync,
                 isSelected && styles.daySelected,
                 isPending && styles.dayPending,
-                isPast && styles.dayPast
+                isPast && !isOccupied && styles.dayPast
             )}
+            data-day-state={isOccupied ? 'blocked' : isPast ? 'past' : 'free'}
             onClick={() => !isDisabled && onSelect(dateKey)}
             disabled={isDisabled}
             aria-label={ariaLabel}

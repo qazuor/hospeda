@@ -5,9 +5,12 @@
  * 500-line limit. Stateless: every value and handler comes from the island.
  */
 
-import { DEFAULT_ENTITY_MAX_FILE_SIZE_MB } from '@repo/media';
+import { DeleteIcon } from '@repo/icons';
+import { DEFAULT_ENTITY_MAX_FILE_SIZE_MB, mbToBytes } from '@repo/media';
 import type { ChangeEvent, JSX, RefObject } from 'react';
 import fieldStyles from '@/components/account/editor/content-editor-fields.module.css';
+import { Button } from '@/components/account/ui/Button';
+import { ImageUploader, type ImageUploadResult } from '@/components/account/ui/ImageUploader';
 import { PhotoMetadataEditor } from '@/components/host/editor/PhotoMetadataEditor.client';
 import type { PhotoMetadataUpdateBody } from '@/components/host/editor/photo-section-helpers';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -26,9 +29,8 @@ export interface ContentMediaViewProps {
     readonly anyOpInFlight: boolean;
     readonly canWrite: boolean;
     readonly error: string | null;
-    readonly featuredInputRef: RefObject<HTMLInputElement | null>;
     readonly galleryInputRef: RefObject<HTMLInputElement | null>;
-    readonly handleFeaturedSelect: (event: ChangeEvent<HTMLInputElement>) => void;
+    readonly uploadFeatured: (file: File) => Promise<ImageUploadResult>;
     readonly handleGallerySelect: (event: ChangeEvent<HTMLInputElement>) => void;
     readonly handleFeaturedRemove: () => void;
     readonly handleGalleryRemove: (item: ContentMediaItem) => void;
@@ -55,9 +57,8 @@ export function ContentMediaView({
     anyOpInFlight,
     canWrite,
     error,
-    featuredInputRef,
     galleryInputRef,
-    handleFeaturedSelect,
+    uploadFeatured,
     handleGallerySelect,
     handleFeaturedRemove,
     handleGalleryRemove,
@@ -83,25 +84,33 @@ export function ContentMediaView({
     return (
         <div className={styles.media}>
             <div className={styles.mediaGroup}>
-                <span className={fieldStyles.label}>{featuredLabel}</span>
+                <ImageUploader
+                    locale={locale}
+                    label={featuredLabel}
+                    value={featuredItem?.url ?? null}
+                    previewAlt={featuredItem?.alt ?? featuredLabel}
+                    maxMb={DEFAULT_ENTITY_MAX_FILE_SIZE_MB}
+                    maxBytes={mbToBytes(DEFAULT_ENTITY_MAX_FILE_SIZE_MB)}
+                    upload={uploadFeatured}
+                    // The adapter already persisted and updated state. Never persist again here.
+                    onChange={() => {}}
+                    disabled={anyOpInFlight || !canWrite}
+                />
                 {featuredItem ? (
-                    <div className={styles.mediaItem}>
-                        <div className={styles.mediaThumb}>
-                            <img
-                                src={featuredItem.url}
-                                alt={featuredItem.alt ?? featuredLabel}
-                                className={styles.mediaImage}
+                    <>
+                        <Button
+                            className={styles.featuredRemove}
+                            variant="secondary"
+                            iconOnly
+                            aria-label={removeLabel}
+                            disabled={anyOpInFlight || !canWrite || !featuredItem.id}
+                            onClick={handleFeaturedRemove}
+                        >
+                            <DeleteIcon
+                                size="sm"
+                                aria-hidden="true"
                             />
-                            <button
-                                type="button"
-                                className={styles.mediaRemove}
-                                aria-label={removeLabel}
-                                disabled={anyOpInFlight || !canWrite || !featuredItem.id}
-                                onClick={handleFeaturedRemove}
-                            >
-                                ×
-                            </button>
-                        </div>
+                        </Button>
                         <PhotoMetadataEditor
                             locale={locale}
                             item={featuredItem}
@@ -110,26 +119,8 @@ export function ContentMediaView({
                             closeAriaLabel={featuredCloseAria}
                             onSave={handleUpdateText}
                         />
-                    </div>
-                ) : (
-                    <button
-                        type="button"
-                        className={styles.mediaAdd}
-                        disabled={anyOpInFlight || !canWrite}
-                        onClick={() => featuredInputRef.current?.click()}
-                    >
-                        {addLabel}
-                    </button>
-                )}
-                <input
-                    ref={featuredInputRef}
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp"
-                    aria-label={featuredLabel}
-                    className={styles.mediaFileInput}
-                    disabled={!canWrite}
-                    onChange={handleFeaturedSelect}
-                />
+                    </>
+                ) : null}
             </div>
 
             <div className={styles.mediaGroup}>
@@ -161,6 +152,7 @@ export function ContentMediaView({
                                 item={image}
                                 disabled={anyOpInFlight || !canWrite}
                                 compactLayout={true}
+                                iconOnly
                                 toggleAriaLabel={t(
                                     'host.properties.editor.photo.editDetailsAria',
                                     'Editar textos de la foto {{index}}',

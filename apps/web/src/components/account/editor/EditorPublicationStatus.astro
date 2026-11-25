@@ -1,0 +1,30 @@
+---
+/** Publication facts already fetched by the hub; no reads or publish actions. */
+import { LinkButton, StatusPill } from '@/components/account/ui';
+import { resolveEditorPublicationStatus } from '@/lib/editor/editor-publication-status';
+import { createTranslations, type SupportedLocale } from '@/lib/i18n';
+
+interface Props {
+    readonly locale: SupportedLocale;
+    readonly vertical: string;
+    readonly publicationStatus?: string | null;
+    readonly slug?: string | null;
+}
+const { locale, vertical, publicationStatus, slug } = Astro.props;
+const { t } = createTranslations(locale);
+const status = resolveEditorPublicationStatus({ locale, vertical, publicationStatus, slug });
+---
+
+<div class="editor-publication" aria-label={t('account.editorHub.publicationStatus')}>
+    <StatusPill tone={status.tone}>{t(status.labelKey)}</StatusPill>
+    {status.href && <LinkButton href={status.href} variant="secondary">{t('host.properties.card.actions.viewOnSite')}</LinkButton>}
+</div>
+
+<style>
+    .editor-publication {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--space-3);
+    }
+</style>
