@@ -88,6 +88,11 @@ describe('PartnerApplication (AC:V7:15)', () => {
 
     it('submits only the email and Turnstile token, with real Spanish i18n copy', async () => {
         renderForm();
+        expect(screen.getByRole('button', { name: 'Enviar postulación' })).toHaveClass(
+            'btn-gradient--accent',
+            'btn-gradient--flat',
+            'btn-gradient--shape-rounded'
+        );
         completeForm('persona@example.com');
         fireEvent.submit(
             screen.getByRole('button', { name: 'Enviar postulación' }).closest('form')!

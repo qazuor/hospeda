@@ -36,8 +36,7 @@
     font: inherit;
 }
 
-.input:focus-visible,
-.button:focus-visible {
+.input:focus-visible {
     outline: 3px solid var(--brand-primary);
     outline-offset: 2px;
 }
@@ -55,20 +54,6 @@
 
 .button {
     justify-self: start;
-    min-height: 2.75rem;
-    padding: var(--space-3, 0.75rem) var(--space-5, 1.25rem);
-    border: 0;
-    border-radius: var(--radius-md, 0.5rem);
-    color: var(--primary-foreground);
-    background: var(--brand-primary);
-    font: inherit;
-    font-weight: 600;
-    cursor: pointer;
-}
-
-.button:disabled {
-    cursor: not-allowed;
-    opacity: 0.55;
 }
 
 .error {

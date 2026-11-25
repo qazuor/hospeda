@@ -4,6 +4,7 @@
  */
 
 import { type FormEvent, useEffect, useRef, useState } from 'react';
+import { GradientButton } from '@/components/ui/GradientButtonReact';
 import { partnerApplicationApi } from '@/lib/api/endpoints';
 import { fetchAuthMe } from '@/lib/auth-cache';
 import { resendVerificationEmail } from '@/lib/auth-client';
@@ -253,16 +254,22 @@ export function PartnerApplication({ locale, turnstileSiteKey }: PartnerApplicat
                             </p>
                         )}
                         {accountEmail !== null && (
-                            <button
-                                type="button"
+                            <GradientButton
+                                as="button"
+                                variant="accent"
+                                flat
+                                shape="rounded"
                                 className={styles.button}
                                 disabled={resendState === 'sending'}
                                 onClick={resendVerification}
-                            >
-                                {resendState === 'sending'
-                                    ? t('alliance-leads.partnerApplication.resendingVerification')
-                                    : t('alliance-leads.partnerApplication.resendVerification')}
-                            </button>
+                                label={
+                                    resendState === 'sending'
+                                        ? t(
+                                              'alliance-leads.partnerApplication.resendingVerification'
+                                          )
+                                        : t('alliance-leads.partnerApplication.resendVerification')
+                                }
+                            />
                         )}
                     </>
                 )}
@@ -349,15 +356,20 @@ export function PartnerApplication({ locale, turnstileSiteKey }: PartnerApplicat
                               : t('alliance-leads.partnerApplication.error')}
                     </p>
                 )}
-                <button
+                <GradientButton
+                    as="button"
+                    variant="accent"
+                    flat
+                    shape="rounded"
                     className={styles.button}
                     type="submit"
                     disabled={!isValidEmail(email) || !token || state === 'sending'}
-                >
-                    {state === 'sending'
-                        ? t('alliance-leads.partnerApplication.sending')
-                        : t('alliance-leads.partnerApplication.submit')}
-                </button>
+                    label={
+                        state === 'sending'
+                            ? t('alliance-leads.partnerApplication.sending')
+                            : t('alliance-leads.partnerApplication.submit')
+                    }
+                />
             </form>
         </section>
     );

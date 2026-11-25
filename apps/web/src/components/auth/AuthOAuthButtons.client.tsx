@@ -5,7 +5,7 @@
  *
  * Signing in with Google IS signing up with Google — there is no meaningful
  * distinction between the two intents once a provider is chosen — so this
- * block renders ONCE, above and outside the sign-in/sign-up tabs owned by
+ * block renders ONCE, after and outside the sign-in/sign-up tabs owned by
  * `AuthTabs.client.tsx`, instead of being duplicated inside each form. This
  * component owns only presentation (the divider, the two buttons, the
  * brand icons); `AuthTabs` owns the click handler, the loading state, and
@@ -31,6 +31,8 @@ export interface AuthOAuthButtonsProps {
     readonly loadingProvider: AuthOAuthProvider | null;
     /** Called with the chosen provider when a button is activated. */
     readonly onSelectProvider: (provider: AuthOAuthProvider) => void;
+    /** Show a divider only when an email form precedes this group. */
+    readonly showDivider?: boolean;
 }
 
 /**
@@ -46,20 +48,23 @@ export interface AuthOAuthButtonsProps {
 export function AuthOAuthButtons({
     locale,
     loadingProvider,
-    onSelectProvider
+    onSelectProvider,
+    showDivider = false
 }: AuthOAuthButtonsProps) {
     const { t } = createTranslations(locale);
 
     return (
         <div className={styles.oauthBlock}>
-            <div
-                className={styles.divider}
-                aria-hidden="true"
-            >
-                <span className={styles.dividerLine} />
-                <span>{t('auth.oauth.or', 'o')}</span>
-                <span className={styles.dividerLine} />
-            </div>
+            {showDivider && (
+                <div
+                    className={styles.divider}
+                    aria-hidden="true"
+                >
+                    <span className={styles.dividerLine} />
+                    <span>{t('auth.oauth.or', 'o')}</span>
+                    <span className={styles.dividerLine} />
+                </div>
+            )}
 
             <button
                 type="button"

@@ -9,6 +9,7 @@
 
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { AuthOAuthButtons } from '../../../src/components/auth/AuthOAuthButtons.client';
 import { AuthTabs } from '../../../src/components/auth/AuthTabs.client';
 
 // ─── Module mocks ─────────────────────────────────────────────────────────────
@@ -72,6 +73,37 @@ function renderAuthTabs(overrides: Partial<Parameters<typeof AuthTabs>[0]> = {})
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
 describe('AuthTabs — tab structure and ARIA', () => {
+    it.each([
+        'signin',
+        'signup'
+    ] as const)('separates the %s email form from social buttons in DOM order', (initialTab) => {
+        renderAuthTabs({ initialTab });
+
+        const panel = screen.getByRole('tabpanel');
+        const divider = screen.getByText('o');
+        const google = screen.getByRole('button', { name: 'Continuar con Google' });
+        expect(
+            panel.compareDocumentPosition(divider) & Node.DOCUMENT_POSITION_FOLLOWING
+        ).toBeTruthy();
+        expect(
+            divider.compareDocumentPosition(google) & Node.DOCUMENT_POSITION_FOLLOWING
+        ).toBeTruthy();
+        expect(screen.getAllByText('o')).toHaveLength(1);
+    });
+
+    it('does not render an orphaned divider for standalone social buttons', () => {
+        render(
+            <AuthOAuthButtons
+                locale="es"
+                loadingProvider={null}
+                onSelectProvider={vi.fn()}
+            />
+        );
+
+        expect(screen.queryByText('o')).not.toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Continuar con Google' })).toBeInTheDocument();
+    });
+
     beforeEach(() => {
         signInSocialMock.mockReset();
         signInEmailMock.mockReset();

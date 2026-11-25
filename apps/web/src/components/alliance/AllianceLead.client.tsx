@@ -858,7 +858,7 @@ export function AllianceLead({
 
             <button
                 type="submit"
-                className={styles.submit}
+                className={`${styles.submit} btn-gradient btn-gradient--accent btn-gradient--flat btn-gradient--shape-rounded`}
                 disabled={isSubmitting}
                 aria-busy={isSubmitting}
             >
