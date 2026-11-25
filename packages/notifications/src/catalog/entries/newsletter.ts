@@ -2,8 +2,8 @@
  * Catalog entries of the newsletter emails.
  *
  * The campaign is sent by the newsletter delivery service with the campaign's
- * own subject. The double opt-in verify and welcome emails have templates and
- * subjects but no production sender yet (HOS-2535), so they are `wired: false`.
+ * own subject. The double opt-in verify and welcome emails are sent by the
+ * API's newsletter dispatcher (`apps/api/src/lib/newsletter-dispatcher.ts`, HOS-2603).
  *
  * @module catalog/entries/newsletter
  */
@@ -81,7 +81,6 @@ export const NEWSLETTER_ENTRIES: readonly EmailCatalogEntry[] = [
         name: 'Confirmación de suscripción al newsletter',
         domain: 'newsletter',
         audience: 'user',
-        wired: false,
         scenarios: [
             { id: 'with-name', label: 'Con nombre', input: { firstName: 'Ana' } },
             { id: 'without-name', label: 'Sin nombre', input: {} }
@@ -101,7 +100,6 @@ export const NEWSLETTER_ENTRIES: readonly EmailCatalogEntry[] = [
         name: 'Bienvenida al newsletter',
         domain: 'newsletter',
         audience: 'user',
-        wired: false,
         scenarios: [
             { id: 'with-name', label: 'Con nombre', input: { firstName: 'Ana' } },
             { id: 'without-name', label: 'Sin nombre', input: {} }
