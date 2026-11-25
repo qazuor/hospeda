@@ -143,6 +143,15 @@ async function selectFeaturedFile(file: File): Promise<void> {
 }
 
 describe('MediaSection client-side compression wiring (HOS-332)', () => {
+    it('uses the shared help-linked photo Section without nesting', async () => {
+        render(<MediaSection {...defaultProps} />);
+        await waitFor(() => expect(mockListMedia).toHaveBeenCalled());
+        expect(document.querySelectorAll('[data-kit-section]')).toHaveLength(1);
+        expect(
+            screen.getByRole('heading', { name: 'Cover and photo gallery' }).closest('section')
+        ).toHaveAttribute('data-help', 'section:venue.fotos');
+    });
+
     beforeEach(() => {
         vi.clearAllMocks();
         mockListMedia.mockReturnValue(makeListEmpty());

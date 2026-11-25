@@ -45,6 +45,7 @@
 
 import { EditIcon } from '@repo/icons';
 import { type KeyboardEvent, useEffect, useRef, useState } from 'react';
+import { Button } from '@/components/account/ui/Button';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import styles from './PhotoSection.module.css';
@@ -66,6 +67,8 @@ export interface PhotoMetadataEditorProps<
     readonly disabled: boolean;
     /** Gallery thumbnails need a wider floating panel than their own narrow column. */
     readonly compactLayout?: boolean;
+    /** Compact icon trigger for content gallery thumbnails; accessible names stay unchanged. */
+    readonly iconOnly?: boolean;
     /** Close after a successful save (enabled for accommodation photos only). */
     readonly closeOnSuccessfulSave?: boolean;
     /** Accessible label for the toggle button while the panel is closed. */
@@ -86,6 +89,7 @@ export function PhotoMetadataEditor<TItem extends PhotoMetadataEditableItem>({
     item,
     disabled,
     compactLayout = false,
+    iconOnly = false,
     closeOnSuccessfulSave = false,
     toggleAriaLabel,
     closeAriaLabel,
@@ -179,21 +183,28 @@ export function PhotoMetadataEditor<TItem extends PhotoMetadataEditableItem>({
             // HOS-2489: an open panel widens its kit `PhotoTile` to the full row.
             data-tile-expanded={isOpen ? 'true' : undefined}
         >
-            <button
+            <Button
                 ref={toggleRef}
-                type="button"
-                className={`${styles.metadataToggle} ${compactLayout ? styles.metadataToggleCompact : ''}`}
+                variant="secondary"
+                size="lg"
+                iconOnly={iconOnly}
+                className={
+                    iconOnly
+                        ? undefined
+                        : `${styles.metadataToggle} ${compactLayout ? styles.metadataToggleCompact : ''}`
+                }
                 onClick={handleToggle}
                 disabled={!canOperate}
                 aria-expanded={isOpen}
                 aria-label={isOpen ? closeAriaLabel : toggleAriaLabel}
+                title={isOpen ? closeAriaLabel : toggleAriaLabel}
             >
                 <EditIcon
                     size="sm"
                     aria-hidden="true"
                 />
-                {t('host.properties.editor.photo.editDetailsLabel', 'Editar textos')}
-            </button>
+                {!iconOnly && t('host.properties.editor.photo.editDetailsLabel', 'Editar textos')}
+            </Button>
 
             {isOpen && (
                 // A <div>, NOT a <form> (HOS-1297): every host editor mounts this

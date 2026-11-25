@@ -53,11 +53,11 @@
 import { DeleteIcon } from '@repo/icons';
 import { DEFAULT_ENTITY_MAX_FILE_SIZE_MB, getMediaUrl } from '@repo/media';
 import { useCallback, useEffect, useRef } from 'react';
+import { PhotoEditor } from '@/components/account/editor/PhotoEditor';
 import {
     Alert,
     Button,
     MediaDropzone,
-    PhotoGrid,
     PhotoTile,
     TextLink,
     useConfirm
@@ -65,6 +65,7 @@ import {
 import { useMyEntitlements } from '@/hooks/useMyEntitlements';
 import type { AccommodationMediaItem, MediaImage } from '@/lib/api/types';
 import { photoRemovalConfirmRequest } from '@/lib/forms/confirm-photo-removal';
+import { sectionHelpId } from '@/lib/help/section-help-id';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { PhotoAltBadge } from './PhotoAltBadge';
@@ -275,130 +276,131 @@ export function PhotoSection({
         : 0;
 
     return (
-        <div className={styles.section}>
-            <h3 className={styles.sectionTitle}>
-                {t('host.properties.editor.section.photos', 'Fotos')}
-            </h3>
-            <PhotoSectionDescription
-                locale={locale}
-                isLoading={isEntitlementsLoading}
-                isResolved={isGalleryCapResolved}
-                readFailed={entitlementsError !== null}
-                cap={galleryCap}
-            />
+        <PhotoEditor
+            locale={locale}
+            helpId={sectionHelpId({ vertical: 'accommodation', slug: 'fotos' })}
+            description={
+                <PhotoSectionDescription
+                    locale={locale}
+                    isLoading={isEntitlementsLoading}
+                    isResolved={isGalleryCapResolved}
+                    readFailed={entitlementsError !== null}
+                    cap={galleryCap}
+                />
+            }
+            featured={
+                <div className={styles.slot}>
+                    <label
+                        htmlFor="featured-image-input"
+                        className={styles.slotLabel}
+                    >
+                        {t('host.properties.editor.photo.featured', 'Imagen principal')}
+                    </label>
 
-            {/* Featured Image (Portada) */}
-            <div className={styles.slot}>
-                <label
-                    htmlFor="featured-image-input"
-                    className={styles.slotLabel}
-                >
-                    {t('host.properties.editor.photo.featured', 'Imagen principal')}
-                </label>
-
-                {featuredItem ? (
-                    // HOS-637: the `card` preset (w_400,h_300) matches the
-                    // featured tile's 4:3 frame.
-                    <PhotoTile
-                        featured
-                        src={getMediaUrl(featuredItem.url, { preset: 'card' })}
-                        alt={
-                            featuredItem.alt ??
-                            t('host.properties.editor.photo.featuredAlt', 'Imagen principal')
-                        }
-                        actions={
-                            <Button
-                                variant="secondary"
-                                size="lg"
-                                iconOnly
-                                onClick={handleFeaturedRemove}
-                                disabled={anyOpInFlight || !opsReady || !featuredItem.id}
-                                aria-label={t('host.properties.editor.photo.remove', 'Eliminar')}
-                            >
-                                <DeleteIcon
-                                    size="sm"
-                                    aria-hidden="true"
+                    {featuredItem ? (
+                        // HOS-637: the `card` preset (w_400,h_300) matches the
+                        // featured tile's 4:3 frame.
+                        <PhotoTile
+                            featured
+                            src={getMediaUrl(featuredItem.url, { preset: 'card' })}
+                            alt={
+                                featuredItem.alt ??
+                                t('host.properties.editor.photo.featuredAlt', 'Imagen principal')
+                            }
+                            actions={
+                                <Button
+                                    variant="secondary"
+                                    size="lg"
+                                    iconOnly
+                                    onClick={handleFeaturedRemove}
+                                    disabled={anyOpInFlight || !opsReady || !featuredItem.id}
+                                    aria-label={t(
+                                        'host.properties.editor.photo.remove',
+                                        'Eliminar'
+                                    )}
+                                >
+                                    <DeleteIcon
+                                        size="sm"
+                                        aria-hidden="true"
+                                    />
+                                </Button>
+                            }
+                            badge={
+                                <PhotoAltBadge
+                                    locale={locale}
+                                    item={featuredItem}
                                 />
-                            </Button>
-                        }
-                        badge={
-                            <PhotoAltBadge
+                            }
+                        >
+                            <PhotoMetadataEditor
                                 locale={locale}
                                 item={featuredItem}
+                                closeOnSuccessfulSave
+                                disabled={anyOpInFlight || !opsReady}
+                                toggleAriaLabel={t(
+                                    'host.properties.editor.photo.editFeaturedDetailsAria',
+                                    'Editar textos de la portada'
+                                )}
+                                closeAriaLabel={t(
+                                    'host.properties.editor.photo.closeFeaturedDetailsAria',
+                                    'Cerrar edición de textos de la portada'
+                                )}
+                                onSave={handleUpdateMediaText}
                             />
-                        }
-                    >
-                        <PhotoMetadataEditor
-                            locale={locale}
-                            item={featuredItem}
-                            closeOnSuccessfulSave
-                            disabled={anyOpInFlight || !opsReady}
-                            toggleAriaLabel={t(
-                                'host.properties.editor.photo.editFeaturedDetailsAria',
-                                'Editar textos de la portada'
+                        </PhotoTile>
+                    ) : (
+                        <MediaDropzone
+                            title={t(
+                                'host.properties.editor.photo.dropOrClick',
+                                'Arrastrá una imagen o hacé clic para seleccionar'
                             )}
-                            closeAriaLabel={t(
-                                'host.properties.editor.photo.closeFeaturedDetailsAria',
-                                'Cerrar edición de textos de la portada'
+                            hint={t(
+                                'host.properties.editor.photo.formats',
+                                'JPG, PNG o WebP — máx. {{maxSize}}MB',
+                                { maxSize: DEFAULT_ENTITY_MAX_FILE_SIZE_MB }
                             )}
-                            onSave={handleUpdateMediaText}
+                            isDragOver={isDragOverFeatured}
+                            disabled={anyOpInFlight}
+                            onPick={() => featuredInputRef.current?.click()}
+                            onDrop={handleFeaturedDrop}
+                            onDragOver={handleFeaturedDragOver}
+                            onDragLeave={handleFeaturedDragLeave}
                         />
-                    </PhotoTile>
-                ) : (
-                    <MediaDropzone
-                        title={t(
-                            'host.properties.editor.photo.dropOrClick',
-                            'Arrastrá una imagen o hacé clic para seleccionar'
-                        )}
-                        hint={t(
-                            'host.properties.editor.photo.formats',
-                            'JPG, PNG o WebP — máx. {{maxSize}}MB',
-                            { maxSize: DEFAULT_ENTITY_MAX_FILE_SIZE_MB }
-                        )}
-                        isDragOver={isDragOverFeatured}
-                        disabled={anyOpInFlight}
-                        onPick={() => featuredInputRef.current?.click()}
-                        onDrop={handleFeaturedDrop}
-                        onDragOver={handleFeaturedDragOver}
-                        onDragLeave={handleFeaturedDragLeave}
+                    )}
+
+                    <input
+                        ref={featuredInputRef}
+                        id="featured-image-input"
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp,image/heic"
+                        className={styles.fileInput}
+                        onChange={handleFeaturedSelect}
                     />
-                )}
+                </div>
+            }
+            status={
+                <>
+                    <PhotoUploadStatus
+                        locale={locale}
+                        isCompressing={isCompressing}
+                        isUploading={isUploading}
+                        progress={uploadProgress}
+                        batch={uploadBatch}
+                    />
 
-                <input
-                    ref={featuredInputRef}
-                    id="featured-image-input"
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp,image/heic"
-                    className={styles.fileInput}
-                    onChange={handleFeaturedSelect}
-                />
-            </div>
-
-            {/* HOS-332: compressing before anything is sent, then the upload. */}
-            <PhotoUploadStatus
-                locale={locale}
-                isCompressing={isCompressing}
-                isUploading={isUploading}
-                progress={uploadProgress}
-                batch={uploadBatch}
-            />
-
-            {error && (
-                <Alert
-                    tone="danger"
-                    locale={locale}
-                >
-                    {error}
-                </Alert>
-            )}
-
-            {/* Gallery */}
-            <div className={styles.slot}>
-                <label
-                    htmlFor="gallery-image-input"
-                    className={styles.slotLabel}
-                    aria-busy={!isGalleryCapResolved}
-                >
+                    {error && (
+                        <Alert
+                            tone="danger"
+                            locale={locale}
+                        >
+                            {error}
+                        </Alert>
+                    )}
+                </>
+            }
+            galleryInputId="gallery-image-input"
+            galleryLabel={
+                <span aria-busy={!isGalleryCapResolved}>
                     {isGalleryCapResolved
                         ? t(
                               'host.properties.editor.photo.gallery',
@@ -406,9 +408,10 @@ export function PhotoSection({
                               { cap: galleryCap }
                           )
                         : t('host.properties.editor.photo.galleryLoading', 'Galería de fotos')}
-                </label>
-
-                {isGalleryFull && (
+                </span>
+            }
+            galleryNotice={
+                isGalleryFull && (
                     // HOS-1024: sober, single-line upsell — the same copy/CTA
                     // the failed-upload toast already uses.
                     <Alert
@@ -426,41 +429,38 @@ export function PhotoSection({
                             cap: galleryCap
                         })}
                     </Alert>
-                )}
-
-                <PhotoGrid>
-                    {/* HOS-2126: drag-and-drop reorder, on top of (not instead
-                        of) the per-photo move buttons. The cover above is not
-                        part of this list. */}
-                    <SortablePhotoGallery
-                        locale={locale}
-                        items={galleryItems}
-                        disabled={anyOpInFlight || !opsReady}
-                        onRemove={handleGalleryRemove}
-                        onPromote={handlePromoteToFeatured}
-                        onMoveUp={handleMoveUp}
-                        onMoveDown={handleMoveDown}
-                        onReorder={handleReorderGallery}
-                        onUpdateMetadata={handleUpdateMediaText}
-                    />
-
-                    {!isGalleryFull && (
-                        <MediaDropzone
-                            variant="tile"
-                            title={t(
-                                'host.properties.editor.photo.addToGallery',
-                                'Agregar fotos a la galería'
-                            )}
-                            isDragOver={isDragOverGallery}
-                            disabled={anyOpInFlight || !isGalleryCapResolved}
-                            onPick={() => galleryInputRef.current?.click()}
-                            onDrop={handleGalleryDrop}
-                            onDragOver={handleGalleryDragOver}
-                            onDragLeave={handleGalleryDragLeave}
-                        />
-                    )}
-                </PhotoGrid>
-
+                )
+            }
+            gallery={
+                <SortablePhotoGallery
+                    locale={locale}
+                    items={galleryItems}
+                    disabled={anyOpInFlight || !opsReady}
+                    onRemove={handleGalleryRemove}
+                    onPromote={handlePromoteToFeatured}
+                    onMoveUp={handleMoveUp}
+                    onMoveDown={handleMoveDown}
+                    onReorder={handleReorderGallery}
+                    onUpdateMetadata={handleUpdateMediaText}
+                />
+            }
+            galleryPicker={
+                isGalleryFull
+                    ? undefined
+                    : {
+                          title: t(
+                              'host.properties.editor.photo.addToGallery',
+                              'Agregar fotos a la galería'
+                          ),
+                          isDragOver: isDragOverGallery,
+                          disabled: anyOpInFlight || !isGalleryCapResolved,
+                          onPick: () => galleryInputRef.current?.click(),
+                          onDrop: handleGalleryDrop,
+                          onDragOver: handleGalleryDragOver,
+                          onDragLeave: handleGalleryDragLeave
+                      }
+            }
+            galleryInput={
                 <input
                     ref={galleryInputRef}
                     id="gallery-image-input"
@@ -471,8 +471,8 @@ export function PhotoSection({
                     disabled={!isGalleryCapResolved || isGalleryFull}
                     onChange={handleGallerySelect}
                 />
-            </div>
-
+            }
+        >
             {confirmDialog}
             <PublishReadyDialog
                 isOpen={publishPrompt.isOpen}
@@ -482,6 +482,6 @@ export function PhotoSection({
                 startsTrial={publishPrompt.startsTrial}
                 trialDays={publishContext?.trialDays ?? 0}
             />
-        </div>
+        </PhotoEditor>
     );
 }
