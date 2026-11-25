@@ -1,6 +1,5 @@
 /**
- * Owner listing notices (HOS-1492): maps the API read to copy for Mi Cuenta.
- * A failed read yields no notices; decisions stay in the core read.
+ * Owner listing notices: maps the API read to copy for Mi Cuenta.
  */
 
 import type {
@@ -17,7 +16,6 @@ import { formatDate } from '../format-utils';
 import type { PluralTranslationFn, SupportedLocale, TranslationFn } from '../i18n';
 import { buildBusinessLinesChangedView } from './business-lines-notice-view';
 
-/** The market's time zone: instants are dated as the owner lives them. */
 const SITE_TIME_ZONE = 'America/Argentina/Buenos_Aires';
 
 /** Visual weight of a notice. */
@@ -329,7 +327,7 @@ function buildOne<K extends ListingNoticeKind>({
 }
 
 /**
- * Builds the views of one listing's notices, in the order the read returned.
+ * Builds notices in API order, suppressing a lift superseded by a plan blocker.
  *
  * @param params.locale - The page locale.
  * @param params.t - Translation function bound to the locale.
@@ -358,7 +356,12 @@ export function buildListingNoticeViews({
         recurringAddonNames: item.recurringListingAddonItems.map((addon) => addon.name),
         listingId: item.listingId
     };
+    // CARD-145 H-3: the current plan-limit blocker takes precedence over the
+    // historical moderation lift. Keep unrelated notices (e.g. a fix request
+    // with its action); never blanket-truncate the read to its first entry.
+    const hasSurplus = item.notices.some((notice) => notice.kind === 'SURPLUS');
     return item.notices
+        .filter((notice) => !(hasSurplus && notice.kind === 'MODERATION_LIFTED'))
         .map((notice) => buildOne({ kind: notice.kind, notice, ctx }))
         .filter((view): view is ListingNoticeView => view !== null);
 }

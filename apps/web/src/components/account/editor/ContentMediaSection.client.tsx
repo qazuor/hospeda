@@ -46,6 +46,7 @@
 
 import { getGalleryCap } from '@repo/schemas';
 import { type JSX, useCallback, useEffect, useRef, useState } from 'react';
+import type { ImageUploadResult } from '@/components/account/ui/ImageUploader';
 import type { PhotoMetadataUpdateBody } from '@/components/host/editor/photo-section-helpers';
 import { type ContentMediaEntity, contentMediaApi } from '@/lib/api/endpoints-protected';
 import { visibleApiMessage } from '@/lib/api-errors';
@@ -93,7 +94,6 @@ export function ContentMediaSection({
     disabled = false
 }: ContentMediaSectionProps): JSX.Element {
     const { t, tPlural } = createTranslations(locale);
-    const featuredInputRef = useRef<HTMLInputElement>(null);
     const galleryInputRef = useRef<HTMLInputElement>(null);
 
     const [featuredItem, setFeaturedItem] = useState<ContentMediaItem | null>(null);
@@ -166,21 +166,20 @@ export function ContentMediaSection({
      * The backend's single-featured invariant unmarks the previous featured
      * row; we move it to the gallery locally.
      */
-    const handleFeaturedSelect = useCallback(
-        async (event: React.ChangeEvent<HTMLInputElement>) => {
-            const file = event.target.files?.[0];
+    const uploadFeatured = useCallback(
+        async (file: File): Promise<ImageUploadResult> => {
             // `canWrite` gates the handler, not just the control's `disabled`
             // attribute. The attribute alone is a rendering detail — anything
             // that dispatches a change programmatically (a test, a userscript,
             // a stale event queued before the lock resolved) would otherwise
             // upload and persist a photo the server is about to 403.
-            if (!file || !canWrite) {
-                return;
+            if (!canWrite) {
+                return { ok: false };
             }
             const validationError = validateFile(file);
             if (validationError) {
                 reportError(validationError);
-                return;
+                return { ok: false, message: validationError };
             }
             setError(null);
             setIsUploading(true);
@@ -194,7 +193,7 @@ export function ContentMediaSection({
                 });
                 if (!added.ok) {
                     reportError(added.message);
-                    return;
+                    return { ok: false, message: added.message };
                 }
                 const newRow = added.row;
 
@@ -205,14 +204,14 @@ export function ContentMediaSection({
                 });
 
                 if (!featuredResult.ok) {
-                    reportError(
+                    const message =
                         visibleApiMessage({ error: featuredResult.error }) ??
-                            t(
-                                'account.myContent.editor.media.featuredFailed',
-                                'No se pudo marcar la imagen como principal'
-                            )
-                    );
-                    return;
+                        t(
+                            'account.myContent.editor.media.featuredFailed',
+                            'No se pudo marcar la imagen como principal'
+                        );
+                    reportError(message);
+                    return { ok: false, message };
                 }
 
                 // The old featured becomes a gallery item; the new row is featured.
@@ -220,13 +219,13 @@ export function ContentMediaSection({
                     featuredItem ? [...prev, { ...featuredItem, isFeatured: false }] : [...prev]
                 );
                 setFeaturedItem(rowToItem(featuredResult.data.media));
+                return { ok: true, url: featuredResult.data.media.url };
             } catch (err) {
-                reportError(describeUploadError(err, t));
+                const message = describeUploadError(err, t);
+                reportError(message);
+                return { ok: false, message };
             } finally {
                 setIsUploading(false);
-                if (featuredInputRef.current) {
-                    featuredInputRef.current.value = '';
-                }
             }
         },
         [canWrite, validateFile, entity, entityId, featuredItem, t, reportError]
@@ -443,9 +442,8 @@ export function ContentMediaSection({
             anyOpInFlight={isUploading || opLoading}
             canWrite={canWrite}
             error={error}
-            featuredInputRef={featuredInputRef}
             galleryInputRef={galleryInputRef}
-            handleFeaturedSelect={handleFeaturedSelect}
+            uploadFeatured={uploadFeatured}
             handleGallerySelect={handleGallerySelect}
             handleFeaturedRemove={handleFeaturedRemove}
             handleGalleryRemove={handleGalleryRemove}

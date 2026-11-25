@@ -138,6 +138,8 @@ describe('EventEditor — saving', () => {
         fireEvent.change(screen.getByLabelText('Nombre *'), {
             target: { value: 'Otra fiesta' }
         });
+        expect(screen.getAllByRole('button', { name: /Guardar/ })).toHaveLength(1);
+        expect(document.querySelectorAll('[data-status="dirty"]')).toHaveLength(1);
         fireEvent.click(screen.getByRole('button', { name: /Guardar/ }));
 
         await waitFor(() => expect(mockUpdate).toHaveBeenCalledTimes(1));
@@ -145,6 +147,9 @@ describe('EventEditor — saving', () => {
             id: 'event-1',
             data: { name: 'Otra fiesta' }
         });
+        await waitFor(() =>
+            expect(document.querySelectorAll('[data-status="saved"]')).toHaveLength(1)
+        );
     });
 
     it('sends the start date when only the end date was edited', async () => {

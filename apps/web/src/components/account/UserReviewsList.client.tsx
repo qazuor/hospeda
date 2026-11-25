@@ -15,6 +15,7 @@ import { useCallback, useEffect, useState } from 'react';
 import {
     AsyncRegion,
     type AsyncResult,
+    Avatar,
     DataList,
     EmptyState,
     ErrorState,
@@ -29,6 +30,7 @@ import {
 import type { SupportedLocale } from '@/lib/i18n';
 import { createT, createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
+import styles from './UserReviewsList.module.css';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -326,6 +328,12 @@ function ReviewRow({
     return (
         <ListRow
             rowId={review.id}
+            leading={
+                <Avatar
+                    name={name}
+                    decorative
+                />
+            }
             title={name}
             href={review.entityUrl ?? undefined}
             meta={
@@ -348,8 +356,9 @@ function ReviewRow({
             description={
                 review.title || review.content ? (
                     <>
-                        {review.title ? <strong>{review.title}</strong> : null}
-                        {review.title && review.content ? ' ' : null}
+                        {review.title ? (
+                            <strong className={styles.reviewTitle}>{review.title}</strong>
+                        ) : null}
                         {review.content ? <span>{review.content}</span> : null}
                     </>
                 ) : undefined

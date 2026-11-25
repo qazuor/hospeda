@@ -125,7 +125,17 @@ describe('EditorMapPin', () => {
         renderPin({ locale: 'en' });
 
         expect(screen.getByRole('button', { name: 'Tap to move the pin' })).toBeInTheDocument();
-        expect(screen.getByText('Coordinates')).toBeInTheDocument();
+        expect(screen.getByText('Enter coordinates')).toBeInTheDocument();
+    });
+
+    it('shows current coordinates in the disclosure summary', () => {
+        renderPin({ lat: { name: 'lat', value: '-32.5' }, long: { name: 'long', value: '-58.2' } });
+        expect(screen.getByText(/-32.500000, -58.200000/).closest('summary')).not.toBeNull();
+    });
+
+    it('opens manual entry when a coordinate has a validation error', () => {
+        renderPin({ lat: { name: 'lat', value: '', error: 'Invalid latitude' } });
+        expect(screen.getByLabelText(/^Latitud/).closest('details')).toHaveAttribute('open');
     });
 
     it('lets an editor that stores numbers finish typing a negative coordinate', () => {

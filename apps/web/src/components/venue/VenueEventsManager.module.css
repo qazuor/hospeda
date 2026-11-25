@@ -2,18 +2,11 @@
    design tokens only since HOS-2490. The rows' chrome (label, move, remove,
    add) is the kit Repeater's; the save is the editor save bar. */
 
+/* The caller owns spacing inside the kit Section body, not on its root. */
 .panel {
     display: flex;
     flex-direction: column;
     gap: var(--space-5);
-}
-
-.heading {
-    margin: 0;
-    padding-block-end: var(--space-2);
-    border-block-end: 1px solid var(--border);
-    font: var(--app-section);
-    color: var(--core-foreground);
 }
 
 .intro,

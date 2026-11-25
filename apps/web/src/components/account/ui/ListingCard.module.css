@@ -3,8 +3,8 @@
    A card with a photo stacks media over body; a card without one shows the
    vertical's icon tile beside the title.
 
-   HOS-2600: a card keeps its own height (a shorter card is not stretched into
-   empty bands), and the card does not clip its overflow, so the «more actions»
+   HOS-2626: cards stretch equally, with surplus space in the body only.
+   The card does not clip its overflow, so the «more actions»
    menu opens whole; the photo rounds its own top corners instead. */
 
 .gridWrap {
@@ -14,7 +14,7 @@
 .grid {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
-    align-items: start;
+    align-items: stretch;
     gap: var(--space-4);
     margin: 0;
     padding: 0;
@@ -40,8 +40,8 @@
 }
 
 .card {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
+    display: flex;
+    flex-direction: column;
     min-inline-size: 0;
     background-color: var(--core-card);
     border: 1px solid var(--border);
@@ -82,13 +82,13 @@
     gap: var(--space-2);
     padding: var(--space-4);
     min-inline-size: 0;
+    flex: 1;
 }
 
 .heading {
     display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
+    flex-direction: column;
+    align-items: flex-start;
     gap: var(--space-2);
 }
 
@@ -162,7 +162,9 @@
 
 /* No photo: the icon tile sits beside the body; actions and footer span both. */
 .withTile {
+    display: grid;
     grid-template-columns: auto minmax(0, 1fr);
+    grid-template-rows: 1fr auto auto;
     grid-template-areas:
         "tile body"
         "actions actions"

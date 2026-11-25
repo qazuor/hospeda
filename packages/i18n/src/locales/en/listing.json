@@ -9,6 +9,12 @@
         "premiumBadge": "Premium"
     },
     "owner": {
+        "downloads": {
+            "label": "Download",
+            "forListing": "Download files for {{name}}",
+            "viewQr": "View QR code",
+            "qrTitle": "QR code: {{name}}"
+        },
         "nav": "My business",
         "purgeAddons": {
             "title": "These add-ons are lost with the listing, with no refund:",
@@ -25,6 +31,12 @@
             "retry": "Retry"
         },
         "list": {
+            "buckets": {
+                "published": "Published",
+                "drafts": "Drafts",
+                "archived": "Archived",
+                "deleted": "Deleted"
+            },
             "title": "My business",
             "subtitle": {
                 "venue": "Manage the information of your published listings.",
@@ -60,12 +72,12 @@
             },
             "usage": {
                 "venue": {
-                    "label_one": "{{current}} of {{max}} Food & nightlife listing",
-                    "label_other": "{{current}} of {{max}} Food & nightlife listings"
+                    "label_one": "Publishing capacity: {{current}} of {{max}} Food & nightlife listing",
+                    "label_other": "Publishing capacity: {{current}} of {{max}} Food & nightlife listings"
                 },
                 "experience": {
-                    "label_one": "{{current}} of {{max}} experience listing",
-                    "label_other": "{{current}} of {{max}} experience listings"
+                    "label_one": "Publishing capacity: {{current}} of {{max}} experience listing",
+                    "label_other": "Publishing capacity: {{current}} of {{max}} experience listings"
                 },
                 "upgrade": "Add more capacity",
                 "atLimit": "You have reached your plan limit. To publish another listing, add more capacity."
@@ -97,7 +109,6 @@
             "venueStats": {
                 "title": "Listing metrics",
                 "venue": "Venue",
-                "loading": "Loading metrics…",
                 "error": "We couldn't load the metrics. Please try again later.",
                 "lockedPreTrial": "Advanced metrics will be available when you publish your listing.",
                 "lockedWithPlan": "Unlock the daily chart, clicks by channel, click rate and {{history}} of data with {{plan}}.",
@@ -292,6 +303,7 @@
                 "emptyState": "No questions yet. Add the first one.",
                 "addButton": "Add question",
                 "editButton": "Edit",
+                "editAria": "Edit \"{{question}}\"",
                 "deleteButton": "Delete",
                 "saveButton": "Save",
                 "cancelButton": "Cancel",
@@ -332,11 +344,11 @@
             },
             "unsavedChanges": "You have unsaved changes. If you leave now they will be lost. Leave anyway?",
             "media": {
+                "uploadHint": "JPG, PNG, WebP or HEIC — max {{maxSize}}MB",
                 "featured": "Featured image",
                 "gallery": "Photo gallery",
                 "add": "Add photo",
                 "remove": "Remove",
-                "uploadHint": "JPG, PNG, WebP or HEIC — max. {{maxSize}}MB",
                 "invalidType": "Only JPG, PNG, WebP or HEIC files are allowed",
                 "tooLarge": "The file cannot exceed {{maxSize}}MB",
                 "uploadFailed": "Error uploading the image",
@@ -376,7 +388,7 @@
                     "faqs_other": "{{count}} questions",
                     "selected_one": "{{count}} selected",
                     "selected_other": "{{count}} selected",
-                    "blockedFromPublishing": "⛔ Needed to publish: {{fields}}",
+                    "blockedFromPublishing": "Needed to publish: {{fields}}",
                     "lockedWithData_one": "Locked by your plan · {{count}} item saved (not published)",
                     "lockedWithData_other": "Locked by your plan · {{count}} items saved (not published)",
                     "lockedEmpty": "Locked by your plan"

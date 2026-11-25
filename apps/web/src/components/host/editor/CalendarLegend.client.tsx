@@ -67,15 +67,18 @@ export function CalendarLegend({ t, presentSources }: CalendarLegendProps) {
                     <span className={cn(legendStyles.legendDot, styles.dotFree)} />
                     {t('host.properties.editor.calendar.legend.free', 'Libre')}
                 </span>
-                {has(OccupancySourceEnum.MANUAL) && (
-                    <span className={legendStyles.legendItem}>
-                        <span className={cn(legendStyles.legendDot, styles.dotManual)} />
-                        {t(
-                            'host.properties.editor.calendar.legend.manual',
-                            'Bloqueado manualmente'
-                        )}
-                    </span>
-                )}
+                <span className={legendStyles.legendItem}>
+                    <span className={cn(legendStyles.legendDot, styles.dotPast)} />
+                    {t('host.properties.editor.calendar.legend.past', 'Días pasados')}
+                </span>
+                <span className={legendStyles.legendItem}>
+                    <span className={cn(legendStyles.legendDot, styles.dotOutside)} />
+                    {t('host.properties.editor.calendar.legend.outside', 'Fuera del mes')}
+                </span>
+                <span className={legendStyles.legendItem}>
+                    <span className={cn(legendStyles.legendDot, styles.dotManual)} />
+                    {t('host.properties.editor.calendar.legend.manual', 'Bloqueado manualmente')}
+                </span>
                 {has(OccupancySourceEnum.GOOGLE_CALENDAR) && (
                     <span className={legendStyles.legendItem}>
                         <GoogleIcon

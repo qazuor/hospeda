@@ -59,6 +59,7 @@
         }
     },
     "registerUsage": {
+        "backToProvider": "Back to the provider listing",
         "title": "Record benefit use",
         "subtitle": "Record that you used {{name}}'s benefit. We'll ask them to confirm it.",
         "subtitleFallback": "Record the use of a benefit from the provider directory.",
@@ -283,7 +284,7 @@
             "title": "Your QR code",
             "help": "Print it or show it on your phone. The host scans it with their camera and records the usage themselves: you do not need to ask for details or record it yourself.",
             "alt": "QR code leading to the page for recording a usage of your benefit",
-            "encodes": "Leads to: {{url}}",
+            "targetLabel": "QR code destination",
             "download": "Download the QR",
             "downloaded": "Done, we downloaded it as SVG."
         }

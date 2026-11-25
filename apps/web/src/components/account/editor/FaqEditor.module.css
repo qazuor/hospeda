@@ -1,0 +1,19 @@
+.stack {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    min-inline-size: 0;
+}
+
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.answer {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    font: var(--app-body);
+}

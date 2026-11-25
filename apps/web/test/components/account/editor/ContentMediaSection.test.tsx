@@ -2,24 +2,8 @@
  * @file ContentMediaSection.test.tsx
  * @description Tests for the shared post/event media editor (HOS-374 2D / HOS-390).
  *
- * Covers the per-operation persistence contract, ported from
- * `test/components/listing/editor/MediaSection.test.tsx`:
- * - On mount: hydrates from `contentMediaApi.listMedia` and splits featured vs
- *   gallery, per entity.
- * - Adding a gallery photo calls `addMedia` immediately (NOT deferred to the
- *   editor's Save) and shows it in the grid.
- * - Removing calls `removeMedia` immediately and fires NO client-side Cloudinary
- *   delete — the server deletes the binary inside `removeMedia`, before dropping
- *   the row, so a client-side delete would be a second delete of a gone asset.
- * - Setting a featured image runs upload → addMedia → setFeaturedMedia, and the
- *   previous featured moves to the gallery.
- * - A failed operation surfaces an inline error + toast and does NOT mutate
- *   state (the UI never claims success on failure).
- * - Gallery cap enforcement, per entity (post 15, event 10 — different caps are
- *   the reason the cap assertions are derived from `getGalleryCap`, not typed in).
- * - The moderation lock (`disabled`) closes every write affordance. This is the
- *   one behavior with no venue/experience counterpart: listings have no
- *   author-edit lock, posts and events do (HOS-374 §7.6.3).
+ * Covers hydration, per-operation persistence, server-side deletion, cover
+ * promotion/demotion, errors, vertical gallery caps and moderation locks.
  *
  * @module test/components/account/editor/ContentMediaSection
  */
@@ -82,7 +66,13 @@ vi.mock('../../../../src/store/toast-store', () => ({
     addToast: mockAddToast
 }));
 
-vi.mock('../../../../src/lib/i18n', () => ({
+vi.mock('@/lib/media/compress-image', () => ({
+    compressImageForUpload: async ({ file }: { file: File }) => ({ file, wasCompressed: false }),
+    isCompressionUnavailable: () => false
+}));
+
+vi.mock('../../../../src/lib/i18n', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('../../../../src/lib/i18n')>()),
     // Interpolating translator, matching the real `createTranslations().t`.
     createTranslations: () => ({
         t: (key: string, fallback?: string, params?: Record<string, string | number>): string => {
@@ -210,6 +200,8 @@ async function renderHydrated(props: Partial<ContentMediaSectionProps> = {}) {
 
 describe('ContentMediaSection — per-operation persistence (HOS-390)', () => {
     beforeEach(() => {
+        URL.createObjectURL = vi.fn(() => 'blob:preview');
+        URL.revokeObjectURL = vi.fn();
         vi.clearAllMocks();
         mockListMedia.mockReturnValue(makeListEmpty());
         mockDeleteMedia.mockResolvedValue({ ok: true, data: { deleted: true } });
@@ -437,7 +429,13 @@ describe('ContentMediaSection — per-operation persistence (HOS-390)', () => {
             // Old featured demoted into the gallery, new one in the featured slot.
             await waitFor(() => {
                 const srcs = screen.getAllByRole('img').map((i) => i.getAttribute('src'));
-                expect(srcs).toContain(NEW_ROW.url);
+                expect(screen.getByTestId('image-uploader-preview')).toHaveAttribute(
+                    'src',
+                    'blob:preview'
+                );
+                expect(
+                    document.querySelector(`[data-photo-metadata-id="${NEW_ROW.id}"]`)
+                ).not.toBeNull();
                 expect(srcs).toContain(FEATURED_ROW.url);
             });
         });

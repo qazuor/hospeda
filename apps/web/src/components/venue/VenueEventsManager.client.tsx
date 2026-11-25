@@ -40,11 +40,13 @@ import type { JSX } from 'react';
 import { useCallback, useEffect, useId, useState } from 'react';
 import { EditorSaveBar } from '@/components/account/editor-shell/EditorSaveBar';
 import { Repeater } from '@/components/account/ui/Repeater';
+import { Section } from '@/components/account/ui/Section';
 import type { SaveOutcome } from '@/components/account/ui/use-save-bar';
 import { type ListingPlanGate, useListingPlanGate } from '@/hooks/useListingPlanGate';
 import { useSectionVaciar } from '@/hooks/useSectionVaciar';
 import { apiClient } from '@/lib/api/client';
 import { showConfirmationDialog } from '@/lib/forms/show-confirmation-dialog';
+import { sectionHelpId } from '@/lib/help/section-help-id';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import {
@@ -356,144 +358,139 @@ export function VenueEventsManager({
     const atMax = countCurrent(entries) >= VENUE_EVENTS_MAX_ENTRIES;
     const pastIndexes = entries.flatMap((entry, i) => (entry.isPast ? [i] : []));
 
+    // Resolve the optional, pluralized ceiling notice separately from list composition.
+    const limitNotice = atMax
+        ? tPlural('venue.owner.editor.venueEventsManager.maxReached', VENUE_EVENTS_MAX_ENTRIES, {
+              max: VENUE_EVENTS_MAX_ENTRIES
+          })
+        : null;
+
     return (
-        <section
-            className={styles.panel}
+        <Section
             id="editor-venue-events"
+            helpId={sectionHelpId({ vertical: 'venue', slug: 'eventos' })}
+            title={t('venue.owner.editor.venueEventsManager.title', 'Agenda del local')}
         >
-            <h2 className={styles.heading}>
-                {t('venue.owner.editor.venueEventsManager.title', 'Agenda del local')}
-            </h2>
-            <p className={styles.intro}>
-                {t(
-                    'venue.owner.editor.venueEventsManager.intro',
-                    'Contale a tus comensales cuándo pasa algo en tu local: música en vivo, happy hour, la promo de los martes.'
-                )}
-            </p>
-
-            {isSectionLocked ? (
-                <VenueSectionLockedPanel
-                    id={planNoticeId}
-                    gate={lockedGate}
-                    locale={locale}
-                    messageKey="venue.owner.editor.venueEventsManager.locked"
-                    messageFallback="Mantener una agenda de eventos está disponible desde el plan {{plan}}."
-                    noPlanMessageFallback="Mantener una agenda de eventos está disponible en un plan pago."
-                    planName={upsellPlanName}
-                    preTrialMessageKey="venue.owner.editor.venueEventsManager.lockedPreTrial"
-                    preTrialMessageFallback="La agenda de eventos se habilita cuando publiques tu ficha."
-                    sectionLabel={t(
-                        'venue.owner.editor.venueEventsManager.title',
-                        'Agenda del local'
+            <div className={styles.panel}>
+                <p className={styles.intro}>
+                    {t(
+                        'venue.owner.editor.venueEventsManager.intro',
+                        'Contale a tus comensales cuándo pasa algo en tu local: música en vivo, happy hour, la promo de los martes.'
                     )}
-                    hasData={entries.length > 0}
-                    vaciar={vaciar}
-                >
-                    {entries.length === 0 ? (
-                        <p className={styles.intro}>
-                            {t(
-                                'venue.owner.editor.lockedSection.empty',
-                                'No hay datos cargados en esta sección.'
-                            )}
-                        </p>
-                    ) : (
-                        <VenueEventsReadOnlyList
-                            entries={entries}
-                            t={t}
-                            weekdayLabels={weekdayLabels}
-                        />
-                    )}
-                </VenueSectionLockedPanel>
-            ) : (
-                <>
-                    <Repeater
-                        locale={locale}
-                        label={t('venue.owner.editor.venueEventsManager.title', 'Agenda del local')}
-                        items={liveIndexes}
-                        // Index-keyed on purpose: a draft row has no id, and the
-                        // whole list is re-submitted as a document.
-                        getKey={(entryIndex) => `event-${entryIndex}`}
-                        getItemLabel={(entryIndex) => entries[entryIndex]?.title || newEntry}
-                        disabled={isLocked || state === 'loading'}
-                        onMove={(position, delta) => {
-                            const entryIndex = liveIndexes[position];
-                            if (entryIndex !== undefined) {
-                                moveEntry(entryIndex, delta);
-                            }
-                        }}
-                        onRemove={(position) => {
-                            const entryIndex = liveIndexes[position];
-                            if (entryIndex !== undefined) {
-                                removeEntry(entryIndex);
-                            }
-                        }}
-                        onAdd={addEntry}
-                        canAdd={!atMax}
-                        addLabel={t(
-                            'venue.owner.editor.venueEventsManager.addEntry',
-                            'Agregar evento'
-                        )}
-                        renderItem={(entryIndex) => {
-                            const entry = entries[entryIndex];
-                            return entry ? (
-                                <VenueEventEntryCard
-                                    entry={entry}
-                                    index={entryIndex}
-                                    locale={locale}
-                                    t={t}
-                                    weekdayLabels={weekdayLabels}
-                                    onPatch={patchEntry}
-                                    onSetRecurrence={setRecurrence}
-                                />
-                            ) : null;
-                        }}
-                    />
-
-                    {atMax ? (
-                        <p className={styles.intro}>
-                            {/*
-                             * `tPlural`, not `t`: the sentence interpolates a count next
-                             * to a noun, so at `max = 1` a single form would read
-                             * "máximo de 1 eventos". The ceiling is 30 today and the
-                             * singular is unreachable — which is exactly why it is
-                             * wired now rather than left for whoever lowers it.
-                             */}
-                            {tPlural(
-                                'venue.owner.editor.venueEventsManager.maxReached',
-                                VENUE_EVENTS_MAX_ENTRIES,
-                                { max: VENUE_EVENTS_MAX_ENTRIES }
-                            )}
-                        </p>
-                    ) : null}
-
-                    <VenueEventsPastGroup
-                        entries={entries}
-                        pastIndexes={pastIndexes}
-                        atMax={atMax}
-                        t={t}
-                        tPlural={tPlural}
-                        onDuplicate={duplicateEntry}
-                        onRemove={removeEntry}
-                        onRemoveAll={removeAllPast}
-                    />
-
-                    <EditorSaveBar
-                        locale={locale}
-                        isDirty={isDirty}
-                        onSave={saveEvents}
-                        onDiscard={discard}
-                    />
-                </>
-            )}
-
-            {message ? (
-                <p
-                    className={styles.message}
-                    role="status"
-                >
-                    {message}
                 </p>
-            ) : null}
-        </section>
+
+                {isSectionLocked ? (
+                    <VenueSectionLockedPanel
+                        id={planNoticeId}
+                        gate={lockedGate}
+                        locale={locale}
+                        messageKey="venue.owner.editor.venueEventsManager.locked"
+                        messageFallback="Mantener una agenda de eventos está disponible desde el plan {{plan}}."
+                        noPlanMessageFallback="Mantener una agenda de eventos está disponible en un plan pago."
+                        planName={upsellPlanName}
+                        preTrialMessageKey="venue.owner.editor.venueEventsManager.lockedPreTrial"
+                        preTrialMessageFallback="La agenda de eventos se habilita cuando publiques tu ficha."
+                        sectionLabel={t(
+                            'venue.owner.editor.venueEventsManager.title',
+                            'Agenda del local'
+                        )}
+                        hasData={entries.length > 0}
+                        vaciar={vaciar}
+                    >
+                        {entries.length === 0 ? (
+                            <p className={styles.intro}>
+                                {t(
+                                    'venue.owner.editor.lockedSection.empty',
+                                    'No hay datos cargados en esta sección.'
+                                )}
+                            </p>
+                        ) : (
+                            <VenueEventsReadOnlyList
+                                entries={entries}
+                                t={t}
+                                weekdayLabels={weekdayLabels}
+                            />
+                        )}
+                    </VenueSectionLockedPanel>
+                ) : (
+                    <>
+                        <Repeater
+                            locale={locale}
+                            label={t(
+                                'venue.owner.editor.venueEventsManager.title',
+                                'Agenda del local'
+                            )}
+                            items={liveIndexes}
+                            // Index-keyed on purpose: a draft row has no id, and the
+                            // whole list is re-submitted as a document.
+                            getKey={(entryIndex) => `event-${entryIndex}`}
+                            getItemLabel={(entryIndex) => entries[entryIndex]?.title || newEntry}
+                            disabled={isLocked || state === 'loading'}
+                            onMove={(position, delta) => {
+                                const entryIndex = liveIndexes[position];
+                                if (entryIndex !== undefined) {
+                                    moveEntry(entryIndex, delta);
+                                }
+                            }}
+                            onRemove={(position) => {
+                                const entryIndex = liveIndexes[position];
+                                if (entryIndex !== undefined) {
+                                    removeEntry(entryIndex);
+                                }
+                            }}
+                            onAdd={addEntry}
+                            canAdd={!atMax}
+                            addLabel={t(
+                                'venue.owner.editor.venueEventsManager.addEntry',
+                                'Agregar evento'
+                            )}
+                            renderItem={(entryIndex) => {
+                                const entry = entries[entryIndex];
+                                return entry ? (
+                                    <VenueEventEntryCard
+                                        entry={entry}
+                                        index={entryIndex}
+                                        locale={locale}
+                                        t={t}
+                                        weekdayLabels={weekdayLabels}
+                                        onPatch={patchEntry}
+                                        onSetRecurrence={setRecurrence}
+                                    />
+                                ) : null;
+                            }}
+                        />
+
+                        {limitNotice ? <p className={styles.intro}>{limitNotice}</p> : null}
+
+                        <VenueEventsPastGroup
+                            entries={entries}
+                            pastIndexes={pastIndexes}
+                            atMax={atMax}
+                            t={t}
+                            tPlural={tPlural}
+                            onDuplicate={duplicateEntry}
+                            onRemove={removeEntry}
+                            onRemoveAll={removeAllPast}
+                        />
+
+                        <EditorSaveBar
+                            locale={locale}
+                            isDirty={isDirty}
+                            onSave={saveEvents}
+                            onDiscard={discard}
+                        />
+                    </>
+                )}
+
+                {message ? (
+                    <p
+                        className={styles.message}
+                        role="status"
+                    >
+                        {message}
+                    </p>
+                ) : null}
+            </div>
+        </Section>
     );
 }

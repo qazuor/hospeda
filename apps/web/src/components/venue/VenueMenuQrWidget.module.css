@@ -1,24 +1,3 @@
-.widget {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-3, 0.75rem);
-}
-
-.header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-3, 0.75rem);
-    flex-wrap: wrap;
-}
-
-.title {
-    margin: 0;
-    font-size: var(--text-body);
-    font-weight: 600;
-    color: var(--core-foreground);
-}
-
 .toggle {
     display: inline-flex;
     margin: 0;
@@ -63,6 +42,10 @@
     font-size: var(--text-body-sm);
     font-weight: 600;
     color: var(--core-foreground);
+}
+
+.card + .card {
+    margin-top: var(--space-4);
 }
 
 .locked,

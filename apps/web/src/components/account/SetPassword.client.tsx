@@ -294,10 +294,6 @@ export function SetPassword({
                                 setPassword(v);
                                 if (passwordError) setPasswordError(null);
                             }}
-                            placeholder={t(
-                                'account.setPassword.fields.passwordPlaceholder',
-                                'Mínimo 8 caracteres'
-                            )}
                             autoComplete="new-password"
                             required
                             disabled={busy}

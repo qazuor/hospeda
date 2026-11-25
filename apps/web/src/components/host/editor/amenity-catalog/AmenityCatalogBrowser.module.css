@@ -2,9 +2,8 @@
  * AmenityCatalogBrowser.module.css — the accommodation amenity/feature
  * browser (HOS-2123, mockup variant B).
  *
- * Mobile first: the category list is a horizontal, scrollable chip row above
- * the tiles. From 64rem (the editor shell's sidebar already takes a column)
- * it becomes the left column of a two-column layout.
+ * Categories stay in a horizontal, scrollable chip row above the options at
+ * every width, avoiding a tall sidebar beside a nearly empty panel.
  */
 
 .browser {
@@ -244,6 +243,12 @@
     min-width: 0;
 }
 
+/* Only declared detail summaries need a full row. Keep normal row auto-placement
+   (no dense packing or order changes) so visual and keyboard order stay aligned. */
+.tileItemWithDetails {
+    grid-column: 1 / -1;
+}
+
 .tile {
     display: flex;
     align-items: center;
@@ -264,8 +269,10 @@
         background-color 150ms ease-out;
 }
 
-.tile:hover {
-    border-color: var(--brand-primary);
+@media (hover: hover) {
+    .tile:hover {
+        background-color: var(--surface-warm);
+    }
 }
 
 .tile:focus-visible {
@@ -337,53 +344,6 @@
     font-family: var(--font-sans);
     font-size: var(--app-caption-size);
     color: var(--core-muted-foreground);
-}
-
-/* ── Desktop: categories as the left column ───────────────────────────── */
-
-@media (min-width: 64rem) {
-    .layout {
-        display: grid;
-        grid-template-columns: minmax(12rem, 15rem) minmax(0, 1fr);
-        align-items: start;
-        gap: var(--space-4, 1.25rem);
-    }
-
-    .nav {
-        flex-direction: column;
-        gap: var(--space-3, 1rem);
-        overflow-x: visible;
-        padding: var(--space-2, 0.5rem);
-        border: 1px solid var(--border);
-        border-radius: var(--radius-md);
-        background-color: var(--core-card, var(--core-background));
-    }
-
-    .navGroup {
-        flex-direction: column;
-        align-items: stretch;
-        gap: var(--space-1, 0.25rem);
-    }
-
-    .navGroupTitle {
-        padding: var(--space-1, 0.25rem) 0.75rem;
-    }
-
-    .navList {
-        flex-direction: column;
-        gap: 2px;
-    }
-
-    .navButton {
-        border-color: transparent;
-        border-radius: var(--radius-sm);
-        white-space: normal;
-    }
-
-    .navButton:hover {
-        border-color: transparent;
-        background-color: var(--surface-warm);
-    }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -43,6 +43,18 @@ const openMenu = () =>
 afterEach(() => vi.clearAllMocks());
 
 describe('PropertyCardMenu', () => {
+    it('uses the neutral kit secondary overflow trigger, rather than blue ghost dots', () => {
+        render(
+            <PropertyCardMenu
+                locale="es"
+                label="Más acciones para Casa"
+                edit={{ href: '/edit/', label: 'Editar' }}
+            />
+        );
+        expect(screen.getByRole('button', { name: 'Más acciones para Casa' })).toHaveClass(
+            'secondary'
+        );
+    });
     it('lists only the actions it was given, the external one marked as a new tab', () => {
         // Arrange
         render(

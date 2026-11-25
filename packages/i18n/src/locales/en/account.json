@@ -1,4 +1,18 @@
 {
+    "editorHub": {
+        "publicationStatus": "Publication status",
+        "publicationUnavailable": "Publication status unavailable",
+        "complete": "Requirements complete",
+        "incomplete": "Requirements pending",
+        "recommended": "Recommended",
+        "requiredOnly": "The meter counts only sections required to publish. Recommendations do not block publication; other publication checks are evaluated separately.",
+        "readyWithRecommendations": "Content requirements are complete. You can improve the listing with the recommendations shown; they do not block publication. Other publication checks are evaluated separately."
+    },
+    "editorPresentation": {
+        "faqTitle": "Questions and answers",
+        "translationTitle": "Content by language",
+        "missingHint": "Missing translations: {{locales}}. Open each language tab to review the pending fields."
+    },
     "whatsNewModal": {
         "title": "What's New",
         "close": "Close",
@@ -1126,6 +1140,16 @@
                 "unavailable": "Not available",
                 "reviewsDesc": "Published reviews",
                 "subscriptionDesc": "Current plan",
+                "favoritesEmpty": "Your favorite places will appear here.",
+                "favoritesNext_one": "Visit your saved place again.",
+                "favoritesNext_other": "Explore your {{count}} saved places.",
+                "reviewsEmpty": "Share the experience of your next trip.",
+                "reviewsNext_one": "Revisit the review you shared.",
+                "reviewsNext_other": "Revisit your {{count}} shared reviews.",
+                "planContext": "Explore the benefits of your plan.",
+                "trialEndsToday": "Your trial ends today. Choose how to continue.",
+                "trialNext_one": "Your trial ends in {{count}} day.",
+                "trialNext_other": "Your trial ends in {{count}} days.",
                 "subscriptionStatus": "Subscription status",
                 "activeStatus": "Active",
                 "trialStatus": "On trial",
@@ -1385,7 +1409,6 @@
         "contextOAuth": "Add a password to your account so you can also sign in with email and password.",
         "fields": {
             "password": "Password",
-            "passwordPlaceholder": "Minimum 8 characters",
             "passwordHint": "Minimum 8 characters.",
             "confirmPassword": "Confirm password",
             "confirmPasswordPlaceholder": "Repeat your password"
@@ -1628,7 +1651,8 @@
                 "hint": {
                     "summary": "Between 10 and 300 characters. Shown in the blog listing.",
                     "content": "At least 100 characters.",
-                    "readingTime": "Leave it empty to keep the current value."
+                    "readingTime": "Edit the minutes, or clear this field to reset the saved reading time.",
+                    "readingTimeEmpty": "No reading time is set. Enter the number of minutes to set one."
                 },
                 "placeholder": {
                     "content": "Write your post..."
@@ -1657,6 +1681,8 @@
         "editor": {
             "media": {
                 "sectionTitle": "Photos",
+                "photoSectionTitle": "Cover and photo gallery",
+                "photoActions": "Photo actions {{index}}",
                 "featured": "Cover image",
                 "gallery": "Photo gallery",
                 "add": "Add photo",
@@ -1853,7 +1879,7 @@
             "benefitSection": "Benefit for hosts",
             "benefitNote": "A benefit change goes to the Hospeda team for review before it's published. In the meantime, the current benefit stays visible in the directory.",
             "liveBenefitLabel": "Currently published benefit",
-            "noBenefit": "No structured benefit set",
+            "noBenefit": "No benefit has been published yet",
             "pendingLabel": "Awaiting review",
             "noChanges": "There are no changes to save",
             "success": "Changes saved",
@@ -1882,7 +1908,7 @@
         "pageTitle": "My partner listing",
         "pageSubtitle": "Manage your presence as a Hospeda partner",
         "empty": {
-            "text": "You don't have a partner listing yet. Apply from \"Become a partner\" and, once your application is approved, your listing will show up here.",
+            "text": "You don't have a partner listing yet. Apply from “Become a partner” and, once your application is approved, your listing will show up here.",
             "cta": "Go to Become a partner",
             "title": "Your partner listing"
         },
@@ -2286,7 +2312,7 @@
         },
         "hoursEditor": {
             "title": "Opening hours",
-            "hint": "Turn on the days you open and add their time slots. «Copy to every day» repeats one day's hours across the week.",
+            "hint": "Turn on the days you open and add their time slots.",
             "open": "Open",
             "closed": "Closed",
             "openAria": "{{day}} open",
@@ -2412,6 +2438,7 @@
                 "action": "Go to the map"
             },
             "coordinates": "Coordinates",
+            "enterCoordinates": "Enter coordinates",
             "latitude": "Latitude",
             "longitude": "Longitude"
         }

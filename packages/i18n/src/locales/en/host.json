@@ -207,8 +207,8 @@
             }
         },
         "usage": {
-            "label_one": "{{current}} of {{max}} property",
-            "label_other": "{{current}} of {{max}} properties",
+            "label_one": "Publishing capacity: {{current}} of {{max}} accommodation",
+            "label_other": "Publishing capacity: {{current}} of {{max}} accommodations",
             "unlimited": "Unlimited properties",
             "upgrade": "Upgrade plan"
         },
@@ -600,8 +600,6 @@
                 "sourceEmpty": "You have not written this content yet.",
                 "translationEmpty": "This translation has not been generated yet.",
                 "textUnavailable": "Just generated. Refresh the page to read it.",
-                "expandText": "Show full text",
-                "collapseText": "Show less",
                 "missingCount": "Untranslated fields: {{count}}",
                 "missingNotice": "Translations missing in {{locales}}."
             },
@@ -657,6 +655,8 @@
                 "legend": {
                     "title": "Legend",
                     "free": "Free",
+                    "past": "Past days",
+                    "outside": "Outside this month",
                     "manual": "Manually blocked",
                     "google": "Synced — Google Calendar",
                     "airbnb": "Synced — Airbnb",
@@ -721,20 +721,20 @@
                 "title": "Edit property",
                 "subtitle": "Choose what you want to edit",
                 "status": {
-                    "missingDescription": "⚠ Description missing",
-                    "missingPrice": "⚠ No price set",
+                    "missingDescription": "Description missing",
+                    "missingPrice": "No price set",
                     "guests_one": "Up to {{count}} guest",
                     "guests_other": "Up to {{count}} guests",
-                    "missingCoordinates": "⚠ Not placed on the map",
+                    "missingCoordinates": "Not placed on the map",
                     "selected_one": "{{count}} selected",
                     "selected_other": "{{count}} selected",
                     "photos_one": "{{count}} photo",
                     "photos_other": "{{count}} photos",
-                    "missingPhotos": "⚠ No photos",
+                    "missingPhotos": "No photos",
                     "faqs_one": "{{count}} question",
                     "faqs_other": "{{count}} questions",
-                    "missingContact": "⚠ No contact details",
-                    "blockedFromPublishing": "⛔ Needed to publish: {{fields}}"
+                    "missingContact": "No contact details",
+                    "blockedFromPublishing": "Needed to publish: {{fields}}"
                 }
             },
             "publishRequirement": {

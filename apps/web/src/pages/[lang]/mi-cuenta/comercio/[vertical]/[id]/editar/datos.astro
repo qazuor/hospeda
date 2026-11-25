@@ -14,6 +14,7 @@
  */
 
 import { ListingEditor } from '@/components/listing/ListingEditor.client';
+import { Alert } from '@/components/account/ui/Alert';
 import ListingEditorSectionLayout from '@/layouts/ListingEditorSectionLayout.astro';
 import { resolveListingEditorPage } from '@/lib/editor/resolve-listing-editor-page';
 import { createTranslations } from '@/lib/i18n';
@@ -59,7 +60,7 @@ const listingIsPublished = isListingPublished({ publicationStatus: detail.public
 	currentSectionSlug="datos"
 	title={t('listing.owner.editor.sectionNav.basicInfo', 'Información básica')}
 >
-	<p class="ce-identity__notice">
+	<Alert tone="info" locale={locale}>
 		{listingIsPublished
 			? t(
 					'listing.owner.editor.slugFixedNotice',
@@ -69,7 +70,7 @@ const listingIsPublished = isListingPublished({ publicationStatus: detail.public
 					'listing.owner.editor.slugFollowsNameNotice',
 					'La dirección web de tu ficha (su URL) va a seguir al nombre hasta que la publiques.',
 				)}
-	</p>
+	</Alert>
 
 	<ListingEditor
 		client:load
@@ -82,11 +83,3 @@ const listingIsPublished = isListingPublished({ publicationStatus: detail.public
 		destinationsLoadFailed={resolution.destinationsLoadFailed}
 	/>
 </ListingEditorSectionLayout>
-
-<style>
-	.ce-identity__notice {
-		margin: 0 0 var(--space-5, 1.5rem);
-		font-size: var(--text-body-sm);
-		color: var(--core-muted-foreground);
-	}
-</style>

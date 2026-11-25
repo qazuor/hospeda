@@ -1,0 +1,6 @@
+.reviewTitle {
+    display: block;
+    margin-block-end: var(--space-1);
+    font-weight: var(--app-card-title-weight);
+    color: var(--core-foreground);
+}

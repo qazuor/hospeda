@@ -57,7 +57,7 @@
  */
 
 import type { JSX } from 'react';
-import { useCallback, useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { LoadingButton } from '@/components/shared/feedback/LoadingButton';
 import { Spinner } from '@/components/shared/feedback/Spinner';
 import { getApiUrl } from '@/lib/env';
@@ -65,21 +65,12 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildSvgDataUrl } from '@/lib/qr/qr-png';
 import styles from './ListingQrSheet.module.css';
+import {
+    QR_API_SEGMENT_BY_VERTICAL as API_SEGMENT_BY_VERTICAL,
+    useListingQrDownload
+} from './use-listing-qr-download';
 
-/**
- * API path segment per vertical — mirrors the protected route mounts of both
- * `protected/qrCode.ts` (the image) and `protected/qrSheet.ts` (the PDF).
- *
- * A map rather than a ternary: eleven sites once decided a vertical with
- * `x === 'venue' ? A : B` and every one of them silently answered `B` for
- * `'accommodation'` (HOS-1079), the shape GUARD:G1 now forbids in shared code.
- * With three verticals in play here that mistake would be one keystroke away.
- */
-const API_SEGMENT_BY_VERTICAL = {
-    accommodation: 'accommodations',
-    venue: 'venues',
-    experience: 'experiences'
-} as const;
+export { resolveQrSheetErrorReason, resolveQrSheetFilename } from './use-listing-qr-download';
 
 /** The three verticals whose listings print a QR sheet. */
 export type ListingQrSheetVertical = keyof typeof API_SEGMENT_BY_VERTICAL;
@@ -102,17 +93,9 @@ export interface ListingQrSheetProps {
      * request: see the module docblock.
      */
     readonly isPublished: boolean;
+    /** The card's download menu owns the action when this panel is a dialog preview. */
+    readonly codeOnly?: boolean;
 }
-
-/** Why the download did not happen. Each one gets its own sentence. */
-type SheetErrorReason = 'notFound' | 'rateLimited' | 'signedOut' | 'generic';
-
-/** What the panel is doing right now. */
-type SheetState =
-    | { readonly status: 'idle' }
-    | { readonly status: 'working' }
-    | { readonly status: 'ready' }
-    | { readonly status: 'error'; readonly reason: SheetErrorReason };
 
 /**
  * The symbol itself, fetched once when the panel mounts.
@@ -126,49 +109,6 @@ type CodeState =
     | { readonly status: 'loading' }
     | { readonly status: 'ready'; readonly svg: string; readonly url: string }
     | { readonly status: 'error' };
-
-/**
- * Maps a refused response onto the sentence the owner reads.
- *
- * The three named statuses are the ones the route can actually produce for a
- * caller who got this far, and they need different answers: a 429 resolves by
- * waiting, a 401 by signing in again, and a 404 by checking the listing is still
- * published. Collapsing them into one "try again later" would send an owner to
- * retry a thing that cannot start working.
- *
- * @param status - HTTP status of the refused response.
- * @returns The reason key for the message to render.
- */
-export function resolveQrSheetErrorReason(status: number): SheetErrorReason {
-    if (status === 401) {
-        return 'signedOut';
-    }
-    if (status === 404) {
-        return 'notFound';
-    }
-    if (status === 429) {
-        return 'rateLimited';
-    }
-    return 'generic';
-}
-
-/**
- * Reads the filename the server chose, falling back to the listing slug.
- *
- * The header is `attachment; filename="qr-x.pdf"` (`qr-sheet-response.ts`). A
- * missing or unparsable one is not worth failing over — the file is already in
- * hand.
- *
- * @param input - The raw `Content-Disposition` header and the listing slug.
- * @returns The name to save the file under.
- */
-export function resolveQrSheetFilename(input: {
-    readonly disposition: string | null;
-    readonly slug: string;
-}): string {
-    const match = /filename="([^"]+)"/.exec(input.disposition ?? '');
-    return match?.[1] ?? `qr-${input.slug}.pdf`;
-}
 
 /**
  * ListingQrSheet — shows one listing's QR and downloads its printable sheet.
@@ -192,10 +132,11 @@ export function ListingQrSheet({
     listingId,
     slug,
     locale,
-    isPublished
+    isPublished,
+    codeOnly = false
 }: ListingQrSheetProps): JSX.Element {
     const { t } = createTranslations(locale);
-    const [state, setState] = useState<SheetState>({ status: 'idle' });
+    const { state, handleDownload } = useListingQrDownload({ vertical, listingId, slug, locale });
     const [code, setCode] = useState<CodeState>({ status: 'loading' });
     const helpId = useId();
     /**
@@ -207,27 +148,7 @@ export function ListingQrSheet({
      * exactly one button, so finding it from here is both stable and honest.
      */
     const panelRef = useRef<HTMLDivElement | null>(null);
-    const previousStatus = useRef<SheetState['status']>('idle');
-    /**
-     * The object URL of the last download, kept only so it can be released.
-     *
-     * It is NOT revoked when the save starts: revoking before the browser has
-     * begun writing aborts the download in Safari (the same fix already carried by
-     * `BrochureDownloadButton` and `VenueMenuQrWidget`). It is released when a
-     * later download replaces it — that save finished long ago — and on unmount.
-     */
-    const objectUrlRef = useRef<string | null>(null);
-
-    useEffect(
-        () => () => {
-            if (objectUrlRef.current !== null) {
-                URL.revokeObjectURL(objectUrlRef.current);
-                objectUrlRef.current = null;
-            }
-        },
-        []
-    );
-
+    const previousStatus = useRef<typeof state.status>('idle');
     /**
      * Returns focus to the button when the work ends.
      *
@@ -296,61 +217,6 @@ export function ListingQrSheet({
             cancelled = true;
         };
     }, [isPublished, listingId, vertical]);
-
-    const handleDownload = useCallback(async (): Promise<void> => {
-        // A second line, and unreachable from the UI: `LoadingButton` disables
-        // itself while `loading`, so the button cannot dispatch a second click.
-        // No test covers this branch and none can through the rendered control —
-        // said out loud because a test named after it WOULD pass with it deleted,
-        // which is what an adversarial review found here.
-        if (state.status === 'working') {
-            return;
-        }
-        setState({ status: 'working' });
-
-        try {
-            const url = `${getApiUrl()}/api/v1/protected/${API_SEGMENT_BY_VERTICAL[vertical]}/${listingId}/qr-sheet`;
-            const response = await fetch(url, {
-                // Without this the browser sends no session cookie and writes the
-                // 401 body to the owner's disk as a .pdf.
-                credentials: 'include',
-                // The API resolves the SHEET's language from this header (the same
-                // signal the checkout return URLs read), so a sheet asked for from
-                // an /en/ page prints in English. It does NOT decide where the code
-                // lands — that is pinned to the market locale on the row itself.
-                headers: { 'X-Client-Locale': locale }
-            });
-
-            if (!response.ok) {
-                setState({ status: 'error', reason: resolveQrSheetErrorReason(response.status) });
-                return;
-            }
-
-            const blob = await response.blob();
-            const objectUrl = URL.createObjectURL(blob);
-            if (objectUrlRef.current !== null) {
-                URL.revokeObjectURL(objectUrlRef.current);
-            }
-            objectUrlRef.current = objectUrl;
-
-            // The anchor is created for the click and thrown away. A rendered one
-            // would have to be hidden from assistive technology, and a hidden link
-            // with no accessible content is exactly what it sounds like.
-            const anchor = document.createElement('a');
-            anchor.href = objectUrl;
-            anchor.download = resolveQrSheetFilename({
-                disposition: response.headers.get('content-disposition'),
-                slug
-            });
-            document.body.appendChild(anchor);
-            anchor.click();
-            anchor.remove();
-
-            setState({ status: 'ready' });
-        } catch {
-            setState({ status: 'error', reason: 'generic' });
-        }
-    }, [listingId, locale, slug, state.status, vertical]);
 
     if (!isPublished) {
         return (
@@ -444,18 +310,20 @@ export function ListingQrSheet({
                 )}
             </p>
 
-            <LoadingButton
-                className={styles.button}
-                loading={state.status === 'working'}
-                loadingLabel={t('common.qrSheet.working', 'Generando la hoja…')}
-                aria-describedby={helpId}
-                onClick={() => {
-                    void handleDownload();
-                }}
-                data-testid="listing-qr-sheet-download"
-            >
-                {t('common.qrSheet.download', 'Descargar la hoja QR (PDF)')}
-            </LoadingButton>
+            {!codeOnly && (
+                <LoadingButton
+                    className={styles.button}
+                    loading={state.status === 'working'}
+                    loadingLabel={t('common.qrSheet.working', 'Generando la hoja…')}
+                    aria-describedby={helpId}
+                    onClick={() => {
+                        void handleDownload();
+                    }}
+                    data-testid="listing-qr-sheet-download"
+                >
+                    {t('common.qrSheet.download', 'Descargar la hoja QR (PDF)')}
+                </LoadingButton>
+            )}
 
             {state.status === 'ready' && (
                 <p

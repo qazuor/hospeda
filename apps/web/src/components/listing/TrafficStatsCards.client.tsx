@@ -34,7 +34,7 @@ import {
 } from '@repo/schemas';
 import type { JSX } from 'react';
 import { useEffect, useState } from 'react';
-import { EmptyState } from '@/components/account/ui';
+import { EmptyState, KeyValueList, Skeleton } from '@/components/account/ui';
 import { listingAnalyticsApi } from '@/lib/api/endpoints-protected';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -155,17 +155,13 @@ function BreakdownCard({
             {rows.length === 0 ? (
                 <p className={styles.empty}>{emptyLabel}</p>
             ) : (
-                <ul className={styles.list}>
-                    {rows.map((row) => (
-                        <li
-                            key={row.key}
-                            className={styles.row}
-                        >
-                            <span className={styles.rowLabel}>{row.label}</span>
-                            <span className={styles.rowCount}>{countLabel(row.count)}</span>
-                        </li>
-                    ))}
-                </ul>
+                <KeyValueList
+                    items={rows.map((row) => ({
+                        key: row.key,
+                        label: row.label,
+                        value: countLabel(row.count)
+                    }))}
+                />
             )}
         </section>
     );
@@ -253,12 +249,14 @@ export function TrafficStatsCards({
     if (state.status === 'loading') {
         return (
             <div
-                className={styles.loading}
+                className={styles.grid}
                 role="status"
                 aria-busy="true"
                 data-testid="traffic-stats-loading"
             >
-                <span>{t('common.loading', 'Cargando...')}</span>
+                <Skeleton.Stat locale={locale} />
+                <Skeleton.Stat locale={locale} />
+                <Skeleton.Stat locale={locale} />
             </div>
         );
     }
@@ -348,33 +346,31 @@ export function TrafficStatsCards({
                     <h3 className={styles.cardTitle}>
                         {t('listing.owner.traffic.contacts.title', 'Contactos')}
                     </h3>
-                    <dl className={styles.funnel}>
-                        <div className={styles.row}>
-                            <dt className={styles.rowLabel}>
-                                {t('listing.owner.traffic.contacts.views', 'Vistas')}
-                            </dt>
-                            <dd className={styles.rowCount}>{formatCount(contactFunnel.views)}</dd>
-                        </div>
-                        <div className={styles.row}>
-                            <dt className={styles.rowLabel}>
-                                {t('listing.owner.traffic.contacts.started', 'Contacto iniciado')}
-                            </dt>
-                            <dd className={styles.rowCount}>
-                                {formatCount(contactFunnel.contactStarted)}
-                            </dd>
-                        </div>
-                        <div className={styles.row}>
-                            <dt className={styles.rowLabel}>
-                                {t(
+                    <KeyValueList
+                        items={[
+                            {
+                                key: 'views',
+                                label: t('listing.owner.traffic.contacts.views', 'Vistas'),
+                                value: formatCount(contactFunnel.views)
+                            },
+                            {
+                                key: 'started',
+                                label: t(
+                                    'listing.owner.traffic.contacts.started',
+                                    'Contacto iniciado'
+                                ),
+                                value: formatCount(contactFunnel.contactStarted)
+                            },
+                            {
+                                key: 'completed',
+                                label: t(
                                     'listing.owner.traffic.contacts.completed',
                                     'Contacto completado'
-                                )}
-                            </dt>
-                            <dd className={styles.rowCount}>
-                                {formatCount(contactFunnel.contactCompleted)}
-                            </dd>
-                        </div>
-                    </dl>
+                                ),
+                                value: formatCount(contactFunnel.contactCompleted)
+                            }
+                        ]}
+                    />
                 </section>
             )}
         </div>

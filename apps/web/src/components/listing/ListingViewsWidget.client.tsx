@@ -33,6 +33,9 @@
 import { EntityTypeEnum, type ListingTrafficStatsEntityType } from '@repo/schemas';
 import type { JSX } from 'react';
 import { useEffect, useState } from 'react';
+import { KeyValueList } from '@/components/account/ui/KeyValueList';
+import { Section } from '@/components/account/ui/Section';
+import { Skeleton } from '@/components/account/ui/Skeleton';
 import { listingAnalyticsApi } from '@/lib/api/endpoints-protected';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -226,81 +229,107 @@ export function ListingViewsWidget({
             className={styles.widget}
             data-testid="listing-views-widget"
         >
-            <div className={styles.header}>
-                <h2 className={styles.title}>{t('listing.owner.list.views.title', 'Vistas')}</h2>
-                <fieldset
-                    className={styles.toggle}
-                    aria-label={t('common.window.ariaLabel', 'Período de tiempo')}
-                >
-                    <button
-                        type="button"
-                        className={windowParam === '7d' ? styles.toggleActive : styles.toggleButton}
-                        onClick={() => setWindowParam('7d')}
-                        aria-pressed={windowParam === '7d'}
+            <Section
+                title={t('listing.owner.list.views.title', 'Vistas')}
+                helpId="section:comercio.vistas"
+                actions={
+                    <fieldset
+                        className={styles.toggle}
+                        aria-label={t('common.window.ariaLabel', 'Período de tiempo')}
                     >
-                        {t('common.window.7d', '7 días')}
-                    </button>
-                    <button
-                        type="button"
-                        className={
-                            windowParam === '30d' ? styles.toggleActive : styles.toggleButton
-                        }
-                        onClick={() => setWindowParam('30d')}
-                        aria-pressed={windowParam === '30d'}
-                    >
-                        {t('common.window.30d', '30 días')}
-                    </button>
-                </fieldset>
-            </div>
-
-            {state.status === 'ready' && state.hasLockedVertical && (
-                <p
-                    className={styles.locked}
-                    data-testid="listing-views-locked"
-                >
-                    {t(
-                        'listing.owner.list.views.locked',
-                        'Las vistas de tus fichas aparecen mientras están publicadas, con un plan activo o en período de prueba.'
-                    )}
-                </p>
-            )}
-
-            {state.status === 'error' && (
-                <p
-                    className={styles.error}
-                    role="alert"
-                >
-                    {t(
-                        'listing.owner.list.views.error',
-                        'No pudimos cargar las vistas. Probá de nuevo más tarde.'
-                    )}
-                </p>
-            )}
-
-            {state.status === 'ready' && state.rows.length > 0 && (
-                <ul
-                    className={styles.list}
-                    data-testid="listing-views-list"
-                >
-                    {state.rows.map((row) => (
-                        <li
-                            key={row.id}
-                            className={styles.row}
-                            data-testid="listing-views-row"
+                        <button
+                            type="button"
+                            className={
+                                windowParam === '7d' ? styles.toggleActive : styles.toggleButton
+                            }
+                            onClick={() => setWindowParam('7d')}
+                            aria-pressed={windowParam === '7d'}
                         >
-                            <span className={styles.rowName}>{row.name}</span>
-                            <span className={styles.rowStats}>
-                                <span data-testid="listing-views-unique">
-                                    {row.unique} {t('listing.owner.list.views.unique', 'únicos')}
-                                </span>
-                                <span data-testid="listing-views-total">
-                                    {row.total} {t('listing.owner.list.views.total', 'totales')}
-                                </span>
-                            </span>
-                        </li>
-                    ))}
-                </ul>
-            )}
+                            {t('common.window.7d', '7 días')}
+                        </button>
+                        <button
+                            type="button"
+                            className={
+                                windowParam === '30d' ? styles.toggleActive : styles.toggleButton
+                            }
+                            onClick={() => setWindowParam('30d')}
+                            aria-pressed={windowParam === '30d'}
+                        >
+                            {t('common.window.30d', '30 días')}
+                        </button>
+                    </fieldset>
+                }
+            >
+                {state.status === 'loading' && (
+                    <Skeleton
+                        locale={locale}
+                        lines={3}
+                    />
+                )}
+
+                {state.status === 'ready' && state.hasLockedVertical && (
+                    <p
+                        className={styles.locked}
+                        data-testid="listing-views-locked"
+                    >
+                        {t(
+                            'listing.owner.list.views.locked',
+                            'Las vistas de tus fichas aparecen mientras están publicadas, con un plan activo o en período de prueba.'
+                        )}
+                    </p>
+                )}
+
+                {state.status === 'error' && (
+                    <p
+                        className={styles.error}
+                        role="alert"
+                    >
+                        {t(
+                            'listing.owner.list.views.error',
+                            'No pudimos cargar las vistas. Probá de nuevo más tarde.'
+                        )}
+                    </p>
+                )}
+
+                {state.status === 'ready' && state.rows.length > 0 && (
+                    <ul
+                        className={styles.list}
+                        data-testid="listing-views-list"
+                    >
+                        {state.rows.map((row) => (
+                            <li
+                                key={row.id}
+                                className={styles.row}
+                                data-testid="listing-views-row"
+                            >
+                                <span className={styles.rowName}>{row.name}</span>
+                                <KeyValueList
+                                    items={[
+                                        {
+                                            key: 'unique',
+                                            label: t('listing.owner.list.views.unique', 'únicos'),
+                                            value: (
+                                                <span data-testid="listing-views-unique">
+                                                    {row.unique.toLocaleString(locale)}
+                                                </span>
+                                            )
+                                        },
+                                        {
+                                            key: 'total',
+                                            label: t('listing.owner.list.views.total', 'totales'),
+                                            value: (
+                                                <span data-testid="listing-views-total">
+                                                    {row.total.toLocaleString(locale)}
+                                                </span>
+                                            )
+                                        }
+                                    ]}
+                                />
+                            </li>
+                        ))}
+                    </ul>
+                )}
+            </Section>
 
             {TRAFFIC_VERTICALS.map((vertical) => {
                 const verticalListings = trafficListings.filter(
@@ -308,41 +337,46 @@ export function ListingViewsWidget({
                 );
                 if (verticalListings.length === 0) return null;
                 return (
-                    <section
+                    <div
                         key={vertical}
-                        className={styles.traffic}
                         data-testid={`listing-traffic-section-${vertical}`}
                     >
-                        <h2 className={styles.title}>
-                            {t('listing.owner.traffic.verticalTitle', 'Tráfico: {{vertical}}', {
-                                vertical: t(
-                                    `listing.owner.list.badge.${vertical}`,
-                                    vertical === 'venue' ? 'Comer y salir' : 'Experiencia'
-                                )
-                            })}
-                        </h2>
-                        {verticalListings.map((listing) => (
-                            <section
-                                key={listing.id}
-                                className={styles.trafficListing}
-                                aria-labelledby={`listing-traffic-name-${listing.id}`}
-                                data-testid="listing-traffic-listing"
-                            >
-                                <p
-                                    id={`listing-traffic-name-${listing.id}`}
-                                    className={styles.trafficListingName}
+                        <Section
+                            helpId="section:comercio.trafico"
+                            title={t(
+                                'listing.owner.traffic.verticalTitle',
+                                'Tráfico: {{vertical}}',
+                                {
+                                    vertical: t(
+                                        `listing.owner.list.badge.${vertical}`,
+                                        vertical === 'venue' ? 'Comer y salir' : 'Experiencia'
+                                    )
+                                }
+                            )}
+                        >
+                            {verticalListings.map((listing) => (
+                                <section
+                                    key={listing.id}
+                                    className={styles.trafficListing}
+                                    aria-labelledby={`listing-traffic-name-${listing.id}`}
+                                    data-testid="listing-traffic-listing"
                                 >
-                                    {listing.name}
-                                </p>
-                                <TrafficStatsCards
-                                    locale={locale}
-                                    entityType={TRAFFIC_ENTITY_TYPE[vertical]}
-                                    entityId={listing.id}
-                                    window={windowParam}
-                                />
-                            </section>
-                        ))}
-                    </section>
+                                    <p
+                                        id={`listing-traffic-name-${listing.id}`}
+                                        className={styles.trafficListingName}
+                                    >
+                                        {listing.name}
+                                    </p>
+                                    <TrafficStatsCards
+                                        locale={locale}
+                                        entityType={TRAFFIC_ENTITY_TYPE[vertical]}
+                                        entityId={listing.id}
+                                        window={windowParam}
+                                    />
+                                </section>
+                            ))}
+                        </Section>
+                    </div>
                 );
             })}
         </div>

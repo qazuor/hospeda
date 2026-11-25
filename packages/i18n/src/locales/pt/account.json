@@ -1,4 +1,18 @@
 {
+    "editorHub": {
+        "publicationStatus": "Estado de publicação",
+        "publicationUnavailable": "Estado de publicação indisponível",
+        "complete": "Requisitos cumpridos",
+        "incomplete": "Requisitos pendentes",
+        "recommended": "Sugerido",
+        "requiredOnly": "O indicador conta apenas as seções obrigatórias para publicar. Recomendações não impedem a publicação; outras verificações de publicação são avaliadas separadamente.",
+        "readyWithRecommendations": "Os requisitos de conteúdo estão completos. Você pode melhorar a ficha com as recomendações indicadas; elas não impedem a publicação. Outras verificações de publicação são avaliadas separadamente."
+    },
+    "editorPresentation": {
+        "faqTitle": "Perguntas e respostas",
+        "translationTitle": "Conteúdo por idioma",
+        "missingHint": "Faltam traduções em {{locales}}. Abra cada aba de idioma para revisar os campos pendentes."
+    },
     "whatsNewModal": {
         "title": "Novidades",
         "close": "Fechar",
@@ -1126,6 +1140,16 @@
                 "unavailable": "Indisponível",
                 "reviewsDesc": "Avaliações publicadas",
                 "subscriptionDesc": "Plano atual",
+                "favoritesEmpty": "Seus lugares favoritos aparecerão aqui.",
+                "favoritesNext_one": "Visite seu lugar salvo novamente.",
+                "favoritesNext_other": "Explore seus {{count}} lugares salvos.",
+                "reviewsEmpty": "Compartilhe a experiência da sua próxima viagem.",
+                "reviewsNext_one": "Reveja a avaliação que você compartilhou.",
+                "reviewsNext_other": "Reveja suas {{count}} avaliações compartilhadas.",
+                "planContext": "Confira os benefícios do seu plano.",
+                "trialEndsToday": "Seu período de teste termina hoje. Escolha como continuar.",
+                "trialNext_one": "Seu período de teste termina em {{count}} dia.",
+                "trialNext_other": "Seu período de teste termina em {{count}} dias.",
                 "subscriptionStatus": "Estado da assinatura",
                 "activeStatus": "Ativo",
                 "trialStatus": "Em avaliação",
@@ -1385,7 +1409,6 @@
         "contextOAuth": "Adicione uma senha à sua conta para também entrar com email e senha.",
         "fields": {
             "password": "Senha",
-            "passwordPlaceholder": "Mínimo 8 caracteres",
             "passwordHint": "Mínimo 8 caracteres.",
             "confirmPassword": "Confirmar senha",
             "confirmPasswordPlaceholder": "Repita a senha"
@@ -1628,7 +1651,8 @@
                 "hint": {
                     "summary": "Entre 10 e 300 caracteres. Aparece na listagem do blog.",
                     "content": "Mínimo de 100 caracteres.",
-                    "readingTime": "Deixe vazio para manter o valor atual."
+                    "readingTime": "Altere os minutos ou deixe o campo vazio para redefinir o tempo de leitura salvo.",
+                    "readingTimeEmpty": "Nenhum tempo de leitura foi definido. Informe a quantidade de minutos para defini-lo."
                 },
                 "placeholder": {
                     "content": "Escreva sua publicação..."
@@ -1657,6 +1681,8 @@
         "editor": {
             "media": {
                 "sectionTitle": "Fotos",
+                "photoSectionTitle": "Capa e galeria de fotos",
+                "photoActions": "Ações da foto {{index}}",
                 "featured": "Imagem principal",
                 "gallery": "Galeria de fotos",
                 "add": "Adicionar foto",
@@ -1853,7 +1879,7 @@
             "benefitSection": "Benefício para anfitriões",
             "benefitNote": "Uma mudança no benefício vai para revisão da equipe da Hospeda antes de ser publicada. Enquanto isso, o benefício atual continua visível no diretório.",
             "liveBenefitLabel": "Benefício publicado atualmente",
-            "noBenefit": "Nenhum benefício estruturado cadastrado",
+            "noBenefit": "Ainda não há um benefício publicado",
             "pendingLabel": "Aguardando revisão",
             "noChanges": "Não há mudanças para salvar",
             "success": "Mudanças salvas",
@@ -1882,7 +1908,7 @@
         "pageTitle": "Minha ficha de parceiro",
         "pageSubtitle": "Gerencie sua presença como parceiro da Hospeda",
         "empty": {
-            "text": "Você ainda não tem uma ficha de parceiro. Candidate-se em \"Seja parceiro\" e, depois que sua solicitação for aprovada, sua ficha vai aparecer aqui.",
+            "text": "Você ainda não tem uma ficha de parceiro. Candidate-se em “Seja parceiro” e, depois que sua solicitação for aprovada, sua ficha vai aparecer aqui.",
             "cta": "Ir para Seja parceiro",
             "title": "Sua ficha de parceiro"
         },
@@ -2286,7 +2312,7 @@
         },
         "hoursEditor": {
             "title": "Horário de funcionamento",
-            "hint": "Ative os dias em que você abre e cadastre os horários. Com «Copiar para todos os dias» você repete o horário de um dia na semana inteira.",
+            "hint": "Ative os dias em que você abre e cadastre os horários.",
             "open": "Aberto",
             "closed": "Fechado",
             "openAria": "{{day}} aberto",
@@ -2412,6 +2438,7 @@
                 "action": "Ir para o mapa"
             },
             "coordinates": "Coordenadas",
+            "enterCoordinates": "Inserir coordenadas",
             "latitude": "Latitude",
             "longitude": "Longitude"
         }

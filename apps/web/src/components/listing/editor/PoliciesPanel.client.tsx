@@ -189,13 +189,10 @@ export function PoliciesPanel({
         const notes: ListingPolicyNote = pets?.notes ?? { es: '', en: '', pt: '' };
         const admits = pets !== undefined && pets.admission !== 'no';
         return (
-            <fieldset
+            <div
                 key="pets"
                 className={styles.group}
             >
-                <legend className={styles.groupTitle}>
-                    {t('listing.policies.pets.label', 'Mascotas')}
-                </legend>
                 <Field
                     locale={locale}
                     idParts={idOf('policies.pets.admission')}
@@ -276,7 +273,7 @@ export function PoliciesPanel({
                         ))}
                     </div>
                 )}
-            </fieldset>
+            </div>
         );
     };
 
@@ -322,7 +319,7 @@ export function PoliciesPanel({
                 </div>
             );
         },
-        pets: () => wide('pets', renderPets()),
+        pets: renderPets,
         smokingAllowed: () => (
             <Field
                 key="smokingAllowed"

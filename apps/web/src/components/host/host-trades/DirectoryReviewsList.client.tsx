@@ -127,12 +127,12 @@ export function DirectoryReviewsList({
     }
 
     return (
-        <section className={styles.panel}>
-            <h2 className={styles.sectionTitle}>
+        <div className={styles.panel}>
+            <p className={styles.sectionTitle}>
                 {tPlural('host-trades.directory.reviews.title', initialTotal, {
                     count: String(initialTotal)
                 })}
-            </h2>
+            </p>
 
             {errorMessage ? (
                 <p
@@ -289,6 +289,6 @@ export function DirectoryReviewsList({
                     </button>
                 </nav>
             ) : null}
-        </section>
+        </div>
     );
 }

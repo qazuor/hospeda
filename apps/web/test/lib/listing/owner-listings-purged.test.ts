@@ -75,12 +75,19 @@ describe('mi-cuenta/comercio/index.astro — PURGED offers no action (HOS-1641)'
     });
 
     it('links a purged listing nowhere and gives it no action (HOS-2484 card)', () => {
-        expect(source).toContain('href={isPurged(listing) ? undefined : editUrl(listing)}');
+        const card = readFileSync(
+            resolve(__dirname, '../../../src/components/account/OwnerListingCard.astro'),
+            'utf8'
+        );
+        expect(source).toContain('<OwnerListingCard listing={listing}');
+        expect(card).toContain('href={actions.edit ? editUrl : undefined}');
         // The primary action resolver answers 'none' for PURGED, so neither the
         // edit button nor the menu renders (unit-tested in
         // owner-listing-primary-action.test.ts).
-        expect(source).toContain("primary === 'edit' && (");
-        expect(source).toContain("primary === 'publish' && (");
+        expect(card).toContain(
+            "resolveOwnerListingPrimaryAction({ listing, affordance: publishAffordance }) === 'publish'"
+        );
+        expect(card).toContain(') : actions.edit ? (');
     });
 
     it('keeps a purged listing out of the menu QR widget', () => {
@@ -93,6 +100,8 @@ describe('mi-cuenta/comercio/index.astro — PURGED offers no action (HOS-1641)'
 
     it('still renders the notices for every listing (row 20 is how a purged one is explained)', () => {
         expect(source).not.toMatch(/!isPurged\(listing\) && \(\s*<ListingNotices/);
-        expect(source).toContain('<ListingNotices');
+        expect(source).toContain(
+            'notices={noticesByVertical.get(listing.vertical)?.byListingId.get(listing.id)}'
+        );
     });
 });

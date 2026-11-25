@@ -34,64 +34,6 @@
     gap: var(--space-3, 0.75rem);
 }
 
-.publishButton,
-.deleteButton,
-.cancelButton {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 44px;
-    padding: 0.5rem 1.25rem;
-    border-radius: var(--radius-pill);
-    font-family: var(--font-sans);
-    font-weight: 600;
-    font-size: var(--app-control-size);
-    cursor: pointer;
-    transition:
-        opacity 150ms ease-out,
-        background-color 150ms ease-out;
-}
-
-.publishButton {
-    border: none;
-    background-color: var(--brand-primary);
-    color: var(--primary-foreground);
-}
-
-/* HOS-1942: the lifted-in-dark text twin of --destructive, so the label clears
-   4.5:1 on the dark card (the fill token reads 3.37:1 there). */
-.deleteButton {
-    border: 1px solid var(--destructive-text);
-    background-color: transparent;
-    color: var(--destructive-text);
-}
-
-.cancelButton {
-    border: 1px solid var(--core-muted-foreground);
-    background-color: transparent;
-    color: var(--core-foreground);
-}
-
-.publishButton:hover:not(:disabled),
-.deleteButton:hover:not(:disabled),
-.cancelButton:hover:not(:disabled) {
-    opacity: 0.85;
-}
-
-.publishButton:disabled,
-.deleteButton:disabled,
-.cancelButton:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-.publishButton:focus-visible,
-.deleteButton:focus-visible,
-.cancelButton:focus-visible {
-    outline: 2px solid var(--brand-primary);
-    outline-offset: 2px;
-}
-
 .confirm {
     display: inline-flex;
     flex-wrap: wrap;

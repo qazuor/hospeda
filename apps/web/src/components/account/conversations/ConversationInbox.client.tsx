@@ -15,6 +15,7 @@ import { useCallback, useEffect, useState } from 'react';
 import {
     AsyncRegion,
     type AsyncResult,
+    Avatar,
     CountPill,
     DataList,
     EmptyState,
@@ -272,11 +273,18 @@ export function ConversationInbox({ locale, viewer, page }: ConversationInboxPro
                                 return (
                                     <ListRow
                                         key={row.id}
+                                        rowId={row.id}
                                         href={threadHref(row.id)}
+                                        leading={
+                                            <Avatar
+                                                name={row.title}
+                                                decorative
+                                            />
+                                        }
                                         title={row.title}
                                         meta={row.meta}
                                         description={
-                                            row.excerpt ? row.excerpt.slice(0, 200) : undefined
+                                            row.excerpt || t('conversations.inbox.noActivity')
                                         }
                                         emphasis={row.unreadCount > 0}
                                         trailing={
@@ -285,11 +293,11 @@ export function ConversationInbox({ locale, viewer, page }: ConversationInboxPro
                                                     <time dateTime={row.lastActivityAt}>
                                                         {rowDate}
                                                     </time>
-                                                ) : (
+                                                ) : row.excerpt ? (
                                                     <span>
                                                         {t('conversations.inbox.noActivity')}
                                                     </span>
-                                                )}
+                                                ) : null}
                                                 {row.unreadCount > 0 && (
                                                     <CountPill
                                                         count={row.unreadCount}

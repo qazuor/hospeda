@@ -52,13 +52,14 @@ import {
     Alert,
     EmptyState,
     LinkButton,
-    ListingCardGrid,
     PageHeader,
     Pagination
 } from '@/components/account/ui';
 import PageHelpLink from '@/components/account/help/PageHelpLink.astro';
 import { PageLoadError } from '@/components/account/PageLoadError.client';
 import PropertyCard from '@/components/host/PropertyCard.astro';
+import OwnerListingsByState from '@/components/account/OwnerListingsByState.astro';
+import { bucketOwnerListings, type OwnerListingBucket } from '@/lib/listing/owner-listing-buckets';
 import { AddIcon, BuildingIcon } from '@repo/icons';
 import { resolveUsageAlertTone } from '@/lib/listing/usage-alert-tone';
 import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
@@ -257,6 +258,9 @@ if (!fetchError && pageState.isPastEnd) {
 }
 
 const isEmpty = properties.length === 0;
+// Counts and buckets describe this page only; the owner-wide usage stays above.
+const buckets = bucketOwnerListings({ listings: properties });
+const bucketCounts = Object.fromEntries(Object.entries(buckets).map(([key, rows]) => [key, rows.length])) as Record<keyof typeof buckets, number>;
 
 // HOS-217: proactive "anfitrión en preparación" banner — an owner with at
 // least one DRAFT property but no real owner/complex subscription would
@@ -354,8 +358,8 @@ const needsPlanCta = t('host.properties.list.needsPlanBanner.cta', 'Elegir plan 
         />
     ) : !isEmpty ? (
         <>
-        <ListingCardGrid label={title} helpId="section:propiedades.listado">
-            {properties.map((property) => (
+        <OwnerListingsByState locale={locale} counts={bucketCounts} helpId="section:propiedades.listado" listLabel={title}>
+            {(bucket: OwnerListingBucket) => buckets[bucket].map((property) => (
                 <PropertyCard
                     property={property}
                     locale={locale}
@@ -364,7 +368,7 @@ const needsPlanCta = t('host.properties.list.needsPlanBanner.cta', 'Elegir plan 
                     trialRunning={listingNotices.trialRunning}
                 />
             ))}
-        </ListingCardGrid>
+        </OwnerListingsByState>
         {pageState.totalPages > 1 && (
             <Pagination
                 locale={locale}

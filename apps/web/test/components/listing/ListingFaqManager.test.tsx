@@ -28,6 +28,7 @@
  */
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { createT } from '@/lib/i18n';
 import type { ListingFaq } from '../../../src/components/listing/ListingFaqManager.client';
 import { ListingFaqManager } from '../../../src/components/listing/ListingFaqManager.client';
 
@@ -45,13 +46,11 @@ vi.mock('@/components/host/editor/PlanEntitlementGate.client', () => ({
 // Module mocks
 // ---------------------------------------------------------------------------
 
-vi.mock('../../../src/components/listing/ListingFaqManager.module.css', () => ({
-    default: new Proxy({} as Record<string, string>, { get: (_t, prop) => String(prop) })
-}));
-
 vi.mock('../../../src/lib/i18n', async (importOriginal) => ({
     ...(await importOriginal<typeof import('../../../src/lib/i18n')>()),
-    createTranslations: () => ({ t: (key: string, fallback?: string) => fallback ?? key })
+    createTranslations: () => ({
+        t: (key: string, fallback?: string) => fallback ?? createT('es')(key)
+    })
 }));
 
 vi.mock('../../../src/lib/api/client', () => ({
@@ -112,6 +111,39 @@ function renderManager(initialFaqs: readonly ListingFaq[] = []) {
 // ---------------------------------------------------------------------------
 
 describe('ListingFaqManager', () => {
+    it('keeps category during partial edits and places all actions after the answer', async () => {
+        const faq = { ...FAQ_1, category: 'general' };
+        mockPut.mockResolvedValueOnce({ ok: true, data: { faq } });
+        const { container } = renderManager([faq]);
+        expect(
+            container.querySelector('[data-help="section:venue.preguntas"][data-kit-section]')
+        ).not.toBeNull();
+        const answer = screen.getByText(faq.answer);
+        const edit = screen.getByRole('button', { name: /Editar/ });
+        const remove = screen.getByRole('button', { name: /Quitar/ });
+        expect(
+            answer.compareDocumentPosition(edit) & Node.DOCUMENT_POSITION_FOLLOWING
+        ).toBeTruthy();
+        expect(
+            answer.compareDocumentPosition(remove) & Node.DOCUMENT_POSITION_FOLLOWING
+        ).toBeTruthy();
+        fireEvent.click(edit);
+        fireEvent.change(screen.getByLabelText('Respuesta'), {
+            target: { value: 'Updated opening hours.' }
+        });
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+        await waitFor(() =>
+            expect(mockPut).toHaveBeenCalledWith({
+                path: '/api/v1/protected/venues/listing-1/faqs/faq-1',
+                body: expect.objectContaining({
+                    category: 'general',
+                    answer: 'Updated opening hours.'
+                })
+            })
+        );
+        expect(mockPatch).not.toHaveBeenCalled();
+    });
+
     beforeEach(() => {
         mockPost.mockReset();
         mockPostProtected.mockReset();
@@ -234,7 +266,7 @@ describe('ListingFaqManager', () => {
 
     it('opens the edit form with pre-filled values when Edit is clicked', () => {
         renderManager([FAQ_1]);
-        fireEvent.click(screen.getByRole('button', { name: 'Editar' }));
+        fireEvent.click(screen.getByRole('button', { name: /Editar/ }));
         const questionField = screen.getByLabelText('Pregunta') as HTMLTextAreaElement;
         expect(questionField.value).toBe('¿Cuándo abren?');
     });
@@ -246,7 +278,7 @@ describe('ListingFaqManager', () => {
             isUsableByAi: false
         };
         renderManager([hiddenFaq]);
-        fireEvent.click(screen.getByRole('button', { name: 'Editar' }));
+        fireEvent.click(screen.getByRole('button', { name: /Editar/ }));
 
         const visibleCheckbox = screen.getByLabelText(
             'Visible en la ficha pública'
@@ -263,7 +295,7 @@ describe('ListingFaqManager', () => {
         mockPut.mockResolvedValueOnce({ ok: true, data: { faq: updated } });
 
         renderManager([FAQ_1]);
-        fireEvent.click(screen.getByRole('button', { name: 'Editar' }));
+        fireEvent.click(screen.getByRole('button', { name: /Editar/ }));
 
         const qField = screen.getByLabelText('Pregunta') as HTMLTextAreaElement;
         fireEvent.change(qField, { target: { value: '¿Cuándo abre el local?' } });

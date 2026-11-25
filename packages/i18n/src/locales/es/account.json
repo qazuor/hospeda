@@ -1,4 +1,18 @@
 {
+    "editorHub": {
+        "publicationStatus": "Estado de publicación",
+        "publicationUnavailable": "Estado de publicación no disponible",
+        "complete": "Requisitos completos",
+        "incomplete": "Requisitos pendientes",
+        "recommended": "Recomendado",
+        "requiredOnly": "El medidor cuenta solo las secciones obligatorias para publicar. Las recomendaciones no bloquean la publicación; otros controles de publicación se evalúan por separado.",
+        "readyWithRecommendations": "Los requisitos de contenido están completos. Puedes mejorar la ficha con las recomendaciones indicadas; no bloquean la publicación. Los demás controles de publicación se evalúan por separado."
+    },
+    "editorPresentation": {
+        "faqTitle": "Preguntas y respuestas",
+        "translationTitle": "Contenido por idioma",
+        "missingHint": "Faltan traducciones en {{locales}}. Abre cada pestaña de idioma para revisar los campos pendientes."
+    },
     "whatsNewModal": {
         "title": "Novedades",
         "close": "Cerrar",
@@ -1126,6 +1140,16 @@
                 "unavailable": "No disponible",
                 "reviewsDesc": "Reseñas publicadas",
                 "subscriptionDesc": "Plan actual",
+                "favoritesEmpty": "Tus lugares favoritos estarán aquí.",
+                "favoritesNext_one": "Volvé a visitar tu lugar guardado.",
+                "favoritesNext_other": "Explorá tus {{count}} lugares guardados.",
+                "reviewsEmpty": "Compartí la experiencia de tu próximo viaje.",
+                "reviewsNext_one": "Revisá la reseña que compartiste.",
+                "reviewsNext_other": "Revisá tus {{count}} reseñas compartidas.",
+                "planContext": "Consultá los beneficios de tu plan.",
+                "trialEndsToday": "Tu prueba termina hoy. Elegí cómo continuar.",
+                "trialNext_one": "Tu prueba termina en {{count}} día.",
+                "trialNext_other": "Tu prueba termina en {{count}} días.",
                 "subscriptionStatus": "Estado de la suscripción",
                 "activeStatus": "Activo",
                 "trialStatus": "En prueba",
@@ -1385,7 +1409,6 @@
         "contextOAuth": "Agregá una contraseña a tu cuenta para poder iniciar sesión también con email y contraseña.",
         "fields": {
             "password": "Contraseña",
-            "passwordPlaceholder": "Mínimo 8 caracteres",
             "passwordHint": "Mínimo 8 caracteres.",
             "confirmPassword": "Confirmá la contraseña",
             "confirmPasswordPlaceholder": "Repetí la contraseña"
@@ -1628,7 +1651,8 @@
                 "hint": {
                     "summary": "Entre 10 y 300 caracteres. Se muestra en el listado del blog.",
                     "content": "Mínimo 100 caracteres.",
-                    "readingTime": "Dejalo vacío para mantener el valor actual."
+                    "readingTime": "Modifica los minutos o deja el campo vacío para restablecer el tiempo de lectura guardado.",
+                    "readingTimeEmpty": "No hay un tiempo de lectura definido. Introduce la cantidad de minutos para establecerlo."
                 },
                 "placeholder": {
                     "content": "Escribí tu nota..."
@@ -1657,6 +1681,8 @@
         "editor": {
             "media": {
                 "sectionTitle": "Fotos",
+                "photoSectionTitle": "Portada y galería de fotos",
+                "photoActions": "Acciones de la foto {{index}}",
                 "featured": "Imagen principal",
                 "gallery": "Galería de fotos",
                 "add": "Agregar foto",
@@ -1853,7 +1879,7 @@
             "benefitSection": "Beneficio para hosts",
             "benefitNote": "Un cambio en el beneficio pasa a revisión del equipo de Hospeda antes de publicarse. Mientras tanto, el beneficio actual sigue visible en el directorio.",
             "liveBenefitLabel": "Beneficio publicado actualmente",
-            "noBenefit": "Sin beneficio estructurado cargado",
+            "noBenefit": "Todavía no hay un beneficio publicado",
             "pendingLabel": "Esperando revisión",
             "noChanges": "No hay cambios para guardar",
             "success": "Cambios guardados",
@@ -1882,7 +1908,7 @@
         "pageTitle": "Mi ficha de aliado",
         "pageSubtitle": "Gestioná tu presencia como aliado de Hospeda",
         "empty": {
-            "text": "Todavía no tenés una ficha de aliado. Postulate desde \"Sumate como aliado\" y, una vez aprobada tu solicitud, tu ficha va a aparecer acá.",
+            "text": "Todavía no tenés una ficha de aliado. Postulate desde «Sumate como aliado» y, una vez aprobada tu solicitud, tu ficha va a aparecer acá.",
             "cta": "Ir a Sumate como aliado",
             "title": "Tu ficha de aliado"
         },
@@ -2286,7 +2312,7 @@
         },
         "hoursEditor": {
             "title": "Horarios de atención",
-            "hint": "Activá los días que abrís y cargá sus franjas. Con «Copiar a todos los días» repetís el horario de un día en toda la semana.",
+            "hint": "Activa los días de apertura y agrega sus franjas horarias.",
             "open": "Abierto",
             "closed": "Cerrado",
             "openAria": "{{day}} abierto",
@@ -2412,6 +2438,7 @@
                 "action": "Ir al mapa"
             },
             "coordinates": "Coordenadas",
+            "enterCoordinates": "Ingresar coordenadas",
             "latitude": "Latitud",
             "longitude": "Longitud"
         }

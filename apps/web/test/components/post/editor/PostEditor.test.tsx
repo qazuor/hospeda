@@ -139,6 +139,8 @@ describe('PostEditor — saving', () => {
         fireEvent.change(screen.getByLabelText('Título *'), {
             target: { value: 'Un título nuevo' }
         });
+        expect(screen.getAllByRole('button', { name: /Guardar/ })).toHaveLength(1);
+        expect(document.querySelectorAll('[data-status="dirty"]')).toHaveLength(1);
         fireEvent.click(screen.getByRole('button', { name: /Guardar/ }));
 
         await waitFor(() => expect(mockUpdate).toHaveBeenCalledTimes(1));
@@ -146,6 +148,9 @@ describe('PostEditor — saving', () => {
             id: 'post-1',
             data: { title: 'Un título nuevo' }
         });
+        await waitFor(() =>
+            expect(document.querySelectorAll('[data-status="saved"]')).toHaveLength(1)
+        );
     });
 
     it('never sends a publication-state field, whatever was edited', async () => {

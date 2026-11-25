@@ -34,6 +34,10 @@ export interface StatValue {
     readonly value: ReactNode;
     /** One short line under the value. */
     readonly hint?: ReactNode;
+    /** Preferred single next-step/context line; takes precedence over the legacy hint. */
+    readonly nextStep?: string;
+    /** Unabridged details exposed on the clamped line. */
+    readonly detail?: string;
 }
 
 /** Props of {@link StatCard}. */
@@ -50,6 +54,8 @@ export interface StatCardProps {
     readonly link?: { readonly href: string; readonly label: string };
     /** Decorative icon (an `@repo/icons` element with `aria-hidden`). */
     readonly icon?: ReactNode;
+    /** Context for an empty read, or for a ready value without a hint. */
+    readonly context?: string;
     /** Extra class from the caller (layout only). */
     readonly className?: string;
     /** Optional help anchor rendered as `data-help`. */
@@ -81,6 +87,7 @@ export function StatCard({
     locale,
     link,
     icon,
+    context,
     className,
     helpId
 }: StatCardProps) {
@@ -93,7 +100,6 @@ export function StatCard({
             className={cx(styles.card, className)}
         >
             <div className={styles.head}>
-                <p className={styles.label}>{label}</p>
                 {icon ? (
                     <span
                         className={styles.icon}
@@ -102,6 +108,7 @@ export function StatCard({
                         {icon}
                     </span>
                 ) : null}
+                <p className={styles.label}>{label}</p>
             </div>
             <AsyncRegion
                 state={state}
@@ -121,7 +128,19 @@ export function StatCard({
                         </Button>
                     </div>
                 )}
-                empty={() => <Dash locale={locale} />}
+                empty={() => (
+                    <>
+                        <Dash locale={locale} />
+                        {context ? (
+                            <p
+                                className={styles.hint}
+                                title={context}
+                            >
+                                {context}
+                            </p>
+                        ) : null}
+                    </>
+                )}
                 locked={(reason) => (
                     <LockedState
                         reason={reason}
@@ -130,8 +149,24 @@ export function StatCard({
                 )}
                 ready={(data) => (
                     <>
-                        <p className={styles.value}>{data.value}</p>
-                        {data.hint ? <p className={styles.hint}>{data.hint}</p> : null}
+                        <p
+                            className={styles.value}
+                            title={typeof data.value === 'string' ? data.value : undefined}
+                        >
+                            {data.value}
+                        </p>
+                        {data.nextStep || data.hint || context ? (
+                            <p
+                                className={styles.hint}
+                                title={
+                                    data.detail ??
+                                    data.nextStep ??
+                                    (typeof data.hint === 'string' ? data.hint : context)
+                                }
+                            >
+                                {data.nextStep ?? data.hint ?? context}
+                            </p>
+                        ) : null}
                     </>
                 )}
             />

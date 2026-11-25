@@ -48,6 +48,10 @@ const LEGITIMATE_IDENTICAL: Readonly<Record<string, readonly TargetLocale[]>> = 
     VIP: ['en', 'pt'],
     Promo: ['en', 'pt'],
     'Para todos': ['pt'],
+    // HOS-2626 owner lists: identical spelling in Brazilian Portuguese.
+    Publicadas: ['pt'],
+    'Ver código QR': ['pt'],
+    'Código QR: {{name}}': ['pt'],
     'Ver {{name}}': ['pt'],
     'Página {{page}} de {{total}}': ['pt'],
     // Spelled the same in English / Brazilian Portuguese (HOS-2485 subscription tabs

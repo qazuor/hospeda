@@ -1,23 +1,10 @@
 /**
  * @file PhotoSection.module.css
  * @description What the accommodation photo editor adds around the kit
- * MediaManager skin (HOS-2489): section heading, slot labels and the
+ * MediaManager skin (HOS-2489): slot labels and the
  * per-photo text editor (`PhotoMetadataEditor`, shared by every gallery).
  * Tokens only; no viewport breakpoint.
  */
-
-.section {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-4);
-    padding-block: var(--space-4);
-}
-
-.sectionTitle {
-    margin: 0;
-    font: var(--app-card-title);
-    color: var(--core-foreground);
-}
 
 .sectionDescription {
     margin: 0;
@@ -62,6 +49,20 @@
 
 .dragHandle:active:not(:disabled) {
     cursor: grabbing;
+}
+
+/* One unbroken action row; scroll rather than strand the promotion action. */
+.galleryToolbar {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: var(--space-1);
+    min-inline-size: 0;
+    max-inline-size: 100%;
+    overflow-x: auto;
+}
+
+.galleryToolbar > button {
+    flex-shrink: 0;
 }
 
 /* Per-photo text metadata editor (HOS-125). The panel sits in normal flow

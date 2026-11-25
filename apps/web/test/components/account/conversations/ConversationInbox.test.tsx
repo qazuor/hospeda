@@ -140,6 +140,36 @@ describe.each([
 });
 
 describe('ConversationInbox rows', () => {
+    it('keeps API order, decorative avatars and unread markers in one responsive list', async () => {
+        guestList.mockResolvedValue(
+            page([
+                guestItem,
+                {
+                    ...guestItem,
+                    id: 'c2',
+                    accommodationName: 'Another stay',
+                    unreadCount: 0,
+                    lastMessageExcerpt: null
+                }
+            ])
+        );
+        const { container } = render(
+            <ConversationInbox
+                locale="es"
+                viewer="guest"
+                page={1}
+            />
+        );
+        await screen.findByRole('link', { name: 'Another stay' });
+        const rows = Array.from(container.querySelectorAll('[data-row]'));
+        expect(rows.map((row) => row.getAttribute('data-row'))).toEqual(['c1', 'c2']);
+        expect(rows[0]).toHaveAttribute('data-emphasis');
+        expect(rows[1]).not.toHaveAttribute('data-emphasis');
+        for (const row of rows)
+            expect(row.querySelector('[data-palette][aria-hidden="true"]')).not.toBeNull();
+        expect(screen.getByRole('img', { name: '2 sin leer' })).toBeInTheDocument();
+        expect(rows[1]?.textContent).toContain('Sin mensajes todavía');
+    });
     it('guest rows: listing as title, link to the guest thread, unread CountPill', async () => {
         guestList.mockResolvedValue(page([guestItem]));
         render(

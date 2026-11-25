@@ -55,6 +55,7 @@ vi.mock('@/lib/i18n', async (importOriginal) => ({
 }));
 
 vi.mock('@/lib/env', () => ({ getApiUrl: () => 'https://api.test' }));
+vi.mock('@/lib/logger', () => ({ webLogger: { warn: vi.fn(), error: vi.fn() } }));
 
 const { mockFreshEntitlements } = vi.hoisted(() => ({ mockFreshEntitlements: vi.fn() }));
 
@@ -99,8 +100,18 @@ describe('VenueMenuManager locked intro (HOS-2079)', () => {
             />
         );
         await screen.findByTestId('venue-section-locked-notice');
+        expect(container.querySelectorAll('[data-kit-section]')).toHaveLength(1);
+        expect(container.querySelector('[data-kit-section]')).toHaveAttribute(
+            'data-help',
+            'section:venue.carta'
+        );
 
         const intro = container.querySelector('p.intro');
+        const section = container.querySelector('[data-kit-section]');
+        expect(section).not.toHaveClass('panel');
+        const stack = section?.querySelector(':scope > div > .panel');
+        expect(stack).toContainElement(intro);
+        expect(stack).toContainElement(screen.getByTestId('venue-section-locked-notice'));
         expect(intro).not.toBeNull();
         expect(intro?.textContent ?? '').not.toMatch(FILE_OR_LINK_PROMISE);
     });
@@ -115,6 +126,9 @@ describe('VenueMenuManager locked intro (HOS-2079)', () => {
             />
         );
         await screen.findByRole('heading', { name: 'Carta' });
+        const stack = container.querySelector('[data-kit-section] > div > .panel');
+        expect(stack).toContainElement(container.querySelector('p.intro'));
+        expect(stack?.children.length).toBeGreaterThan(2);
         expect(container.querySelector('p.intro')?.textContent).toBe(
             'Cargá tu carta plato por plato, o subí una foto o un PDF del menú. Podés usar las dos formas, y ninguna es obligatoria.'
         );

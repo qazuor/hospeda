@@ -11,6 +11,7 @@
  * Owner-scoped SSR page content only; it renders nothing when `show` is false.
  */
 import { createTranslations, type SupportedLocale } from '@/lib/i18n';
+import { Alert } from '@/components/account/ui/Alert';
 
 interface Props {
 	readonly locale: SupportedLocale;
@@ -23,23 +24,11 @@ const { t } = createTranslations(locale);
 
 {
 	show && (
-		<p class="location-duplicate-notice" role="status">
+		<Alert locale={locale} tone="warning">
 			{t(
 				'listing.owner.locationDuplicate.warning',
 				'Ya tenés otra ficha publicada en esta dirección. Cada local físico va en una sola ficha: sumale el rubro que falta en vez de crear otra. Podés seguir editando este borrador, pero no vas a poder publicarlo.',
 			)}
-		</p>
+		</Alert>
 	)
 }
-
-<style>
-	.location-duplicate-notice {
-		margin: 0 0 var(--space-5, 1.5rem);
-		padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
-		border: 1px solid var(--warning);
-		border-radius: var(--radius-md);
-		font-size: var(--text-body-sm);
-		color: var(--core-foreground);
-		background: var(--core-card);
-	}
-</style>

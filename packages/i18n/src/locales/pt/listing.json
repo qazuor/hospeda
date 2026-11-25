@@ -9,6 +9,12 @@
         "premiumBadge": "Premium"
     },
     "owner": {
+        "downloads": {
+            "label": "Baixar",
+            "forListing": "Baixar arquivos de {{name}}",
+            "viewQr": "Ver código QR",
+            "qrTitle": "Código QR: {{name}}"
+        },
         "nav": "Meu comércio",
         "purgeAddons": {
             "title": "Estes complementos se perdem com o anúncio, sem reembolso:",
@@ -25,6 +31,12 @@
             "retry": "Tentar de novo"
         },
         "list": {
+            "buckets": {
+                "published": "Publicadas",
+                "drafts": "Rascunhos",
+                "archived": "Arquivadas",
+                "deleted": "Excluídas"
+            },
             "title": "Meu comércio",
             "subtitle": {
                 "venue": "Gerencie as informações dos seus comércios publicados.",
@@ -60,12 +72,12 @@
             },
             "usage": {
                 "venue": {
-                    "label_one": "{{current}} de {{max}} ficha de Comer e sair",
-                    "label_other": "{{current}} de {{max}} fichas de Comer e sair"
+                    "label_one": "Cota de publicação: {{current}} de {{max}} ficha de Comer e sair",
+                    "label_other": "Cota de publicação: {{current}} de {{max}} fichas de Comer e sair"
                 },
                 "experience": {
-                    "label_one": "{{current}} de {{max}} experiência",
-                    "label_other": "{{current}} de {{max}} experiências"
+                    "label_one": "Cota de publicação: {{current}} de {{max}} experiência",
+                    "label_other": "Cota de publicação: {{current}} de {{max}} experiências"
                 },
                 "upgrade": "Ampliar cota",
                 "atLimit": "Você atingiu o limite do seu plano. Para publicar outra ficha, amplie sua cota."
@@ -97,7 +109,6 @@
             "venueStats": {
                 "title": "Métricas da ficha",
                 "venue": "Estabelecimento",
-                "loading": "Carregando métricas…",
                 "error": "Não foi possível carregar as métricas. Tente novamente mais tarde.",
                 "lockedPreTrial": "As métricas avançadas estarão disponíveis quando você publicar sua ficha.",
                 "lockedWithPlan": "Desbloqueie o gráfico diário, cliques por canal, taxa de cliques e {{history}} de dados com {{plan}}.",
@@ -292,6 +303,7 @@
                 "emptyState": "Ainda não há perguntas. Adicione a primeira.",
                 "addButton": "Adicionar pergunta",
                 "editButton": "Editar",
+                "editAria": "Editar a pergunta \"{{question}}\"",
                 "deleteButton": "Excluir",
                 "saveButton": "Salvar",
                 "cancelButton": "Cancelar",
@@ -332,11 +344,11 @@
             },
             "unsavedChanges": "Você tem alterações não salvas. Se sair agora, elas serão perdidas. Deseja sair mesmo assim?",
             "media": {
+                "uploadHint": "JPG, PNG, WebP ou HEIC — máx. {{maxSize}}MB",
                 "featured": "Imagem principal",
                 "gallery": "Galeria de fotos",
                 "add": "Adicionar foto",
                 "remove": "Remover",
-                "uploadHint": "JPG, PNG, WebP ou HEIC — máx. {{maxSize}}MB",
                 "invalidType": "Apenas arquivos JPG, PNG, WebP ou HEIC são permitidos",
                 "tooLarge": "O arquivo não pode exceder {{maxSize}}MB",
                 "uploadFailed": "Erro ao enviar a imagem",
@@ -376,7 +388,7 @@
                     "faqs_other": "{{count}} perguntas",
                     "selected_one": "{{count}} selecionado",
                     "selected_other": "{{count}} selecionados",
-                    "blockedFromPublishing": "⛔ Falta para publicar: {{fields}}",
+                    "blockedFromPublishing": "Falta para publicar: {{fields}}",
                     "lockedWithData_one": "Bloqueada pelo seu plano · {{count}} item salvo (não é publicado)",
                     "lockedWithData_other": "Bloqueada pelo seu plano · {{count}} itens salvos (não são publicados)",
                     "lockedEmpty": "Bloqueada pelo seu plano"

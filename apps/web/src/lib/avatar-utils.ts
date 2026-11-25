@@ -38,11 +38,10 @@ interface GetInitialsInput {
  *
  * Rules (in order):
  *
- * 1. If `name` has two or more whitespace-separated tokens, return the first
- *    letter of the first token + first letter of the last token. Example:
- *    `"Carlos Alberto Ramírez"` → `"CR"`.
- * 2. If `name` has a single token, return its first two characters, uppercased.
- *    Example: `"carlos"` → `"CA"`.
+ * 1. With two or more significant words (standalone connectors in Spanish,
+ *    English and Portuguese are ignored), use the first letter of the first and
+ *    of the last. `"Host y Comercio"` → `"HC"`; `"Carlos Alberto Ramírez"` → `"CR"`.
+ * 2. A single significant word contributes its first two characters.
  * 3. If `name` is empty/undefined and `email` is provided, return the first
  *    character of the local part (before `@`), uppercased. Example:
  *    `"jane.doe@example.com"` → `"J"`.
@@ -65,13 +64,17 @@ export function getInitials(input: GetInitialsInput = {}): string {
 
     const trimmedName = name?.trim() ?? '';
     if (trimmedName.length > 0) {
-        const parts = trimmedName.split(/\s+/);
-        if (parts.length === 1) {
-            return (parts[0] ?? '').slice(0, 2).toUpperCase();
-        }
-        const first = parts[0] ?? '';
-        const last = parts[parts.length - 1] ?? '';
-        return `${first.charAt(0)}${last.charAt(0)}`.toUpperCase();
+        const words = trimmedName.match(/[\p{L}\p{N}]+/gu) ?? [];
+        const significant = words.filter(
+            (word) => !/^(y|e|and|de|del|la|las|los|el|do|da|dos|das|o|a|os|as|the)$/iu.test(word)
+        );
+        const pool = significant.length > 0 ? significant : words;
+        const first = pool[0] ?? '';
+        const initials =
+            pool.length === 1
+                ? Array.from(first).slice(0, 2).join('').toUpperCase()
+                : `${Array.from(first)[0] ?? ''}${Array.from(pool[pool.length - 1] ?? '')[0] ?? ''}`.toUpperCase();
+        if (initials) return initials;
     }
 
     const trimmedEmail = email?.trim() ?? '';

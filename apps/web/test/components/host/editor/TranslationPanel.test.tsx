@@ -33,10 +33,6 @@ import type { AccommodationTranslationData } from '../../../../src/lib/api/types
 // Module mocks
 // ---------------------------------------------------------------------------
 
-vi.mock('../../../../src/components/host/editor/TranslationPanel.module.css', () => ({
-    default: new Proxy({} as Record<string, string>, { get: (_t, prop) => String(prop) })
-}));
-
 // The `t` stub INTERPOLATES. A stub that ignored the third argument would let a
 // raw `{{locales}}` reach production with every test still green — the whole
 // point of assertion 4 is the rendered string, not the key.
@@ -127,8 +123,8 @@ const TAB_LABELS = ['ES', 'EN', 'PT'] as const;
 /** Selects a locale tab and returns the row of the field named `label` in it. */
 function fieldRowIn(tab: (typeof TAB_LABELS)[number], label: string): HTMLElement | undefined {
     fireEvent.click(screen.getByRole('tab', { name: new RegExp(`^${tab}`) }));
-    return [...document.querySelectorAll<HTMLElement>('.fieldCard')].find((row) =>
-        row.querySelector('.fieldName')?.textContent?.includes(label)
+    return [...document.querySelectorAll<HTMLElement>('[data-translation-row]')].find((row) =>
+        row.querySelector('[data-translation-label]')?.textContent?.includes(label)
     );
 }
 
@@ -145,7 +141,9 @@ function fieldTextAcrossTabs(label: string): string {
 /** The role pill of the field in each tab, source first. */
 function rolesAcrossTabs(label: string): (string | null | undefined)[] {
     return TAB_LABELS.map(
-        (tab) => fieldRowIn(tab, label)?.querySelector('.fieldHead')?.children[1]?.textContent
+        (tab) =>
+            fieldRowIn(tab, label)?.querySelector('[data-translation-heading]')?.children[1]
+                ?.textContent
     );
 }
 
@@ -185,6 +183,14 @@ afterEach(() => {
 // ---------------------------------------------------------------------------
 
 describe('TranslationPanel — rich description row (BETA-199)', () => {
+    it('uses a distinct shared section title and remains read-only', () => {
+        const { container } = renderPanel(NOT_ENTITLED);
+        expect(container.querySelectorAll('[data-kit-section]')).toHaveLength(1);
+        expect(screen.getByRole('heading', { name: 'Contenido por idioma' })).toBeInTheDocument();
+        expect(screen.queryByRole('heading', { name: 'Traducciones' })).toBeNull();
+        expect(screen.queryAllByRole('textbox')).toHaveLength(0);
+    });
+
     it('hides the row and the button when the plan excludes rich description', () => {
         renderPanel(NOT_ENTITLED);
 
@@ -239,7 +245,11 @@ describe('TranslationPanel — rich description row (BETA-199)', () => {
         // Scope to the row under test — the other three fields are fully
         // translated and would read as present on PT themselves. The row carries
         // its locale role as `data-role` (HOS-2492: one tab per locale).
-        expect(container.querySelector('fieldset')).not.toBeNull();
+        expect(
+            container.querySelector(
+                '[data-kit-section][data-help="section:accommodation.traducciones"]'
+            )
+        ).not.toBeNull();
         const present = presentLocales('Nombre');
         expect(present).not.toContain('PT');
         // Not vacuous: EN carries real content on this same row and IS present.
@@ -295,6 +305,17 @@ describe('TranslationPanel — per-field run reporting (HOS-317)', () => {
 
         renderPanel(PARTIALLY_TRANSLATED);
         fireEvent.click(screen.getByRole('button', { name: GENERATE_BUTTON }));
+        await waitFor(() =>
+            expect(mockPostProtected).toHaveBeenCalledWith({
+                path: '/api/v1/protected/ai/translate',
+                body: {
+                    entityType: 'accommodation',
+                    entityId: ACCOMMODATION_ID,
+                    sourceLocale: 'es'
+                },
+                timeoutMs: 90_000
+            })
+        );
 
         // The rendered string, interpolated — not the key, and not a raw
         // `{{locales}}`.
@@ -528,7 +549,7 @@ describe('TranslationPanel — per-field run reporting (HOS-317)', () => {
         expect(screen.queryByRole('button', { name: GENERATE_BUTTON })).not.toBeInTheDocument();
 
         // And the rows agree with the note: EN/PT are present on the name card now.
-        expect(container.querySelector('fieldset')).not.toBeNull();
+        expect(container.querySelector('[data-kit-section]')).not.toBeNull();
         const present = presentLocales('Nombre');
         expect(present).toEqual(expect.arrayContaining(['EN', 'PT']));
     });
@@ -555,7 +576,7 @@ describe('TranslationPanel — per-field run reporting (HOS-317)', () => {
             expect(screen.getByText('No se pudo traducir a PT')).toBeInTheDocument();
         });
 
-        expect(container.querySelector('fieldset')).not.toBeNull();
+        expect(container.querySelector('[data-kit-section]')).not.toBeNull();
         const present = presentLocales('Nombre');
         expect(present).toContain('EN');
         expect(present).not.toContain('PT');
@@ -909,7 +930,7 @@ describe('TranslationPanel — the translated text itself (HOS-797)', () => {
 
     /** The name field's text across the three locale tabs (HOS-2492). */
     function nameTextOf(container: HTMLElement): string {
-        expect(container.querySelector('fieldset')).not.toBeNull();
+        expect(container.querySelector('[data-kit-section]')).not.toBeNull();
         return fieldTextAcrossTabs('Nombre');
     }
 

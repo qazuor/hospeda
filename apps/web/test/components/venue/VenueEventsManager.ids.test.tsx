@@ -67,7 +67,18 @@ describe('VenueEventsManager: stable event ids (HOS-2291)', () => {
         // Act — the save bar shows on a dirty draft; the trailing space on the
         // title is trimmed by the payload.
         const title = (await screen.findByLabelText('Título')) as HTMLInputElement;
+        const section = document.querySelector('[data-kit-section]');
+        expect(section).not.toHaveClass('panel');
+        const stack = section?.querySelector(':scope > div > .panel');
+        expect(stack).toContainElement(section?.querySelector('p.intro') ?? null);
+        expect(stack).toContainElement(title);
+        expect(document.querySelectorAll('[data-kit-section]')).toHaveLength(1);
+        expect(document.querySelector('[data-kit-section]')).toHaveAttribute(
+            'data-help',
+            'section:venue.eventos'
+        );
         fireEvent.change(title, { target: { value: `${title.value} ` } });
+        expect(stack).toContainElement(screen.getByRole('button', { name: 'Guardar cambios' }));
         fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
 
         // Assert

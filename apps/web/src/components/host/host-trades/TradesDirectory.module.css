@@ -26,6 +26,20 @@
     block-size: 100%;
 }
 
+@container (width < 40rem) {
+    .filters {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        max-inline-size: 100%;
+        min-inline-size: 0;
+        padding-block-end: var(--space-2);
+    }
+
+    .filters > button {
+        flex-shrink: 0;
+    }
+}
+
 @container (width >= 48rem) {
     .grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));

@@ -90,6 +90,15 @@ function renderList() {
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
 describe('UserReviewsList', () => {
+    it('renders a decorative entity avatar and separates the review heading from its body', async () => {
+        globalThis.fetch = vi.fn().mockResolvedValue(makeReviewsResponse([ACCOMMODATION_REVIEW]));
+        const { container } = renderList();
+        const title = await screen.findByText(ACCOMMODATION_REVIEW.title);
+        expect(title.tagName).toBe('STRONG');
+        expect(title.className).toContain('reviewTitle');
+        expect(title.nextElementSibling).toHaveTextContent(ACCOMMODATION_REVIEW.content);
+        expect(container.querySelector('[data-palette][aria-hidden="true"]')).not.toBeNull();
+    });
     beforeEach(() => {
         vi.clearAllMocks();
     });
