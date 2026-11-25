@@ -938,7 +938,6 @@
             "removeConfirmButton": "Remover",
             "fetchError": "Tivemos um problema temporário ao carregar esta coleção. Tente novamente em alguns minutos.",
             "errorTitle": "Não conseguimos carregar a coleção",
-            "backToList": "Voltar para meus favoritos",
             "bookmarksLabel": "favoritos",
             "prevPage": "Página anterior",
             "nextPage": "Próxima página",
@@ -1607,7 +1606,6 @@
             "editor": {
                 "pageTitle": "Editar publicação",
                 "slugImmutableNotice": "A URL pública é gerada ao criar a publicação e não pode ser alterada.",
-                "backToList": "Voltar às minhas publicações",
                 "lockNotice": "Esta publicação já foi aprovada e publicada, então você não pode editá-la. Fale com a equipe se precisar mudar algo.",
                 "unsavedChanges": "Você tem alterações não salvas. Se sair agora, elas serão perdidas. Deseja sair mesmo assim?",
                 "publicationExplainer": "Sua publicação aparece no site público somente quando está aprovada, pública e ativa ao mesmo tempo.",
@@ -1728,7 +1726,6 @@
             },
             "editor": {
                 "pageTitle": "Editar evento",
-                "backToList": "Voltar aos meus eventos",
                 "readOnlyNotice": "A URL, o organizador e o local são definidos ao criar o evento e não são editáveis aqui.",
                 "lockNotice": "Este evento já foi aprovado e publicado, então você não pode editá-lo. Fale com a equipe se precisar mudar algo.",
                 "unsavedChanges": "Você tem alterações não salvas. Se sair agora, elas serão perdidas. Deseja sair mesmo assim?",
@@ -2276,10 +2273,6 @@
             "summary": "{{done}} de {{total}} seções completas",
             "complete": "Seu anúncio tem tudo o que precisa para ser publicado.",
             "missingTitle": "Falta completar:"
-        },
-        "editorShell": {
-            "backToHub": "Voltar ao editor",
-            "backToList": "Voltar à lista"
         },
         "repeater": {
             "add": "Adicionar",

@@ -413,8 +413,6 @@
             }
         },
         "labels": {
-            "breadcrumbHome": "Home",
-            "breadcrumbAccommodations": "Accommodations",
             "emptyTitle": "No {{type}} accommodations available"
         }
     },
