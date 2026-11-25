@@ -504,12 +504,11 @@ describe('Conversation Token Reminder Cron Job', () => {
 
             expect(result.success).toBe(true);
             expect(mockSendEmail).toHaveBeenCalledTimes(1);
-            // HOS-2359: attributed to its catalog key, with the open pixel
+            // HOS-2359: attributed to its catalog key,
             expect(mockSendEmail.mock.calls[0]?.[0]).toMatchObject({
                 attribution: {
                     medium: 'transactional',
-                    templateKey: 'conversation.token-expiring-day15',
-                    includePixel: true
+                    templateKey: 'conversation.token-expiring-day15'
                 }
             });
             expect(mockMarkReminderSent).toHaveBeenCalledTimes(1);

@@ -10,7 +10,7 @@ This file provides guidance for working with the Email package (`@repo/email`).
 
 - **`EmailLayout`**: the ONE layout every Hospeda email renders inside, including the 114 templates in `@repo/notifications`.
 - **`renderEmailBodies`**: the single place that turns a React Email element into the HTML body and the text/plain alternative (HOS-2107, HOS-2519 D4). It takes a **required** `attribution` and applies it (HOS-2359).
-- **`applyEmailAttribution`**: the single implementation of email attribution (HOS-2359): UTMs on every link to our web domain and one Umami open pixel per email. See [Attribution](#attribution-hos-2359).
+- **`applyEmailAttribution`**: the single implementation of email attribution (HOS-2359): UTMs on every link to our web domain (no open pixel since HOS-2583). See [Attribution](#attribution-hos-2359).
 - **`sendEmail`**: a provider call over the **Brevo** REST API (`POST /smtp/email`). There is no Resend anymore; "resend" in some file and class names elsewhere is legacy.
 - The two auth templates (`VerifyEmailTemplate`, `ResetPasswordTemplate`) and their subject constants.
 
@@ -33,7 +33,7 @@ pnpm lint              # Biome
 packages/email/
 ├── src/
 │   ├── client.ts               # createEmailClient({ apiKey, baseUrl? }) → opaque EmailClient (Brevo)
-│   ├── attribution.ts          # applyEmailAttribution, EmailAttribution, UMAMI_PIXEL_PATH (HOS-2359)
+│   ├── attribution.ts          # applyEmailAttribution, EmailAttribution (HOS-2359)
 │   ├── render.ts               # renderEmailBodies({ react, attribution }) → { html, text }
 │   ├── send.ts                 # sendEmail(input) → { success, messageId?, error? } (never throws)
 │   ├── subjects.ts             # RESET_PASSWORD_EMAIL_SUBJECT, VERIFY_EMAIL_SUBJECT
@@ -55,12 +55,12 @@ Every send path passes an `EmailAttribution`:
 
 ```ts
 type EmailAttribution =
-    | { medium: 'transactional'; templateKey: string; includePixel: boolean } // catalog key, e.g. 'auth.reset-password'
-    | { medium: 'campaign'; campaignSlug: string; pixelSlug: string | null }; // newsletter
+    | { medium: 'transactional'; templateKey: string } // catalog key, e.g. 'auth.reset-password'
+    | { medium: 'campaign'; campaignSlug: string }; // newsletter
 ```
 
 - **Links**: every `<a href>` on our web domain (`buildOwnWebOrigins` from `@repo/analytics`: the configured site origin plus `hospeda.com.ar`, `www.`, `staging.`) gets `utm_source=email`, `utm_medium`, `utm_campaign` (the key as a token, or the campaign slug) and `utm_content` = the anchor's `data-utm-content`, else its `data-layout-link`, else `body-link`. API/admin hosts, `mailto:`, `tel:`, anchors and links that already carry UTMs stay byte-identical. The text part gets the same replacements.
-- **Pixel**: `<img src="{pixelBaseUrl}/p/{slug}" width="1" height="1" alt="">` before `</body>`, only when `configureEmailAssets({ pixelBaseUrl })` got an `https:` URL. No query string, identical for every recipient (no recipient id). Slug: `email-<key token>` or the campaign's `pixelSlug`. `includePixel: false` / `pixelSlug: null` render none (admin preview, newsletter test send).
+- **No open pixel (HOS-2583)**: opens are NOT measured by an image. Brevo proxies every image through its cache and hides the open from Umami, so opens come from Brevo's `opened` webhook (`apps/api/src/routes/webhooks/brevo.ts`), keyed by the `template:<catalog key>` tag the Brevo transport adds to every transactional send.
 - `applyEmailAttribution` never throws: a link the vocabulary rejects is left as is and logged once.
 
 ```tsx

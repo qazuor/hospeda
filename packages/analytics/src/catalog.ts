@@ -96,6 +96,8 @@ export const AnalyticsEvents = {
     accommodationImportCompleted: 'accommodation_import_completed',
     accommodationImportFailed: 'accommodation_import_failed',
     accommodationPublished: 'accommodation_published',
+    /** Hyphenated on purpose: this is the name the owner fixed in HOS-2583. */
+    emailOpen: 'email-open',
     billingCheckoutStarted: 'billing_checkout_started',
     billingCheckoutAbandoned: 'billing_checkout_abandoned',
     billingSubscriptionActivated: 'billing_subscription_activated',
@@ -316,6 +318,17 @@ export const AnalyticsEventSchemas = {
         destination_id: idSchema.optional(),
         is_first_publication: z.boolean().nullable().optional(),
         owner_id: idSchema.optional()
+    }),
+    /**
+     * An email was opened, as reported by Brevo's `opened` webhook (HOS-2583). Brevo's
+     * image proxy hides opens from any pixel of ours, so this is the only open signal.
+     * `template_key` names the catalog template of a transactional mail; `campaign` is
+     * the slug of a newsletter. Neither carries the recipient.
+     */
+    [AnalyticsEvents.emailOpen]: z.object({
+        campaign: z.string().min(1).max(100).optional(),
+        kind: z.enum(['transactional', 'newsletter']),
+        template_key: z.string().min(1).max(100).optional()
     }),
     ...BillingAnalyticsEventSchemas,
     ...AddonAnalyticsEventSchemas,

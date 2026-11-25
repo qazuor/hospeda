@@ -3,8 +3,7 @@
  * @description Catalog keys and attribution of the emails `apps/api` sends itself (HOS-2359 §6.A.4).
  *
  * Every transactional email names its email catalog key, which derives its
- * `utm_campaign` and its Umami pixel slug. A key that is not in the catalog renders a
- * pixel no `umami:setup` run creates, so these keys are pinned against
+ * `utm_campaign` and its Brevo `template:` open tag. These keys are pinned against
  * `EMAIL_CATALOG` by `test/utils/email-attribution.test.ts`.
  */
 import type { EmailAttribution, EmailLayoutContextValue } from '@repo/email';
@@ -14,7 +13,7 @@ import {
     findEmailCatalogEntry
 } from '@repo/notifications';
 
-/** Catalog keys of the auth emails (OD-1: reset and verify carry a pixel too). */
+/** Catalog keys of the auth emails . */
 export const AUTH_EMAIL_KEYS = {
     resetPassword: 'auth.reset-password',
     verifyEmail: 'auth.verify-email'
@@ -37,7 +36,7 @@ export const TOKEN_REMINDER_TEMPLATE_KEYS = {
 } as const;
 
 /**
- * Attribution of a real transactional send: UTMs plus the template's open pixel.
+ * Attribution of a real transactional send: UTMs for its links.
  *
  * @param input - `templateKey`: the email catalog key
  * @returns The attribution to pass to `sendAppEmail`
@@ -46,8 +45,8 @@ export function buildTransactionalAttribution({
     templateKey
 }: {
     readonly templateKey: EmailCatalogKey;
-}): EmailAttribution {
-    return { medium: 'transactional', templateKey, includePixel: true };
+}): Extract<EmailAttribution, { readonly medium: 'transactional' }> {
+    return { medium: 'transactional', templateKey };
 }
 
 /**

@@ -1,16 +1,10 @@
 /**
  * Deterministic attribution slugs for emails (HOS-2359 §6.0).
  *
- * The email renderer and `pnpm umami:setup` compute the same string from the same
+ * The email renderer and the Brevo open webhook compute the same string from the same
  * catalog key, so neither needs a lookup table, a DB read or a network call to agree
- * on a template's pixel.
+ * on a template's campaign. (The per-template open pixel slugs were removed by HOS-2583.)
  */
-
-/** Prefix of a transactional email template's Umami pixel slug. */
-export const EMAIL_TEMPLATE_PIXEL_PREFIX = 'email-';
-
-/** Prefix of a newsletter campaign's Umami pixel slug. */
-export const NEWSLETTER_PIXEL_PREFIX = 'newsletter-';
 
 /** Max length of the title part of a newsletter campaign slug. */
 const NEWSLETTER_TITLE_MAX_LENGTH = 40;
@@ -44,16 +38,6 @@ export function buildEmailTemplateCampaign({ key }: { readonly key: string }): s
 }
 
 /**
- * Umami pixel slug of a transactional email template (`email-auth-reset-password`).
- *
- * @param input - `key`: the email catalog entry key
- * @returns The pixel slug
- */
-export function buildEmailTemplatePixelSlug({ key }: { readonly key: string }): string {
-    return `${EMAIL_TEMPLATE_PIXEL_PREFIX}${toUtmToken(key)}`;
-}
-
-/**
  * Attribution slug of a newsletter campaign: the title as a token cut at 40 chars
  * (no trailing `-`), plus `-` and the first 8 hex chars of the campaign id. An empty
  * title yields `newsletter-<id8>`.
@@ -71,18 +55,4 @@ export function buildNewsletterCampaignSlug({
     const id8 = id.replace(/-/g, '').toLowerCase().slice(0, 8);
     const titleToken = toUtmToken(title).slice(0, NEWSLETTER_TITLE_MAX_LENGTH).replace(/-+$/g, '');
     return titleToken.length > 0 ? `${titleToken}-${id8}` : `newsletter-${id8}`;
-}
-
-/**
- * Umami pixel slug of a newsletter campaign (`newsletter-<campaignSlug>`).
- *
- * @param input - `campaignSlug` from {@link buildNewsletterCampaignSlug}
- * @returns The pixel slug
- */
-export function buildNewsletterPixelSlug({
-    campaignSlug
-}: {
-    readonly campaignSlug: string;
-}): string {
-    return `${NEWSLETTER_PIXEL_PREFIX}${campaignSlug}`;
 }

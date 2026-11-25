@@ -152,6 +152,23 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4746
+    {
+        id: '2026-11-24-site-shows-new-version-after-update',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'Después de cada actualización, la web muestra la versión nueva en minutos',
+            en: 'After each update, the site shows the new version within minutes',
+            pt: 'Depois de cada atualização, o site mostra a versão nova em minutos'
+        },
+        body: {
+            es: 'Antes, tras publicar una versión nueva, algunas páginas podían seguir mostrando la anterior hasta una hora. Ahora las páginas se actualizan pocos minutos después de cada publicación, sin que nadie tenga que hacer nada.',
+            en: 'Previously, after a new version went live, some pages could keep showing the old one for up to an hour. Now pages update a few minutes after each release, with nobody having to do anything.',
+            pt: 'Antes, depois de publicar uma versão nova, algumas páginas podiam continuar mostrando a anterior por até uma hora. Agora as páginas se atualizam poucos minutos depois de cada publicação, sem que ninguém precise fazer nada.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4719, #4723
     {
         id: '2026-11-23-campaign-attribution-umami',

@@ -38,36 +38,9 @@ export const EMAIL_ISOTIPO_PATH = '/email/hospeda-isotipo@2x.png';
 export interface ConfigureEmailAssetsInput {
     /** Absolute http(s) origin that serves `/email/*` (e.g. the validated `HOSPEDA_SITE_URL`). */
     readonly siteUrl: string;
-    /**
-     * Public origin of the Umami instance that serves open pixels (`HOSPEDA_UMAMI_URL`,
-     * HOS-2359). A pixel is rendered only when this is an `https:` URL: unset, an
-     * internal `http://` URL or garbage means "no pixel", and UTMs are still applied.
-     */
-    readonly pixelBaseUrl?: string;
 }
 
 let assetOrigin: string = EMAIL_PUBLIC_SITE_URL;
-let pixelOrigin: string | null = null;
-
-/**
- * Normalizes a pixel origin, answering `null` for anything that is not an absolute
- * `https:` URL. Never throws: a bad Umami URL must not stop the api from booting or
- * an email from sending; it only means no pixel.
- */
-function normalizePixelOrigin(pixelBaseUrl: string | undefined): string | null {
-    if (typeof pixelBaseUrl !== 'string' || pixelBaseUrl.trim() === '') {
-        return null;
-    }
-    const trimmed = pixelBaseUrl.trim();
-    try {
-        if (new URL(trimmed).protocol !== 'https:') {
-            return null;
-        }
-    } catch {
-        return null;
-    }
-    return trimmed.replace(/\/+$/, '');
-}
 
 /**
  * Parses and normalizes an asset origin.
@@ -111,7 +84,6 @@ function normalizeOrigin(siteUrl: unknown): string {
  */
 export function configureEmailAssets(input: ConfigureEmailAssetsInput): void {
     assetOrigin = normalizeOrigin(input.siteUrl);
-    pixelOrigin = normalizePixelOrigin(input.pixelBaseUrl);
 }
 
 /**
@@ -122,16 +94,6 @@ export function configureEmailAssets(input: ConfigureEmailAssetsInput): void {
  */
 export function resolveEmailSiteOrigin(): string {
     return assetOrigin;
-}
-
-/**
- * Origin that serves open pixels, or `null` when no pixel must be rendered (no
- * `https:` Umami URL configured).
- *
- * @returns The pixel origin without a trailing slash, or `null`.
- */
-export function resolveEmailPixelBaseUrl(): string | null {
-    return pixelOrigin;
 }
 
 /**
@@ -170,5 +132,4 @@ export function resolveEmailAssetUrl(input: { readonly path: EmailAssetPath }): 
  */
 export function resetEmailAssets(): void {
     assetOrigin = EMAIL_PUBLIC_SITE_URL;
-    pixelOrigin = null;
 }

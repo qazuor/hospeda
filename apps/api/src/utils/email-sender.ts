@@ -146,7 +146,13 @@ export function getEmailEnvironmentLabel(): string | undefined {
  * @returns The provider result, unchanged
  */
 export async function sendAppEmail(
-    input: Omit<SendEmailInput, 'fromEmail' | 'fromName'>
+    input: Omit<SendEmailInput, 'fromEmail' | 'fromName' | 'attribution'> & {
+        /**
+         * Transactional only (HOS-2583): the catalog key becomes the `template:` Brevo tag
+         * that attributes an open to its template, so every caller must name one.
+         */
+        readonly attribution: Extract<SendEmailInput['attribution'], { medium: 'transactional' }>;
+    }
 ): Promise<SendEmailResult> {
     const { fromEmail, fromName, subjectPrefix } = getEmailSender();
 

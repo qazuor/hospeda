@@ -19,8 +19,7 @@ function makeSendInput(overrides?: Partial<SendEmailInput>): SendEmailInput {
         react: {} as never,
         attribution: {
             medium: 'transactional',
-            templateKey: 'notification.payment_success',
-            includePixel: true
+            templateKey: 'notification.payment_success'
         },
         ...overrides
     };

@@ -136,8 +136,7 @@ describe('NotificationService', () => {
             // HOS-2359: attributed to the catalog key `notification.<type>`, which exists.
             expect(sendInput.attribution).toEqual({
                 medium: 'transactional',
-                templateKey: `notification.${NotificationType.PAYMENT_SUCCESS}`,
-                includePixel: true
+                templateKey: `notification.${NotificationType.PAYMENT_SUCCESS}`
             });
             expect(
                 findEmailCatalogEntry({ key: `notification.${NotificationType.PAYMENT_SUCCESS}` })

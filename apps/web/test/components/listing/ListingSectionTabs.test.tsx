@@ -166,15 +166,25 @@ describe('ListingSectionTabs', () => {
     });
 
     it('scrolls to the section on click without leaving the page (AC-2.1)', () => {
+        const scrollTo = vi.fn();
+        vi.stubGlobal('scrollTo', scrollTo);
+        vi.stubGlobal('requestAnimationFrame', () => 0);
         render(<ListingSectionTabs {...props} />);
         const comodidades = document.getElementById('listing-amenities') as HTMLElement;
+        comodidades.getBoundingClientRect = () => ({ top: 900 }) as DOMRect;
+        // jsdom has no layout: give the page room to scroll.
+        Object.defineProperty(document.documentElement, 'scrollHeight', {
+            value: 5000,
+            configurable: true
+        });
 
         fireEvent.click(screen.getByRole('link', { name: 'Comodidades' }));
 
-        expect(comodidades.scrollIntoView).toHaveBeenCalledWith({
-            behavior: 'smooth',
-            block: 'start'
-        });
+        // HOS-2605: driven frame by frame against the live sticky offset, not
+        // scrollIntoView (the wave band collapses during the scroll).
+        expect(comodidades.scrollIntoView).not.toHaveBeenCalled();
+        expect(scrollTo).toHaveBeenCalledWith(expect.objectContaining({ behavior: 'instant' }));
+        Reflect.deleteProperty(document.documentElement, 'scrollHeight');
         expect(window.location.hash).toBe('#listing-amenities');
         expect(screen.getByRole('link', { name: 'Comodidades' })).toHaveAttribute(
             'aria-current',
@@ -183,12 +193,15 @@ describe('ListingSectionTabs', () => {
     });
 
     it('lets the browser handle modified clicks', () => {
+        const scrollTo = vi.fn();
+        vi.stubGlobal('scrollTo', scrollTo);
         render(<ListingSectionTabs {...props} />);
         const target = document.getElementById('listing-amenities') as HTMLElement;
 
         fireEvent.click(screen.getByRole('link', { name: 'Comodidades' }), { ctrlKey: true });
 
         expect(target.scrollIntoView).not.toHaveBeenCalled();
+        expect(scrollTo).not.toHaveBeenCalled();
     });
 
     it('hides price and Consultar until the gallery is out of view, then opens the panel (AC-2.2)', () => {

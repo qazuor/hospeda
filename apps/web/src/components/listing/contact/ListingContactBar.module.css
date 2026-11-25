@@ -14,13 +14,24 @@
         justify-content: center;
         min-inline-size: 0;
         min-block-size: 48px;
-        gap: 2px;
+        /* HOS-2607: breathing room between the price line and the buttons. */
+        gap: var(--space-2);
     }
 
     /* The bar is taller than one control (price line above the icons), so the
        row aligns on the bottom edge: the icons and the ai-chat button share a line. */
     :global(.mobile-dock__row):has(.bar) {
         align-items: flex-end;
+    }
+
+    /* HOS-2607: in light mode the frosted dock (card white at 72%) melted into the
+       page scrolling behind it. On listing pages it gets a near-opaque surface, a
+       visible top border and the sticky-bar shadow. Dark mode already contrasts
+       and keeps the shared dock surface. */
+    :global(html:not([data-theme="dark"]) .mobile-dock__row):has(.bar) {
+        border-block-start-color: var(--border);
+        background: var(--core-card-a95);
+        box-shadow: var(--shadow-sticky);
     }
 }
 
@@ -39,7 +50,7 @@
 
 /* Small muted label before the amount ("Desde"). */
 .prefix {
-    font-size: var(--text-caption);
+    font-size: var(--text-sm);
     line-height: 1.1;
     color: var(--core-muted-foreground);
 }
@@ -52,14 +63,15 @@
     white-space: nowrap;
 }
 
+/* HOS-2607: the amount is the bar's headline, not a caption. */
 .amount {
-    font-size: var(--text-sm);
-    font-weight: 700;
+    font-size: var(--text-lg);
+    font-weight: 800;
     line-height: 1.1;
     font-variant-numeric: tabular-nums;
 }
 
 .unit {
-    font-size: var(--text-caption);
+    font-size: var(--text-sm);
     color: var(--core-muted-foreground);
 }

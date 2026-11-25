@@ -90,7 +90,7 @@ async function payloadAt(dedupKey: string): Promise<unknown> {
 function expectedUpcoming(
     journey: IncreaseJourney,
     daysBefore: 30 | 7,
-    amounts: { readonly current: number; readonly next: number }
+    amounts: { readonly current: number; readonly next: number; readonly keepsPromo?: true }
 ) {
     return {
         planMigrationId: journey.migrationId,
@@ -106,6 +106,7 @@ function expectedUpcoming(
         applicationDate: journey.applicationDate,
         daysBefore,
         losesPromo: false,
+        ...(amounts.keepsPromo ? { keepsPromo: true } : {}),
         variant: 'SCHEDULED',
         providerNotifies: daysBefore === 7,
         deadlinesVersion: journey.deadlineVersion,
@@ -115,7 +116,7 @@ function expectedUpcoming(
 
 function expectedAnnouncement(
     journey: IncreaseJourney,
-    amounts: { readonly current: number; readonly next: number }
+    amounts: { readonly current: number; readonly next: number; readonly keepsPromo?: true }
 ) {
     return {
         planMigrationId: journey.migrationId,
@@ -130,6 +131,7 @@ function expectedAnnouncement(
         currency: 'ARS',
         applicationDate: journey.applicationDate,
         losesPromo: false,
+        ...(amounts.keepsPromo ? { keepsPromo: true } : {}),
         variant: 'SCHEDULED',
         deadlinesVersion: journey.deadlineVersion,
         reason: 'PRICE_INCREASE'
@@ -208,7 +210,9 @@ describe.skipIf(!isServiceTestDbAvailable())(
 
             const composed = {
                 current: INCREASE_CURRENT_AMOUNT_MINOR - INCREASE_PROMO_VALUE_MINOR,
-                next: S37_INCREASE_TARGET_AMOUNT_MINOR - INCREASE_PROMO_VALUE_MINOR
+                next: S37_INCREASE_TARGET_AMOUNT_MINOR - INCREASE_PROMO_VALUE_MINOR,
+                // HOS-2608: the live promo keeps applying on the new price.
+                keepsPromo: true as const
             };
             const plain = {
                 current: INCREASE_CURRENT_AMOUNT_MINOR,

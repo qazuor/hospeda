@@ -13,19 +13,18 @@ import {
 vi.mock('../../../src/utils/env.js', () => ({ env: {} }));
 
 const SITE_URL = 'https://hospeda.com.ar';
-const PIXEL_BASE_URL = 'https://pulso.hospeda.com.ar';
 const BODY = `<p>Mirá <a href="${SITE_URL}/es/alojamientos/">los alojamientos</a> y <a href="https://instagram.com/hospeda">Instagram</a>.</p>`;
 
 describe('newsletter renderers with attribution', () => {
     beforeAll(() => {
-        configureEmailAssets({ siteUrl: SITE_URL, pixelBaseUrl: PIXEL_BASE_URL });
+        configureEmailAssets({ siteUrl: SITE_URL });
     });
 
     afterAll(() => {
         resetEmailAssets();
     });
 
-    it('adds the campaign UTMs and the campaign pixel to a real send (AC-10)', async () => {
+    it('adds the campaign UTMs and no pixel to a real send (AC-10, HOS-2583 AC-2)', async () => {
         // Act
         const html = await renderAttributedCampaignEmail({
             subject: 'Otoño',
@@ -34,8 +33,7 @@ describe('newsletter renderers with attribution', () => {
             isTest: false,
             attribution: {
                 medium: 'campaign',
-                campaignSlug: 'otono-aaaaaaaa',
-                pixelSlug: 'newsletter-otono-aaaaaaaa'
+                campaignSlug: 'otono-aaaaaaaa'
             }
         });
 
@@ -44,7 +42,7 @@ describe('newsletter renderers with attribution', () => {
             'utm_source=email&amp;utm_medium=campaign&amp;utm_campaign=otono-aaaaaaaa'
         );
         expect(html).toContain('href="https://instagram.com/hospeda"');
-        expect(html).toContain(`${PIXEL_BASE_URL}/p/newsletter-otono-aaaaaaaa`);
+        expect(html).not.toContain('/p/');
     });
 
     it('renders no pixel for a test send (AC-13)', async () => {
@@ -53,7 +51,7 @@ describe('newsletter renderers with attribution', () => {
             bodyHtml: BODY,
             unsubscribeUrl: `${SITE_URL}/es/newsletter/baja?t=x`,
             isTest: true,
-            attribution: { medium: 'campaign', campaignSlug: 'otono-aaaaaaaa', pixelSlug: null }
+            attribution: { medium: 'campaign', campaignSlug: 'otono-aaaaaaaa' }
         });
 
         expect(html).toContain('utm_campaign=otono-aaaaaaaa');
@@ -65,12 +63,11 @@ describe('newsletter renderers with attribution', () => {
             html: `<html><body>${BODY}</body></html>`,
             attribution: {
                 medium: 'campaign',
-                campaignSlug: 'otono-aaaaaaaa',
-                pixelSlug: 'newsletter-x'
+                campaignSlug: 'otono-aaaaaaaa'
             }
         });
 
         expect(html).toContain('utm_campaign=otono-aaaaaaaa');
-        expect(html).toContain(`${PIXEL_BASE_URL}/p/newsletter-x`);
+        expect(html).not.toContain('/p/');
     });
 });

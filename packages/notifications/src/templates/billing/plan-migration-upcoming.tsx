@@ -13,6 +13,8 @@ export interface PlanMigrationUpcomingProps {
     readonly newAmount: string;
     readonly applicationDate: string;
     readonly losesPromo: boolean;
+    /** True when a live promo keeps applying on the new price (price increase only). Absent means false. */
+    readonly keepsPromo?: boolean;
     /** When true, the card payer is told the provider also announces the amount change. */
     readonly providerNotifies?: boolean;
     /** Why the migration was announced; absent means a plan retirement. */
@@ -34,6 +36,7 @@ export function PlanMigrationUpcoming({
     newAmount,
     applicationDate,
     losesPromo,
+    keepsPromo = false,
     providerNotifies = false,
     reason = 'RETIREMENT'
 }: PlanMigrationUpcomingProps) {
@@ -53,6 +56,9 @@ export function PlanMigrationUpcoming({
                     </Text>
                     <Text>Tu precio actual es {currentAmount}.</Text>
                     <Text>El precio nuevo será {newAmount}.</Text>
+                    {keepsPromo ? (
+                        <Text>Tu promoción se sigue aplicando sobre el precio nuevo.</Text>
+                    ) : null}
                     {providerNotifies ? (
                         <Text>
                             Mercado Pago también te va a mandar un aviso del cambio de monto.
