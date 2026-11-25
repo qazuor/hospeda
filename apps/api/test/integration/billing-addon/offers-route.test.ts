@@ -1,8 +1,6 @@
 import {
     addonInstances,
     addonProducts,
-    addonVersionEntitlements,
-    addonVersionLimits,
     getDb,
     inArray,
     permanentGrants,
@@ -155,18 +153,14 @@ afterAll(async () => testDb.teardown());
 
 describe('AC:B10:11 TEST:B10:13 owner addon offers and return URL', () => {
     it('returns only the grants of each product version, including entitlement and limit keys', async () => {
-        const first = await catalog({});
-        const second = await catalog({});
-        await getDb()
-            .insert(addonVersionEntitlements)
-            .values({ addonVersionId: first.versionId, key: 'featured_listing' });
-        await getDb()
-            .insert(addonVersionLimits)
-            .values({ addonVersionId: first.versionId, key: 'max_accommodations', value: 1 });
-        await getDb().insert(addonVersionLimits).values({
-            addonVersionId: second.versionId,
-            key: 'max_photos_per_accommodation',
-            value: 1
+        const first = await catalog({
+            grants: {
+                entitlements: ['featured_listing'],
+                limits: [{ key: 'max_accommodations', value: 1 }]
+            }
+        });
+        const second = await catalog({
+            grants: { limits: [{ key: 'max_photos_per_accommodation', value: 1 }] }
         });
         const { app } = purchaseApp();
         const response = await app.request(offersPath, { headers: ownerHeaders(first.ownerId) });
