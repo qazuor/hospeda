@@ -460,7 +460,7 @@
                 "empty": "Todavía no cargaste promociones.",
                 "count": "Promociones activas: {{count}} / {{max}}",
                 "unlimitedCount": "Promociones activas: {{count}} · sin tope",
-                "create": "Nueva promoción",
+                "create": "Agregar promoción",
                 "actions": {
                     "delete": "Borrar",
                     "edit": "Editar",

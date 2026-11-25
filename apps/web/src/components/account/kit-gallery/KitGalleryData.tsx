@@ -7,6 +7,7 @@
  * @module components/account/kit-gallery/KitGalleryData
  */
 
+import { AddIcon } from '@repo/icons';
 import {
     Avatar,
     Button,
@@ -298,7 +299,15 @@ export function KitGalleryData({ locale }: GalleryGroupProps) {
                             locale={locale}
                             title="Mis eventos"
                             description="Revisá el estado de tus eventos"
-                            createAction={<Button>Nuevo evento</Button>}
+                            createAction={
+                                <Button>
+                                    <AddIcon
+                                        size="sm"
+                                        aria-hidden="true"
+                                    />
+                                    Agregar evento
+                                </Button>
+                            }
                             sectionTitle="Tus eventos"
                             helpId="section:content.events"
                             listLabel="Mis eventos"

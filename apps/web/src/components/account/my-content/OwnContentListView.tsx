@@ -10,6 +10,7 @@
  * acceso único»): never a redirect, never the form.
  */
 
+import { AddIcon } from '@repo/icons';
 import type { ReactNode } from 'react';
 import {
     ContentCard,
@@ -102,9 +103,17 @@ export function OwnContentListView({
             description={t(`account.myContent.${kind}.list.subtitle`)}
             help={help}
             createAction={
-                status === 'locked' ? undefined : (
-                    <LinkButton href={createHref}>{t(`${copy}.create`)}</LinkButton>
-                )
+                // HOS-2611: one solid primary per screen. The empty state owns
+                // the «create» action, so the header drops it there.
+                status === 'ready' ? (
+                    <LinkButton href={createHref}>
+                        <AddIcon
+                            size="sm"
+                            aria-hidden="true"
+                        />
+                        {t(`${copy}.create`)}
+                    </LinkButton>
+                ) : undefined
             }
             sectionTitle={t(`${copy}.sectionTitle`)}
             helpId={kind === 'events' ? 'section:content.events' : 'section:content.posts'}
@@ -116,6 +125,10 @@ export function OwnContentListView({
                     title={t(`account.myContent.${kind}.list.empty`)}
                     action={
                         <LinkButton href={createHref}>
+                            <AddIcon
+                                size="sm"
+                                aria-hidden="true"
+                            />
                             {t(`account.myContent.${kind}.list.emptyCta`)}
                         </LinkButton>
                     }

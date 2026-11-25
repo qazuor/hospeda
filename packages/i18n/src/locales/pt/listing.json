@@ -33,8 +33,8 @@
                 "venue": "Comer e sair",
                 "experience": "Experiência"
             },
-            "emptyCta": "Criar meu primeiro comércio",
-            "createCta": "+ Novo comércio",
+            "emptyCta": "Adicionar comércio",
+            "createCta": "Adicionar comércio",
             "state": {
                 "published": "Publicado",
                 "viewPublic": "Ver ficha pública",

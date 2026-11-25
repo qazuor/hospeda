@@ -197,7 +197,7 @@
         "list": {
             "title": "Mis propiedades",
             "subtitle": "Gestioná tus publicaciones",
-            "publishAnother": "Publicar otra",
+            "add": "Agregar alojamiento",
             "needsPlanBanner": {
                 "title": "Sos anfitrión en preparación",
                 "description": "Tus propiedades quedan guardadas como borrador y todavía no son visibles en el sitio. Para publicarlas necesitás un plan de anfitrión activo.",
@@ -807,7 +807,6 @@
         },
         "empty": {
             "title": "Aún no publicaste ninguna propiedad",
-            "cta": "Publicar ahora",
             "fetchError": "No se pudo cargar la lista. Intentá recargar la página."
         },
         "error": {
@@ -890,6 +889,7 @@
         "pageDescription": "Creá y gestioná descuentos y ofertas especiales para tus propiedades",
         "empty": "Todavía no tenés ninguna promoción. ¡Creá tu primera oferta!",
         "createButton": "Nueva promoción",
+        "addButton": "Agregar promoción",
         "loading": "Cargando promoción...",
         "fields": {
             "title": "Título",

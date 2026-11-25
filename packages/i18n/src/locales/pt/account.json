@@ -902,6 +902,7 @@
         },
         "collections": {
             "create": "Criar coleção",
+            "add": "Adicionar coleção",
             "delete": "Excluir coleção",
             "delete_confirm": "Tem certeza que deseja excluir esta coleção? Os favoritos permanecerão, apenas sem coleção.",
             "edit": "Editar coleção",
@@ -1559,7 +1560,7 @@
                 "empty": "Você ainda não escreveu nenhuma publicação",
                 "fetchError": "Não foi possível carregar a lista. Tente recarregar a página.",
                 "createCta": "+ Nova publicação",
-                "emptyCta": "Escrever minha primeira publicação"
+                "emptyCta": "Adicionar publicação"
             },
             "create": {
                 "pageTitle": "Nova publicação",
@@ -1658,7 +1659,7 @@
                 "empty": "Você ainda não criou nenhum evento",
                 "fetchError": "Não foi possível carregar a lista. Tente recarregar a página.",
                 "createCta": "+ Novo evento",
-                "emptyCta": "Criar meu primeiro evento"
+                "emptyCta": "Adicionar evento"
             },
             "create": {
                 "pageTitle": "Novo evento",
@@ -1756,7 +1757,7 @@
         "contentList": {
             "editNamed": "Editar “{{title}}”",
             "events": {
-                "create": "Novo evento",
+                "create": "Adicionar evento",
                 "sectionTitle": "Seus eventos",
                 "locked": {
                     "feature": "Gerenciar eventos é uma função dos editores",
@@ -1764,7 +1765,7 @@
                 }
             },
             "posts": {
-                "create": "Nova publicação",
+                "create": "Adicionar publicação",
                 "sectionTitle": "Suas publicações",
                 "locked": {
                     "feature": "Escrever publicações é uma função dos editores",

@@ -104,13 +104,13 @@ describe('TEST:B13a:25 PromotionList effective-set gate', () => {
     it('shows the CTA with the key', async () => {
         mockOwnerPromotionList.mockResolvedValue(makeListResponse([]));
         render(<PromotionList locale="es" />);
-        expect(await screen.findByRole('link', { name: 'Nueva promoción' })).toBeInTheDocument();
+        expect(await screen.findByRole('link', { name: 'Agregar promoción' })).toBeInTheDocument();
     });
-    it('a failed entitlement read does not lock: the empty state and «Nueva» stay (like PromotionForm)', async () => {
+    it('a failed entitlement read does not lock: the empty state and «Agregar» stay (like PromotionForm)', async () => {
         mockGetEffectiveSet.mockResolvedValue({ entitlements: {}, limits: {}, failed: true });
         mockOwnerPromotionList.mockResolvedValue(makeListResponse([]));
         render(<PromotionList locale="es" />);
-        expect(await screen.findByRole('link', { name: 'Nueva promoción' })).toBeInTheDocument();
+        expect(await screen.findByRole('link', { name: 'Agregar promoción' })).toBeInTheDocument();
         expect(screen.getByText(/todavía no tenés ninguna promoción/i)).toBeInTheDocument();
         expect(screen.queryByText('Tu plan no incluye promociones.')).not.toBeInTheDocument();
         expect(document.querySelector('[data-reason="plan"]')).toBeNull();
@@ -131,7 +131,7 @@ describe('TEST:B13a:25 PromotionList effective-set gate', () => {
         });
         expect(screen.queryByText('Tu plan no incluye promociones.')).not.toBeInTheDocument();
         expect(document.querySelector('[data-reason="plan"]')).toBeNull();
-        expect(screen.queryByRole('link', { name: 'Nueva promoción' })).not.toBeInTheDocument();
+        expect(screen.queryByRole('link', { name: 'Agregar promoción' })).not.toBeInTheDocument();
         await act(async () => {
             settle({ entitlements: {}, limits: {}, failed: false });
         });
@@ -143,7 +143,7 @@ describe('TEST:B13a:25 PromotionList effective-set gate', () => {
         render(<PromotionList locale="es" />);
         expect(await screen.findByText('Tu plan no incluye promociones.')).toBeInTheDocument();
         expect(screen.queryByText(/creá tu primera oferta/i)).not.toBeInTheDocument();
-        expect(screen.queryByRole('link', { name: 'Nueva promoción' })).not.toBeInTheDocument();
+        expect(screen.queryByRole('link', { name: 'Agregar promoción' })).not.toBeInTheDocument();
     });
     it('renders loading skeleton on mount while data is pending', () => {
         mockOwnerPromotionList.mockReturnValue(new Promise(() => {})); // never resolves
@@ -197,7 +197,7 @@ describe('TEST:B13a:25 PromotionList effective-set gate', () => {
         expect(screen.getByText(/borrador/i)).toBeInTheDocument();
     });
 
-    it('renders the "Nueva promoción" link', async () => {
+    it('renders the "Agregar promoción" link', async () => {
         mockOwnerPromotionList.mockResolvedValue(makeListResponse([]));
 
         render(<PromotionList locale="es" />);

@@ -9,6 +9,7 @@
 import { LOCATION_EXCEPTION_REASON_MAX, LOCATION_EXCEPTION_REASON_MIN } from '@repo/schemas';
 import type { JSX } from 'react';
 import { useId } from 'react';
+import { Button } from '@/components/account/ui/Button';
 import { useLocationExceptionRequest } from '@/hooks/use-location-exception-request';
 import { createTranslations, type SupportedLocale } from '@/lib/i18n';
 import type {
@@ -140,26 +141,22 @@ export function LocationExceptionRequestForm({
                 </p>
             )}
             <div className={styles.actions}>
-                <button
-                    type="button"
-                    className={`${styles.button} ${styles.primary}`}
+                <Button
                     onClick={form.onSubmit}
-                    disabled={busy}
-                    aria-busy={busy}
+                    loading={busy}
                 >
                     {busy
                         ? t('listing.owner.locationException.form.submitting', 'Enviando...')
                         : t('listing.owner.locationException.form.submit', 'Enviar pedido')}
-                </button>
+                </Button>
                 {onCancel && (
-                    <button
-                        type="button"
-                        className={`${styles.button} ${styles.secondary}`}
+                    <Button
+                        variant="secondary"
                         onClick={onCancel}
                         disabled={busy}
                     >
                         {t('listing.owner.locationException.form.cancel', 'Cancelar')}
-                    </button>
+                    </Button>
                 )}
             </div>
         </div>
