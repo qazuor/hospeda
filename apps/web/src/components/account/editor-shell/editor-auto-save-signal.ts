@@ -22,7 +22,8 @@
  *
  * It reports `saving`, then `saved` (with the time) or `error` (with the retry
  * the chip offers). Or call {@link reportEditorAutoSave} directly when the save
- * does not fit a single promise. A `bar` section never reports here.
+ * does not fit a single promise. Explicit-save sections report their state
+ * through `EditorSaveBar`, without changing when persistence occurs.
  */
 
 import type { AutoSaveStatus } from '@/components/account/ui/AutoSaveChip';
