@@ -112,8 +112,6 @@ export interface FavoriteButtonProps {
      * retain the pill behaviour without setting this prop.
      */
     readonly showCount?: boolean;
-    /** Move focus into the guest sign-in prompt and associate it with this trigger. */
-    readonly focusGuestPrompt?: boolean;
     /** Focus target when a responsive layout hides the guest prompt's trigger. */
     readonly guestPromptFallbackRef?: RefObject<HTMLElement | null>;
     /** Surface this heart lives on, forwarded as `origin` on the favorite events (HOS-2579). */
@@ -175,7 +173,6 @@ export const FavoriteButton: FC<FavoriteButtonProps> = ({
     onChange,
     count,
     showCount = false,
-    focusGuestPrompt = false,
     guestPromptFallbackRef,
     origin,
     labels
@@ -507,7 +504,7 @@ export const FavoriteButton: FC<FavoriteButtonProps> = ({
 
     const buttonRef = useRef<HTMLButtonElement>(null);
     const guestPromptId = useId();
-    const hasGuestPrompt = focusGuestPrompt && (user === null || isPopoverOpen);
+    const hasGuestPrompt = user === null || isPopoverOpen;
 
     return (
         <div className={styles.wrapper}>
@@ -519,7 +516,7 @@ export const FavoriteButton: FC<FavoriteButtonProps> = ({
                 aria-busy={isPending || isResolving}
                 aria-haspopup={hasGuestPrompt ? 'dialog' : undefined}
                 aria-expanded={hasGuestPrompt ? isPopoverOpen : undefined}
-                aria-controls={focusGuestPrompt && isPopoverOpen ? guestPromptId : undefined}
+                aria-controls={isPopoverOpen ? guestPromptId : undefined}
                 data-variant={variant}
                 data-entity-type={entityType}
                 data-pending={isPending ? 'true' : undefined}
@@ -568,12 +565,12 @@ export const FavoriteButton: FC<FavoriteButtonProps> = ({
                     onClose={handlePopoverClose}
                     locale={locale}
                     returnUrl={returnUrl}
-                    keyboardEntryId={focusGuestPrompt ? guestPromptId : undefined}
+                    keyboardEntryId={guestPromptId}
                     hiddenAnchorFallbackRef={guestPromptFallbackRef}
-                    dialogLabel={focusGuestPrompt ? t('common.auth.authRequired') : undefined}
-                    closeLabel={focusGuestPrompt ? t('common.auth.close') : undefined}
-                    signInLabel={focusGuestPrompt ? t('common.auth.signIn') : undefined}
-                    registerLabel={focusGuestPrompt ? t('common.auth.createAccount') : undefined}
+                    dialogLabel={t('common.auth.authRequired')}
+                    closeLabel={t('common.auth.close')}
+                    signInLabel={t('common.auth.signIn')}
+                    registerLabel={t('common.auth.createAccount')}
                 />
             )}
 

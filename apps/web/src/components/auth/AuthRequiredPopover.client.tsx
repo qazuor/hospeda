@@ -55,7 +55,7 @@ export interface AuthRequiredPopoverProps {
     readonly signInLabel?: string;
     /** Register button text. Defaults to 'Crear cuenta'. */
     readonly registerLabel?: string;
-    /** Opt-in dialog ID for the trigger's aria-controls; enables focus entry and return. */
+    /** Dialog ID for the trigger's aria-controls; when set, focus enters the dialog on open and returns to the anchor on dismissal. */
     readonly keyboardEntryId?: string;
     /** Opt into resize dismissal and provide a focus target if the anchor becomes hidden. */
     readonly hiddenAnchorFallbackRef?: RefObject<HTMLElement | null>;

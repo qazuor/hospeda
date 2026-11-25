@@ -145,3 +145,39 @@ describe('BenefitUsagesCountPill — it clears on RESOLVE, not on view', () => {
         await waitFor(() => expect(mockCountPending).toHaveBeenCalledTimes(1));
     });
 });
+
+describe('BenefitUsagesCountPill — a read that outlives the component (HOS-2634)', () => {
+    it('drops a count that arrives after unmount instead of touching a torn-down window', async () => {
+        // Arrange: hold the read open until the component is gone, then resolve it
+        // with `window` removed, which is what the test environment's teardown does.
+        let resolveRead: (value: unknown) => void = () => {};
+        mockCountPending.mockReturnValue(
+            new Promise((resolve) => {
+                resolveRead = resolve;
+            })
+        );
+        const rejections: unknown[] = [];
+        const onRejection = (reason: unknown) => {
+            rejections.push(reason);
+        };
+        process.on('unhandledRejection', onRejection);
+        const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
+        const { unmount } = renderPill();
+        await waitFor(() => expect(mockCountPending).toHaveBeenCalledTimes(1));
+        unmount();
+
+        // Act
+        vi.stubGlobal('window', undefined);
+        try {
+            resolveRead({ ok: true, data: { count: 2 } });
+            await flush();
+        } finally {
+            vi.unstubAllGlobals();
+        }
+        await flush();
+        process.off('unhandledRejection', onRejection);
+
+        // Assert
+        expect(rejections).toEqual([]);
+    });
+});
