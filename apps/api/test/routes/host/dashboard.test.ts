@@ -41,17 +41,27 @@ vi.mock('../../../src/utils/clock', () => ({
     getClock: () => ({ clock: { now: () => new Date('2026-11-22T12:00:00Z') } })
 }));
 
+/** Entitlement keys the mocked effective set grants; `[]` is a host with no plan. */
+const grantedKeys = vi.hoisted(() => ({ current: ['view_basic_stats'] as string[] }));
+const effectiveSetMock = vi.hoisted(() => vi.fn());
+
 vi.mock('../../../src/utils/listing-access/ports', () => ({
     getListingAccessPorts: () => ({
-        effectiveSet: async ({ userId, vertical }: { userId: string; vertical: VerticalEnum }) =>
-            rehydrateEffectiveSet({
+        effectiveSet: async ({ userId, vertical }: { userId: string; vertical: VerticalEnum }) => {
+            effectiveSetMock({ userId, vertical });
+            return rehydrateEffectiveSet({
                 version: 1,
                 userId,
                 vertical,
                 hasLiveNonTrialTitle: false,
                 inheritsTouristVip: false,
-                entries: [{ key: 'view_basic_stats', value: 1, strategy: 'MAX' }]
-            })
+                entries: grantedKeys.current.map((key) => ({
+                    key,
+                    value: 1,
+                    strategy: 'MAX' as const
+                }))
+            });
+        }
     })
 }));
 
@@ -68,6 +78,8 @@ function ok(accommodations: Array<{ id: string; publicationStatus: PublicationSt
 }
 
 beforeEach(() => {
+    grantedKeys.current = ['view_basic_stats'];
+    effectiveSetMock.mockReset();
     getByOwnerMock.mockReset();
     getUnreadCountMock.mockReset();
     readOwnPlanStateMock.mockReset();
@@ -338,6 +350,36 @@ describe('GET /api/v1/protected/host/dashboard (SPEC-205)', () => {
                 draft: 0,
                 archived: 0
             });
+        });
+    });
+
+    describe('host without the stats entitlement (HOS-2214)', () => {
+        it('still answers 200 with counts and unread conversations (pre-trial / floor host)', async () => {
+            // Arrange: the effective set grants nothing, as for a pre-trial or floor plan version
+            grantedKeys.current = [];
+            getByOwnerMock.mockResolvedValue(
+                ok([
+                    { id: 'a1', publicationStatus: PublicationStatusEnum.PUBLISHED },
+                    { id: 'd1', publicationStatus: PublicationStatusEnum.DRAFT }
+                ])
+            );
+            getUnreadCountMock.mockResolvedValue({ data: { count: 3 }, error: undefined });
+
+            // Act
+            const res = await buildApp().request('/dashboard');
+            const body = await res.json();
+
+            // Assert
+            expect(res.status).toBe(200);
+            expect(body.data.properties).toEqual({ total: 2, published: 1, draft: 1, archived: 0 });
+            expect(body.data.unreadConversations).toBe(3);
+            expect(body.data.unavailable).toEqual([]);
+        });
+
+        it('does not consult the effective set at all: counts are not statistics', async () => {
+            grantedKeys.current = [];
+            await buildApp().request('/dashboard');
+            expect(effectiveSetMock).not.toHaveBeenCalled();
         });
     });
 

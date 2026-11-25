@@ -4,7 +4,10 @@
  * Single aggregation endpoint returning property counts, plan info,
  * and unread conversation count for the authenticated host user.
  *
- * Dashboard statistics require the owner's effective view_basic_stats capability.
+ * The response is counts and unread conversations, not statistics, so it is open to
+ * every authenticated host, including one with no active plan (HOS-2214). The real
+ * statistics endpoints (monthly-inquiries, response-rate, views/*) keep their own
+ * `view_basic_stats` gate.
  *
  * GET /api/v1/protected/host/dashboard
  */
@@ -27,7 +30,6 @@ import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
 import { getClock } from '../../../utils/clock';
 import { env } from '../../../utils/env';
-import { enforceUserGate } from '../../../utils/listing-access/user-gate';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
 import { z } from '../../../utils/zod';
@@ -286,8 +288,8 @@ async function resolveUnreadConversations(input: {
  * - Plan info: the live PRINCIPAL subscription's catalog plan (HOS-2543), null when none
  * - Unread conversations count (coarse approximation)
  *
- * The dashboard requires view_basic_stats; the plan summary is a separate data
- * read, not an authorization gate.
+ * No entitlement gate: nothing here is a statistic (HOS-2214). The plan summary is a
+ * data read, not an authorization gate.
  */
 export const hostDashboardRoute = createProtectedRoute({
     method: 'get',
@@ -295,16 +297,11 @@ export const hostDashboardRoute = createProtectedRoute({
     summary: 'Host Dashboard',
     description:
         'Returns aggregated host dashboard data: property counts, the plan summary, and unread conversation count. ' +
-        'Requires VIEW_BASIC_STATS entitlement.',
+        'Open to any authenticated host: it holds no statistics, so it needs no stats entitlement.',
     tags: ['Host', 'Dashboard'],
     responseSchema: HostDashboardResponseSchema,
     handler: async (ctx: Context, _params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
-        await enforceUserGate({
-            userId: actor.id,
-            vertical: VerticalEnum.ACCOMMODATION,
-            keys: ['view_basic_stats']
-        });
         try {
             apiLogger.debug({ actorId: actor.id, roles: actor.roles }, 'Host dashboard requested');
 
