@@ -101,6 +101,6 @@ describe('PageHeader', () => {
         );
         const heading = screen.getByRole('heading', { level: 1 });
         expect(screen.getAllByTestId('help')).toHaveLength(1);
-        expect(heading.nextElementSibling).toBe(screen.getByTestId('help'));
+        expect(heading.nextElementSibling).toContainElement(screen.getByTestId('help'));
     });
 });

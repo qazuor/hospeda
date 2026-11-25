@@ -1007,6 +1007,7 @@
         "notes": {
             "cancel": "Cancelar",
             "placeholder": "Agregá una nota personal...",
+            "emptyPlaceholder": "Escribe una nota personal...",
             "save": "Guardar nota",
             "saved": "Nota guardada",
             "label": "Nota personal",
@@ -1187,7 +1188,14 @@
         },
         "reviews": {
             "title": "Mis reseñas",
-            "description": "Gestioná tus reseñas de alojamientos y destinos en Hospeda"
+            "description": "Gestioná tus reseñas de alojamientos y destinos en Hospeda",
+            "headingDesc": "Consulta y gestiona las reseñas que has compartido sobre tus experiencias."
+        },
+        "guestInbox": {
+            "headingDesc": "Consulta tus conversaciones con los anfitriones y sigue las respuestas a tus consultas."
+        },
+        "ownerInbox": {
+            "headingDesc": "Responde las consultas de los viajeros y gestiona las conversaciones de tus publicaciones."
         },
         "preferences": {
             "title": "Preferencias",
@@ -2191,6 +2199,8 @@
             "leaveMessage": "Tenés cambios sin guardar. Si salís ahora, se pierden."
         },
         "autoSave": {
+            "clean": "Todo guardado",
+            "dirty": "Cambios sin guardar",
             "saving": "Guardando…",
             "saved": "Guardado {{time}}",
             "error": "No se guardó",

@@ -30,8 +30,8 @@
  * `data-save-model`. For `auto`, the shell mounts the one `EditorAutoSaveChip`
  * next to the title; the section's islands feed it through
  * `editor-auto-save-signal`. For `bar`, the section's own island renders
- * `EditorSaveBar` (it owns the form state the bar needs). A page renders only
- * the signal of its model.
+ * `EditorSaveBar` (it owns the form state the bar needs), feeding the same
+ * header chip. The wrapper still identifies the persistence model.
  *
  * Everything that differs per vertical comes from the `registry` prop.
  */
@@ -120,7 +120,7 @@ const saveModel = isHub
 <AccountLayout locale={locale} title={title} description={description} activeSection={accountSection}>
 	<PageHeader title={title} description={subtitle} back={back} locale={locale}>
 		<PageHelpLink slot="help" anchor={helpAnchor} locale={locale} />
-		{saveModel === 'auto' && <EditorAutoSaveChip slot="actions" client:idle locale={locale} />}
+		{(saveModel === 'auto' || saveModel === 'bar') && <EditorAutoSaveChip slot="actions" client:idle locale={locale} saveModel={saveModel} />}
 	</PageHeader>
 
 	<div class="editor-shell" data-editor-shell>

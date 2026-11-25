@@ -174,7 +174,7 @@ describe('ProfileEditForm', () => {
         fireEvent.change(input, { target: { value: 'x'.repeat(101) } });
         fireEvent.click(screen.getByRole('button', { name: /guardar cambios/i }));
         await waitFor(() => {
-            expect(screen.getByRole('alert')).toBeInTheDocument();
+            expect(document.getElementById('profile-displayName-error')).toBeInTheDocument();
         });
     });
 

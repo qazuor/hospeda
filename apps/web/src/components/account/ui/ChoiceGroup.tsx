@@ -1,6 +1,7 @@
 /**
  * ChoiceGroup — the `<fieldset>/<legend>` shell shared by CheckboxGroup and
  * RadioGroup (HOS-2413 T-007). Internal: not exported from the kit entry.
+ * Native grouping semantics remain independent of the token-painted choice chrome.
  *
  * @module components/account/ui/ChoiceGroup
  */

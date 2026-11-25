@@ -137,6 +137,14 @@
     cursor: not-allowed;
 }
 
+.primary:disabled,
+.primary[aria-disabled="true"]:not(.loading) {
+    background-color: var(--muted);
+    color: var(--core-muted-foreground);
+    border-color: var(--control-border);
+    opacity: 1;
+}
+
 .content {
     display: inline-flex;
     align-items: center;

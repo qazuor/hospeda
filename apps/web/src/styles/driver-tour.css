@@ -33,8 +33,7 @@
  *   --color-fg-primary               -> --core-foreground
  *   --color-fg-secondary             -> --core-muted-foreground
  *   --color-border                   -> --border
- *   --color-primary (river, next/close btn) -> --brand-accent (web's CTA color)
- *   --palette-neutral-50 (btn text)  -> --accent-foreground
+ *   next/previous/close controls follow the account kit's semantic tokens.
  *   --radius (popover)               -> --radius-md (compact surface, not --radius-card)
  *   --radius - 2px (buttons)         -> --radius-button
  */
@@ -55,7 +54,7 @@
     line-height: 1.4;
     margin-bottom: var(--space-2);
     /* HOS-2448: room for the absolutely positioned close icon. */
-    padding-inline-end: var(--space-8, 2rem);
+    padding-inline-end: var(--control-h-md);
 }
 
 .driver-popover-description {
@@ -79,28 +78,39 @@
 
 .driver-popover-prev-btn,
 .driver-popover-next-btn {
-    background-color: var(--brand-accent);
-    color: var(--accent-foreground);
-    border: none;
-    border-radius: var(--radius-button);
-    font-size: var(--text-body-sm);
-    font-weight: 500;
+    box-sizing: border-box;
+    min-block-size: var(--control-h-md);
+    border: 1px solid transparent;
+    border-radius: var(--radius-control);
+    font: var(--app-control);
+    text-shadow: none;
     padding: var(--space-2) var(--space-4);
     cursor: pointer;
     transition: background-color var(--duration-fast) ease;
 }
 
+.driver-popover-next-btn {
+    background-color: var(--action-primary);
+    color: var(--on-action-primary);
+}
+
 .driver-popover-prev-btn {
-    background-color: var(--muted);
+    background-color: var(--control-bg);
+    border-color: var(--control-border);
     color: var(--core-foreground);
 }
 
+.driver-popover-prev-btn[hidden] {
+    /* biome-ignore lint/complexity/noImportantStyles: driver sets an inline display on navigation buttons. */
+    display: none !important;
+}
+
 .driver-popover-prev-btn:hover {
-    background-color: var(--core-muted-foreground-a20);
+    background-color: var(--muted);
 }
 
 .driver-popover-next-btn:hover {
-    background-color: var(--accent-hover);
+    background-color: var(--action-primary-hover);
 }
 
 /*
@@ -110,13 +120,17 @@
  * Keep it a small, quiet icon button and reserve room for it beside the title.
  */
 .driver-popover-close-btn {
+    inset-block-start: var(--space-2);
+    inset-inline-end: var(--space-2);
+    inset-block-end: auto;
+    inset-inline-start: auto;
     background-color: transparent;
     color: var(--core-muted-foreground);
     border: none;
-    border-radius: var(--radius-button);
+    border-radius: var(--radius-control);
     padding: 0;
-    width: 2rem;
-    height: 2rem;
+    inline-size: var(--control-h-md);
+    block-size: var(--control-h-md);
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -129,8 +143,10 @@
     color: var(--core-foreground);
 }
 
-.driver-popover-close-btn:focus-visible {
-    outline: 2px solid var(--brand-primary);
+.driver-popover-close-btn:focus-visible,
+.driver-popover-prev-btn:focus-visible,
+.driver-popover-next-btn:focus-visible {
+    outline: 2px solid var(--focus-ring);
     outline-offset: 2px;
 }
 

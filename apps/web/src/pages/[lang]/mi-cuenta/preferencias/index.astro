@@ -62,15 +62,5 @@ const { hasAssistant: showAiQuestionsDigest } = hasListingAssistant({
 		showAiQuestionsDigest={showAiQuestionsDigest}
 	/>
 
-	<div class="preferencias-tour-gap">
-		<RestartTour client:idle locale={locale} userRoles={user.roles} />
-	</div>
+	<RestartTour client:idle locale={locale} userRoles={user.roles} />
 </AccountLayout>
-
-<style>
-	/* The kit Sections inside PreferenceToggles have no outer margin, so the tour
-	   section needs an explicit gap before it. */
-	.preferencias-tour-gap {
-		margin-top: var(--space-6);
-	}
-</style>
