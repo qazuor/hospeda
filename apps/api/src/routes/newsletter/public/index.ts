@@ -1,7 +1,7 @@
 /**
  * Public newsletter routes (SPEC-101 T-101-22 & T-101-23).
  *
- * Two browser-facing redirect endpoints:
+ * Browser-facing newsletter endpoints:
  *
  *   GET /api/v1/public/newsletter/verify?token=<hmac>&locale=<es|en|pt>
  *     Double opt-in confirmation. Validates the HMAC verification token,
@@ -10,14 +10,18 @@
  *     redirect to the error page with a `reason` query.
  *
  *   GET /api/v1/public/newsletter/unsubscribe?token=<hmac>&locale=<es|en|pt>
- *     1-click unsubscribe (no auth). Validates the stable HMAC unsubscribe
- *     token, flips the row to `unsubscribed`, and 302-redirects to
- *     `/{locale}/newsletter/desuscripto/`. Bad tokens redirect to error.
+ *     Never unsubscribes (HOS-2617). 302-redirects to the web confirmation
+ *     page `/{locale}/newsletter/unsubscribe/?token=…`.
+ *
+ *   POST /api/v1/public/newsletter/unsubscribe
+ *     Performs the unsubscribe (JSON body `{ token }`, or RFC 8058 one-click
+ *     with the token in the query). Answers JSON; see `unsubscribe-post.ts`.
  *
  * Both are mounted under `/api/v1/public/newsletter` from routes/index.ts.
  */
 
 import { ServiceErrorCode } from '@repo/schemas';
+import { buildNewsletterUnsubscribePageUrl } from '@repo/utils';
 import type { Context } from 'hono';
 import { createPerRouteRateLimitMiddleware } from '../../../middlewares/rate-limit';
 import { createRouter } from '../../../utils/create-app';
@@ -26,6 +30,7 @@ import { apiLogger } from '../../../utils/logger';
 import { getDefaultNewsletterService } from '../protected/_singletons';
 import { newsletterGuestResendRoute } from './resend';
 import { newsletterGuestSubscribeRoute } from './subscribe';
+import { unsubscribePostHandler } from './unsubscribe-post';
 
 const SUPPORTED_LOCALES = new Set(['es', 'en', 'pt']);
 
@@ -106,38 +111,21 @@ const unsubscribeRateLimiter = createPerRouteRateLimitMiddleware({
     windowMs: 60_000
 });
 
+/**
+ * GET twin of the unsubscribe endpoint (HOS-2617). It NEVER unsubscribes:
+ * mail scanners and link previewers prefetch GET links, so a state change here
+ * would drop people who never asked. It redirects to the web confirmation page
+ * (`buildNewsletterUnsubscribePageUrl`), which POSTs once the person clicks.
+ * Kept so campaign mails sent before the web page existed keep working.
+ */
 async function unsubscribeHandler(c: Context): Promise<Response> {
     const token = (c.req.query('token') ?? '').trim();
-    if (!token) {
-        return c.redirect(buildVerifyErrorRedirect(c, 'NEWSLETTER_TOKEN_INVALID'), 302);
-    }
-
-    try {
-        const result = await getDefaultNewsletterService().unsubscribeByToken(token);
-        if (result.error) {
-            const reason = result.error.reason ?? result.error.code ?? '';
-            apiLogger.info({ reason }, 'Newsletter unsubscribe failed');
-            return c.redirect(buildVerifyErrorRedirect(c, reason), 302);
-        }
-        const locale = resolveLocale(c);
-        return c.redirect(buildSiteUrl(`/${locale}/newsletter/desuscripto/`), 302);
-    } catch (err) {
-        if (err instanceof Error && err.message.includes('HOSPEDA_NEWSLETTER_HMAC_SECRET')) {
-            apiLogger.error(
-                { error: err.message },
-                'Newsletter unsubscribe: service not configured'
-            );
-            return c.redirect(
-                buildVerifyErrorRedirect(c, ServiceErrorCode.SERVICE_UNAVAILABLE),
-                302
-            );
-        }
-        apiLogger.error(
-            { error: err instanceof Error ? err.message : String(err) },
-            'Newsletter unsubscribe: unexpected error'
-        );
-        return c.redirect(buildVerifyErrorRedirect(c, 'NEWSLETTER_TOKEN_INVALID'), 302);
-    }
+    const target = buildNewsletterUnsubscribePageUrl({
+        siteUrl: env.HOSPEDA_SITE_URL ?? 'http://localhost:4321',
+        locale: resolveLocale(c),
+        token
+    });
+    return c.redirect(target, 302);
 }
 
 /**
@@ -148,6 +136,7 @@ async function unsubscribeHandler(c: Context): Promise<Response> {
 export const newsletterPublicRoutes = createRouter()
     .get('/verify', verifyRateLimiter, verifyHandler)
     .get('/unsubscribe', unsubscribeRateLimiter, unsubscribeHandler)
+    .post('/unsubscribe', unsubscribeRateLimiter, unsubscribePostHandler)
     .route('/', newsletterGuestSubscribeRoute)
     .route('/', newsletterGuestResendRoute);
 
