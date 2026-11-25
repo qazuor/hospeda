@@ -1,0 +1,19 @@
+.content {
+    display: grid;
+    gap: var(--space-4);
+    color: var(--core-foreground);
+}
+
+.content p {
+    margin: 0;
+}
+
+.content ul {
+    margin: 0;
+    padding-inline-start: var(--space-5);
+}
+
+.price {
+    font-family: var(--font-heading);
+    font-weight: 600;
+}

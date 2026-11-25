@@ -56,10 +56,6 @@
     outline-offset: 2px;
 }
 
-.vipBadge {
-    composes: vipBadge from "../promotions/PromotionCards.module.css";
-}
-
 .priceAlertButtonCreate:disabled {
     opacity: 0.7;
     cursor: default;
