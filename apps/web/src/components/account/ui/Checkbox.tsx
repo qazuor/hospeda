@@ -2,7 +2,8 @@
  * Checkbox and CheckboxGroup — native checkboxes for the Mi Cuenta kit
  * (HOS-2413 T-007).
  *
- * The native control with `accent-color`; `indeterminate` is set on the DOM
+ * Native semantics with token-painted CSS check and mixed-state glyphs;
+ * `indeterminate` is set on the DOM
  * node (it has no HTML attribute). The label row is the 44px target. A group
  * is a `<fieldset>` with a `<legend>`.
  *

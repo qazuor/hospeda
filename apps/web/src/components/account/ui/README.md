@@ -36,9 +36,13 @@ No account page adopts the kit in phase 2. Pages migrate in phases 3-5
 
 ## Layout: container queries first
 
+The shell owns the content-column sibling stack (`--space-6`) for all five
+templates. Page wrappers retain internal grouping gaps, not duplicate outer margins.
+
 A component adapts to its CONTAINER, not to the viewport. Media queries are
 for page layout only, and only at the four closed breakpoints (D6
-«breakpoints cerrados»): `min-width` 30rem, 48rem, 64rem or 80rem.
+«breakpoints cerrados»): `min-width` 30rem, 48rem, 64rem or 80rem. Capability
+queries such as `(hover: hover)` may gate interaction styling, never layout.
 `check:account-breakpoints` enforces both rules, and `@container` conditions
 must use `rem`.
 
@@ -66,6 +70,16 @@ must use `rem`.
 The same numbers are exported from TS as `ACCOUNT_BREAKPOINTS_REM` and
 `CQ_EDITOR_NAV_REM` in `@repo/design-tokens`, for tests and `matchMedia`
 callers.
+
+## Native semantics, shared appearance
+
+Select, checkbox and radio retain native elements, form values, refs and keyboard
+behavior. CSS Modules replace browser painting with token borders, backgrounds
+and glyphs (`appearance: none`). Select uses a decorative CSS chevron for dropdowns
+only, not multiple/size listboxes. Checkbox check/mixed glyphs and radio dots remain
+visible alongside focus, invalid and disabled states; choice labels keep 44px targets.
+Textarea shares the token-painted surface without replacing native editing. Number
+spinners are hidden in both TextInput and InputGroup; date/time keep native pickers.
 
 ## Two save models (D8 «dos modelos de guardado»)
 

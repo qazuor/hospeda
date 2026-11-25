@@ -1,9 +1,10 @@
 /**
  * Select — the native `<select>` of the Mi Cuenta kit (HOS-2413 T-007).
  *
- * 44px tall with 16px text. Native on purpose: mobile pickers, keyboard and
- * screen readers work for free. Inside a {@link Field} it picks up its id and
- * ARIA attributes.
+ * 44px tall with 16px text. Native semantics preserve mobile pickers, keyboard
+ * operation and screen-reader support; custom token-painted appearance replaces
+ * browser chrome, with a decorative CSS chevron only for dropdowns. Inside a
+ * {@link Field} it picks up its id and ARIA attributes.
  *
  * @module components/account/ui/Select
  */
@@ -30,7 +31,7 @@ export interface SelectProps extends Omit<SelectHTMLAttributes<HTMLSelectElement
  * The kit select.
  *
  * @param props - See {@link SelectProps}.
- * @returns A `<select>` element.
+ * @returns A wrapper around the native `<select>` element.
  */
 export function Select({
     invalid,
@@ -41,18 +42,24 @@ export function Select({
     ref,
     'aria-describedby': describedBy,
     children,
+    multiple,
+    size,
     ...rest
 }: SelectProps) {
     const control = useFieldControl({ id, describedBy, invalid, required });
     return (
-        <select
-            {...rest}
-            {...control}
-            {...helpAttr({ helpId })}
-            ref={ref}
-            className={cx(styles.control, styles.select, className)}
-        >
-            {children}
-        </select>
+        <div className={cx(styles.selectWrap, !multiple && (size ?? 0) <= 1 && styles.dropdown)}>
+            <select
+                {...rest}
+                {...control}
+                {...helpAttr({ helpId })}
+                ref={ref}
+                multiple={multiple}
+                size={size}
+                className={cx(styles.control, styles.select, className)}
+            >
+                {children}
+            </select>
+        </div>
     );
 }
