@@ -999,6 +999,7 @@
         "notes": {
             "cancel": "Cancel",
             "placeholder": "Add a personal note...",
+            "emptyPlaceholder": "Write a personal note...",
             "save": "Save note",
             "saved": "Note saved",
             "label": "Personal note",
@@ -1189,7 +1190,14 @@
         },
         "reviews": {
             "title": "My Reviews",
-            "description": "Manage your accommodation and destination reviews on Hospeda"
+            "description": "Manage your accommodation and destination reviews on Hospeda",
+            "headingDesc": "View and manage the reviews you have shared about your experiences."
+        },
+        "guestInbox": {
+            "headingDesc": "View your conversations with hosts and follow the replies to your inquiries."
+        },
+        "ownerInbox": {
+            "headingDesc": "Reply to travelers' inquiries and manage conversations about your listings."
         },
         "preferences": {
             "title": "Preferences",
@@ -2186,6 +2194,8 @@
             "leaveMessage": "You have unsaved changes. If you leave now, they are lost."
         },
         "autoSave": {
+            "clean": "All changes saved",
+            "dirty": "Unsaved changes",
             "saving": "Saving…",
             "saved": "Saved {{time}}",
             "error": "Not saved",

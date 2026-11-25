@@ -119,3 +119,19 @@
 .chipError {
     color: var(--status-danger-fg);
 }
+
+.chipClean {
+    color: var(--status-success-fg);
+}
+
+.chipDirty {
+    color: var(--status-warning-fg);
+}
+
+.chipDot {
+    flex: none;
+    inline-size: var(--space-2);
+    block-size: var(--space-2);
+    border-radius: var(--radius-pill);
+    background-color: currentColor;
+}

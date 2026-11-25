@@ -42,6 +42,19 @@ function edit(name: string, value: string): void {
 }
 
 describe('ProfileEditForm on the account kit (HOS-2478)', () => {
+    it('shows the clean chip at the top of the form and the bar only after edits', () => {
+        const { container } = renderForm();
+        expect(container.querySelector('form > :first-child')).toHaveTextContent('Todo guardado');
+        expect(screen.queryByRole('region', { name: 'Guardar cambios' })).toBeNull();
+        edit('occupation', 'Guide');
+        expect(container.querySelector('form > :first-child')).not.toHaveTextContent(
+            'Todo guardado'
+        );
+        expect(screen.getByRole('region', { name: 'Guardar cambios' })).toBeInTheDocument();
+        fireEvent.click(screen.getByRole('button', { name: 'Descartar' }));
+        expect(container.querySelector('form > :first-child')).toHaveTextContent('Todo guardado');
+        expect(screen.queryByRole('region', { name: 'Guardar cambios' })).toBeNull();
+    });
     beforeEach(() => {
         globalThis.fetch = vi.fn().mockResolvedValue(
             new Response(JSON.stringify({ success: true, data: {} }), {
@@ -122,7 +135,7 @@ describe('ProfileEditForm on the account kit (HOS-2478)', () => {
         );
     });
 
-    it('mixes no auto-save into the page (D8): no chip, saving is explicit', () => {
+    it('keeps saving explicit even while the presentation chip shows dirty', () => {
         renderForm();
         edit('occupation', 'Guía');
         expect(globalThis.fetch).not.toHaveBeenCalled();

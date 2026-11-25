@@ -1,7 +1,7 @@
 /**
  * Radio, RadioGroup and the OptionCard variant (HOS-2413 T-007).
  *
- * Native radios: the arrow keys move the selection by themselves. A
+ * Native radios with token-painted CSS dots: arrow keys move the selection by themselves. A
  * `RadioGroup` is a `<fieldset>` with a `<legend>` and shares one `name` (and,
  * if wanted, a controlled `value`) with its radios. `variant="card"` draws the
  * radio as an OptionCard: the selected one shows a double border AND the

@@ -24,10 +24,19 @@
 }
 
 .content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
     container-type: inline-size;
     container-name: account-content;
     min-inline-size: 0;
     padding: var(--space-4);
+}
+
+/* PageHeader already has an outer margin; direct shell siblings use the gap.
+   Headers inside page-owned grouping wrappers keep their existing spacing. */
+.content > header {
+    margin-block-end: 0;
 }
 
 /* No auto inline margin on .content itself (HOS-2601). From 64rem it is a grid
