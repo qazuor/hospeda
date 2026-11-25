@@ -55,7 +55,8 @@
  */
 export const APPROVED_INK_TOKENS: readonly string[] = [
     // The channel inks. `-foreground` is the AA-safe ink on the green (9.12:1),
-    // `-logo` is white and valid ONLY for the logotype badge (WCAG 1.4.3),
+    // `-logo` is white and valid ONLY for a logo-only badge (WCAG 1.4.3): the
+    // newsletter badge and the listing action bar button (HOS-2607),
     // `-text` is the theme-aware teal for the number on `--surface-warm`.
     '--channel-whatsapp-foreground',
     '--channel-whatsapp-logo',

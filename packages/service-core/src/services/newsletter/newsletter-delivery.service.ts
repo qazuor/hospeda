@@ -38,6 +38,7 @@ import {
     newsletterSubscribers
 } from '@repo/db';
 import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
+import { buildNewsletterUnsubscribeApiUrl, buildNewsletterUnsubscribePageUrl } from '@repo/utils';
 import { and, eq, inArray, isNull } from 'drizzle-orm';
 import { z } from 'zod';
 import { BaseService } from '../../base/base.service.js';
@@ -288,6 +289,13 @@ export interface NewsletterDeliveryServiceOptions {
      * Falls back to `process.env.HOSPEDA_NEWSLETTER_HMAC_SECRET`.
      */
     hmacSecret?: string;
+    /**
+     * API base URL (HOS-2617). When set, campaign mails carry the RFC 8058
+     * `List-Unsubscribe` / `List-Unsubscribe-Post` headers pointing at the
+     * API's POST unsubscribe endpoint. When unset the headers are omitted and
+     * the mail only has the footer link to the web confirmation page.
+     */
+    apiUrl?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -413,6 +421,7 @@ export class NewsletterDeliveryService extends BaseService implements INewslette
     private readonly senderEmail: string;
     private readonly senderName: string;
     private readonly siteUrl: string;
+    private readonly apiUrl: string | undefined;
     private readonly hmacSecret: string;
 
     constructor(config: ServiceConfig, options: NewsletterDeliveryServiceOptions = {}) {
@@ -430,6 +439,7 @@ export class NewsletterDeliveryService extends BaseService implements INewslette
             options.senderEmail ?? process.env.HOSPEDA_EMAIL_FROM_EMAIL ?? 'noreply@hospeda.com.ar';
         this.senderName = options.senderName ?? process.env.HOSPEDA_EMAIL_FROM_NAME ?? 'Hospeda';
         this.siteUrl = options.siteUrl ?? process.env.HOSPEDA_SITE_URL ?? 'https://hospeda.com.ar';
+        this.apiUrl = options.apiUrl;
         this.hmacSecret = options.hmacSecret ?? process.env.HOSPEDA_NEWSLETTER_HMAC_SECRET ?? '';
     }
 
@@ -672,7 +682,22 @@ export class NewsletterDeliveryService extends BaseService implements INewslette
                               })
                             : '';
 
-                        const unsubscribeUrl = `${this.siteUrl}/${locale}/newsletter/unsubscribe?token=${unsubscribeToken}`;
+                        const unsubscribeUrl = buildNewsletterUnsubscribePageUrl({
+                            siteUrl: this.siteUrl,
+                            locale,
+                            token: unsubscribeToken
+                        });
+                        // HOS-2617: RFC 8058 one-click, only with a real token and a known API origin.
+                        const oneClickHeaders: Record<string, string> =
+                            this.apiUrl && unsubscribeToken
+                                ? {
+                                      'List-Unsubscribe': `<${buildNewsletterUnsubscribeApiUrl({
+                                          apiUrl: this.apiUrl,
+                                          token: unsubscribeToken
+                                      })}>`,
+                                      'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click'
+                                  }
+                                : {};
 
                         const recipientHtml = await this.renderCampaignEmailFn({
                             subject: campaign.subject,
@@ -685,7 +710,8 @@ export class NewsletterDeliveryService extends BaseService implements INewslette
                             deliveryId: delivery.id,
                             email,
                             recipientHtml,
-                            unsubscribeUrl
+                            unsubscribeUrl,
+                            oneClickHeaders
                         };
                     })
                 );
@@ -714,7 +740,7 @@ export class NewsletterDeliveryService extends BaseService implements INewslette
                         to: { email: r.email },
                         subject: campaign.subject,
                         htmlContent: r.recipientHtml,
-                        headers: { 'X-Newsletter-Delivery-Id': r.deliveryId }
+                        headers: { 'X-Newsletter-Delivery-Id': r.deliveryId, ...r.oneClickHeaders }
                     }))
                 };
 
@@ -991,7 +1017,10 @@ export class NewsletterDeliveryService extends BaseService implements INewslette
                 }
 
                 const bodyHtml = this.renderTiptapEmailFn({ content: campaign.bodyJson });
-                const unsubscribeUrl = `${this.siteUrl}/es/newsletter/unsubscribe?test=1`;
+                const unsubscribeUrl = buildNewsletterUnsubscribePageUrl({
+                    siteUrl: this.siteUrl,
+                    locale: 'es'
+                });
 
                 // Build the ReactElement and send via single-recipient transport
                 const emailElement = this.buildCampaignReactElementFn({

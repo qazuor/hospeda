@@ -188,6 +188,7 @@ export const NON_SITEMAP_STATIC_PAGES: Readonly<Record<string, StaticSitemapExcl
     '/newsletter/confirmado/': 'noindex',
     '/newsletter/desuscripto/': 'noindex',
     '/newsletter/error/': 'noindex',
+    '/newsletter/unsubscribe/': 'noindex',
 
     // HOS-1486: this page is reachable only through a one-time emailed token.
     '/partners/reclamar/': 'token-gated',

@@ -12,7 +12,9 @@
  * jsdom; they are E2E (`apps/e2e/tests/guest/guest-13-listing-detail-standard.spec.ts`).
  */
 import { AnalyticsEventSchemas } from '@repo/analytics';
+import { BarServiceIcon, DEFAULT_DUOTONE_COLOR, ForkKnifeIcon, WhatsappIcon } from '@repo/icons';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ListingActionBarButtonsProps } from '@/components/listing/contact/ListingActionBarButtons';
 import { ListingActionBarButtons } from '@/components/listing/contact/ListingActionBarButtons';
@@ -527,5 +529,109 @@ describe('ListingActionBarButtons: favorite sync (AC-36)', () => {
         await waitFor(() => expect(gallery).toHaveAttribute('aria-pressed', 'true'));
         expect(bar).toHaveAttribute('aria-pressed', 'true');
         expect(bar).toHaveAccessibleName('Quitar de favoritos');
+    });
+});
+
+describe('ListingActionBarButtons: HOS-2607 glyphs', () => {
+    /** Markup of an icon exactly as the bar draws it, for a byte comparison. */
+    const markupOf = (node: Parameters<typeof renderToStaticMarkup>[0]): string => {
+        const host = document.createElement('div');
+        host.innerHTML = renderToStaticMarkup(node);
+        return host.innerHTML;
+    };
+
+    it.each([
+        ['food', ForkKnifeIcon],
+        ['nightlife', BarServiceIcon]
+    ] as const)('a %s venue menu draws its own glyph in «Ver carta»', (glyph, Icon) => {
+        // Arrange
+        render(
+            <ListingActionBarButtons
+                {...venue}
+                primary={{ kind: 'menu', href: 'https://bar.test/carta', glyph }}
+            />
+        );
+
+        // Act
+        const menu = screen.getByRole('link', { name: 'Ver carta' });
+
+        // Assert
+        expect(menu).toHaveAttribute('data-menu-glyph', glyph);
+        expect(menu.innerHTML).toBe(
+            markupOf(
+                <Icon
+                    size={22}
+                    weight="bold"
+                    aria-hidden="true"
+                />
+            )
+        );
+    });
+
+    it('a menu without a glyph keeps the fork and knife', () => {
+        render(
+            <ListingActionBarButtons
+                {...venue}
+                primary={{ kind: 'menu', href: 'https://bar.test/carta' }}
+            />
+        );
+
+        const menu = screen.getByRole('link', { name: 'Ver carta' });
+        expect(menu).toHaveAttribute('data-menu-glyph', 'food');
+        expect(menu.innerHTML).toBe(
+            markupOf(
+                <ForkKnifeIcon
+                    size={22}
+                    weight="bold"
+                    aria-hidden="true"
+                />
+            )
+        );
+    });
+
+    it.each([
+        ['accommodation (panel)', accommodation],
+        [
+            'venue (PUBLIC wa.me)',
+            { ...venue, venueWhatsapp: { mode: 'PUBLIC', number: '+5493442111111' } } as const
+        ]
+    ] as const)('WhatsApp on %s is the brand mark, logo-only (white ink depends on it)', (_name, props) => {
+        render(<ListingActionBarButtons {...props} />);
+
+        const link = screen.getByRole('link', { name: 'Escribir por WhatsApp' });
+        expect(link.innerHTML).toBe(
+            markupOf(
+                <WhatsappIcon
+                    size={22}
+                    aria-hidden="true"
+                />
+            )
+        );
+        // No visible text: `--channel-whatsapp-logo` is white, 1.98:1 on the green.
+        // (The brand mark's own SVG <title> is not painted, and the svg is aria-hidden.)
+        const outsideSvg = link.cloneNode(true) as HTMLElement;
+        for (const svg of outsideSvg.querySelectorAll('svg')) svg.remove();
+        expect(outsideSvg.textContent?.trim()).toBe('');
+        expect(link.querySelector('svg text')).toBeNull();
+        expect(link.querySelector('svg')).toHaveAttribute('aria-hidden', 'true');
+    });
+
+    it('no secondary glyph is duotone: call, favorite, share and compare share one ink', () => {
+        render(<ListingActionBarButtons {...accommodation} />);
+
+        const secondaries = ['call', 'favorite', 'share', 'compare'].map((action) => {
+            const node = document.querySelector(`[data-action="${action}"]`);
+            if (!node) throw new Error(`missing ${action}`);
+            return node;
+        });
+        for (const node of secondaries) {
+            const svgs = Array.from(node.querySelectorAll('svg'));
+            expect(svgs.length).toBeGreaterThan(0);
+            for (const svg of svgs) {
+                // The duotone default paints the whole glyph in a fixed blue.
+                expect(svg.getAttribute('fill')).toBe('currentColor');
+                expect(svg.getAttribute('fill')).not.toBe(DEFAULT_DUOTONE_COLOR);
+            }
+        }
     });
 });

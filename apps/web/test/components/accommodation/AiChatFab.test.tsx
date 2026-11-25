@@ -10,7 +10,7 @@ vi.mock('@/lib/i18n', () => ({
 }));
 
 describe('AiChatFab (HOS-2561)', () => {
-    it('renders the chat bubble with a sparkle badge, both decorative', () => {
+    it('renders one decorative AI glyph and no badge (HOS-2607)', () => {
         render(
             <AiChatFab
                 isOpen={false}
@@ -21,12 +21,11 @@ describe('AiChatFab (HOS-2561)', () => {
         );
 
         const button = screen.getByRole('button', { name: 'Ask AI' });
-        const sparkle = screen.getByTestId('ai-chat-fab-sparkle');
-        const badge = screen.getByTestId('ai-chat-fab-badge');
-        expect(button).toContainElement(badge);
-        expect(badge).toContainElement(sparkle);
-        expect(sparkle).toHaveAttribute('aria-hidden', 'true');
-        expect(button.querySelectorAll('svg')).toHaveLength(2);
+        const icon = screen.getByTestId('ai-chat-fab-icon');
+        expect(button).toContainElement(icon);
+        expect(icon).toHaveAttribute('aria-hidden', 'true');
+        expect(button.querySelectorAll('svg')).toHaveLength(1);
+        expect(screen.queryByTestId('ai-chat-fab-badge')).toBeNull();
     });
 
     it('renders nothing while the panel is open', () => {

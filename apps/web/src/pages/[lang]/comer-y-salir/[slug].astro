@@ -61,6 +61,7 @@ import { AiChatWidget } from '@/components/accommodation/AiChatWidget';
 import { ListingContactBar } from '@/components/listing/contact/ListingContactBar.client';
 import { ListingChannelsPanel } from '@/components/listing/contact/ListingChannelsPanel.client';
 import { buildVenueChannels, resolveVenueContactMode } from '@/lib/listing-contact/listing-channels';
+import { resolveVenueMenuGlyph } from '@/lib/listing-contact/venue-menu-glyph';
 import { VENUE_CONTACT_ANCHOR_ID } from '@/lib/venue-contact';
 import { resolveListingBarPhoneHref } from '@/lib/listing-contact/listing-action-bar';
 import { buildLoginRedirect } from '@/lib/auth-redirect';
@@ -294,9 +295,12 @@ const contactPanelId = 'listing-contact-panel';
 // HOS-2579 §6.10 (D-1): position 1 is «Ver carta» with a menu, «Consultar» when the
 // panel has something to list, nothing otherwise. The panel also exists for a
 // LOGGED_IN_ONLY WhatsApp, which the bar opens on its WhatsApp row even beside a menu.
+// HOS-2607: the menu glyph follows the venue type (fork and knife for food, a
+// drink for nightlife); see `resolveVenueMenuGlyph`.
+const { glyph: venueMenuGlyph } = resolveVenueMenuGlyph({ type: venue.type });
 const barPrimary =
     contactMode.kind === 'menu'
-        ? ({ kind: 'menu', href: contactMode.href } as const)
+        ? ({ kind: 'menu', href: contactMode.href, glyph: venueMenuGlyph } as const)
         : contactMode.kind === 'panel'
           ? ({ kind: 'inquire' } as const)
           : null;

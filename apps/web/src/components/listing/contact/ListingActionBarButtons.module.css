@@ -1,7 +1,7 @@
 /*
  * ListingActionBarButtons.module.css
  * The icon-only action row of the listing mobile bar (HOS-2579 §6.10.2).
- * Width budget at 360px: 52 (Consultar) + 5 × 44 + 5 × 4px gaps = 292px,
+ * Width budget at 360px: 6 × 44 + 5 × 4px gaps = 284px,
  * next to the 44px ai-chat button. Every target is at least 44×44px.
  */
 
@@ -24,25 +24,30 @@
     text-decoration: none;
 }
 
-/* D7: functional contact actions use a flat orange accent without elevation. */
+/* Primary by position and fill: first, and the only filled button (HOS-2607
+ * round 3, owner: round like the rest, orange fill with a white glyph).
+ * `--brand-accent-l82` is the brand orange at ~0.58 lightness in BOTH themes, so
+ * the white `--on-action-accent` glyph clears the 3:1 non-text contrast of
+ * WCAG 1.4.11 (the 0.70 `--brand-accent` would not). */
 .primary {
-    inline-size: 52px;
-    border: 1.5px solid var(--brand-accent);
-    background: var(--brand-accent);
-    color: var(--accent-foreground);
+    inline-size: 44px;
+    border: 1.5px solid var(--brand-accent-l82);
+    background: var(--brand-accent-l82);
+    color: var(--on-action-accent);
+    box-shadow: var(--shadow-card);
 }
 
 .primary:hover {
-    background: var(--brand-accent-l82);
+    box-shadow: var(--shadow-card-hover);
 }
 
-/* Outline round icon buttons. `--surface-overlay` is the card white in light and
- * a lifted surface in dark, so the buttons stand out from the dock in both themes
- * (HOS-2607: in dark they had the dock's own colour). */
+/* Outline round icon buttons. `--dock-action-surface` is a light brand tint in
+ * light (the card white vanished into the white dock) and a lifted surface in
+ * dark, so the buttons stand out from the dock in both themes (HOS-2607). */
 .action {
     inline-size: 44px;
     border: 1.5px solid var(--border);
-    background-color: var(--surface-overlay);
+    background-color: var(--dock-action-surface);
     color: var(--core-foreground);
 }
 
@@ -78,16 +83,44 @@
     border-width: 1.5px;
 }
 
-/* Resting surface only: the islands keep their own pressed tint. */
-.row .island .favorite:not([aria-pressed="true"]),
-.row .island .compare:not([aria-pressed="true"]) {
-    background-color: var(--surface-overlay);
+/* HOS-2607: Llamar, Favorito, Compartir and Comparar are one family. Same
+ * surface, same border and the same ink as `.action` in both themes, whatever
+ * state the island is in: an active favorite or a selected compare changes ONLY
+ * its glyph (filled heart in the favourite colour, check in the brand blue).
+ * The attribute selector lifts these rules to (0,4,0), above every state rule
+ * the islands ship, `.button[aria-pressed="true"]:hover` (0,3,0) included. */
+.row .island .favorite[aria-pressed],
+.row .island .compare[aria-pressed] {
+    border-color: var(--border);
+    background-color: var(--dock-action-surface);
+    color: var(--core-foreground);
+    box-shadow: none;
+}
+
+/* The island's hover preview (a filled heart drawn on top) keeps the favourite
+ * colour, so it never reads as a white "active" heart. */
+.row .island .favorite[aria-pressed="true"],
+.row .island .favorite[aria-pressed]:hover {
+    color: var(--destructive);
+}
+
+.row .island .compare[aria-pressed="true"] {
+    color: var(--brand-primary);
 }
 
 .share :global(button[aria-expanded]) {
     width: 44px;
     height: 44px;
     border: 1.5px solid var(--border);
-    background-color: var(--surface-overlay);
+    background-color: var(--dock-action-surface);
     color: var(--core-foreground);
+}
+
+/* One glyph box for the whole row: the islands draw 18px (compare) and 20px
+ * (share) glyphs of their own, the bar's own glyphs are 22px. */
+.row .island .favorite svg,
+.row .island .compare svg,
+.share :global(button[aria-expanded] svg) {
+    width: 22px;
+    height: 22px;
 }

@@ -20,6 +20,7 @@ import {
     NotificationType
 } from '@repo/notifications';
 import type { NewsletterNotificationDispatcher } from '@repo/service-core';
+import { buildNewsletterUnsubscribePageUrl } from '@repo/utils';
 import {
     buildAppEmailLayout,
     buildTransactionalAttribution,
@@ -77,17 +78,19 @@ export function createNewsletterNotificationDispatcher(): NewsletterNotification
                 );
                 return;
             }
-            // A guest has no account, so the welcome carries the one-click unsubscribe
-            // link instead of the "Mi cuenta" preferences button.
+            // A guest has no account, so the welcome carries the unsubscribe link instead
+            // of the "Mi cuenta" preferences button. It opens the web confirmation page
+            // (HOS-2617): following the link never unsubscribes by itself.
+            const siteUrl = (env.HOSPEDA_SITE_URL ?? 'https://hospeda.com.ar').replace(/\/$/, '');
             const unsubscribeUrl = userId
                 ? undefined
-                : `${env.HOSPEDA_API_URL.replace(/\/$/, '')}/api/v1/public/newsletter/unsubscribe?token=${encodeURIComponent(unsubscribeToken)}&locale=${encodeURIComponent(locale)}`;
+                : buildNewsletterUnsubscribePageUrl({ siteUrl, locale, token: unsubscribeToken });
             const result = await sendAppEmail({
                 client,
                 to: email,
                 subject: getSubject(NotificationType.NEWSLETTER_WELCOME, {}),
                 react: NewsletterWelcomeEmail({
-                    baseUrl: (env.HOSPEDA_SITE_URL ?? 'https://hospeda.com.ar').replace(/\/$/, ''),
+                    baseUrl: siteUrl,
                     unsubscribeUrl
                 }),
                 attribution: buildTransactionalAttribution({
