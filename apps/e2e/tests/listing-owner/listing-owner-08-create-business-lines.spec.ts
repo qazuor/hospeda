@@ -118,6 +118,13 @@ async function createVenue(
     return match[1];
 }
 
+/** The create step lands on the editor hub; business lines are edited in «Datos». */
+async function openBasicDataSection(page: Page, venueId: string): Promise<void> {
+    await page.goto(`${WEB_URL}/es/mi-cuenta/comercio/venue/${venueId}/editar/datos/`, {
+        waitUntil: 'load'
+    });
+}
+
 /** Reads the persisted business lines of one venue. */
 async function readBusinessLines(venueId: string): Promise<readonly string[]> {
     const rows = await execSQL<{ business_lines: string[] }>(
@@ -165,6 +172,7 @@ test.describe('LISTING-OWNER-08: owner creates venues with business lines presel
         });
 
         expect(await readBusinessLines(barId)).toEqual(['food', 'nightlife']);
+        await openBasicDataSection(page, barId);
         await expect(page.getByTestId('business-line-food')).toBeChecked();
         await expect(page.getByTestId('business-line-nightlife')).toBeChecked();
 
@@ -187,6 +195,7 @@ test.describe('LISTING-OWNER-08: owner creates venues with business lines presel
         });
 
         expect(await readBusinessLines(heladeriaId)).toEqual(['food']);
+        await openBasicDataSection(page, heladeriaId);
         await expect(page.getByTestId('business-line-food')).toBeChecked();
         await expect(page.getByTestId('business-line-nightlife')).toHaveCount(0);
     });
