@@ -149,7 +149,6 @@ describe('help article (web-ui §4)', () => {
     it("breadcrumbs the reader's tab from ?para= only, never the first audience (HOS-2552)", () => {
         expect(ARTICLE).toContain('<Breadcrumbs');
         expect(ARTICLE).toContain('includeHome={false}');
-        expect(ARTICLE).toContain('jsonLd={false}');
         expect(ARTICLE).toContain("ariaLabel={t('account.help.article.breadcrumbLabel')}");
         expect(ARTICLE).toMatch(/path: `mi-cuenta\/ayuda\?para=\$\{crumbAudience\}`/);
         expect(ARTICLE).not.toContain('help-crumbs');

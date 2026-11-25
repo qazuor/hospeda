@@ -92,7 +92,6 @@ export function PageHeader({
                     homeLabel=""
                     ariaLabel={t('account.ui.breadcrumbs')}
                     includeHome={false}
-                    jsonLd={false}
                 />
             ) : null}
             <div className={styles.top}>
