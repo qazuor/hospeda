@@ -31,6 +31,8 @@ import { AiActivityHistory } from '@/components/account/AiActivityHistory.client
 import { buildLoginRedirect } from '@/lib/auth-redirect';
 import { getApiUrl } from '@/lib/env';
 import { createTranslations } from '@/lib/i18n';
+import { buildAccountBreadcrumbs } from '@/lib/account/account-breadcrumbs';
+import { getAccountSectionLabel } from '@/lib/account-nav-model';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { buildAccountNotFoundTarget } from '@/lib/account-not-found';
@@ -63,7 +65,11 @@ const signinUrl = buildLoginRedirect({
 ---
 
 <AccountLayout locale={locale} title={title} description={description} activeSection="asistentes-ia">
-	<PageHeader title={title} description={description} locale={locale}>
+	<PageHeader title={title} description={description} locale={locale} breadcrumbs={buildAccountBreadcrumbs({
+		t,
+		parents: [{ label: getAccountSectionLabel({ t, section: 'asistentes-ia' }), path: 'mi-cuenta/asistentes-ia' }],
+		current: title
+	})}>
 		<PageHelpLink slot="help" locale={locale} />
 	</PageHeader>
 

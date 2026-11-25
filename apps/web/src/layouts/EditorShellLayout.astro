@@ -12,8 +12,8 @@
  *
  * ## What it draws
  *
- * - The kit `PageHeader`: the page's one `<h1>`, the subtitle, a back link (a
- *   section goes back to its editor hub, the hub back to the listing index)
+ * - The kit `PageHeader`: the page's one `<h1>`, the subtitle, breadcrumbs (a
+ *   section links to its editor hub and list, the hub to the listing index)
  *   and the «?» (`section:<vertical>.<slug>` on a section, the route's `page:`
  *   anchor on the hub).
  * - On a section page, the section navigation, chosen by the width of the
@@ -40,6 +40,8 @@ import { EditorAutoSaveChip } from '@/components/account/editor-shell/EditorAuto
 import PageHelpLink from '@/components/account/help/PageHelpLink.astro';
 import { EditorSectionNav, EditorSwitcher, PageHeader } from '@/components/account/ui';
 import AccountLayout from '@/layouts/AccountLayout.astro';
+import { buildAccountBreadcrumbs } from '@/lib/account/account-breadcrumbs';
+import { getAccountSectionLabel } from '@/lib/account-nav-model';
 import type { EditorSectionStatus } from '@/lib/editor/editor-hub-status-model';
 import type { EditorRegistry, EditorSectionVisibility } from '@/lib/editor/editor-registry';
 import { buildEditorNavModel } from '@/lib/editor/editor-route-nav-model';
@@ -47,7 +49,6 @@ import { buildEditorSwitcherModel } from '@/lib/editor/editor-switcher-model';
 import { pageHelpAnchor, sectionHelpAnchor } from '@/lib/help/help-entry';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { buildUrl } from '@/lib/urls';
 
 interface Props {
 	readonly locale: SupportedLocale;
@@ -97,15 +98,14 @@ const helpAnchor =
 		? pageHelpAnchor({ routePattern: Astro.routePattern })
 		: sectionHelpAnchor({ vertical: registry.id, slug: currentSectionSlug });
 
-const back = isHub
-	? {
-			label: t('account.ui.editorShell.backToList', 'Volver a la lista'),
-			href: buildUrl({ locale, path: registry.indexPath }),
-		}
-	: {
-			label: t('account.ui.editorShell.backToHub', 'Volver al editor'),
-			href: buildUrl({ locale, path: registry.buildHubPath({ entityId }) }),
-		};
+const breadcrumbs = buildAccountBreadcrumbs({
+	t,
+	parents: [
+		{ label: getAccountSectionLabel({ t, section: accountSection }), path: registry.indexPath },
+		...(!isHub ? [{ label: entityName, path: registry.buildHubPath({ entityId }) }] : []),
+	],
+	current: isHub ? entityName : title,
+});
 
 const navGroups = isHub
 	? []
@@ -118,7 +118,7 @@ const saveModel = isHub
 ---
 
 <AccountLayout locale={locale} title={title} description={description} activeSection={accountSection}>
-	<PageHeader title={title} description={subtitle} back={back} locale={locale}>
+	<PageHeader title={title} description={subtitle} breadcrumbs={breadcrumbs} locale={locale}>
 		<PageHelpLink slot="help" anchor={helpAnchor} locale={locale} />
 		{(saveModel === 'auto' || saveModel === 'bar') && <EditorAutoSaveChip slot="actions" client:idle locale={locale} saveModel={saveModel} />}
 	</PageHeader>

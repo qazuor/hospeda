@@ -2,7 +2,7 @@
 /**
  * @file mi-cuenta/consultas/[conversationId].astro
  * @description Authenticated guest conversation thread on the account kit
- * (HOS-2481): a `PageHeader` with a labelled back link and the
+ * (HOS-2481): a `PageHeader` with account breadcrumbs and the
  * `ConversationPanel` island with `viewer="guest"` (kit `ConversationThread` +
  * `Composer`, optimistic reply, no page reload).
  *
@@ -18,7 +18,9 @@
  */
 
 import AccountLayout from '@/layouts/AccountLayout.astro';
-import { LinkButton, PageHeader } from '@/components/account/ui';
+import { PageHeader } from '@/components/account/ui';
+import { buildAccountBreadcrumbs } from '@/lib/account/account-breadcrumbs';
+import { getAccountSectionLabel } from '@/lib/account-nav-model';
 import PageHelpLink from '@/components/account/help/PageHelpLink.astro';
 import { ConversationPanel } from '@/components/account/conversations/ConversationPanel.client';
 import { ConversationLoadError } from '@/components/account/conversations/ConversationLoadError.client';
@@ -60,8 +62,6 @@ if (!result.ok && result.error.status === 404) {
     return Astro.rewrite(buildAccountNotFoundTarget({ locale, back: 'messages' }));
 }
 
-const inboxHref = buildUrl({ locale, path: 'mi-cuenta/consultas' });
-const back = { label: t('conversations.thread.backToInbox'), href: inboxHref };
 const thread = result.ok ? result.data : null;
 
 let pageTitle = t('conversations.inbox.guestInboxTitle');
@@ -103,9 +103,12 @@ const subtitle = thread
 ---
 
 <AccountLayout locale={locale} title={pageTitle} description={subtitle ?? pageTitle} activeSection="messages">
-    <PageHeader title={pageTitle} description={subtitle} locale={locale}>
+    <PageHeader title={pageTitle} description={subtitle} locale={locale} breadcrumbs={buildAccountBreadcrumbs({
+        t,
+        parents: [{ label: getAccountSectionLabel({ t, section: 'messages' }), path: 'mi-cuenta/consultas' }],
+        current: pageTitle
+    })}>
         <PageHelpLink slot="help" locale={locale} />
-        <LinkButton slot="actions" variant="secondary" href={back.href}>← {back.label}</LinkButton>
     </PageHeader>
 
     {thread ? (

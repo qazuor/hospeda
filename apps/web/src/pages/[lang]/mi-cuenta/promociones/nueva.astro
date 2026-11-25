@@ -2,7 +2,7 @@
 /**
  * @file mi-cuenta/promociones/nueva.astro
  * @description Create an owner promotion, on the account kit editor template
- * (HOS-2505): kit `PageHeader` with a back link, then the `PromotionForm`
+ * (HOS-2505): kit `PageHeader` with account breadcrumbs, then the `PromotionForm`
  * island (kit field Sections + `StickySaveBar`). When the owner's plan does
  * not include promotions the island shows a `LockedState` BEFORE the form
  * (D9), naming the catalog plans read here.
@@ -17,7 +17,8 @@
 
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { buildUrl } from '@/lib/urls';
+import { buildAccountBreadcrumbs } from '@/lib/account/account-breadcrumbs';
+import { getAccountSectionLabel } from '@/lib/account-nav-model';
 import { buildLoginRedirect } from '@/lib/middleware-helpers';
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import PageHelpLink from '@/components/account/help/PageHelpLink.astro';
@@ -63,10 +64,11 @@ const lockPlanNames = planNamesWithEntitlement({
         title={title}
         description={description}
         locale={locale}
-        back={{
-            label: t('host.promotions.kit.backToList'),
-            href: buildUrl({ locale, path: 'mi-cuenta/promociones' })
-        }}
+        breadcrumbs={buildAccountBreadcrumbs({
+            t,
+            parents: [{ label: getAccountSectionLabel({ t, section: 'promociones' }), path: 'mi-cuenta/promociones' }],
+            current: title
+        })}
     >
         <PageHelpLink slot="help" locale={locale} />
     </PageHeader>

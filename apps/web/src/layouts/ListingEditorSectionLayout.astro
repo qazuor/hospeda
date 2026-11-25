@@ -5,7 +5,7 @@
  *
  * A thin adapter over `EditorShellLayout.astro`, the same way
  * `EditorSectionLayout.astro` is for accommodations. Everything structural —
- * the two-column geometry, the breadcrumb trail, the sticky route nav — lives
+ * the two-column geometry, account/list/entity breadcrumbs and sticky route nav — lives
  * in the shell; what is left here is the vertical-specific part: the registry the
  * resolver built for this listing's vertical, and the account sidebar entry
  * it marks active.
@@ -33,7 +33,7 @@ interface Props {
 	readonly listingName: string;
 	/** `null` on the hub, where no section is active. */
 	readonly currentSectionId: string | null;
-	/** `null` on the hub. Drives the last breadcrumb. */
+	/** `null` on the hub. Drives the section help anchor. */
 	readonly currentSectionSlug: string | null;
 	readonly title: string;
 	readonly description?: string;

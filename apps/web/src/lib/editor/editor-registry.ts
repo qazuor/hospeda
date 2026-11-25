@@ -4,7 +4,7 @@
  * (HOS-1080).
  *
  * HOS-318 built this shape for accommodations: a registry of sections from which
- * the route nav, the hub list and the breadcrumbs are ALL derived, so a section
+ * the route nav, hub list and current section title are ALL derived, so a section
  * can never be reachable from one surface and missing from another. It worked,
  * and the owner's decision for HOS-1080 was to take it up rather than down —
  * venue and experience get the same architecture instead of accommodation
@@ -114,7 +114,7 @@ export interface EditorRegistry {
     readonly groupLabelKeys: Readonly<Record<EditorSectionGroup, string>>;
     /** Path of the owner's listing index, e.g. `mi-cuenta/propiedades`. */
     readonly indexPath: string;
-    /** i18n key for the index's breadcrumb label, e.g. "Mis propiedades". */
+    /** Legacy index label key; account breadcrumbs use the sidebar section label. */
     readonly indexLabelKey: string;
     /** Path of one entity's editor hub, e.g. `mi-cuenta/propiedades/<id>/editar`. */
     readonly buildHubPath: (params: { readonly entityId: string }) => string;

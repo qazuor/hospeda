@@ -43,6 +43,8 @@ import { hostTradesApi } from '@/lib/api/endpoints-protected';
 import type { DirectoryProvider } from '@/lib/api/endpoints-protected';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { buildAccountBreadcrumbs } from '@/lib/account/account-breadcrumbs';
+import { getAccountSectionLabel } from '@/lib/account-nav-model';
 import { webLogger as logger } from '@/lib/logger';
 import { buildLoginRedirect } from '@/lib/middleware-helpers';
 import { buildUrl } from '@/lib/urls';
@@ -148,7 +150,14 @@ const backToDirectory = t('host-trades.registerUsage.backToDirectory', 'Volver a
     description={subtitle}
     activeSection="directorio-proveedores"
 >
-    <PageHeader title={title} description={subtitle} locale={locale}>
+    <PageHeader title={title} description={subtitle} locale={locale} breadcrumbs={buildAccountBreadcrumbs({
+        t,
+        parents: [
+            { label: getAccountSectionLabel({ t, section: 'directorio-proveedores' }), path: 'mi-cuenta/directorio-proveedores' },
+            ...(provider ? [{ label: provider.name, path: `mi-cuenta/directorio-proveedores/${slug}` }] : [])
+        ],
+        current: title
+    })}>
         <PageHelpLink slot="help" locale={locale} />
     </PageHeader>
 

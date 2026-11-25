@@ -12,7 +12,7 @@
  * hydration would show an empty panel on exactly the screen where "no reviews"
  * and "not loaded yet" carry opposite meanings.
  *
- * Built on the account kit (HOS-2472): `PageHeader` with a back link, the
+ * Built on the account kit (HOS-2472): `PageHeader` with account breadcrumbs, the
  * provider's data and a «Contactar» dialog in one island, the benefit with its
  * CTA, and the reviews island untouched.
  *
@@ -43,6 +43,8 @@ import type { DirectoryProvider, DirectoryReviewRow } from '@/lib/api/endpoints-
 import { hostTradesApi } from '@/lib/api/endpoints-protected';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { buildAccountBreadcrumbs } from '@/lib/account/account-breadcrumbs';
+import { getAccountSectionLabel } from '@/lib/account-nav-model';
 import { webLogger as logger } from '@/lib/logger';
 import { buildLoginRedirect } from '@/lib/middleware-helpers';
 import { buildUrl } from '@/lib/urls';
@@ -168,7 +170,11 @@ const backToDirectory = t('host-trades.registerUsage.backToDirectory', 'Volver a
         title={title}
         description={subtitle}
         locale={locale}
-        back={{ label: backToDirectory, href: directoryHref }}
+        breadcrumbs={buildAccountBreadcrumbs({
+            t,
+            parents: [{ label: getAccountSectionLabel({ t, section: 'directorio-proveedores' }), path: 'mi-cuenta/directorio-proveedores' }],
+            current: title
+        })}
         helpId="section:hosttrade.detalle"
     >
         <PageHelpLink slot="help" locale={locale} />
