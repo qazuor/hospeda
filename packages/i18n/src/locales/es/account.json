@@ -1,4 +1,18 @@
 {
+    "editorHub": {
+        "publicationStatus": "Estado de publicación",
+        "publicationUnavailable": "Estado de publicación no disponible",
+        "complete": "Requisitos completos",
+        "incomplete": "Requisitos pendientes",
+        "recommended": "Recomendado",
+        "requiredOnly": "El medidor cuenta solo las secciones obligatorias para publicar. Las recomendaciones no bloquean la publicación; otros controles de publicación se evalúan por separado.",
+        "readyWithRecommendations": "Los requisitos de contenido están completos. Puedes mejorar la ficha con las recomendaciones indicadas; no bloquean la publicación. Los demás controles de publicación se evalúan por separado."
+    },
+    "editorPresentation": {
+        "faqTitle": "Preguntas y respuestas",
+        "translationTitle": "Contenido por idioma",
+        "missingHint": "Faltan traducciones en {{locales}}. Abre cada pestaña de idioma para revisar los campos pendientes."
+    },
     "whatsNewModal": {
         "title": "Novedades",
         "close": "Cerrar",
@@ -1606,7 +1620,8 @@
                 "hint": {
                     "summary": "Entre 10 y 300 caracteres. Se muestra en el listado del blog.",
                     "content": "Mínimo 100 caracteres.",
-                    "readingTime": "Dejalo vacío para mantener el valor actual."
+                    "readingTime": "Modifica los minutos o deja el campo vacío para restablecer el tiempo de lectura guardado.",
+                    "readingTimeEmpty": "No hay un tiempo de lectura definido. Introduce la cantidad de minutos para establecerlo."
                 },
                 "placeholder": {
                     "content": "Escribí tu nota..."
@@ -1635,6 +1650,9 @@
         "editor": {
             "media": {
                 "sectionTitle": "Fotos",
+                "photoSectionTitle": "Portada y galería de fotos",
+                "photoFormats": "JPG, PNG, WebP o HEIC - max 10MB",
+                "photoActions": "Acciones de la foto {{index}}",
                 "featured": "Imagen principal",
                 "gallery": "Galería de fotos",
                 "add": "Agregar foto",
@@ -2261,7 +2279,7 @@
         },
         "hoursEditor": {
             "title": "Horarios de atención",
-            "hint": "Activá los días que abrís y cargá sus franjas. Con «Copiar a todos los días» repetís el horario de un día en toda la semana.",
+            "hint": "Activa los días de apertura y agrega sus franjas horarias.",
             "open": "Abierto",
             "closed": "Cerrado",
             "openAria": "{{day}} abierto",
@@ -2387,6 +2405,7 @@
                 "action": "Ir al mapa"
             },
             "coordinates": "Coordenadas",
+            "enterCoordinates": "Ingresar coordenadas",
             "latitude": "Latitud",
             "longitude": "Longitud"
         }
