@@ -81,8 +81,19 @@ const ownsHostTradeListing = Astro.locals.user?.ownsHostTradeListing === true;
  */
 const ownsPartner = Astro.locals.user?.ownsPartner === true;
 
+/**
+ * HOS-2627: the add-ons summary entry exists only for an account with at least
+ * one subscription. Cached per user for a minute and fail-closed.
+ */
+const hasSubscription = Astro.locals.user
+	? await hasAnySubscription({
+			userId: Astro.locals.user.id,
+			cookieHeader: Astro.request.headers.get('cookie') ?? undefined
+		})
+	: false;
+
 const navModel = buildAccountNavModel({
-    hasSubscription: Astro.locals.user ? await hasAnySubscription({ userId: Astro.locals.user.id, cookieHeader: Astro.request.headers.get('cookie') ?? undefined }) : false,
+	hasSubscription,
 	roles: userRoles,
 	permissions: userPermissions,
 	ownsHostTradeListing,
