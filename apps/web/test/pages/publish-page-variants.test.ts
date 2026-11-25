@@ -25,13 +25,14 @@ describe('D10 shared publish page presentation', () => {
         expect(src.indexOf('<PublishFormSlot')).toBeLessThan(src.indexOf('<PublishHowItWorks'));
     });
 
-    it('renders only a compact heading for direct journeys', () => {
+    it('renders a compact heading that keeps the trial callout slot for direct journeys', () => {
         const src = readSource('components/publish/PublishHero.astro');
         const compact = src.slice(src.indexOf("variant === 'direct' ? ("), src.indexOf(') : ('));
         expect(compact).toContain('<h1');
         expect(compact).toContain('{title}');
         expect(compact).not.toContain('{body}');
-        expect(compact).not.toContain('<slot');
+        // The accommodation trial callout (HOS-1183 F-6) must survive the compact heading.
+        expect(compact).toContain('<slot');
         expect(compact).not.toContain('<Icon');
     });
 
