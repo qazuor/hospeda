@@ -292,7 +292,7 @@
                 "emptyState": "Ainda não há perguntas. Adicione a primeira.",
                 "addButton": "Adicionar pergunta",
                 "editButton": "Editar",
-                "editAria": "Editar \"{{question}}\"",
+                "editAria": "Editar a pergunta \"{{question}}\"",
                 "deleteButton": "Excluir",
                 "saveButton": "Salvar",
                 "cancelButton": "Cancelar",

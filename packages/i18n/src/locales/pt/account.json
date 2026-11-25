@@ -2,9 +2,9 @@
     "editorHub": {
         "publicationStatus": "Estado de publicação",
         "publicationUnavailable": "Estado de publicação indisponível",
-        "complete": "Requisitos completos",
+        "complete": "Requisitos cumpridos",
         "incomplete": "Requisitos pendentes",
-        "recommended": "Recomendado",
+        "recommended": "Sugerido",
         "requiredOnly": "O indicador conta apenas as seções obrigatórias para publicar. Recomendações não impedem a publicação; outras verificações de publicação são avaliadas separadamente.",
         "readyWithRecommendations": "Os requisitos de conteúdo estão completos. Você pode melhorar a ficha com as recomendações indicadas; elas não impedem a publicação. Outras verificações de publicação são avaliadas separadamente."
     },
