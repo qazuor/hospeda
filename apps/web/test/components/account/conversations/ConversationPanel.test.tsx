@@ -449,3 +449,49 @@ describe('sendErrorMessage', () => {
         );
     });
 });
+
+describe('ConversationPanel — HOS-2611 thread anatomy', () => {
+    it('renders the composer INSIDE the messages Section card', () => {
+        // Arrange
+        render(
+            <ConversationPanel
+                locale="es"
+                viewer="guest"
+                conversationId="c1"
+                initialMessages={MESSAGES}
+                canReply
+            />
+        );
+
+        // Act
+        const composer = screen.getByRole('textbox');
+        const section = composer.closest('section');
+
+        // Assert
+        expect(section).not.toBeNull();
+        expect(
+            within(section as HTMLElement).getByText('Pregunta del huésped')
+        ).toBeInTheDocument();
+    });
+
+    it('shows a visible sender label on each own and counterpart message', () => {
+        // Arrange
+        render(
+            <ConversationPanel
+                locale="es"
+                viewer="owner"
+                conversationId="c1"
+                initialMessages={MESSAGES}
+                canReply={false}
+            />
+        );
+
+        // Act
+        const mine = screen.getByText('Respuesta del dueño').closest('li') as HTMLElement;
+        const theirs = screen.getByText('Pregunta del huésped').closest('li') as HTMLElement;
+
+        // Assert
+        expect(mine.querySelector('[aria-hidden="true"]')).toHaveTextContent('Vos');
+        expect(theirs.querySelector('[aria-hidden="true"]')).toHaveTextContent('Huésped');
+    });
+});

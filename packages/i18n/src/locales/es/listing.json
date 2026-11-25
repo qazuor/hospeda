@@ -297,7 +297,8 @@
                 "visibleOnListingLabel": "Visible en la ficha pública",
                 "usableByAiLabel": "Usable por la IA",
                 "notVisibleBadge": "No visible en la ficha",
-                "notAiUsableBadge": "No usable por IA"
+                "notAiUsableBadge": "No usable por IA",
+                "emptyDescription": "Responder las dudas más comunes ayuda a tus huéspedes y al asistente de la ficha."
             },
             "noChanges": "No hay cambios para guardar",
             "success": "Cambios guardados.",

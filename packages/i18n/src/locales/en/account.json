@@ -826,7 +826,8 @@
                 "venue": "Food & nightlife"
             },
             "price": "{{amount}} {{cycle}}",
-            "nextCharge": "Next charge: {{date}}, for {{amount}}."
+            "nextCharge": "Next charge: {{date}}, for {{amount}}.",
+            "emptyDescription": "Pick a plan to publish and manage your listings."
         },
         "cancel": {
             "open": "Cancel subscription",

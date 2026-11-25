@@ -32,7 +32,7 @@
  * editor (`FaqSection.client.tsx`). Both default to checked.
  */
 
-import { EyeOffIcon, SparkleIcon } from '@repo/icons';
+import { EyeOffIcon, FaqsIcon, SparkleIcon } from '@repo/icons';
 import type { JSX } from 'react';
 import { Button } from '@/components/account/ui/Button';
 import { Repeater } from '@/components/account/ui/Repeater';
@@ -173,6 +173,13 @@ export function ListingFaqManager({
                     isAdding
                         ? undefined
                         : {
+                              icon: (
+                                  <FaqsIcon
+                                      size={28}
+                                      aria-hidden={true}
+                                  />
+                              ),
+                              description: t('listing.owner.editor.faqManager.emptyDescription'),
                               title: t(
                                   'listing.owner.editor.faqManager.emptyState',
                                   'Todavía no hay preguntas. Agregá la primera.'

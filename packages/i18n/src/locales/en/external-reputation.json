@@ -28,7 +28,8 @@
         "reviewsCount_other": "{{count}} reviews",
         "reviewsCountOn_one": "{{count}} review on {{platform}}",
         "reviewsCountOn_other": "{{count}} reviews on {{platform}}",
-        "noData": "No data available"
+        "noData": "No data available",
+        "noDataDescription": "Add a platform link to see your score and reviews here."
     },
     "snippets": {
         "ttlExpired": "Text reviews are temporarily unavailable; showing score only",

@@ -826,7 +826,8 @@
                 "venue": "Comer y salir"
             },
             "price": "{{amount}} {{cycle}}",
-            "nextCharge": "Próximo cobro: {{date}}, por {{amount}}."
+            "nextCharge": "Próximo cobro: {{date}}, por {{amount}}.",
+            "emptyDescription": "Elegí un plan para publicar y gestionar tus fichas."
         },
         "cancel": {
             "open": "Dar de baja",

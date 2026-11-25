@@ -480,7 +480,8 @@
                     "body3": "Destildá \"Usable por la IA\" para contenido que preferís que se muestre tal cual, sin que el asistente lo parafrasee — texto legal o condiciones exactas de cancelación, por ejemplo.",
                     "body4": "Importante: una pregunta no visible en la ficha pero usable por la IA no es privada. El asistente se la puede decir a cualquiera que pregunte por chat; solo no aparece publicada en la página."
                 },
-                "rowFallback": "Pregunta {{n}}"
+                "rowFallback": "Pregunta {{n}}",
+                "emptyDescription": "Responder las dudas más comunes ayuda a tus huéspedes y al asistente de la ficha."
             },
             "action": {
                 "save": "Guardar",
@@ -780,7 +781,8 @@
                 "aiDraftNotEligible": "Esta pregunta ya tiene una respuesta del asistente.",
                 "unansweredCountLabel": "{{count}} sin responder",
                 "dismissedCountLabel": "{{count}} descartadas",
-                "dismissedToggle": "Ver las descartadas"
+                "dismissedToggle": "Ver las descartadas",
+                "emptyDescription": "Cuando un visitante use el asistente de tu ficha, sus preguntas van a aparecer acá."
             },
             "catalog": {
                 "searchLabel": "Buscar en todo el catálogo",

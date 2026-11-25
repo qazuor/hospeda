@@ -1,3 +1,4 @@
+import { PackageIcon } from '@repo/icons';
 import { useEffect, useMemo, useState } from 'react';
 import { EmptyState } from '@/components/account/ui/EmptyState';
 import { LinkButton } from '@/components/account/ui/LinkButton';
@@ -85,6 +86,12 @@ export function AddonPurchaseGate({
         return (
             <div data-testid="addons-no-subscription">
                 <EmptyState
+                    icon={
+                        <PackageIcon
+                            size={28}
+                            aria-hidden={true}
+                        />
+                    }
                     title={t('billing.addonPurchase.noSubscription.title')}
                     description={t('billing.addonPurchase.noSubscription.description')}
                     action={

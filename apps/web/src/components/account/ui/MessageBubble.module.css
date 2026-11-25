@@ -95,3 +95,10 @@
         max-inline-size: 70%;
     }
 }
+
+/* Visible sender caption (HOS-2611); screen readers get the hidden prefix. */
+.sender {
+    font: var(--app-meta);
+    font-weight: 600;
+    opacity: 0.85;
+}

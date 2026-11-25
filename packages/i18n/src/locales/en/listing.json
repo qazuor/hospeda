@@ -297,7 +297,8 @@
                 "visibleOnListingLabel": "Visible on the listing page",
                 "usableByAiLabel": "Usable by AI",
                 "notVisibleBadge": "Not visible on the listing",
-                "notAiUsableBadge": "Not usable by AI"
+                "notAiUsableBadge": "Not usable by AI",
+                "emptyDescription": "Answering the most common questions helps your guests and the listing assistant."
             },
             "noChanges": "No changes to save",
             "success": "Changes saved.",
