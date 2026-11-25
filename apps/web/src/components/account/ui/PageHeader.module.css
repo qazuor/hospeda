@@ -41,16 +41,23 @@
 
 .titleRow {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     align-items: center;
     gap: var(--space-3);
 }
 
 .title {
+    min-inline-size: 0;
+    overflow-wrap: anywhere;
     margin: 0;
     font: var(--app-title);
     letter-spacing: var(--app-title-tracking);
     color: var(--core-foreground);
+}
+
+.help {
+    display: inline-flex;
+    flex: none;
 }
 
 .description {
