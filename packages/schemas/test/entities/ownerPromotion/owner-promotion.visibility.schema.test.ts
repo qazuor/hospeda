@@ -3,6 +3,7 @@ import {
     PromotionListingQuerySchema,
     PromotionLockedItemSchema,
     PromotionModelInfoSchema,
+    PromotionSeedSchema,
     PromotionVisibilityItemSchema,
     PromotionVisibleItemSchema,
     PromotionVisibleQuerySchema
@@ -99,10 +100,25 @@ describe('seed handling (D-7)', () => {
         'has spaces in it',
         '<script>alert(1)</script>',
         'x'.repeat(65)
-    ])('drops a malformed seed %s instead of failing', (seed) => {
-        const parsed = PromotionListingQuerySchema.parse({ seed });
-        expect(parsed.seed).toBeUndefined();
-        expect(parsed.page).toBe(1);
+    ])('never fails the query on a malformed seed %s', (seed) => {
+        // The raw param accepts any string; the route drops a malformed one with
+        // PromotionSeedSchema.safeParse (the OpenAPI generator cannot describe `.catch`).
+        const parsed = PromotionListingQuerySchema.safeParse({ seed });
+        expect(parsed.success).toBe(true);
+        expect(parsed.data?.page).toBe(1);
+    });
+
+    it.each([
+        'short',
+        'has spaces in it',
+        '<script>alert(1)</script>',
+        'x'.repeat(65)
+    ])('PromotionSeedSchema rejects the malformed seed %s', (seed) => {
+        expect(PromotionSeedSchema.safeParse(seed).success).toBe(false);
+    });
+
+    it('PromotionSeedSchema accepts a well-formed seed', () => {
+        expect(PromotionSeedSchema.safeParse('abcDEF12-_x').success).toBe(true);
     });
 });
 
