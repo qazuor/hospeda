@@ -4,8 +4,9 @@
  * @description The add-ons page (HOS-2485): kit `PageHeader` with the «Plan /
  * Complementos» tabs, the add-on purchase flow (its own island: per-user
  * billing state, a Stepper and catalog-driven OptionCards, a back step on every
- * step) and the recurring add-ons withdrawal as a kit `Section`. Highlights its
- * own sidebar item («Complementos», under «Cuenta»).
+ * step) and the recurring add-ons withdrawal as a kit `Section`. It is the second
+ * tab of «Suscripción»: same H1, same help «?» and the «Suscripción» sidebar item
+ * highlighted (HOS-2610 F-19).
  *
  * Owner decision 3 (Mi cuenta UI epic): `AddonPurchaseGate` shows an account
  * with no subscription «Antes tenés que suscribirte a un plan» and the plans
@@ -31,12 +32,14 @@ if (!user) {
     return Astro.redirect(buildLoginRedirect({ locale, currentUrl: Astro.url.pathname + Astro.url.search }));
 }
 const { t } = createTranslations(locale);
-const title = t('billing.addonPurchase.title');
+// F-19 (HOS-2610): «Plan» and «Complementos» read as one page, so they share
+// the H1 and the sidebar item of «Suscripción».
+const title = t('account.pages.subscription.title', 'Suscripción');
 const returnOrderRequestId = parseReturnOrderRequestId({ search: Astro.url.search });
 const listingId = Astro.url.searchParams.get('listing');
 ---
 
-<AccountLayout locale={locale} title={title} activeSection="complementos">
+<AccountLayout locale={locale} title={title} activeSection="suscripcion">
     <div class="addons-page">
     <PageHeader locale={locale} title={title}>
         <PageHelpLink slot="help" locale={locale} />

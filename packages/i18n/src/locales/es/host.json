@@ -195,7 +195,7 @@
     },
     "properties": {
         "list": {
-            "title": "Mis propiedades",
+            "title": "Mis alojamientos",
             "subtitle": "Gestioná tus publicaciones",
             "add": "Agregar alojamiento",
             "needsPlanBanner": {
@@ -715,7 +715,7 @@
                 "management": "Gestión"
             },
             "breadcrumb": {
-                "properties": "Mis propiedades"
+                "properties": "Mis alojamientos"
             },
             "hub": {
                 "title": "Editar propiedad",

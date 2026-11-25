@@ -80,8 +80,10 @@ describe('create labels read «Agregar …» in every locale', () => {
     const KEYS = [
         ['host', 'properties.list.add'],
         ['host', 'promotions.addButton'],
-        ['listing', 'owner.list.createCta'],
-        ['listing', 'owner.list.emptyCta'],
+        ['listing', 'owner.list.createCta.venue'],
+        ['listing', 'owner.list.createCta.experience'],
+        ['listing', 'owner.list.emptyCta.venue'],
+        ['listing', 'owner.list.emptyCta.experience'],
         ['account', 'myContent.contentList.events.create'],
         ['account', 'myContent.contentList.posts.create'],
         ['account', 'myContent.events.list.emptyCta'],

@@ -93,7 +93,10 @@ export function BasicInfoSection({
                 <Field
                     locale={locale}
                     idParts={idOf('name')}
-                    label={t('listing.owner.editor.sections.name', 'Nombre del comercio')}
+                    label={t(
+                        `listing.owner.editor.sections.name.${vertical}`,
+                        config.labels.nameFallback
+                    )}
                     error={errors.name}
                 >
                     <TextInput

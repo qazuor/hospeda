@@ -168,7 +168,7 @@ describe('«Páginas» box (HOS-2552)', () => {
     it('a degraded editor section never renames the list page it shares (publish-requirements)', () => {
         // «Ubicación» of an accommodation opens «Mis propiedades» on the web.
         const labels = viewOf('publish-requirements').pages.map((page) => page.label);
-        expect(labels).toContain('Mis propiedades');
+        expect(labels).toContain('Mis alojamientos');
         expect(labels).toContain('Mi comercio');
         expect(labels.some((label) => label.startsWith('Ubicación'))).toBe(false);
     });

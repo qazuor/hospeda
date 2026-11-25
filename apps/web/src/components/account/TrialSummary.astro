@@ -28,6 +28,11 @@ interface Props {
 	readonly entries: readonly TrialSummaryEntry[];
 	/** Verticals in which the account holds a live subscription. */
 	readonly liveSubscriptionVerticals: readonly string[];
+	/**
+	 * Who reads the card. Picks the ended-trial call to action: an owner is told
+	 * to publish again, anybody else is not (HOS-2610 F-40). Defaults to `owner`.
+	 */
+	readonly audience?: 'owner' | 'tourist';
 }
 
 /** The vertical's name inside the block title. */
@@ -51,8 +56,12 @@ const ORIGIN_KEYS = [
 	['support', 'account.subscription.trialSummary.origins.support']
 ] as const;
 
-const { locale, entries, liveSubscriptionVerticals } = Astro.props;
+const { locale, entries, liveSubscriptionVerticals, audience = 'owner' } = Astro.props;
 const { t, tPlural } = createTranslations(locale);
+const endedPlanMessageKey =
+	audience === 'tourist'
+		? 'account.subscription.trialSummary.endedPlanMessageTourist'
+		: 'account.subscription.trialSummary.endedPlanMessage';
 
 type SummaryCardView = {
 	readonly vertical: PublishVerticalSlug;
@@ -127,7 +136,7 @@ const views = entries.flatMap<SummaryCardView>(({ vertical, summary }) => {
 		notice,
 		...(state.canChoosePlan && {
 			plan: {
-				message: t('account.subscription.trialSummary.endedPlanMessage'),
+				message: t(endedPlanMessageKey),
 				href: buildUrl({ locale, path: PRICING_PATH_BY_VERTICAL[vertical] }),
 				label: t('account.subscription.trialSummary.choosePlan')
 			}

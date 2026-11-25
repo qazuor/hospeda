@@ -142,12 +142,17 @@ export function Dialog({
 
     // Focus management: when the dialog opens, remember where focus was and
     // move it into the panel. When it closes, restore focus to the trigger.
+    // The move is deferred one frame, so by the time it runs the user may have
+    // already focused a field inside the panel. Focus is then left where it is:
+    // pulling it back to the panel swallowed the keystrokes being typed into
+    // that field (HOS-2591, seen as a reject note arriving empty).
     useEffect(() => {
         if (!isOpen || !mounted) return;
         const previouslyFocused = document.activeElement as HTMLElement | null;
         const id = requestAnimationFrame(() => {
             const panel = panelRef.current;
             if (!panel) return;
+            if (panel.contains(document.activeElement)) return;
             if (variant === 'sheet') {
                 const { tabStops } = getTabStops({ container: panel });
                 for (const control of tabStops) {
