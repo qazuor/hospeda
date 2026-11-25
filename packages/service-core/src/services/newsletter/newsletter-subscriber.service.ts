@@ -233,7 +233,11 @@ const UpdatePreferencesInputSchema = z.object({
 
 const GetEligibleInputSchema = z.object({
     localeFilter: z.enum(['all', 'es', 'en', 'pt']),
-    softCapWindowDays: z.number().int().min(1),
+    /**
+     * Rolling soft-cap window in days. OMIT it to skip the soft-cap exclusion entirely
+     * ("ignore soft cap"); there is no sentinel value for "no window" (HOS-2613).
+     */
+    softCapWindowDays: z.number().int().min(1).optional(),
     /**
      * Optional content-type filter. When provided, only subscribers whose
      * `preferences[contentType]` is `true` are eligible — implemented as a
@@ -1711,7 +1715,8 @@ export class NewsletterSubscriberService extends BaseService {
      *
      * Eligible = `status='active'`, `deleted_at IS NULL`, locale matches,
      * (optionally) `preferences[contentType] = true`, AND no delivery row with
-     * `delivered_at >= now() - softCapWindowDays days`.
+     * `delivered_at >= now() - softCapWindowDays days`. When `softCapWindowDays` is
+     * omitted the soft-cap exclusion is skipped altogether (HOS-2613).
      *
      * The soft-cap exclusion is expressed as a single SQL `NOT EXISTS` subquery
      * to avoid fetching all rows and filtering in JS (scales to 50k+ subscribers).
@@ -1738,7 +1743,7 @@ export class NewsletterSubscriberService extends BaseService {
     public async getEligibleForCampaign(
         input: {
             localeFilter: 'all' | 'es' | 'en' | 'pt';
-            softCapWindowDays: number;
+            softCapWindowDays?: number;
             contentType?: NewsletterContentTypeEnum;
         },
         ctx?: ServiceContext
@@ -1787,6 +1792,15 @@ export class NewsletterSubscriberService extends BaseService {
 
                 // Eligible = candidates that have NOT received a delivery recently.
                 // NOT EXISTS subquery keeps this to a single SQL round-trip.
+                const softCapCondition =
+                    validated.softCapWindowDays === undefined
+                        ? sql`TRUE`
+                        : sql`NOT EXISTS (
+                          SELECT 1
+                          FROM newsletter_campaign_deliveries d
+                          WHERE d.subscriber_id = ns.id
+                            AND d.delivered_at >= NOW() - (${validated.softCapWindowDays} || ' days')::interval
+                      )`;
                 const eligibleResult = await db.execute(sql`
                     SELECT ns.id
                     FROM newsletter_subscribers ns
@@ -1794,12 +1808,7 @@ export class NewsletterSubscriberService extends BaseService {
                       AND ns.deleted_at IS NULL
                       AND ${localeCondition}
                       AND ${contentTypeCondition}
-                      AND NOT EXISTS (
-                          SELECT 1
-                          FROM newsletter_campaign_deliveries d
-                          WHERE d.subscriber_id = ns.id
-                            AND d.delivered_at >= NOW() - (${validated.softCapWindowDays} || ' days')::interval
-                      )
+                      AND ${softCapCondition}
                 `);
 
                 const eligibleIds = (eligibleResult.rows as { id: string }[]).map((r) => r.id);
