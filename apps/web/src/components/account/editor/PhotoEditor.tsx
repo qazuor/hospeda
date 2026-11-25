@@ -15,6 +15,8 @@ export interface PhotoEditorProps {
     readonly featured: ReactNode;
     readonly gallery: ReactNode;
     readonly galleryLabel: ReactNode;
+    /** Accepted formats and the REAL size cap (HOS-322); never hard-coded here. */
+    readonly uploadHint: string;
     readonly galleryInputId: string;
     readonly galleryInput: ReactNode;
     readonly galleryPicker?: MediaDropzoneProps;
@@ -32,6 +34,7 @@ export function PhotoEditor({
     featured,
     gallery,
     galleryLabel,
+    uploadHint,
     galleryInputId,
     galleryInput,
     galleryPicker,
@@ -44,7 +47,10 @@ export function PhotoEditor({
         <Section
             id={id}
             helpId={helpId}
-            title={t('account.myContent.editor.media.photoSectionTitle', 'Cover and photo gallery')}
+            title={t(
+                'account.myContent.editor.media.photoSectionTitle',
+                'Portada y galería de fotos'
+            )}
         >
             <div className={styles.stack}>
                 {description}
@@ -54,10 +60,7 @@ export function PhotoEditor({
                     locale={locale}
                     id={galleryInputId}
                     label={galleryLabel}
-                    hint={t(
-                        'account.myContent.editor.media.photoFormats',
-                        'JPG, PNG, WebP or HEIC - max 10MB'
-                    )}
+                    hint={uploadHint}
                 >
                     {galleryNotice}
                     <PhotoGrid>

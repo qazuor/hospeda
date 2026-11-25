@@ -148,7 +148,7 @@ describe('MediaSection client-side compression wiring (HOS-332)', () => {
         await waitFor(() => expect(mockListMedia).toHaveBeenCalled());
         expect(document.querySelectorAll('[data-kit-section]')).toHaveLength(1);
         expect(
-            screen.getByRole('heading', { name: 'Cover and photo gallery' }).closest('section')
+            screen.getByRole('heading', { name: 'Portada y galería de fotos' }).closest('section')
         ).toHaveAttribute('data-help', 'section:venue.fotos');
     });
 

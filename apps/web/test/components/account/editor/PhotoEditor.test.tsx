@@ -23,6 +23,7 @@ function props(overrides: Partial<PhotoEditorProps> = {}): PhotoEditorProps {
             />
         ),
         galleryLabel: 'Gallery',
+        uploadHint: 'JPG, PNG, WebP o HEIC — máx. 25MB',
         galleryInputId: 'gallery-upload',
         galleryInput: (
             <input
@@ -55,7 +56,7 @@ describe('PhotoEditor', () => {
         );
         const add = screen.getByRole('button', { name: 'Add gallery photo' });
         expect(add.querySelector('svg')).not.toBeNull();
-        expect(screen.getByText('JPG, PNG, WebP o HEIC - max 10MB')).toHaveAttribute(
+        expect(screen.getByText('JPG, PNG, WebP o HEIC — máx. 25MB')).toHaveAttribute(
             'id',
             'gallery-upload-hint'
         );
@@ -72,6 +73,7 @@ describe('PhotoEditor', () => {
     it('uses the same translated composition in English', () => {
         render(<PhotoEditor {...props({ locale: 'en' })} />);
         expect(screen.getByRole('heading', { name: 'Cover and photo gallery' })).toBeVisible();
-        expect(screen.getByText('JPG, PNG, WebP or HEIC - max 10MB')).toBeVisible();
+        // The hint is supplied by the caller (it carries the REAL cap, HOS-322).
+        expect(screen.getByText('JPG, PNG, WebP o HEIC — máx. 25MB')).toBeVisible();
     });
 });

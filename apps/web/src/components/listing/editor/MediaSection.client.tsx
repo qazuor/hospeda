@@ -42,6 +42,7 @@
  */
 
 import { DeleteIcon } from '@repo/icons';
+import { DEFAULT_ENTITY_MAX_FILE_SIZE_MB } from '@repo/media';
 import type { Image } from '@repo/schemas';
 import { type JSX, useCallback } from 'react';
 import { PhotoEditor } from '@/components/account/editor/PhotoEditor';
@@ -134,6 +135,11 @@ export function MediaSection({
     return (
         <PhotoEditor
             locale={locale}
+            uploadHint={t(
+                'listing.owner.editor.media.uploadHint',
+                'JPG, PNG, WebP o HEIC — máx. {{maxSize}}MB',
+                { maxSize: DEFAULT_ENTITY_MAX_FILE_SIZE_MB }
+            )}
             helpId={sectionHelpId({ vertical, slug: 'fotos' })}
             id="editor-media"
             featured={

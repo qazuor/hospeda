@@ -278,6 +278,11 @@ export function PhotoSection({
     return (
         <PhotoEditor
             locale={locale}
+            uploadHint={t(
+                'host.properties.editor.photo.formats',
+                'JPG, PNG o WebP — máx. {{maxSize}}MB',
+                { maxSize: DEFAULT_ENTITY_MAX_FILE_SIZE_MB }
+            )}
             helpId={sectionHelpId({ vertical: 'accommodation', slug: 'fotos' })}
             description={
                 <PhotoSectionDescription
