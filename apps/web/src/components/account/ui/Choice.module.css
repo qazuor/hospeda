@@ -80,7 +80,7 @@
     block-size: var(--space-5);
     margin: var(--space-1) 0 0;
     border: 2px solid var(--control-border);
-    border-radius: calc(var(--radius-control) / 2);
+    border-radius: var(--radius-sm);
     background-color: var(--control-bg);
     color: var(--on-action-primary);
     cursor: pointer;
