@@ -1,5 +1,5 @@
 {
-  "contentHash": "a696578982bf9b68757f1f0827845d142b30afba27857e883984925ff71b93d9",
+  "contentHash": "88556b4044d3582c6975864ffcab5df1b7170c402cd77bbee1d9d2d126a335f3",
   "locales": {
     "es": [
       {
@@ -192,7 +192,7 @@
           "publish-requirements",
           "ai-assistants"
         ],
-        "reviewedAt": "2026-11-24",
+        "reviewedAt": "2026-11-25",
         "sections": {
           "canDo": "Tildar los servicios que ofrecés en {{link:section:accommodation:servicios|Servicios y comodidades}} (alojamientos) o en {{link:section:venue:servicios|Servicios del comercio}} y {{link:section:experience:servicios|Servicios de la experiencia}}.",
           "expect": "- En alojamientos el catálogo está agrupado por categorías y cada comodidad tiene su detalle.\n- Un asistente agrega o quita servicios de una categoría por vez (mirá {{article:ai-assistants|cómo conectarlo}}).",
@@ -262,7 +262,7 @@
           "provider-directory",
           "benefit-usage-provider"
         ],
-        "reviewedAt": "2026-11-23",
+        "reviewedAt": "2026-11-25",
         "sections": {
           "canDo": "Registrar un uso desde el proveedor en el {{link:providerDirectory|directorio}} y responder los que te registran en {{link:benefitUsages|Usos del beneficio}}.",
           "expect": "- Un uso queda pendiente hasta que la otra parte lo confirma, y solo cuenta cuando está confirmado.\n- Un rechazo se puede deshacer.\n- El historial se filtra por pendientes, confirmados, rechazados o vencidos.",
@@ -324,7 +324,7 @@
           "benefit-usage",
           "provider-directory"
         ],
-        "reviewedAt": "2026-11-23",
+        "reviewedAt": "2026-11-25",
         "sections": {
           "canDo": "Registrar usos, descargar tu código QR y confirmar los usos pendientes desde {{link:providerPanel|Mi ficha de proveedor}}.",
           "expect": "- Lo que registrás queda pendiente hasta que el anfitrión lo confirme (mirá {{article:benefit-usage|cómo lo ve el anfitrión}}).\n- Los usos confirmados suman a tus números.",
@@ -394,7 +394,7 @@
           "publish-requirements",
           "inquiries"
         ],
-        "reviewedAt": "2026-11-23",
+        "reviewedAt": "2026-11-25",
         "sections": {
           "canDo": "Bloquear y liberar fechas, y conectar calendarios externos, desde {{link:section:accommodation:calendario|Calendario}}.",
           "expect": "- Las fechas bloqueadas no aparecen disponibles en las búsquedas.\n- Un calendario conectado muestra su estado y se puede sincronizar a mano o desconectar.\n- El calendario y la sincronización dependen de tu plan: compará {{link:plans:accommodation|los planes para alojamientos}}.",
@@ -852,7 +852,7 @@
           "ai-assistants",
           "calendar"
         ],
-        "reviewedAt": "2026-11-23",
+        "reviewedAt": "2026-11-25",
         "sections": {
           "canDo": "Leer y responder las conversaciones de tus alojamientos en {{link:inquiries|Mensajes de huéspedes}}.",
           "expect": "- Las conversaciones con mensajes sin leer tienen una marca.\n- Un asistente redacta la respuesta y te la muestra antes de enviarla (mirá {{article:ai-assistants|cómo conectarlo}}).",
@@ -932,7 +932,7 @@
           "change-plan",
           "pause-resume"
         ],
-        "reviewedAt": "2026-11-24",
+        "reviewedAt": "2026-11-25",
         "sections": {
           "canDo": "Crear promociones para tus alojamientos en {{link:page:promotions|Mis promociones}} y para tu comercio en {{link:section:venue:promociones|las promociones de tu comercio}}. En cada promoción elegís quién la ve: «Para todos» o «Solo VIP».",
           "expect": "- Crear promociones depende de tu plan, y tu plan fija cuántas pueden estar activas a la vez: {{limit:max_active_promotions:accommodation}}.\n- «Solo VIP» también depende de tu plan. Si tu plan no la incluye, la opción aparece con un candado y un enlace a los planes.\n- Una promoción borrosa muestra solo el valor y el tipo de beneficio. El nombre del lugar no aparece: en su lugar va un nombre de relleno.\n- En la búsqueda, las tarjetas muestran «Promo» si el lugar tiene una promoción «Para todos» y «VIP» si tiene una «Solo VIP». Si tiene de las dos, se ven las dos.\n- Los turistas suscriptos reciben una vez por semana un correo con las promociones nuevas de esa semana, de los dos tipos.\n\n### Ejemplo {#ejemplo}\n\nTenés tres promociones «Para todos» y una «Solo VIP». Un turista suscripto ve las cuatro. Un turista con el plan gratis ve algunas de las tres «Para todos», distintas en cada visita, y la «Solo VIP» borrosa.",
@@ -1093,7 +1093,7 @@
           "create-listing",
           "change-plan"
         ],
-        "reviewedAt": "2026-11-24",
+        "reviewedAt": "2026-11-25",
         "sections": {
           "canDo": "Cargar la foto principal y sumar fotos a la galería desde la sección «Fotos» del editor:\n{{link:section:accommodation:fotos|Fotos de tu alojamiento}}, {{link:section:venue:fotos|Fotos de tu comercio}} o {{link:section:experience:fotos|Fotos de tu experiencia}}.\n\nEn alojamientos también podés reordenar la galería y elegir la portada.",
           "expect": "- Cada cambio se guarda al instante, sin un botón de guardar.\n- La foto principal es obligatoria para publicar: sin ella, {{article:publish-requirements|los requisitos para publicar}} no se cumplen.\n- Fotos que entran en la galería de un alojamiento: {{limit:max_photos_per_accommodation:accommodation}}. El editor te avisa cuántas te quedan.",
@@ -1156,7 +1156,7 @@
           "benefit-usage",
           "benefit-usage-provider"
         ],
-        "reviewedAt": "2026-11-23",
+        "reviewedAt": "2026-11-25",
         "sections": {
           "canDo": "Buscar proveedores locales de confianza y ver su beneficio para anfitriones en {{link:providerDirectory|Directorio de proveedores}}.",
           "expect": "- Necesitás tener alojamientos registrados para ver el directorio.\n- Cada proveedor muestra su beneficio, su horario y las valoraciones de otros anfitriones.\n- Después de usar un servicio, {{article:benefit-usage|registrás el uso del beneficio}}.",
