@@ -3,9 +3,9 @@
  * preselected by type.
  *
  * What this validates:
- *  1. A BAR starts with BOTH catalog lines checked (`food`, `nightlife`).
- *  2. A HELADERIA has NO `nightlife` option at all and starts with `food`.
- *  3. Both selections reach the create endpoint and are persisted on the row.
+ *  1. The minimal create step leaves business lines to the server.
+ *  2. A BAR persists both `food` and `nightlife`; a HELADERIA persists `food`.
+ *  3. The editor exposes the preselected lines after the draft is created.
  *
  * Actors: two fresh users created through the real signup API, one per venue —
  * the trial account allows a single venue, so reusing one owner would turn the
@@ -118,6 +118,13 @@ async function createVenue(
     return match[1];
 }
 
+/** The create step lands on the editor hub; business lines are edited in «Datos». */
+async function openBasicDataSection(page: Page, venueId: string): Promise<void> {
+    await page.goto(`${WEB_URL}/es/mi-cuenta/comercio/venue/${venueId}/editar/datos/`, {
+        waitUntil: 'load'
+    });
+}
+
 /** Reads the persisted business lines of one venue. */
 async function readBusinessLines(venueId: string): Promise<readonly string[]> {
     const rows = await execSQL<{ business_lines: string[] }>(
@@ -154,8 +161,8 @@ test.describe('LISTING-OWNER-08: owner creates venues with business lines presel
         await waitForListingCreateFormHydration({ page });
         await page.getByLabel('Categoría').selectOption('BAR');
 
-        await expect(page.getByTestId('business-line-food')).toBeChecked();
-        await expect(page.getByTestId('business-line-nightlife')).toBeChecked();
+        await expect(page.getByTestId('business-line-food')).toHaveCount(0);
+        await expect(page.getByTestId('business-line-nightlife')).toHaveCount(0);
 
         const barId = await createVenue(page, {
             name: `Bar de prueba ${Date.now()}`,
@@ -165,6 +172,9 @@ test.describe('LISTING-OWNER-08: owner creates venues with business lines presel
         });
 
         expect(await readBusinessLines(barId)).toEqual(['food', 'nightlife']);
+        await openBasicDataSection(page, barId);
+        await expect(page.getByTestId('business-line-food')).toBeChecked();
+        await expect(page.getByTestId('business-line-nightlife')).toBeChecked();
 
         // ── HELADERIA: no nightlife option, only food persisted ────────────
         const iceCreamOwner = await createOwner();
@@ -175,7 +185,7 @@ test.describe('LISTING-OWNER-08: owner creates venues with business lines presel
         await page.getByLabel('Categoría').selectOption('HELADERIA');
 
         await expect(page.getByTestId('business-line-nightlife')).toHaveCount(0);
-        await expect(page.getByTestId('business-line-food')).toBeChecked();
+        await expect(page.getByTestId('business-line-food')).toHaveCount(0);
 
         const heladeriaId = await createVenue(page, {
             name: `Heladería de prueba ${Date.now()}`,
@@ -185,5 +195,8 @@ test.describe('LISTING-OWNER-08: owner creates venues with business lines presel
         });
 
         expect(await readBusinessLines(heladeriaId)).toEqual(['food']);
+        await openBasicDataSection(page, heladeriaId);
+        await expect(page.getByTestId('business-line-food')).toBeChecked();
+        await expect(page.getByTestId('business-line-nightlife')).toHaveCount(0);
     });
 });

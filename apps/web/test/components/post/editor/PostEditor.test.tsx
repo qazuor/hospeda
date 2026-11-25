@@ -334,7 +334,7 @@ describe('PostEditor — moderation edit lock (§7.6.3)', () => {
         renderEditor({ isEditLocked: true });
 
         expect(screen.getByLabelText('Título *')).toBeDisabled();
-        expect(screen.getByLabelText('Categoría *')).toBeDisabled();
+        expect(screen.getByRole('combobox', { name: /Categoría/ })).toBeDisabled();
     });
 
     it('disables the rich-text body too', () => {

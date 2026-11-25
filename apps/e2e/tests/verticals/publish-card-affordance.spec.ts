@@ -6,6 +6,7 @@ import {
 } from '../../fixtures/api-helpers.ts';
 import { seedCookieConsent, waitForIslandHydration } from '../../fixtures/browser-helpers.ts';
 import { execSQL, getDbPool } from '../../fixtures/db-helpers.ts';
+import { DRAFT_PROPERTY_LIST } from '../../fixtures/owner-lists.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
 
 /**
@@ -98,7 +99,7 @@ test.describe('Publish card affordance @p0 @verticals @billing', () => {
             await seedCookieConsent(page);
             await attachSession(page, owner.sessionCookie);
             await page.goto(`${WEB_URL}/es/mi-cuenta/propiedades/`);
-            const list = page.getByRole('list', { name: 'Mis alojamientos' });
+            const list = page.getByRole('list', { name: DRAFT_PROPERTY_LIST });
             await expect(
                 list.getByRole('link', { name: 'Elegir plan de anfitrión', exact: true })
             ).toBeVisible();
@@ -148,7 +149,7 @@ test.describe('Publish card affordance @p0 @verticals @billing', () => {
             await seedCookieConsent(page);
             await attachSession(page, owner.sessionCookie);
             await page.goto(`${WEB_URL}/es/mi-cuenta/propiedades/`);
-            const list = page.getByRole('list', { name: 'Mis alojamientos' });
+            const list = page.getByRole('list', { name: DRAFT_PROPERTY_LIST });
             const publish = list.getByRole('button', { name: 'Publicar', exact: true });
             await expect(publish).toBeVisible();
             await expect(list.getByRole('link', { name: /elegir plan/i })).toHaveCount(0);

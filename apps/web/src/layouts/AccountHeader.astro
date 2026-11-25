@@ -49,11 +49,11 @@ import logoSrc from '@/assets/images/logo.webp';
 interface Props {
 	readonly locale: SupportedLocale;
 	readonly mcpEnabled?: boolean;
-	/** HOS-2627: the account holds ≥1 subscription; gates Complementos in the account sheet. */
-	readonly hasSubscription?: boolean;
+	/** D5b: a subscription or active add-on gates Complementos in the account sheet. */
+	readonly billingPresence?: boolean;
 }
 
-const { locale, mcpEnabled = false, hasSubscription = false } = Astro.props;
+const { locale, mcpEnabled = false, billingPresence = false } = Astro.props;
 const { t } = createTranslations(locale);
 
 let menuLogoSrc = logoSrc.src;
@@ -153,7 +153,7 @@ const adminPanelUrl = getAdminUrl();
 					client:load
 					locale={locale}
 					mcpEnabled={mcpEnabled}
-					hasSubscription={hasSubscription}
+					billingPresence={billingPresence}
 					adminPanelUrl={adminPanelUrl}
 				/>
 			</div>

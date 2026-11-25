@@ -28,6 +28,7 @@
  */
 
 import AccountLayout from '@/layouts/AccountLayout.astro';
+import { hasBillingPresence } from '@/lib/account-billing-presence';
 import { PageHeader, Section } from '@/components/account/ui';
 import PageHelpLink from '@/components/account/help/PageHelpLink.astro';
 import SubscriptionTabs from '@/components/account/SubscriptionTabs.astro';
@@ -86,7 +87,7 @@ try {
 	 ownSubscriptions = null;
 }
 
-const hasSubscriptions = ownSubscriptions === null || ownSubscriptions.subscriptions.length > 0;
+const billingPresence = await hasBillingPresence({ userId: user.id, cookieHeader });
 
 const addonVerticals = [...new Set(eligibleSubscriptionTargets({
     subscriptions: ownSubscriptions?.subscriptions ?? [],
@@ -117,7 +118,7 @@ if (returnSubscriptionId) {
 	<StripMercadoPagoReturnParams slot="head-early" />
 	<PageHeader locale={locale} title={title}>
 		<PageHelpLink slot="help" locale={locale} />
-		<SubscriptionTabs slot="tabs" locale={locale} current="plan" showAddons={hasSubscriptions} />
+		<SubscriptionTabs slot="tabs" locale={locale} current="plan" showAddons={billingPresence} />
 	</PageHeader>
 	{returnSubscriptionId && <SubscriptionReturn
 		client:load

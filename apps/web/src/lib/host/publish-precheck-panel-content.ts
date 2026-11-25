@@ -218,7 +218,7 @@ export function resolvePrecheckPanelContent(
                 titleKey: `billing.limit.${limitKey}.atLimitPanel.title`,
                 titleFallback: 'Llegaste al límite de tu plan',
                 bodyKey: `billing.limit.${limitKey}.atLimitPanel.body`,
-                bodyFallback: `Estás usando {{currentCount}} de {{maxAllowed}} ${nounPlural}. Para publicar otra, actualizá tu plan.`,
+                bodyFallback: `Tenés {{currentCount}} de {{maxAllowed}} ${nounPlural} publicadas. Los borradores no cuentan para este límite. Para publicar otra, actualizá tu plan.`,
                 showQuota: true,
                 bodyPluralBasis: 'maxAllowed',
                 actions: [
@@ -269,7 +269,7 @@ export function resolvePrecheckPanelContent(
                 titleKey: `${ns}.resumeDeleteOrUpgrade.title`,
                 titleFallback: 'Tenés un borrador, pero llegaste al límite de tu plan',
                 bodyKey: `${ns}.resumeDeleteOrUpgrade.body`,
-                bodyFallback: `Estás usando {{currentCount}} ${nounPlural} y tu plan permite {{maxAllowed}}. Podés retomar tu borrador, borrarlo para liberar lugar, o subir de plan.`,
+                bodyFallback: `Tenés {{currentCount}} ${nounPlural} publicadas y tu plan permite {{maxAllowed}}. Los borradores no cuentan para este límite. Podés retomar o borrar tu borrador; para publicar otra, subí de plan.`,
                 showQuota: true,
                 bodyPluralBasis: 'currentCount',
                 actions: [
@@ -285,7 +285,8 @@ export function resolvePrecheckPanelContent(
                         labelKey: `${ns}.resumeDeleteOrUpgrade.deleteCta`,
                         labelFallback: 'Borrar borrador',
                         confirmTextKey: `${ns}.resumeDeleteOrUpgrade.deleteConfirm`,
-                        confirmTextFallback: `¿Borrar este borrador? Vas a poder crear una ${noun} nueva.`
+                        confirmTextFallback:
+                            '¿Borrar este borrador? Esta acción no libera cupo de publicación.'
                     },
                     {
                         kind: 'link',
@@ -327,7 +328,7 @@ export function resolvePrecheckPanelContent(
                 titleKey: `${ns}.pickDraftDeleteOrUpgrade.title`,
                 titleFallback: 'Tenés varios borradores, pero llegaste al límite de tu plan',
                 bodyKey: `${ns}.pickDraftDeleteOrUpgrade.body`,
-                bodyFallback: `Estás usando {{currentCount}} ${nounPlural} y tu plan permite {{maxAllowed}}. Editá uno de tus borradores existentes o subí de plan para crear uno nuevo.`,
+                bodyFallback: `Tenés {{currentCount}} ${nounPlural} publicadas y tu plan permite {{maxAllowed}}. Los borradores no cuentan para este límite. Podés seguir editándolos; para publicar otra, subí de plan.`,
                 showQuota: true,
                 bodyPluralBasis: 'currentCount',
                 actions: [

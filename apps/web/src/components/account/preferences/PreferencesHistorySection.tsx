@@ -38,8 +38,6 @@ export interface PreferencesHistorySectionProps {
 
 type HistoryAccess = { readonly allowed: boolean };
 
-const LOCKED_ANCHOR = 'preferences-history-locked';
-
 async function probeAccess({
     apiUrl,
     signal
@@ -96,12 +94,6 @@ export function PreferencesHistorySection({
 
     const label = t('account.searchHistory.optOut.label');
     const description = t('account.searchHistory.optOut.description');
-    const planLabel =
-        gatePlanNames.length > 0
-            ? new Intl.ListFormat(locale, { style: 'long', type: 'disjunction' }).format(
-                  gatePlanNames
-              )
-            : t('account.preferences.searchHistory.planFallback');
 
     return (
         <Section
@@ -162,28 +154,16 @@ export function PreferencesHistorySection({
                             helpId="section:preferences.history"
                         />
                     ) : (
-                        <>
-                            <SwitchRow
-                                label={label}
-                                description={description}
-                                locale={locale}
-                                checked={false}
-                                onChange={async () => undefined}
-                                locked={{ planLabel, href: `#${LOCKED_ANCHOR}` }}
-                            />
-                            <div id={LOCKED_ANCHOR}>
-                                <LockedState
-                                    locale={locale}
-                                    reason={{
-                                        kind: 'plan',
-                                        feature: label,
-                                        description,
-                                        plans: gatePlanNames.map((name) => ({ name })),
-                                        plansHref
-                                    }}
-                                />
-                            </div>
-                        </>
+                        <LockedState
+                            locale={locale}
+                            reason={{
+                                kind: 'plan',
+                                feature: label,
+                                description,
+                                plans: gatePlanNames.map((name) => ({ name })),
+                                plansHref
+                            }}
+                        />
                     )
                 }
             />

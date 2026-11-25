@@ -49,6 +49,9 @@ export function getCharacterCounterState({
     // `union([literal(''), string().min(30)])`: clearing it removes the
     // override, which is the whole point of HOS-792. Flagging it would tell
     // the host to fix something that is already correct.
+    // Length guidance must not mark an untouched, empty form as erroneous.
+    // Requiredness is still enforced by the schema and the enclosing Field.
+    if (current === 0) return 'normal';
     const minApplies = typeof min === 'number' && !(optional && current === 0);
     if (minApplies && current < (min as number)) return 'under-minimum';
     if (current >= max) return 'danger';
@@ -125,12 +128,16 @@ export function CharacterCounter({
              * call site instead of one per form.
              */}
             {typeof min === 'number'
-                ? t('comments.form.charCountWithMin', '{{count}}/{{max}} · mín. {{min}}', {
-                      count: String(current),
-                      max: String(max),
-                      min: String(min)
-                  })
-                : t('comments.form.charCount', '{{count}}/{{max}}', {
+                ? t(
+                      'comments.form.charCountWithMin',
+                      '{{count}} de {{max}} caracteres · mín. {{min}}',
+                      {
+                          count: String(current),
+                          max: String(max),
+                          min: String(min)
+                      }
+                  )
+                : t('comments.form.charCount', '{{count}} de {{max}} caracteres', {
                       count: String(current),
                       max: String(max)
                   })}

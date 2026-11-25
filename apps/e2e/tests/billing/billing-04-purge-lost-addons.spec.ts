@@ -9,6 +9,7 @@ import {
 import { seedCookieConsent } from '../../fixtures/browser-helpers.ts';
 import { execSQL, getDbPool } from '../../fixtures/db-helpers.ts';
 import { attachSession, renameListing } from '../../fixtures/listing-notices.ts';
+import { ALL_PROPERTY_LISTS } from '../../fixtures/owner-lists.ts';
 import { openPropertyCardConfirm } from '../../fixtures/property-card-actions.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
 
@@ -95,7 +96,7 @@ test.describe('TEST:B13a:3 AC:B13a:4 the delete confirmation names the lost add-
         await seedCookieConsent(page);
         await attachSession({ page, sessionCookie: owner.sessionCookie });
         await page.goto(`${WEB_URL}/es/mi-cuenta/propiedades/`);
-        const list = page.getByRole('list', { name: 'Mis alojamientos' });
+        const list = page.getByRole('list', { name: ALL_PROPERTY_LISTS });
         const addonCard = list.getByRole('listitem').filter({ hasText: withAddonName });
         await expect(addonCard).toHaveCount(1);
         const addonConfirm = await openPropertyCardConfirm({

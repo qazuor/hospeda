@@ -222,13 +222,13 @@ describe('PhoneField', () => {
                 label="Teléfono"
                 locale="es"
             >
-                <PhoneField />
+                <PhoneField locale="es" />
             </Field>
         );
         const input = screen.getByLabelText('Teléfono');
         expect(input).toHaveAttribute('type', 'tel');
         expect(input).toHaveAttribute('inputmode', 'tel');
-        expect(input).toHaveAttribute('autocomplete', 'tel');
-        expect(container.querySelector('[data-addon="prefix"]')).toHaveTextContent('+54');
+        expect(input).toHaveAttribute('autocomplete', 'tel-national');
+        expect(container.querySelector('.phoneCountry')).toHaveTextContent('+54');
     });
 });

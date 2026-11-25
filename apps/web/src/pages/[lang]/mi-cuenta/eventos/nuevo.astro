@@ -27,7 +27,7 @@
 
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import PageHelpLink from '@/components/account/help/PageHelpLink.astro';
-import { LockedState, PageHeader, Section } from '@/components/account/ui';
+import { LockedState, PageHeader } from '@/components/account/ui';
 import { EventCreateForm } from '@/components/event/editor/EventCreateForm.client';
 import { eventOrganizersApi } from '@/lib/api/endpoints';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -94,14 +94,12 @@ const subtitle = t(
     </PageHeader>
 
     {canCreateEvents ? (
-        <Section title={title} helpId="section:content.event-create">
             <EventCreateForm
                 client:load
                 locale={locale}
                 organizers={organizers}
                 organizersLoadFailed={organizersLoadFailed}
             />
-        </Section>
     ) : (
         <LockedState
             locale={locale}

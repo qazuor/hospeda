@@ -117,8 +117,8 @@ for (const page of PAGES) {
             expect(src).toContain('<PublishPlanLinks');
         });
 
-        it('links to its own sales page and price grid, from the shared path map', () => {
-            expect(src).toContain('PLANS_PAGE_PATH_BY_VERTICAL[VERTICAL]');
+        it('links once to its price grid, from the shared path map', () => {
+            expect(src).not.toContain('plansUrl=');
             expect(src).toContain('PRICING_PAGE_PATH_BY_VERTICAL[VERTICAL]');
             // Never a literal: five separate copies of a path is how HOS-1032
             // left a menu pointing at a sales page.

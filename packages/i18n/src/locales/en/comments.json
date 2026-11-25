@@ -10,8 +10,8 @@
         "errorNetwork": "Your comment couldn't be sent. Please try again.",
         "errorRateLimit": "Too many comments, please wait a moment.",
         "errorAuthCta": "Sign in to comment",
-        "charCount": "{{count}}/{{max}}",
-        "charCountWithMin": "{{count}}/{{max}} · min. {{min}}",
+        "charCount": "{{count}} of {{max}} characters",
+        "charCountWithMin": "{{count}} of {{max}} characters · min. {{min}}",
         "charCountBelowMin": "Still below the {{min}}-character minimum"
     },
     "moderation": {

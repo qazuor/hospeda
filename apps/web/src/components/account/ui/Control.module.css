@@ -98,6 +98,28 @@
     opacity: 0.5;
 }
 
+.phoneGroup {
+    min-inline-size: 0;
+    flex-direction: column;
+}
+
+.phoneCountry {
+    flex: 0 0 auto;
+    border-inline-end: 0;
+    border-block-end: 1px solid var(--control-border);
+}
+
+@media (min-width: 48rem) {
+    .phoneGroup {
+        flex-direction: row;
+    }
+
+    .phoneCountry {
+        border-inline-end: 1px solid var(--control-border);
+        border-block-end: 0;
+    }
+}
+
 .addon {
     display: inline-flex;
     align-items: center;
@@ -120,6 +142,11 @@
 
 .bare:focus-visible {
     outline: none;
+}
+
+.phoneCountry > button,
+.phoneGroup > .bare {
+    min-block-size: calc(var(--control-h-lg) - 2px);
 }
 
 /* Remove numeric steppers, not native keyboard stepping or date/time pickers. */

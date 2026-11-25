@@ -48,11 +48,11 @@ interface Props {
 	readonly description?: string;
 	readonly template?: AccountShellTemplate;
 	readonly mcpEnabled?: boolean;
-	/** HOS-2627: the account holds ≥1 subscription; gates Complementos in the account sheet. */
-	readonly hasSubscription?: boolean;
+	/** D5b: a subscription or active add-on gates Complementos in the account sheet. */
+	readonly billingPresence?: boolean;
 }
 
-const { locale, navModel, title, description, template, mcpEnabled = false, hasSubscription = false } = Astro.props;
+const { locale, navModel, title, description, template, mcpEnabled = false, billingPresence = false } = Astro.props;
 
 const { t } = createTranslations(locale);
 const canonicalUrl = new URL(Astro.url.pathname, getSiteUrl()).href;
@@ -74,7 +74,7 @@ try {
 ---
 
 <BaseLayout locale={locale} title={resolvedTitle} description={resolvedDescription}>
-	<AccountHeader slot="chrome-header" locale={locale} mcpEnabled={mcpEnabled} hasSubscription={hasSubscription} />
+	<AccountHeader slot="chrome-header" locale={locale} mcpEnabled={mcpEnabled} billingPresence={billingPresence} />
 	<AccountFooter
 		slot="chrome-footer"
 		locale={locale}

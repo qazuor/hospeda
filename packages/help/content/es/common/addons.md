@@ -43,7 +43,7 @@ Comprar un complemento desde la sección de tu categoría en {{link:subscription
 
 ## Cómo se hace
 
-1. Entrá a «Suscripción» y buscá la sección de complementos de la categoría que tiene una suscripción activa. Si todavía no tenés ninguna suscripción, elegí un plan primero: la pestaña «Complementos» no aparece y su dirección te devuelve a «Mi cuenta».
+1. Entrá a «Suscripción» y buscá la sección de complementos de la categoría que tiene una suscripción activa. Si todavía no tenés ninguna suscripción ni ningún complemento activo, elegí un plan primero: la pestaña «Complementos» no aparece y su dirección te devuelve a «Mi cuenta».
 2. Elegí un complemento de la lista de esa categoría. Podés filtrar por categoría de complemento; cada tarjeta muestra su precio y los que ya tenés llevan «Activo».
 3. Elegí la ficha (o la suscripción) a la que se aplica.
 4. Revisá el resumen: muestra el importe y la frecuencia. Si tu beneficio lo incluye, aparece «Gratis por tu beneficio» y podés elegirlo sin pagar.

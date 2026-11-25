@@ -39,8 +39,14 @@
 
 import { EventOrganizerCreateHttpSchema } from '@repo/schemas';
 import { type JSX, useState } from 'react';
+import styles from '@/components/account/CreateStep.module.css';
+import { CreateTextField } from '@/components/account/CreateTextField';
+import { Alert } from '@/components/account/ui/Alert';
+import { Button } from '@/components/account/ui/Button';
+import { Field } from '@/components/account/ui/Field';
+import { Select } from '@/components/account/ui/Select';
 import { eventOrganizerApi } from '@/lib/api/endpoints-protected';
-import type { TranslationFn } from '@/lib/i18n';
+import type { SupportedLocale, TranslationFn } from '@/lib/i18n';
 
 /** Just `name` — the only field `EventOrganizerCreateHttpSchema` genuinely requires. */
 const ORGANIZER_NAME_SCHEMA = EventOrganizerCreateHttpSchema.shape.name;
@@ -55,6 +61,7 @@ export interface EventOrganizerOption {
 
 /** Props for {@link EventOrganizerPicker}. */
 export interface EventOrganizerPickerProps {
+    readonly locale: SupportedLocale;
     /** Organizer catalog fetched SSR by the page. */
     readonly initialOrganizers: readonly EventOrganizerOption[];
     /**
@@ -68,12 +75,8 @@ export interface EventOrganizerPickerProps {
     readonly onChange: (organizerId: string) => void;
     /** Validation message for the organizer field, owned by the parent form. */
     readonly fieldErrorMessage: string | undefined;
-    /** id of the parent's `FieldError` element, for `aria-describedby`. */
-    readonly fieldErrorElementId: string;
     /** Translator from the parent, so both share one `createTranslations` call. */
     readonly t: TranslationFn;
-    /** CSS-module classes from the parent form, so the picker inherits its styling. */
-    readonly styles: Readonly<Record<string, string>>;
 }
 
 /**
@@ -82,14 +85,13 @@ export interface EventOrganizerPickerProps {
  * @param props - See {@link EventOrganizerPickerProps}.
  */
 export function EventOrganizerPicker({
+    locale,
     initialOrganizers,
     loadFailed,
     value,
     onChange,
     fieldErrorMessage,
-    fieldErrorElementId,
-    t,
-    styles
+    t
 }: EventOrganizerPickerProps): JSX.Element {
     const [organizers, setOrganizers] =
         useState<readonly EventOrganizerOption[]>(initialOrganizers);
@@ -140,56 +142,67 @@ export function EventOrganizerPicker({
     }
 
     return (
-        <>
+        <div className={styles.fields}>
             {loadFailed && (
-                <p
-                    className={styles.error}
-                    role="alert"
-                    data-testid="event-organizer-load-error"
-                >
-                    {t(
-                        'account.myContent.events.create.organizer.loadError',
-                        'No pudimos cargar el listado de organizadores. Recargá la página para reintentar, o creá uno nuevo abajo.'
-                    )}
-                </p>
+                <div data-testid="event-organizer-load-error">
+                    <Alert
+                        tone="danger"
+                        locale={locale}
+                    >
+                        {t(
+                            'account.myContent.events.create.organizer.loadError',
+                            'No pudimos cargar el listado de organizadores. Recargá la página para reintentar, o creá uno nuevo abajo.'
+                        )}
+                    </Alert>
+                </div>
             )}
 
             {!loadFailed && !hasOrganizers && (
-                <p
-                    className={styles.hint}
-                    data-testid="event-organizer-empty-notice"
-                >
-                    {t(
-                        'account.myContent.events.create.organizer.empty',
-                        'Todavía no hay organizadores cargados. Creá el primero para poder publicar tu evento.'
-                    )}
-                </p>
+                <div data-testid="event-organizer-empty-notice">
+                    <Alert
+                        tone="info"
+                        locale={locale}
+                    >
+                        {t(
+                            'account.myContent.events.create.organizer.empty',
+                            'Todavía no hay organizadores cargados. Creá el primero para poder publicar tu evento.'
+                        )}
+                    </Alert>
+                </div>
             )}
 
             {!showCreate && hasOrganizers && (
                 <>
-                    <select
+                    <Field
                         id="ec-organizerId"
-                        className={styles.input}
-                        value={value}
-                        onChange={(event) => onChange(event.target.value)}
-                        aria-invalid={fieldErrorMessage ? 'true' : 'false'}
-                        aria-describedby={fieldErrorMessage ? fieldErrorElementId : undefined}
+                        locale={locale}
+                        label={t('account.myContent.events.create.field.organizerId', 'Organiza')}
+                        hint={t('account.myContent.events.create.hint.organizerId')}
+                        error={fieldErrorMessage}
                         required
                     >
-                        <option value="">—</option>
-                        {organizers.map((organizer) => (
-                            <option
-                                key={organizer.id}
-                                value={organizer.id}
-                            >
-                                {organizer.name}
+                        <Select
+                            id="ec-organizerId"
+                            value={value}
+                            onChange={(event) => onChange(event.target.value)}
+                            required
+                        >
+                            <option value="">
+                                {t('account.myContent.events.create.placeholder.organizer')}
                             </option>
-                        ))}
-                    </select>
-                    <button
+                            {organizers.map((organizer) => (
+                                <option
+                                    key={organizer.id}
+                                    value={organizer.id}
+                                >
+                                    {organizer.name}
+                                </option>
+                            ))}
+                        </Select>
+                    </Field>
+                    <Button
                         type="button"
-                        className={styles.linkButton}
+                        variant="secondary"
                         onClick={() => setShowCreate(true)}
                         data-testid="event-organizer-create-toggle"
                     >
@@ -197,31 +210,37 @@ export function EventOrganizerPicker({
                             'account.myContent.events.create.organizer.createNew',
                             '+ Crear organizador nuevo'
                         )}
-                    </button>
+                    </Button>
                 </>
             )}
 
             {showCreate && (
                 <div
-                    className={styles.organizerCreateBlock}
+                    className={styles.fields}
                     data-testid="event-organizer-create-block"
                 >
-                    <input
+                    <CreateTextField
                         id="ec-organizer-name"
-                        type="text"
-                        className={styles.input}
-                        value={newName}
-                        onChange={(event) => setNewName(event.target.value)}
-                        placeholder={t(
+                        locale={locale}
+                        label={t(
                             'account.myContent.events.create.organizer.namePlaceholder',
                             'Nombre del organizador'
                         )}
+                        hint={t(
+                            'account.myContent.events.create.organizer.nameInvalid',
+                            'El nombre debe tener entre 3 y 100 caracteres.'
+                        )}
+                        error={fieldErrorMessage}
+                        min={3}
+                        max={100}
+                        value={newName}
+                        onChange={setNewName}
                     />
-                    <div className={styles.organizerCreateActions}>
-                        <button
+                    <div className={styles.actions}>
+                        <Button
                             type="button"
-                            className={styles.organizerCreateSubmit}
-                            disabled={isCreating}
+                            variant="secondary"
+                            loading={isCreating}
                             onClick={() => void handleCreate()}
                             data-testid="event-organizer-create-submit"
                         >
@@ -234,11 +253,11 @@ export function EventOrganizerPicker({
                                       'account.myContent.events.create.organizer.submit',
                                       'Crear organizador'
                                   )}
-                        </button>
+                        </Button>
                         {hasOrganizers && (
-                            <button
+                            <Button
                                 type="button"
-                                className={styles.linkButton}
+                                variant="ghost"
                                 onClick={() => {
                                     setShowCreate(false);
                                     setCreateError(null);
@@ -246,20 +265,21 @@ export function EventOrganizerPicker({
                                 data-testid="event-organizer-create-cancel"
                             >
                                 {t('account.myContent.events.create.organizer.cancel', 'Cancelar')}
-                            </button>
+                            </Button>
                         )}
                     </div>
                     {createError && (
-                        <p
-                            className={styles.error}
-                            role="alert"
-                            data-testid="event-organizer-create-error"
-                        >
-                            {createError}
-                        </p>
+                        <div data-testid="event-organizer-create-error">
+                            <Alert
+                                tone="danger"
+                                locale={locale}
+                            >
+                                {createError}
+                            </Alert>
+                        </div>
                     )}
                 </div>
             )}
-        </>
+        </div>
     );
 }

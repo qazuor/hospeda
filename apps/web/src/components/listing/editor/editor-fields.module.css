@@ -24,7 +24,7 @@
    the UA's default `<fieldset>` margin, which the card recipe does not set.
 
    NOTE: the recipe sets `overflow: hidden` (via `.branded`). That is exactly
-   why `CountryCodeCombobox` portals its popover to `document.body` — see that
+   why the kit phone country picker portals its popover to `document.body` — see that
    component's file header. Any future popover inside a card must do the same. */
 .section {
     composes: card from "../../account/AccountSection.module.css";

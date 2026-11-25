@@ -1,8 +1,8 @@
 ---
 /**
  * @file mi-cuenta/complementos/index.astro
- * @description Active add-on summary with the subscription tabs. A successful
- * empty subscription read redirects to the account dashboard, except when settling
+ * @description Active add-on summary with the subscription tabs. Accounts without
+ * subscriptions or active add-ons redirect to the dashboard, except when settling
  * a Mercado Pago return. New purchases live in each vertical's subscription section;
  * personal add-on reads and the return settlement stay in browser islands.
  *
@@ -15,11 +15,10 @@ import SubscriptionTabs from '@/components/account/SubscriptionTabs.astro';
 import { AddonPurchase } from '@/components/billing/addon-purchase/AddonPurchase.client';
 import { RecurringAddonWithdrawal } from '@/components/billing/recurring-addons/RecurringAddonWithdrawal.client';
 import AccountLayout from '@/layouts/AccountLayout.astro';
+import { hasBillingPresence } from '@/lib/account-billing-presence';
 import { parseReturnOrderRequestId } from '@/lib/billing/addon-purchase-return';
 import { createTranslations, type SupportedLocale } from '@/lib/i18n';
 import { buildLoginRedirect } from '@/lib/middleware-helpers';
-import { billingSubscriptionApi } from '@/lib/api/endpoints-protected';
-import { parseOwnSubscriptions } from '@/lib/billing/self-cancel';
 import { buildUrl } from '@/lib/urls';
 
 const locale = Astro.locals.locale as SupportedLocale;
@@ -34,13 +33,7 @@ const title = t('account.pages.subscription.title', 'Suscripción');
 const returnOrderRequestId = parseReturnOrderRequestId({ search: Astro.url.search });
 const listingId = Astro.url.searchParams.get('listing');
 const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
-let ownSubscriptions = null;
-try {
-    ownSubscriptions = parseOwnSubscriptions({ result: await billingSubscriptionApi.listMine({ cookieHeader }) });
-} catch {
-    ownSubscriptions = null;
-}
-if (!returnOrderRequestId && ownSubscriptions?.subscriptions.length === 0) {
+if (!returnOrderRequestId && !await hasBillingPresence({ userId: user.id, cookieHeader })) {
     return Astro.redirect(buildUrl({ locale, path: 'mi-cuenta' }));
 }
 ---

@@ -14,10 +14,10 @@
 
 import type { FieldErrors } from '@/lib/forms/field-errors';
 import type { SupportedLocale } from '@/lib/i18n';
-import { COUNTRY_CODES, type SupportedTheme } from './ProfileCompletion.helpers';
+import type { SupportedTheme } from './ProfileCompletion.helpers';
 import styles from './ProfileCompletion.module.css';
 import { PcSelectField } from './ProfileCompletionFields';
-import { Field, Select, TextInput } from './ui';
+import { Field, PhoneField } from './ui';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -25,10 +25,8 @@ import { Field, Select, TextInput } from './ui';
 export interface ProfileCompletionContactFieldsProps {
     /** Active locale, for the kit fields' fixed copy. */
     readonly locale: SupportedLocale;
-    /** Selected phone country code (e.g. '+54'). */
-    readonly phoneCode: string;
-    /** Phone number (without country code). */
-    readonly phoneNumber: string;
+    /** Complete E.164 phone value. */
+    readonly phone: string;
     /** Currently selected locale preference. */
     readonly selectedLocale: SupportedLocale;
     /** Currently selected theme preference. */
@@ -39,10 +37,8 @@ export interface ProfileCompletionContactFieldsProps {
     readonly submitting: boolean;
     /** Translation function from the parent island. */
     readonly t: (key: string, fallback: string) => string;
-    /** Handler for phone country code change. */
-    readonly onPhoneCodeChange: (value: string) => void;
-    /** Handler for phone number change. */
-    readonly onPhoneNumberChange: (value: string) => void;
+    /** Handler for the complete phone value. */
+    readonly onPhoneChange: (value: string) => void;
     /** Handler for locale selection change. */
     readonly onLocaleChange: (value: SupportedLocale) => void;
     /**
@@ -62,15 +58,13 @@ export interface ProfileCompletionContactFieldsProps {
  */
 export function ProfileCompletionContactFields({
     locale,
-    phoneCode,
-    phoneNumber,
+    phone,
     selectedLocale,
     selectedTheme,
     errors,
     submitting,
     t,
-    onPhoneCodeChange,
-    onPhoneNumberChange,
+    onPhoneChange,
     onLocaleChange,
     onThemeChange
 }: ProfileCompletionContactFieldsProps) {
@@ -88,38 +82,19 @@ export function ProfileCompletionContactFields({
                 )}
                 className={styles.full}
             >
-                <div className={styles.phoneRow}>
-                    <Select
-                        id="pc-phoneCode"
-                        value={phoneCode}
-                        onChange={(e) => onPhoneCodeChange(e.target.value)}
-                        disabled={submitting}
-                        aria-label={t(
-                            'account.profileCompletion.fields.phoneCodeLabel',
-                            'Código de país'
-                        )}
-                    >
-                        {COUNTRY_CODES.map((cc) => (
-                            <option
-                                key={cc.code}
-                                value={cc.code}
-                            >
-                                {cc.label}
-                            </option>
-                        ))}
-                    </Select>
-                    <TextInput
-                        type="tel"
-                        value={phoneNumber}
-                        onChange={(e) => onPhoneNumberChange(e.target.value)}
-                        placeholder={t(
-                            'account.profileCompletion.fields.phonePlaceholder',
-                            '9 11 1234-5678'
-                        )}
-                        autoComplete="tel-national"
-                        disabled={submitting}
-                    />
-                </div>
+                <PhoneField
+                    locale={locale}
+                    countryId="pc-phoneCode"
+                    compact
+                    value={phone}
+                    onValueChange={onPhoneChange}
+                    placeholder={t(
+                        'account.profileCompletion.fields.phonePlaceholder',
+                        '9 11 1234-5678'
+                    )}
+                    autoComplete="tel-national"
+                    disabled={submitting}
+                />
             </Field>
 
             {/* ── Preferred locale ──────────────────────────────────── */}

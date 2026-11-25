@@ -1,4 +1,16 @@
 {
+    "vipGate": {
+        "title": "Travel with Hospeda VIP",
+        "body": "VIP is the plan for travelers who want to get more out of every trip.",
+        "priceAlert": "Set alerts for your favorite accommodations and get notified when the price drops.",
+        "benefit": "You also get access to exclusive offers for VIP travelers.",
+        "monthlyPrice": "{{price}} per month",
+        "upgrade": "Become VIP",
+        "notNow": "Not now",
+        "loading": "Loading the VIP plan…",
+        "unavailable": "We couldn't load the VIP plan price. Please try again.",
+        "retry": "Try again"
+    },
     "accommodations": "Accommodations",
     "redactedContact": {
         "email": "[email hidden]",

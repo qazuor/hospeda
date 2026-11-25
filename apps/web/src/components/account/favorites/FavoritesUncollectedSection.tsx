@@ -35,7 +35,7 @@ export interface FavoritesUncollectedSectionProps {
     /** The list state from `useFavoritesList`. */
     readonly list: UseFavoritesListResult;
     /** Opens the «Mover» dialog for a bookmark. */
-    readonly onMove: (bookmark: BookmarkItem) => void;
+    readonly onMove?: (bookmark: BookmarkItem) => void;
     /** Asks for confirmation, then removes. */
     readonly onRemove: (bookmark: BookmarkItem) => void;
 }

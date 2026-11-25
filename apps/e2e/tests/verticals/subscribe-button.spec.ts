@@ -6,6 +6,7 @@ import {
 } from '../../fixtures/api-helpers.ts';
 import { seedCookieConsent } from '../../fixtures/browser-helpers.ts';
 import { execSQL, getDbPool } from '../../fixtures/db-helpers.ts';
+import { ALL_PROPERTY_LISTS } from '../../fixtures/owner-lists.ts';
 import { retireAccommodationPlanVersions } from '../../fixtures/subscribe-button.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
 
@@ -143,7 +144,7 @@ test.describe('Subscribe button with no plans @verticals @billing', () => {
             await expect(cardNoPlans).not.toContainText(/suscribite/i);
             await expect(
                 page
-                    .getByRole('list', { name: 'Mis alojamientos' })
+                    .getByRole('list', { name: ALL_PROPERTY_LISTS })
                     .getByRole('button', { name: 'Publicar', exact: true })
             ).toHaveCount(0);
         } finally {

@@ -302,7 +302,7 @@
             "province": "Provincia / Región",
             "birthDate": "Fecha de nacimiento",
             "birthDateHint": "Formato: dd/mm/yyyy.",
-            "phoneHint": "Formato E.164: +541134567890",
+            "phoneHint": "Choose the country and enter your phone number.",
             "facebook": "Facebook",
             "instagram": "Instagram",
             "linkedin": "LinkedIn",
@@ -1611,6 +1611,8 @@
             },
             "create": {
                 "pageTitle": "New post",
+                "sectionTitle": "Post details",
+                "placeholder": { "category": "Choose a category" },
                 "subtitle": "Fill in the basics now — you'll be able to add photos and more details afterward in the editor.",
                 "field": {
                     "title": "Title",
@@ -1620,6 +1622,8 @@
                 },
                 "hint": {
                     "summary": "Between 10 and 500 characters. Shown in the blog listing.",
+                    "title": "Choose a clear title for your post.",
+                    "category": "Choose the post’s main topic.",
                     "content": "At least 100 characters. You'll be able to keep editing it in the full editor."
                 },
                 "submit": "Create post",
@@ -1712,6 +1716,11 @@
             },
             "create": {
                 "pageTitle": "New event",
+                "sectionTitle": "Event details",
+                "placeholder": {
+                    "category": "Choose a category",
+                    "organizer": "Choose an organizer"
+                },
                 "subtitle": "Fill in the basics now — you'll be able to add photos and more details later in the editor.",
                 "noAccess": {
                     "title": "Creating events is an editor feature",
@@ -1727,7 +1736,12 @@
                     "organizerId": "Organized by"
                 },
                 "hint": {
-                    "description": "Between 50 and 2000 characters. The listing summary comes from here."
+                    "description": "Between 50 and 2000 characters. The listing summary comes from here.",
+                    "name": "Enter the name used to announce the event.",
+                    "category": "Choose the category that best describes the event.",
+                    "startDate": "Enter the local start date and time.",
+                    "endDate": "Enter the local end date and time.",
+                    "organizerId": "Choose who is organizing the event or create an organizer."
                 },
                 "organizer": {
                     "createNew": "+ Create new organizer",
@@ -2136,6 +2150,33 @@
         }
     },
     "ui": {
+        "phoneCountries": {
+            "AR": "Argentina",
+            "UY": "Uruguay",
+            "BR": "Brazil",
+            "CL": "Chile",
+            "PY": "Paraguay",
+            "BO": "Bolivia",
+            "PE": "Peru",
+            "CO": "Colombia",
+            "EC": "Ecuador",
+            "VE": "Venezuela",
+            "MX": "Mexico",
+            "US": "United States",
+            "CA": "Canada",
+            "ES": "Spain",
+            "IT": "Italy",
+            "FR": "France",
+            "DE": "Germany",
+            "GB": "United Kingdom",
+            "PT": "Portugal",
+            "NL": "Netherlands",
+            "CH": "Switzerland",
+            "CN": "China",
+            "JP": "Japan",
+            "IL": "Israel",
+            "AU": "Australia"
+        },
         "loading": "Loading…",
         "retry": "Try again",
         "close": "Close",

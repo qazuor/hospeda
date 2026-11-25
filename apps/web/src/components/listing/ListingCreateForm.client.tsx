@@ -1,84 +1,31 @@
-/**
- * @file ListingCreateForm.client.tsx
- * @description Owner self-service listing create form island
- * (HOS-166 §7.2, §8 point 2).
- *
- * Collects ONLY the minimum identity fields the create endpoint's schema
- * genuinely requires (`name`, `type`, `summary`, `description`, plus the
- * optional `destinationId`) — everything else (contact, media, opening
- * hours, price, social) is filled in afterward via the existing
- * `ListingEditor` on the listing's editor page, which this form
- * redirects to on success. Experience listings additionally require
- * `priceFrom`/`priceUnit` at create time (the base `ExperienceSchema` has no
- * default for either — see the vertical-specific price section below).
- *
- * Native HTML form + `useZodForm` (no TanStack Form, per web conventions).
- * Field-level validation runs against a `.pick()` SUBSET of the real
- * `VenueOwnerCreateInputSchema` / `ExperienceOwnerCreateInputSchema`
- * (imported from `@repo/schemas`, never hand-rolled) — the exact schema the
- * create endpoint itself validates against, so there is only one set of
- * rules, just scoped to the fields this form actually collects.
- *
- * HOS-693 §6.2 removed the HOS-257 `prefill` prop (sourced from the caller's
- * own admin-provisioned listing lead, which no longer exists — HOS-687
- * grants the matching vertical owner role on listing creation instead). The form always starts
- * blank now, which was already its behaviour for the common case
- * (AC-10/AC-11 predate this and still hold).
- *
- * HOS-809: the price field asks for PESOS and converts to the centavos the
- * schema and the column store, via `@/lib/listing/price-units`. It used to
- * pass the typed number straight through under a label reading "Precio desde
- * (centavos)", so an owner who typed 15000 meaning pesos published $ 150.
- *
- * HOS-820: the copy that NAMES what is being created (the name field, the
- * submit button, the create-failed message) follows the vertical instead of
- * the shared module — an excursion is not a "comercio".
- *
- * Hydration: caller MUST use `client:load` (the primary interactive surface
- * of the create page).
- */
-
-import { ExperiencePriceUnitEnum, resolveBusinessLineOptions } from '@repo/schemas';
+/** Minimal owner create step: create a draft, then open its full editor. */
+import { ExperiencePriceUnitEnum } from '@repo/schemas';
 import { type FormEvent, type JSX, useEffect, useRef, useState } from 'react';
+import styles from '@/components/account/CreateStep.module.css';
+import { CreateTextField } from '@/components/account/CreateTextField';
+import { Alert } from '@/components/account/ui/Alert';
+import { Button } from '@/components/account/ui/Button';
+import { Checkbox } from '@/components/account/ui/Checkbox';
+import { Field } from '@/components/account/ui/Field';
+import { Section } from '@/components/account/ui/Section';
+import { Select } from '@/components/account/ui/Select';
+import { TextInput } from '@/components/account/ui/TextInput';
 import type { DestinationOption } from '@/components/listing/destination-option';
-import { BusinessLinesField } from '@/components/listing/editor/BusinessLinesField.client';
-import { MinAgeField } from '@/components/listing/editor/MinAgeField.client';
-import { FieldError, fieldErrorId } from '@/components/ui/FieldError';
 import { useZodForm } from '@/lib/forms/use-zod-form';
-import type { SupportedLocale } from '@/lib/i18n';
-import { createTranslations } from '@/lib/i18n';
+import { sectionHelpId } from '@/lib/help/section-help-id';
+import { createTranslations, type SupportedLocale } from '@/lib/i18n';
 import { LISTING_VERTICAL_FORM_CONFIG } from '@/lib/listing/listing-vertical-form-config';
-import type { VenueOrExperience } from '@/lib/listing/owner-listings';
-import { createOwnerListing } from '@/lib/listing/owner-listings';
+import { createOwnerListing, type VenueOrExperience } from '@/lib/listing/owner-listings';
 import { centsToPesosInputValue, parsePesosInputToCents } from '@/lib/listing/price-units';
 import { buildUrl } from '@/lib/urls';
-import styles from './ListingCreateForm.module.css';
 
 export interface ListingCreateFormProps {
-    /** Which vertical this create form targets. */
     readonly vertical: VenueOrExperience;
-    /** Active locale. */
     readonly locale: SupportedLocale;
-    /** Destination options for the (optional) destination select. */
     readonly destinations: readonly DestinationOption[];
-    /**
-     * `true` when the SSR destination catalog fetch failed (as opposed to
-     * succeeding with a genuinely empty catalog). `destinationId` is REQUIRED
-     * for publish-readiness (`resolveListingCompleteness`), so silently
-     * hiding the select on a failed fetch (the old `destinations.length > 0`
-     * gate) left the owner with no way to ever complete their listing and no
-     * indication why the field was missing. Defaults to `false` so existing
-     * callers/tests that omit it keep the prior behaviour.
-     */
     readonly destinationsLoadFailed?: boolean;
 }
 
-const PRICE_UNIT_OPTIONS = Object.values(ExperiencePriceUnitEnum);
-
-/**
- * ListingCreateForm — owner self-service listing create island.
- * Submits a DRAFT listing and redirects to its operational editor.
- */
 export function ListingCreateForm({
     vertical,
     locale,
@@ -87,139 +34,45 @@ export function ListingCreateForm({
 }: ListingCreateFormProps): JSX.Element {
     const { t } = createTranslations(locale);
     const config = LISTING_VERTICAL_FORM_CONFIG[vertical];
-
     const { fieldErrors, formError, validate, handleApiError, setFormError } = useZodForm({
         schema: config.formSchema,
         t
     });
-
     const [name, setName] = useState('');
     const [listingType, setListingType] = useState('');
     const [summary, setSummary] = useState('');
     const [description, setDescription] = useState('');
     const [destinationId, setDestinationId] = useState('');
-    // HOS-809: held in CENTAVOS, the unit `ExperienceOwnerCreateInputSchema`
-    // and the column both use. The field below shows and reads PESOS.
     const [priceFromCents, setPriceFromCents] = useState<number | null>(null);
     const [priceUnit, setPriceUnit] = useState('');
     const [isPriceOnRequest, setIsPriceOnRequest] = useState(false);
-    // HOS-1787 leaf 5.6 — business lines. The selection starts empty and the
-    // type's `preselect` fills it when the owner picks a type. `minAge` is the
-    // type's `fieldDefaults.policies.minAge` suggestion (BOLICHE → 18, HOS-2060),
-    // editable and clearable, and travels in the create body as
-    // `policies.minAge` when the owner leaves it set.
-    const [businessLines, setBusinessLines] = useState<readonly string[]>([]);
-    const [businessLinesTouched, setBusinessLinesTouched] = useState(false);
-    const [minAge, setMinAge] = useState<number | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
-
-    // The form controls are server-rendered, so their presence alone does not
-    // mean React has attached its handlers yet. Set this marker after mount so
-    // browser tests can wait before interacting without changing SSR markup.
     const formRef = useRef<HTMLFormElement>(null);
     useEffect(() => {
         formRef.current?.setAttribute('data-hydrated', 'true');
     }, []);
 
-    const typeOptions = config.typeOptions;
-    const typeDefaults = config.showsBusinessLines
-        ? config.resolveBusinessLineDefaults(listingType)
-        : { preselect: [], fieldDefaults: {} };
-    const showMinAge = typeof typeDefaults.fieldDefaults.policies?.minAge === 'number';
-
-    // HOS-820: "comercio" is the name of the internal module venue and
-    // experience share — not a word an excursion, a boat trip or a tour guide
-    // recognises itself in. The page already knows which vertical it is
-    // creating (the route carries it), so the three strings that NAME the thing
-    // being created follow the vertical instead of the module. Deliberately out
-    // of scope: the account sidebar's "Mi comercio", which is one shared entry
-    // across both verticals and needs a neutral term rather than a branch.
-    const nameLabel = t(config.labels.nameKey, config.labels.nameFallback);
-    const submitLabel = t(config.labels.submitKey, config.labels.submitFallback);
-    const createErrorMessage = t(config.labels.createErrorKey, config.labels.createErrorFallback);
-
-    /**
-     * Applies the new type's preselection and field defaults.
-     *
-     * An owner-touched selection survives a type change only when the new type
-     * still admits every selected line; otherwise the type's `preselect` wins,
-     * so a HELADERIA never starts with `nightlife` selected.
-     */
-    function handleTypeChange(nextType: string): void {
-        setListingType(nextType);
-        if (!config.showsBusinessLines) return;
-
-        const defaults = config.resolveBusinessLineDefaults(nextType);
-        const resolved = resolveBusinessLineOptions({
-            vertical,
-            type: nextType,
-            selected: businessLines
-        });
-        const stillAllowed = resolved
-            .filter((option) => option.selected && !option.reason)
-            .map((option) => option.value);
-        const keepTouched =
-            businessLinesTouched &&
-            businessLines.length !== 0 &&
-            stillAllowed.length === businessLines.length;
-
-        setBusinessLines(keepTouched ? stillAllowed : [...defaults.preselect]);
-        const suggestedMinAge = defaults.fieldDefaults.policies?.minAge;
-        setMinAge(typeof suggestedMinAge === 'number' ? suggestedMinAge : null);
-    }
-
     async function handleSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
         event.preventDefault();
-        // HOS-816: the previous attempt's banner belongs to the previous
-        // attempt. `handleApiError` only ever sets one, so without this a
-        // rejected submit left its message on screen through every later
-        // attempt — including one still in flight, which reads as "this failed
-        // again" before the server has answered anything.
         setFormError(null);
-
-        const basePayload: Record<string, unknown> = {
+        const payload: Record<string, unknown> = {
             name,
             type: listingType || undefined,
             summary,
             description,
             destinationId: destinationId || undefined
         };
-
         if (config.showsPriceFields) {
-            // HOS-1943: "a consultar" stores no price, never a fake 0 that
-            // reads as "$0". Same reasoning as the unit just below.
-            basePayload.priceFrom = isPriceOnRequest ? null : (priceFromCents ?? undefined);
-            // H-156: an experience with no price has no billing unit. Send an
-            // explicit null rather than whatever the select happened to hold, so
-            // the row does not end up asserting "price on request", "price 0"
-            // and "charged per person" all at once.
-            basePayload.priceUnit = isPriceOnRequest ? null : priceUnit || undefined;
-            basePayload.isPriceOnRequest = isPriceOnRequest;
+            payload.priceFrom = isPriceOnRequest ? null : (priceFromCents ?? undefined);
+            payload.priceUnit = isPriceOnRequest ? null : priceUnit || undefined;
+            payload.isPriceOnRequest = isPriceOnRequest;
         }
-
-        if (config.showsBusinessLines) {
-            basePayload.businessLines = [...businessLines];
-            // HOS-2060: the age is a policy. A cleared age sends no policies at
-            // all, so the server's defaults (cash) are all the listing starts with.
-            if (minAge !== null) {
-                basePayload.policies = { minAge };
-            }
-        }
-
-        const parsed = validate(basePayload);
-        if (!parsed.success) {
-            return;
-        }
-
+        // Business lines and policies are optional at create and belong to the editor.
+        // The venue endpoint derives business lines from the selected type.
+        const parsed = validate(payload);
+        if (!parsed.success) return;
         setIsSubmitting(true);
-
-        // `parsed.data` is typed against the narrow `.pick()` subset schema this
-        // form validates (only the fields it collects), not the full owner-create
-        // input type — every field the subset omits is optional/defaulted
-        // server-side (see the module doc), but TS cannot see that equivalence
-        // across the two distinct zod object types.
         const created = await createOwnerListing(config.buildCreatePayload(parsed.data));
-
         if (created.ok) {
             window.location.href = buildUrl({
                 locale,
@@ -227,319 +80,205 @@ export function ListingCreateForm({
             });
             return;
         }
-
-        handleApiError(created.error, createErrorMessage);
+        handleApiError(
+            created.error,
+            t(config.labels.createErrorKey, config.labels.createErrorFallback)
+        );
         setIsSubmitting(false);
     }
 
     return (
-        <form
-            ref={formRef}
-            className={styles.form}
-            onSubmit={(event) => void handleSubmit(event)}
-            noValidate
+        <Section
+            title={t('listing.owner.create.sectionTitle')}
+            description={t('listing.owner.create.sectionHint')}
+            helpId={sectionHelpId({ vertical, slug: 'datos' })}
         >
-            <div className={styles.field}>
-                <label
-                    className={styles.label}
-                    htmlFor="cc-name"
-                >
-                    {nameLabel}
-                </label>
-                <input
+            <form
+                ref={formRef}
+                className={styles.fields}
+                onSubmit={(event) => void handleSubmit(event)}
+                noValidate
+            >
+                <CreateTextField
                     id="cc-name"
-                    type="text"
-                    className={styles.input}
+                    locale={locale}
+                    label={t(config.labels.nameKey, config.labels.nameFallback)}
+                    hint={t('listing.owner.create.hint.name')}
+                    error={fieldErrors.name}
                     value={name}
-                    onChange={(event) => setName(event.target.value)}
-                    aria-invalid={fieldErrors.name ? 'true' : 'false'}
-                    aria-describedby={fieldErrors.name ? fieldErrorId('name') : undefined}
-                    required
+                    onChange={setName}
+                    min={2}
+                    max={100}
                 />
-                <FieldError
-                    id={fieldErrorId('name')}
-                    message={fieldErrors.name}
-                />
-            </div>
-
-            <div className={styles.field}>
-                <label
-                    className={styles.label}
-                    htmlFor="cc-type"
-                >
-                    {t('listing.owner.create.fields.type', 'Categoría')}
-                </label>
-                <select
+                <Field
                     id="cc-type"
-                    className={styles.input}
-                    value={listingType}
-                    onChange={(event) => handleTypeChange(event.target.value)}
-                    aria-invalid={fieldErrors.type ? 'true' : 'false'}
-                    aria-describedby={fieldErrors.type ? fieldErrorId('type') : undefined}
-                    required
-                >
-                    <option value="">—</option>
-                    {typeOptions.map((opt) => (
-                        <option
-                            key={opt}
-                            value={opt}
-                        >
-                            {config.resolveTypeLabel({ t, type: opt })}
-                        </option>
-                    ))}
-                </select>
-                <FieldError
-                    id={fieldErrorId('type')}
-                    message={fieldErrors.type}
-                />
-                {config.showsTypeDescription && listingType ? (
-                    <p
-                        className={styles.hint}
-                        aria-live="polite"
-                    >
-                        {t(`venue.typeDescriptions.${listingType}`, '')}
-                    </p>
-                ) : null}
-            </div>
-
-            {config.showsBusinessLines && listingType ? (
-                <BusinessLinesField
                     locale={locale}
-                    vertical={vertical}
-                    type={listingType}
-                    selected={businessLines}
-                    onChange={(next) => {
-                        setBusinessLines(next);
-                        setBusinessLinesTouched(true);
-                    }}
-                    errors={fieldErrors}
-                />
-            ) : null}
-
-            {config.showsBusinessLines && showMinAge ? (
-                <MinAgeField
-                    locale={locale}
-                    value={minAge}
-                    onChange={setMinAge}
-                    error={fieldErrors['policies.minAge']}
-                />
-            ) : null}
-
-            <div className={styles.field}>
-                <label
-                    className={styles.label}
-                    htmlFor="cc-summary"
-                >
-                    {t('listing.owner.create.fields.summary', 'Resumen')}
-                </label>
-                <textarea
-                    id="cc-summary"
-                    className={styles.textarea}
-                    rows={2}
-                    value={summary}
-                    onChange={(event) => setSummary(event.target.value)}
-                    aria-invalid={fieldErrors.summary ? 'true' : 'false'}
-                    aria-describedby={fieldErrors.summary ? fieldErrorId('summary') : undefined}
-                    required
-                />
-                <FieldError
-                    id={fieldErrorId('summary')}
-                    message={fieldErrors.summary}
-                />
-            </div>
-
-            <div className={styles.field}>
-                <label
-                    className={styles.label}
-                    htmlFor="cc-description"
-                >
-                    {t('listing.owner.create.fields.description', 'Descripción')}
-                </label>
-                <textarea
-                    id="cc-description"
-                    className={styles.textarea}
-                    rows={5}
-                    value={description}
-                    onChange={(event) => setDescription(event.target.value)}
-                    aria-invalid={fieldErrors.description ? 'true' : 'false'}
-                    aria-describedby={
-                        fieldErrors.description ? fieldErrorId('description') : undefined
+                    label={t('listing.owner.create.fields.type', 'Categoría')}
+                    hint={
+                        config.showsTypeDescription && listingType
+                            ? t(`venue.typeDescriptions.${listingType}`, '')
+                            : t('listing.owner.create.hint.type')
                     }
+                    error={fieldErrors.type}
                     required
-                />
-                <FieldError
-                    id={fieldErrorId('description')}
-                    message={fieldErrors.description}
-                />
-            </div>
-
-            {/* `destinationsLoadFailed` (judgment-day fix): surfaces a failed SSR
-                catalog fetch explicitly instead of silently omitting a REQUIRED
-                field (completeness needs `destinationId`) — see the prop's doc. */}
-            {destinationsLoadFailed ? (
-                <div className={styles.field}>
-                    <p
-                        className={styles.error}
-                        role="alert"
+                >
+                    <Select
+                        value={listingType}
+                        onChange={(event) => setListingType(event.target.value)}
                     >
-                        {t(
-                            'listing.owner.create.fields.destinationLoadError',
-                            'No pudimos cargar el listado de ciudades / destinos. Recargá la página para reintentar.'
-                        )}
-                    </p>
-                </div>
-            ) : destinations.length > 0 ? (
-                <div className={styles.field}>
-                    <label
-                        className={styles.label}
-                        htmlFor="cc-destinationId"
-                    >
-                        {t('listing.owner.create.fields.destination', 'Ciudad / Destino')}
-                    </label>
-                    <select
-                        id="cc-destinationId"
-                        className={styles.input}
-                        value={destinationId}
-                        onChange={(event) => setDestinationId(event.target.value)}
-                        aria-invalid={fieldErrors.destinationId ? 'true' : 'false'}
-                        aria-describedby={
-                            fieldErrors.destinationId ? fieldErrorId('destinationId') : undefined
-                        }
-                    >
-                        <option value="">—</option>
-                        {destinations.map((d) => (
+                        <option value="">{t('listing.owner.create.placeholder.type')}</option>
+                        {config.typeOptions.map((type) => (
                             <option
-                                key={d.id}
-                                value={d.id}
+                                key={type}
+                                value={type}
                             >
-                                {d.name}
+                                {config.resolveTypeLabel({ t, type })}
                             </option>
                         ))}
-                    </select>
-                    <FieldError
-                        id={fieldErrorId('destinationId')}
-                        message={fieldErrors.destinationId}
-                    />
-                </div>
-            ) : (
-                // HOS-260: catalog fetch SUCCEEDED but returned zero rows. The old
-                // `destinations.length > 0` gate silently omitted the field here
-                // too, leaving `destinationId` (required for completeness)
-                // unfillable with no indication why. Distinct from the
-                // `destinationsLoadFailed` branch above (fetch failure).
-                <div className={styles.field}>
-                    <p
-                        className={styles.error}
-                        role="alert"
+                    </Select>
+                </Field>
+                <CreateTextField
+                    id="cc-summary"
+                    locale={locale}
+                    label={t('listing.owner.create.fields.summary', 'Resumen')}
+                    hint={t('listing.owner.create.hint.summary')}
+                    error={fieldErrors.summary}
+                    value={summary}
+                    onChange={setSummary}
+                    min={10}
+                    max={300}
+                    rows={2}
+                />
+                <CreateTextField
+                    id="cc-description"
+                    locale={locale}
+                    label={t('listing.owner.create.fields.description', 'Descripción')}
+                    hint={t('listing.owner.create.hint.description')}
+                    error={fieldErrors.description}
+                    value={description}
+                    onChange={setDescription}
+                    min={20}
+                    max={2000}
+                    rows={5}
+                />
+                {destinationsLoadFailed || destinations.length === 0 ? (
+                    <Alert
+                        tone="danger"
+                        locale={locale}
                     >
-                        {t(
-                            'listing.owner.create.fields.destinationEmpty',
-                            'Todavía no hay ciudades / destinos cargados. Contactanos para poder completar este campo.'
-                        )}
-                    </p>
-                </div>
-            )}
-
-            {config.showsPriceFields && (
-                <div className={styles.field}>
-                    <label className={styles.checkbox}>
-                        <input
-                            type="checkbox"
+                        {destinationsLoadFailed
+                            ? t(
+                                  'listing.owner.create.fields.destinationLoadError',
+                                  'No pudimos cargar el listado de ciudades / destinos. Recargá la página para reintentar.'
+                              )
+                            : t(
+                                  'listing.owner.create.fields.destinationEmpty',
+                                  'Todavía no hay ciudades / destinos cargados. Contactanos para poder completar este campo.'
+                              )}
+                    </Alert>
+                ) : (
+                    <Field
+                        id="cc-destinationId"
+                        locale={locale}
+                        label={t('listing.owner.create.fields.destination', 'Ciudad / Destino')}
+                        hint={t('listing.owner.create.hint.destination')}
+                        error={fieldErrors.destinationId}
+                        optional
+                    >
+                        <Select
+                            value={destinationId}
+                            onChange={(event) => setDestinationId(event.target.value)}
+                        >
+                            <option value="">
+                                {t('listing.owner.create.placeholder.destination')}
+                            </option>
+                            {destinations.map((destination) => (
+                                <option
+                                    key={destination.id}
+                                    value={destination.id}
+                                >
+                                    {destination.name}
+                                </option>
+                            ))}
+                        </Select>
+                    </Field>
+                )}
+                {config.showsPriceFields && (
+                    <>
+                        <Checkbox
+                            label={t(
+                                'listing.owner.editor.sections.isPriceOnRequest',
+                                'Precio a consultar'
+                            )}
                             checked={isPriceOnRequest}
                             onChange={(event) => setIsPriceOnRequest(event.target.checked)}
                         />
-                        {t('listing.owner.editor.sections.isPriceOnRequest', 'Precio a consultar')}
-                    </label>
-
-                    <label
-                        className={styles.label}
-                        htmlFor="cc-priceFrom"
-                    >
-                        {t('listing.owner.editor.sections.priceFrom', 'Precio desde')}
-                    </label>
-                    {/* HOS-809: the owner types PESOS; the state holds centavos. */}
-                    <input
-                        id="cc-priceFrom"
-                        type="number"
-                        min={0}
-                        step={1}
-                        className={styles.input}
-                        disabled={isPriceOnRequest}
-                        value={centsToPesosInputValue({ cents: priceFromCents })}
-                        onChange={(event) => {
-                            setPriceFromCents(parsePesosInputToCents({ raw: event.target.value }));
-                        }}
-                        aria-invalid={fieldErrors.priceFrom ? 'true' : 'false'}
-                        aria-describedby={
-                            fieldErrors.priceFrom ? fieldErrorId('priceFrom') : undefined
-                        }
-                    />
-                    <FieldError
-                        id={fieldErrorId('priceFrom')}
-                        message={fieldErrors.priceFrom}
-                    />
-
-                    <label
-                        className={styles.label}
-                        htmlFor="cc-priceUnit"
-                    >
-                        {t('listing.owner.editor.sections.priceUnit', 'Unidad de precio')}
-                    </label>
-                    {/*
-                     * H-156: disabled while the price is "on request", mirroring
-                     * `priceFrom` above. This used to stay enabled BECAUSE
-                     * `ExperienceOwnerCreateInputSchema.priceUnit` was required even for a
-                     * listing with no price — disabling it would have made the form
-                     * unsubmittable. The column is nullable now and the create schema only
-                     * demands a unit when there IS a price, so the field can finally follow
-                     * the checkbox instead of contradicting it.
-                     */}
-                    <select
-                        id="cc-priceUnit"
-                        className={styles.input}
-                        value={priceUnit}
-                        disabled={isPriceOnRequest}
-                        onChange={(event) => setPriceUnit(event.target.value)}
-                        aria-invalid={fieldErrors.priceUnit ? 'true' : 'false'}
-                        aria-describedby={
-                            fieldErrors.priceUnit ? fieldErrorId('priceUnit') : undefined
-                        }
-                    >
-                        <option value="">—</option>
-                        {PRICE_UNIT_OPTIONS.map((unit) => (
-                            <option
-                                key={unit}
-                                value={unit}
+                        <Field
+                            id="cc-priceFrom"
+                            locale={locale}
+                            label={t('listing.owner.editor.sections.priceFrom', 'Precio desde')}
+                            hint={t('listing.owner.create.hint.price')}
+                            error={fieldErrors.priceFrom}
+                            required={!isPriceOnRequest}
+                        >
+                            <TextInput
+                                type="number"
+                                min={0}
+                                step={1}
+                                disabled={isPriceOnRequest}
+                                value={centsToPesosInputValue({ cents: priceFromCents })}
+                                onChange={(event) =>
+                                    setPriceFromCents(
+                                        parsePesosInputToCents({ raw: event.target.value })
+                                    )
+                                }
+                            />
+                        </Field>
+                        <Field
+                            id="cc-priceUnit"
+                            locale={locale}
+                            label={t('listing.owner.editor.sections.priceUnit', 'Unidad de precio')}
+                            error={fieldErrors.priceUnit}
+                            required={!isPriceOnRequest}
+                        >
+                            <Select
+                                value={priceUnit}
+                                disabled={isPriceOnRequest}
+                                onChange={(event) => setPriceUnit(event.target.value)}
                             >
-                                {t(`listing.owner.editor.priceUnitOption.${unit}`, unit)}
-                            </option>
-                        ))}
-                    </select>
-                    <FieldError
-                        id={fieldErrorId('priceUnit')}
-                        message={fieldErrors.priceUnit}
-                    />
-                </div>
-            )}
-
-            {formError && (
-                <p
-                    className={styles.error}
-                    role="alert"
+                                <option value="">
+                                    {t('listing.owner.create.placeholder.priceUnit')}
+                                </option>
+                                {Object.values(ExperiencePriceUnitEnum).map((unit) => (
+                                    <option
+                                        key={unit}
+                                        value={unit}
+                                    >
+                                        {t(`listing.owner.editor.priceUnitOption.${unit}`, unit)}
+                                    </option>
+                                ))}
+                            </Select>
+                        </Field>
+                    </>
+                )}
+                {formError && (
+                    <Alert
+                        tone="danger"
+                        locale={locale}
+                    >
+                        {formError}
+                    </Alert>
+                )}
+                <Button
+                    type="submit"
+                    loading={isSubmitting}
+                    data-testid="listing-create-submit"
                 >
-                    {formError}
-                </p>
-            )}
-
-            <button
-                type="submit"
-                className={styles.submit}
-                disabled={isSubmitting}
-                aria-busy={isSubmitting}
-                data-testid="listing-create-submit"
-            >
-                {isSubmitting ? t('listing.owner.create.submitting', 'Creando...') : submitLabel}
-            </button>
-        </form>
+                    {isSubmitting
+                        ? t('listing.owner.create.submitting', 'Creando...')
+                        : t(config.labels.submitKey, config.labels.submitFallback)}
+                </Button>
+            </form>
+        </Section>
     );
 }

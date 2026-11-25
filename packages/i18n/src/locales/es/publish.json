@@ -92,7 +92,7 @@
         },
         "hero": {
             "tagline": "Para quienes ofrecen experiencias",
-            "title": "Publicá tu experiencia y llenala",
+            "title": "Publicá tu experiencia y llegá a más viajeros",
             "body": "Empezá acá con lo básico: qué ofrecés, de qué tipo es y desde qué destino salís. Las fotos, el punto de encuentro y los horarios los cargás después, desde tu panel."
         },
         "trialCallout_one": "Probá Hospeda gratis por {{trialDays}} día, sin tarjeta. La prueba arranca sola cuando publicás tu primera experiencia.",
@@ -137,11 +137,11 @@
             },
             "resumeDeleteOrUpgrade": {
                 "title": "Tenés una ficha empezada, pero llegaste al límite de tu plan",
-                "body_one": "Estás usando {{currentCount}} ficha y tu plan permite {{maxAllowed}}. Podés retomar la que empezaste, borrarla para liberar lugar, o subir de plan.",
-                "body_other": "Estás usando {{currentCount}} fichas y tu plan permite {{maxAllowed}}. Podés retomar la que empezaste, borrarla para liberar lugar, o subir de plan.",
+                "body_one": "Tenés {{currentCount}} ficha publicada y tu plan permite {{maxAllowed}}. Los borradores no cuentan para este límite. Podés retomar o borrar tu borrador; para publicar otra ficha, subí de plan.",
+                "body_other": "Tenés {{currentCount}} fichas publicadas y tu plan permite {{maxAllowed}}. Los borradores no cuentan para este límite. Podés retomar o borrar tu borrador; para publicar otra ficha, subí de plan.",
                 "resumeCta": "Retomar la ficha",
                 "deleteCta": "Borrar la ficha",
-                "deleteConfirm": "¿Borrar esta ficha sin publicar? Vas a poder crear una nueva.",
+                "deleteConfirm": "¿Borrar este borrador? Esta acción no libera cupo de publicación.",
                 "upgradeCta": "Subir de plan"
             },
             "pickDraftOrCreate": {
@@ -152,8 +152,8 @@
             },
             "pickDraftDeleteOrUpgrade": {
                 "title": "Tenés varias fichas empezadas, pero llegaste al límite de tu plan",
-                "body_one": "Estás usando {{currentCount}} ficha y tu plan permite {{maxAllowed}}. Editá una de las que ya empezaste o subí de plan para crear otra.",
-                "body_other": "Estás usando {{currentCount}} fichas y tu plan permite {{maxAllowed}}. Editá una de las que ya empezaste o subí de plan para crear otra.",
+                "body_one": "Tenés {{currentCount}} ficha publicada y tu plan permite {{maxAllowed}}. Los borradores no cuentan para este límite. Podés seguir editándolos; para publicar otra ficha, subí de plan.",
+                "body_other": "Tenés {{currentCount}} fichas publicadas y tu plan permite {{maxAllowed}}. Los borradores no cuentan para este límite. Podés seguir editándolos; para publicar otra ficha, subí de plan.",
                 "pickCta": "Editar una ficha empezada",
                 "upgradeCta": "Subir de plan"
             }
@@ -167,11 +167,11 @@
             },
             "resumeDeleteOrUpgrade": {
                 "title": "Tenés una experiencia empezada, pero llegaste al límite de tu plan",
-                "body_one": "Estás usando {{currentCount}} experiencia y tu plan permite {{maxAllowed}}. Podés retomar la que empezaste, borrarla para liberar lugar, o subir de plan.",
-                "body_other": "Estás usando {{currentCount}} experiencias y tu plan permite {{maxAllowed}}. Podés retomar la que empezaste, borrarla para liberar lugar, o subir de plan.",
+                "body_one": "Tenés {{currentCount}} experiencia publicada y tu plan permite {{maxAllowed}}. Los borradores no cuentan para este límite. Podés retomar o borrar tu borrador; para publicar otra experiencia, subí de plan.",
+                "body_other": "Tenés {{currentCount}} experiencias publicadas y tu plan permite {{maxAllowed}}. Los borradores no cuentan para este límite. Podés retomar o borrar tu borrador; para publicar otra experiencia, subí de plan.",
                 "resumeCta": "Retomar la experiencia",
                 "deleteCta": "Borrar la experiencia",
-                "deleteConfirm": "¿Borrar esta experiencia sin publicar? Vas a poder crear una nueva.",
+                "deleteConfirm": "¿Borrar este borrador? Esta acción no libera cupo de publicación.",
                 "upgradeCta": "Subir de plan"
             },
             "pickDraftOrCreate": {
@@ -182,8 +182,8 @@
             },
             "pickDraftDeleteOrUpgrade": {
                 "title": "Tenés varias experiencias empezadas, pero llegaste al límite de tu plan",
-                "body_one": "Estás usando {{currentCount}} experiencia y tu plan permite {{maxAllowed}}. Editá una de las que ya empezaste o subí de plan para crear otra.",
-                "body_other": "Estás usando {{currentCount}} experiencias y tu plan permite {{maxAllowed}}. Editá una de las que ya empezaste o subí de plan para crear otra.",
+                "body_one": "Tenés {{currentCount}} experiencia publicada y tu plan permite {{maxAllowed}}. Los borradores no cuentan para este límite. Podés seguir editándolos; para publicar otra experiencia, subí de plan.",
+                "body_other": "Tenés {{currentCount}} experiencias publicadas y tu plan permite {{maxAllowed}}. Los borradores no cuentan para este límite. Podés seguir editándolos; para publicar otra experiencia, subí de plan.",
                 "pickCta": "Editar una experiencia empezada",
                 "upgradeCta": "Subir de plan"
             }

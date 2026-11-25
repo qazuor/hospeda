@@ -159,9 +159,13 @@ describe('MoveToCollectionModal — the collections gate (HOS-2480)', () => {
         expect(
             screen.queryByRole('button', { name: '+ Crear nueva colección' })
         ).not.toBeInTheDocument();
-        expect(screen.getByTestId('move-bookmark-create-locked')).toHaveTextContent(
-            'Tu plan no incluye colecciones.'
+        expect(screen.getByRole('link', { name: 'Ver planes' })).toHaveAttribute(
+            'href',
+            '/es/planes/turistas/precios/'
         );
+        expect(document.querySelectorAll('[data-reason="plan"]')).toHaveLength(1);
+        expect(screen.queryByRole('radio')).not.toBeInTheDocument();
+        expect(screen.queryByTestId('move-bookmark-confirm')).not.toBeInTheDocument();
     });
 
     it('at the limit: no create entry, and the limit is said', () => {

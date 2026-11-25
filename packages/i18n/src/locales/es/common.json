@@ -1,4 +1,16 @@
 {
+    "vipGate": {
+        "title": "Viajá con Hospeda VIP",
+        "body": "VIP es el plan para turistas que quieren aprovechar más cada viaje.",
+        "priceAlert": "Activá alertas para tus alojamientos favoritos y recibí un aviso cuando baje el precio.",
+        "benefit": "También accedés a promociones exclusivas para turistas VIP.",
+        "monthlyPrice": "{{price}} por mes",
+        "upgrade": "Hacerme VIP",
+        "notNow": "Ahora no",
+        "loading": "Cargando el plan VIP…",
+        "unavailable": "No pudimos cargar el precio del plan VIP. Volvé a intentarlo.",
+        "retry": "Reintentar"
+    },
     "accommodations": "Alojamientos",
     "redactedContact": {
         "email": "[email oculto]",

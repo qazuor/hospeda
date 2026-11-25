@@ -218,6 +218,7 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     // editors that mount it (accommodation, venue/experience, event, post).
     'common.richText',
     'common.untitled',
+    'common.vipGate',
     // HOS-734 — `ListingViewsWidget.client.tsx` names `common.window.7d` /
     // `.30d` / `.ariaLabel` for its time-window toggle, reusing the same keys
     // admin's `WindowToggle` already used (admin ships its own bundle, so this

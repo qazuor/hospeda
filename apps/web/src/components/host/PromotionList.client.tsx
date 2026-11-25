@@ -29,12 +29,10 @@
  */
 
 import { AddIcon } from '@repo/icons';
-import { formatCalendarDate } from '@repo/utils';
 import { type JSX, type ReactNode, useCallback, useEffect, useState } from 'react';
 import {
     Alert,
     Button,
-    ContentCard,
     EmptyState,
     LinkButton,
     MyContentList,
@@ -54,15 +52,8 @@ import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 import { formatPromotionBenefit } from '@/lib/promotions/format-benefit';
 import { listVipPausedTitles } from '@/lib/promotions/vip-paused';
 import { buildUrl } from '@/lib/urls';
-
-/**
- * Renders a promotion validity boundary — a calendar day, not an instant.
- * `validFrom`/`validUntil` are date-only UTC-midnight values: the shared
- * helper pins UTC so a viewer west of UTC sees the right day (BETA-88).
- */
-function formatValidity(value: string | Date | null | undefined, locale: string): string {
-    return formatCalendarDate({ value, locale, options: { dateStyle: 'long' } }) ?? '';
-}
+import { PromotionCard } from './PromotionCard';
+import promotionStyles from './PromotionCard.module.css';
 
 /** Lifecycle tone of an owner promotion. */
 const LIFECYCLE_TONES: Readonly<Record<string, StatusTone>> = {
@@ -307,6 +298,7 @@ export function PromotionList({
                 sectionTitle={t('host.promotions.kit.sectionTitle')}
                 helpId="section:promotions.list"
                 listLabel={t('host.promotions.pageTitle')}
+                listClassName={promotionStyles.grid}
                 state={listState}
                 empty={<EmptyState title={t('host.promotions.empty')} />}
                 pagination={{
@@ -317,44 +309,27 @@ export function PromotionList({
             >
                 {items.map((promo) => {
                     const tone = LIFECYCLE_TONES[promo.lifecycleState];
-                    const validity = promo.validUntil
-                        ? t('host.promotions.kit.validRange', undefined, {
-                              from: formatValidity(promo.validFrom, locale),
-                              until: formatValidity(promo.validUntil, locale)
-                          })
-                        : t('host.promotions.kit.validOpen', undefined, {
-                              from: formatValidity(promo.validFrom, locale)
-                          });
                     return (
-                        <ContentCard
+                        <PromotionCard
                             key={promo.id}
                             locale={locale}
                             title={promo.title}
-                            meta={formatPromotionBenefit({
+                            benefit={formatPromotionBenefit({
                                 discountType: promo.discountType,
                                 discountValue: promo.discountValue,
                                 locale,
                                 style: 'summary'
                             })}
-                            statuses={[
-                                {
-                                    key: 'lifecycle',
-                                    label: t('host.promotions.kit.statusLabel'),
-                                    value: (
-                                        <StatusPill tone={tone ?? 'neutral'}>
-                                            {t(
-                                                `host.promotions.lifecycleStates.${promo.lifecycleState.toLowerCase()}`,
-                                                promo.lifecycleState
-                                            )}
-                                        </StatusPill>
-                                    )
-                                },
-                                {
-                                    key: 'validity',
-                                    label: t('host.promotions.kit.validityLabel'),
-                                    value: validity
-                                }
-                            ]}
+                            validFrom={promo.validFrom}
+                            validUntil={promo.validUntil}
+                            status={
+                                <StatusPill tone={tone ?? 'neutral'}>
+                                    {t(
+                                        `host.promotions.lifecycleStates.${promo.lifecycleState.toLowerCase()}`,
+                                        promo.lifecycleState
+                                    )}
+                                </StatusPill>
+                            }
                             actions={
                                 <>
                                     {canEdit ? (
@@ -407,7 +382,7 @@ export function PromotionList({
                                         </Button>
                                     ) : null}
                                     <Button
-                                        variant="danger-ghost"
+                                        variant="secondary"
                                         size="sm"
                                         aria-label={t(
                                             'host.promotions.kit.deleteNamed',

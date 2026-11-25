@@ -17,7 +17,7 @@
 
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import PageHelpLink from '@/components/account/help/PageHelpLink.astro';
-import { LockedState, PageHeader, Section } from '@/components/account/ui';
+import { LockedState, PageHeader } from '@/components/account/ui';
 import { PostCreateForm } from '@/components/post/editor/PostCreateForm.client';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -65,12 +65,10 @@ const subtitle = t(
     </PageHeader>
 
     {canCreatePosts ? (
-        <Section title={title} helpId="section:content.post-create">
             <PostCreateForm
                 client:load
                 locale={locale}
             />
-        </Section>
     ) : (
         <LockedState
             locale={locale}

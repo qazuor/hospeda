@@ -1,0 +1,13 @@
+/** Layout shared by minimal draft-create forms; controls belong to the kit. */
+.fields {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    min-inline-size: 0;
+}
+
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+}

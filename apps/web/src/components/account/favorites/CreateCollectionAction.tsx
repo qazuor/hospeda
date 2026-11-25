@@ -3,11 +3,8 @@
  * @description «Agregar colección», the page-header action of the favorites
  * page (HOS-2480). Replaces `CreateCollectionCTA` and its upsell variant.
  *
- * It reads the collections gate. When creating is locked the button is
- * disabled AND the reason is visible next to it (and tied to it with
- * `aria-describedby`), with the very sentence the «Mover» dialog shows: it is
- * never a silently disabled button. The plan upsell itself lives only in the
- * collections Section's `LockedState`.
+ * Without the collections plan this action is hidden: the collections
+ * Section owns the single plan LockedState. Quota limits remain visible here.
  */
 
 import { AddIcon } from '@repo/icons';
@@ -62,6 +59,8 @@ export function CreateCollectionAction({
             })
         });
     }
+
+    if (gate.kind === 'noPlan') return null;
 
     return (
         <div className={styles.createAction}>

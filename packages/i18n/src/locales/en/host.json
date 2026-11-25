@@ -948,7 +948,7 @@
             "save": "Save",
             "saving": "Saving...",
             "cancel": "Cancel",
-            "confirmDelete": "Delete this promotion? This action cannot be undone.",
+            "confirmDelete": "The promotion will no longer be available to tourists. This action cannot be undone.",
             "upgradePlan": "View plans",
             "pause": "Pause"
         },
@@ -974,9 +974,9 @@
         "audience": {
             "legend": "Who sees this promotion?",
             "plusLabel": "Everyone",
-            "plusDescription_one": "Every VIP tourist sees it. Free tourists see up to {{count}} promotion per page, picked at random, so sometimes they see it and sometimes they do not.",
-            "plusDescription_other": "Every VIP tourist sees it. Free tourists see up to {{count}} promotions per page, picked at random, so sometimes they see it and sometimes they do not.",
-            "plusDescriptionNoQuota": "Every VIP tourist sees it. Free tourists see some promotions per page, picked at random, so sometimes they see it and sometimes they do not.",
+            "plusDescription_one": "Choose Everyone to make the promotion available to all tourists. VIP tourists always see it; free tourists see up to {{count}} randomly selected promotion per page, so it may not appear on every visit.",
+            "plusDescription_other": "Choose Everyone to make the promotion available to all tourists. VIP tourists always see it; free tourists see up to {{count}} randomly selected promotions per page, so it may not appear on every visit.",
+            "plusDescriptionNoQuota": "Choose Everyone to make the promotion available to all tourists. VIP tourists always see it; free tourists see a random selection of promotions per page, so it may not appear on every visit.",
             "vipLabel": "VIP only",
             "vipDescription": "Only VIP tourists see it, and we email them about it. Free tourists see it blurred, with an invitation to go VIP.",
             "vipDescriptionPlan": "Only tourists on the {{plan}} plan see it, and we email them about it. Free tourists see it blurred, with an invitation to go VIP.",
@@ -1094,8 +1094,8 @@
             "subtitle": "We'll create the draft with this information. Photos, pricing and the rest go in step 2, from the panel.",
             "precheck": {
                 "pickDraftDeleteOrUpgrade": {
-                    "body_one": "You're using {{currentCount}} property and your plan allows {{maxAllowed}}. Edit one of your existing drafts or upgrade your plan to create a new one.",
-                    "body_other": "You're using {{currentCount}} properties and your plan allows {{maxAllowed}}. Edit one of your existing drafts or upgrade your plan to create a new one.",
+                    "body_one": "You have {{currentCount}} published property and your plan allows {{maxAllowed}}. Drafts do not count towards this limit. You can keep editing them; upgrade your plan to publish another property.",
+                    "body_other": "You have {{currentCount}} published properties and your plan allows {{maxAllowed}}. Drafts do not count towards this limit. You can keep editing them; upgrade your plan to publish another property.",
                     "pickCta": "Edit an existing draft",
                     "title": "You have several drafts, but you've reached your plan's limit",
                     "upgradeCta": "Upgrade plan"
@@ -1107,10 +1107,10 @@
                     "title": "You have several unpublished drafts"
                 },
                 "resumeDeleteOrUpgrade": {
-                    "body_one": "You're using {{currentCount}} property and your plan allows {{maxAllowed}}. You can resume your draft, delete it to free up space, or upgrade your plan.",
-                    "body_other": "You're using {{currentCount}} properties and your plan allows {{maxAllowed}}. You can resume your draft, delete it to free up space, or upgrade your plan.",
-                    "deleteConfirm": "¿Borrar este borrador? Vas a poder crear una propiedad nueva.",
-                    "deleteCta": "Borrar borrador",
+                    "body_one": "You have {{currentCount}} published property and your plan allows {{maxAllowed}}. Drafts do not count towards this limit. You can resume or delete your draft; upgrade your plan to publish another property.",
+                    "body_other": "You have {{currentCount}} published properties and your plan allows {{maxAllowed}}. Drafts do not count towards this limit. You can resume or delete your draft; upgrade your plan to publish another property.",
+                    "deleteConfirm": "Delete this draft? This does not free up a publication slot.",
+                    "deleteCta": "Delete draft",
                     "resumeCta": "Resume draft",
                     "title": "You have a draft, but you've reached your plan's limit",
                     "upgradeCta": "Upgrade plan"

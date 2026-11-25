@@ -36,6 +36,7 @@ import {
     type E2eMailCaptureServer,
     startE2eMailCapture
 } from '../../fixtures/mail-capture-server.ts';
+import { DRAFT_PROPERTY_LIST } from '../../fixtures/owner-lists.ts';
 import { attachSession, monthlyOptionForSlug } from '../../fixtures/signup-checkout.ts';
 import {
     expectWinBackContent,
@@ -168,7 +169,7 @@ test.describe('TEST:V4:23 AC:V4:17 the late conversion of an expired trial (T5) 
             await attachSession(page, ownerUser.sessionCookie);
             await page.goto(`${WEB_URL}/es/mi-cuenta/propiedades/`);
             await page
-                .getByRole('list', { name: 'Mis alojamientos' })
+                .getByRole('list', { name: DRAFT_PROPERTY_LIST })
                 .getByRole('button', { name: 'Publicar', exact: true })
                 .click();
             await page.getByRole('button', { name: 'Sí, publicar', exact: true }).click();

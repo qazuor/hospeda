@@ -29,6 +29,7 @@ import { seedCookieConsent } from '../../fixtures/browser-helpers.ts';
 import { latestOutbox, signUpCardSubscriber } from '../../fixtures/cancellation-flow.ts';
 import { getDbPool } from '../../fixtures/db-helpers.ts';
 import { purgeOwnListing, renameListing } from '../../fixtures/listing-notices.ts';
+import { ALL_PROPERTY_LISTS } from '../../fixtures/owner-lists.ts';
 import { openPropertyCardConfirm } from '../../fixtures/property-card-actions.ts';
 import { describeSweepCandidates } from '../../fixtures/sweep-candidates.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
@@ -248,7 +249,7 @@ test.describe('TEST:B10:16 AC:B10:14 the addon end to end @p0 @billing @clock', 
 
         await page.goto(`${WEB_URL}/es/mi-cuenta/propiedades/`);
         const card = page
-            .getByRole('list', { name: 'Mis alojamientos' })
+            .getByRole('list', { name: ALL_PROPERTY_LISTS })
             .getByRole('listitem')
             .filter({ hasText: listingName });
         await expect(card).toHaveCount(1);

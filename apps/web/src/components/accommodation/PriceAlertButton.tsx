@@ -36,7 +36,9 @@
  */
 
 import { BellIcon, LockIcon } from '@repo/icons';
-import { type ReactNode, useCallback, useEffect, useState } from 'react';
+import { lazy, type ReactNode, Suspense, useCallback, useEffect, useState } from 'react';
+import { Button } from '@/components/account/ui/Button';
+import { StatusPill } from '@/components/account/ui/StatusPill';
 import { Spinner } from '@/components/shared/feedback/Spinner';
 import { useAccountPermissions } from '@/hooks/use-account-permissions';
 import { usePriceAlertGateState } from '@/hooks/use-price-alert-gate-state';
@@ -44,10 +46,14 @@ import { translateApiError } from '@/lib/api-errors';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { webLogger } from '@/lib/logger';
-import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
-import { buildUrl } from '@/lib/urls';
 import { addToast } from '@/store/toast-store';
 import styles from './PriceAlertButton.module.css';
+
+const VipGateDialog = lazy(() =>
+    import('@/components/account/ui/VipGateDialog').then((module) => ({
+        default: module.VipGateDialog
+    }))
+);
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -107,7 +113,6 @@ export function PriceAlertButton({
 }: PriceAlertButtonProps) {
     const { t } = createTranslations(locale);
     const base = apiUrl.replace(/\/$/, '');
-    const pricingHref = buildUrl({ locale, path: PRICING_PAGE_PATH_BY_AUDIENCE.tourist });
 
     // Simple mode (no `initialUser`): `user` starts null, so the anonymous
     // branch is what renders on the server and on first paint.
@@ -121,6 +126,7 @@ export function PriceAlertButton({
     const [alertId, setAlertId] = useState<string | null>(null);
     const [phase, setPhase] = useState<SubmitPhase>('idle');
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    const [vipGateOpen, setVipGateOpen] = useState(false);
 
     // Adopt the resolved lookup once it settles. Deliberately keyed on the
     // settled snapshot only: a mutation that already flipped the local mirror
@@ -311,25 +317,44 @@ export function PriceAlertButton({
     if (gate.readFailed || !gate.canCreateAlerts) {
         return (
             <div className={styles.priceAlertWrapper}>
-                <a
-                    className={styles.priceAlertButtonCreate}
-                    href={pricingHref}
+                <Button
+                    variant="secondary"
+                    fullWidth
+                    onClick={() => setVipGateOpen(true)}
+                    aria-haspopup="dialog"
+                    aria-expanded={vipGateOpen}
                 >
                     <LockIcon
                         size="sm"
                         aria-hidden="true"
                     />
                     {t('accommodations.detail.priceAlert.locked', 'Avisame si baja el precio')}
-                    <span
-                        className={styles.vipBadge}
-                        aria-hidden="true"
-                    >
-                        {t('common.promotions.vipBadge', 'VIP')}
-                    </span>
+                    <StatusPill tone="plan">{t('common.promotions.vipBadge', 'VIP')}</StatusPill>
                     <span className="sr-only">
                         {t('accommodations.detail.priceAlert.vipOnly', 'Solo para turistas VIP')}
                     </span>
-                </a>
+                </Button>
+                {vipGateOpen && (
+                    <Suspense
+                        fallback={
+                            <Spinner
+                                size="sm"
+                                label={t('common.vipGate.loading')}
+                            />
+                        }
+                    >
+                        <VipGateDialog
+                            open={vipGateOpen}
+                            onClose={() => setVipGateOpen(false)}
+                            locale={locale}
+                            apiUrl={apiUrl}
+                            title={t('common.vipGate.title')}
+                            body={t('common.vipGate.body')}
+                            featureCopy={t('common.vipGate.priceAlert')}
+                            benefits={[t('common.vipGate.benefit')]}
+                        />
+                    </Suspense>
+                )}
             </div>
         );
     }

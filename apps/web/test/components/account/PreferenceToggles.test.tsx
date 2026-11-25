@@ -370,12 +370,14 @@ describe('PreferenceToggles: search history (D11)', () => {
         ).not.toBeChecked();
     });
 
-    it('renders the plan-locked row: disabled switch, LockedState, catalog plan names, no literal', async () => {
+    it('renders one LockedState with catalog plan names and no duplicate switch', async () => {
         installApi({ historyLocked: true });
         const { container } = renderPage({ gatePlanNames: ['Plan Catalogo A', 'Plan Catalogo B'] });
-        const toggle = await screen.findByRole('switch', { name: /Historial de búsquedas/ });
-        expect(toggle).toBeDisabled();
-        expect(toggle).not.toBeChecked();
+        await screen.findByRole('link', { name: /ver planes/i });
+        expect(
+            screen.queryByRole('switch', { name: /Historial de búsquedas/ })
+        ).not.toBeInTheDocument();
+        expect(container.querySelectorAll('[data-reason="plan"]')).toHaveLength(1);
         const locked = container.querySelector('[data-reason="plan"]') as HTMLElement;
         expect(locked).not.toBeNull();
         expect(within(locked).getAllByText(/Plan Catalogo/).length).toBeGreaterThan(0);

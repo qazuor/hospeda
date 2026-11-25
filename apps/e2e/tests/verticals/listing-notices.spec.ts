@@ -41,6 +41,7 @@ import {
     seedPurgedByInactivity,
     seedSurplusUnpublish
 } from '../../fixtures/listing-notices.ts';
+import { ALL_PROPERTY_LISTS } from '../../fixtures/owner-lists.ts';
 import { openPropertyCardConfirm } from '../../fixtures/property-card-actions.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
 
@@ -92,7 +93,7 @@ async function openPropertyCard(input: {
     await seedCookieConsent(input.page);
     await attachSession({ page: input.page, sessionCookie: input.sessionCookie });
     await input.page.goto(`${WEB_URL}/es/mi-cuenta/propiedades/`);
-    const list = input.page.getByRole('list', { name: 'Mis alojamientos' });
+    const list = input.page.getByRole('list', { name: ALL_PROPERTY_LISTS });
     const card = list.getByRole('listitem').filter({ hasText: input.name });
     await expect(card).toHaveCount(1);
     return card;
@@ -250,7 +251,7 @@ test.describe('Listing notices of V8a @verticals', () => {
             name: byQuota
         });
         const pb5Card = page
-            .getByRole('list', { name: 'Mis alojamientos' })
+            .getByRole('list', { name: ALL_PROPERTY_LISTS })
             .getByRole('listitem')
             .filter({ hasText: byOwner });
 

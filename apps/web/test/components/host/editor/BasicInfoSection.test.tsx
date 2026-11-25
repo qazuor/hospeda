@@ -444,7 +444,9 @@ describe('BasicInfoSection — character counters (HOS-783 B5)', () => {
     ])('renders %s with its range', (testId, used, min, max, state) => {
         render(<BasicInfoSection {...buildProps()} />);
 
-        expect(screen.getByTestId(testId)).toHaveTextContent(`${used}/${max} · mín. ${min}`);
+        expect(screen.getByTestId(testId)).toHaveTextContent(
+            `${used} de ${max} caracteres · mín. ${min}`
+        );
         expect(screen.getByTestId(testId)).toHaveAttribute('data-state', state);
     });
 
@@ -453,7 +455,9 @@ describe('BasicInfoSection — character counters (HOS-783 B5)', () => {
             <BasicInfoSection {...buildProps({ data: { ...MOCK_DATA, name: 'x'.repeat(80) } })} />
         );
 
-        expect(screen.getByTestId('name-char-counter')).toHaveTextContent('80/100 · mín. 3');
+        expect(screen.getByTestId('name-char-counter')).toHaveTextContent(
+            '80 de 100 caracteres · mín. 3'
+        );
         expect(screen.getByTestId('name-char-counter')).toHaveAttribute('data-state', 'warning');
     });
 
@@ -464,7 +468,9 @@ describe('BasicInfoSection — character counters (HOS-783 B5)', () => {
             />
         );
 
-        expect(screen.getByTestId('summary-char-counter')).toHaveTextContent('300/300 · mín. 10');
+        expect(screen.getByTestId('summary-char-counter')).toHaveTextContent(
+            '300 de 300 caracteres · mín. 10'
+        );
         expect(screen.getByTestId('summary-char-counter')).toHaveAttribute('data-state', 'danger');
     });
 
@@ -476,7 +482,7 @@ describe('BasicInfoSection — character counters (HOS-783 B5)', () => {
         );
 
         expect(screen.getByTestId('description-char-counter')).toHaveTextContent(
-            '2000/2000 · mín. 30'
+            '2000 de 2000 caracteres · mín. 30'
         );
         expect(screen.getByTestId('description-char-counter')).toHaveAttribute(
             'data-state',
@@ -506,15 +512,8 @@ describe('BasicInfoSection — character counters (HOS-783 B5)', () => {
 });
 
 /**
- * HOS-800. The plan notice for rich text used to render BELOW the textarea, as
- * a plain `.fieldHint`, one element away from the AI-improve trigger — so a
- * restriction and an available action sat adjacent, in the same muted grey,
- * both opening with the same verb. The product owner read his own screen and
- * concluded the AI feature was plan-gated while actively using it.
- *
- * These assert the structural half of the fix (the copy half is held by the
- * i18n inline-fallback guard): the notice occupies the slot where the rich
- * editor's formatting toolbar would be, and it is not typographically a hint.
+ * G12 owner decision: the formatting notice is a Field hint below its control.
+ * It names description formatting, independently of the AI-improve action.
  */
 describe('BasicInfoSection — rich-text plan notice placement (HOS-800)', () => {
     beforeEach(() => {
@@ -526,7 +525,7 @@ describe('BasicInfoSection — rich-text plan notice placement (HOS-800)', () =>
         const textarea = screen.getByLabelText(/^descripción$/i);
         const noticeId = (textarea.getAttribute('aria-describedby') ?? '')
             .split(' ')
-            .find((id) => id.endsWith('-format-upsell'));
+            .find((id) => id.endsWith('-hint'));
 
         expect(noticeId).toBeDefined();
         const notice = document.getElementById(noticeId as string);
@@ -535,7 +534,7 @@ describe('BasicInfoSection — rich-text plan notice placement (HOS-800)', () =>
         return notice as HTMLElement;
     };
 
-    it('renders the plan notice, then the textarea, then the AI trigger — in that order', () => {
+    it('renders the textarea, then the Field hint, then the AI trigger', () => {
         render(<BasicInfoSection {...buildProps()} />);
 
         const labelled: ReadonlyArray<readonly [string, HTMLElement]> = [
@@ -544,29 +543,22 @@ describe('BasicInfoSection — rich-text plan notice placement (HOS-800)', () =>
             ['ai-trigger', screen.getByTestId('ai-mock-trigger-description')]
         ];
 
-        // Sorting by document position and comparing the WHOLE sequence is what
-        // makes this bite. Asserting "notice precedes trigger" on its own was
-        // already true of the buggy layout (notice → counter → trigger); only
-        // the textarea landing BETWEEN them distinguishes the two.
         const domOrder = [...labelled]
             .sort(([, a], [, b]) =>
                 a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1
             )
             .map(([name]) => name);
 
-        expect(domOrder).toEqual(['notice', 'textarea', 'ai-trigger']);
+        expect(domOrder).toEqual(['textarea', 'notice', 'ai-trigger']);
     });
 
-    it('styles the plan notice as a restriction, not as an ordinary field hint', () => {
+    it('keeps the upgrade link in the Field hint outside the control', () => {
         render(<BasicInfoSection {...buildProps()} />);
 
-        // The CSS module is proxied to identity, so the class name IS the key.
         const notice = getFormatNotice();
-        const box = notice.parentElement;
-
-        expect(box).not.toBeNull();
-        expect(box).toHaveClass('formatUpsell');
-        expect(notice).not.toHaveClass('fieldHint');
+        expect(notice.tagName).toBe('P');
+        expect(notice.querySelector('a')).toHaveTextContent('Mejorar plan');
+        expect(notice.querySelector('textarea')).toBeNull();
     });
 
     it('describes the textarea with the plan notice as well as the counter', () => {
@@ -584,6 +576,6 @@ describe('BasicInfoSection — rich-text plan notice placement (HOS-800)', () =>
 
         render(<BasicInfoSection {...buildProps()} />);
 
-        expect(document.querySelector('[id$="-format-upsell"]')).toBeNull();
+        expect(screen.queryByText('Mejorar plan')).not.toBeInTheDocument();
     });
 });

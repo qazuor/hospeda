@@ -78,6 +78,8 @@ export interface MyContentListProps {
     readonly helpId: HelpAnchor;
     /** Translated accessible name of the card list. */
     readonly listLabel: string;
+    /** Optional list layout supplied by a specialized shared card. */
+    readonly listClassName?: string;
     /** What the body shows. */
     readonly state: MyContentListState;
     /** The EmptyState for `empty`. */
@@ -102,11 +104,19 @@ function ListBody({
     empty,
     errorRegion,
     listLabel,
+    listClassName,
     children,
     pagination
 }: Pick<
     MyContentListProps,
-    'locale' | 'state' | 'empty' | 'errorRegion' | 'listLabel' | 'children' | 'pagination'
+    | 'locale'
+    | 'state'
+    | 'empty'
+    | 'errorRegion'
+    | 'listLabel'
+    | 'listClassName'
+    | 'children'
+    | 'pagination'
 >) {
     switch (state.status) {
         case 'loading':
@@ -142,7 +152,7 @@ function ListBody({
                 <>
                     <div className={styles.gridWrap}>
                         <ul
-                            className={styles.grid}
+                            className={listClassName ?? styles.grid}
                             aria-label={listLabel}
                         >
                             {children}
@@ -189,6 +199,7 @@ export function MyContentList({
     sectionTitle,
     helpId,
     listLabel,
+    listClassName,
     state,
     empty,
     errorRegion,
@@ -217,6 +228,7 @@ export function MyContentList({
                     empty={empty}
                     errorRegion={errorRegion}
                     listLabel={listLabel}
+                    listClassName={listClassName}
                     pagination={pagination}
                 >
                     {children}

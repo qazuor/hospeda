@@ -1,7 +1,7 @@
 /* BasicInfoSection.module.css — SPEC-208, kit fields in HOS-2488.
    The kit `Section` is a query container, so the grid follows the width of
    its own card and never the viewport. Labels, controls, hints and errors come
-   from the kit `Field`; only layout and the two notices live here. */
+    from the kit `Field`; only layout and the slug notice live here. */
 
 .grid {
     display: grid;
@@ -37,39 +37,8 @@
 }
 
 /*
- * HOS-800: the plan notice that replaces the rich editor's formatting toolbar.
- * The boxed treatment (and the lock) is what makes "this is locked" readable at
- * a glance, separately from the copy; it sits above the textarea, in the slot
- * the toolbar occupies, so it is not read as gating the AI-improve button.
+ * Formatting-plan hints are owned by Field and PlanEntitlementGate.
  */
-.formatUpsell {
-    display: flex;
-    gap: var(--space-2);
-    align-items: flex-start;
-    padding: var(--space-3);
-    border: 1px solid var(--status-info-border);
-    border-radius: var(--radius-surface);
-    background: var(--status-info-bg);
-    color: var(--status-info-fg);
-}
-
-.formatUpsellIcon {
-    inline-size: 1rem;
-    block-size: 1rem;
-    flex-shrink: 0;
-    margin-block-start: var(--space-1);
-}
-
-.formatUpsellText {
-    margin: 0;
-    font: var(--app-ui);
-}
-
-.formatUpsellText a {
-    color: inherit;
-    text-decoration: underline;
-}
-
 /* The published-slug opt-in: a notice with its own checkbox. */
 .notice {
     display: flex;

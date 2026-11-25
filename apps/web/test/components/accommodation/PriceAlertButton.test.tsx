@@ -21,15 +21,16 @@
  * create an alert is the API's answer to the create request.
  */
 
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { buildAuthSnapshot } from '../../helpers/auth-session';
+import { tFromCatalog } from '../../helpers/i18n-catalog';
 
 vi.mock('@/lib/i18n', () => ({
     createTranslations: () => ({
-        t: (_key: string, fallback?: string) => fallback ?? _key
+        t: tFromCatalog
     }),
     createT: () => (key: string, fallback?: string) =>
         key === 'common.apiError.ENTITLEMENT_REQUIRED'
@@ -52,6 +53,10 @@ vi.mock('@/lib/auth-cache', () => ({
 
 const mockAlertsList = vi.fn();
 const mockGetEffectiveSet = vi.fn();
+const mockFetchPublicPlans = vi.fn();
+vi.mock('@/components/account/ui/read-tourist-vip-plan', () => ({
+    readTouristVipPlan: (params: unknown) => mockFetchPublicPlans(params)
+}));
 
 vi.mock('@/lib/api/endpoints-protected', () => ({
     priceAlertsApi: { list: (params: unknown) => mockAlertsList(params) },
@@ -101,6 +106,8 @@ describe('TEST:B13a:25 PriceAlertButton effective-set gate', () => {
         mockReadCachedAuthMe.mockReturnValue(buildAuthSnapshot({ isAuthenticated: true }));
         mockAlertsList.mockReset();
         mockGetEffectiveSet.mockReset();
+        mockFetchPublicPlans.mockReset();
+        mockFetchPublicPlans.mockResolvedValue(null);
         mockGetEffectiveSet.mockResolvedValue({
             entitlements: { price_alerts: 1 },
             limits: { max_active_alerts: 10 },
@@ -149,10 +156,10 @@ describe('TEST:B13a:25 PriceAlertButton effective-set gate', () => {
 
         render(<PriceAlertButton {...PROPS} />);
 
-        const upsell = await screen.findByRole('link', {
+        const upsell = await screen.findByRole('button', {
             name: /avisame si baja el precio.*solo para turistas vip/i
         });
-        expect(upsell).toHaveAttribute('href', '/es/planes/turistas/precios/');
+        expect(upsell).toHaveAttribute('aria-haspopup', 'dialog');
         expect(upsell).toHaveTextContent('VIP');
         expect(upsell.querySelector('svg[aria-hidden="true"]')).toBeInTheDocument();
     });
@@ -164,10 +171,10 @@ describe('TEST:B13a:25 PriceAlertButton effective-set gate', () => {
         });
         mockAlertsList.mockResolvedValue({ ok: true, data: { items: [] } });
         const { unmount } = render(<PriceAlertButton {...PROPS} />);
-        const upsell = await screen.findByRole('link', {
+        const upsell = await screen.findByRole('button', {
             name: /avisame si baja el precio.*solo para turistas vip/i
         });
-        expect(upsell).toHaveAttribute('href', '/es/planes/turistas/precios/');
+        expect(upsell).toHaveAttribute('aria-haspopup', 'dialog');
         expect(upsell).toHaveTextContent('VIP');
         expect(upsell.querySelector('svg[aria-hidden="true"]')).toBeInTheDocument();
         unmount();
@@ -208,10 +215,34 @@ describe('TEST:B13a:25 PriceAlertButton effective-set gate', () => {
         mockAlertsList.mockResolvedValue({ ok: true, data: { items: [] } });
         render(<PriceAlertButton {...PROPS} />);
         expect(
-            await screen.findByRole('link', {
+            await screen.findByRole('button', {
                 name: /avisame si baja el precio.*solo para turistas vip/i
             })
         ).toBeInTheDocument();
+    });
+    it('loads the VIP dialog only on click, stays on the page, and closes with Ahora no', async () => {
+        mockGetEffectiveSet.mockResolvedValue({ entitlements: {}, limits: {}, failed: false });
+        mockAlertsList.mockResolvedValue({ ok: true, data: { items: [] } });
+        const user = userEvent.setup();
+        const href = window.location.href;
+        render(<PriceAlertButton {...PROPS} />);
+        const trigger = await screen.findByRole('button', {
+            name: /avisame si baja el precio.*solo para turistas vip/i
+        });
+        expect(mockFetchPublicPlans).not.toHaveBeenCalled();
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+        await user.click(trigger);
+        await act(async () => {
+            await vi.dynamicImportSettled();
+        });
+        expect(
+            await screen.findByRole('dialog', { name: 'Viajá con Hospeda VIP' })
+        ).toBeInTheDocument();
+        expect(window.location.href).toBe(href);
+        expect(mockFetchPublicPlans).toHaveBeenCalledWith({ apiUrl: PROPS.apiUrl });
+        await user.click(screen.getByRole('button', { name: 'Ahora no' }));
+        await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+        expect(trigger).toHaveFocus();
     });
     it('translates an ENTITLEMENT_REQUIRED refusal and hides the API English message', async () => {
         const user = userEvent.setup();

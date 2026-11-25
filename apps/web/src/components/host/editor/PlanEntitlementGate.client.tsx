@@ -103,6 +103,46 @@ export function PlanEntitlementGate({
     );
 }
 
+/** Place in `Field.hint` so a formatting upgrade never separates label/control. */
+export function PlanEntitlementHint({
+    entitlementKey,
+    upgradeUrl,
+    locale = 'es',
+    vertical = 'accommodation'
+}: Pick<
+    PlanEntitlementGateProps,
+    'entitlementKey' | 'upgradeUrl' | 'locale' | 'vertical'
+>): React.ReactNode {
+    const { t } = createTranslations(locale);
+    const nudge =
+        entitlementKey === 'can_use_rich_description'
+            ? {
+                  key: 'richDescriptionHint',
+                  fallback:
+                      'Texto con formato en la descripción: negritas, listas y más. Disponible en planes superiores.'
+              }
+            : (NUDGE_KEY_BY_ENTITLEMENT[entitlementKey] ?? GENERIC_NUDGE);
+    return (
+        <PlanEntitlementGate
+            entitlementKey={entitlementKey}
+            locale={locale}
+            vertical={vertical}
+            fallback={
+                <span className={styles.hint}>
+                    {t(`host.properties.editor.entitlement.${nudge.key}`, nudge.fallback)}{' '}
+                    {upgradeUrl ? (
+                        <a href={upgradeUrl}>
+                            {t('host.properties.editor.entitlement.upgradeLink', 'Mejorar plan')}
+                        </a>
+                    ) : null}
+                </span>
+            }
+        >
+            {null}
+        </PlanEntitlementGate>
+    );
+}
+
 // ---------------------------------------------------------------------------
 // Internal helpers
 // ---------------------------------------------------------------------------

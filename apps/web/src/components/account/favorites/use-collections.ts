@@ -102,7 +102,7 @@ export function useCollections({
             ? { status: 'loading' }
             : read.status === 'error'
               ? { status: 'error', retry }
-              : read.status === 'noPlan'
+              : read.status === 'noPlan' || gate.kind === 'noPlan'
                 ? { status: 'locked', reason: lockReason }
                 : read.items.length === 0
                   ? { status: 'empty' }

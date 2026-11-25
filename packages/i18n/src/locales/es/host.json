@@ -948,7 +948,7 @@
             "save": "Guardar",
             "saving": "Guardando...",
             "cancel": "Cancelar",
-            "confirmDelete": "¿Eliminar esta promoción? Esta acción no se puede deshacer.",
+            "confirmDelete": "La promoción dejará de estar disponible para los turistas. Esta acción no se puede deshacer.",
             "upgradePlan": "Ver planes",
             "pause": "Pausar"
         },
@@ -974,9 +974,9 @@
         "audience": {
             "legend": "¿Quién ve esta promoción?",
             "plusLabel": "Para todos",
-            "plusDescription_one": "Todos los turistas VIP la ven. Los turistas gratis ven hasta {{count}} promoción por página, elegida al azar, así que a veces la ven y a veces no.",
-            "plusDescription_other": "Todos los turistas VIP la ven. Los turistas gratis ven hasta {{count}} promociones por página, elegidas al azar, así que a veces la ven y a veces no.",
-            "plusDescriptionNoQuota": "Todos los turistas VIP la ven. Los turistas gratis ven algunas promociones por página, elegidas al azar, así que a veces la ven y a veces no.",
+            "plusDescription_one": "Si elegís Para todos, la promoción está disponible para todos los turistas. Los VIP la ven siempre; los turistas gratis ven hasta {{count}} promoción por página, elegida al azar, por lo que puede no aparecerles en cada visita.",
+            "plusDescription_other": "Si elegís Para todos, la promoción está disponible para todos los turistas. Los VIP la ven siempre; los turistas gratis ven hasta {{count}} promociones por página, elegidas al azar, por lo que puede no aparecerles en cada visita.",
+            "plusDescriptionNoQuota": "Si elegís Para todos, la promoción está disponible para todos los turistas. Los VIP la ven siempre; los turistas gratis ven una selección aleatoria de promociones por página, por lo que puede no aparecerles en cada visita.",
             "vipLabel": "Solo VIP",
             "vipDescription": "Solo la ven los turistas VIP, y les avisamos por correo. Los turistas gratis la ven borrosa, con una invitación a hacerse VIP.",
             "vipDescriptionPlan": "Solo la ven los turistas con el plan {{plan}}, y les avisamos por correo. Los turistas gratis la ven borrosa, con una invitación a hacerse VIP.",
@@ -1094,8 +1094,8 @@
             "subtitle": "Creamos el borrador con estos datos. Las fotos, los precios y el resto los cargás en el paso 2, desde el panel.",
             "precheck": {
                 "pickDraftDeleteOrUpgrade": {
-                    "body_one": "Estás usando {{currentCount}} propiedad y tu plan permite {{maxAllowed}}. Editá uno de tus borradores existentes o subí de plan para crear uno nuevo.",
-                    "body_other": "Estás usando {{currentCount}} propiedades y tu plan permite {{maxAllowed}}. Editá uno de tus borradores existentes o subí de plan para crear uno nuevo.",
+                    "body_one": "Tenés {{currentCount}} propiedad publicada y tu plan permite {{maxAllowed}}. Los borradores no cuentan para este límite. Podés seguir editándolos; para publicar otra propiedad, subí de plan.",
+                    "body_other": "Tenés {{currentCount}} propiedades publicadas y tu plan permite {{maxAllowed}}. Los borradores no cuentan para este límite. Podés seguir editándolos; para publicar otra propiedad, subí de plan.",
                     "pickCta": "Editar un borrador existente",
                     "title": "Tenés varios borradores, pero llegaste al límite de tu plan",
                     "upgradeCta": "Subir de plan"
@@ -1107,9 +1107,9 @@
                     "title": "Tenés varios borradores sin publicar"
                 },
                 "resumeDeleteOrUpgrade": {
-                    "body_one": "Estás usando {{currentCount}} propiedad y tu plan permite {{maxAllowed}}. Podés retomar tu borrador, borrarlo para liberar lugar, o subir de plan.",
-                    "body_other": "Estás usando {{currentCount}} propiedades y tu plan permite {{maxAllowed}}. Podés retomar tu borrador, borrarlo para liberar lugar, o subir de plan.",
-                    "deleteConfirm": "¿Borrar este borrador? Vas a poder crear una propiedad nueva.",
+                    "body_one": "Tenés {{currentCount}} propiedad publicada y tu plan permite {{maxAllowed}}. Los borradores no cuentan para este límite. Podés retomar o borrar tu borrador; para publicar otra propiedad, subí de plan.",
+                    "body_other": "Tenés {{currentCount}} propiedades publicadas y tu plan permite {{maxAllowed}}. Los borradores no cuentan para este límite. Podés retomar o borrar tu borrador; para publicar otra propiedad, subí de plan.",
+                    "deleteConfirm": "¿Borrar este borrador? Esta acción no libera cupo de publicación.",
                     "deleteCta": "Borrar borrador",
                     "resumeCta": "Retomar borrador",
                     "title": "Tenés un borrador, pero llegaste al límite de tu plan",

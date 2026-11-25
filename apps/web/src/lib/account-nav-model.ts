@@ -70,8 +70,8 @@ export function getAccountSectionLabel({
 
 /** Facts the layout reads from the request and hands to the model. */
 export interface AccountNavModelInput {
-    /** Whether a successful owner read found at least one subscription. Absent hides add-ons. */
-    readonly hasSubscription?: boolean;
+    /** Whether owner reads found a subscription or active add-on. Absent hides add-ons. */
+    readonly billingPresence?: boolean;
     /** The session's role SET (HOS-296), or `null` for no session. */
     readonly roles: readonly string[] | null;
     /**
@@ -158,7 +158,7 @@ export function buildAccountNavModel({
     ownsHostTradeListing,
     ownsPartner = false,
     mcpEnabled,
-    hasSubscription = false,
+    billingPresence = false,
     activeSection
 }: AccountNavModelInput): AccountNavModel {
     const visibility = (node: Parameters<typeof isVisibleByPermissions>[0]) =>
@@ -182,7 +182,7 @@ export function buildAccountNavModel({
         groups: ordered.map((group): AccountNavGroupModel => {
             const items: AccountNavItemModel[] = group.items
                 .filter((item) => showAiAssistants || item.id !== AI_ASSISTANTS_NAV_ITEM_ID)
-                .filter((item) => hasSubscription || item.id !== ADDONS_NAV_ITEM_ID)
+                .filter((item) => billingPresence || item.id !== ADDONS_NAV_ITEM_ID)
                 .map((item) => {
                     const sectionKey = getActiveSectionKey({ href: item.href });
                     return { item, sectionKey, active: sectionKey === activeSection };

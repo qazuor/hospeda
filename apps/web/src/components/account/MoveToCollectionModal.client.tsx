@@ -11,7 +11,7 @@
  */
 
 import { useCallback, useEffect, useState } from 'react';
-import { Button, Dialog, Radio, RadioGroup } from '@/components/account/ui';
+import { Button, Dialog, LockedState, Radio, RadioGroup } from '@/components/account/ui';
 import { userBookmarkCollectionsApi } from '@/lib/api/endpoints-protected';
 import { translateApiError } from '@/lib/api-errors';
 import { createTranslations, type SupportedLocale } from '@/lib/i18n';
@@ -21,7 +21,8 @@ import { COLLECTION_CREATED_EVENT } from './collection-created-event';
 import {
     type CollectionsGate,
     canCreateCollection,
-    collectionsLockText
+    collectionsLockText,
+    collectionsPlanLockReason
 } from './favorites/collections-gate';
 
 /** One collection of the radio list. */
@@ -169,6 +170,30 @@ export function MoveToCollectionModal({
 
     const unchanged = selected === (currentCollectionId ?? NO_COLLECTION_VALUE);
     const title = t('account.favorites.collections.move_to');
+
+    // Defensive entry point: stale callers still get a useful way out, never
+    // an unchangeable radio list with a disabled submit button.
+    if (gate.kind === 'noPlan') {
+        return (
+            <Dialog
+                open={isOpen}
+                onOpenChange={(next) => {
+                    if (!next) onClose();
+                }}
+                title={title}
+                locale={locale}
+            >
+                <LockedState
+                    locale={locale}
+                    reason={collectionsPlanLockReason({
+                        t,
+                        locale,
+                        planNames: gatePlanNames ?? []
+                    })}
+                />
+            </Dialog>
+        );
+    }
 
     return (
         <>

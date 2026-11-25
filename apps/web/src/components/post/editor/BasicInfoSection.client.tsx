@@ -9,6 +9,7 @@
 
 import { PostCategoryEnum } from '@repo/schemas';
 import styles from '@/components/account/editor/content-editor-fields.module.css';
+import { Field, Select } from '@/components/account/ui';
 import { TextField } from '@/components/ui/TextField';
 import { getPostCategoryLabel } from '@/lib/colors';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -99,18 +100,17 @@ export function BasicInfoSection({
                 </span>
             </div>
 
-            <div className={styles.field}>
-                <TextField
-                    as="select"
-                    prefix={POST_FIELD_PREFIX}
+            <Field
+                locale={locale}
+                idParts={{ prefix: POST_FIELD_PREFIX, name: 'category' }}
+                label={t('account.myContent.posts.editor.field.category', 'Categoría')}
+                error={errors.category}
+                required
+            >
+                <Select
                     name="category"
-                    label={`${t('account.myContent.posts.editor.field.category', 'Categoría')} *`}
-                    labelClassName={styles.fieldLabel}
-                    className={styles.fieldInput}
-                    error={errors.category}
                     value={data.category}
                     onChange={(e) => onFieldChange('category', e.target.value)}
-                    required
                 >
                     {categoryOptions.map((option) => (
                         <option
@@ -120,8 +120,8 @@ export function BasicInfoSection({
                             {option.label}
                         </option>
                     ))}
-                </TextField>
-            </div>
+                </Select>
+            </Field>
         </fieldset>
     );
 }

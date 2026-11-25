@@ -492,6 +492,21 @@
             "publishCtaTrialNoCount": "Publish for free"
         },
         "create": {
+            "sectionTitle": "Start with the basics",
+            "sectionHint": "Create a draft with these details. You can complete your listing in the editor next.",
+            "hint": {
+                "name": "Use the name your customers know you by.",
+                "type": "Choose the category that best describes what you offer.",
+                "summary": "Summarize what you offer in one sentence. This appears in listing cards.",
+                "description": "Describe what you offer. You can add more details later.",
+                "destination": "Choose your listing’s city. You can fill this in later in the editor.",
+                "price": "Enter the amount in Argentine pesos or select Price on request."
+            },
+            "placeholder": {
+                "type": "Choose a category",
+                "destination": "Choose a city or destination",
+                "priceUnit": "Choose a pricing unit"
+            },
             "fields": {
                 "name": {
                     "venue": "Business name",

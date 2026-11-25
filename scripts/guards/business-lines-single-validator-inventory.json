@@ -33,11 +33,6 @@
             "spec": ".hoja/notas.md:5"
         },
         {
-            "file": "apps/web/src/components/listing/ListingCreateForm.client.tsx",
-            "count": 1,
-            "spec": ".hoja/notas.md:5"
-        },
-        {
             "file": "apps/admin/src/components/entity-form/fields/BusinessLinesField.tsx",
             "count": 1,
             "spec": ".hoja/notas.md:5"

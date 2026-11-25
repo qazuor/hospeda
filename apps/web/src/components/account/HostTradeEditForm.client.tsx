@@ -42,6 +42,7 @@ import { createTranslations } from '@/lib/i18n';
 import { addToast } from '@/store/toast-store';
 import { buildHostTradeEditSnapshot, buildHostTradeOwnerPatch } from './HostTradeEditForm.helpers';
 import styles from './HostTradeEditForm.module.css';
+import { Checkbox, Field, Select } from './ui';
 
 /** Props for {@link HostTradeEditForm}. */
 export interface HostTradeEditFormProps {
@@ -260,21 +261,13 @@ export function HostTradeEditForm({ locale, trade: initialTrade }: HostTradeEdit
                         disabled={submitting}
                     />
                 </div>
-                <div className={styles.field}>
-                    <label
-                        className={styles.label}
-                        htmlFor="htf-checkbox-24h"
-                    >
-                        <input
-                            id="htf-checkbox-24h"
-                            type="checkbox"
-                            checked={is24h}
-                            onChange={(e) => setIs24h(e.target.checked)}
-                            disabled={submitting}
-                        />{' '}
-                        {t('account.provider.form.fields.is24h', 'Disponible las 24 horas')}
-                    </label>
-                </div>
+                <Checkbox
+                    id="htf-checkbox-24h"
+                    label={t('account.provider.form.fields.is24h', 'Disponible las 24 horas')}
+                    checked={is24h}
+                    onChange={(e) => setIs24h(e.target.checked)}
+                    disabled={submitting}
+                />
                 {!is24h && (
                     <div className={styles.field}>
                         <label
@@ -369,19 +362,16 @@ export function HostTradeEditForm({ locale, trade: initialTrade }: HostTradeEdit
                     </div>
                 )}
 
-                <div className={styles.field}>
-                    <label
-                        className={styles.label}
-                        htmlFor="htf-benefitType"
-                    >
-                        {t(
-                            'alliance-leads.form.fields.benefitType',
-                            'Beneficio para los anfitriones'
-                        )}
-                    </label>
-                    <select
+                <Field
+                    locale={locale}
+                    id="htf-benefitType"
+                    label={t(
+                        'alliance-leads.form.fields.benefitType',
+                        'Beneficio para los anfitriones'
+                    )}
+                >
+                    <Select
                         id="htf-benefitType"
-                        className={styles.select}
                         value={benefitType}
                         onChange={(e) => setBenefitType(e.target.value)}
                         disabled={submitting}
@@ -400,8 +390,8 @@ export function HostTradeEditForm({ locale, trade: initialTrade }: HostTradeEdit
                                 {t(`alliance-leads.form.benefitTypeOptions.${value}`, value)}
                             </option>
                         ))}
-                    </select>
-                </div>
+                    </Select>
+                </Field>
 
                 {benefitValueApplicable && (
                     <div className={styles.field}>

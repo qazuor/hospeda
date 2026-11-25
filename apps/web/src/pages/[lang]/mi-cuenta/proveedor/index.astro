@@ -277,10 +277,12 @@ const panelError = t(
             <>
                 {/* Tab navigation: plain links, so only the active panel's
                     island ships and every tab is linkable. */}
-                <NavTabs
-                    items={tabs}
-                    ariaLabel={t('account.provider.tabs.label', 'Secciones de tu ficha')}
-                />
+                <div class="provider-tabs">
+                    <NavTabs
+                        items={tabs}
+                        ariaLabel={t('account.provider.tabs.label', 'Secciones de tu ficha')}
+                    />
+                </div>
 
                 <Section
                     title={tabs.find((tab) => tab.current)?.label ?? title}
@@ -322,3 +324,29 @@ const panelError = t(
         )
     }
 </AccountLayout>
+
+<style>
+    .provider-tabs :global(nav) {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        overflow: visible;
+    }
+
+    .provider-tabs :global(nav > a) {
+        justify-content: center;
+        padding-inline: var(--space-2);
+    }
+
+    @media (min-width: 48rem) {
+        .provider-tabs :global(nav) {
+            display: revert;
+            grid-template-columns: revert;
+            overflow: revert;
+        }
+
+        .provider-tabs :global(nav > a) {
+            justify-content: revert;
+            padding-inline: revert;
+        }
+    }
+</style>
