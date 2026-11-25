@@ -211,20 +211,6 @@
             "spec": ".hoja/notas.md:5"
         },
         {
-            "file": "apps/web/src/components/listing/ListingCreateForm.client.tsx",
-            "symbol": "ListingCreateForm",
-            "count": 1,
-            "category": "create-form",
-            "spec": ".hoja/notas.md:5"
-        },
-        {
-            "file": "apps/web/src/components/listing/ListingCreateForm.client.tsx",
-            "symbol": "handleSubmit",
-            "count": 1,
-            "category": "create-form",
-            "spec": ".hoja/notas.md:5"
-        },
-        {
             "file": "apps/web/src/components/listing/editor/BasicInfoSection.client.tsx",
             "symbol": "BasicInfoSection",
             "count": 1,

@@ -13,7 +13,6 @@
                 "apps/web/src/components/destination/DestinationRatingBreakdown.astro": 2,
                 "apps/web/src/components/destination/destination-rating.ts": 4,
                 "apps/web/src/components/event/editor/BasicInfoSection.client.tsx": 2,
-                "apps/web/src/components/event/editor/EventCreateForm.client.tsx": 2,
                 "apps/web/src/components/shared/cards/utils/postCategoryIcon.ts": 3,
                 "apps/web/src/lib/colors.ts": 5,
                 "apps/web/src/lib/event-listing-summary/summary.catalogs.ts": 2,
@@ -412,5 +411,5 @@
         }
     },
     "historyWordFiles": 14,
-    "ledgerFingerprint": "ceaf30e1622cb1fe64dba71fe66d28cd2f384a21f3bc4da731220804bc66bcfc"
+    "ledgerFingerprint": "310fee7025a058facac2f5d6de020cb1f446d58b233ecf994abd6f5f129f3417"
 }
