@@ -19,7 +19,9 @@ import {
     type ListingLocationExceptionDecisionPayload,
     NotificationType,
     type PartnerMentionsLoggedPayload,
-    type PartnerRevokedPayload
+    type PartnerRevokedPayload,
+    type VipPromotionsPausedPayload,
+    type VipPromotionsWeeklyDigestPayload
 } from '../../types/notification.types.js';
 import { defineNotificationEntry } from '../define-entry.js';
 import { SAMPLE_RECIPIENT, SAMPLE_SITE_URL } from '../sample-data.js';
@@ -394,6 +396,73 @@ export const NOTIFICATION_COMMUNITY_ENTRIES: readonly EmailCatalogEntry[] = [
                     accommodationName: 'Cabañas del Río (ejemplo)',
                     providerLabel: 'Airbnb',
                     reconnectUrl: `${SAMPLE_SITE_URL}/es/mi-cuenta/propiedades/ejemplo/editar`
+                }
+            }
+        ]
+    }),
+    defineNotificationEntry<VipPromotionsWeeklyDigestPayload>({
+        type: NotificationType.VIP_PROMOTIONS_WEEKLY_DIGEST,
+        name: 'Resumen semanal de promociones para VIP',
+        domain: 'listing',
+        audience: 'user',
+        scenarios: [
+            {
+                id: 'es-three-promotions',
+                label: 'Español, tres promociones (una Solo VIP)',
+                input: {
+                    ...SAMPLE_RECIPIENT,
+                    type: NotificationType.VIP_PROMOTIONS_WEEKLY_DIGEST,
+                    locale: 'es',
+                    digestSubject: '3 promociones nuevas esta semana',
+                    promotions: [
+                        {
+                            title: 'Fin de semana largo (ejemplo)',
+                            benefit: '20% de descuento',
+                            placeName: 'Cabañas del Río (ejemplo)',
+                            placeUrl: `${SAMPLE_SITE_URL}/es/alojamientos/ejemplo/`,
+                            vipOnly: false,
+                            startsLabel: null
+                        },
+                        {
+                            title: 'Cena para dos (ejemplo)',
+                            benefit: '$ 5.000 de descuento',
+                            placeName: 'Parrilla del Puerto (ejemplo)',
+                            placeUrl: `${SAMPLE_SITE_URL}/es/comer-y-salir/ejemplo/`,
+                            vipOnly: true,
+                            startsLabel: 'Desde el 1 de diciembre'
+                        },
+                        {
+                            title: 'Noche extra (ejemplo)',
+                            benefit: 'Una noche gratis',
+                            placeName: 'Posada Las Moras (ejemplo)',
+                            placeUrl: `${SAMPLE_SITE_URL}/es/alojamientos/ejemplo-2/`,
+                            vipOnly: false,
+                            startsLabel: null
+                        }
+                    ],
+                    moreCount: 0,
+                    promotionsUrl: `${SAMPLE_SITE_URL}/es/promociones/`,
+                    preferencesUrl: `${SAMPLE_SITE_URL}/es/mi-cuenta/preferencias/`
+                }
+            }
+        ]
+    }),
+    defineNotificationEntry<VipPromotionsPausedPayload>({
+        type: NotificationType.VIP_PROMOTIONS_PAUSED,
+        name: 'Promociones Solo VIP pausadas',
+        domain: 'listing',
+        audience: 'user',
+        scenarios: [
+            {
+                id: 'es-two-paused',
+                label: 'Español, dos pausadas',
+                input: {
+                    ...SAMPLE_RECIPIENT,
+                    type: NotificationType.VIP_PROMOTIONS_PAUSED,
+                    locale: 'es',
+                    pausedSubject: 'Pausamos 2 promociones «Solo VIP»',
+                    promotionTitles: ['Fin de semana largo (ejemplo)', 'Cena para dos (ejemplo)'],
+                    promotionsUrl: `${SAMPLE_SITE_URL}/es/mi-cuenta/promociones/`
                 }
             }
         ]

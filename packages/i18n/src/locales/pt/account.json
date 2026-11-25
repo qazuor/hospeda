@@ -159,7 +159,7 @@
         "favorites": "Favoritos",
         "searchHistory": "Histórico de buscas",
         "alerts": "Alertas de preço",
-        "exclusiveDeals": "Ofertas exclusivas",
+        "exclusiveDeals": "Promoções",
         "reviews": "Minhas avaliações",
         "hostDashboard": "Painel do anfitrião",
         "properties": "Meus alojamentos",
@@ -393,6 +393,10 @@
         "changeInPreferences": "Alterar em Preferências",
         "searchHistory": {
             "planFallback": "Plano superior"
+        },
+        "vipPromotionsDigest": {
+            "label": "Receber o resumo semanal de promoções",
+            "description": "Um e-mail às segundas com as promoções novas da semana. Se não houve nenhuma, não escrevemos."
         }
     },
     "aiAssistants": {
@@ -1211,10 +1215,6 @@
             "title": "Alertas de preço",
             "description": "Gerencie seus alertas de queda de preço no Hospeda"
         },
-        "exclusiveDeals": {
-            "title": "Ofertas exclusivas",
-            "description": "Descubra ofertas e descontos exclusivos para o seu plano no Hospeda"
-        },
         "recommendations": {
             "title": "Sugestões para você",
             "description": "Acomodações escolhidas especialmente para você, com base nos seus favoritos, buscas e atividade recente no Hospeda"
@@ -1490,31 +1490,6 @@
         "deleteConfirmTitle": "Excluir este alerta?",
         "deleteConfirmBody": "Você deixa de receber avisos de queda de preço de {{name}}.",
         "closedStatus": "Encerrado"
-    },
-    "exclusiveDeals": {
-        "lock": {
-            "description": "Acesse descontos e benefícios que os anfitriões reservam para os viajantes deste plano."
-        },
-        "loading": "Carregando ofertas exclusivas...",
-        "errorFetch": "Não foi possível carregar suas ofertas exclusivas",
-        "empty": {
-            "title": "Nenhuma oferta ativa no momento",
-            "body": "Volte mais tarde para ver novas ofertas exclusivas para o seu plano."
-        },
-        "upgrade": {
-            "title": "Ofertas exclusivas",
-            "message_one": "As ofertas exclusivas estão disponíveis no plano {{plans}}. Atualize seu plano para acessar.",
-            "message_other": "As ofertas exclusivas estão disponíveis nos planos {{plans}}. Atualize seu plano para acessar.",
-            "messageNoPlans": "As ofertas exclusivas não estão incluídas no seu plano atual. Atualize seu plano para acessar.",
-            "cta": "Ver planos"
-        },
-        "listLabel": "Suas ofertas exclusivas",
-        "item": {
-            "vipBadge": "Somente VIP",
-            "viewListing": "Ver acomodação",
-            "listingUnavailable": "Esta acomodação não está mais disponível.",
-            "validUntil": "Válida até {{date}}"
-        }
     },
     "recommendations": {
         "loading": "Carregando recomendações...",

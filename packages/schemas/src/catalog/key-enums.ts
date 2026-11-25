@@ -42,6 +42,7 @@ export enum EntitlementKeyEnum {
     VIP_SUPPORT = 'vip_support',
     VIP_VISIBILITY_ACCESS = 'vip_visibility_access',
     VIP_PROMOTIONS_ACCESS = 'vip_promotions_access',
+    VIP_ONLY_PROMOTIONS = 'vip_only_promotions',
     CAN_COMPARE_ACCOMMODATIONS = 'can_compare_accommodations',
     CAN_ATTACH_REVIEW_PHOTOS = 'can_attach_review_photos',
     CAN_VIEW_SEARCH_HISTORY = 'can_view_search_history',
@@ -85,5 +86,6 @@ export enum LimitKeyEnum {
     MAX_AI_SUPPORT_PER_MONTH = 'max_ai_support_per_month',
     MAX_AI_TRANSLATE_PER_MONTH = 'max_ai_translate_per_month',
     MAX_AI_ACCOMMODATION_IMPORT_PER_MONTH = 'max_ai_accommodation_import_per_month',
-    MAX_AI_FAQ_DRAFT_PER_MONTH = 'max_ai_faq_draft_per_month'
+    MAX_AI_FAQ_DRAFT_PER_MONTH = 'max_ai_faq_draft_per_month',
+    MAX_FREE_VISIBLE_PROMOTIONS = 'max_free_visible_promotions'
 }

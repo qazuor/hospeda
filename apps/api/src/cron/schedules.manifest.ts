@@ -362,6 +362,22 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
             "Email each listing owner the week's AI chat questions their listings could not answer, with a link to the listing's AI questions tab; skips empty weeks and opted-out owners (HOS-2101)."
     },
     {
+        name: 'vip-promotions-weekly-digest',
+        displayName: 'Resumen semanal de promociones para VIP',
+        category: 'notifications',
+        schedule: '0 10 * * 1',
+        description:
+            "Email each VIP tourist the previous week's newly activated promotions (both audiences), with a link to /{lang}/promociones/; skips empty weeks and opted-out tourists (HOS-2589)."
+    },
+    {
+        name: 'vip-only-promotions-pause',
+        displayName: 'Pausa de promociones Solo VIP sin plan',
+        category: 'notifications',
+        schedule: '20 * * * *',
+        description:
+            'Pause the «Solo VIP» promotions of owners whose plan no longer grants vip_only_promotions (never deleted nor converted) and email the owner once per pause (HOS-2589 D-8).'
+    },
+    {
         name: 'entity-views-purge',
         displayName: 'Purga de vistas de entidades',
         category: 'system',

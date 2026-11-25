@@ -1,6 +1,6 @@
 import type { VenuePromotionListOutput } from '@repo/schemas';
 import { OwnerPromotionDiscountTypeEnum } from '@repo/schemas';
-import type { Dispatch, FormEventHandler, RefObject, SetStateAction } from 'react';
+import type { Dispatch, FormEventHandler, ReactNode, RefObject, SetStateAction } from 'react';
 import { Button } from '@/components/account/ui/Button';
 import fieldStyles from '@/components/listing/editor/editor-fields.module.css';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -46,6 +46,8 @@ interface Props {
     readonly setWindowStart: Dispatch<SetStateAction<string>>;
     readonly windowEnd: string;
     readonly setWindowEnd: Dispatch<SetStateAction<string>>;
+    /** HOS-2589: the «Para todos» / «Solo VIP» radio group, built by the manager. */
+    readonly audienceField?: ReactNode;
 }
 
 /** Owner editor form for a venue promotion and its optional weekly window. */
@@ -75,7 +77,8 @@ export function VenuePromotionForm({
     windowStart,
     setWindowStart,
     windowEnd,
-    setWindowEnd
+    setWindowEnd,
+    audienceField
 }: Props) {
     const { t } = createTranslations(locale);
     return (
@@ -273,6 +276,7 @@ export function VenuePromotionForm({
                     )}
                 </small>
             </fieldset>
+            {audienceField}
             <div className={styles.formActions}>
                 <Button
                     type="submit"

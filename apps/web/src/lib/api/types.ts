@@ -562,6 +562,8 @@ export interface OwnerPromotionData {
     readonly currentRedemptions: number;
     readonly lifecycleState: OwnerPromotionLifecycleState;
     readonly touristAudience: OwnerPromotionTouristAudience;
+    /** HOS-2589 D-8: when the «Solo VIP» pause stopped it (the plan lost the key); else null. */
+    readonly vipPausedAt?: string | null;
     readonly createdAt: string;
     readonly updatedAt: string;
 }

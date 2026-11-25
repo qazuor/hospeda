@@ -7,9 +7,9 @@
  * not include promotions the island shows a `LockedState` BEFORE the form
  * (D9), naming the catalog plans read here.
  *
- * The catalog reader is server-only, so this page reads the plan names (the
- * exclusive-deals audience hint, HOS-2544, and the promotions lock) and hands
- * them to the island.
+ * The catalog reader is server-only, so this page reads the catalog values (X and
+ * the VIP plan name for the audience texts, HOS-2589, and the plans of the
+ * promotions lock) and hands them to the island.
  *
  * @route    /[lang]/mi-cuenta/promociones/nueva
  * @rendering SSR (prerender = false — requires authenticated user)
@@ -25,6 +25,7 @@ import { PageHeader } from '@/components/account/ui';
 import { PromotionForm } from '@/components/host/PromotionForm.client';
 import { EntitlementKeyEnum } from '@repo/schemas';
 import { fetchPublicPlans, planNamesWithEntitlement } from '@/lib/billing/fetch-plans';
+import { readPromotionPolicy } from '@/lib/promotions/promotion-policy';
 
 export const prerender = false;
 
@@ -44,11 +45,8 @@ const [touristPlans, ownerPlans] = await Promise.all([
     fetchPublicPlans({ vertical: 'tourist' }),
     fetchPublicPlans({ vertical: 'accommodation' })
 ]);
-// HOS-2544: the audience hint names the tourist plans that carry exclusive deals.
-const audiencePlanNames = planNamesWithEntitlement({
-    result: touristPlans,
-    entitlement: EntitlementKeyEnum.EXCLUSIVE_DEALS
-});
+// HOS-2589: the audience texts read X and the VIP plan name from the tourist catalog.
+const { freeQuota, vipPlanName } = readPromotionPolicy({ result: touristPlans });
 // HOS-2505: the lock names the owner plans that include promotions.
 const lockPlanNames = planNamesWithEntitlement({
     result: ownerPlans,
@@ -73,7 +71,8 @@ const lockPlanNames = planNamesWithEntitlement({
         client:load
         locale={locale}
         mode="create"
-        audiencePlanNames={audiencePlanNames}
+        freeQuota={freeQuota}
+        vipPlanName={vipPlanName}
         lockPlanNames={lockPlanNames}
     />
 </AccountLayout>

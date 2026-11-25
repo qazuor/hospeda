@@ -97,11 +97,12 @@ describe('VenueCard.astro', () => {
         });
     });
 
-    describe('promotion badge (HOS-2271)', () => {
-        it('shows only the fixed Promo or Promo VIP label when a badge is present', () => {
-            expect(src).toContain('data.promoBadge?.hasPromo');
-            expect(src).toContain('venue.card.promoVip');
-            expect(src).toContain('venue.card.promo');
+    describe('promotion badges (HOS-2271, HOS-2589 D-6)', () => {
+        it('shows «Promo» and «VIP» as separate fixed badges, never the promotion text', () => {
+            expect(src).toContain('resolveVenuePromoBadges({ badge: data.promoBadge })');
+            expect(src).toContain('common.promotions.badges.promo');
+            expect(src).toContain('common.promotions.badges.vip');
+            expect(src).not.toContain('venue.card.promoVip');
             expect(src).not.toContain('specialOfferText');
         });
     });

@@ -17,6 +17,7 @@ export * from './listing/index.js';
 export * from './listing-location/index.js';
 export * from './newsletter/index.js';
 export * from './partner/index.js';
+export * from './promotions/index.js';
 export * from './subscription/index.js';
 export * from './trial/index.js';
 export * from './verticals/index.js';

@@ -1,3 +1,5 @@
+import type { VerticalEnum } from '@repo/schemas';
+import { rehydrateEffectiveSet } from '@repo/verticals';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AppBindings } from '../../../../src/types.js';
 
@@ -20,6 +22,29 @@ vi.mock('@repo/service-core', async (importActual) => {
         }
     };
 });
+
+/** Stands for the TOURIST floor plan's `max_free_visible_promotions` row (HOS-2589). */
+const FREE_QUOTA = 2;
+
+vi.mock('../../../../src/utils/listing-access/ports', () => ({
+    getListingAccessPorts: () => ({
+        effectiveSet: async ({ userId, vertical }: { userId: string; vertical: VerticalEnum }) =>
+            rehydrateEffectiveSet({
+                version: 1,
+                userId,
+                vertical,
+                hasLiveNonTrialTitle: false,
+                inheritsTouristVip: false,
+                entries: [
+                    {
+                        key: 'max_free_visible_promotions',
+                        value: FREE_QUOTA,
+                        strategy: 'MAX' as const
+                    }
+                ]
+            })
+    })
+}));
 
 vi.mock('../../../../src/utils/logger.js', () => ({
     apiLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }
@@ -60,7 +85,8 @@ describe('GET public venue promotions', () => {
                 discountType: 'percentage',
                 discountValue: 20,
                 validFrom: new Date('2026-11-01T00:00:00Z'),
-                validUntil: null
+                validUntil: null,
+                touristAudience: 'plus'
             }
         ]);
 
@@ -81,5 +107,27 @@ describe('GET public venue promotions', () => {
 
         expect(response.status).toBe(404);
         expect(mocks.findActiveForVenue).not.toHaveBeenCalled();
+    });
+
+    it('HOS-2589 AC-10: a non-VIP reader gets at most the free quota in full, never cached', async () => {
+        mocks.getById.mockResolvedValue({ data: { publicationStatus: 'PUBLISHED' } });
+        mocks.findActiveForVenue.mockResolvedValue(
+            Array.from({ length: 5 }, (_, n) => ({
+                id: `33333333-3333-4333-8333-33333333333${n}`,
+                title: `Promo ${n}`,
+                description: null,
+                discountType: 'percentage',
+                discountValue: 10 + n,
+                validFrom: new Date('2026-11-01T00:00:00Z'),
+                validUntil: null,
+                touristAudience: 'plus'
+            }))
+        );
+
+        const response = await makeApp().request(`/${VENUE_ID}/promotions`);
+        const body = (await response.json()) as { data: { items: unknown[] } };
+
+        expect(body.data.items).toHaveLength(FREE_QUOTA);
+        expect(response.headers.get('cache-control')).toBe('private, no-store');
     });
 });

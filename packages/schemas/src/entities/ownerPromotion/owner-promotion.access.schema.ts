@@ -94,6 +94,11 @@ export const OwnerPromotionProtectedSchema = OwnerPromotionObjectSchema.pick({
     // to manage their promotions from the web CRUD.
     lifecycleState: true,
 
+    // HOS-2589: the owner's audience choice («Para todos» / «Solo VIP») and, when a
+    // «Solo VIP» promotion was paused on the loss of `vip_only_promotions`, when.
+    touristAudience: true,
+    vipPausedAt: true,
+
     // Audit (for owners)
     createdAt: true,
     updatedAt: true

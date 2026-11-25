@@ -11,6 +11,7 @@
 import {
     LifecycleStatusEnum,
     OwnerPromotionDiscountTypeEnum,
+    TouristAudienceEnum,
     VenuePromotionCreateRequestSchema
 } from '@repo/schemas';
 import { type FormEvent, useCallback, useEffect, useRef, useState } from 'react';
@@ -24,13 +25,19 @@ import { Section } from '@/components/account/ui/Section';
 import { Skeleton } from '@/components/account/ui/Skeleton';
 import { useConfirm } from '@/components/account/ui/use-confirm';
 import { isUnlimitedLimit } from '@/components/billing/plan-card-delta';
+import {
+    type PromotionAudience,
+    PromotionAudienceField
+} from '@/components/host/PromotionAudienceField';
 import { venuePromotionsApi } from '@/lib/api/endpoints-protected';
 import type { ApiError } from '@/lib/api/types';
 import { buildLimitReachedPayloadFromDetails } from '@/lib/billing-limit-error';
+import { getEntitlementsCached } from '@/lib/entitlements-cache';
 import { sectionHelpId } from '@/lib/help/section-help-id';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
+import { listVipPausedTitles } from '@/lib/promotions/vip-paused';
 import { buildUrl } from '@/lib/urls';
 import {
     resolveVenuePromotionLimitPlanName,
@@ -46,11 +53,22 @@ export { resolvePromotionLifecycleState } from './promotion-lifecycle';
 type VenueDiscountType = PromotionRow['discountType'];
 
 interface Props {
+    /** HOS-2589: X and the VIP plan name from the tourist catalog (SSR); `null` if unreadable. */
+    readonly freeQuota?: number | null;
+    readonly vipPlanName?: string | null;
     readonly listingId: string;
     readonly locale: SupportedLocale;
     readonly sectionState: 'locked' | 'available';
     readonly upsellPlanName: string | null;
     readonly limitPlanOptions: readonly VenuePromotionLimitPlanOption[];
+}
+
+/** The update body without its audience (the create schema defaults it to `plus`). */
+function omitAudience<T extends { readonly touristAudience?: unknown }>(
+    body: T
+): Omit<T, 'touristAudience'> {
+    const { touristAudience: _omitted, ...rest } = body;
+    return rest;
 }
 
 /** Owner editor for the venue's own promotions. */
@@ -59,7 +77,9 @@ export function VenuePromotionsManager({
     locale,
     sectionState,
     upsellPlanName,
-    limitPlanOptions
+    limitPlanOptions,
+    freeQuota = null,
+    vipPlanName = null
 }: Props) {
     const { t } = createTranslations(locale);
     const { confirm: askConfirm, confirmDialog } = useConfirm({ locale });
@@ -91,6 +111,26 @@ export function VenuePromotionsManager({
     const [messageTone, setMessageTone] = useState<'info' | 'danger'>('info');
     const [offerError, setOfferError] = useState('');
     const [now, setNow] = useState<number | null>(null);
+    // HOS-2589: who sees it, and whether the plan lets the owner pick «Solo VIP».
+    const [audience, setAudience] = useState<PromotionAudience>(TouristAudienceEnum.PLUS);
+    const [initialAudience, setInitialAudience] = useState<PromotionAudience>(
+        TouristAudienceEnum.PLUS
+    );
+    const [vipOnlyAllowed, setVipOnlyAllowed] = useState(false);
+    useEffect(() => {
+        let cancelled = false;
+        const check = async (): Promise<void> => {
+            const effectiveSet = await getEntitlementsCached({ vertical: 'venue' });
+            if (cancelled) return;
+            setVipOnlyAllowed(
+                !effectiveSet.failed && (effectiveSet.entitlements.vip_only_promotions ?? 0) > 0
+            );
+        };
+        void check();
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     useEffect(() => setNow(Date.now()), []);
 
@@ -149,6 +189,8 @@ export function VenuePromotionsManager({
         setWindowWeekdays([]);
         setWindowStart('');
         setWindowEnd('');
+        setAudience(TouristAudienceEnum.PLUS);
+        setInitialAudience(TouristAudienceEnum.PLUS);
         setFormOpen(false);
         setMessage('');
         setOfferError('');
@@ -170,6 +212,12 @@ export function VenuePromotionsManager({
         setWindowWeekdays(item.window?.weekdays ?? []);
         setWindowStart(item.window?.startTime ?? '');
         setWindowEnd(item.window?.endTime ?? '');
+        const stored =
+            item.touristAudience === TouristAudienceEnum.VIP
+                ? TouristAudienceEnum.VIP
+                : TouristAudienceEnum.PLUS;
+        setAudience(stored);
+        setInitialAudience(stored);
         setFormOpen(true);
     };
 
@@ -191,8 +239,15 @@ export function VenuePromotionsManager({
             validUntil: validUntil || null,
             window: windowEnabled
                 ? { weekdays: windowWeekdays, startTime: windowStart, endTime: windowEnd }
-                : null
+                : null,
+            touristAudience: audience
         };
+        // AC-2: «Para todos» always stores plus; an unchanged «Solo VIP» on edit is
+        // not re-sent, so a paused one stays editable without the key (D-8).
+        const keepsVip =
+            editing !== null &&
+            audience === TouristAudienceEnum.VIP &&
+            initialAudience === TouristAudienceEnum.VIP;
         const parsed = VenuePromotionCreateRequestSchema.safeParse(body);
         if (!parsed.success) {
             notify(
@@ -211,7 +266,7 @@ export function VenuePromotionsManager({
                     ? await venuePromotionsApi.update({
                           id: listingId,
                           promotionId,
-                          body: parsed.data
+                          body: keepsVip ? omitAudience(parsed.data) : parsed.data
                       })
                     : await venuePromotionsApi.create({ id: listingId, body: parsed.data });
                 if (!result.ok) {
@@ -285,12 +340,26 @@ export function VenuePromotionsManager({
         });
     };
 
+    // HOS-2589 D-8 / AC-36: the in-app notice of the «Solo VIP» pause.
+    const { titles: vipPausedTitles } = listVipPausedTitles({ items });
+
     return (
         <Section
             title={t('venue.owner.editor.promotionsManager.title', 'Promociones')}
             helpId={sectionHelpId({ vertical: 'venue', slug: 'promociones' })}
         >
             <div className={styles.stack}>
+                {vipPausedTitles.length > 0 ? (
+                    <Alert
+                        locale={locale}
+                        tone="warning"
+                        title={t('host.promotions.vipPaused.title')}
+                    >
+                        {t('host.promotions.vipPaused.body', undefined, {
+                            titles: vipPausedTitles.join(', ')
+                        })}
+                    </Alert>
+                ) : null}
                 <p className={styles.count}>
                     {isUnlimitedLimit({ value: maxActive })
                         ? t(
@@ -436,6 +505,22 @@ export function VenuePromotionsManager({
                         setWindowStart={setWindowStart}
                         windowEnd={windowEnd}
                         setWindowEnd={setWindowEnd}
+                        audienceField={
+                            <PromotionAudienceField
+                                locale={locale}
+                                t={t}
+                                name="venue-promotion-touristAudience"
+                                value={audience}
+                                onChange={setAudience}
+                                freeQuota={freeQuota}
+                                vipPlanName={vipPlanName}
+                                vipOnlyAllowed={vipOnlyAllowed}
+                                plansHref={buildUrl({
+                                    locale,
+                                    path: PRICING_PAGE_PATH_BY_AUDIENCE.venue
+                                })}
+                            />
+                        }
                     />
                 )}
                 {confirmDialog}

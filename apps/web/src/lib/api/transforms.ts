@@ -52,6 +52,7 @@ import {
     type MediaAttribution,
     toRenderableImageUrl
 } from '../media';
+import { resolvePromotionBadges } from '../promotions/promotion-badges';
 import {
     type I18nTextLike,
     resolveI18nText,
@@ -311,6 +312,18 @@ function extractRelationItems(
  * @param item - Raw accommodation object from the API
  * @returns Typed AccommodationCardData for the card component
  */
+/** HOS-2589 D-6: the list's promotion presence flags, only when present. */
+function promotionBadgeFlags(item: Record<string, unknown>): {
+    readonly hasFreePromotion?: boolean;
+    readonly hasVipPromotion?: boolean;
+} {
+    const { free, vip } = resolvePromotionBadges(item);
+    return {
+        ...(free ? { hasFreePromotion: true } : {}),
+        ...(vip ? { hasVipPromotion: true } : {})
+    };
+}
+
 export function toAccommodationCardProps({
     item,
     locale = 'es'
@@ -404,7 +417,8 @@ export function toAccommodationCardProps({
         bookmarkCount: item.bookmarkCount === undefined ? undefined : Number(item.bookmarkCount),
         // F1: owner-level AI_CHAT entitlement, surfaced by the public list
         // endpoint. Absent on responses that don't enrich it.
-        hasAiChat: item.hasAiChat === undefined ? undefined : Boolean(item.hasAiChat)
+        hasAiChat: item.hasAiChat === undefined ? undefined : Boolean(item.hasAiChat),
+        ...promotionBadgeFlags(item)
     };
 }
 
@@ -2349,6 +2363,7 @@ export function transformOwnerPromotion({
         touristAudience: String(
             item.touristAudience ?? 'plus'
         ) as import('./types').OwnerPromotionTouristAudience,
+        vipPausedAt: item.vipPausedAt == null ? null : String(item.vipPausedAt),
         createdAt: String(item.createdAt ?? ''),
         updatedAt: String(item.updatedAt ?? '')
     };

@@ -13,7 +13,6 @@ describe('VenuePromoBadge', () => {
         const { container } = render(
             <VenuePromoBadge
                 windows={[{ weekdays: [5], startTime: '18:00', endTime: '20:00' }]}
-                vipOnly={false}
                 locale="es"
             />
         );

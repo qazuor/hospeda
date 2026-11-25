@@ -52,7 +52,6 @@
         "opensAt": "Opens at {{time}}",
         "featured": "Featured",
         "promo": "Deal",
-        "promoVip": "VIP deal",
         "promoNow": "Now"
     },
     "detail": {

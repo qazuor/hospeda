@@ -158,6 +158,13 @@ export const UserSettingsSchema = z.object({
     aiQuestionsDigest: z.boolean().optional(),
 
     /**
+     * Whether a VIP tourist receives the weekly email of the new promotions
+     * (HOS-2589 M-3). Opt-out, like `aiQuestionsDigest`: absent reads as "send",
+     * so the digest cron compares against `false` explicitly. JSONB, no migration.
+     */
+    vipPromotionsDigest: z.boolean().optional(),
+
+    /**
      * Onboarding progress namespace. Shared by SPEC-174 (welcome tour) and
      * SPEC-175 (What's New). Added additively — no DB migration required.
      *

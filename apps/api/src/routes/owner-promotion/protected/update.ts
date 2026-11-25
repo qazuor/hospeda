@@ -17,6 +17,7 @@ import { getActorFromContext } from '../../../utils/actor';
 import { enforceUserGate } from '../../../utils/listing-access/user-gate';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
+import { enforceVipOnlyPromotionGate } from '../vip-only-gate';
 import { assertAccommodationPromotion } from './accommodation-door';
 
 const ownerPromotionService = new OwnerPromotionService({ logger: apiLogger });
@@ -58,13 +59,23 @@ export const protectedUpdateOwnerPromotionRoute = createProtectedRoute({
             vertical: VerticalEnum.ACCOMMODATION,
             keys: ['create_promotions']
         });
+        // HOS-2589 D-4/D-8: a promotion that stays or becomes «Solo VIP» and live
+        // needs the OWNER's `vip_only_promotions` (a pause never does).
+        const vipOnlyVerified = await enforceVipOnlyPromotionGate({
+            userId: existing.data?.ownerId ?? actor.id,
+            vertical: VerticalEnum.ACCOMMODATION,
+            body,
+            existing: existing.data ?? undefined
+        });
         // Strip ownerId from the update body so a client cannot reassign ownership.
         // The service layer does not guard against this field, so we drop it at the
         // route boundary before it reaches the service.
         const { ownerId: _drop, ...safeBody } = body as Record<string, unknown> & {
             ownerId?: unknown;
         };
-        const result = await ownerPromotionService.update(actor, id, safeBody as never);
+        const result = await ownerPromotionService.update(actor, id, safeBody as never, {
+            hookState: { vipOnlyVerified }
+        });
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);
