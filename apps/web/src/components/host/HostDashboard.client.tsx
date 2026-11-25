@@ -46,6 +46,8 @@ export interface HostDashboardProps {
     readonly planNames: readonly string[];
     /** Where «Ver planes» goes. */
     readonly plansHref: string;
+    /** Effective SSR authority to navigate to the owner inbox; counts stay visible without it. */
+    readonly canViewInbox: boolean;
 }
 
 type HostState = { readonly kind: 'loading' } | HostDashboardOutcome;
@@ -57,7 +59,12 @@ type ReadyState = Extract<HostDashboardOutcome, { kind: 'ready' }>;
  * @param props - See {@link HostDashboardProps}.
  * @returns The stats, the onboarding or the lock, and the analytics.
  */
-export function HostDashboard({ locale, planNames, plansHref }: HostDashboardProps): JSX.Element {
+export function HostDashboard({
+    locale,
+    planNames,
+    plansHref,
+    canViewInbox = false
+}: HostDashboardProps): JSX.Element {
     const t = createT(locale);
     const { tPlural } = createTranslations(locale);
     const [state, setState] = useState<HostState>({ kind: 'loading' });
@@ -158,11 +165,18 @@ export function HostDashboard({ locale, planNames, plansHref }: HostDashboardPro
                     state={unreadState}
                     locale={locale}
                     icon={<ChatIcon size={20} />}
-                    link={{
-                        // The OWNER inbox, never the guest one (HOS-2418).
-                        href: buildUrl({ locale, path: 'mi-cuenta/consultas-propietario' }),
-                        label: t('host.dashboard.widgets.viewAll')
-                    }}
+                    link={
+                        canViewInbox
+                            ? {
+                                  // The OWNER inbox, never the guest one (HOS-2418).
+                                  href: buildUrl({
+                                      locale,
+                                      path: 'mi-cuenta/consultas-propietario'
+                                  }),
+                                  label: t('host.dashboard.widgets.viewAll')
+                              }
+                            : undefined
+                    }
                 />
             </StatGrid>
 

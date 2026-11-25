@@ -9,7 +9,7 @@
  * Gating must be by ROW OWNERSHIP, never by permission or role: HOS-278 AC-7
  * establishes that an approved provider is an ordinary tourist account with
  * no `HOST_TRADE_*` permission and no role change, so the usual
- * `requiredPermission` -> `isVisibleByRoles` mechanism every other sidebar
+ * `requiredPermission` -> effective-permission mechanism every other sidebar
  * group uses structurally cannot represent this state.
  *
  * The ownership answer therefore rides on the SESSION, from the `/auth/me`

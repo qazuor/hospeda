@@ -4,12 +4,28 @@
 
 import { PermissionEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
+import { getNavForSurface } from '../../src/config/navigation';
 import { getCuratedAccountNav } from '../../src/lib/nav-avatar';
 
 const adminIds = (params: Parameters<typeof getCuratedAccountNav>[0]) =>
     getCuratedAccountNav(params).adminItems.map((item) => item.id);
 
 describe('getCuratedAccountNav', () => {
+    it('takes four ordered quick items from the sidebar registry without changing their identity', () => {
+        const registry = getNavForSurface({
+            surface: 'sidebar',
+            visibility: () => true
+        }).groups.flatMap((group) => group.items);
+        const { quickItems } = getCuratedAccountNav({ permissions: [] });
+        expect(quickItems.map((item) => item.id)).toEqual([
+            'dashboard',
+            'editProfile',
+            'favorites',
+            'subscription'
+        ]);
+        for (const item of quickItems)
+            expect(item).toBe(registry.find((entry) => entry.id === item.id));
+    });
     it('always returns the «Mi cuenta» identity link to /mi-cuenta/', () => {
         const { dashboardItem } = getCuratedAccountNav({ permissions: [] });
         expect(dashboardItem?.id).toBe('dashboard');

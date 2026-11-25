@@ -30,7 +30,11 @@ import { createTranslations } from '@/lib/i18n';
 import { loadListingNoticesItem } from '@/lib/listing/listing-notices-loader';
 import { loadSupportEdits } from '@/lib/listing/support-edits';
 
+import { guardPublisherArea } from '@/lib/account/publisher-access';
+
 export const prerender = false;
+const denied = guardPublisherArea({ astro: Astro, area: 'accommodationEdit' });
+if (denied) return denied;
 
 const resolution = await resolveEditorPage({
 	astro: Astro,

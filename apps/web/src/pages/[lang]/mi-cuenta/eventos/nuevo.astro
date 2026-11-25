@@ -37,7 +37,11 @@ import { hasEventsNavAccess } from '@/lib/nav-gating';
 import { webLogger as logger } from '@/lib/logger';
 import { buildUrl } from '@/lib/urls';
 
+import { guardPublisherArea } from '@/lib/account/publisher-access';
+
 export const prerender = false;
+const denied = guardPublisherArea({ astro: Astro, area: 'eventCreate' });
+if (denied) return denied;
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
@@ -47,7 +51,7 @@ if (!user) {
     return Astro.redirect(buildLoginRedirect({ locale, currentUrl: Astro.url.pathname + Astro.url.search }));
 }
 
-const canCreateEvents = hasEventsNavAccess({ roles: user.roles });
+const canCreateEvents = hasEventsNavAccess({ permissions: user.permissions });
 
 // The organizer catalog: at most 100 entries today, no pagination UI — the
 // same simplifying assumption `destinationsApi.list({ pageSize: 100 })` makes

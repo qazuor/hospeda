@@ -132,6 +132,6 @@ describe('only the CREATE path was ever opened (HOS-687 companion half)', () => 
         // (`resolveOwnerListPage`, VENUE_EDIT_OWN / EXPERIENCE_EDIT_OWN).
         expect(listingIndexSource).toContain('resolveOwnerListPage');
         expect(listingIndexSource).toMatch(/decision\.kind === 'forbidden'/);
-        expect(editorResolverSource).toContain('hasListingNavAccess');
+        expect(editorResolverSource).toContain('canAccessPublisherArea');
     });
 });

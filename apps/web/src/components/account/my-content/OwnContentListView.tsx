@@ -46,6 +46,10 @@ export interface OwnContentListViewProps {
     readonly kind: OwnContentKind;
     readonly status: OwnContentListStatus;
     readonly items: readonly OwnContentListItem[];
+    /** Effective create authority supplied by the SSR page, independent of list admission. */
+    readonly canCreate: boolean;
+    /** Effective update authority supplied by the SSR page. */
+    readonly canEdit: boolean;
     /** Current page, 1-based. */
     readonly page: number;
     /** Total pages, at least 1. */
@@ -73,6 +77,8 @@ export function OwnContentListView({
     kind,
     status,
     items,
+    canCreate = false,
+    canEdit = false,
     page,
     pageCount,
     help,
@@ -105,7 +111,7 @@ export function OwnContentListView({
             createAction={
                 // HOS-2611: one solid primary per screen. The empty state owns
                 // the «create» action, so the header drops it there.
-                status === 'ready' ? (
+                canCreate && status === 'ready' ? (
                     <LinkButton href={createHref}>
                         <AddIcon
                             size="sm"
@@ -124,13 +130,15 @@ export function OwnContentListView({
                 <EmptyState
                     title={t(`account.myContent.${kind}.list.empty`)}
                     action={
-                        <LinkButton href={createHref}>
-                            <AddIcon
-                                size="sm"
-                                aria-hidden="true"
-                            />
-                            {t(`account.myContent.${kind}.list.emptyCta`)}
-                        </LinkButton>
+                        canCreate ? (
+                            <LinkButton href={createHref}>
+                                <AddIcon
+                                    size="sm"
+                                    aria-hidden="true"
+                                />
+                                {t(`account.myContent.${kind}.list.emptyCta`)}
+                            </LinkButton>
+                        ) : undefined
                     }
                 />
             }
@@ -152,16 +160,22 @@ export function OwnContentListView({
                         lifecycleState: item.lifecycleState
                     })}
                     actions={
-                        <LinkButton
-                            href={buildUrl({ locale, path: `${basePath}/${item.id}/editar` })}
-                            variant="secondary"
-                            size="sm"
-                            aria-label={t('account.myContent.contentList.editNamed', undefined, {
-                                title: item.title
-                            })}
-                        >
-                            {t('account.myContent.card.editLink')}
-                        </LinkButton>
+                        canEdit ? (
+                            <LinkButton
+                                href={buildUrl({ locale, path: `${basePath}/${item.id}/editar` })}
+                                variant="secondary"
+                                size="sm"
+                                aria-label={t(
+                                    'account.myContent.contentList.editNamed',
+                                    undefined,
+                                    {
+                                        title: item.title
+                                    }
+                                )}
+                            >
+                                {t('account.myContent.card.editLink')}
+                            </LinkButton>
+                        ) : undefined
                     }
                 />
             ))}

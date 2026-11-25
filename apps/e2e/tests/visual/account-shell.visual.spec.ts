@@ -87,7 +87,9 @@ test.describe('VISUAL-SHELL: Mi Cuenta account shell @visual @account', () => {
             await prepareVisualPage({ page, context, theme, viewport: 'mobile' });
             await settleVisualPage({ page, path: DASHBOARD_PATH, theme });
 
-            await page.locator('[data-account-bar] button[aria-expanded]').click();
+            // HOS-2622 D2: the header avatar opens the account sheet; the
+            // AccountBar no longer carries a toggle.
+            await page.locator('[data-account-sheet-trigger]').click();
             await expect(page.getByRole('dialog')).toBeVisible();
 
             await expect(page.getByRole('dialog')).toHaveScreenshot([

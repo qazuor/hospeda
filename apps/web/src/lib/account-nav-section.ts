@@ -8,9 +8,12 @@
  */
 
 import {
+    OWNER_LIST_BASE_PATH,
+    OWNER_LIST_VERTICAL_PARAM,
     OWNER_LIST_VERTICALS,
     ownerListPath,
-    ownerListSectionKey
+    ownerListSectionKey,
+    parseOwnerListVertical
 } from '@/lib/listing/owner-list-vertical';
 
 /**
@@ -38,14 +41,36 @@ export const ACTIVE_SECTION_OVERRIDES: Readonly<Record<string, string>> = {
 };
 
 /**
- * Derives the `activeSection`-comparable key for a nav item's `href`.
+ * Resolves a registry href or browser pathname to its canonical account section.
+ * Nested pages inherit their parent entry. Only the shared comercio list reads
+ * the vertical query; a comercio editor's pathname supplies its vertical instead.
  *
  * @param input - Options object.
- * @param input.href - The item's path segment (e.g. `mi-cuenta/editar`).
+ * @param input.href - A registry href or locale-prefixed browser pathname.
+ * @param input.search - Optional browser query, separate from the pathname.
  * @returns The section key to compare against the `activeSection` prop.
  */
-export function getActiveSectionKey({ href }: { readonly href: string }): string {
-    const override = ACTIVE_SECTION_OVERRIDES[href];
-    if (override) return override;
-    return href === 'mi-cuenta' ? href : href.replace('mi-cuenta/', '');
+export function getActiveSectionKey({
+    href,
+    search
+}: {
+    readonly href: string;
+    readonly search?: string;
+}): string {
+    const [pathname = '', hrefSearch = ''] = href.split('#')[0]?.split('?') ?? [];
+    const normalized = pathname.replace(/^\/(?:es|en|pt)\//, '').replace(/^\/|\/$/g, '');
+    const segments = normalized.split('/');
+    if (segments[0] !== 'mi-cuenta') return normalized;
+
+    const parentPath = segments.slice(0, 2).join('/');
+    if (parentPath === OWNER_LIST_BASE_PATH) {
+        const value =
+            normalized === OWNER_LIST_BASE_PATH
+                ? new URLSearchParams(search ?? hrefSearch).get(OWNER_LIST_VERTICAL_PARAM)
+                : (segments[2] ?? null);
+        const vertical = parseOwnerListVertical({ value });
+        if (vertical) return ownerListSectionKey({ vertical });
+    }
+
+    return ACTIVE_SECTION_OVERRIDES[parentPath] ?? segments[1] ?? 'mi-cuenta';
 }

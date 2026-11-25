@@ -26,6 +26,7 @@ import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildLoginRedirect } from '@/lib/middleware-helpers';
 import { resolveOwnerInboxGate } from '@/lib/owner-inbox-gate';
+import { guardPublisherArea } from '@/lib/account/publisher-access';
 
 export const prerender = false;
 
@@ -39,7 +40,9 @@ if (!user) {
 }
 
 // HOS-2433 / HOS-2482: gate by PERMISSION, never by role name.
-const gate = resolveOwnerInboxGate({ roles: user.roles });
+const denied = guardPublisherArea({ astro: Astro, area: 'inbox' });
+if (denied) return denied;
+const gate = resolveOwnerInboxGate({ permissions: user.permissions });
 
 // Pagination from URL search params (the island reads that page).
 const parsed = Number.parseInt(Astro.url.searchParams.get('page') ?? '1', 10);

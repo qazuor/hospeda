@@ -11,13 +11,15 @@ interface DashboardControllerProps {
     readonly locale: SupportedLocale;
     /** Every role the user holds (`Astro.locals.user.roles`) — HOS-296. */
     readonly userRoles: readonly string[];
+    /** Effective authority passed through to the welcome tour. */
+    readonly permissions?: readonly string[];
 }
 
 function hasUnseenHighlights(items: readonly WhatsNewItem[]): boolean {
     return items.some((item) => item.highlight && !item.seen);
 }
 
-export function DashboardController({ locale, userRoles }: DashboardControllerProps) {
+export function DashboardController({ locale, userRoles, permissions }: DashboardControllerProps) {
     const { isLoading: tourLoading, hasSeen } = useTourState();
     const { items, isLoading: whatsNewLoading } = useWhatsNew();
     const [whatsNewModalOpen, setWhatsNewModalOpen] = useState(false);
@@ -54,6 +56,7 @@ export function DashboardController({ locale, userRoles }: DashboardControllerPr
             <TourController
                 locale={locale}
                 userRoles={userRoles}
+                permissions={permissions}
                 page="dashboard"
             />
 

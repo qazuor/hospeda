@@ -33,7 +33,11 @@ import { createTranslations } from '@/lib/i18n';
 import { webLogger as logger } from '@/lib/logger';
 import { buildLoginRedirect } from '@/lib/middleware-helpers';
 
+import { guardPublisherArea } from '@/lib/account/publisher-access';
+
 export const prerender = false;
+const denied = guardPublisherArea({ astro: Astro, area: 'host' });
+if (denied) return denied;
 
 /** Rows per page, matching the island's own page size. */
 const PAGE_SIZE = 20;

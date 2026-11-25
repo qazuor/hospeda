@@ -64,7 +64,7 @@ describe('AccountHeader.astro (HOS-2413, HOS-2550)', () => {
     });
 
     it('renders the 36px logo and the site nav from the chrome model', () => {
-        expect(header).toMatch(/<Image src=\{logoSrc\} alt="" width=\{34\} height=\{36\}/);
+        expect(header).toContain('<BrandWordmark logoSrc={menuLogoSrc} />');
         expect(header).toContain('siteNav.inline.map(');
         expect(header).toContain('navItems={siteNav.menu}');
         expect(header).toContain("aria-label={t('account.ui.chrome.siteNav')}");

@@ -144,10 +144,14 @@ describe('PartnerMentionsSection — wired by ownership, never by permission', (
         // Asserted on the CONFIG, which is where the violation would actually
         // be written. The page can only consume the door; it cannot grant it a
         // permission, so scanning the page proves nothing.
-        const partnerOption = DOORS_SOURCE.slice(
-            DOORS_SOURCE.indexOf("id: 'partner'"),
-            DOORS_SOURCE.indexOf("id: 'partner'") + 1200
-        );
+        // The first `id: 'partner'` is the DOOR; the second is the partner
+        // OPTION inside it. Read that option up to the next one, without the
+        // comments (which explain why the field is absent).
+        const doorStart = DOORS_SOURCE.indexOf("id: 'partner'");
+        const optionStart = DOORS_SOURCE.indexOf("id: 'partner'", doorStart + 1);
+        const optionEnd = DOORS_SOURCE.indexOf("id: '", optionStart + 1);
+        expect(optionStart).toBeGreaterThan(doorStart);
+        const partnerOption = DOORS_SOURCE.slice(optionStart, optionEnd).replace(/\/\/[^\n]*/g, '');
         expect(partnerOption).not.toContain('acquiredPermission');
     });
 

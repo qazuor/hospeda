@@ -51,7 +51,8 @@
         },
         "inbox": {
             "title": "Tus consultas",
-            "body": "Seguí las conversaciones que tenés con los anfitriones."
+            "body": "Seguí las conversaciones que tenés con los anfitriones.",
+            "ownerBody": "Recibí y respondé las consultas de viajeros sobre tus locales y experiencias."
         },
         "greetingHost": {
             "title": "Bienvenido a tu panel de hospedaje",
@@ -129,6 +130,14 @@
     },
     "sections": "Secciones de cuenta",
     "nav": {
+        "zoneLink": {
+            "host": "Ir a Alojamientos",
+            "venues": "Ir a Comer y salir",
+            "experiences": "Ir a Experiencias",
+            "editorial": "Ir al área editorial",
+            "partner": "Ir a mi ficha de aliado",
+            "provider": "Ir a mi ficha de proveedor"
+        },
         "groupAccount": "Mi cuenta",
         "groupTourist": "Área turista",
         "groupHost": "Área anfitrión",
@@ -191,19 +200,18 @@
                 },
                 "experience": {
                     "title": "Experiencias",
-                    "description": "¿Ofrecés tours, actividades o experiencias para viajeros? Creá tu cuenta, cargá los datos de tu experiencia y publicala desde tu panel.",
+                    "description": "Gestioná tus tours, actividades y experiencias para viajeros desde tu panel.",
                     "cta": "Publicá tu experiencia"
                 },
                 "venue": {
                     "title": "Comer y salir",
-                    "description": "Sumá tu local a Hospeda: para comer o salir. Creá tu cuenta, cargá los datos de tu local y publicalo desde tu panel.",
+                    "description": "Gestioná los datos y la publicación de tu local para comer o salir desde tu panel.",
                     "cta": "Publicá tu local"
                 }
             }
         },
         "partner": {
             "title": "Sumate como aliado",
-            "titleStateful": "Sumá otra alianza",
             "subtitle": "Sumate como aliado de Hospeda: destacá tu marca o tus servicios frente a miles de viajeros y anfitriones.",
             "options": {
                 "sponsor": {
@@ -2001,6 +2009,12 @@
     },
     "description": "Gestioná tu cuenta en Hospeda",
     "menu": "Menú de cuenta",
+    "sheet": {
+        "title": "Menú de cuenta",
+        "signOut": "Cerrar sesión",
+        "signingOut": "Cerrando sesión…",
+        "signOutError": "No pudimos cerrar tu sesión. Intentá de nuevo."
+    },
     "title": "Mi cuenta",
     "changePassword": {
         "title": "Cambiar contraseña",

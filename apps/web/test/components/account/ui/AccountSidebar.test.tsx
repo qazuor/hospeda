@@ -9,8 +9,10 @@ import { AccountSidebar, buildSidebarView } from '../../../../src/components/acc
 import { buildAccountNavModel } from '../../../../src/lib/account-nav-model';
 
 /** HOS-2562: a host's effective permissions (the AI-assistants gate reads them, not roles). */
-const permissionsFor = (roles: readonly string[]): readonly string[] =>
-    roles.includes('HOST') ? [PermissionEnum.ACCOMMODATION_CREATE] : [];
+const permissionsFor = (roles: readonly string[]): readonly string[] => [
+    ...(roles.includes('HOST') ? [PermissionEnum.ACCOMMODATION_CREATE] : []),
+    ...(roles.includes('EDITOR') ? [PermissionEnum.POST_CREATE, PermissionEnum.EVENT_CREATE] : [])
+];
 
 function viewFor(roles: readonly string[], activeSection = 'mi-cuenta') {
     return buildSidebarView({

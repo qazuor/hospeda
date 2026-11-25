@@ -24,7 +24,7 @@ describe('comercio index — one list per vertical (HOS-2559)', () => {
 
     it('leaves the page with neither vertical, and canonicalises any other URL', () => {
         expect(frontmatter).toMatch(
-            /decision\.kind === 'forbidden'\) \{\s*return Astro\.redirect\(buildUrl\(\{ locale, path: 'mi-cuenta' \}\)\);/
+            /decision\.kind === 'forbidden'\) \{\s*return Astro\.redirect\(publisherDenyRedirect\(\{ locale \}\)\);/
         );
         expect(frontmatter).toMatch(
             /decision\.kind === 'redirect'\) \{\s*return Astro\.redirect\(buildUrl\(\{ locale, path: ownerListPath\(\{ vertical: decision\.vertical \}\) \}\)\);/

@@ -63,6 +63,7 @@ import {
     OWNER_LIST_VERTICAL_PARAM,
     ownerListPath,
     ownerListSectionKey,
+    parseOwnerListVertical,
     resolveOwnerListPage
 } from '@/lib/listing/owner-list-vertical';
 import {
@@ -81,6 +82,8 @@ import { createTranslations } from '@/lib/i18n';
 import { AddIcon, VenueIcon } from '@repo/icons';
 import { PublicationStatusEnum } from '@repo/schemas';
 
+import { guardPublisherArea, publisherDenyRedirect } from '@/lib/account/publisher-access';
+
 export const prerender = false;
 
 const locale = Astro.locals.locale as SupportedLocale;
@@ -97,8 +100,11 @@ const decision = resolveOwnerListPage({
     requested: Astro.url.searchParams.get(OWNER_LIST_VERTICAL_PARAM),
     permissions: user.permissions
 });
+const area = parseOwnerListVertical({ value: Astro.url.searchParams.get(OWNER_LIST_VERTICAL_PARAM) }) ?? 'venueOrExperience';
+const denied = guardPublisherArea({ astro: Astro, area });
+if (denied) return denied;
 if (decision.kind === 'forbidden') {
-    return Astro.redirect(buildUrl({ locale, path: 'mi-cuenta' }));
+    return Astro.redirect(publisherDenyRedirect({ locale }));
 }
 if (decision.kind === 'redirect') {
     return Astro.redirect(buildUrl({ locale, path: ownerListPath({ vertical: decision.vertical }) }));
@@ -420,6 +426,7 @@ const listHelpId = 'section:comercio.listado' as const;
     <TourController
         locale={locale}
         userRoles={user.roles}
+        permissions={user.permissions}
         page="comercio"
         client:idle
     />

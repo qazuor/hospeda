@@ -1,0 +1,54 @@
+.root {
+    display: inline-flex;
+    align-items: center;
+    flex: none;
+    gap: var(--space-2);
+    white-space: nowrap;
+    font: var(--app-card-title);
+    font-family: var(--font-heading);
+}
+
+.default {
+    color: var(--brand-secondary-foreground);
+}
+
+.inverse {
+    color: var(--footer-fg);
+}
+
+.mark {
+    display: block;
+    flex: none;
+    inline-size: var(--brand-mark-width);
+    block-size: var(--brand-mark-height);
+    object-fit: contain;
+}
+
+.sm {
+    --brand-mark-width: 22px;
+    --brand-mark-height: 24px;
+}
+
+.md {
+    --brand-mark-width: 34px;
+    --brand-mark-height: 36px;
+}
+
+.lg {
+    --brand-mark-width: 42px;
+    --brand-mark-height: 45px;
+}
+
+@media (max-width: 1025px) {
+    .lg {
+        --brand-mark-width: 34px;
+        --brand-mark-height: 36px;
+    }
+}
+
+@media (max-width: 47.99rem) {
+    .inverse {
+        --brand-mark-width: 28px;
+        --brand-mark-height: 30px;
+    }
+}

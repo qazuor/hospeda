@@ -10,6 +10,7 @@
  */
 
 import type { AstroGlobal } from 'astro';
+import { canAccessPublisherArea, publisherDenyRedirect } from '@/lib/account/publisher-access';
 import { buildAccountNotFoundTarget } from '@/lib/account-not-found';
 import {
     type AccommodationEditorData,
@@ -59,6 +60,14 @@ export async function resolveEditorPage({
     }
 
     const accommodationId = astro.params.id;
+    if (
+        !canAccessPublisherArea({
+            area: 'accommodationEdit',
+            permissions: astro.locals.user.permissions
+        })
+    ) {
+        return { redirect: astro.redirect(publisherDenyRedirect({ locale })) };
+    }
     if (!accommodationId) {
         return {
             redirect: await astro.rewrite(
