@@ -116,6 +116,7 @@ export function AccountSheet({ locale, mcpEnabled = false, adminPanelUrl }: Acco
                 aria-label={t('account.sheet.title')}
                 aria-haspopup="dialog"
                 aria-expanded={open}
+                data-account-sheet-trigger=""
                 onClick={show}
             >
                 {avatar}
