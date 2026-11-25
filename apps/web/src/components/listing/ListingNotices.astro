@@ -16,6 +16,8 @@ import type { ListingNoticesItem } from '@repo/schemas';
 import type { PublishVerticalSlug } from '@/lib/api/endpoints-protected';
 import { createTranslations, type SupportedLocale } from '@/lib/i18n';
 import { buildListingNoticeViews } from '@/lib/listing/listing-notices';
+import { Alert, type AlertTone } from '@/components/account/ui';
+import type { ListingNoticeTone } from '@/lib/listing/listing-notices';
 import { ReportFixedButton } from './ReportFixedButton.client';
 import styles from './ListingNotices.module.css';
 
@@ -33,17 +35,18 @@ interface Props {
 const { locale, vertical, listingId, item } = Astro.props;
 const { t, tPlural } = createTranslations(locale);
 const views = buildListingNoticeViews({ locale, t, tPlural, item });
+const KIT_TONE: Readonly<Record<ListingNoticeTone, AlertTone>> = {
+    danger: 'danger', warning: 'warning', info: 'info'
+};
 ---
 
 {
 	views.map((view) => (
-		<aside
-			class:list={[styles.notice, styles[view.tone]]}
-			aria-label={view.title}
+		<div
 			data-testid="listing-notice"
 			data-notice-kind={view.kind}
 		>
-			<p class={styles.title}>{view.title}</p>
+            <Alert locale={locale} tone={KIT_TONE[view.tone]} title={view.title}>
 			{view.lines.map((line) => (
 				<p class={styles.body}>{line}</p>
 			))}
@@ -62,6 +65,7 @@ const views = buildListingNoticeViews({ locale, t, tPlural, item });
 					reportedAt={view.reportFixed.reportedAt}
 				/>
 			)}
-		</aside>
+            </Alert>
+		</div>
 	))
 }

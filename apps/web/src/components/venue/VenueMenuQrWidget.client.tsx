@@ -4,15 +4,9 @@
  * (HOS-1044 §6.6), rendered in `mi-cuenta/comercio/` next to
  * `ListingViewsWidget`.
  *
- * Follows that same widget's pattern rather than inventing a new one:
- * `client:visible`, a `loading`/`ready`/`error` state machine, its own
- * `*.module.css`. It adds one state ListingViewsWidget does not need —
- * `locked` — because unlike `VIEW_BASIC_STATS` (the venue/experience floor every
- * tier gets), `menu_qr_scan_metrics` is a premium-only entitlement
- * (`venue-premium`), so a basic/pro venue's request answers `403`. That
- * refusal is a REAL state, never rendered as a generic error: the copy names
- * the plan gate, mirroring `BrochureDownloadButton.client.tsx` /
- * `ExperienceCertificatePanel.client.tsx`'s own `locked` branch.
+ * Shares the views widget's lazy hydration and async states. A `403` for the
+ * premium-only `menu_qr_scan_metrics` entitlement renders the plan gate instead
+ * of a generic error, like the brochure and experience certificate actions.
  *
  * The locked copy has two wordings (owner decision, 2026-10-29), picked from the
  * owner's effective set by `useListingPlanGate`: a pre-trial owner gets the QR
@@ -41,6 +35,8 @@
  */
 
 import { type JSX, useEffect, useState } from 'react';
+import { Section } from '@/components/account/ui/Section';
+import { Skeleton } from '@/components/account/ui/Skeleton';
 import { useListingPlanGate } from '@/hooks/useListingPlanGate';
 import { listingAnalyticsApi } from '@/lib/api/endpoints-protected';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -341,149 +337,164 @@ export function VenueMenuQrWidget({
     }
 
     return (
-        <div
-            className={styles.widget}
-            data-testid="venue-menu-qr-widget"
-        >
-            <div className={styles.header}>
-                <h2 className={styles.title}>
-                    {t('listing.owner.list.menuQr.title', 'QR de la carta')}
-                </h2>
-                <fieldset
-                    className={styles.toggle}
-                    aria-label={t('common.window.ariaLabel', 'Período de tiempo')}
-                >
-                    <button
-                        type="button"
-                        className={windowParam === '7d' ? styles.toggleActive : styles.toggleButton}
-                        onClick={() => setWindowParam('7d')}
-                        aria-pressed={windowParam === '7d'}
+        <div data-testid="venue-menu-qr-widget">
+            <Section
+                title={t('listing.owner.list.menuQr.title', 'QR de la carta')}
+                helpId="section:comercio.qr-carta"
+                actions={
+                    <fieldset
+                        className={styles.toggle}
+                        aria-label={t('common.window.ariaLabel', 'Período de tiempo')}
                     >
-                        {t('common.window.7d', '7 días')}
-                    </button>
-                    <button
-                        type="button"
-                        className={
-                            windowParam === '30d' ? styles.toggleActive : styles.toggleButton
-                        }
-                        onClick={() => setWindowParam('30d')}
-                        aria-pressed={windowParam === '30d'}
-                    >
-                        {t('common.window.30d', '30 días')}
-                    </button>
-                </fieldset>
-            </div>
+                        <button
+                            type="button"
+                            className={
+                                windowParam === '7d' ? styles.toggleActive : styles.toggleButton
+                            }
+                            onClick={() => setWindowParam('7d')}
+                            aria-pressed={windowParam === '7d'}
+                        >
+                            {t('common.window.7d', '7 días')}
+                        </button>
+                        <button
+                            type="button"
+                            className={
+                                windowParam === '30d' ? styles.toggleActive : styles.toggleButton
+                            }
+                            onClick={() => setWindowParam('30d')}
+                            aria-pressed={windowParam === '30d'}
+                        >
+                            {t('common.window.30d', '30 días')}
+                        </button>
+                    </fieldset>
+                }
+            >
+                {listings.map((listing) => {
+                    const state = states.get(listing.id) ?? { status: 'loading' as const };
+                    if (state.status === 'absent') return null;
 
-            {listings.map((listing) => {
-                const state = states.get(listing.id) ?? { status: 'loading' as const };
-                if (state.status === 'absent') return null;
-
-                return (
-                    <div
-                        key={listing.id}
-                        className={styles.card}
-                        data-testid="venue-menu-qr-card"
-                    >
-                        <h3 className={styles.cardName}>{listing.name}</h3>
-
-                        {state.status === 'locked' && (
-                            <p
-                                className={styles.locked}
-                                data-testid="venue-menu-qr-locked"
-                            >
-                                {isPreTrial ? (
-                                    t(
-                                        'listing.owner.list.menuQr.lockedPreTrial',
-                                        'El QR de la carta y sus estadísticas de escaneo se habilitan cuando publiques tu ficha.'
-                                    )
-                                ) : (
-                                    <>
-                                        {t(
-                                            'listing.owner.list.menuQr.locked',
-                                            'El QR de la carta y sus estadísticas de escaneo están disponibles en el plan Premium de Comer y salir.'
-                                        )}{' '}
-                                        <a
-                                            className={styles.plansLink}
-                                            href={buildUrl({
-                                                locale,
-                                                path: PRICING_PAGE_PATH_BY_AUDIENCE.venue
-                                            })}
-                                        >
-                                            {t('listing.owner.list.menuQr.seePlans', 'Ver planes')}
-                                        </a>
-                                    </>
-                                )}
-                            </p>
-                        )}
-
-                        {state.status === 'error' && (
-                            <p
-                                className={styles.error}
-                                role="alert"
-                            >
-                                {t(
-                                    'listing.owner.list.menuQr.error',
-                                    'No pudimos cargar los escaneos del QR. Probá de nuevo más tarde.'
-                                )}
-                            </p>
-                        )}
-
-                        {state.status === 'ready' && (
-                            <>
-                                <div className={styles.totalRow}>
-                                    <span
-                                        className={styles.totalNumber}
-                                        data-testid="menu-qr-total"
-                                    >
-                                        {state.stats.total}
-                                    </span>
-                                    <span className={styles.totalLabel}>
-                                        {t('listing.owner.list.menuQr.scans', 'escaneos')}
-                                    </span>
-                                </div>
-
-                                {state.stats.total === 0 ? (
-                                    <p className={styles.empty}>
-                                        {t(
-                                            'listing.owner.list.menuQr.empty',
-                                            'Todavía no tuvo escaneos en este período.'
-                                        )}
-                                    </p>
-                                ) : (
-                                    <DailySeries items={state.stats.dailySeries} />
-                                )}
-
-                                <div className={styles.breakdowns}>
-                                    <Breakdown
-                                        title={t('listing.owner.list.menuQr.device', 'Dispositivo')}
-                                        breakdown={state.stats.byDeviceType}
-                                        t={t}
-                                    />
-                                    <Breakdown
-                                        title={t(
-                                            'listing.owner.list.menuQr.os',
-                                            'Sistema operativo'
-                                        )}
-                                        breakdown={state.stats.byOs}
-                                        t={t}
-                                    />
-                                    <Breakdown
-                                        title={t('listing.owner.list.menuQr.language', 'Idioma')}
-                                        breakdown={state.stats.byBrowserLanguage}
-                                        t={t}
-                                    />
-                                </div>
-
-                                <QrBlock
-                                    listingName={listing.name}
-                                    qr={state.qr}
-                                    t={t}
+                    return (
+                        <div
+                            key={listing.id}
+                            className={styles.card}
+                            data-testid="venue-menu-qr-card"
+                        >
+                            <h3 className={styles.cardName}>{listing.name}</h3>
+                            {state.status === 'loading' && (
+                                <Skeleton
+                                    locale={locale}
+                                    shape="block"
                                 />
-                            </>
-                        )}
-                    </div>
-                );
-            })}
+                            )}
+
+                            {state.status === 'locked' && (
+                                <p
+                                    className={styles.locked}
+                                    data-testid="venue-menu-qr-locked"
+                                >
+                                    {isPreTrial ? (
+                                        t(
+                                            'listing.owner.list.menuQr.lockedPreTrial',
+                                            'El QR de la carta y sus estadísticas de escaneo se habilitan cuando publiques tu ficha.'
+                                        )
+                                    ) : (
+                                        <>
+                                            {t(
+                                                'listing.owner.list.menuQr.locked',
+                                                'El QR de la carta y sus estadísticas de escaneo están disponibles en el plan Premium de Comer y salir.'
+                                            )}{' '}
+                                            <a
+                                                className={styles.plansLink}
+                                                href={buildUrl({
+                                                    locale,
+                                                    path: PRICING_PAGE_PATH_BY_AUDIENCE.venue
+                                                })}
+                                            >
+                                                {t(
+                                                    'listing.owner.list.menuQr.seePlans',
+                                                    'Ver planes'
+                                                )}
+                                            </a>
+                                        </>
+                                    )}
+                                </p>
+                            )}
+
+                            {state.status === 'error' && (
+                                <p
+                                    className={styles.error}
+                                    role="alert"
+                                >
+                                    {t(
+                                        'listing.owner.list.menuQr.error',
+                                        'No pudimos cargar los escaneos del QR. Probá de nuevo más tarde.'
+                                    )}
+                                </p>
+                            )}
+
+                            {state.status === 'ready' && (
+                                <>
+                                    <div className={styles.totalRow}>
+                                        <span
+                                            className={styles.totalNumber}
+                                            data-testid="menu-qr-total"
+                                        >
+                                            {state.stats.total}
+                                        </span>
+                                        <span className={styles.totalLabel}>
+                                            {t('listing.owner.list.menuQr.scans', 'escaneos')}
+                                        </span>
+                                    </div>
+
+                                    {state.stats.total === 0 ? (
+                                        <p className={styles.empty}>
+                                            {t(
+                                                'listing.owner.list.menuQr.empty',
+                                                'Todavía no tuvo escaneos en este período.'
+                                            )}
+                                        </p>
+                                    ) : (
+                                        <DailySeries items={state.stats.dailySeries} />
+                                    )}
+
+                                    <div className={styles.breakdowns}>
+                                        <Breakdown
+                                            title={t(
+                                                'listing.owner.list.menuQr.device',
+                                                'Dispositivo'
+                                            )}
+                                            breakdown={state.stats.byDeviceType}
+                                            t={t}
+                                        />
+                                        <Breakdown
+                                            title={t(
+                                                'listing.owner.list.menuQr.os',
+                                                'Sistema operativo'
+                                            )}
+                                            breakdown={state.stats.byOs}
+                                            t={t}
+                                        />
+                                        <Breakdown
+                                            title={t(
+                                                'listing.owner.list.menuQr.language',
+                                                'Idioma'
+                                            )}
+                                            breakdown={state.stats.byBrowserLanguage}
+                                            t={t}
+                                        />
+                                    </div>
+
+                                    <QrBlock
+                                        listingName={listing.name}
+                                        qr={state.qr}
+                                        t={t}
+                                    />
+                                </>
+                            )}
+                        </div>
+                    );
+                })}
+            </Section>
         </div>
     );
 }

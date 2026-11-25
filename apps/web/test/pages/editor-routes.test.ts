@@ -219,8 +219,9 @@ describe('editor pages follow the /mi-cuenta conventions', () => {
         }
     });
 
-    it('should give the way back as the header back link, not a breadcrumb trail (HOS-2493)', () => {
-        expect(codeOf(LAYOUT)).toContain('back={back}');
+    it('should give the way back as a kit button in the header actions', () => {
+        expect(codeOf(LAYOUT)).toContain('<div slot="actions" class="editor-shell__actions">');
+        expect(codeOf(LAYOUT)).toContain('<LinkButton href={back.href} variant="secondary">');
         expect(codeOf(LAYOUT)).not.toContain('Breadcrumbs');
     });
 });

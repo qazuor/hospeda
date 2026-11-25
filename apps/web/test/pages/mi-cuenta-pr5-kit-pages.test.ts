@@ -23,9 +23,15 @@ const CLOSURES: Readonly<Record<string, readonly string[]>> = {
     propiedades: [
         'pages/[lang]/mi-cuenta/propiedades/index.astro',
         'components/host/PropertyCard.astro',
+        'components/account/OwnerListingCard.astro',
+        'components/account/OwnerListingsByState.astro',
         'components/host/PropertyCardMenu.client.tsx'
     ],
-    comercio: ['pages/[lang]/mi-cuenta/comercio/index.astro'],
+    comercio: [
+        'pages/[lang]/mi-cuenta/comercio/index.astro',
+        'components/account/OwnerListingCard.astro',
+        'components/account/OwnerListingsByState.astro'
+    ],
     suscripcion: [
         'pages/[lang]/mi-cuenta/suscripcion/index.astro',
         'components/account/MySubscriptions.astro',

@@ -25,6 +25,7 @@ import {
 } from '../../../src/components/venue/VenueMenuQrWidget.client';
 
 vi.mock('../../../src/lib/i18n', () => ({
+    createT: () => (key: string) => key,
     createTranslations: (_locale: string) => ({
         t: (_key: string, fallback?: string, params?: Record<string, unknown>) => {
             if (!fallback) return _key;
@@ -153,6 +154,11 @@ describe('VenueMenuQrWidget (HOS-1044)', () => {
         );
 
         await waitFor(() => expect(screen.getByTestId('menu-qr-total')).toHaveTextContent('42'));
+        const section = screen
+            .getByTestId('venue-menu-qr-widget')
+            .querySelector('[data-kit-section]');
+        expect(section).toHaveAttribute('data-help', 'section:comercio.qr-carta');
+        expect(section?.querySelector('[data-kit-section]')).toBeNull();
 
         expect(screen.getByText('La Parrilla del Puerto')).toBeTruthy();
         expect(screen.getByTestId('menu-qr-daily-series')).toBeTruthy();
