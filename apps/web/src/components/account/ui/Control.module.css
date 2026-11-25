@@ -100,21 +100,23 @@
 
 .phoneGroup {
     min-inline-size: 0;
+    flex-direction: column;
 }
 
 .phoneCountry {
     flex: 0 0 auto;
-    border-inline-end: 1px solid var(--control-border);
+    border-inline-end: 0;
+    border-block-end: 1px solid var(--control-border);
 }
 
-@media (max-width: 639px) {
+@media (min-width: 48rem) {
     .phoneGroup {
-        flex-direction: column;
+        flex-direction: row;
     }
 
     .phoneCountry {
-        border-inline-end: 0;
-        border-block-end: 1px solid var(--control-border);
+        border-inline-end: 1px solid var(--control-border);
+        border-block-end: 0;
     }
 }
 

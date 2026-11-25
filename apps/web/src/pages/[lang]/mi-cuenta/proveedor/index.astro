@@ -326,16 +326,27 @@ const panelError = t(
 </AccountLayout>
 
 <style>
-    @media (max-width: 639px) {
+    .provider-tabs :global(nav) {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        overflow: visible;
+    }
+
+    .provider-tabs :global(nav > a) {
+        justify-content: center;
+        padding-inline: var(--space-2);
+    }
+
+    @media (min-width: 48rem) {
         .provider-tabs :global(nav) {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            overflow: visible;
+            display: revert;
+            grid-template-columns: revert;
+            overflow: revert;
         }
 
         .provider-tabs :global(nav > a) {
-            justify-content: center;
-            padding-inline: var(--space-2);
+            justify-content: revert;
+            padding-inline: revert;
         }
     }
 </style>
