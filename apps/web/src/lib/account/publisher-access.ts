@@ -23,7 +23,7 @@ export const PUBLISHER_ACCESS = {
     directory: { requiredPermissions: [P.HOST_TRADE_VIEW] },
     venue: { requiredPermissions: [P.VENUE_EDIT_OWN, P.VENUE_EDIT_ALL] },
     experience: { requiredPermissions: [P.EXPERIENCE_EDIT_OWN, P.EXPERIENCE_EDIT_ALL] },
-    commerce: {
+    venueOrExperience: {
         requiredPermissions: [
             P.VENUE_EDIT_OWN,
             P.VENUE_EDIT_ALL,
@@ -96,4 +96,29 @@ export function guardPublisherArea({
     )
         return null;
     return astro.redirect(publisherDenyRedirect({ locale: astro.locals.locale }));
+}
+
+/** The two comercio verticals a `/mi-cuenta/comercio/{vertical}/…` URL may name. */
+const VENUE_OR_EXPERIENCE_AREAS: ReadonlySet<PublisherArea> = new Set<PublisherArea>([
+    'venue',
+    'experience'
+]);
+
+/**
+ * Admission for the comercio listing editor pages: a `{vertical}` param that
+ * names no comercio vertical answers 404, and a known one goes through
+ * {@link guardPublisherArea}. Keeps the vertical literals out of the pages,
+ * which G-FAC-05 forbids from dispatching by vertical.
+ */
+export function guardVenueOrExperienceArea({
+    astro
+}: {
+    readonly astro: Parameters<typeof guardPublisherArea>[0]['astro'] & {
+        readonly params: { readonly vertical?: string };
+    };
+}): Response | null {
+    const vertical = astro.params.vertical;
+    const area = [...VENUE_OR_EXPERIENCE_AREAS].find((candidate) => candidate === vertical);
+    if (!area) return new Response(null, { status: 404 });
+    return guardPublisherArea({ astro, area });
 }

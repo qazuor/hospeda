@@ -51,7 +51,7 @@ export function resolveTourStepBody({
     readonly step: TourStepConfig;
     readonly permissions: readonly string[];
 }): string {
-    return step.ownerBody && canAccessPublisherArea({ area: 'commerce', permissions })
+    return step.ownerBody && canAccessPublisherArea({ area: 'venueOrExperience', permissions })
         ? step.ownerBody
         : step.body;
 }

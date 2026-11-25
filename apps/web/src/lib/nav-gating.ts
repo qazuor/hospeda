@@ -34,7 +34,7 @@ export function hasListingNavAccess({
 }: {
     readonly permissions: readonly string[];
 }): boolean {
-    return canAccessPublisherArea({ area: 'commerce', permissions });
+    return canAccessPublisherArea({ area: 'venueOrExperience', permissions });
 }
 
 /** Own-post navigation admits independently granted create or update authority. */

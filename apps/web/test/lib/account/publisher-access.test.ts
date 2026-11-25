@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
     canAccessPublisherArea,
     guardPublisherArea,
+    guardVenueOrExperienceArea,
     PUBLISHER_ACCESS,
     publisherDenyRedirect
 } from '@/lib/account/publisher-access';
@@ -146,5 +147,45 @@ describe('effective publisher admission', () => {
         ['pt', '/pt/mi-cuenta/']
     ] as const)('redirects denied %s publishers to exact account home %s', (locale, expected) => {
         expect(publisherDenyRedirect({ locale })).toBe(expected);
+    });
+});
+
+describe('comercio listing editor admission', () => {
+    function context({
+        vertical,
+        permissions
+    }: {
+        readonly vertical: string | undefined;
+        readonly permissions: readonly string[];
+    }) {
+        return {
+            params: { vertical },
+            locals: { locale: 'es' as const, user: { permissions } },
+            redirect: vi.fn(
+                (path: string) => new Response(null, { status: 302, headers: { Location: path } })
+            )
+        };
+    }
+
+    it('answers 404 for a vertical that is not a comercio vertical', () => {
+        // Arrange
+        const astro = context({ vertical: 'accommodation', permissions: [P.VENUE_EDIT_OWN] });
+        // Act
+        const response = guardVenueOrExperienceArea({ astro });
+        // Assert
+        expect(response?.status).toBe(404);
+        expect(astro.redirect).not.toHaveBeenCalled();
+    });
+
+    it('admits a venue owner on the venue editor', () => {
+        const astro = context({ vertical: 'venue', permissions: [P.VENUE_EDIT_OWN] });
+        expect(guardVenueOrExperienceArea({ astro })).toBeNull();
+    });
+
+    it('sends an account without the vertical permission back to the account home', () => {
+        const astro = context({ vertical: 'experience', permissions: [P.VENUE_EDIT_OWN] });
+        const response = guardVenueOrExperienceArea({ astro });
+        expect(response?.status).toBe(302);
+        expect(response?.headers.get('Location')).toBe('/es/mi-cuenta/');
     });
 });

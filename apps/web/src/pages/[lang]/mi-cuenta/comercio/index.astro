@@ -100,7 +100,7 @@ const decision = resolveOwnerListPage({
     requested: Astro.url.searchParams.get(OWNER_LIST_VERTICAL_PARAM),
     permissions: user.permissions
 });
-const area = parseOwnerListVertical({ value: Astro.url.searchParams.get(OWNER_LIST_VERTICAL_PARAM) }) ?? 'commerce';
+const area = parseOwnerListVertical({ value: Astro.url.searchParams.get(OWNER_LIST_VERTICAL_PARAM) }) ?? 'venueOrExperience';
 const denied = guardPublisherArea({ astro: Astro, area });
 if (denied) return denied;
 if (decision.kind === 'forbidden') {

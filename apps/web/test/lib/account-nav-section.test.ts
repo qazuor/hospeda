@@ -31,7 +31,7 @@ describe('canonical account route sections', () => {
     it.each([
         'venue',
         'experience'
-    ] as const)('disambiguates the commerce list using only its vertical query (%s)', (vertical) => {
+    ] as const)('disambiguates the comercio list using only its vertical query (%s)', (vertical) => {
         const section = getActiveSectionKey({
             href: '/es/mi-cuenta/comercio/',
             search: `?vertical=${vertical}`
@@ -39,7 +39,7 @@ describe('canonical account route sections', () => {
         expect(section).toBe(`comercio-${vertical}`);
     });
 
-    it('keeps nested commerce pathname identity ahead of a conflicting query', () => {
+    it('keeps nested comercio pathname identity ahead of a conflicting query', () => {
         const section = getActiveSectionKey({
             href: '/es/mi-cuenta/comercio/experience/example-id/editar/',
             search: '?vertical=venue'
@@ -51,11 +51,11 @@ describe('canonical account route sections', () => {
         '',
         '?vertical=invalid',
         '?other=venue'
-    ])('does not invent a commerce vertical for %s', (search) => {
+    ])('does not invent a comercio vertical for %s', (search) => {
         expect(getActiveSectionKey({ href: '/es/mi-cuenta/comercio/', search })).toBe('comercio');
     });
 
-    it('ignores commerce query parameters for other routes and respects path segment boundaries', () => {
+    it('ignores comercio query parameters for other routes and respects path segment boundaries', () => {
         expect(
             getActiveSectionKey({
                 href: '/es/mi-cuenta/propiedades/example-id/editar/',

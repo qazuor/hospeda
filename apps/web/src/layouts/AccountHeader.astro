@@ -146,12 +146,14 @@ const adminPanelUrl = getAdminUrl();
 					adminPanelUrl={adminPanelUrl}
 				/>
 			</div>
-			<AccountSheet
-				client:load
-				locale={locale}
-				mcpEnabled={mcpEnabled}
-				adminPanelUrl={adminPanelUrl}
-			/>
+			<div class="account-header__mobile-user">
+				<AccountSheet
+					client:load
+					locale={locale}
+					mcpEnabled={mcpEnabled}
+					adminPanelUrl={adminPanelUrl}
+				/>
+			</div>
 			<IconButton
 				ariaLabel={t('nav.openMenu', 'Open navigation menu')}
 				variant="ghost"
@@ -253,9 +255,13 @@ const adminPanelUrl = getAdminUrl();
 		margin-inline-start: auto;
 	}
 
+	/* The account zone switches at the closed 64rem breakpoint (HOS-2469):
+	   below it the avatar opens the account sheet, from it the desktop menu. */
 	.account-header__desktop-user { display: none; }
-	@media (min-width: 1025px) {
+	.account-header__mobile-user { display: contents; }
+	@media (min-width: 64rem) {
 		.account-header__desktop-user { display: block; }
+		.account-header__mobile-user { display: none; }
 	}
 
 	.account-header__right :global(.account-header__icon) {

@@ -50,7 +50,7 @@ export function buildGeneralDashboardLinks({
     const isHost = canAccessPublisherArea({ area: 'host', permissions });
     const ownsVenues = canAccessPublisherArea({ area: 'venue', permissions });
     const ownsExperiences = canAccessPublisherArea({ area: 'experience', permissions });
-    const isOwner = canAccessPublisherArea({ area: 'commerce', permissions });
+    const isOwner = canAccessPublisherArea({ area: 'venueOrExperience', permissions });
     const provider = PROVIDER_NAV_GROUP.items[0];
 
     return [

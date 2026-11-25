@@ -105,7 +105,7 @@ describe('publisher directory direct guards', () => {
                     .split(/^---\s*$/m)[1]
                     ?.replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, '') ?? '';
             expect(frontmatter).toMatch(
-                /const denied = guardPublisherArea\(\{ astro: Astro, area(?:: '[^']+')? \}\)/
+                /const denied = (?:guardPublisherArea\(\{ astro: Astro, area(?:: '[^']+')? \}\)|guardVenueOrExperienceArea\(\{ astro: Astro \}\))/
             );
             expect(frontmatter).toMatch(/if \(denied\) return denied;/);
             const helperImport = frontmatter.indexOf("from '@/lib/account/publisher-access'");
@@ -138,14 +138,16 @@ describe('publisher directory direct guards', () => {
                 expect(frontmatter).toContain("area: 'directory'");
             if (relative === 'comercio/index.astro') {
                 expect(frontmatter).toContain('const area = parseOwnerListVertical(');
-                expect(frontmatter).toContain("?? 'commerce'");
+                expect(frontmatter).toContain("?? 'venueOrExperience'");
             }
             if (relative.startsWith('propiedades/[id]/'))
                 expect(frontmatter).toContain("area: 'accommodationEdit'");
             if (relative.startsWith('comercio/[vertical]/')) {
-                expect(frontmatter).toContain('const area = Astro.params.vertical');
-                expect(frontmatter).toContain("area !== 'venue' && area !== 'experience'");
-                expect(frontmatter).toContain('status: 404');
+                // The helper answers 404 for a non-comercio vertical and keeps
+                // the vertical literals out of the page (G-FAC-05).
+                expect(frontmatter).toContain(
+                    'const denied = guardVenueOrExperienceArea({ astro: Astro });'
+                );
             }
             if (relative === 'promociones/[id]/editar.astro') {
                 expect(frontmatter).toContain("area: 'promotionEdit'");

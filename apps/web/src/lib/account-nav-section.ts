@@ -42,8 +42,8 @@ export const ACTIVE_SECTION_OVERRIDES: Readonly<Record<string, string>> = {
 
 /**
  * Resolves a registry href or browser pathname to its canonical account section.
- * Nested pages inherit their parent entry. Only the shared commerce list reads
- * the vertical query; a commerce editor's pathname supplies its vertical instead.
+ * Nested pages inherit their parent entry. Only the shared comercio list reads
+ * the vertical query; a comercio editor's pathname supplies its vertical instead.
  *
  * @param input - Options object.
  * @param input.href - A registry href or locale-prefixed browser pathname.
