@@ -206,7 +206,6 @@ export function ImageGalleryMobileTrack({
                             {...favorite}
                             className={styles.favorite}
                             locale={locale}
-                            focusGuestPrompt
                             guestPromptFallbackRef={mosaicTriggerRef}
                         />
                     )}
