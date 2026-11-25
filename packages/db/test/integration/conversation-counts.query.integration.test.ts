@@ -35,13 +35,16 @@ describe('ConversationModel.countCreatedSince (real query)', () => {
             const [recent, deleted] = await tx
                 .insert(conversations)
                 .values([
-                    { accommodationId: accommodation.id, userId: guestA.id },
-                    { accommodationId: accommodation.id, userId: guestB.id }
+                    { accommodationId: accommodation.id, userId: guestA.id, status: 'OPEN' },
+                    { accommodationId: accommodation.id, userId: guestB.id, status: 'OPEN' }
                 ])
                 .returning({ id: conversations.id });
-            await tx
-                .insert(conversations)
-                .values({ accommodationId: accommodation.id, userId: guestC.id, createdAt: old });
+            await tx.insert(conversations).values({
+                accommodationId: accommodation.id,
+                userId: guestC.id,
+                status: 'OPEN',
+                createdAt: old
+            });
             await tx
                 .update(conversations)
                 .set({ deletedAt: new Date() })

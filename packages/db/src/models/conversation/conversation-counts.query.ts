@@ -1,4 +1,4 @@
-import { and, count, gte, inArray, isNull } from 'drizzle-orm';
+import { and, count, gte, inArray, isNull, ne } from 'drizzle-orm';
 import { conversations } from '../../schemas/conversation/conversations.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
 import { DbError } from '../../utils/error.ts';
@@ -10,7 +10,8 @@ const ENTITY_NAME = 'conversations';
 /**
  * Counts the conversations (inquiries) started on any of the given
  * accommodations at or after `since`. Soft-deleted conversations are excluded,
- * as in `getMonthlyInquiriesByOwnerId`. Backs `ConversationModel.countCreatedSince`.
+ * as in `getMonthlyInquiriesByOwnerId`, and so are unverified anonymous
+ * inquiries (`PENDING_VERIFICATION`, HOS-2615). Backs `ConversationModel.countCreatedSince`.
  *
  * @param input - `{ db, ids, since }`: client, accommodation
  *   ids (may be empty) and the inclusive lower bound on `createdAt`.
@@ -37,6 +38,7 @@ export async function countCreatedSinceQuery(input: {
                 and(
                     inArray(conversations.accommodationId, ids as string[]),
                     isNull(conversations.deletedAt),
+                    ne(conversations.status, 'PENDING_VERIFICATION' as const),
                     gte(conversations.createdAt, since)
                 )
             );

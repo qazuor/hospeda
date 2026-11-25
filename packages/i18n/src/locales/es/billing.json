@@ -257,7 +257,7 @@
             "submitting": "Preparando el pago…",
             "payerEmail": {
                 "label": "¿Con qué email entrás a Mercado Pago?",
-                "hint": "Es el correo con el que vas a pagar en Mercado Pago. Ya pusimos el de tu cuenta de Hospeda; cambialo solo si en Mercado Pago usás otro. Si no coincide, el pago se rechaza y no se cobra nada.",
+                "hint": "Es el correo de tu cuenta de Mercado Pago. Si pagás con otra cuenta, cambialo acá: si no coincide, el pago se rechaza.",
                 "invalid": "Ingresá un email válido."
             },
             "pending": {
@@ -904,7 +904,7 @@
         "chooseFree": "Elegir gratis",
         "payerEmailLabel": "Correo del pagador",
         "payerEmailInvalid": "Ingresá un correo válido del pagador.",
-        "payerEmailHint": "Es el correo con el que vas a pagar en Mercado Pago. Lo declarás vos; el proveedor no lo confirma.",
+        "payerEmailHint": "Es el correo de tu cuenta de Mercado Pago. Si pagás con otra cuenta, cambialo acá: si no coincide, el pago se rechaza.",
         "confirmPurchase": "Confirmar compra",
         "oneTimeSummary": "Pago único: se cobra una sola vez y no se renueva.",
         "instantMethodsOnly": "Pagás en Mercado Pago con tarjeta de crédito, débito o dinero en cuenta. No se aceptan pagos en efectivo.",

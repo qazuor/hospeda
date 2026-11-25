@@ -1,6 +1,6 @@
 import type { HostConversationResponseRate } from '@repo/schemas';
 import type { SQL } from 'drizzle-orm';
-import { and, count, desc, eq, gte, inArray, isNotNull, isNull, or, sql } from 'drizzle-orm';
+import { and, count, desc, eq, gte, inArray, isNotNull, isNull, ne, or, sql } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import type {
     InsertConversation,
@@ -187,7 +187,10 @@ export class ConversationModel extends BaseModelImpl<SelectConversation> {
                     .select()
                     .from(conversations)
                     .where(where)
-                    .orderBy(desc(conversations.lastActivityAt))
+                    .orderBy(
+                        sql`${conversations.lastActivityAt} DESC NULLS LAST`,
+                        desc(conversations.createdAt)
+                    )
                     .limit(pageSize)
                     .offset(offset),
                 db.select({ total: count() }).from(conversations).where(where)
@@ -207,7 +210,11 @@ export class ConversationModel extends BaseModelImpl<SelectConversation> {
      * List conversations for an owner's inbox by providing one or more
      * accommodation IDs. Supports filtering by conversation status and
      * full-text search on the anonymous guest name / email. Sorted by most
-     * recent activity first.
+     * recent activity first, rows with no activity date last.
+     *
+     * Conversations still in `PENDING_VERIFICATION` (anonymous visitor has not
+     * confirmed their email yet, HOS-2615) are excluded from both `items` and
+     * `total`: the owner sees an inquiry only once it is verified.
      *
      * @param accommodationIds - List of accommodation UUIDs owned by the actor
      * @param options.page - 1-based page number
@@ -229,7 +236,8 @@ export class ConversationModel extends BaseModelImpl<SelectConversation> {
         try {
             const conditions: SQL<unknown>[] = [
                 inArray(conversations.accommodationId, accommodationIds),
-                isNull(conversations.deletedAt)
+                isNull(conversations.deletedAt),
+                ne(conversations.status, 'PENDING_VERIFICATION' as const)
             ];
             if (status) {
                 conditions.push(
@@ -261,7 +269,10 @@ export class ConversationModel extends BaseModelImpl<SelectConversation> {
                     .from(conversations)
                     .leftJoin(users, eq(users.id, conversations.userId))
                     .where(where)
-                    .orderBy(desc(conversations.lastActivityAt))
+                    .orderBy(
+                        sql`${conversations.lastActivityAt} DESC NULLS LAST`,
+                        desc(conversations.createdAt)
+                    )
                     .limit(pageSize)
                     .offset(offset),
                 db
@@ -362,7 +373,8 @@ export class ConversationModel extends BaseModelImpl<SelectConversation> {
         try {
             const baseWhere = and(
                 inArray(conversations.accommodationId, ownerAccommodationIds as string[]),
-                isNull(conversations.deletedAt)
+                isNull(conversations.deletedAt),
+                ne(conversations.status, 'PENDING_VERIFICATION' as const)
             );
 
             // Run both aggregations in a single Promise.all to minimise
@@ -472,6 +484,7 @@ export class ConversationModel extends BaseModelImpl<SelectConversation> {
                     and(
                         inArray(conversations.accommodationId, ownerAccommodationIds as string[]),
                         isNull(conversations.deletedAt),
+                        ne(conversations.status, 'PENDING_VERIFICATION' as const),
                         gte(conversations.createdAt, since)
                     )
                 )
