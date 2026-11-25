@@ -75,10 +75,17 @@ export function DetailsSection({
                     'Tiempo de lectura (minutos)'
                 )}
                 error={errors.readingTimeMinutes}
-                hint={t(
-                    'account.myContent.posts.editor.hint.readingTime',
-                    'Dejalo vacío para mantener el valor actual.'
-                )}
+                hint={
+                    data.readingTimeMinutes === null
+                        ? t(
+                              'account.myContent.posts.editor.hint.readingTimeEmpty',
+                              'No reading time is set. Enter the number of minutes to set one.'
+                          )
+                        : t(
+                              'account.myContent.posts.editor.hint.readingTime',
+                              'Edit the minutes, or clear this field to reset the saved reading time.'
+                          )
+                }
             >
                 <TextInput
                     name="readingTimeMinutes"

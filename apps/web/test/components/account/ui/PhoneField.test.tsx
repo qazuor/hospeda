@@ -6,7 +6,7 @@
  */
 import { fireEvent, render, screen } from '@testing-library/react';
 import { useState } from 'react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { Field, PhoneField } from '@/components/account/ui';
 import { buildFieldId } from '@/lib/forms/build-field-id';
 
@@ -25,6 +25,7 @@ function PhoneHarness({ baseline }: { readonly baseline: string }) {
                 <PhoneField
                     locale="es"
                     name="contact.mobilePhone"
+                    compact
                     value={value}
                     onValueChange={setValue}
                 />
@@ -119,5 +120,17 @@ describe('PhoneField — discard (HOS-2497 review)', () => {
 
         expect(storedValue()).toBe('+54343');
         expect(numberInput().value).toBe('343 ');
+    });
+
+    it('keeps the number as typed unless compact is set', () => {
+        const onValueChange = vi.fn();
+        render(
+            <PhoneField
+                locale="es"
+                onValueChange={onValueChange}
+            />
+        );
+        fireEvent.change(screen.getByRole('textbox'), { target: { value: '3442 45-2345' } });
+        expect(onValueChange).toHaveBeenLastCalledWith('+54 3442 45-2345');
     });
 });

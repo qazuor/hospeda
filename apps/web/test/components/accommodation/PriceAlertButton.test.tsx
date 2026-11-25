@@ -54,8 +54,8 @@ vi.mock('@/lib/auth-cache', () => ({
 const mockAlertsList = vi.fn();
 const mockGetEffectiveSet = vi.fn();
 const mockFetchPublicPlans = vi.fn();
-vi.mock('@/lib/billing/fetch-plans', () => ({
-    fetchPublicPlans: (params: unknown) => mockFetchPublicPlans(params)
+vi.mock('@/components/account/ui/read-tourist-vip-plan', () => ({
+    readTouristVipPlan: (params: unknown) => mockFetchPublicPlans(params)
 }));
 
 vi.mock('@/lib/api/endpoints-protected', () => ({
@@ -107,7 +107,7 @@ describe('TEST:B13a:25 PriceAlertButton effective-set gate', () => {
         mockAlertsList.mockReset();
         mockGetEffectiveSet.mockReset();
         mockFetchPublicPlans.mockReset();
-        mockFetchPublicPlans.mockResolvedValue({ ok: false, error: 'offline' });
+        mockFetchPublicPlans.mockResolvedValue(null);
         mockGetEffectiveSet.mockResolvedValue({
             entitlements: { price_alerts: 1 },
             limits: { max_active_alerts: 10 },
@@ -239,10 +239,7 @@ describe('TEST:B13a:25 PriceAlertButton effective-set gate', () => {
             await screen.findByRole('dialog', { name: 'Viajá con Hospeda VIP' })
         ).toBeInTheDocument();
         expect(window.location.href).toBe(href);
-        expect(mockFetchPublicPlans).toHaveBeenCalledWith({
-            vertical: 'tourist',
-            apiUrl: PROPS.apiUrl
-        });
+        expect(mockFetchPublicPlans).toHaveBeenCalledWith({ apiUrl: PROPS.apiUrl });
         await user.click(screen.getByRole('button', { name: 'Ahora no' }));
         await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
         expect(trigger).toHaveFocus();

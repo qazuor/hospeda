@@ -74,6 +74,7 @@ export function ProfileEditContactSection({
                     <PhoneField
                         locale={locale}
                         name="phone"
+                        compact
                         value={phone}
                         onValueChange={onPhoneChange}
                         disabled={submitting}

@@ -1,12 +1,12 @@
 /** Reusable VIP upsell. Import dynamically so catalog and modal code load on demand. */
 import { useEffect, useId, useState } from 'react';
-import { fetchPublicPlans, type PublicPlanData } from '@/lib/billing/fetch-plans';
 import { buildSignupCheckoutHref } from '@/lib/billing/signup-checkout';
 import { formatPrice } from '@/lib/format-utils';
 import { createTranslations, type SupportedLocale } from '@/lib/i18n';
 import { Button } from './Button';
 import { Dialog } from './Dialog';
 import { LinkButton } from './LinkButton';
+import { readTouristVipPlan, type TouristVipPlan } from './read-tourist-vip-plan';
 import styles from './VipGateDialog.module.css';
 
 export interface VipGateDialogProps {
@@ -33,7 +33,7 @@ export function VipGateDialog({
 }: VipGateDialogProps) {
     const { t } = createTranslations(locale);
     const descriptionId = useId();
-    const [plan, setPlan] = useState<PublicPlanData | null>(null);
+    const [plan, setPlan] = useState<TouristVipPlan | null>(null);
     const [loading, setLoading] = useState(true);
     const [attempt, setAttempt] = useState(0);
 
@@ -43,18 +43,9 @@ export function VipGateDialog({
         let cancelled = false;
         setLoading(true);
         setPlan(null);
-        void fetchPublicPlans({ vertical: 'tourist', apiUrl }).then((result) => {
+        void readTouristVipPlan({ apiUrl }).then((result) => {
             if (cancelled) return;
-            setPlan(
-                result.ok
-                    ? (result.plans.find(
-                          (candidate) =>
-                              candidate.isActive &&
-                              candidate.slug === 'tourist-vip' &&
-                              candidate.billingOptions?.monthly
-                      ) ?? null)
-                    : null
-            );
+            setPlan(result);
             setLoading(false);
         });
         return () => {
@@ -81,12 +72,12 @@ export function VipGateDialog({
                     >
                         {t('common.vipGate.notNow')}
                     </Button>
-                    {plan?.billingOptions?.monthly ? (
+                    {plan ? (
                         <LinkButton
                             variant="accent"
                             href={buildSignupCheckoutHref({
                                 locale,
-                                billingOptionId: plan.billingOptions.monthly
+                                billingOptionId: plan.monthlyOptionId
                             })}
                         >
                             {t('common.vipGate.upgrade')}

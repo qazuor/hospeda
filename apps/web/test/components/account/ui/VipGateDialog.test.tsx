@@ -2,31 +2,12 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { VipGateDialog } from '@/components/account/ui/VipGateDialog';
-import type { PublicPlanData } from '@/lib/billing/fetch-plans';
 import { formatPrice } from '@/lib/format-utils';
 
-const fetchPlans = vi.hoisted(() => vi.fn());
-vi.mock('@/lib/billing/fetch-plans', () => ({ fetchPublicPlans: fetchPlans }));
+const readPlan = vi.hoisted(() => vi.fn());
+vi.mock('@/components/account/ui/read-tourist-vip-plan', () => ({ readTouristVipPlan: readPlan }));
 
-const plan: PublicPlanData = {
-    id: 'vip',
-    planVersionId: 'vip-v2',
-    slug: 'tourist-vip',
-    name: 'VIP',
-    description: '',
-    vertical: 'tourist',
-    category: 'tourist',
-    monthlyPriceArs: 987654,
-    annualPriceArs: null,
-    billingOptions: { monthly: 'monthly-option', annual: null },
-    hasTrial: false,
-    trialDays: 0,
-    sortOrder: 1,
-    isActive: true,
-    inheritsTouristVip: false,
-    entitlements: ['price_alerts'],
-    limits: {}
-};
+const plan = { monthlyOptionId: 'monthly-option', monthlyPriceArs: 987654 };
 const props = {
     open: true,
     onClose: vi.fn(),
@@ -41,7 +22,7 @@ const props = {
 describe('VipGateDialog', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        fetchPlans.mockResolvedValue({ ok: true, plans: [plan] });
+        readPlan.mockResolvedValue(plan);
     });
 
     it('renders the catalog price in minor units and links to that exact monthly checkout option', async () => {
@@ -53,7 +34,7 @@ describe('VipGateDialog', () => {
         expect(screen.getByRole('status').textContent).toBe(
             `${formatPrice({ amount: plan.monthlyPriceArs / 100, locale: 'es', showDecimals: true })} por mes`
         );
-        fetchPlans.mockResolvedValue({ ok: true, plans: [{ ...plan, monthlyPriceArs: 123400 }] });
+        readPlan.mockResolvedValue({ ...plan, monthlyPriceArs: 123400 });
         rerender(
             <VipGateDialog
                 {...props}
@@ -86,19 +67,15 @@ describe('VipGateDialog', () => {
         expect(props.onClose).toHaveBeenCalledTimes(2);
     });
 
-    it.each([
-        { ok: false, error: 'offline' },
-        { ok: true, plans: [] },
-        { ok: true, plans: [{ ...plan, slug: 'tourist-free', billingOptions: undefined }] }
-    ])('never invents a price or checkout on an unavailable catalog (%j)', async (result) => {
-        fetchPlans.mockResolvedValue(result);
+    it('never invents a price or checkout on an unavailable catalog', async () => {
+        readPlan.mockResolvedValue(null);
         render(<VipGateDialog {...props} />);
         expect(
             await screen.findByText('No pudimos cargar el precio del plan VIP. Volvé a intentarlo.')
         ).toBeInTheDocument();
         expect(screen.queryByRole('link')).not.toBeInTheDocument();
         expect(screen.getByRole('button', { name: 'Hacerme VIP' })).toBeDisabled();
-        fetchPlans.mockResolvedValue({ ok: true, plans: [plan] });
+        readPlan.mockResolvedValue(plan);
         await userEvent.click(screen.getByRole('button', { name: 'Reintentar' }));
         expect(await screen.findByRole('link', { name: 'Hacerme VIP' })).toBeInTheDocument();
     });
@@ -110,7 +87,7 @@ describe('VipGateDialog', () => {
                 open={false}
             />
         );
-        expect(fetchPlans).not.toHaveBeenCalled();
+        expect(readPlan).not.toHaveBeenCalled();
         expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     });
 

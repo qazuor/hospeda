@@ -17,6 +17,12 @@ export interface PhoneFieldProps
     readonly onValueChange?: (value: string) => void;
     /** Explicit picker id for existing form and end-to-end selector contracts. */
     readonly countryId?: string;
+    /**
+     * Strip spaces, dots, dashes and parentheses from the emitted value (a strict
+     * E.164 string). The default keeps the number as typed, which is the contract
+     * of the listing contact editor.
+     */
+    readonly compact?: boolean;
 }
 
 export function PhoneField({
@@ -24,6 +30,7 @@ export function PhoneField({
     value = '',
     onValueChange,
     countryId,
+    compact = false,
     id,
     invalid,
     required,
@@ -36,7 +43,10 @@ export function PhoneField({
     const control = useFieldControl({ id, invalid, required, describedBy });
     const [parts, setParts] = useState(() => parsePhoneValue(value));
     const [seen, setSeen] = useState(value);
-    const compose = (next: typeof parts) => composePhoneValue(next).replace(/[\s().-]/g, '');
+    const compose = (next: typeof parts) => {
+        const composed = composePhoneValue(next);
+        return compact ? composed.replace(/[\s().-]/g, '') : composed;
+    };
     // Only external changes (discard/reset) reseed the pair. Echoed values must
     // preserve whitespace while typing and the selected country for shared codes.
     if (seen !== value) {

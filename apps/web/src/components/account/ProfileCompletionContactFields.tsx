@@ -85,6 +85,7 @@ export function ProfileCompletionContactFields({
                 <PhoneField
                     locale={locale}
                     countryId="pc-phoneCode"
+                    compact
                     value={phone}
                     onValueChange={onPhoneChange}
                     placeholder={t(
