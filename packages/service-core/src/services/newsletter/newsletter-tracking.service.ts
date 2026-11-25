@@ -18,7 +18,9 @@
  *   spam | complained → subscriber: status = COMPLAINED, complainedAt = date
  *   unsubscribed   → subscriber: status = UNSUBSCRIBED, unsubscribedAt = date
  *   invalid_email  → subscriber: status = BOUNCED, bouncedAt = date
- *   opened         → delivery: openedAt = date (idempotent: WHERE opened_at IS NULL)
+ *   opened         → delivery: openedAt = date (idempotent: WHERE opened_at IS NULL).
+ *                    The webhook route feeds BOTH Brevo's `unique_opened` (first open)
+ *                    and `opened` (re-open) through this event (HOS-2583)
  *   click          → delivery: firstClickAt = date (idempotent: WHERE first_click_at IS NULL)
  *
  * Lookup strategy:
@@ -111,8 +113,9 @@ export interface ProcessBrevoWebhookEventOutput {
     readonly skippedReason?: string;
     /**
      * `opened` only (HOS-2583): the `utm_campaign` slug of the campaign the opened message
-     * belongs to, set on EVERY open of a newsletter delivery (not just the first, which is
-     * the only one that writes `opened_at`). Absent when the message is not a newsletter
+     * belongs to, set on EVERY open event of a newsletter delivery (not just the one that
+     * writes `opened_at`). The webhook route reports to analytics only for Brevo's
+     * `unique_opened`, so a re-open never counts twice. Absent when the message is not a newsletter
      * delivery, so the caller treats the open as a transactional one.
      */
     readonly openedCampaignSlug?: string;

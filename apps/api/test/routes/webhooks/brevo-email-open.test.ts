@@ -1,6 +1,6 @@
 /**
  * @file brevo-email-open.test.ts
- * @description HOS-2583: a Brevo `opened` webhook becomes one `email-open` analytics event.
+ * @description HOS-2583: a Brevo `unique_opened` webhook (the FIRST open) becomes one `email-open` analytics event.
  *
  * - AC-1: a transactional open carries the template key read from the `template:` tag.
  * - AC-3: an open with no tag, or with a key that is not in the email catalog, does not
@@ -62,10 +62,10 @@ function post(body: unknown, token = 'test-secret') {
     });
 }
 
-/** Brevo's transactional `opened` payload (developers.brevo.com, transactional webhooks). */
+/** Brevo's transactional `unique_opened` payload (developers.brevo.com, transactional webhooks). */
 function openedEvent(overrides: Record<string, unknown> = {}) {
     return {
-        event: 'opened',
+        event: 'unique_opened',
         email: 'reader@example.com',
         id: 1,
         date: '2026-11-24 10:00:00',
@@ -79,7 +79,7 @@ function openedEvent(overrides: Record<string, unknown> = {}) {
     };
 }
 
-describe('Brevo webhook: opened -> email-open (HOS-2583)', () => {
+describe('Brevo webhook: unique_opened -> email-open (HOS-2583)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         _resetBrevoWebhookCache();
@@ -132,12 +132,36 @@ describe('Brevo webhook: opened -> email-open (HOS-2583)', () => {
         });
     });
 
-    it('keeps recording the newsletter open in the tracking service (opened_at untouched)', async () => {
+    it('forwards a unique_opened to the tracking service as the `opened` event so opened_at gets the first open', async () => {
         await post(openedEvent());
 
         expect(mocks.processBrevoWebhookEvent).toHaveBeenCalledWith(
             expect.objectContaining({ event: 'opened', email: 'reader@example.com' })
         );
+    });
+
+    it('still forwards a re-open (`opened`) to the tracking service but never reports it', async () => {
+        await post(openedEvent({ event: 'opened' }));
+
+        expect(mocks.processBrevoWebhookEvent).toHaveBeenCalledWith(
+            expect.objectContaining({ event: 'opened', email: 'reader@example.com' })
+        );
+        expect(mocks.captureEmailOpen).not.toHaveBeenCalled();
+    });
+
+    it('does not report a re-open of a newsletter message either', async () => {
+        mocks.processBrevoWebhookEvent.mockResolvedValue({
+            data: {
+                updated: false,
+                matchedByMessageId: true,
+                matchedBySubscriberEmail: false,
+                openedCampaignSlug: 'otono-aaaaaaaa'
+            }
+        });
+
+        await post(openedEvent({ event: 'opened' }));
+
+        expect(mocks.captureEmailOpen).not.toHaveBeenCalled();
     });
 
     it.each([
