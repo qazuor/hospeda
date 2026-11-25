@@ -364,7 +364,7 @@ const needsPlanCta = t('host.properties.list.needsPlanBanner.cta', 'Elegir plan 
         />
     ) : !isEmpty ? (
         <>
-        <OwnerListingsByState locale={locale} counts={bucketCounts} helpId="section:propiedades.listado">
+        <OwnerListingsByState locale={locale} counts={bucketCounts} helpId="section:propiedades.listado" listLabel={title}>
             {(bucket: OwnerListingBucket) => buckets[bucket].map((property) => (
                 <PropertyCard
                     property={property}

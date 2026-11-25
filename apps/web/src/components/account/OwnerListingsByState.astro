@@ -10,8 +10,10 @@ interface Props {
     readonly locale: SupportedLocale;
     readonly counts: Readonly<Record<OwnerListingBucket, number>>;
     readonly helpId: HelpAnchor;
+    /** The page title: every list is named after it, then the state (e.g. «Mis alojamientos: Publicadas (2)»). */
+    readonly listLabel: string;
 }
-const { locale, counts, helpId } = Astro.props;
+const { locale, counts, helpId, listLabel } = Astro.props;
 const { t } = createTranslations(locale);
 const sections = await Promise.all(OWNER_LISTING_BUCKETS.filter((bucket) => counts[bucket] > 0).map(async (bucket) => ({
     bucket,
@@ -26,14 +28,14 @@ const sections = await Promise.all(OWNER_LISTING_BUCKETS.filter((bucket) => coun
         return bucket === 'archived' || bucket === 'deleted' ? (
             <Section title={label} helpId={helpId}>
                 <Disclosure summary={title}>
-                    <ListingCardGrid label={title} helpId={helpId}>
+                    <ListingCardGrid label={`${listLabel}: ${title}`} helpId={helpId}>
                         <Fragment set:html={html} />
                     </ListingCardGrid>
                 </Disclosure>
             </Section>
         ) : (
             <Section title={title} helpId={helpId}>
-                <ListingCardGrid label={title} helpId={helpId}>
+                <ListingCardGrid label={`${listLabel}: ${title}`} helpId={helpId}>
                     <Fragment set:html={html} />
                 </ListingCardGrid>
             </Section>

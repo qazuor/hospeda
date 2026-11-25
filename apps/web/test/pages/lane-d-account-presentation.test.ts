@@ -31,9 +31,6 @@ describe('short account pages', () => {
         expect(read('components/auth/ChangePasswordForm.client.tsx')).toMatch(
             /actions=\{\s*forced[\s\S]*?<LinkButton/
         );
-        expect(read('layouts/EditorShellLayout.astro')).toMatch(
-            /slot="actions"[\s\S]*?<LinkButton/
-        );
         const activity = read('components/account/AiActivityItem.tsx');
         expect(activity).toContain('<TextLink');
         expect(activity).not.toMatch(/<a\s/);

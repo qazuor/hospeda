@@ -317,7 +317,7 @@ const bucketCounts = Object.fromEntries(Object.entries(buckets).map(([key, rows]
                     </LinkButton>
                 </EmptyState>
             ) : (
-                <OwnerListingsByState locale={locale} counts={bucketCounts} helpId={listHelpId}>
+                <OwnerListingsByState locale={locale} counts={bucketCounts} helpId={listHelpId} listLabel={title}>
                     {(bucket: OwnerListingBucket) => buckets[bucket].map((listing) => {
                         const affordance =
                             publishAffordances.get(listing.vertical) ?? UNKNOWN_PUBLISH_AFFORDANCE;

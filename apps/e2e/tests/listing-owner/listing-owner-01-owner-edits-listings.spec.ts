@@ -183,7 +183,7 @@ test.describe('LISTING-OWNER-01: venue or experience owner edits listings — bo
         // lookup is scoped to the page's listing list («Mis locales» /
         // «Mis experiencias»): other widgets on the page (the menu-QR card)
         // also carry the listing name as a heading.
-        const listingList = () => page.getByRole('list', { name: /^mis (locales|experiencias)$/i });
+        const listingList = () => page.getByRole('list', { name: /^mis (locales|experiencias)/i });
         const listingHeading = (name: string) =>
             listingList().getByRole('heading', { level: 3, name, exact: true });
         const listingCard = (name: string) =>

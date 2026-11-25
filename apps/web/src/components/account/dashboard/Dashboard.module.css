@@ -42,10 +42,11 @@
 .identityName {
     min-inline-size: 0;
     overflow-wrap: anywhere;
+    font: var(--app-card-title);
 }
 
-@media (width < 40rem) {
+@media (width >= 48rem) {
     .identityName {
-        font: var(--app-card-title);
+        font: var(--app-title);
     }
 }
