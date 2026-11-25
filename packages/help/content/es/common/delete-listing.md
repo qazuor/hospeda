@@ -37,7 +37,7 @@ covers:
   - "page:mi-cuenta/propiedades"
   - "enum:PublicationStatus.PURGED"
 entryFor: []
-reviewedAt: "2026-11-24"
+reviewedAt: "2026-11-25"
 ---
 
 ## Qué podés hacer

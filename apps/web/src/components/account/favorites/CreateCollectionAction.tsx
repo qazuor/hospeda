@@ -1,6 +1,6 @@
 /**
  * @file CreateCollectionAction.tsx
- * @description «Crear colección», the page-header action of the favorites
+ * @description «Agregar colección», the page-header action of the favorites
  * page (HOS-2480). Replaces `CreateCollectionCTA` and its upsell variant.
  *
  * It reads the collections gate. When creating is locked the button is
@@ -10,6 +10,7 @@
  * collections Section's `LockedState`.
  */
 
+import { AddIcon } from '@repo/icons';
 import { useId, useState } from 'react';
 import { Button } from '@/components/account/ui';
 import { createT, type SupportedLocale } from '@/lib/i18n';
@@ -30,7 +31,7 @@ export interface CreateCollectionActionProps {
 }
 
 /**
- * The header «Crear colección» action and its create dialog.
+ * The header «Agregar colección» action and its create dialog.
  *
  * @param props - See {@link CreateCollectionActionProps}.
  * @returns The button, the visible lock reason when locked, and the dialog.
@@ -71,7 +72,11 @@ export function CreateCollectionAction({
                 data-testid="create-collection-button"
                 onClick={() => setOpen(true)}
             >
-                {t('account.favorites.collections.create')}
+                <AddIcon
+                    size="sm"
+                    aria-hidden="true"
+                />
+                {t('account.favorites.collections.add')}
             </Button>
             {lockText ? (
                 <p

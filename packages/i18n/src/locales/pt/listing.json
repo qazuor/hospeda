@@ -40,12 +40,12 @@
                 "experience": "Experiência"
             },
             "emptyCta": {
-                "venue": "Criar meu primeiro comércio",
-                "experience": "Criar minha primeira experiência"
+                "venue": "Adicionar comércio",
+                "experience": "Adicionar experiência"
             },
             "createCta": {
-                "venue": "+ Novo comércio",
-                "experience": "+ Nova experiência"
+                "venue": "Adicionar comércio",
+                "experience": "Adicionar experiência"
             },
             "state": {
                 "published": "Publicado",

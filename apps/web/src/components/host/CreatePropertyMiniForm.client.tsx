@@ -36,6 +36,7 @@
 import type { AccommodationImportResponse, DestinationPublic, FieldSource } from '@repo/schemas';
 import { AccommodationCreateDraftHttpSchema, AccommodationTypeEnum } from '@repo/schemas';
 import { useCallback, useId, useMemo, useState } from 'react';
+import { Button } from '@/components/account/ui/Button';
 import type { SelectableItem } from '@/components/form/SearchableSelect.client';
 import { SearchableSelect } from '@/components/form/SearchableSelect.client';
 import { ImportFromUrl } from '@/components/host/ImportFromUrl.client';
@@ -1731,20 +1732,14 @@ export function CreatePropertyMiniForm({ locale, apiUrl, trialDays }: CreateProp
             )}
 
             <div className="form-actions">
-                <button
+                <Button
                     type="submit"
-                    className="btn-gradient btn-gradient--accent btn-gradient--shape-rounded"
-                    disabled={isSubmitting}
+                    loading={isSubmitting}
                 >
-                    <span className="gradient-btn__label">
-                        {isSubmitting
-                            ? t('host.miniForm.actions.submitting', 'Creando...')
-                            : t(
-                                  'host.miniForm.actions.submit',
-                                  'Crear borrador y seguir al paso 2'
-                              )}
-                    </span>
-                </button>
+                    {isSubmitting
+                        ? t('host.miniForm.actions.submitting', 'Creando...')
+                        : t('host.miniForm.actions.submit', 'Crear borrador y seguir al paso 2')}
+                </Button>
             </div>
 
             <p className="form-disclaimer">

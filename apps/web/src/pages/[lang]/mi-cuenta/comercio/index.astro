@@ -78,7 +78,7 @@ import { fetchAudiencePlans } from '@/lib/billing/audience-plans';
 import { resolveUnlockingPlanName } from '@/lib/venue/section-upsell-plan';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { VenueIcon } from '@repo/icons';
+import { AddIcon, VenueIcon } from '@repo/icons';
 import { PublicationStatusEnum } from '@repo/schemas';
 
 export const prerender = false;
@@ -258,9 +258,15 @@ const listHelpId = 'section:comercio.listado' as const;
         description={subtitle || undefined}
     >
         <PageHelpLink slot="help" locale={locale} />
-        <LinkButton slot="actions" href={createUrl}>
-            {t(`listing.owner.list.createCta.${listVertical}`)}
-        </LinkButton>
+        {/* HOS-2611: one solid primary per screen. The empty state owns the
+            «create» call to action, so the header hides it there (and on a
+            load failure, like the properties list). */}
+        {listings.length > 0 && !listingsLoadFailed && (
+            <LinkButton slot="actions" href={createUrl}>
+                <AddIcon size="sm" aria-hidden="true" />
+                {t(`listing.owner.list.createCta.${listVertical}`)}
+            </LinkButton>
+        )}
     </PageHeader>
 
     {/* HOS-2443: reaching the cap is informational, never an error tone. */}
@@ -309,6 +315,7 @@ const listHelpId = 'section:comercio.listado' as const;
                 >
                     <VenueIcon slot="icon" size="lg" aria-hidden="true" />
                     <LinkButton slot="action" href={createUrl}>
+                        <AddIcon size="sm" aria-hidden="true" />
                         {t(`listing.owner.list.emptyCta.${listVertical}`)}
                     </LinkButton>
                 </EmptyState>

@@ -63,7 +63,7 @@ describe('OwnContentListView', () => {
             'colaborar/editores'
         );
         expect(screen.queryByRole('list')).not.toBeInTheDocument();
-        expect(screen.queryByRole('link', { name: 'Nueva publicación' })).not.toBeInTheDocument();
+        expect(screen.queryByRole('link', { name: 'Agregar publicación' })).not.toBeInTheDocument();
     });
 
     it('renders the three status axes as words and an edit link per card', () => {
@@ -92,7 +92,7 @@ describe('OwnContentListView', () => {
             'href',
             '/es/mi-cuenta/eventos/id-1/editar/'
         );
-        expect(screen.getByRole('link', { name: 'Nuevo evento' })).toHaveAttribute(
+        expect(screen.getByRole('link', { name: 'Agregar evento' })).toHaveAttribute(
             'href',
             '/es/mi-cuenta/eventos/nuevo/'
         );
@@ -110,6 +110,8 @@ describe('OwnContentListView', () => {
             />
         );
         expect(screen.getByText('Todavía no creaste ningún evento')).toBeInTheDocument();
-        expect(screen.getByRole('link', { name: 'Crear mi primer evento' })).toBeInTheDocument();
+        // HOS-2611: one solid primary per screen. The empty state owns the
+        // «create» action, so the header does not repeat it.
+        expect(screen.getAllByRole('link', { name: 'Agregar evento' })).toHaveLength(1);
     });
 });

@@ -460,7 +460,7 @@
                 "empty": "You have not added any promotions yet.",
                 "count": "Active promotions: {{count}} / {{max}}",
                 "unlimitedCount": "Active promotions: {{count}} · no limit",
-                "create": "New promotion",
+                "create": "Add promotion",
                 "actions": {
                     "delete": "Delete",
                     "edit": "Edit",

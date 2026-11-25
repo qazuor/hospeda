@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
 import { PRODUCTION_PLAN_CATALOG } from '../../../../scripts/production-catalog/catalog.js';
-import * as migration from '../../src/data-migrations/0191-hos-2614-spanish-plan-names.js';
+import * as migration from '../../src/data-migrations/0192-hos-2614-spanish-plan-names.js';
 import type { SeedMigrationCtx } from '../../src/data-migrations/types.js';
 
-describe('0191-hos-2614-spanish-plan-names', () => {
+describe('0192-hos-2614-spanish-plan-names', () => {
     it('is content-only so a baseline stamp never skips it', () => {
         expect(migration.meta.contentOnly).toBe(true);
         expect(migration.meta.destructive).toBe(false);
