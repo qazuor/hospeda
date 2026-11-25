@@ -59,7 +59,7 @@
     block-size: var(--space-9);
     border-radius: var(--radius-pill);
     color: var(--brand-primary);
-    background-color: oklch(from var(--brand-primary) l c h / 0.1);
+    background-color: var(--brand-primary-a10);
 }
 
 .value {
