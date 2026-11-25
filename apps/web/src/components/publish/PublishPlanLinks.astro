@@ -20,8 +20,11 @@
 import { ArrowRightIcon } from '@repo/icons';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import type { PublishPageVariant } from '@/lib/publish/publish-page-variant';
 
 interface Props {
+    /** Only guests need links back to the plans introduction. */
+    readonly variant?: PublishPageVariant;
     readonly locale: SupportedLocale;
     /** This vertical's sales page. */
     readonly plansUrl: string;
@@ -29,11 +32,11 @@ interface Props {
     readonly pricingUrl: string;
 }
 
-const { locale, plansUrl, pricingUrl } = Astro.props;
+const { locale, plansUrl, pricingUrl, variant = 'guest' } = Astro.props;
 const { t } = createTranslations(locale);
 ---
 
-<section class="publish-plan-links section section--warm">
+{variant === 'guest' && <section class="publish-plan-links section section--warm">
     <div class="publish-plan-links__container" data-reveal="up">
         <p class="publish-plan-links__tagline">
             {t('publish.plans.tagline', 'Antes de decidir')}
@@ -63,7 +66,7 @@ const { t } = createTranslations(locale);
             </a>
         </div>
     </div>
-</section>
+</section>}
 
 <style>
     .publish-plan-links__container {

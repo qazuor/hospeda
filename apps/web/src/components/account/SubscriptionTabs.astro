@@ -14,13 +14,15 @@ interface Props {
     readonly locale: SupportedLocale;
     /** Which page renders the tabs. */
     readonly current: 'plan' | 'addons';
+    /** Hide the tab navigation when the account has no subscriptions. */
+    readonly showAddons?: boolean;
 }
 
-const { locale, current } = Astro.props;
+const { locale, current, showAddons = true } = Astro.props;
 const { t } = createTranslations(locale);
 ---
 
-<NavTabs
+{showAddons && <NavTabs
     ariaLabel={t('account.subscription.tabs.ariaLabel')}
     items={[
         {
@@ -34,4 +36,4 @@ const { t } = createTranslations(locale);
             current: current === 'addons'
         }
     ]}
-/>
+/>}

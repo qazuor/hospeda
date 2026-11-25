@@ -15,21 +15,21 @@
 
 import type { IconProps } from '@repo/icons';
 import type { ComponentType } from 'react';
+import type { PublishPageVariant } from '@/lib/publish/publish-page-variant';
 
 /** Any `@repo/icons` component, as the nav/door configs already type them. */
 type IconComponent = ComponentType<IconProps>;
 
 interface Props {
+    /** Direct journeys omit this section; members omit registration when present. */
+    readonly variant?: PublishPageVariant;
+    readonly hasRegistrationStep?: boolean;
     /** Handwritten eyebrow above the steps. */
     readonly stepsTagline: string;
     /** The steps section's heading. */
     readonly stepsTitle: string;
-    /** Exactly three steps, in order. */
-    readonly steps: readonly [
-        { readonly title: string; readonly desc: string },
-        { readonly title: string; readonly desc: string },
-        { readonly title: string; readonly desc: string }
-    ];
+    /** Two or three steps, in display order. */
+    readonly steps: ReadonlyArray<{ readonly title: string; readonly desc: string }>;
     /** Handwritten eyebrow above the benefits. */
     readonly benefitsTagline: string;
     /** The benefits section's heading. */
@@ -43,15 +43,18 @@ interface Props {
 }
 
 const { stepsTagline, stepsTitle, steps, benefitsTagline, benefitsTitle, benefits } = Astro.props;
+const { variant = 'guest', hasRegistrationStep = false } = Astro.props;
+const visibleSteps = variant === 'member' && hasRegistrationStep ? steps.slice(1) : steps;
 ---
 
+{variant !== 'direct' && <>
 <section class="publish-steps section section--warm">
     <div class="publish-steps__container">
         <p class="publish-steps__tagline" data-reveal="up">{stepsTagline}</p>
         <h2 class="publish-steps__title" data-reveal="up">{stepsTitle}</h2>
 
-        <div class="publish-steps__grid">
-            {steps.map((step, index) => (
+        <div class:list={['publish-steps__grid', { 'publish-steps__grid--two': visibleSteps.length === 2 }]}>
+            {visibleSteps.map((step, index) => (
                 <div
                     class="publish-step"
                     data-reveal="up"
@@ -94,6 +97,8 @@ const { stepsTagline, stepsTitle, steps, benefitsTagline, benefitsTitle, benefit
     </div>
 </section>
 
+</>}
+
 <style>
     .publish-steps__container,
     .publish-benefits__container {
@@ -132,6 +137,10 @@ const { stepsTagline, stepsTitle, steps, benefitsTagline, benefitsTitle, benefit
 
     .publish-benefits__grid {
         text-align: left;
+    }
+
+    .publish-steps__grid--two {
+        grid-template-columns: repeat(2, 1fr);
     }
 
     .publish-step__num {

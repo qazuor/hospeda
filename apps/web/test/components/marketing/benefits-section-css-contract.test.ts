@@ -32,7 +32,7 @@ describe('BenefitsSection auto-fit grid', () => {
         const flex = baseValue({ rules, selector: CARD, prop: 'flex' });
 
         // Assert: no flex-grow (grow would stretch the orphan wider than its siblings)
-        expect(flex).toMatch(/^0 1 \d+px$/);
+        expect(flex).toBe('0 1 calc((100% - 2 * var(--space-card-gap)) / 3)');
     });
 
     it('collapses to one full-width column on mobile', () => {

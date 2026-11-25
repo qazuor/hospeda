@@ -1,14 +1,14 @@
 import { SignupNoticeResponseSchema } from '@repo/schemas';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { LinkButton } from '@/components/account/ui/LinkButton';
+import { PageHeader } from '@/components/account/ui/PageHeader';
 import type { StartSubscriptionResponse } from '@/lib/api/endpoints-protected';
 import { billingSubscriptionApi } from '@/lib/api/endpoints-protected';
 import {
     formatSignupWindowEnd,
     resolveDeclaredPayerEmail,
     resolveSignupPendingAttempt,
-    resolveSignupPlanName,
     resolveSignupRejection,
-    SIGNUP_CYCLE_LABEL_KEY,
     SIGNUP_VERTICAL_LABEL_KEY,
     type SignupPendingAttempt,
     type SignupPlanSummary,
@@ -20,7 +20,7 @@ import { resolveSafeExternalUrl } from '@/lib/safe-external-url';
 import { PaidSignupsPausedNotice } from './PaidSignupsPausedNotice';
 import { PendingAttemptPanel } from './PendingAttemptPanel';
 import styles from './SignupCheckout.module.css';
-import { formatSignupAmount, SignupPromoLine } from './SignupPromoLine';
+import { SignupCheckoutSummary } from './SignupCheckoutSummary';
 
 /** Props for the minimum protected signup checkout island. */
 export interface SignupCheckoutProps {
@@ -28,6 +28,7 @@ export interface SignupCheckoutProps {
     readonly billingOptionId: string;
     readonly accountEmail: string;
     readonly plansHref: string;
+    readonly vertical?: keyof typeof SIGNUP_VERTICAL_LABEL_KEY | null;
     readonly trialNotice: SignupTrialNotice | null;
     readonly touristVipNotice: SignupTouristVipNotice | null;
     readonly planSummary: SignupPlanSummary | null;
@@ -53,6 +54,7 @@ export function SignupCheckout({
     billingOptionId,
     accountEmail,
     plansHref,
+    vertical = null,
     trialNotice,
     touristVipNotice,
     planSummary,
@@ -201,10 +203,12 @@ export function SignupCheckout({
             data-tourist-vip={touristVipNotice?.kind ?? 'NOT_AFFECTED'}
         >
             {view.state !== 'pending' && !activePendingAttempt && (
-                <>
-                    <h1>{t('billing.checkout.signup.title')}</h1>
-                    <p>{t('billing.checkout.signup.intro')}</p>
-                </>
+                <PageHeader
+                    className={styles.pageHeader}
+                    locale={locale}
+                    title={t('billing.checkout.signup.title')}
+                    description={t('billing.checkout.signup.intro')}
+                />
             )}
             {activePendingAttempt && view.state === 'idle' && (
                 <PendingAttemptPanel
@@ -222,36 +226,11 @@ export function SignupCheckout({
             {(view.state === 'idle' || view.state === 'submitting') && !activePendingAttempt ? (
                 <>
                     {planSummary && (
-                        <div
-                            className={styles.planSummary}
-                            data-testid="signup-checkout-plan-summary"
-                        >
-                            {t('billing.checkout.signup.planSummary', undefined, {
-                                plan: resolveSignupPlanName({ plan: planSummary, t }),
-                                amount: formatSignupAmount({
-                                    amount: planSummary.promo?.amount ?? planSummary.amount,
-                                    currency: planSummary.currency,
-                                    locale
-                                }),
-                                cycle: t(SIGNUP_CYCLE_LABEL_KEY[planSummary.cycle])
-                            })}
-                            {planSummary.promo && (
-                                <del
-                                    className={styles.listPrice}
-                                    data-testid="signup-checkout-list-price"
-                                >
-                                    {formatSignupAmount({
-                                        amount: planSummary.amount,
-                                        currency: planSummary.currency,
-                                        locale
-                                    })}
-                                </del>
-                            )}
-                            <SignupPromoLine
-                                plan={planSummary}
-                                locale={locale}
-                            />
-                        </div>
+                        <SignupCheckoutSummary
+                            plan={planSummary}
+                            locale={locale}
+                            vertical={vertical}
+                        />
                     )}
                     <div className={styles.payerEmailField}>
                         <label
@@ -362,17 +341,26 @@ export function SignupCheckout({
                             )}
                         </div>
                     )}
-                    <button
-                        className={styles.primary}
-                        type="button"
-                        data-testid="signup-checkout-confirm"
-                        disabled={busy}
-                        onClick={() => void start()}
-                    >
-                        {busy
-                            ? t('billing.checkout.signup.submitting')
-                            : t('billing.checkout.signup.confirm')}
-                    </button>
+                    <div className={styles.actions}>
+                        <LinkButton
+                            variant="secondary"
+                            href={plansHref}
+                            data-testid="signup-checkout-back"
+                        >
+                            {t('billing.checkout.signup.back')}
+                        </LinkButton>
+                        <button
+                            className={styles.primary}
+                            type="button"
+                            data-testid="signup-checkout-confirm"
+                            disabled={busy}
+                            onClick={() => void start()}
+                        >
+                            {busy
+                                ? t('billing.checkout.signup.submitting')
+                                : t('billing.checkout.signup.confirm')}
+                        </button>
+                    </div>
                 </>
             ) : null}
             {pending && (

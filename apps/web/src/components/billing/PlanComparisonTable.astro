@@ -23,12 +23,13 @@
  */
 
 import { CheckIcon, MinusIcon } from '@repo/icons';
+import PlanComparisonPrice from './PlanComparisonPrice.astro';
+import './comparison-scroll.css';
 import { COMPARISON_ROW_ICONS } from '@/components/billing/comparison-row-icons';
 import { getLineMarkText } from '@/components/billing/plan-comparison-catalog-rows';
 import { resolveGroupCell } from '@/components/billing/plan-comparison-source';
 import {
 	comparisonScrollsOnMobile,
-	formatPriceArs,
 	getActivePlans,
 	getComparisonGroups,
 	getVisibleRows
@@ -90,10 +91,10 @@ const activePlans = getActivePlans({ plans, audience });
 const scrollsOnMobile = comparisonScrollsOnMobile({ planCount: activePlans.length });
 const groups = getComparisonGroups(audience);
 
-const freePlanLabel = t('pricing.free', 'Gratis');
 ---
 
-<div class="comparison-table__wrapper" role="region" aria-label={t('pricing.comparison.link', 'Comparativa')} tabindex="0">
+<div class="comparison-scroll" data-comparison-scroll>
+<div class="comparison-table__wrapper" data-comparison-viewport role="region" aria-label={t('pricing.comparison.link', 'Comparativa')} tabindex="0">
 	<table class:list={['comparison-table', { 'comparison-table--fits-mobile': !scrollsOnMobile }]}>
 		<thead>
 			<tr>
@@ -103,16 +104,7 @@ const freePlanLabel = t('pricing.free', 'Gratis');
 				{activePlans.map((plan) => (
 					<th scope="col" class="comparison-table__plan-col">
 						<span class="comparison-table__plan-name">{getPlanName({ plan, t })}</span>
-						<span class="comparison-table__plan-price">
-							{formatPriceArs({
-								cents: plan.monthlyPriceArs,
-								intlLocale,
-								freeLabel: freePlanLabel
-							})}
-						</span>
-						{plan.monthlyPriceArs > 0 && (
-							<span class="comparison-table__plan-period">{t('pricing.period.month', '/mes')}</span>
-						)}
+						<PlanComparisonPrice plan={plan} intlLocale={intlLocale} locale={locale} />
 						<span class="comparison-table__plan-cta">
 							{/*
 								Same rule as `PricingCardsGrid`'s `ctaMode` (HOS-1032): a
@@ -195,6 +187,7 @@ const freePlanLabel = t('pricing.free', 'Gratis');
 		))}
 	</table>
 </div>
+</div>
 
 {scrollsOnMobile && <p class="comparison-table__scroll-hint" aria-hidden="true">
 	<span>{t('billing.comparison.scrollHint', 'Deslizá para ver todos los planes')}</span>
@@ -275,23 +268,6 @@ const freePlanLabel = t('pricing.free', 'Gratis');
 		font-size: var(--text-body-lg);
 		color: var(--core-foreground);
 		margin-bottom: var(--space-1);
-	}
-
-	.comparison-table__plan-price {
-		display: inline-block;
-		font-family: var(--font-heading);
-		font-weight: 700;
-		font-size: var(--text-lg);
-		/* `--brand-accent-text` is the orange meant for TEXT on light surfaces;
-		   the fill token measured 2.82:1 on the white header (HOS-1766). */
-		color: var(--brand-accent-text);
-	}
-
-	.comparison-table__plan-period {
-		font-family: var(--font-sans);
-		font-size: var(--text-caption);
-		color: var(--core-muted-foreground);
-		margin-left: var(--space-1);
 	}
 
 	/* OQ-4: per-column purchase CTA in each plan header, so users can buy
@@ -513,3 +489,9 @@ const freePlanLabel = t('pricing.free', 'Gratis');
 		}
 	}
 </style>
+
+<script>
+    import { initComparisonScroll } from './comparison-scroll';
+    initComparisonScroll();
+    document.addEventListener('astro:page-load', initComparisonScroll);
+</script>

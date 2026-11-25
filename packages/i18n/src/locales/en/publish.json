@@ -9,6 +9,8 @@
         "republishFromProperties": "Publish again from My account",
         "republishFromPropertiesHint": "Your listing is unpublished. Publish it again and start your free trial.",
         "currentPlan": "Your current plan in {{vertical}}",
+        "switchToAnnual": "Switch to annual billing",
+        "switchToMonthly": "Switch to monthly billing",
         "touristVipInherited": "Your plan already includes Tourist VIP: you do not need to buy it."
     },
     "limitReached": {

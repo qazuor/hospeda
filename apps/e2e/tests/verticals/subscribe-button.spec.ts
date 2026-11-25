@@ -63,7 +63,7 @@ test.describe('Subscribe button destinations @p0 @verticals @billing', () => {
             const subscribe = page.getByTestId('subscribe-button');
             await expect(subscribe).toHaveAttribute('data-destination', 'publish');
             await subscribe.getByRole('link').click();
-            await expect(page).toHaveURL(/\/es\/publicar\/$/);
+            await expect(page).toHaveURL(/\/es\/publicar\/\?desde=planes$/);
             await expect(page.getByText(/prueba gratis.*arranca.*public/i)).toBeVisible();
 
             await page.context().clearCookies();

@@ -130,9 +130,13 @@ const pricingHref = buildUrl({ locale, path: PRICING_PAGE_PATH_BY_AUDIENCE.touri
 
     <MarketingHero
         tagline={t('pricing.tourist.hero.tagline')}
-        titleAccent={t('pricing.tourist.hero.title')}
+        titleMain={t('pricing.tourist.hero.titleMain')}
+        titleAccent={t('pricing.tourist.hero.titleAccent')}
         subtitle={t('pricing.tourist.hero.desc')}
     >
+        <MapIcon slot="icon-1" size="md" weight="duotone" />
+        <StarIcon slot="icon-2" size="md" weight="duotone" />
+        <BuildingsIcon slot="icon-3" size="md" weight="duotone" />
         <GradientButton
             slot="cta"
             href={pricingHref}
@@ -143,8 +147,7 @@ const pricingHref = buildUrl({ locale, path: PRICING_PAGE_PATH_BY_AUDIENCE.touri
         />
     </MarketingHero>
 
-    {/* `auto-fit` and not a fixed 3: this audience has FIVE benefits, and three
-        columns would leave the second row with a hole beside the last two. */}
+    {/* The auto-fit layout centers the final two benefits below the first three. */}
     <BenefitsSection
         tagline={t('benefits.tourist.tagline')}
         title={t('benefits.tourist.title')}

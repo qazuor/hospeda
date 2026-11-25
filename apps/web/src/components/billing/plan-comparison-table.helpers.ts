@@ -119,6 +119,17 @@ export function formatPriceArs(input: {
     }
 }
 
+/** Resolve annual display from the catalog, retaining monthly billing when no annual price exists. */
+export function getComparisonAnnualPrice({
+    plan
+}: {
+    readonly plan: Pick<PublicPlanData, 'monthlyPriceArs' | 'annualPriceArs'>;
+}): { readonly cents: number; readonly period: 'month' | 'year' } {
+    return plan.annualPriceArs !== null && plan.annualPriceArs > 0
+        ? { cents: plan.annualPriceArs, period: 'year' }
+        : { cents: plan.monthlyPriceArs, period: 'month' };
+}
+
 /**
  * HOS-2599: how many plan columns fit a 390px phone next to the sticky label column without
  * scrolling sideways. 366px of content (390 - 2 * 12px gutter) minus the 150px label leaves

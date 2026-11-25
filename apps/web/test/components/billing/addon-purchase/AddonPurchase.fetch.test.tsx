@@ -31,7 +31,8 @@ describe('AC:B10:11 browser API composition', () => {
                             scopeType: 'LISTING',
                             validity: 'WHILE_SUBSCRIPTION_ALIVE',
                             validityDays: null,
-                            freeUnderGrantVerticals: []
+                            freeUnderGrantVerticals: [],
+                            grantedKeys: ['featured_listing']
                         }
                     ]
                 });

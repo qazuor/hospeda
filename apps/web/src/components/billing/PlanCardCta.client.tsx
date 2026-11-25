@@ -1,5 +1,6 @@
 import type { PricingSituationVertical } from '@repo/schemas';
 import { useEffect, useMemo, useState } from 'react';
+import { StatusPill } from '@/components/account/ui/StatusPill';
 import { billingSubscriptionApi } from '@/lib/api/endpoints-protected';
 import { totalCourtesyMonths } from '@/lib/billing/my-subscription-notices';
 import {
@@ -156,6 +157,7 @@ export function PlanCardCta({
             data-kind={view.kind}
             data-plan-version-id={planVersionId}
             data-loaded={result !== null}
+            data-has-both-cycles={billingOptions.annual !== null}
             className={styles.root}
         >
             {view.kind === 'checkout' &&
@@ -163,6 +165,7 @@ export function PlanCardCta({
                     <a
                         key={cycle}
                         href={href}
+                        data-cycle={cycle}
                         className={cycle === 'monthly' ? styles.primary : styles.secondary}
                     >
                         {t(
@@ -186,7 +189,12 @@ export function PlanCardCta({
                 </>
             )}
             {view.kind === 'current' && (
-                <span>{t('publish.subscribe.currentPlan', undefined, { vertical: label })}</span>
+                <StatusPill
+                    tone="success"
+                    className={styles.currentPlan}
+                >
+                    {t('publish.subscribe.currentPlan', undefined, { vertical: label })}
+                </StatusPill>
             )}
             {blockedStatus === 'PAUSED' && (
                 <p data-testid="pricing-plan-change-paused">
@@ -215,16 +223,27 @@ export function PlanCardCta({
                         type="button"
                         className={styles.secondary}
                         data-billing-option-id={id}
+                        data-cycle={id === billingOptions.monthly ? 'monthly' : 'annual'}
                         onClick={() => {
                             setSelectedOptionId(id);
                             void prefillPayerEmail();
                         }}
                     >
-                        {t('account.subscription.mine.planChange.pricingOpen')} ·{' '}
-                        {t(
-                            SIGNUP_CYCLE_LABEL_KEY[
-                                id === billingOptions.monthly ? 'monthly' : 'annual'
-                            ]
+                        {view.kind === 'current' ? (
+                            t(
+                                id === billingOptions.monthly
+                                    ? 'publish.subscribe.switchToMonthly'
+                                    : 'publish.subscribe.switchToAnnual'
+                            )
+                        ) : (
+                            <>
+                                {t('account.subscription.mine.planChange.pricingOpen')} ·{' '}
+                                {t(
+                                    SIGNUP_CYCLE_LABEL_KEY[
+                                        id === billingOptions.monthly ? 'monthly' : 'annual'
+                                    ]
+                                )}
+                            </>
                         )}
                     </button>
                 ))}
