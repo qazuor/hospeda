@@ -24,6 +24,7 @@ import { BuildingIcon, CompassIcon, PostIcon, StarIcon, VenueIcon, WrenchIcon } 
 import { type BusinessVerticalId, PermissionEnum } from '@repo/schemas';
 import type { ComponentType } from 'react';
 import {
+    ADDONS_NAV_ITEM_ID,
     AI_ASSISTANTS_NAV_ITEM_ID,
     EXPERIENCE_LISTINGS_GROUP_ID,
     type NavGroup,
@@ -44,6 +45,7 @@ export const PARTNER_GROUP_ID = 'partner';
 export const PROFILE_NAV_ITEM_IDS = [
     'editProfile',
     'subscription',
+    ADDONS_NAV_ITEM_ID,
     'preferences',
     'newsletter',
     AI_ASSISTANTS_NAV_ITEM_ID

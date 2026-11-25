@@ -39,7 +39,9 @@ describe('publicar/index.astro — the existing-host redirect is gone (D-3, AC-7
         // to a list — otherwise they cannot create a second property from the
         // menu at all, which is what this whole issue is about.
         expect(src).not.toContain("path: 'mi-cuenta/propiedades' })");
-        expect(src).not.toContain('Astro.redirect');
+        // D10 permits only the shared flow's single-draft editor redirect.
+        expect(src.match(/Astro\.redirect\([^)]*\)/g)).toEqual(['Astro.redirect(redirectUrl)']);
+        expect(src).toContain('if (redirectUrl) return Astro.redirect(redirectUrl)');
     });
 
     it('no longer fetches the owned-accommodation count (R-3)', () => {

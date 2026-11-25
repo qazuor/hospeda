@@ -8,12 +8,15 @@
 import { describe, expect, it } from 'vitest';
 import { baseValue, parseFile } from '../../helpers/css-contract';
 
-const rules = parseFile({ path: 'components/billing/PlanComparisonTable.astro' });
+const rules = [
+    ...parseFile({ path: 'components/billing/PlanComparisonTable.astro' }),
+    ...parseFile({ path: 'components/billing/PlanComparisonPrice.astro' })
+];
 
 const INK = [
     ['.comparison-table__icon--included', 'var(--hospeda-forest-link)'],
     ['.comparison-table__limit-value--unlimited', 'var(--hospeda-forest-link)'],
-    ['.comparison-table__plan-price', 'var(--brand-accent-text)'],
+    ['.comparison-price__amount', 'var(--brand-accent-text)'],
     ['.comparison-table__badge--upcoming', 'var(--core-foreground)']
 ] as const;
 

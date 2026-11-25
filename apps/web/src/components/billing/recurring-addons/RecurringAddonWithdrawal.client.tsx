@@ -1,3 +1,4 @@
+import { PackageIcon } from '@repo/icons';
 import type { OwnerRecurringAddon } from '@repo/schemas';
 import {
     AddonWithdrawalResponseSchema,
@@ -5,11 +6,17 @@ import {
     OwnerRecurringAddonsResponseSchema
 } from '@repo/schemas';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { Button } from '@/components/account/ui/Button';
+import { DataList } from '@/components/account/ui/DataList';
+import { EmptyState } from '@/components/account/ui/EmptyState';
+import { LinkButton } from '@/components/account/ui/LinkButton';
+import { ListRow } from '@/components/account/ui/ListRow';
 import { billingAddonApi } from '@/lib/api/endpoints-protected-addons';
 import { translateApiError, visibleApiMessage } from '@/lib/api-errors';
 import { getAddonName } from '@/lib/billing/addon-purchase';
 import { formatPrice } from '@/lib/format-utils';
 import { createTranslations, type SupportedLocale } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
 import styles from './RecurringAddonWithdrawal.module.css';
 
 /** Owner controls for live recurring addons. All personal data loads in this island. */
@@ -65,7 +72,8 @@ export function RecurringAddonWithdrawal({
                 if (!active) return;
                 if (result.ok) {
                     const parsed = OwnerRecurringAddonsResponseSchema.safeParse(result.data);
-                    if (parsed.success) setItems(parsed.data.items);
+                    if (parsed.success)
+                        setItems(parsed.data.items.filter((item) => item.status === 'ACTIVE'));
                     else setError(t('billing.addonPurchase.recurringAddons.loadError'));
                 } else
                     setError(
@@ -136,73 +144,116 @@ export function RecurringAddonWithdrawal({
                 </p>
             )}
             {!loading && !error && items.length === 0 && (
-                <p>{t('billing.addonPurchase.recurringAddons.empty')}</p>
+                <EmptyState
+                    icon={
+                        <PackageIcon
+                            size={28}
+                            aria-hidden={true}
+                        />
+                    }
+                    title={t('billing.addonPurchase.recurringAddons.empty')}
+                    action={
+                        <LinkButton href={buildUrl({ locale, path: 'mi-cuenta/suscripcion' })}>
+                            {t('billing.addonPurchase.recurringAddons.viewSubscriptions')}
+                        </LinkButton>
+                    }
+                />
             )}
-            {items.map((item) => (
-                <div
-                    className={styles.row}
-                    data-testid={`recurring-addon-${item.addonInstanceId}`}
-                    key={item.addonInstanceId}
-                >
-                    <strong>
-                        {getAddonName({
-                            offer: { slug: item.slug, name: item.name, description: null },
-                            t
-                        })}
-                    </strong>
-                    <span>
-                        {formatPrice({ amount: item.price / 100, currency: item.currency, locale })}{' '}
-                        · {t(`billing.addonPurchase.cycle.${item.cycle}`)}
-                    </span>
-                    <span>
-                        {item.targetName ?? t('billing.addonPurchase.recurringAddons.noListing')}
-                    </span>
-                    {confirmId === item.addonInstanceId ? (
-                        <div
-                            className={styles.confirm}
-                            data-testid="recurring-addon-withdraw-confirm"
-                        >
-                            <p>{t('billing.addonPurchase.recurringAddons.confirmText')}</p>
-                            <button
-                                ref={confirmButtonRef}
-                                type="button"
-                                disabled={busy}
-                                onClick={() =>
-                                    void confirmWithdrawal({ instanceId: item.addonInstanceId })
-                                }
-                            >
-                                {t('billing.addonPurchase.recurringAddons.confirm')}
-                            </button>
-                            <button
-                                type="button"
-                                disabled={busy}
-                                onClick={() => {
-                                    restoreTriggerFocusRef.current = true;
-                                    setConfirmId(null);
-                                }}
-                            >
-                                {t('billing.addonPurchase.recurringAddons.cancel')}
-                            </button>
-                        </div>
-                    ) : (
-                        <button
-                            ref={
-                                item.addonInstanceId === focusReturnIdRef.current
-                                    ? triggerRef
-                                    : undefined
+            {items.length > 0 && (
+                <DataList label={t('billing.addonPurchase.recurringAddons.title')}>
+                    {items.map((item) => (
+                        <ListRow
+                            key={item.addonInstanceId}
+                            rowId={item.addonInstanceId}
+                            title={
+                                <span data-testid={`recurring-addon-${item.addonInstanceId}`}>
+                                    {getAddonName({
+                                        offer: {
+                                            slug: item.slug,
+                                            name: item.name,
+                                            description: null
+                                        },
+                                        t
+                                    })}
+                                </span>
                             }
-                            type="button"
-                            data-testid={`recurring-addon-withdraw-${item.addonInstanceId}`}
-                            onClick={() => {
-                                focusReturnIdRef.current = item.addonInstanceId;
-                                setConfirmId(item.addonInstanceId);
-                            }}
-                        >
-                            {t('billing.addonPurchase.recurringAddons.withdraw')}
-                        </button>
-                    )}
-                </div>
-            ))}
+                            meta={
+                                <span>
+                                    {formatPrice({
+                                        amount: item.price / 100,
+                                        currency: item.currency,
+                                        locale
+                                    })}{' '}
+                                    · {t(`billing.addonPurchase.cycle.${item.cycle}`)}
+                                </span>
+                            }
+                            description={
+                                <span>
+                                    {item.targetName ??
+                                        t('billing.addonPurchase.recurringAddons.noListing')}
+                                </span>
+                            }
+                            actions={[
+                                confirmId === item.addonInstanceId ? (
+                                    <div
+                                        key="confirm"
+                                        className={styles.confirm}
+                                        data-testid="recurring-addon-withdraw-confirm"
+                                    >
+                                        <p>
+                                            {t('billing.addonPurchase.recurringAddons.confirmText')}
+                                        </p>
+                                        <Button
+                                            variant="secondary"
+                                            className={styles.withdrawButton}
+                                            ref={confirmButtonRef}
+                                            type="button"
+                                            disabled={busy}
+                                            onClick={() =>
+                                                void confirmWithdrawal({
+                                                    instanceId: item.addonInstanceId
+                                                })
+                                            }
+                                        >
+                                            {t('billing.addonPurchase.recurringAddons.confirm')}
+                                        </Button>
+                                        <Button
+                                            variant="secondary"
+                                            type="button"
+                                            disabled={busy}
+                                            onClick={() => {
+                                                restoreTriggerFocusRef.current = true;
+                                                setConfirmId(null);
+                                            }}
+                                        >
+                                            {t('billing.addonPurchase.recurringAddons.cancel')}
+                                        </Button>
+                                    </div>
+                                ) : (
+                                    <Button
+                                        key="withdraw"
+                                        variant="secondary"
+                                        className={styles.withdrawButton}
+                                        ref={
+                                            item.addonInstanceId === focusReturnIdRef.current
+                                                ? triggerRef
+                                                : undefined
+                                        }
+                                        type="button"
+                                        data-testid={`recurring-addon-withdraw-${item.addonInstanceId}`}
+                                        onClick={() => {
+                                            focusReturnIdRef.current = item.addonInstanceId;
+                                            setConfirmId(item.addonInstanceId);
+                                        }}
+                                    >
+                                        {t('billing.addonPurchase.recurringAddons.withdraw')}
+                                    </Button>
+                                )
+                            ]}
+                        />
+                    ))}
+                </DataList>
+            )}
         </div>
     );
 }

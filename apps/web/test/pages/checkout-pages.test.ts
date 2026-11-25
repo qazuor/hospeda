@@ -9,10 +9,18 @@ const indexSrc = readFileSync(
 );
 
 describe('signup checkout page — B3 UI (B3.md:1045-1053)', () => {
+    it('uses the validated selected vertical for the summary and plans return link', () => {
+        expect(indexSrc).toContain('SignupNoticeResponseSchema.safeParse(result.data)');
+        expect(indexSrc).toContain('vertical = parsed.data.vertical');
+        expect(indexSrc).toContain('plansPathForVertical({ vertical })');
+        expect(indexSrc).toContain('vertical={vertical}');
+    });
     it('keeps the role-aware redirect for a missing or invalid option', () => {
         expect(indexSrc).toContain('parseSignupOptionId({ search: Astro.url.search })');
         expect(indexSrc).toContain('if (!optionId)');
-        expect(indexSrc).toContain('resolveSubscriptionPlansPath({ roles: user?.roles ?? null })');
+        expect(indexSrc).toContain(
+            'resolveSubscriptionPlansPath({ permissions: user?.permissions ?? [] })'
+        );
         expect(indexSrc).toContain('status: 302');
     });
 

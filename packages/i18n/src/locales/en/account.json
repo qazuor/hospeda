@@ -65,7 +65,8 @@
         },
         "inbox": {
             "title": "Your inquiries",
-            "body": "Follow up on your conversations with hosts."
+            "body": "Follow up on your conversations with hosts.",
+            "ownerBody": "Receive and reply to travelers' inquiries about your venues and experiences."
         },
         "greetingHost": {
             "title": "Welcome to your hosting dashboard",
@@ -143,6 +144,14 @@
     },
     "sections": "Account sections",
     "nav": {
+        "zoneLink": {
+            "host": "Go to Accommodations",
+            "venues": "Go to Food & nightlife",
+            "experiences": "Go to Experiences",
+            "editorial": "Go to the editorial area",
+            "partner": "Go to my partner profile",
+            "provider": "Go to my provider profile"
+        },
         "groupAccount": "My account",
         "groupTourist": "Traveler area",
         "groupHost": "Host area",
@@ -205,19 +214,18 @@
                 },
                 "experience": {
                     "title": "Experiences",
-                    "description": "Do you offer tours, activities, or experiences for travelers? Create your account, add your experience's details and publish it from your dashboard.",
+                    "description": "Manage your tours, activities and experiences for travelers from your dashboard.",
                     "cta": "List your experience"
                 },
                 "venue": {
                     "title": "Food & nightlife",
-                    "description": "Add your venue to Hospeda, for food or nightlife. Create your account, add your venue's details and publish it from your dashboard.",
+                    "description": "Manage your food or nightlife venue's details and publication from your dashboard.",
                     "cta": "List your venue"
                 }
             }
         },
         "partner": {
             "title": "Become a partner",
-            "titleStateful": "Add another partnership",
             "subtitle": "Become a Hospeda partner: showcase your brand or services to thousands of travelers and hosts.",
             "options": {
                 "sponsor": {
@@ -2018,6 +2026,12 @@
     },
     "description": "Gestioná tu cuenta en Hospeda",
     "menu": "Account menu",
+    "sheet": {
+        "title": "Account menu",
+        "signOut": "Sign out",
+        "signingOut": "Signing out…",
+        "signOutError": "We could not sign you out. Please try again."
+    },
     "title": "Mi cuenta",
     "changePassword": {
         "title": "Change password",

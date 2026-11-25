@@ -1,11 +1,7 @@
-/* AccountBar.module.css — the mobile account bar (HOS-2413 T-021, D3).
-   A sticky 48px bar under the header. It only exists below 64rem: the island
-   hydrates with client:media and the shell hides it from 64rem. */
-
-.sentinel {
-    block-size: 1px;
-    margin-block-end: -1px;
-}
+/* AccountBar.module.css — the mobile account crumb (HOS-2413 T-021).
+   A sticky 48px bar under the header that names the current page. It only
+   exists below 64rem: the shell hides it from 64rem. Account navigation is the
+   header avatar's sheet (HOS-2622 D2); breadcrumbs proper come later (HOS-2623). */
 
 .bar {
     position: sticky;
@@ -14,42 +10,27 @@
     z-index: 10;
     display: flex;
     align-items: center;
+    gap: var(--space-2);
     block-size: 3rem;
     padding-inline: var(--space-4);
+    font: var(--app-ui);
     background-color: var(--core-card);
     border-block-end: 1px solid var(--border);
 }
 
-.stuck {
-    box-shadow: var(--shadow-sticky);
+.link {
+    color: var(--brand-primary);
+    text-decoration: none;
 }
 
-.toggle {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-    inline-size: 100%;
-    min-block-size: var(--control-h-md);
-    padding: 0;
-    border: 0;
-    background: transparent;
-    color: var(--core-foreground);
-    font: var(--app-control);
-    text-align: start;
-    cursor: pointer;
-}
-
-.toggle:focus-visible {
+.link:focus-visible {
     outline: 2px solid var(--focus-ring);
     outline-offset: 2px;
-    border-radius: var(--radius-control);
 }
 
 .current {
-    color: var(--core-muted-foreground);
-    font: var(--app-ui);
-}
-
-.drawerBody {
-    padding-block-end: var(--space-4);
+    overflow: hidden;
+    color: var(--core-foreground);
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }

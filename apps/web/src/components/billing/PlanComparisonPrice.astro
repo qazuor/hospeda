@@ -1,0 +1,45 @@
+---
+/** Catalog-backed comparison prices; monthly is the no-script default. */
+import { formatPriceArs, getComparisonAnnualPrice } from './plan-comparison-table.helpers';
+import type { PublicPlanData } from '@/lib/billing/fetch-plans';
+import { createTranslations, type SupportedLocale } from '@/lib/i18n';
+
+interface Props {
+    readonly plan: PublicPlanData;
+    readonly intlLocale: string;
+    readonly locale: SupportedLocale;
+}
+
+const { plan, intlLocale, locale } = Astro.props;
+const { t } = createTranslations(locale);
+const annual = getComparisonAnnualPrice({ plan });
+const freeLabel = t('pricing.free');
+---
+
+<span class="comparison-price comparison-price--monthly">
+    <span class="comparison-price__amount">{formatPriceArs({ cents: plan.monthlyPriceArs, intlLocale, freeLabel })}</span>
+    {plan.monthlyPriceArs > 0 && <span class="comparison-price__period">{t('pricing.period.month')}</span>}
+</span>
+{plan.monthlyPriceArs > 0 && <span class="comparison-price comparison-price--annual">
+    <span class="comparison-price__amount">{formatPriceArs({ cents: annual.cents, intlLocale, freeLabel })}</span>
+    <span class="comparison-price__period">{t(annual.period === 'year' ? 'pricing.period.year' : 'pricing.period.month')}</span>
+</span>}
+
+<style>
+    .comparison-price--annual { display: none; }
+    :global(html[data-pricing-billing='annual']) .comparison-price--monthly:has(+ .comparison-price--annual) { display: none; }
+    :global(html[data-pricing-billing='annual']) .comparison-price--annual { display: inline; }
+    .comparison-price__amount {
+        display: inline-block;
+        font-family: var(--font-heading);
+        font-weight: 700;
+        font-size: var(--text-lg);
+        color: var(--brand-accent-text);
+    }
+    .comparison-price__period {
+        font-family: var(--font-sans);
+        font-size: var(--text-caption);
+        color: var(--core-muted-foreground);
+        margin-left: var(--space-1);
+    }
+</style>

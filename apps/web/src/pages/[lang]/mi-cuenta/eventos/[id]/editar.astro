@@ -34,7 +34,11 @@ import { hasEventsNavAccess } from '@/lib/nav-gating';
 import { resolveAuthoredEditorItem } from '@/lib/editor/resolve-authored-editor-item';
 import { buildUrl } from '@/lib/urls';
 
+import { guardPublisherArea } from '@/lib/account/publisher-access';
+
 export const prerender = false;
+const denied = guardPublisherArea({ astro: Astro, area: 'eventEdit' });
+if (denied) return denied;
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
@@ -46,7 +50,7 @@ if (!user) {
     return Astro.redirect(buildLoginRedirect({ locale, currentUrl: Astro.url.pathname + Astro.url.search }));
 }
 
-const canManageEvents = hasEventsNavAccess({ roles: user.roles });
+const canManageEvents = hasEventsNavAccess({ permissions: user.permissions });
 
 let event: ReturnType<typeof transformEventEditDetail> | null = null;
 

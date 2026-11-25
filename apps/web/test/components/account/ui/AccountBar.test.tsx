@@ -1,252 +1,59 @@
-/**
- * Tests for AccountBar (HOS-2413 T-021).
- */
-
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
-import {
-    AccountBar,
-    AccountSidebar,
-    buildSidebarView
-} from '../../../../src/components/account/ui';
+import { render, screen } from '@testing-library/react';
+import { describe, expect, it } from 'vitest';
+import { AccountBar } from '../../../../src/components/account/ui/AccountBar';
+import { buildSidebarView } from '../../../../src/components/account/ui/account-sidebar-view';
 import { buildAccountNavModel } from '../../../../src/lib/account-nav-model';
 
-vi.mock('astro:transitions/client', () => ({ navigate: () => Promise.resolve() }));
-
-vi.mock('../../../../src/components/host/host-trades/BenefitUsagesCountPill.client', () => ({
-    BenefitUsagesCountPill: () => <span data-testid="benefit-pill">1</span>
-}));
-
-const model = buildAccountNavModel({
-    roles: ['HOST'],
-    ownsHostTradeListing: false,
-    mcpEnabled: false,
-    activeSection: 'editar'
-});
-const view = buildSidebarView({ model, locale: 'es' });
-const areasView = buildSidebarView({
-    model: buildAccountNavModel({
-        roles: ['HOST'],
-        ownsHostTradeListing: false,
-        mcpEnabled: false,
-        activeSection: 'propiedades'
-    }),
-    locale: 'es'
-});
-
-/** Hrefs of every link inside a node, in order. */
-const hrefsIn = (node: ParentNode) =>
-    [...node.querySelectorAll('a')].map((anchor) => anchor.getAttribute('href'));
-
-describe('AccountBar', () => {
-    it('shows the menu label and the current section', () => {
-        render(
-            <AccountBar
-                view={view}
-                locale="es"
-            />
-        );
-        const toggle = screen.getByRole('button', { name: /Mi cuenta/ });
-        expect(toggle).toHaveTextContent(view.activeLabel);
-        expect(toggle).toHaveAttribute('aria-expanded', 'false');
+function viewFor(activeSection: string) {
+    return buildSidebarView({
+        model: buildAccountNavModel({
+            roles: null,
+            permissions: ['accommodation.create'],
+            ownsHostTradeListing: false,
+            mcpEnabled: false,
+            activeSection
+        }),
+        locale: 'es'
     });
+}
 
-    it('names the page when no menu entry does, and never repeats «Mi cuenta» (HOS-2610 F-36)', () => {
-        const noEntryView = buildSidebarView({
-            model: buildAccountNavModel({
-                roles: ['HOST'],
-                ownsHostTradeListing: false,
-                mcpEnabled: false,
-                activeSection: 'no-such-section'
-            }),
-            locale: 'es'
-        });
-        const { unmount } = render(
-            <AccountBar
-                view={noEntryView}
-                locale="es"
-                pageTitle="Publicá tu alojamiento"
-            />
-        );
-        expect(screen.getByRole('button', { name: /Mi cuenta/ })).toHaveTextContent(
-            '/ Publicá tu alojamiento'
-        );
-        unmount();
-        render(
-            <AccountBar
-                view={noEntryView}
-                locale="es"
-                pageTitle="Mi cuenta"
-            />
-        );
-        expect(screen.getByRole('button', { name: /Mi cuenta/ })).not.toHaveTextContent('/');
-    });
-
-    it('opens the drawer, closes on Escape and returns focus to the button', async () => {
-        const user = userEvent.setup();
-        render(
-            <AccountBar
-                view={view}
-                locale="es"
-            />
-        );
-        const toggle = screen.getByRole('button', { name: /Mi cuenta/ });
-        toggle.focus();
-        await user.click(toggle);
-        expect(await screen.findByRole('dialog')).toBeInTheDocument();
-        expect(toggle).toHaveAttribute('aria-expanded', 'true');
-        fireEvent.keyDown(document, { key: 'Escape' });
-        await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
-        expect(toggle).toHaveFocus();
-    });
-
-    it('closes when a link inside the drawer is chosen', async () => {
-        const user = userEvent.setup();
-        render(
-            <AccountBar
-                view={view}
-                locale="es"
-            />
-        );
-        await user.click(screen.getByRole('button', { name: /Mi cuenta/ }));
-        const dialog = await screen.findByRole('dialog');
-        const link = dialog.querySelector('a') as HTMLAnchorElement;
-        await user.click(link);
-        await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
-    });
-
-    it.each([
-        ['a personal page', view],
-        ['an area page', areasView]
-    ])('lists the same links in the drawer as the sidebar does on %s (HOS-2551)', async (_label, pageView) => {
-        const user = userEvent.setup();
+describe('AccountBar minimal crumb', () => {
+    it('links to the account root and renders the current section as plain text, without controls', () => {
         const { container } = render(
-            <>
-                <AccountSidebar
-                    view={pageView}
-                    locale="es"
-                />
-                <AccountBar
-                    view={pageView}
-                    locale="es"
-                />
-            </>
+            <AccountBar
+                view={viewFor('editar')}
+                locale="es"
+            />
         );
-        await user.click(screen.getByRole('button', { name: /Mi cuenta/ }));
-        const dialog = await screen.findByRole('dialog');
-        const sidebar = container.querySelectorAll('[data-account-sidebar]')[0] as Element;
-        const drawerLinks = hrefsIn(dialog);
-        expect(drawerLinks).toEqual(hrefsIn(sidebar));
-        expect(drawerLinks.length).toBeGreaterThan(0);
+        expect(screen.getByRole('link', { name: 'Mi cuenta' })).toHaveAttribute(
+            'href',
+            '/es/mi-cuenta/'
+        );
+        expect(container).toHaveTextContent('Mi cuenta / Editar perfil');
+        expect(screen.queryByRole('button')).toBeNull();
+        expect(screen.queryByRole('dialog')).toBeNull();
+        expect(container.querySelectorAll('a')).toHaveLength(1);
     });
 
-    it('shows only the personal zone in the drawer on a personal page (HOS-2551)', async () => {
-        const user = userEvent.setup();
-        render(
+    it.each(['Mi cuenta', undefined])('does not repeat the account root (%s)', (pageTitle) => {
+        const { container } = render(
             <AccountBar
-                view={view}
+                view={viewFor('mi-cuenta')}
                 locale="es"
+                pageTitle={pageTitle}
             />
         );
-        await user.click(screen.getByRole('button', { name: /Mi cuenta/ }));
-        const dialog = await screen.findByRole('dialog');
-        expect(dialog.querySelector('[data-back-link]')).toBeNull();
-        expect(hrefsIn(dialog)).toContain('/es/mi-cuenta/favoritos/');
-        expect(hrefsIn(dialog)).not.toContain('/es/mi-cuenta/propiedades/');
+        expect(container.textContent).toBe('Mi cuenta');
     });
 
-    it('shows «← Mi cuenta» and only the verticals in the drawer on a business page (HOS-2551)', async () => {
-        const user = userEvent.setup();
-        render(
+    it('uses the page title when the registry has no active entry', () => {
+        const { container } = render(
             <AccountBar
-                view={areasView}
+                view={viewFor('unknown')}
                 locale="es"
+                pageTitle="New listing"
             />
         );
-        await user.click(screen.getByRole('button', { name: /Mi cuenta/ }));
-        const dialog = await screen.findByRole('dialog');
-        expect(dialog.querySelector('[data-back-link]')).toHaveAttribute('href', '/es/mi-cuenta/');
-        expect(hrefsIn(dialog)).toContain('/es/mi-cuenta/propiedades/');
-        expect(hrefsIn(dialog)).not.toContain('/es/mi-cuenta/editar/');
-    });
-
-    it('points aria-controls at the drawer only while it is open', async () => {
-        const user = userEvent.setup();
-        render(
-            <AccountBar
-                view={view}
-                locale="es"
-            />
-        );
-        const toggle = screen.getByRole('button', { name: /Mi cuenta/ });
-        expect(toggle).not.toHaveAttribute('aria-controls');
-        await user.click(toggle);
-        const dialog = await screen.findByRole('dialog');
-        const target = toggle.getAttribute('aria-controls') ?? '';
-        expect(dialog.querySelector(`#${target}`)).not.toBeNull();
-    });
-
-    it('gives the drawer copy the icons and the count pill of the desktop sidebar', async () => {
-        const user = userEvent.setup();
-        const { unmount } = render(
-            <AccountBar
-                view={areasView}
-                locale="es"
-            />
-        );
-        await user.click(screen.getByRole('button', { name: /Mi cuenta/ }));
-        const dialog = await screen.findByRole('dialog');
-        const firstEntry = dialog.querySelector('li a') as HTMLElement;
-        expect(firstEntry.querySelector('svg')).not.toBeNull();
-        expect(screen.getByTestId('benefit-pill').closest('a')).not.toBeNull();
-        unmount();
-
-        // HOS-2550: «Qué hay de nuevo» and «Ayuda» are header icons now, so
-        // the personal drawer lists neither (the header keeps them on mobile).
-        render(
-            <AccountBar
-                view={view}
-                locale="es"
-            />
-        );
-        await user.click(screen.getByRole('button', { name: /Mi cuenta/ }));
-        const personal = await screen.findByRole('dialog');
-        const hrefs = [...personal.querySelectorAll('a')].map((a) => a.getAttribute('href'));
-        expect(hrefs.some((href) => href?.includes('/mi-cuenta/novedades'))).toBe(false);
-        expect(hrefs.some((href) => href?.includes('/mi-cuenta/ayuda'))).toBe(false);
-    });
-
-    it('lists the AI-assistants entry in the drawer for a client, and none for a tourist (HOS-2562)', async () => {
-        const user = userEvent.setup();
-        const drawerHrefs = async () => {
-            await user.click(screen.getByRole('button', { name: /Mi cuenta/ }));
-            return hrefsIn(await screen.findByRole('dialog'));
-        };
-        const viewFor = (input: { readonly roles: string[]; readonly permissions: string[] }) =>
-            buildSidebarView({
-                model: buildAccountNavModel({
-                    ...input,
-                    ownsHostTradeListing: false,
-                    mcpEnabled: true,
-                    activeSection: 'editar'
-                }),
-                locale: 'es'
-            });
-        const client = render(
-            <AccountBar
-                view={viewFor({ roles: ['HOST'], permissions: ['accommodation.create'] })}
-                locale="es"
-            />
-        );
-        expect(await drawerHrefs()).toContain('/es/mi-cuenta/asistentes-ia/');
-        client.unmount();
-        render(
-            <AccountBar
-                view={viewFor({ roles: ['USER'], permissions: [] })}
-                locale="es"
-            />
-        );
-        expect(await drawerHrefs()).not.toContain('/es/mi-cuenta/asistentes-ia/');
+        expect(container).toHaveTextContent('Mi cuenta / New listing');
     });
 });

@@ -1,5 +1,5 @@
 {
-  "contentHash": "9ee672d3f9041bb8cd81f026e114acd75f2ca2f1cc37952083e7cd7be9179e34",
+  "contentHash": "f9e2372bc5788ec6c22a754e414741619a29d373ff6f5a8e323e4873834ce6d4",
   "locales": {
     "es": [
       {
@@ -9,7 +9,8 @@
           "venue"
         ],
         "covers": [
-          "entitlement:featured_listing"
+          "entitlement:featured_listing",
+          "page:mi-cuenta/suscripcion"
         ],
         "destinations": [
           {
@@ -41,26 +42,26 @@
           "delete-listing",
           "pause-resume"
         ],
-        "reviewedAt": "2026-11-24",
+        "reviewedAt": "2026-11-25",
         "sections": {
-          "canDo": "Comprar un complemento y dar de baja los recurrentes desde {{link:addons|Complementos}}.",
+          "canDo": "Comprar un complemento desde la sección de tu categoría en {{link:subscription|Suscripción}} y consultar o dar de baja los recurrentes desde {{link:addons|Complementos}}.",
           "expect": "- El resumen muestra el importe y la frecuencia antes de confirmar.\n- Si tu beneficio incluye el complemento, aparece «Gratis por tu beneficio».\n- Dar de baja un destaque recurrente corta el cobro y lo apaga ese mismo día.",
           "howTo": {
             "after": "",
             "steps": [
-              "Entrá a «Suscripción» y abrí la pestaña «Complementos». Si todavía no tenés ninguna suscripción, la página te pide elegir un plan primero.",
-              "Elegí un complemento de la lista.",
+              "Entrá a «Suscripción» y buscá la sección de complementos de la categoría que tiene una suscripción activa. Si todavía no tenés ninguna suscripción, elegí un plan primero: la pestaña «Complementos» no aparece y su dirección te devuelve a «Mi cuenta».",
+              "Elegí un complemento de la lista de esa categoría. Podés filtrar por categoría de complemento; cada tarjeta muestra su precio y los que ya tenés llevan «Activo».",
               "Elegí la ficha (o la suscripción) a la que se aplica.",
               "Revisá el resumen: muestra el importe y la frecuencia. Si tu beneficio lo incluye, aparece «Gratis por tu beneficio» y podés elegirlo sin pagar.",
-              "Ingresá el correo con el que pagás en Mercado Pago y tocá «Confirmar compra».",
-              "Los complementos recurrentes (destaques) se dan de baja en la misma página, en «Tus destaques recurrentes»: al confirmar, se corta el cobro y el destaque se apaga hoy, sin reembolso.",
+              "Si el complemento es recurrente y pago, ingresá el correo con el que pagás en Mercado Pago. Tocá «Confirmar compra»; los de pago único no piden ese correo.",
+              "Consultá los complementos recurrentes en la pestaña «Complementos», en «Tus complementos activos». Para dar uno de baja, confirmá la acción: se corta el cobro y el complemento se desactiva hoy, sin reembolso. Si no tenés complementos activos, el estado vacío te lleva a «Suscripción» para comprarlos.",
               "Si ves «Compras pausadas», por ahora no se pueden comprar complementos: probá más tarde."
             ]
           },
           "notExpect": "- Un reembolso al dar de baja un complemento recurrente.\n- Conservar los complementos de una ficha que eliminás: mirá {{article:delete-listing|qué se pierde al eliminar}}.",
           "troubleshooting": "### Dice «Compras pausadas» {#compras-pausadas}\n\nPor ahora no se pueden comprar complementos. Probá más tarde.\n\n### Quiero más de lo que da mi plan {#mas-que-el-plan}\n\nUn complemento suma algo puntual; para cambiar lo que incluye tu plan, mirá {{article:change-plan|cómo cambiar tu plan}}."
         },
-        "summary": "Cómo comprar un complemento para una ficha y cómo dar de baja uno recurrente.",
+        "summary": "Cómo comprar un complemento desde tu suscripción y cómo dar de baja uno recurrente.",
         "title": "Comprar o dar de baja un complemento",
         "translation": null,
         "verticals": [
@@ -192,7 +193,7 @@
           "publish-requirements",
           "ai-assistants"
         ],
-        "reviewedAt": "2026-11-24",
+        "reviewedAt": "2026-11-25",
         "sections": {
           "canDo": "Tildar los servicios que ofrecés en {{link:section:accommodation:servicios|Servicios y comodidades}} (alojamientos) o en {{link:section:venue:servicios|Servicios del comercio}} y {{link:section:experience:servicios|Servicios de la experiencia}}.",
           "expect": "- En alojamientos el catálogo está agrupado por categorías y cada comodidad tiene su detalle.\n- Un asistente agrega o quita servicios de una categoría por vez (mirá {{article:ai-assistants|cómo conectarlo}}).",
@@ -262,7 +263,7 @@
           "provider-directory",
           "benefit-usage-provider"
         ],
-        "reviewedAt": "2026-11-23",
+        "reviewedAt": "2026-11-25",
         "sections": {
           "canDo": "Registrar un uso desde el proveedor en el {{link:providerDirectory|directorio}} y responder los que te registran en {{link:benefitUsages|Usos del beneficio}}.",
           "expect": "- Un uso queda pendiente hasta que la otra parte lo confirma, y solo cuenta cuando está confirmado.\n- Un rechazo se puede deshacer.\n- El historial se filtra por pendientes, confirmados, rechazados o vencidos.",
@@ -324,7 +325,7 @@
           "benefit-usage",
           "provider-directory"
         ],
-        "reviewedAt": "2026-11-23",
+        "reviewedAt": "2026-11-25",
         "sections": {
           "canDo": "Registrar usos, descargar tu código QR y confirmar los usos pendientes desde {{link:providerPanel|Mi ficha de proveedor}}.",
           "expect": "- Lo que registrás queda pendiente hasta que el anfitrión lo confirme (mirá {{article:benefit-usage|cómo lo ve el anfitrión}}).\n- Los usos confirmados suman a tus números.",
@@ -560,10 +561,10 @@
           "photos",
           "pause-resume"
         ],
-        "reviewedAt": "2026-11-23",
+        "reviewedAt": "2026-11-25",
         "sections": {
           "canDo": "Crear una publicación nueva del rubro que elijas: {{link:create:accommodation|publicar un alojamiento}}, {{link:create:venue|publicar un comercio}} o {{link:create:experience|publicar una experiencia}}.\n\nUn asistente de IA conectado también puede crear el borrador por vos.",
-          "expect": "- La publicación nace como borrador y no se ve en el sitio hasta que la publiques.\n- Si ya tenés un borrador, el sitio te ofrece retomarlo antes de crear otro.\n- Después completás las secciones en el editor; las fotos se cargan como explica {{article:photos|la ayuda de fotos}}.",
+          "expect": "- La publicación nace como borrador y no se ve en el sitio hasta que la publiques.\n- Si ya tenés un borrador, el sitio te ofrece retomarlo antes de crear otro; si llegás desde la página de planes, te lleva directo a retomarlo.\n- Después completás las secciones en el editor; las fotos se cargan como explica {{article:photos|la ayuda de fotos}}.",
           "howTo": {
             "after": "",
             "steps": [
@@ -932,7 +933,7 @@
           "change-plan",
           "pause-resume"
         ],
-        "reviewedAt": "2026-11-24",
+        "reviewedAt": "2026-11-25",
         "sections": {
           "canDo": "Crear promociones para tus alojamientos en {{link:page:promotions|Mis promociones}} y para tu comercio en {{link:section:venue:promociones|las promociones de tu comercio}}. En cada promoción elegís quién la ve: «Para todos» o «Solo VIP».",
           "expect": "- Crear promociones depende de tu plan, y tu plan fija cuántas pueden estar activas a la vez: {{limit:max_active_promotions:accommodation}}.\n- «Solo VIP» también depende de tu plan. Si tu plan no la incluye, la opción aparece con un candado y un enlace a los planes.\n- Una promoción borrosa muestra solo el valor y el tipo de beneficio. El nombre del lugar no aparece: en su lugar va un nombre de relleno.\n- En la búsqueda, las tarjetas muestran «Promo» si el lugar tiene una promoción «Para todos» y «VIP» si tiene una «Solo VIP». Si tiene de las dos, se ven las dos.\n- Los turistas suscriptos reciben una vez por semana un correo con las promociones nuevas de esa semana, de los dos tipos.\n\n### Ejemplo {#ejemplo}\n\nTenés tres promociones «Para todos» y una «Solo VIP». Un turista suscripto ve las cuatro. Un turista con el plan gratis ve algunas de las tres «Para todos», distintas en cada visita, y la «Solo VIP» borrosa.",
@@ -1093,7 +1094,7 @@
           "create-listing",
           "change-plan"
         ],
-        "reviewedAt": "2026-11-24",
+        "reviewedAt": "2026-11-25",
         "sections": {
           "canDo": "Cargar la foto principal y sumar fotos a la galería desde la sección «Fotos» del editor:\n{{link:section:accommodation:fotos|Fotos de tu alojamiento}}, {{link:section:venue:fotos|Fotos de tu comercio}} o {{link:section:experience:fotos|Fotos de tu experiencia}}.\n\nEn alojamientos también podés reordenar la galería y elegir la portada.",
           "expect": "- Cada cambio se guarda al instante, sin un botón de guardar.\n- La foto principal es obligatoria para publicar: sin ella, {{article:publish-requirements|los requisitos para publicar}} no se cumplen.\n- Fotos que entran en la galería de un alojamiento: {{limit:max_photos_per_accommodation:accommodation}}. El editor te avisa cuántas te quedan.",
@@ -1156,7 +1157,7 @@
           "benefit-usage",
           "benefit-usage-provider"
         ],
-        "reviewedAt": "2026-11-23",
+        "reviewedAt": "2026-11-25",
         "sections": {
           "canDo": "Buscar proveedores locales de confianza y ver su beneficio para anfitriones en {{link:providerDirectory|Directorio de proveedores}}.",
           "expect": "- Necesitás tener alojamientos registrados para ver el directorio.\n- Cada proveedor muestra su beneficio, su horario y las valoraciones de otros anfitriones.\n- Después de usar un servicio, {{article:benefit-usage|registrás el uso del beneficio}}.",

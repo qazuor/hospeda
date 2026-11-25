@@ -21,7 +21,11 @@ import { readListingFaqs } from '@/lib/listing/listing-editor-detail';
 import { resolveListingEditorPage } from '@/lib/editor/resolve-listing-editor-page';
 import { createTranslations } from '@/lib/i18n';
 
+import { guardVenueOrExperienceArea } from '@/lib/account/publisher-access';
+
 export const prerender = false;
+const denied = guardVenueOrExperienceArea({ astro: Astro });
+if (denied) return denied;
 
 const resolution = await resolveListingEditorPage({ astro: Astro, sectionSlug: 'preguntas' });
 

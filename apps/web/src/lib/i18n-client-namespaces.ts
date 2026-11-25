@@ -100,6 +100,7 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'account.reviews',
     'account.searchHistory',
     'account.setPassword',
+    'account.sheet',
     'account.status',
     'account.subscription',
     'account.title',

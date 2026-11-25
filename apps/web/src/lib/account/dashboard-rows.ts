@@ -16,6 +16,9 @@ export type DashboardRowIcon =
     | 'settings'
     | 'newsletter'
     | 'megaphone'
+    | 'venue'
+    | 'compass'
+    | 'wrench'
     | 'card';
 
 /** One entry-point row. */

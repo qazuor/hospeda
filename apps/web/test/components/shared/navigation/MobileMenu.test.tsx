@@ -1,334 +1,83 @@
-/**
- * @file MobileMenu.test.tsx
- * @description RTL tests for MobileMenu React island — sign-out loading state.
- *
- * Covers:
- * - SPEC-228 T-022: sign-out button shows LoadingButton/Spinner, NOT '...'
- * - sign-out button is aria-busy while signing out
- * - sign-out button is disabled while signing out
- * - removal guard: the bottom global-search CTA stays gone
- */
-
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { act, fireEvent, render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
 import { MobileMenu } from '../../../../src/components/shared/navigation/MobileMenu.client';
 
-// ─── Module mocks ─────────────────────────────────────────────────────────────
-
-vi.mock('../../../../src/lib/i18n', () => ({
-    createTranslations: (_locale: string) => ({
-        t: (_key: string, fallback?: string) => fallback ?? _key,
-        tPlural: (_key: string, _count: number, fallback?: string) => fallback ?? _key
-    })
+vi.mock('../../../../src/hooks/use-account-permissions', () => ({
+    useAccountPermissions: () => ({ user: null, permissions: [] })
 }));
-
-vi.mock('../../../../src/components/shared/navigation/MobileMenu.module.css', () => ({
-    default: new Proxy({} as Record<string, string>, {
-        get: (_target, prop) => String(prop)
-    })
-}));
-
-vi.mock('../../../../src/components/shared/feedback/LoadingButton.module.css', () => ({
-    default: new Proxy({} as Record<string, string>, {
-        get: (_target, prop) => String(prop)
-    })
-}));
-
-vi.mock('../../../../src/components/shared/feedback/Spinner.module.css', () => ({
-    default: new Proxy({} as Record<string, string>, {
-        get: (_target, prop) => String(prop)
-    })
-}));
-
 vi.mock('../../../../src/components/shared/preferences/LanguageSwitcher.client', () => ({
-    LanguageSwitcher: () => <div data-testid="language-switcher" />
+    LanguageSwitcher: () => <span>Language</span>
 }));
-
 vi.mock('../../../../src/components/shared/preferences/ThemeControl.client', () => ({
-    ThemeControl: () => <div data-testid="theme-control" />
+    ThemeControl: () => <span>Theme</span>
 }));
+vi.mock('astro:transitions/client', () => ({ navigate: vi.fn() }));
 
-vi.mock('../../../../src/components/ui/IconButtonReact', () => ({
-    IconButton: ({
-        children,
-        onClick,
-        ariaLabel
-    }: {
-        children: React.ReactNode;
-        onClick?: () => void;
-        ariaLabel: string;
-    }) => (
-        <button
-            type="button"
-            onClick={onClick}
-            aria-label={ariaLabel}
-        >
-            {children}
-        </button>
-    )
-}));
-
-// MobileMenu now transitively imports the full ACCOUNT_NAV_GROUPS config
-// (via getCuratedAccountNav), which references many more @repo/icons exports
-// than this file's own JSX does (HomeIcon, FavoriteIcon, CreditCardIcon,
-// DashboardIcon, BriefcaseIcon, ShieldIcon, ...). Spread the real module
-// instead of hand-listing icons so this mock can never silently fall behind
-// the config again — override only the icons these tests actually assert on.
-vi.mock('@repo/icons', async (importOriginal) => {
-    const actual = await importOriginal<typeof import('@repo/icons')>();
-    return {
-        ...actual,
-        CloseIcon: () => <span data-testid="icon-close" />,
-        BuildingIcon: () => <span data-testid="icon-building" />,
-        ChevronDownIcon: () => <span data-testid="icon-chevron" />,
-        UserIcon: () => <span data-testid="icon-user" />,
-        LogoutIcon: () => <span data-testid="icon-logout" />
-    };
-});
-
-// Mock auth-client signOut — returns a never-resolving promise to capture loading state
-const mockSignOut = vi.fn();
-vi.mock('../../../../src/lib/auth-client', () => ({
-    signOut: () => mockSignOut(),
-    // Kept so the module mock stays shape-complete; perpetually-pending and
-    // irrelevant to this file's sign-out assertions.
-    useSession: vi.fn(() => ({ data: null, isPending: true }))
-}));
-
-vi.mock('../../../../src/lib/avatar-utils', () => ({
-    getInitials: ({ name }: { name: string }) => name.slice(0, 2).toUpperCase()
-}));
-
-vi.mock('../../../../src/lib/urls', () => ({
-    buildUrl: ({ locale, path }: { locale: string; path?: string }) => `/${locale}/${path ?? ''}/`
-}));
-
-// ─── Fixtures ─────────────────────────────────────────────────────────────────
-
-const DEFAULT_PROPS = {
-    locale: 'es' as const,
-    navItems: [{ label: 'Inicio', href: '/es/' }],
-    currentPath: '/es/',
-    logoSrc: '/logo.svg',
-    homeHref: '/es/',
-    initialUser: {
-        id: 'u1',
-        name: 'Ana García',
-        email: 'ana@example.com'
-    },
-    initialRoles: [] as readonly string[]
-};
-
-function renderMenu(overrides: Partial<typeof DEFAULT_PROPS> = {}) {
-    return render(
+function setup() {
+    render(
         <MobileMenu
-            {...DEFAULT_PROPS}
-            {...overrides}
+            locale="es"
+            navItems={[{ label: 'Destinations', href: '/es/destinos/' }]}
+            currentPath="/es/"
+            logoSrc="/logo.webp"
+            homeHref="/es/"
+            initialUser={null}
+            initialRoles={[]}
         />
     );
+    act(() => window.dispatchEvent(new CustomEvent('mobile-menu:toggle')));
 }
 
-/** Opens the menu by dispatching the custom toggle event. */
-function openMenu() {
-    act(() => {
-        window.dispatchEvent(new CustomEvent('mobile-menu:toggle'));
-    });
-}
-
-/** Opens the menu then expands the account submenu. */
-function openAccountMenu() {
-    openMenu();
-    const userRow = screen.getByRole('button', { name: /Ana García/i });
-    fireEvent.click(userRow);
-}
-
-// ─── Tests ────────────────────────────────────────────────────────────────────
-
-describe('MobileMenu — sign-out loading state (SPEC-228 T-022)', () => {
-    beforeEach(() => {
-        mockSignOut.mockClear();
-        vi.stubGlobal('location', { reload: vi.fn() });
-        // Seed a fresh, authenticated cache matching DEFAULT_PROPS.initialUser
-        // so useAccountPermissions' SSR-reconciling effect trusts it without
-        // a network round-trip — these tests aren't exercising auth
-        // resolution, just the sign-out UI.
-        sessionStorage.setItem(
-            'authMeSnapshot',
-            JSON.stringify({
-                isAuthenticated: true,
-                user: DEFAULT_PROPS.initialUser,
-                permissions: [],
-                roles: [],
-                cachedAt: Date.now()
-            })
+describe('MobileMenu site navigation', () => {
+    it('renders site links, guest sign-in and guest preferences', () => {
+        setup();
+        expect(screen.getByRole('link', { name: 'Destinations' })).toHaveAttribute(
+            'href',
+            '/es/destinos/'
         );
-        global.fetch = vi.fn() as unknown as typeof fetch;
+        expect(screen.getByRole('link', { name: 'Iniciar sesión' })).toHaveAttribute(
+            'href',
+            '/es/auth/signin/'
+        );
+        expect(screen.getByText('Language')).toBeInTheDocument();
+        expect(screen.getByText('Theme')).toBeInTheDocument();
     });
-
-    afterEach(() => {
-        sessionStorage.clear();
+    it('closes on Escape and releases the scroll lock', () => {
+        setup();
+        expect(document.documentElement.style.overflow).toBe('hidden');
+        fireEvent.keyDown(document, { key: 'Escape' });
+        expect(screen.queryByRole('dialog')).toBeNull();
+        expect(document.documentElement).not.toHaveAttribute('data-mobile-menu-open');
     });
-
-    it('renders the sign-out button with the correct idle label', () => {
-        renderMenu();
-        openAccountMenu();
-
-        expect(screen.getByRole('button', { name: /cerrar sesión/i })).toBeInTheDocument();
+    it('closes on page swap', () => {
+        setup();
+        act(() => document.dispatchEvent(new Event('astro:before-swap')));
+        expect(screen.queryByRole('dialog')).toBeNull();
     });
-
-    it('sign-out button does NOT show "..." text in idle state', () => {
-        renderMenu();
-        openAccountMenu();
-
-        const btn = screen.getByRole('button', { name: /cerrar sesión/i });
-        expect(btn.textContent).not.toContain('...');
+    it('keeps publishing and account footer directly after the site list, with a scrollable overlay', () => {
+        const css = readFileSync(
+            resolve(
+                __dirname,
+                '../../../../src/components/shared/navigation/MobileMenu.module.css'
+            ),
+            'utf8'
+        );
+        expect(css.match(/\.nav\s*\{[^}]*\}/)?.[0]).not.toMatch(/flex:\s*1/);
+        expect(css.match(/\.overlay\s*\{[^}]*\}/)?.[0]).toContain('overflow-y: auto');
     });
-
-    it('sign-out button is NOT aria-busy when idle', () => {
-        renderMenu();
-        openAccountMenu();
-
-        const btn = screen.getByRole('button', { name: /cerrar sesión/i });
-        expect(btn).not.toHaveAttribute('aria-busy', 'true');
-    });
-
-    it('shows loading label while signing out (LoadingButton contract)', async () => {
-        // signOut never resolves — keeps loading state active
-        mockSignOut.mockReturnValue(new Promise(() => {}));
-
-        renderMenu();
-        openAccountMenu();
-
-        fireEvent.click(screen.getByRole('button', { name: /cerrar sesión/i }));
-
-        // LoadingButton renders the loadingLabel text while loading
-        await waitFor(() => {
-            expect(screen.getByText(/cerrando sesión/i)).toBeInTheDocument();
-        });
-    });
-
-    it('clears the theme sync marker when signing out (HOS-1988)', async () => {
-        // Arrange: this tab already synced the saved theme for the user.
-        sessionStorage.setItem('themeSyncedFor', 'user-1');
-        mockSignOut.mockReturnValue(new Promise(() => {}));
-        renderMenu();
-        openAccountMenu();
-
-        // Act
-        fireEvent.click(screen.getByRole('button', { name: /cerrar sesión/i }));
-
-        // Assert
-        await waitFor(() => expect(mockSignOut).toHaveBeenCalled());
-        expect(sessionStorage.getItem('themeSyncedFor')).toBeNull();
-    });
-
-    it('sign-out button is aria-busy=true while signing out', async () => {
-        mockSignOut.mockReturnValue(new Promise(() => {}));
-
-        renderMenu();
-        openAccountMenu();
-
-        fireEvent.click(screen.getByRole('button', { name: /cerrar sesión/i }));
-
-        await waitFor(() => {
-            // While loading, LoadingButton sets aria-busy on the button
-            const btn = document.querySelector('[aria-busy="true"]');
-            expect(btn).not.toBeNull();
-        });
-    });
-
-    it('sign-out button is disabled while signing out', async () => {
-        mockSignOut.mockReturnValue(new Promise(() => {}));
-
-        renderMenu();
-        openAccountMenu();
-
-        fireEvent.click(screen.getByRole('button', { name: /cerrar sesión/i }));
-
-        await waitFor(() => {
-            // The button becomes disabled when loading
-            const btn = document.querySelector('[aria-busy="true"]');
-            expect(btn).toHaveAttribute('disabled');
-        });
-    });
-
-    it('does NOT show "..." text anywhere while signing out', async () => {
-        mockSignOut.mockReturnValue(new Promise(() => {}));
-
-        renderMenu();
-        openAccountMenu();
-
-        fireEvent.click(screen.getByRole('button', { name: /cerrar sesión/i }));
-
-        await waitFor(() => {
-            expect(screen.getByText(/cerrando sesión/i)).toBeInTheDocument();
-        });
-
-        expect(document.body.textContent).not.toContain('...');
-    });
-
-    it('drops the /auth/me snapshot before signing out (HOS-1206)', async () => {
-        // Arrange: beforeEach seeded a fresh AUTHENTICATED snapshot. Simple-mode
-        // islands trust it as-is, so if it survives the sign-out they keep
-        // showing this account for up to the 60s TTL.
-        let snapshotAtSignOut: string | null = 'not-called';
-        mockSignOut.mockImplementationOnce(() => {
-            snapshotAtSignOut = sessionStorage.getItem('authMeSnapshot');
-            return new Promise(() => {});
-        });
-        renderMenu();
-        openAccountMenu();
-
-        // Act
-        fireEvent.click(screen.getByRole('button', { name: /cerrar sesión/i }));
-
-        // Assert
-        await waitFor(() => expect(mockSignOut).toHaveBeenCalledTimes(1));
-        expect(snapshotAtSignOut).toBeNull();
-    });
-});
-
-// ─── Global-search CTA removal guard ─────────────────────────────────────────
-
-describe('MobileMenu — bottom search CTA (removed)', () => {
-    // The global site-search feature was cut from the product: the page it led
-    // to and the API endpoint behind it were both deleted. The menu's bottom CTA
-    // went with them, together with its icon import and its nav i18n key.
-    //
-    // Nothing ever asserted the CTA existed, so its deletion broke no test and
-    // nothing would catch it coming back. These are source-level assertions in
-    // the same style as Header.test.ts, which guards the equivalent removal of
-    // the header search icon.
-    const componentSrc = readFileSync(
-        resolve(__dirname, '../../../../src/components/shared/navigation/MobileMenu.client.tsx'),
-        'utf8'
-    );
-
-    it('does not link to the removed search page', () => {
-        expect(componentSrc).not.toContain('busqueda');
-    });
-
-    it('does not import SearchIcon (the CTA that used it is gone)', () => {
-        expect(componentSrc).not.toContain('SearchIcon');
-    });
-
-    it('does not use the nav.goToSearch i18n key (deleted with the CTA)', () => {
-        expect(componentSrc).not.toContain('goToSearch');
-    });
-
-    it('does not reference the CTA styles that were dropped from the module', () => {
-        expect(componentSrc).not.toContain('styles.searchLink');
-        expect(componentSrc).not.toContain('styles.searchLabel');
-    });
-
-    it('does not use the shared dialog history hook directly', () => {
-        expect(componentSrc).not.toContain('useDialogHistoryBack');
-    });
-
-    it('uses the dedicated mobile-menu history manager', () => {
-        expect(componentSrc).toContain('acquireDialogHistoryEntry');
-        expect(componentSrc).toContain('handleLinkClick');
+    it('does not restore the removed global search CTA or duplicate account navigation', () => {
+        const source = readFileSync(
+            resolve(
+                __dirname,
+                '../../../../src/components/shared/navigation/MobileMenu.client.tsx'
+            ),
+            'utf8'
+        );
+        expect(source).not.toMatch(
+            /SearchIcon|goToSearch|styles\.searchLink|getCuratedAccountNav|buildAdminPanelItem/
+        );
+        expect(source).toContain('useNavigationDialog');
     });
 });

@@ -13,7 +13,11 @@ import EditorSectionLayout from '@/layouts/EditorSectionLayout.astro';
 import { resolveEditorPage } from '@/lib/editor/resolve-editor-page';
 import { createTranslations } from '@/lib/i18n';
 
+import { guardPublisherArea } from '@/lib/account/publisher-access';
+
 export const prerender = false;
+const denied = guardPublisherArea({ astro: Astro, area: 'accommodationEdit' });
+if (denied) return denied;
 
 const resolution = await resolveEditorPage({
 	astro: Astro,

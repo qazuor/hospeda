@@ -117,12 +117,6 @@ export interface DiscoveryDoor {
     readonly icon: ComponentType<IconProps>;
     /** Acquirable options shown on the hub page. */
     readonly options: readonly DiscoveryDoorOption[];
-    /**
-     * i18n key for the stateful "Sumá otra alianza" variant (spec §6.2),
-     * shown once the user holds ≥1 partner-door option. Declared for future
-     * use only — see the TODO on `ACCOUNT_DISCOVERY_DOORS` below.
-     */
-    readonly statefulI18nKey?: string;
 }
 
 /**
@@ -138,7 +132,7 @@ export const ACCOUNT_DISCOVERY_DOORS: readonly DiscoveryDoor[] = [
         i18nKey: 'account.doors.publish.title',
         subtitleI18nKey: 'account.doors.publish.subtitle',
         kind: 'listing',
-        href: 'mi-cuenta/publica',
+        href: 'planes',
         icon: BuildingIcon,
         options: [
             {
@@ -187,14 +181,6 @@ export const ACCOUNT_DISCOVERY_DOORS: readonly DiscoveryDoor[] = [
         id: 'partner',
         i18nKey: 'account.doors.partner.title',
         subtitleI18nKey: 'account.doors.partner.subtitle',
-        // RESOLVED (HOS-134 D-4): the two `editor*` options below are the
-        // acquired-capable ones that drive the stateful label — once a user
-        // holds `POST_CREATE` or `EVENT_CREATE` (the editor role),
-        // `resolveDoorLabelKey` (`src/lib/nav-gating.ts`) switches this door's
-        // rendered title from `i18nKey` to `statefulI18nKey` ("Sumá otra
-        // alianza"). Split into two by HOS-374 OQ-5; before that it was a
-        // single `editor` option.
-        statefulI18nKey: 'account.doors.partner.titleStateful',
         kind: 'partner',
         href: 'mi-cuenta/aliados',
         icon: UsersIcon,

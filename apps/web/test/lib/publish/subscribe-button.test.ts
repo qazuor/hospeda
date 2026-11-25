@@ -11,13 +11,39 @@ import {
 const base = { locale: 'es' as const, vertical: 'accommodation' as const };
 
 describe('resolveSubscribeButtonView (TEST:V8a:3 / TEST:V8a:4)', () => {
+    it.each([
+        ['accommodation', 'publicar'],
+        ['venue', 'publicar/comer-y-salir'],
+        ['experience', 'publicar/experiencias']
+    ] as const)('preserves the plans marker for %s in every locale and signup return target', (vertical, path) => {
+        for (const locale of ['es', 'en', 'pt'] as const) {
+            const target = `/${locale}/${path}/?desde=planes`;
+            const publish = resolveSubscribeButtonView({
+                locale,
+                vertical,
+                result: { ok: true, data: { destination: 'PUBLISH', trialDays: 14 } }
+            });
+            expect(publish).toEqual({ kind: 'publish', href: target, trialDays: 14 });
+            const signup = resolveSubscribeButtonView({
+                locale,
+                vertical,
+                result: { ok: false, error: { status: 401, message: 'unauthorized' } }
+            });
+            expect(signup.kind).toBe('signedOut');
+            if (signup.kind === 'signedOut') {
+                expect(
+                    new URL(signup.href, 'https://example.test').searchParams.get('returnUrl')
+                ).toBe(target);
+            }
+        }
+    });
     it('publishes with locale-prefixed trailing slash and trial days', () => {
         expect(
             resolveSubscribeButtonView({
                 ...base,
                 result: { ok: true, data: { destination: 'PUBLISH', trialDays: 14 } }
             })
-        ).toEqual({ kind: 'publish', href: '/es/publicar/', trialDays: 14 });
+        ).toEqual({ kind: 'publish', href: '/es/publicar/?desde=planes', trialDays: 14 });
     });
     it('maps checkout', () =>
         expect(
@@ -49,7 +75,10 @@ describe('resolveSubscribeButtonView (TEST:V8a:3 / TEST:V8a:4)', () => {
                 ...base,
                 result: { ok: false, error: { status: 401, message: 'unauthorized' } }
             })
-        ).toEqual({ kind: 'signedOut', href: '/es/auth/signup/?returnUrl=%2Fes%2Fpublicar%2F' }));
+        ).toEqual({
+            kind: 'signedOut',
+            href: '/es/auth/signup/?returnUrl=%2Fes%2Fpublicar%2F%3Fdesde%3Dplanes'
+        }));
     it.each([0, 503])('hides failed API responses (%s)', (status) =>
         expect(
             resolveSubscribeButtonView({

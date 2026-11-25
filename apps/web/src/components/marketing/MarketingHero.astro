@@ -52,20 +52,6 @@ const hasCta = Astro.slots.has('cta');
 			{titleMain && <>{titleMain}{' '}</>}
 			<span class="marketing-hero__title-accent">
 				{titleAccent}
-				<svg
-					class="marketing-hero__title-underline"
-					viewBox="0 0 200 18"
-					preserveAspectRatio="none"
-					aria-hidden="true"
-				>
-					<path
-						d="M 4 12 Q 50 2, 100 10 T 196 8"
-						stroke="currentColor"
-						stroke-width="4"
-						stroke-linecap="round"
-						fill="none"
-					/>
-				</svg>
 			</span>
 		</h1>
 		<p class="marketing-hero__subtitle">{subtitle}</p>
@@ -137,7 +123,7 @@ const hasCta = Astro.slots.has('cta');
 	.marketing-hero__floating--bottom-left {
 		bottom: 14%;
 		left: clamp(8%, 12vw, 18%);
-		color: oklch(0.72 0.16 75);
+		color: var(--brand-accent);
 		animation-delay: 3s;
 	}
 
@@ -188,20 +174,12 @@ const hasCta = Astro.slots.has('cta');
 	}
 
 	.marketing-hero__title-accent {
-		position: relative;
-		display: inline-block;
-	}
-
-	.marketing-hero__title-underline {
-		position: absolute;
-		left: -3%;
-		right: -3%;
-		bottom: -0.08em;
-		width: 106%;
-		height: 0.32em;
-		color: var(--brand-accent);
-		opacity: 0.75;
-		pointer-events: none;
+		display: inline;
+		text-decoration-line: underline;
+		text-decoration-color: var(--brand-accent);
+		text-decoration-thickness: 0.08em;
+		text-underline-offset: 0.12em;
+		box-decoration-break: clone;
 	}
 
 	.marketing-hero__subtitle {

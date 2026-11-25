@@ -13,6 +13,7 @@ describe('addon offers response', () => {
         price: 5000,
         currency: 'ARS',
         compatibleVerticals: ['accommodation'],
+        grantedKeys: ['featured_listing', 'max_accommodations'],
         scopeType: 'LISTING',
         validity: 'WHILE_SUBSCRIPTION_ALIVE',
         validityDays: null,
@@ -25,6 +26,11 @@ describe('addon offers response', () => {
     });
 
     it('rejects missing policy, invalid price and extra fields', () => {
+        const { grantedKeys: _grantedKeys, ...withoutGrants } = offer;
+        expect(AddonOffersResponseSchema.safeParse({ items: [withoutGrants] }).success).toBe(false);
+        expect(
+            AddonOffersResponseSchema.safeParse({ items: [{ ...offer, grantedKeys: [1] }] }).success
+        ).toBe(false);
         const { scopeType: _scopeType, ...withoutPolicy } = offer;
         const { slug: _slug, ...withoutSlug } = offer;
         expect(AddonOffersResponseSchema.safeParse({ items: [withoutSlug] }).success).toBe(false);

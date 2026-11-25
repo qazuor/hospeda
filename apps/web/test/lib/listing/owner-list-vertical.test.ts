@@ -4,6 +4,7 @@
 
 import { PermissionEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
+import { canAccessPublisherArea, publisherDenyRedirect } from '@/lib/account/publisher-access';
 import {
     filterOwnerListingsByVertical,
     OWNER_LIST_LABEL_KEYS,
@@ -76,6 +77,17 @@ describe('resolveOwnerListVerticals', () => {
 });
 
 describe('resolveOwnerListPage', () => {
+    it.each([
+        ['es', '/es/mi-cuenta/'],
+        ['en', '/en/mi-cuenta/'],
+        ['pt', '/pt/mi-cuenta/']
+    ] as const)('denied %s owner lists return to exact account home %s', (locale, expected) => {
+        expect(resolveOwnerListPage({ requested: 'venue', permissions: [] }).kind).toBe(
+            'forbidden'
+        );
+        expect(canAccessPublisherArea({ area: 'venue', permissions: [] })).toBe(false);
+        expect(publisherDenyRedirect({ locale })).toBe(expected);
+    });
     it('is forbidden with neither vertical', () => {
         expect(resolveOwnerListPage({ requested: 'venue', permissions: [] })).toEqual({
             kind: 'forbidden'

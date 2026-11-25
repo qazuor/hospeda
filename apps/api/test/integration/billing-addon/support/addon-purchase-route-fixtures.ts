@@ -2,6 +2,8 @@ import {
     addonInstances,
     addonProducts,
     addons,
+    addonVersionEntitlements,
+    addonVersionLimits,
     addonVersions,
     billingOptions,
     eq,
@@ -51,6 +53,11 @@ export async function purchaseCatalog(input: {
     readonly scopeType?: 'LISTING' | 'USER';
     readonly chargeKind?: 'UNA_VEZ' | 'PERIODICO';
     readonly owner?: { readonly id: string; readonly email: string };
+    /** Catalog keys the version grants; inserted with the version, which is immutable once published. */
+    readonly grants?: {
+        readonly entitlements?: readonly string[];
+        readonly limits?: readonly { readonly key: string; readonly value: number }[];
+    };
 }) {
     await ensureBillingDeadlineVersion1();
     const db = getDb();
@@ -77,16 +84,23 @@ export async function purchaseCatalog(input: {
         .returning({ id: addons.id });
     if (!addon) throw new Error('Missing addon');
     const chargeKind = input.chargeKind ?? 'UNA_VEZ';
-    const [version] = await db
-        .insert(addonVersions)
-        .values({
-            addonId: addon.id,
-            validity: chargeKind === 'UNA_VEZ' ? 'FIXED_DAYS' : 'WHILE_SUBSCRIPTION_ALIVE',
-            validityDays: chargeKind === 'UNA_VEZ' ? 30 : null,
-            scopeType: input.scopeType ?? 'USER'
-        })
-        .returning({ id: addonVersions.id });
-    if (!version) throw new Error('Missing addon version');
+    const version = await db.transaction(async (tx) => {
+        const [created] = await tx
+            .insert(addonVersions)
+            .values({
+                addonId: addon.id,
+                validity: chargeKind === 'UNA_VEZ' ? 'FIXED_DAYS' : 'WHILE_SUBSCRIPTION_ALIVE',
+                validityDays: chargeKind === 'UNA_VEZ' ? 30 : null,
+                scopeType: input.scopeType ?? 'USER'
+            })
+            .returning({ id: addonVersions.id });
+        if (!created) throw new Error('Missing addon version');
+        for (const key of input.grants?.entitlements ?? [])
+            await tx.insert(addonVersionEntitlements).values({ addonVersionId: created.id, key });
+        for (const limit of input.grants?.limits ?? [])
+            await tx.insert(addonVersionLimits).values({ addonVersionId: created.id, ...limit });
+        return created;
+    });
     const [product] = await db
         .insert(addonProducts)
         .values({

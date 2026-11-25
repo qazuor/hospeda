@@ -10,10 +10,7 @@ import {
 } from '@/lib/api/endpoints-protected';
 import { billingAddonApi } from '@/lib/api/endpoints-protected-addons';
 import { type ApiErrorShape, translateApiError, visibleApiMessage } from '@/lib/api-errors';
-import {
-    noSubscriptionReason,
-    offersForAccountVerticals
-} from '@/lib/billing/addon-account-verticals';
+import { noSubscriptionReason } from '@/lib/billing/addon-account-verticals';
 import {
     type ActiveAddonInstance,
     type AddonSubscriptionTarget,
@@ -26,7 +23,6 @@ import {
     mintOrderRequestId,
     orderIdentityReleased,
     processingCopyKey,
-    purchasableOffers,
     purchaseStateFrom
 } from '@/lib/billing/addon-purchase';
 import { createTranslations, type SupportedLocale } from '@/lib/i18n';
@@ -38,6 +34,7 @@ import { AddonPurchaseOutcome } from './AddonPurchaseOutcome';
 import { AddonPurchaseSummary } from './AddonPurchaseSummary';
 import { AddonSubscriptionPicker } from './AddonSubscriptionPicker';
 import { type AddonTarget, AddonTargetPicker } from './AddonTargetPicker';
+import { useAddonOffers } from './use-addon-offers';
 import {
     ADDON_PURCHASE_STEP_INDEX,
     type AddonPurchaseView,
@@ -65,7 +62,6 @@ export function AddonPurchase(input: {
 }) {
     const accountVerticals = input.accountVerticals ?? null;
     const { t } = useMemo(() => createTranslations(input.locale), [input.locale]);
-    const [offers, setOffers] = useState<readonly Offer[]>([]);
     const [offer, setOffer] = useState<Offer | null>(null);
     const [targets, setTargets] = useState<readonly AddonTarget[]>([]);
     const [target, setTarget] = useState<AddonTarget | null>(null);
@@ -101,38 +97,13 @@ export function AddonPurchase(input: {
                   offer.freeUnderGrantVerticals.includes(vertical)
               ));
 
-    useEffect(() => {
-        let alive = true;
-        void billingAddonApi
-            .offers()
-            .then((result) => {
-                if (!alive) return;
-                if (result.ok) {
-                    setOffers(
-                        offersForAccountVerticals({
-                            offers: purchasableOffers(result.data.items),
-                            accountVerticals
-                        })
-                    );
-                    if (!input.returnOrderRequestId) setView('OFFERS');
-                } else
-                    setError(
-                        visibleApiMessage({ error: result.error }) ??
-                            t('billing.addonPurchase.loadError')
-                    );
-            })
-            .catch((cause: unknown) => {
-                if (alive)
-                    setError(
-                        cause instanceof Error
-                            ? cause.message
-                            : t('billing.addonPurchase.loadError')
-                    );
-            });
-        return () => {
-            alive = false;
-        };
-    }, [input.returnOrderRequestId, t, accountVerticals]);
+    const { offers } = useAddonOffers({
+        accountVerticals,
+        returnOrderRequestId: input.returnOrderRequestId,
+        t,
+        setView,
+        setError
+    });
 
     // HOS-2362: what the account already holds, so a bought addon shows as active instead of
     // inviting a purchase the API refuses. Best effort: if the read fails the screen simply
@@ -410,6 +381,7 @@ export function AddonPurchase(input: {
             {view === 'LOADING' && <p>{t('billing.addonPurchase.loading')}</p>}
             {view === 'OFFERS' && (
                 <AddonOfferList
+                    locale={input.locale}
                     offers={offers}
                     isActive={(candidate) =>
                         isOfferFullyActive({

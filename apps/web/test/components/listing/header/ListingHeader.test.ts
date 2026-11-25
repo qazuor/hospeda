@@ -104,12 +104,45 @@ describe('ListingHeader frame', () => {
         );
     });
 
-    it('keeps the action cluster in a right column at every width, title before actions in the DOM', () => {
+    it('keeps the desktop action column and title before actions in the DOM', () => {
         expect(HEADER).toMatch(
             /\.listing-header__main\s*\{[^}]*display: grid;[^}]*grid-template-areas:\s*"badges actions"\s*"title actions"\s*"location actions"/
         );
         expect(markup(HEADER)).toMatch(
             /<\/h1>[\s\S]*?<ListingHeaderActions[\s\S]*?<ListingLocationLine/
+        );
+    });
+});
+
+describe('small-screen header layout (CARD-022)', () => {
+    const smallScreenStyles =
+        HEADER.match(/@media \(width < 640px\)[\s\S]*?(?=@media|<\/style>)/)?.[0] ?? '';
+
+    it('gives the title a full-width row and actions their own row, including gallery headers', () => {
+        expect(smallScreenStyles).toMatch(
+            /\.listing-header__main,\s*:global\(\.wave-header\) \.listing-header--mobile-gallery \.listing-header__main\s*\{[^}]*grid-template-areas:\s*"badges"\s*"title"\s*"actions"\s*"location"\s*"meta"/
+        );
+        expect(smallScreenStyles).toContain('grid-template-columns: minmax(0, 1fr);');
+    });
+
+    it('keeps stars, score and review count together without shrinking the stars', () => {
+        expect(smallScreenStyles).toMatch(
+            /\.listing-header__rating\s*\{[^}]*flex-wrap: nowrap;[^}]*white-space: nowrap;/
+        );
+        expect(smallScreenStyles).toMatch(
+            /\.listing-header__rating > :global\(\.rating-stars\)\s*\{[^}]*flex-shrink: 0;/
+        );
+        expect(smallScreenStyles).toMatch(
+            /\.listing-header__reviews-count\s*\{[^}]*white-space: nowrap;/
+        );
+    });
+
+    it('places bookmarks below the rating without a divider or clipping the second line', () => {
+        expect(smallScreenStyles).toMatch(
+            /\.listing-header__meta\s*\{[^}]*flex-direction: column;[^}]*align-items: flex-start;[^}]*max-height: none;/
+        );
+        expect(smallScreenStyles).toMatch(
+            /\.listing-header__bookmark-count--after-rating\s*\{[^}]*border-left: 0;[^}]*padding-left: 0;[^}]*margin-left: 0;/
         );
     });
 });

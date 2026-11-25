@@ -1,13 +1,8 @@
 /**
  * @file MobileMenuAccountSection.client.tsx
- * @description Auth/account section of the mobile hamburguesa overlay —
- * extracted from `MobileMenu.client.tsx` (HOS-131 §6.5) to keep the parent
- * under the 500-line cap. Renders the "Publicar" three-way submenu
- * (HOS-691), the authenticated user row + expandable curated account
- * accordion (identity "Mi cuenta" link, Favoritos, ONE business shortcut,
- * Suscripción, sign-out), or the guest sign-in link. Shares
- * `MobileMenu.module.css` with its parent — this is a pure presentational
- * split, not a separately styled component.
+ * @description Site-menu footer: publishing, then either one account-sheet
+ * handoff row or the guest sign-in link. Account links and sign-out belong
+ * exclusively to the shared account sheet (owner decision D2).
  *
  * **HOS-691**: the single owner CTA link (which used to swap between the
  * `/publicar` funnel and a "Modo anfitrión" shortcut based on
@@ -17,18 +12,16 @@
  * `PUBLISH_CTA_OPTIONS` (AC-38). It renders unconditionally, for every
  * visitor including an existing HOST or VENUE_OWNER (AC-12) — the old
  * host-mode shortcut to `/mi-cuenta/propiedades/` is gone; a HOST reaches
- * their properties list via the curated account accordion below instead.
+ * their properties list via the account sheet instead.
  * A11y molde copied from `UserMenu.client.tsx` (`aria-haspopup="menu"`,
  * `aria-expanded`, `role="menu"`, click-outside dismissal) — NOT from
  * `SettingsDropdown.client.tsx`'s weaker ARIA.
  */
 
-import { BuildingIcon, ChevronDownIcon, LogoutIcon } from '@repo/icons';
+import { BuildingIcon, ChevronDownIcon } from '@repo/icons';
 import type { MouseEvent } from 'react';
 import { useEffect, useRef, useState } from 'react';
-import { LoadingButton } from '@/components/shared/feedback/LoadingButton';
 import { PUBLISH_CTA_OPTIONS } from '@/config/discovery-doors';
-import type { NavItem } from '@/config/navigation';
 import { getInitials as getInitialsShared } from '@/lib/avatar-utils';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -43,34 +36,23 @@ interface MobileMenuAccountSectionUser {
 }
 
 /** Props for `MobileMenuAccountSection`. */
-/** What one account link needs (a nav item or an «Administrar …» shortcut, HOS-2551). */
-export type MobileAccountNavItem = Pick<NavItem, 'id' | 'i18nKey' | 'href' | 'icon'>;
-
 export interface MobileMenuAccountSectionProps {
     /** Active locale — used for the guest sign-in link and curated-item hrefs. */
     readonly locale: SupportedLocale;
     /** Translation function, already bound to `locale` by the parent. */
     readonly t: (key: string, fallback?: string) => string;
-    /** Whether the parent overlay is open — controls `tabIndex` (focus trap) and collapses this accordion on close. */
+    /** Whether the parent overlay is open; controls tabIndex and the publishing submenu. */
     readonly isOpen: boolean;
     /** Authenticated user data (`null`/`undefined` when not logged in). */
     readonly user?: MobileMenuAccountSectionUser | null;
-    /** The account nav items (HOS-131 §6.5 mobile "option A") — same selector as UserMenu's avatar dropdown. */
-    readonly curatedAccountItems: readonly MobileAccountNavItem[];
-    /** Resolved "Cerrar sesión" label. */
-    readonly signOutLabel: string;
-    /** Resolved "Cerrando sesión…" loading label. */
-    readonly signingOutLabel: string;
-    /** Whether a sign-out request is in flight. */
-    readonly isSigningOut: boolean;
-    /** Sign-out click handler. */
-    readonly onSignOut: () => void;
+    /** Closes/unwinds the site menu before opening the header's account sheet. */
+    readonly onOpenAccount: () => void;
     /** Dedicated menu-link handler (may unwind history before navigating). */
     readonly onLinkClick: (event: MouseEvent<HTMLAnchorElement>) => void;
 }
 
 /**
- * Auth/account section — CTA link, user row + curated accordion, or guest
+ * Auth/account section — publishing, account-sheet handoff, or guest
  * sign-in link. See the file JSDoc for why this is split out of
  * `MobileMenu.client.tsx`.
  */
@@ -79,25 +61,17 @@ export function MobileMenuAccountSection({
     t,
     isOpen,
     user,
-    curatedAccountItems,
-    signOutLabel,
-    signingOutLabel,
-    isSigningOut,
-    onSignOut,
+    onOpenAccount,
     onLinkClick
 }: MobileMenuAccountSectionProps) {
-    const [isAccountOpen, setIsAccountOpen] = useState(false);
     const [isPublishOpen, setIsPublishOpen] = useState(false);
     const publishTriggerRef = useRef<HTMLButtonElement>(null);
     const publishPanelRef = useRef<HTMLDivElement>(null);
     const publishTriggerLabel = t('nav.publishCta', 'Publicar');
 
-    // Collapse both accordions whenever the parent overlay closes, mirroring
-    // the previous single-component `handleClose` behavior (which reset
-    // `isOpen` and the account accordion together).
+    // Publishing must not remain expanded after the site menu closes.
     useEffect(() => {
         if (!isOpen) {
-            setIsAccountOpen(false);
             setIsPublishOpen(false);
         }
     }, [isOpen]);
@@ -185,18 +159,18 @@ export function MobileMenuAccountSection({
             )}
             {user ? (
                 <>
-                    {/* User profile row with expandable account menu */}
+                    {/* One account-sheet handoff, never a second account menu. */}
                     <button
                         type="button"
-                        onClick={() => setIsAccountOpen((prev) => !prev)}
+                        onClick={onOpenAccount}
                         tabIndex={isOpen ? 0 : -1}
                         className={styles.userRow}
-                        aria-expanded={isAccountOpen}
+                        aria-haspopup="dialog"
                     >
                         {user.image ? (
                             <img
                                 src={user.image}
-                                alt={user.name ?? 'Usuario'}
+                                alt=""
                                 className={styles.userAvatar}
                             />
                         ) : (
@@ -204,60 +178,20 @@ export function MobileMenuAccountSection({
                                 aria-hidden="true"
                                 className={styles.userInitials}
                             >
-                                {getInitialsShared({ name: user.name ?? '', placeholder: '' })}
+                                {getInitialsShared({
+                                    name: user.name,
+                                    email: user.email,
+                                    placeholder: '?'
+                                })}
                             </span>
                         )}
-                        <span className={styles.userName}>{user.name ?? 'Usuario'}</span>
-                        <span
-                            aria-hidden="true"
-                            className={cn(
-                                styles.userChevron,
-                                isAccountOpen && styles.userChevronOpen
-                            )}
-                        >
-                            <ChevronDownIcon size={18} />
+                        <span className={styles.userName}>
+                            {t('account.title')}
+                            <small className={styles.userSecondary}>
+                                {user.name || user.email}
+                            </small>
                         </span>
                     </button>
-
-                    {/* Expandable account links — curated set (HOS-131 §6.5),
-                        same selector as UserMenu's avatar dropdown: identity
-                        "Mi cuenta" link, Favoritos, ONE business shortcut,
-                        Suscripción. */}
-                    {isAccountOpen && (
-                        <div className={styles.accountLinks}>
-                            {curatedAccountItems.map((item) => {
-                                const Icon = item.icon;
-                                return (
-                                    <a
-                                        key={item.id}
-                                        href={buildUrl({ locale, path: item.href })}
-                                        onClick={onLinkClick}
-                                        tabIndex={isOpen ? 0 : -1}
-                                        className={styles.accountLink}
-                                    >
-                                        <Icon
-                                            size={18}
-                                            aria-hidden="true"
-                                        />
-                                        {t(item.i18nKey)}
-                                    </a>
-                                );
-                            })}
-                            <LoadingButton
-                                loading={isSigningOut}
-                                loadingLabel={signingOutLabel}
-                                onClick={onSignOut}
-                                tabIndex={isOpen ? 0 : -1}
-                                className={styles.signOutButton}
-                            >
-                                <LogoutIcon
-                                    size={18}
-                                    aria-hidden="true"
-                                />
-                                {signOutLabel}
-                            </LoadingButton>
-                        </div>
-                    )}
                 </>
             ) : (
                 <a

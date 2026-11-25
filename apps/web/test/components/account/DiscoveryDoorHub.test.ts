@@ -9,11 +9,11 @@
 
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { PermissionEnum, RoleEnum } from '@repo/schemas';
+import { PermissionEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 
 import { ACCOUNT_DISCOVERY_DOORS } from '../../../src/config/discovery-doors';
-import { isVisibleByRoles, resolveDoorOptionState } from '../../../src/lib/nav-gating';
+import { isVisibleByPermissions, resolveDoorOptionState } from '../../../src/lib/nav-gating';
 
 const source = readFileSync(
     resolve(__dirname, '../../../src/components/account/DiscoveryDoorHub.astro'),
@@ -21,9 +21,9 @@ const source = readFileSync(
 );
 
 describe('DiscoveryDoorHub.astro — wiring', () => {
-    it('resolves per-option state via resolveDoorOptionState + isVisibleByRoles (HOS-131 D-4, server-side role approximation)', () => {
+    it('resolves per-option state using effective permissions', () => {
         expect(source).toContain(
-            "import { isVisibleByRoles, resolveDoorOptionState } from '@/lib/nav-gating';"
+            "import { isVisibleByPermissions, resolveDoorOptionState } from '@/lib/nav-gating';"
         );
         expect(source).toContain(
             'resolveDoorOptionState({ option, visibility, acquiredOptionIds })'
@@ -115,13 +115,14 @@ describe('DiscoveryDoorHub — per-option state resolution (engine integration)'
         expect(
             resolveDoorOptionState({
                 option: accommodation,
-                visibility: (node) => isVisibleByRoles(node, [RoleEnum.HOST])
+                visibility: (node) =>
+                    isVisibleByPermissions(node, [PermissionEnum.ACCOMMODATION_CREATE])
             })
         ).toBe('acquired');
         expect(
             resolveDoorOptionState({
                 option: accommodation,
-                visibility: (node) => isVisibleByRoles(node, [RoleEnum.USER])
+                visibility: (node) => isVisibleByPermissions(node, [])
             })
         ).toBe('unacquired');
     });
@@ -135,25 +136,27 @@ describe('DiscoveryDoorHub — per-option state resolution (engine integration)'
         expect(
             resolveDoorOptionState({
                 option: venue,
-                visibility: (node) => isVisibleByRoles(node, [RoleEnum.VENUE_OWNER])
+                visibility: (node) => isVisibleByPermissions(node, [PermissionEnum.VENUE_EDIT_OWN])
             })
         ).toBe('acquired');
         expect(
             resolveDoorOptionState({
                 option: experience,
-                visibility: (node) => isVisibleByRoles(node, [RoleEnum.VENUE_OWNER])
+                visibility: (node) => isVisibleByPermissions(node, [PermissionEnum.VENUE_EDIT_OWN])
             })
         ).toBe('unacquired');
         expect(
             resolveDoorOptionState({
                 option: experience,
-                visibility: (node) => isVisibleByRoles(node, [RoleEnum.EXPERIENCE_OWNER])
+                visibility: (node) =>
+                    isVisibleByPermissions(node, [PermissionEnum.EXPERIENCE_EDIT_OWN])
             })
         ).toBe('acquired');
         expect(
             resolveDoorOptionState({
                 option: venue,
-                visibility: (node) => isVisibleByRoles(node, [RoleEnum.EXPERIENCE_OWNER])
+                visibility: (node) =>
+                    isVisibleByPermissions(node, [PermissionEnum.EXPERIENCE_EDIT_OWN])
             })
         ).toBe('unacquired');
     });
@@ -165,7 +168,8 @@ describe('DiscoveryDoorHub — per-option state resolution (engine integration)'
             expect(
                 resolveDoorOptionState({
                     option,
-                    visibility: (node) => isVisibleByRoles(node, [RoleEnum.ADMIN])
+                    visibility: (node) =>
+                        isVisibleByPermissions(node, Object.values(PermissionEnum))
                 })
             ).toBe('unacquired');
         }
@@ -182,13 +186,17 @@ describe('DiscoveryDoorHub — per-option state resolution (engine integration)'
             expect(
                 resolveDoorOptionState({
                     option: editorOption,
-                    visibility: (node) => isVisibleByRoles(node, [RoleEnum.EDITOR])
+                    visibility: (node) =>
+                        isVisibleByPermissions(node, [
+                            PermissionEnum.POST_CREATE,
+                            PermissionEnum.EVENT_CREATE
+                        ])
                 })
             ).toBe('acquired');
             expect(
                 resolveDoorOptionState({
                     option: editorOption,
-                    visibility: (node) => isVisibleByRoles(node, [RoleEnum.USER])
+                    visibility: (node) => isVisibleByPermissions(node, [])
                 })
             ).toBe('unacquired');
         });
@@ -199,7 +207,8 @@ describe('DiscoveryDoorHub — per-option state resolution (engine integration)'
             expect(
                 resolveDoorOptionState({
                     option,
-                    visibility: (node) => isVisibleByRoles(node, [RoleEnum.ADMIN])
+                    visibility: (node) =>
+                        isVisibleByPermissions(node, Object.values(PermissionEnum))
                 })
             ).toBe('acquired');
         }
@@ -226,7 +235,7 @@ describe('DiscoveryDoorHub — acquiredOptionIds override (engine integration)',
         expect(
             resolveDoorOptionState({
                 option: serviceProvider,
-                visibility: (node) => isVisibleByRoles(node, null),
+                visibility: (node) => isVisibleByPermissions(node, []),
                 acquiredOptionIds: ['serviceProvider']
             })
         ).toBe('acquired');
@@ -240,7 +249,7 @@ describe('DiscoveryDoorHub — acquiredOptionIds override (engine integration)',
         expect(
             resolveDoorOptionState({
                 option: serviceProvider,
-                visibility: (node) => isVisibleByRoles(node, [RoleEnum.ADMIN])
+                visibility: (node) => isVisibleByPermissions(node, Object.values(PermissionEnum))
             })
         ).toBe('unacquired');
     });

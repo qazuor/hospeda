@@ -22,7 +22,11 @@ import { PromotionList } from '@/components/host/PromotionList.client';
 import { EntitlementKeyEnum } from '@repo/schemas';
 import { fetchPublicPlans, planNamesWithEntitlement } from '@/lib/billing/fetch-plans';
 
+import { canAccessPublisherArea, guardPublisherArea } from '@/lib/account/publisher-access';
+
 export const prerender = false;
+const denied = guardPublisherArea({ astro: Astro, area: 'promotions' });
+if (denied) return denied;
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
@@ -44,7 +48,9 @@ const lockPlanNames = planNamesWithEntitlement({
 ---
 
 <AccountLayout locale={locale} title={title} description={description} activeSection="promociones">
-    <PromotionList client:load locale={locale} lockPlanNames={lockPlanNames}>
+    <PromotionList client:load locale={locale} lockPlanNames={lockPlanNames}
+        canCreate={canAccessPublisherArea({ area: 'promotionCreate', permissions: user.permissions })}
+        canEdit={canAccessPublisherArea({ area: 'promotionEdit', permissions: user.permissions }) && canAccessPublisherArea({ area: 'promotions', permissions: user.permissions })}>
         <PageHelpLink slot="help" locale={locale} />
     </PromotionList>
 </AccountLayout>

@@ -152,6 +152,30 @@ afterEach(async () => {
 afterAll(async () => testDb.teardown());
 
 describe('AC:B10:11 TEST:B10:13 owner addon offers and return URL', () => {
+    it('returns only the grants of each product version, including entitlement and limit keys', async () => {
+        const first = await catalog({
+            grants: {
+                entitlements: ['featured_listing'],
+                limits: [{ key: 'max_accommodations', value: 1 }]
+            }
+        });
+        const second = await catalog({
+            grants: { limits: [{ key: 'max_photos_per_accommodation', value: 1 }] }
+        });
+        const { app } = purchaseApp();
+        const response = await app.request(offersPath, { headers: ownerHeaders(first.ownerId) });
+        expect(response.status).toBe(200);
+        const items = (await response.json()).data.items as {
+            productId: string;
+            grantedKeys: string[];
+        }[];
+        expect(
+            items.find((item) => item.productId === first.productId)?.grantedKeys.sort()
+        ).toEqual(['featured_listing', 'max_accommodations']);
+        expect(items.find((item) => item.productId === second.productId)?.grantedKeys).toEqual([
+            'max_photos_per_accommodation'
+        ]);
+    });
     it('TEST:B13b:3 AC:B13b:3 retiring an addon stops selling it and restoration returns it to offers', async () => {
         // Only catalog identity is seeded; saleability changes use the action 20 service.
         const fixture = await catalog({ scopeType: 'LISTING' });
@@ -214,7 +238,8 @@ describe('AC:B10:11 TEST:B10:13 owner addon offers and return URL', () => {
         expect((await response.json()).data.items).toContainEqual(
             expect.objectContaining({
                 productId: fixture.productId,
-                freeUnderGrantVerticals: []
+                freeUnderGrantVerticals: [],
+                grantedKeys: []
             })
         );
     });

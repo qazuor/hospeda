@@ -184,6 +184,11 @@ describe('Header', () => {
                 name: /hospeda admin/i
             });
             expect(logoLink).toHaveAttribute('href', '/dashboard');
+            expect(screen.getByText('Hospeda')).toBeVisible();
+            expect(screen.getByText('admin-nav.topbar.admin')).toHaveClass('text-muted-foreground');
+            expect(logoLink.querySelectorAll('img')).toHaveLength(1);
+            expect(logoLink.querySelector('img')).toHaveAttribute('alt', '');
+            expect(logoLink.querySelector('img')).toHaveAttribute('aria-hidden', 'true');
         });
 
         it('should render notification icon', () => {

@@ -27,6 +27,7 @@ import { ShieldAlertIcon } from '@repo/icons';
 import { createFileRoute } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { z } from 'zod';
+import { BrandWordmark } from '@/components/brand/BrandWordmark';
 import { env } from '@/env';
 import { useTranslations } from '@/hooks/use-translations';
 import { signOut } from '@/lib/auth-client';
@@ -174,11 +175,7 @@ function ForbiddenPage(): React.JSX.Element {
                     <div className="w-full max-w-md space-y-8">
                         <div className="text-center">
                             <div className="mb-6 flex justify-center">
-                                <img
-                                    src="/logo.webp"
-                                    alt="Logo"
-                                    className="h-16 w-auto"
-                                />
+                                <BrandWordmark size="lg" />
                             </div>
                         </div>
 

@@ -22,7 +22,8 @@
  * users only see the consolidated UserMenu.
  */
 
-import { getImage, Image } from "astro:assets";
+import { getImage } from "astro:assets";
+import { BrandWordmark } from '@/components/shared/brand/BrandWordmark';
 import { HamburgerIcon } from "@repo/icons";
 import MobileMenuIsland from "@/components/shared/navigation/MobileMenuIsland.astro";
 import HeaderNavSubmenu from "@/components/shared/navigation/HeaderNavSubmenu.astro";
@@ -37,6 +38,7 @@ import HeaderNavSubmenu from "@/components/shared/navigation/HeaderNavSubmenu.as
 import "@/components/shared/navigation/MobileMenu.module.css";
 import { PublishMenu } from "@/components/shared/navigation/PublishMenu.client";
 import { UserMenu } from "@/components/shared/navigation/UserMenu.client";
+import { AccountSheet } from "@/components/shared/navigation/AccountSheet.client";
 import { SettingsDropdown } from "@/components/shared/navigation/SettingsDropdown.client";
 import { LanguageSwitcher } from "@/components/shared/preferences/LanguageSwitcher.client";
 import { ThemeControl } from "@/components/shared/preferences/ThemeControl.client";
@@ -131,15 +133,7 @@ const serverUserRoles = serverUser?.roles ?? [];
     <div class="header__inner">
         <!-- LOGO -->
         <a href={buildUrl({ locale, path: "/" })} class="header__logo" aria-label={t("nav.goHome", "Hospeda - Go to home")}>
-            <Image
-                class="header__logo-icon"
-                src={logoSrc}
-                alt="Hospeda logo"
-                width={42}
-                height={45}
-                loading="eager"
-            />
-            <span class="header__logo-text">Hospeda</span>
+            <BrandWordmark logoSrc={mobileLogoSrc} size="lg" />
         </a>
 
         <!-- NAVIGATION (desktop) -->
@@ -220,6 +214,14 @@ const serverUserRoles = serverUser?.roles ?? [];
                 />
             </div>
 
+            <!-- Account sheet trigger (signed in, BP mobile <1025). The public header
+                 does not probe the AI assistants feature flag on render, so that entry
+                 is left out of the sheet here; the account layouts pass the real flag. -->
+            <AccountSheet
+                client:load
+                locale={locale}
+                adminPanelUrl={adminPanelUrl}
+            />
             <!-- Hamburger (BP mobile <1025) -->
             <IconButton
                 ariaLabel={t("nav.openMenu", "Open navigation menu")}
@@ -308,22 +310,6 @@ const serverUserRoles = serverUser?.roles ?? [];
         outline: 2px solid var(--brand-primary);
         outline-offset: 2px;
         border-radius: 4px;
-    }
-
-    .header__logo-icon {
-        width: 42px;
-        height: 45px;
-        object-fit: contain;
-        flex-shrink: 0;
-    }
-
-    .header__logo-text {
-        font-family: var(--font-decorative);
-        font-weight: 700;
-        font-size: clamp(1.5rem, 4vw, 2rem);
-        line-height: 1.2;
-        color: var(--brand-secondary-foreground);
-        white-space: nowrap;
     }
 
     /* ── Main nav (links) ──────────────────────────────────────────── */
@@ -510,11 +496,6 @@ const serverUserRoles = serverUser?.roles ?? [];
         .header__inner {
             height: auto;
             min-height: 64px;
-        }
-
-        .header__logo-icon {
-            width: 40px;
-            height: 44px;
         }
 
         .header__cta {

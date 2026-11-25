@@ -1,21 +1,16 @@
-/**
- * Regression tests for HOS-2541: a link tapped inside the mobile account drawer
- * must navigate. The drawer used to close synchronously while the shared Dialog
- * held a history entry, so its `history.go(-1)` unwind raced the ClientRouter
- * navigation and the page loaded forever. The bar now owns the entry, releases
- * it first and navigates after the unwind settles.
- */
-
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+/** History regressions now belong to the shared navigation-dialog helper. */
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { useCallback, useState } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { AccountBar, buildSidebarView } from '../../../../src/components/account/ui';
-import { buildAccountNavModel } from '../../../../src/lib/account-nav-model';
+import { useNavigationDialog } from '../../../../src/hooks/use-navigation-dialog';
 
-const calls = vi.hoisted(() => ({ order: [] as string[], navigate: vi.fn(), acquire: vi.fn() }));
-
-vi.mock('../../../../src/lib/dialog-history', async (importOriginal) => ({
-    ...(await importOriginal<typeof import('../../../../src/lib/dialog-history')>()),
+const calls = vi.hoisted(() => ({
+    order: [] as string[],
+    navigate: vi.fn(),
+    acquire: vi.fn(),
+    after: vi.fn()
+}));
+vi.mock('../../../../src/lib/dialog-history', () => ({
     acquireDialogHistoryEntry: (params: { onPopped: () => void }) => {
         calls.acquire(params);
         return { release: () => calls.order.push('release') };
@@ -28,78 +23,82 @@ vi.mock('astro:transitions/client', () => ({
         return Promise.resolve();
     }
 }));
-vi.mock('../../../../src/components/host/host-trades/BenefitUsagesCountPill.client', () => ({
-    BenefitUsagesCountPill: () => null
-}));
 
-const view = buildSidebarView({
-    model: buildAccountNavModel({
-        roles: ['HOST'],
-        ownsHostTradeListing: false,
-        mcpEnabled: false,
-        activeSection: 'editar'
-    }),
-    locale: 'es'
-});
-
-async function openDrawer() {
-    const user = userEvent.setup();
-    render(
-        <AccountBar
-            view={view}
-            locale="es"
-        />
+function Harness() {
+    const [open, setOpen] = useState(true);
+    const close = useCallback(() => setOpen(false), []);
+    const { onLinkClick, closeThen } = useNavigationDialog({ open, onClose: close });
+    return (
+        <>
+            <a
+                href="/es/mi-cuenta/"
+                onClick={onLinkClick}
+            >
+                Account
+            </a>
+            <button
+                type="button"
+                onClick={() => closeThen({ afterClose: calls.after })}
+            >
+                Handoff
+            </button>
+            <span>{String(open)}</span>
+        </>
     );
-    await user.click(screen.getByRole('button', { name: /Mi cuenta/ }));
-    const dialog = await screen.findByRole('dialog');
-    const link = dialog.querySelector('a') as HTMLAnchorElement;
-    return { user, dialog, link };
 }
 
-describe('AccountBar drawer navigation (HOS-2541)', () => {
+describe('shared navigation-dialog history unwind', () => {
     beforeEach(() => {
         calls.order.length = 0;
-        calls.navigate.mockClear();
-        calls.acquire.mockClear();
+        vi.clearAllMocks();
     });
-
-    it('owns exactly one history entry while the drawer is open', async () => {
-        await openDrawer();
-        expect(calls.acquire).toHaveBeenCalledTimes(1);
-    });
-
-    it('releases the history entry, then navigates to the tapped link', async () => {
-        const { link } = await openDrawer();
-        const notPrevented = fireEvent.click(link);
-        expect(notPrevented).toBe(false);
-        await waitFor(() => expect(calls.navigate).toHaveBeenCalledWith(link.href));
-        expect(calls.order.indexOf('release')).toBeGreaterThanOrEqual(0);
-        expect(calls.order.indexOf('release')).toBeLessThan(calls.order.indexOf('navigate'));
-        await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
-    });
-
-    it('navigates once even when popstate fires before the timeout', async () => {
-        const { link } = await openDrawer();
-        fireEvent.click(link);
-        window.dispatchEvent(new PopStateEvent('popstate'));
+    it('releases before navigating exactly once on popstate or fallback', async () => {
+        render(<Harness />);
+        fireEvent.click(screen.getByRole('link'));
+        act(() => window.dispatchEvent(new PopStateEvent('popstate')));
         await waitFor(() => expect(calls.navigate).toHaveBeenCalledTimes(1));
-        await new Promise((resolve) => setTimeout(resolve, 250));
+        await new Promise((resolve) => setTimeout(resolve, 200));
         expect(calls.navigate).toHaveBeenCalledTimes(1);
+        expect(calls.order).toEqual(['release', 'navigate']);
     });
-
-    it('does not intercept modified clicks', async () => {
-        const { link } = await openDrawer();
-        const notPrevented = fireEvent.click(link, { ctrlKey: true });
-        expect(notPrevented).toBe(true);
-        await new Promise((resolve) => setTimeout(resolve, 250));
+    it('continues on fallback when no entry was claimed', async () => {
+        render(<Harness />);
+        fireEvent.click(screen.getByRole('button'));
+        await waitFor(() => expect(calls.after).toHaveBeenCalledTimes(1));
+        expect(calls.order).toEqual(['release']);
+    });
+    it.each([
+        { ctrlKey: true },
+        { metaKey: true },
+        { shiftKey: true },
+        { altKey: true },
+        { button: 1 }
+    ])('preserves modified clicks %j', (modifiers) => {
+        render(<Harness />);
+        expect(fireEvent.click(screen.getByRole('link'), modifiers)).toBe(true);
         expect(calls.navigate).not.toHaveBeenCalled();
     });
-
-    it('does not intercept target=_blank links', async () => {
-        const { link } = await openDrawer();
-        link.target = '_blank';
-        const notPrevented = fireEvent.click(link);
-        expect(notPrevented).toBe(true);
+    it.each(['_blank', 'named-frame'])('preserves target %s', (target) => {
+        render(<Harness />);
+        screen.getByRole('link').setAttribute('target', target);
+        expect(fireEvent.click(screen.getByRole('link'))).toBe(true);
+        expect(calls.navigate).not.toHaveBeenCalled();
+    });
+    it('preserves external and download links', () => {
+        render(<Harness />);
+        const link = screen.getByRole('link');
+        link.setAttribute('href', 'https://example.com/');
+        expect(fireEvent.click(link)).toBe(true);
+        link.setAttribute('href', '/download');
+        link.setAttribute('download', 'file');
+        expect(fireEvent.click(link)).toBe(true);
+        expect(calls.navigate).not.toHaveBeenCalled();
+    });
+    it('cancels a pending continuation on a page swap', async () => {
+        render(<Harness />);
+        fireEvent.click(screen.getByRole('link'));
+        act(() => document.dispatchEvent(new Event('astro:before-swap')));
+        await new Promise((resolve) => setTimeout(resolve, 200));
         expect(calls.navigate).not.toHaveBeenCalled();
     });
 });

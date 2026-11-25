@@ -17,6 +17,7 @@ import type { TranslationKey } from '@repo/i18n';
 import { MenuIcon, NotificationIcon, SettingsIcon, UserIcon } from '@repo/icons';
 import { Link, useRouter } from '@tanstack/react-router';
 import { useEffect, useRef, useState } from 'react';
+import { BrandWordmark } from '@/components/brand/BrandWordmark';
 import { CommandPalette } from '@/components/search/CommandPalette';
 import { WhatsNewBadge } from '@/components/whats-new/WhatsNewBadge';
 import { useSidebarContext } from '@/contexts/sidebar-context';
@@ -112,17 +113,10 @@ export function Header() {
                         aria-label="Hospeda Admin"
                         className="flex items-center gap-2 font-semibold text-sm"
                     >
-                        <img
-                            src="/logo.webp"
-                            alt=""
-                            aria-hidden="true"
-                            width={28}
-                            height={28}
-                            className="h-7 w-7 shrink-0"
+                        <BrandWordmark
+                            size="sm"
+                            suffix={t('admin-nav.topbar.admin' as TranslationKey)}
                         />
-                        <span className="hidden font-heading text-base sm:inline">
-                            {t('admin-nav.topbar.admin' as TranslationKey)}
-                        </span>
                     </Link>
 
                     {/* Brand / nav divider — desktop only (mobile nav lives in BottomNav) */}

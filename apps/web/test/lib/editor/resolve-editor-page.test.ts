@@ -16,10 +16,6 @@ vi.mock('@/lib/middleware-helpers', () => ({
         `/${locale}/auth/signin?redirectTo=${encodeURIComponent(currentUrl)}`
 }));
 
-vi.mock('@/lib/urls', () => ({
-    buildUrl: ({ locale, path }: { locale: string; path: string }) => `/${locale}/${path}`
-}));
-
 const { resolveEditorPage } = await import('@/lib/editor/resolve-editor-page');
 
 const COOKIE = 'better-auth.session_token=abc123';
@@ -39,11 +35,11 @@ function okEditorData() {
 
 function createAstro({
     cookieHeader = COOKIE,
-    user = { id: 'user-1' },
+    user = { id: 'user-1', permissions: ['accommodation.update.own'] },
     accommodationId = 'acc-1'
 }: {
     readonly cookieHeader?: string | null;
-    readonly user?: Record<string, string> | null;
+    readonly user?: { readonly id: string; readonly permissions: readonly string[] } | null;
     readonly accommodationId?: string;
 } = {}) {
     const redirects: string[] = [];
@@ -95,6 +91,15 @@ describe('resolveEditorPage', () => {
             accommodationId: 'acc-1',
             sectionId: 'faqs'
         });
+    });
+
+    it('denies create-only authority before any accommodation load', async () => {
+        const { astro } = createAstro({
+            user: { id: 'user-1', permissions: ['accommodation.create'] }
+        });
+        const result = await resolveEditorPage({ astro: astro as never, sectionSlug: null });
+        expect(result.redirect?.headers.get('Location')).toBe('/es/mi-cuenta/');
+        expect(loadAccommodationEditorData).not.toHaveBeenCalled();
     });
 
     it('passes undefined when the request carries no cookie header', async () => {

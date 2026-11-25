@@ -10,8 +10,8 @@
  *
  * Navigation is rendered from the single-source `ACCOUNT_NAV_GROUPS` config
  * (HOS-131 G-3) via `getNavForSurface({ surface: 'sidebar' })`, gated
- * server-side by `isVisibleByRoles` (HOS-131 D-4 — see `src/lib/nav-gating.ts`
- * for why the sidebar approximates by role instead of exact permissions).
+ * server-side by effective permissions (see `src/lib/nav-gating.ts`
+ * for the evaluator shared with client navigation).
  */
 
 import type { SupportedLocale } from '@/lib/i18n';
@@ -20,6 +20,7 @@ import AccountShell from './AccountShell.astro';
 import { buildAccountNavModel } from '@/lib/account-nav-model';
 import type { AccountShellTemplate } from '@/components/account/ui/account-shell-template';
 import { getConfiguredMcpUrl } from '@/lib/mcp-discovery';
+import { hasAnySubscription } from '@/lib/account-has-subscription';
 
 interface Props {
 	readonly locale: SupportedLocale;
@@ -43,9 +44,7 @@ const { t } = createTranslations(locale);
 const resolvedTitle = title ?? t('account.title');
 const resolvedDescription = description ?? t('account.description');
 
-// HOS-296: the whole role SET drives the sidebar. A node is visible when ANY
-// held role grants its permission, so a user who is both HOST and
-// VENUE_OWNER sees both nav groups (AC-1).
+// Effective permissions decide publisher navigation on every surface.
 //
 // HOS-2413 T-017: the nav DATA (gating, provider placement, doors, active
 // state) lives in `buildAccountNavModel`. The session reads stay here so this
@@ -80,7 +79,19 @@ const ownsHostTradeListing = Astro.locals.user?.ownsHostTradeListing === true;
  */
 const ownsPartner = Astro.locals.user?.ownsPartner === true;
 
+/**
+ * HOS-2627: the add-ons summary entry exists only for an account with at least
+ * one subscription. Cached per user for a minute and fail-closed.
+ */
+const hasSubscription = Astro.locals.user
+	? await hasAnySubscription({
+			userId: Astro.locals.user.id,
+			cookieHeader: Astro.request.headers.get('cookie') ?? undefined
+		})
+	: false;
+
 const navModel = buildAccountNavModel({
+	hasSubscription,
 	roles: userRoles,
 	permissions: userPermissions,
 	ownsHostTradeListing,
@@ -93,6 +104,8 @@ const navModel = buildAccountNavModel({
 <AccountShell
 	locale={locale}
 	navModel={navModel}
+	mcpEnabled={mcpEnabled}
+	hasSubscription={hasSubscription}
 	title={resolvedTitle}
 	description={resolvedDescription}
 	template={template}

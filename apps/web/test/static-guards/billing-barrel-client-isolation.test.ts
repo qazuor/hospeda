@@ -171,6 +171,8 @@ import {
 
 const MOBILE_MENU = 'components/shared/navigation/MobileMenu.client.tsx';
 const NAV_AVATAR = 'lib/nav-avatar.ts';
+/** Island that imports `nav-avatar` directly (MobileMenu no longer does, HOS-2622). */
+const USER_MENU = 'components/shared/navigation/UserMenu.client.tsx';
 const abs = (relative: string) => path.join(WEB_SRC, relative);
 
 /** Counts how many times each specifier appears in `source`'s import edges. */
@@ -696,14 +698,14 @@ describe('HOS-360 static guard — the corpus walk goes RED on a planted violati
     };
 
     it('reports a planted violation at the entrypoint AND one reached transitively', () => {
-        const spy = plant([abs(MOBILE_MENU), abs(NAV_AVATAR)]);
+        const spy = plant([abs(USER_MENU), abs(NAV_AVATAR)]);
 
         try {
-            const offenders = findOffenders([abs(MOBILE_MENU)], new Set());
+            const offenders = findOffenders([abs(USER_MENU)], new Set());
 
-            expect(offenders.map(({ module }) => module)).toEqual([MOBILE_MENU, NAV_AVATAR]);
+            expect(offenders.map(({ module }) => module)).toEqual([USER_MENU, NAV_AVATAR]);
             expect(offenders.find(({ module }) => module === NAV_AVATAR)?.chain).toEqual([
-                MOBILE_MENU,
+                USER_MENU,
                 NAV_AVATAR
             ]);
         } finally {
@@ -711,7 +713,7 @@ describe('HOS-360 static guard — the corpus walk goes RED on a planted violati
         }
 
         // …and clean again the moment the mutation is gone.
-        expect(findOffenders([abs(MOBILE_MENU)], new Set())).toEqual([]);
+        expect(findOffenders([abs(USER_MENU)], new Set())).toEqual([]);
     });
 
     it('reports one shared offender once, not once per island reaching it', () => {

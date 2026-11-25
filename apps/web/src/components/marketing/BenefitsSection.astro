@@ -106,8 +106,8 @@ const visible = typeof limit === 'number' ? items.slice(0, limit) : items;
      * `auto-fit` is a centered flex-wrap, not `repeat(auto-fit, minmax(...))`.
      * A grid gives every row the same tracks, so any count that does not divide
      * the column count (5 cards in 4 columns) strands the remainder alone at the
-     * start of the last row (HOS-1766). Flex-wrap with a fixed card basis keeps
-     * every card the same width and centers a short last row, for any count.
+     * start of the last row (HOS-1766). Three equal-width flex columns keep
+     * five benefits balanced as three plus two, with the last row centered.
      */
     .benefits__grid[data-columns='auto-fit'] {
         display: flex;
@@ -116,7 +116,8 @@ const visible = typeof limit === 'number' ? items.slice(0, limit) : items;
     }
 
     .benefits__grid[data-columns='auto-fit'] .benefits__card {
-        flex: 0 1 300px;
+        flex: 0 1 calc((100% - 2 * var(--space-card-gap)) / 3);
+        max-width: calc((100% - 2 * var(--space-card-gap)) / 3);
     }
 
     .benefits__card {
@@ -161,6 +162,7 @@ const visible = typeof limit === 'number' ? items.slice(0, limit) : items;
 
         .benefits__grid[data-columns='auto-fit'] .benefits__card {
             flex-basis: 100%;
+            max-width: 100%;
         }
     }
 </style>

@@ -44,7 +44,7 @@ entryFor:
   - "page:mi-cuenta/promociones"
   - "page:mi-cuenta/promociones/nueva"
   - "section:venue.promociones"
-reviewedAt: "2026-11-24"
+reviewedAt: "2026-11-25"
 ---
 
 ## Qué podés hacer

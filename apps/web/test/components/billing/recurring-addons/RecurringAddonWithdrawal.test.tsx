@@ -162,10 +162,38 @@ describe('TEST:B13b:1 AC:B13b:1 — la baja ofrecida cancela el destaque recurre
                 listingId={null}
             />
         );
-        expect(
-            await screen.findByText('No tenés destaques recurrentes activos.')
-        ).toBeInTheDocument();
+        expect(await screen.findByText('No tenés complementos activos.')).toBeInTheDocument();
         expect(screen.queryAllByTestId(/^recurring-addon-/)).toHaveLength(0);
+        expect(
+            screen.getByRole('link', { name: 'Ver suscripciones y complementos' })
+        ).toHaveAttribute('href', '/es/mi-cuenta/suscripcion/');
+    });
+
+    it('summarizes only active rows using the kit list and secondary withdrawal action', async () => {
+        listRecurringAddons.mockResolvedValue({
+            ok: true,
+            data: {
+                items: [
+                    item,
+                    {
+                        ...item,
+                        addonInstanceId: '123e4567-e89b-42d3-a456-426614174009',
+                        status: 'PENDING_AUTHORIZATION'
+                    }
+                ]
+            }
+        });
+        render(
+            <RecurringAddonWithdrawal
+                locale="es"
+                listingId={null}
+            />
+        );
+        const list = await screen.findByRole('list', { name: 'Tus complementos activos' });
+        expect(within(list).getAllByRole('listitem')).toHaveLength(1);
+        expect(within(list).getByTestId(`recurring-addon-withdraw-${instanceId}`)).toHaveClass(
+            'secondary'
+        );
     });
 });
 

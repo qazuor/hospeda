@@ -40,7 +40,8 @@ const offer = {
     scopeType: 'VERTICAL_SUBSCRIPTION',
     validity: 'WHILE_SUBSCRIPTION_ALIVE',
     validityDays: null,
-    freeUnderGrantVerticals: []
+    freeUnderGrantVerticals: [],
+    grantedKeys: ['max_accommodations']
 };
 const sub = (id: string) => ({
     id,
@@ -82,7 +83,8 @@ describe('HOS-2362 already-active addons', () => {
         listRecurringAddons.mockResolvedValue({ ok: true, data: { items: [activeOn(subA)] } });
         mount();
         const card = await screen.findByTestId(`addon-offer-${productId}`);
-        await waitFor(() => expect((card as HTMLButtonElement).disabled).toBe(true));
+        await waitFor(() => expect(card).toHaveAttribute('aria-disabled', 'true'));
+        expect(card).not.toBeDisabled();
         expect(card.textContent).toContain('Activo');
         fireEvent.click(card);
         expect(screen.queryByTestId('addon-purchase-summary')).toBeNull();

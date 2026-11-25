@@ -12,7 +12,7 @@
  *
  * What it computes, in the order the legacy layout did:
  *
- * 1. the sidebar groups, gated by role (`getNavForSurface` + `isVisibleByRoles`);
+ * 1. the sidebar groups, gated by effective permissions;
  * 2. the provider group, placed right before Tourist (`placeProviderGroup`);
  * 3. per group: whether its header is suppressed, whether it holds the active
  *    page and whether it renders open (`resolveGroupDefaultOpen`);
@@ -32,6 +32,7 @@ import type { DiscoveryDoor } from '@/config/discovery-doors';
 import { ACCOUNT_DISCOVERY_DOORS } from '@/config/discovery-doors';
 import type { NavGroup, NavItem } from '@/config/navigation';
 import {
+    ADDONS_NAV_ITEM_ID,
     AI_ASSISTANTS_NAV_ITEM_ID,
     getNavForSurface,
     PROVIDER_NAV_GROUP
@@ -43,7 +44,7 @@ import {
     buildShellNavModel,
     withShellOpen
 } from '@/lib/account-nav-shell';
-import { isDoorVisible, isVisibleByRoles, resolveDoorLabelKey } from '@/lib/nav-gating';
+import { isDoorVisible, isVisibleByPermissions } from '@/lib/nav-gating';
 
 export { ACTIVE_SECTION_OVERRIDES, getActiveSectionKey } from '@/lib/account-nav-section';
 export type { AccountNavMode, AccountShellNavModel } from '@/lib/account-nav-shell';
@@ -53,6 +54,8 @@ export const ACCOUNT_MENU_LABEL_KEY = 'account.menu';
 
 /** Facts the layout reads from the request and hands to the model. */
 export interface AccountNavModelInput {
+    /** Whether a successful owner read found at least one subscription. Absent hides add-ons. */
+    readonly hasSubscription?: boolean;
     /** The session's role SET (HOS-296), or `null` for no session. */
     readonly roles: readonly string[] | null;
     /**
@@ -108,7 +111,7 @@ export interface AccountNavGroupModel {
 export interface AccountNavDoorModel {
     /** The door config. */
     readonly door: DiscoveryDoor;
-    /** i18n key of its label (the stateful variant once acquired). */
+    /** i18n key of its fixed label. */
     readonly labelKey: string;
     /** Its section key. */
     readonly sectionKey: string;
@@ -135,15 +138,15 @@ export interface AccountNavModel {
  * @returns The groups, the doors, the active label key and the shell's split view.
  */
 export function buildAccountNavModel({
-    roles,
     permissions = [],
     ownsHostTradeListing,
     ownsPartner = false,
     mcpEnabled,
+    hasSubscription = false,
     activeSection
 }: AccountNavModelInput): AccountNavModel {
-    const visibility = (node: Parameters<typeof isVisibleByRoles>[0]) =>
-        isVisibleByRoles(node, roles);
+    const visibility = (node: Parameters<typeof isVisibleByPermissions>[0]) =>
+        isVisibleByPermissions(node, permissions);
     // HOS-2562: «Asistentes de IA» exists only for a real client, decided by
     // the shared rule from the EFFECTIVE permissions (never the roles), and
     // only while the MCP feature is on.
@@ -163,6 +166,7 @@ export function buildAccountNavModel({
         groups: ordered.map((group): AccountNavGroupModel => {
             const items: AccountNavItemModel[] = group.items
                 .filter((item) => showAiAssistants || item.id !== AI_ASSISTANTS_NAV_ITEM_ID)
+                .filter((item) => hasSubscription || item.id !== ADDONS_NAV_ITEM_ID)
                 .map((item) => {
                     const sectionKey = getActiveSectionKey({ href: item.href });
                     return { item, sectionKey, active: sectionKey === activeSection };
@@ -184,12 +188,12 @@ export function buildAccountNavModel({
     });
 
     const doors: AccountNavDoorModel[] = ACCOUNT_DISCOVERY_DOORS.filter((door) =>
-        isDoorVisible({ door, visibility })
+        isDoorVisible({ door, permissions, ownsPartner, ownsHostTradeListing })
     ).map((door) => {
         const sectionKey = getActiveSectionKey({ href: door.href });
         return {
             door,
-            labelKey: resolveDoorLabelKey({ door, visibility }),
+            labelKey: door.i18nKey,
             sectionKey,
             active: sectionKey === activeSection
         };

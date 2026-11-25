@@ -134,24 +134,28 @@ describe('resolveOwnerDashboardRedirect', () => {
     const input = { locale: 'es' as const, currentUrl: '/es/mi-cuenta/tablero-locales/' };
 
     it('sends an anonymous visitor to login', () => {
-        expect(resolveOwnerDashboardRedirect({ ...input, vertical: 'venue', roles: null })).toMatch(
-            /signin|login|auth/
-        );
+        expect(
+            resolveOwnerDashboardRedirect({ ...input, vertical: 'venue', permissions: null })
+        ).toMatch(/signin|login|auth/);
     });
 
     it('renders for the permission holder and redirects everyone else home', () => {
         expect(
-            resolveOwnerDashboardRedirect({ ...input, vertical: 'venue', roles: ['VENUE_OWNER'] })
+            resolveOwnerDashboardRedirect({
+                ...input,
+                vertical: 'venue',
+                permissions: ['venue.editOwn']
+            })
         ).toBeNull();
         expect(
             resolveOwnerDashboardRedirect({
                 ...input,
                 vertical: 'experience',
-                roles: ['VENUE_OWNER']
+                permissions: ['venue.editOwn']
             })
         ).toBe('/es/mi-cuenta/');
         expect(
-            resolveOwnerDashboardRedirect({ ...input, vertical: 'venue', roles: ['USER'] })
+            resolveOwnerDashboardRedirect({ ...input, vertical: 'venue', permissions: [] })
         ).toBe('/es/mi-cuenta/');
     });
 });

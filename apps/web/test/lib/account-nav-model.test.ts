@@ -12,6 +12,23 @@ import {
 
 const BASE = { ownsHostTradeListing: false, mcpEnabled: true, activeSection: 'mi-cuenta' } as const;
 
+describe('subscription-only add-ons navigation', () => {
+    it.each([
+        true,
+        false,
+        undefined
+    ])('hasSubscription=%s gates the add-ons entry', (hasSubscription) => {
+        const model = buildAccountNavModel({ ...BASE, roles: ['USER'], hasSubscription });
+        const ids = model.groups.flatMap((group) => group.items.map(({ item }) => item.id));
+        expect(ids.includes('addons')).toBe(hasSubscription === true);
+        expect(ids).toContain('subscription');
+        const shellIds = model.shell.groups.flatMap((group) =>
+            group.items.map(({ item }) => item.id)
+        );
+        expect(shellIds.includes('addons')).toBe(hasSubscription === true);
+    });
+});
+
 /**
  * The effective permissions the seed grants each role, for the verticals only.
  * HOS-2562: «Asistentes de IA» reads PERMISSIONS (never roles), so a test that
@@ -39,7 +56,11 @@ describe('buildAccountNavModel: groups per role set', () => {
     });
 
     it('a HOST + VENUE_OWNER sees both management groups, still ending in tourist', () => {
-        const model = buildAccountNavModel({ ...BASE, roles: ['HOST', 'VENUE_OWNER'] });
+        const model = buildAccountNavModel({
+            ...BASE,
+            roles: ['HOST', 'VENUE_OWNER'],
+            permissions: permissionsFor(['HOST', 'VENUE_OWNER'])
+        });
         const ids = groupIds(model);
         expect(ids).toContain('anfitrion');
         expect(ids).toContain('comercio-venue');
@@ -82,6 +103,7 @@ describe('buildAccountNavModel: active state', () => {
     it('keeps the legacy default (all open but turista) while the shell opens only the active group', () => {
         const model = buildAccountNavModel({
             roles: ['HOST'],
+            permissions: permissionsFor(['HOST']),
             ownsHostTradeListing: false,
             mcpEnabled: true,
             activeSection: 'editar'
@@ -411,6 +433,7 @@ describe('buildAccountNavModel: zoned shell (HOS-2551)', () => {
         it('adds the partner group when the account owns a partner row', () => {
             const model = buildAccountNavModel({
                 roles: ['HOST'],
+                permissions: permissionsFor(['HOST']),
                 ownsHostTradeListing: false,
                 ownsPartner: true,
                 mcpEnabled: true,
