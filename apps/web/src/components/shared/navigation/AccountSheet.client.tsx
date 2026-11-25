@@ -21,11 +21,22 @@ import styles from './AccountSheet.module.css';
 export interface AccountSheetProps {
     readonly locale: SupportedLocale;
     readonly mcpEnabled?: boolean;
+    /**
+     * Whether the account holds at least one subscription (HOS-2627), resolved
+     * by the account layout. Gates the Complementos entry; the public header
+     * does not resolve it, so it fails closed there.
+     */
+    readonly hasSubscription?: boolean;
     readonly adminPanelUrl?: string;
 }
 
 /** Renders nothing for guests; permissions and ownership resolve in the browser. */
-export function AccountSheet({ locale, mcpEnabled = false, adminPanelUrl }: AccountSheetProps) {
+export function AccountSheet({
+    locale,
+    mcpEnabled = false,
+    hasSubscription = false,
+    adminPanelUrl
+}: AccountSheetProps) {
     const t = createT(locale);
     const { user, permissions, ownsHostTradeListing, ownsPartner } = useAccountPermissions({
         syncAuthenticatedAttribute: false
@@ -69,6 +80,7 @@ export function AccountSheet({ locale, mcpEnabled = false, adminPanelUrl }: Acco
         ownsHostTradeListing,
         ownsPartner,
         mcpEnabled,
+        hasSubscription,
         activeSection
     });
     const shell = buildFullAccountMenu({

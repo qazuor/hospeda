@@ -35,11 +35,12 @@ vi.mock('../../../../src/lib/dialog-history', async (original) => ({
 }));
 vi.mock('astro:transitions/client', () => ({ navigate: (href: string) => mocks.navigate(href) }));
 
-function renderSheet() {
+function renderSheet({ hasSubscription }: { readonly hasSubscription?: boolean } = {}) {
     return render(
         <AccountSheet
             locale="es"
             mcpEnabled
+            hasSubscription={hasSubscription}
             adminPanelUrl="https://admin.test"
         />
     );
@@ -194,6 +195,25 @@ describe('AccountSheet', () => {
             '/es/mi-cuenta/'
         );
         expect(mocks.acquire).toHaveBeenCalledTimes(1);
+    });
+    it('lists Complementos only for an account with a subscription (HOS-2627)', async () => {
+        // Arrange + Act: no subscription (the fail-closed default)
+        const { unmount } = renderSheet();
+        open();
+        const without = await screen.findByRole('dialog', { name: 'Menú de cuenta' });
+        // Assert
+        expect(within(without).queryByRole('link', { name: 'Complementos' })).toBeNull();
+        unmount();
+
+        // Arrange + Act: one subscription
+        renderSheet({ hasSubscription: true });
+        open();
+        const withOne = await screen.findByRole('dialog', { name: 'Menú de cuenta' });
+        // Assert
+        expect(within(withOne).getByRole('link', { name: 'Complementos' })).toHaveAttribute(
+            'href',
+            '/es/mi-cuenta/complementos/'
+        );
     });
     it('opens via event, closes on Escape and returns focus to the avatar', async () => {
         renderSheet();
