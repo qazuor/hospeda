@@ -30,7 +30,7 @@ describe('DataList', () => {
         const rowCss = readFileSync(resolve(uiDir, 'ListRow.module.css'), 'utf8');
         expect(listCss).toContain('container-type: inline-size');
         expect(rowCss).toContain('@container (width >= 40rem)');
-        expect(rowCss).not.toContain('@media');
+        expect(rowCss).not.toMatch(/@media[^{}]*(?:width|height)/);
     });
 
     it('forwards the help anchor as data-help', () => {
@@ -47,6 +47,30 @@ describe('DataList', () => {
 });
 
 describe('ListRow', () => {
+    it('keeps the full description in the DOM and opts out of clamping explicitly', () => {
+        const description = 'A long review remains available to assistive technology.';
+        const { rerender } = render(
+            <DataList label="Reviews">
+                <ListRow
+                    title="Review"
+                    description={description}
+                />
+            </DataList>
+        );
+        expect(screen.getByText(description)).toHaveClass('description');
+        expect(screen.getByText(description)).not.toHaveClass('descriptionWrap');
+        rerender(
+            <DataList label="Reviews">
+                <ListRow
+                    title="Review"
+                    description={description}
+                    wrapDescription
+                />
+            </DataList>
+        );
+        expect(screen.getByText(description)).toHaveClass('descriptionWrap');
+    });
+
     it('links the title and keeps meta, description and trailing pieces', () => {
         // Arrange / Act
         render(

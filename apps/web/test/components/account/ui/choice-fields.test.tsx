@@ -4,7 +4,7 @@
 
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { useState } from 'react';
+import { createRef, useState } from 'react';
 import { describe, expect, it } from 'vitest';
 import {
     Checkbox,
@@ -18,6 +18,43 @@ import {
 } from '../../../../src/components/account/ui';
 
 describe('Select', () => {
+    it('keeps selection, refs and form values native under custom chrome', async () => {
+        const user = userEvent.setup();
+        const ref = createRef<HTMLSelectElement>();
+        render(
+            <form aria-label="Settings">
+                <Select
+                    aria-label="Region"
+                    name="region"
+                    ref={ref}
+                    defaultValue="a"
+                >
+                    <option value="a">North</option>
+                    <option value="b">South</option>
+                </Select>
+            </form>
+        );
+        await user.selectOptions(screen.getByRole('combobox'), 'b');
+        expect(ref.current).toBe(screen.getByRole('combobox'));
+        expect(new FormData(screen.getByRole('form') as HTMLFormElement).get('region')).toBe('b');
+        expect(ref.current?.parentElement).toHaveClass('dropdown');
+    });
+
+    it.each([
+        { multiple: true },
+        { size: 4 }
+    ])('does not draw a dropdown chevron for a listbox: %j', (props) => {
+        render(
+            <Select
+                aria-label="Regions"
+                {...props}
+            >
+                <option value="a">North</option>
+            </Select>
+        );
+        expect(screen.getByRole('listbox').parentElement).not.toHaveClass('dropdown');
+    });
+
     it('is a native select wired to its Field', () => {
         render(
             <Field
@@ -118,6 +155,33 @@ describe('Textarea counter', () => {
 });
 
 describe('Checkbox', () => {
+    it('preserves Space activation, refs, invalid state and form submission', async () => {
+        const user = userEvent.setup();
+        const ref = createRef<HTMLInputElement>();
+        render(
+            <form aria-label="Preferences">
+                <Checkbox
+                    label="Updates"
+                    name="updates"
+                    value="yes"
+                    invalid
+                    ref={ref}
+                />
+            </form>
+        );
+        const input = screen.getByRole('checkbox');
+        await user.tab();
+        expect(input).toHaveFocus();
+        await user.keyboard(' ');
+        expect(input).toBeChecked();
+        expect(input).toHaveFocus();
+        expect(input).toHaveAttribute('aria-invalid', 'true');
+        expect(ref.current).toBe(input);
+        expect(new FormData(screen.getByRole('form') as HTMLFormElement).get('updates')).toBe(
+            'yes'
+        );
+    });
+
     it('sets indeterminate on the DOM node', () => {
         const { rerender } = render(
             <Checkbox

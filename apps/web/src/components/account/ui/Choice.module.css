@@ -1,5 +1,6 @@
 /* Choice.module.css — Checkbox, Radio, their groups and the OptionCard
-   variant (HOS-2413 T-007). Native inputs; the label row is the 44px target. */
+   variant (HOS-2413 T-007). Native semantics, token-painted inputs; the label
+   row is the 44px target. */
 
 .fieldset {
     display: flex;
@@ -70,12 +71,60 @@
 }
 
 .input {
+    appearance: none;
+    box-sizing: border-box;
+    display: grid;
+    place-content: center;
     flex: none;
     inline-size: var(--space-5);
     block-size: var(--space-5);
     margin: var(--space-1) 0 0;
-    accent-color: var(--action-primary);
+    border: 2px solid var(--control-border);
+    border-radius: var(--radius-sm);
+    background-color: var(--control-bg);
+    color: var(--on-action-primary);
     cursor: pointer;
+}
+
+.input[type="radio"] {
+    border-radius: var(--radius-pill);
+}
+
+.input:checked,
+.input:indeterminate {
+    background-color: var(--action-primary);
+    border-color: var(--action-primary);
+}
+
+.input::before {
+    content: "";
+    display: none;
+}
+
+.input[type="checkbox"]:checked::before {
+    display: block;
+    inline-size: var(--space-1);
+    block-size: var(--space-2);
+    border: solid currentColor;
+    border-width: 0 2px 2px 0;
+    transform: translateY(-15%) rotate(45deg);
+}
+
+.input[type="checkbox"]:indeterminate::before {
+    display: block;
+    inline-size: var(--space-2);
+    block-size: 2px;
+    border: 0;
+    background-color: currentColor;
+    transform: none;
+}
+
+.input[type="radio"]:checked::before {
+    display: block;
+    inline-size: var(--space-2);
+    block-size: var(--space-2);
+    border-radius: var(--radius-pill);
+    background-color: currentColor;
 }
 
 .input:focus-visible {
@@ -83,8 +132,9 @@
     outline-offset: 2px;
 }
 
+.fieldset[aria-invalid="true"] .input,
 .input[aria-invalid="true"] {
-    outline: 2px solid var(--status-danger-solid);
+    border-color: var(--status-danger-solid);
 }
 
 .text {
@@ -105,6 +155,18 @@
 }
 
 .disabled .input {
+    cursor: not-allowed;
+}
+
+.input:disabled {
+    background-color: var(--muted);
+    border-color: var(--control-border);
+    color: var(--core-muted-foreground);
+    cursor: not-allowed;
+}
+
+.fieldset:disabled .choice {
+    opacity: 0.5;
     cursor: not-allowed;
 }
 

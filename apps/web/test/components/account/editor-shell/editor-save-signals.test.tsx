@@ -4,6 +4,8 @@
  */
 
 import { act, fireEvent, render, screen } from '@testing-library/react';
+import { useState } from 'react';
+import { renderToString } from 'react-dom/server';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { EditorAutoSaveChip } from '../../../../src/components/account/editor-shell/EditorAutoSaveChip.client';
 import { EditorSaveBar } from '../../../../src/components/account/editor-shell/EditorSaveBar';
@@ -22,6 +24,100 @@ afterEach(() => {
 });
 
 describe('EditorSaveBar', () => {
+    it('reports clean and dirty, and resets the signal on unmount', () => {
+        const props = {
+            locale: 'es',
+            onSave: async () => ({ ok: true }),
+            onDiscard: vi.fn()
+        } as const;
+        const { rerender, unmount } = render(
+            <EditorSaveBar
+                {...props}
+                isDirty={false}
+            />
+        );
+        expect(getEditorAutoSave().status).toBe('clean');
+        rerender(
+            <EditorSaveBar
+                {...props}
+                isDirty
+            />
+        );
+        expect(getEditorAutoSave().status).toBe('dirty');
+        rerender(
+            <EditorSaveBar
+                {...props}
+                isDirty={false}
+            />
+        );
+        expect(getEditorAutoSave().status).toBe('clean');
+        rerender(
+            <EditorSaveBar
+                {...props}
+                isDirty
+            />
+        );
+        unmount();
+        expect(getEditorAutoSave().status).toBe('idle');
+    });
+
+    it('reports saving, error with working retry, saved time and clean after the saved interval', async () => {
+        vi.useFakeTimers();
+        try {
+            let finish: (result: { ok: boolean }) => void = () => undefined;
+            const onSave = vi.fn(
+                () =>
+                    new Promise<{ ok: boolean }>((resolve) => {
+                        finish = resolve;
+                    })
+            );
+            function Form() {
+                const [dirty, setDirty] = useState(true);
+                return (
+                    <>
+                        <EditorAutoSaveChip
+                            locale="es"
+                            saveModel="bar"
+                        />
+                        <EditorSaveBar
+                            locale="es"
+                            isDirty={dirty}
+                            onDiscard={() => setDirty(false)}
+                            onSave={async () => {
+                                const result = await onSave();
+                                if (result.ok) setDirty(false);
+                                return result.ok ? { ok: true } : { ok: false };
+                            }}
+                        />
+                    </>
+                );
+            }
+            render(<Form />);
+            expect(screen.getByText('Cambios sin guardar')).toHaveAttribute('data-status', 'dirty');
+            fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+            expect(getEditorAutoSave().status).toBe('saving');
+            await act(async () => finish({ ok: false }));
+            expect(getEditorAutoSave()).toMatchObject({
+                status: 'error',
+                retry: expect.any(Function)
+            });
+            fireEvent.click(screen.getByRole('button', { name: 'Reintentar' }));
+            expect(onSave).toHaveBeenCalledTimes(2);
+            expect(getEditorAutoSave().status).toBe('saving');
+            await act(async () => finish({ ok: true }));
+            expect(getEditorAutoSave()).toMatchObject({
+                status: 'saved',
+                savedAt: expect.any(Date)
+            });
+            expect(screen.getByRole('region')).toHaveAttribute('data-status', 'saved');
+            act(() => vi.advanceTimersByTime(3000));
+            expect(getEditorAutoSave().status).toBe('clean');
+            expect(screen.queryByRole('region')).toBeNull();
+            expect(screen.getByText('Todo guardado')).toBeInTheDocument();
+        } finally {
+            vi.useRealTimers();
+        }
+    });
     it('renders the bar signal and stays empty while the form is clean', () => {
         // Act
         const { container } = render(
@@ -121,6 +217,27 @@ describe('editor autosave signal', () => {
 });
 
 describe('EditorAutoSaveChip', () => {
+    it('renders a clean bar chip during SSR without mutating the shared server state', () => {
+        const html = renderToString(
+            <EditorAutoSaveChip
+                locale="es"
+                saveModel="bar"
+            />
+        );
+        expect(html).toContain('Todo guardado');
+        expect(html).toContain('data-editor-save-signal="bar"');
+        expect(getEditorAutoSave().status).toBe('idle');
+    });
+
+    it('keeps the SSR clean bar chip on initial client render', () => {
+        render(
+            <EditorAutoSaveChip
+                locale="es"
+                saveModel="bar"
+            />
+        );
+        expect(screen.getByRole('status')).toHaveTextContent('Todo guardado');
+    });
     it('renders the auto signal with no chip until a save is reported', () => {
         const { container } = render(<EditorAutoSaveChip locale="es" />);
 

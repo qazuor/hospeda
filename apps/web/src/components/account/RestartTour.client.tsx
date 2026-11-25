@@ -19,6 +19,7 @@ type DriverInstance = {
     hasNextStep: () => boolean;
 };
 
+/** Replays available welcome tours without changing their role or step filtering. */
 export function RestartTour({ locale, userRoles }: RestartTourProps) {
     const { t } = createTranslations(locale);
     // HOS-788: a role set can now match SEVERAL welcome tours (e.g. tourist +
