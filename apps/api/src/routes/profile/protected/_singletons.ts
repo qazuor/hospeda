@@ -8,6 +8,7 @@
 
 import { ServiceErrorCode } from '@repo/schemas';
 import { NewsletterSubscriberService, ServiceError, UserService } from '@repo/service-core';
+import { createNewsletterNotificationDispatcher } from '../../../lib/newsletter-dispatcher';
 import { env } from '../../../utils/env';
 import { apiLogger } from '../../../utils/logger';
 
@@ -48,7 +49,8 @@ export function getDefaultNewsletterService(): NewsletterSubscriberService {
             {
                 hmacSecret,
                 hmacSecretPrev: env.HOSPEDA_NEWSLETTER_HMAC_SECRET_PREV,
-                softCapDays: env.HOSPEDA_NEWSLETTER_SOFTCAP_DAYS
+                softCapDays: env.HOSPEDA_NEWSLETTER_SOFTCAP_DAYS,
+                notificationDispatcher: createNewsletterNotificationDispatcher()
             }
         );
     }

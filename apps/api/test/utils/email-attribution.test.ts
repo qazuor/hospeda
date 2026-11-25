@@ -10,6 +10,7 @@ import {
     buildAppEmailLayout,
     buildTransactionalAttribution,
     CONVERSATION_EMAIL_KEYS,
+    NEWSLETTER_EMAIL_KEYS,
     TOKEN_REMINDER_TEMPLATE_KEYS
 } from '../../src/utils/email-attribution';
 
@@ -27,6 +28,12 @@ describe('apps/api email attribution keys', () => {
 
     it.each(ALL_KEYS)('%s is an EMAIL_CATALOG entry', (key) => {
         expect(findEmailCatalogEntry({ key })).toBeDefined();
+    });
+
+    it.each(
+        Object.values(NEWSLETTER_EMAIL_KEYS)
+    )('%s is an EMAIL_CATALOG entry the newsletter dispatcher sends', (key) => {
+        expect(findEmailCatalogEntry({ key })?.wired).toBe(true);
     });
 
     it('builds a transactional attribution', () => {
