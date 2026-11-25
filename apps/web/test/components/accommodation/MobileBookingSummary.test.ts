@@ -5,6 +5,26 @@ import { describe, expect, it } from 'vitest';
 const source = (path: string) => readFileSync(resolve(__dirname, '../../../src', path), 'utf8');
 
 describe('MobileBookingSummary', () => {
+    it('places the mobile alert inside the price summary, after its price and actions', () => {
+        const page = source('pages/[lang]/alojamientos/[slug].astro');
+        expect(page).toMatch(
+            /<MobileBookingSummary\b[\s\S]*?>\s*<ListingPriceAlert\b[^>]*placement="summary"[^>]*\/>\s*<\/MobileBookingSummary>/
+        );
+        const summary = source('components/accommodation/MobileBookingSummary.astro');
+        expect(summary).toMatch(/<MobileBookingSummaryActions\b[^>]*\/>\s*<slot \/>/);
+        const alert = source('components/accommodation/ListingPriceAlert.astro');
+        expect(alert).toContain(
+            "placement === 'summary' ? '(max-width: 1024px)' : '(min-width: 1025px)'"
+        );
+        expect(alert).toContain('.listing-price-alert--sidebar { display: none; }');
+    });
+
+    it('keeps the price CTA in a session-blind Astro card with client-side conversation lookup', () => {
+        const sidebar = source('components/accommodation/PricingSidebar.astro');
+        expect(sidebar).toContain('consultContext');
+        expect(sidebar).toContain('<ConversationCta client:idle accommodationId={accommodationId}');
+        expect(sidebar).not.toMatch(/Astro\.locals|\/protected\//);
+    });
     it('server renders the price and stay lengths before hydrating the actions', () => {
         const summary = source('components/accommodation/MobileBookingSummary.astro');
 
@@ -20,7 +40,7 @@ describe('MobileBookingSummary', () => {
     it('carries no host presentation: HostSection is the only one on the accommodation page', () => {
         const page = source('pages/[lang]/alojamientos/[slug].astro');
         const summary = source('components/accommodation/MobileBookingSummary.astro');
-        const summaryTag = page.match(/<MobileBookingSummary\b[^>]*\/>/)?.[0] ?? '';
+        const summaryTag = page.match(/<MobileBookingSummary\b[^>]*>/)?.[0] ?? '';
 
         expect(summaryTag).not.toMatch(/\bowner/);
         expect(summary).not.toMatch(/owner|avatar|hostSince|formatHostSince/);

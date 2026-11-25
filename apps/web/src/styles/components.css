@@ -278,6 +278,21 @@
     box-shadow: 0 6px 20px var(--brand-accent-a45);
 }
 
+/* Functional accent CTAs keep the shared shape and focus ring. */
+.btn-gradient--flat.btn-gradient--accent {
+    color: var(--accent-foreground);
+    background-image: none;
+    background-color: var(--brand-accent);
+    box-shadow: none;
+    transform: none;
+}
+
+.btn-gradient--flat.btn-gradient--accent:hover:not(:disabled):not([aria-disabled="true"]) {
+    background-color: var(--brand-accent-l82);
+    box-shadow: none;
+    transform: none;
+}
+
 .btn-gradient--primary {
     color: var(--primary-foreground, #fff);
     background-image: linear-gradient(

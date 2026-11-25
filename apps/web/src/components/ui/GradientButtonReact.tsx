@@ -7,6 +7,7 @@
 import type { ReactNode, Ref } from 'react';
 import { Spinner } from '@/components/shared/feedback/Spinner';
 
+/** Props shared by the gradient and flat functional CTA variants. */
 export interface GradientButtonProps {
     readonly label: string;
     readonly as?: 'a' | 'button';
@@ -14,6 +15,8 @@ export interface GradientButtonProps {
     readonly variant?: 'primary' | 'accent' | 'outline-primary' | 'outline-accent';
     readonly size?: 'sm' | 'md' | 'lg';
     readonly shape?: 'pill' | 'rounded';
+    /** Use a solid accent fill without a shadow or hover lift. Defaults to false. */
+    readonly flat?: boolean;
     readonly className?: string;
     readonly onClick?: () => void;
     readonly target?: string;
@@ -65,6 +68,7 @@ export interface GradientButtonProps {
     readonly suppressHydrationWarning?: boolean;
 }
 
+/** Render a link or button using the shared CTA styles. */
 export function GradientButton({
     label,
     as: Element = 'a',
@@ -72,6 +76,7 @@ export function GradientButton({
     variant = 'accent',
     size = 'md',
     shape = 'pill',
+    flat = false,
     className,
     onClick,
     target,
@@ -92,6 +97,7 @@ export function GradientButton({
         `btn-gradient--${variant}`,
         `btn-gradient--${size}`,
         shape === 'rounded' ? 'btn-gradient--shape-rounded' : '',
+        flat ? 'btn-gradient--flat' : '',
         className ?? ''
     ]
         .filter(Boolean)

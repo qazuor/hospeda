@@ -19,8 +19,11 @@
     }
 
     /* The bar is taller than one control (price line above the icons), so the
-       row aligns on the bottom edge: the icons and the ai-chat button share a line. */
-    :global(.mobile-dock__row):has(.bar) {
+       row aligns on the bottom edge: the icons and the ai-chat button share a line.
+       `html` lifts the selector to (0,2,1): a (0,2,0) tie with the dock's scoped
+       row rule lost whenever the dock stylesheet loaded last (HOS-2607, the
+       experience page on staging, where the ai-chat button stayed centred). */
+    :global(html .mobile-dock__row):has(.bar) {
         align-items: flex-end;
     }
 

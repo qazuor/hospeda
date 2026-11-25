@@ -8,10 +8,10 @@
  * keep existing and both render this island, differing only in
  * `initialTab` and the per-tab redirect targets.
  *
- * Layout, top to bottom: an `<h1>` naming the active screen, the shared
- * OAuth block (Google/Facebook — signing in with Google IS signing up with
- * Google, so it has no tab), the ARIA tablist, then the active tab's
- * password form. Only the active tab's form is MOUNTED (conditional render,
+ * Layout, top to bottom: an `<h1>` naming the active screen, the ARIA tablist,
+ * the active tab's password form, then the divider and shared OAuth block.
+ * Google/Facebook have no tab because the provider handles both auth intents.
+ * Only the active tab's form is MOUNTED (conditional render,
  * not CSS hiding) — two simultaneously-mounted `autoComplete="email"` inputs
  * make browser autofill ambiguous.
  *
@@ -373,12 +373,6 @@ export function AuthTabs({
                 </div>
             )}
 
-            <AuthOAuthButtons
-                locale={locale}
-                loadingProvider={oauthLoading}
-                onSelectProvider={handleOauth}
-            />
-
             <div
                 role="tablist"
                 aria-label={t('auth.tabs.label', 'Ingresar o registrarse')}
@@ -438,6 +432,12 @@ export function AuthTabs({
                     />
                 )}
             </div>
+            <AuthOAuthButtons
+                locale={locale}
+                loadingProvider={oauthLoading}
+                onSelectProvider={handleOauth}
+                showDivider
+            />
         </div>
     );
 }

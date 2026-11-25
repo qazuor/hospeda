@@ -139,17 +139,23 @@ export function getAccommodationConversation(
  * Starts at {@link NO_CONVERSATION} (with `isResolving: true` once mounted in a
  * browser), so the server-rendered output is always the anonymous variant.
  *
- * @param params - `{ accommodationId }` (RO-RO).
+ * @param params - Accommodation id and optional `enabled` flag (RO-RO). Other verticals disable the lookup.
  * @returns The current {@link AccommodationConversationState}.
  */
 export function useAccommodationConversation({
-    accommodationId
+    accommodationId,
+    enabled = true
 }: {
     readonly accommodationId: string;
+    readonly enabled?: boolean;
 }): AccommodationConversationState {
     const [state, setState] = useState<AccommodationConversationState>(NO_CONVERSATION);
 
     useEffect(() => {
+        if (!enabled) {
+            setState(NO_CONVERSATION);
+            return;
+        }
         let cancelled = false;
         setState(RESOLVING);
         getAccommodationConversation(accommodationId).then((resolved) => {
@@ -158,7 +164,7 @@ export function useAccommodationConversation({
         return () => {
             cancelled = true;
         };
-    }, [accommodationId]);
+    }, [accommodationId, enabled]);
 
     return state;
 }

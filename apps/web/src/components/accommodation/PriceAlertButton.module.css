@@ -37,16 +37,27 @@
         color var(--duration-fast) ease;
 }
 
-/* ─── Create state (primary CTA) ─────────────────────────────────────────── */
+/* ─── Create and locked states (secondary CTA) ───────────────────────────── */
 
 .priceAlertButtonCreate {
-    color: #fff;
-    background-color: var(--brand-primary);
-    border: 1px solid transparent;
+    color: var(--core-foreground);
+    background-color: transparent;
+    border: 1px solid var(--control-border);
 }
 
-.priceAlertButtonCreate:hover:enabled {
-    opacity: 0.9;
+.priceAlertButtonCreate:hover:not(:disabled) {
+    background-color: var(--muted);
+    border-color: var(--core-muted-foreground);
+    text-decoration: none;
+}
+
+.priceAlertButtonCreate:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+}
+
+.vipBadge {
+    composes: vipBadge from "../promotions/PromotionCards.module.css";
 }
 
 .priceAlertButtonCreate:disabled {
