@@ -804,10 +804,11 @@ export class NewsletterCampaignService extends BaseService {
         readonly ignoreSoftCap: boolean;
     }): Promise<GetEligibleForCampaignResult> {
         const { campaign, ignoreSoftCap } = input;
-        const softCapDays = ignoreSoftCap ? 0 : this.softCapDays;
         const eligibleResult = await this.subscriberService.getEligibleForCampaign({
             localeFilter: campaign.localeFilter as 'all' | 'es' | 'en' | 'pt',
-            softCapWindowDays: softCapDays === 0 ? 99999 : softCapDays,
+            // Omitting the window skips the soft-cap exclusion; a sentinel window would
+            // still exclude everyone mailed within it (HOS-2613).
+            ...(ignoreSoftCap ? {} : { softCapWindowDays: this.softCapDays }),
             // NULL contentType collapses to undefined → no preferences
             // filter applied; non-NULL gates the audience by
             // `preferences[contentType] = true` (with a defensive

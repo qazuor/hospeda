@@ -1233,7 +1233,7 @@ describe('NewsletterCampaignService.getAudienceEstimate', () => {
 
         // Assert
         const arg = subscriberSvc.getEligibleForCampaign.mock.calls[0]?.[0];
-        expect(arg).toMatchObject({ softCapWindowDays: 99999 });
+        expect(arg).not.toHaveProperty('softCapWindowDays');
         expect((arg as { contentType?: unknown }).contentType).toBeUndefined();
     });
 
