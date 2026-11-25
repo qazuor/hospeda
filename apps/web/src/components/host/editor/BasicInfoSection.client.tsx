@@ -4,7 +4,6 @@
  * description, type, and destination. Uses native HTML form elements.
  */
 
-import { LockIcon } from '@repo/icons';
 import { Checkbox } from '@/components/account/ui/Checkbox';
 import { Field } from '@/components/account/ui/Field';
 import { Section } from '@/components/account/ui/Section';
@@ -22,7 +21,7 @@ import { buildUrl } from '@/lib/urls';
 import { AiTextImprovePanel } from './AiTextImprovePanel.client';
 import styles from './BasicInfoSection.module.css';
 import { ACCOMMODATION_FIELD_PREFIX } from './field-ids';
-import { PlanEntitlementGate } from './PlanEntitlementGate.client';
+import { PlanEntitlementGate, PlanEntitlementHint } from './PlanEntitlementGate.client';
 import { RichTextEditor } from './RichTextEditor.client';
 
 /**
@@ -48,7 +47,6 @@ const DESCRIPTION_COUNTER_ID = `${DESCRIPTION_ID}-counter`;
  * from the textarea's `aria-describedby` so a screen-reader user learns WHY
  * there is no toolbar on focus, rather than only on encountering the notice.
  */
-const DESCRIPTION_FORMAT_UPSELL_ID = `${DESCRIPTION_ID}-format-upsell`;
 
 /**
  * Accommodation type values in display order. Labels resolve through
@@ -354,6 +352,16 @@ export function BasicInfoSection({
                         id={DESCRIPTION_ID}
                         label={t('host.properties.editor.field.description', 'Descripción')}
                         error={errors.description}
+                        hint={
+                            <PlanEntitlementHint
+                                entitlementKey="can_use_rich_description"
+                                locale={locale}
+                                upgradeUrl={buildUrl({
+                                    locale,
+                                    path: PRICING_PAGE_PATH_BY_AUDIENCE.owner
+                                })}
+                            />
+                        }
                     >
                         {/*
                          * The entitlement gates RICH text (formatting), NOT the
@@ -365,55 +373,21 @@ export function BasicInfoSection({
                             entitlementKey="can_use_rich_description"
                             locale={locale}
                             fallback={
-                                <>
-                                    {/*
-                                     * Sits ABOVE the textarea, in the slot the rich
-                                     * editor's toolbar occupies (HOS-800), and names
-                                     * the field it is about (HOS-2488), so it reads as
-                                     * a missing toolbar and never as a locked button.
-                                     */}
-                                    <div className={styles.formatUpsell}>
-                                        <LockIcon
-                                            className={styles.formatUpsellIcon}
-                                            aria-hidden="true"
-                                        />
-                                        <p
-                                            id={DESCRIPTION_FORMAT_UPSELL_ID}
-                                            className={styles.formatUpsellText}
-                                        >
-                                            {t(
-                                                'host.properties.editor.entitlement.richDescriptionHint',
-                                                'Texto con formato en la descripción: negritas, listas y más. Disponible en planes superiores.'
-                                            )}{' '}
-                                            <a
-                                                href={buildUrl({
-                                                    locale,
-                                                    path: PRICING_PAGE_PATH_BY_AUDIENCE.owner
-                                                })}
-                                            >
-                                                {t(
-                                                    'host.properties.editor.entitlement.upgradeLink',
-                                                    'Mejorar plan'
-                                                )}
-                                            </a>
-                                        </p>
-                                    </div>
-                                    <Textarea
-                                        value={data.description}
-                                        onChange={(e) =>
-                                            onFieldChange(
-                                                'description',
-                                                capLength(e.target.value, DESCRIPTION_MAX_LENGTH)
-                                            )
-                                        }
-                                        rows={6}
-                                        placeholder={t(
-                                            'host.properties.editor.richText.placeholder',
-                                            'Describí tu propiedad con detalle...'
-                                        )}
-                                        aria-describedby={`${DESCRIPTION_COUNTER_ID} ${DESCRIPTION_FORMAT_UPSELL_ID}`}
-                                    />
-                                </>
+                                <Textarea
+                                    value={data.description}
+                                    onChange={(e) =>
+                                        onFieldChange(
+                                            'description',
+                                            capLength(e.target.value, DESCRIPTION_MAX_LENGTH)
+                                        )
+                                    }
+                                    rows={6}
+                                    placeholder={t(
+                                        'host.properties.editor.richText.placeholder',
+                                        'Describí tu propiedad con detalle...'
+                                    )}
+                                    aria-describedby={DESCRIPTION_COUNTER_ID}
+                                />
                             }
                         >
                             <RichTextEditor

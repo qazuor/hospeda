@@ -948,7 +948,7 @@
             "save": "Save",
             "saving": "Saving...",
             "cancel": "Cancel",
-            "confirmDelete": "Delete this promotion? This action cannot be undone.",
+            "confirmDelete": "The promotion will no longer be available to tourists. This action cannot be undone.",
             "upgradePlan": "View plans",
             "pause": "Pause"
         },
@@ -974,9 +974,9 @@
         "audience": {
             "legend": "Who sees this promotion?",
             "plusLabel": "Everyone",
-            "plusDescription_one": "Every VIP tourist sees it. Free tourists see up to {{count}} promotion per page, picked at random, so sometimes they see it and sometimes they do not.",
-            "plusDescription_other": "Every VIP tourist sees it. Free tourists see up to {{count}} promotions per page, picked at random, so sometimes they see it and sometimes they do not.",
-            "plusDescriptionNoQuota": "Every VIP tourist sees it. Free tourists see some promotions per page, picked at random, so sometimes they see it and sometimes they do not.",
+            "plusDescription_one": "Choose Everyone to make the promotion available to all tourists. VIP tourists always see it; free tourists see up to {{count}} randomly selected promotion per page, so it may not appear on every visit.",
+            "plusDescription_other": "Choose Everyone to make the promotion available to all tourists. VIP tourists always see it; free tourists see up to {{count}} randomly selected promotions per page, so it may not appear on every visit.",
+            "plusDescriptionNoQuota": "Choose Everyone to make the promotion available to all tourists. VIP tourists always see it; free tourists see a random selection of promotions per page, so it may not appear on every visit.",
             "vipLabel": "VIP only",
             "vipDescription": "Only VIP tourists see it, and we email them about it. Free tourists see it blurred, with an invitation to go VIP.",
             "vipDescriptionPlan": "Only tourists on the {{plan}} plan see it, and we email them about it. Free tourists see it blurred, with an invitation to go VIP.",

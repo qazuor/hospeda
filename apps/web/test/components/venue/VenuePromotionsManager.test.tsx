@@ -287,16 +287,16 @@ describe('VenuePromotionsManager', () => {
             />
         );
         fireEvent.click(await screen.findByRole('button', { name: 'Agregar promoción' }));
-        const type = screen.getByLabelText('Beneficio');
+        const type = screen.getByRole('combobox');
         fireEvent.change(type, { target: { value: 'special_offer' } });
         expect(screen.getAllByRole('textbox')[1]).toHaveAttribute('maxLength', '1000');
-        expect(screen.queryByLabelText('Valor')).not.toBeInTheDocument();
+        expect(screen.queryByRole('spinbutton')).not.toBeInTheDocument();
 
         fireEvent.change(type, { target: { value: 'percentage' } });
-        expect(screen.getByLabelText('Valor')).toHaveAttribute('max', '100');
+        expect(screen.getByRole('spinbutton')).toHaveAttribute('max', '100');
     });
 
-    it('renders promotion window copy separately and uses the shared editor field classes', async () => {
+    it('renders promotion window copy separately and uses kit field controls', async () => {
         mocks.list.mockResolvedValue({
             ok: true,
             data: { items: [], meta: { activeCount: 0, maxActive: 5 } }
@@ -311,10 +311,17 @@ describe('VenuePromotionsManager', () => {
             />
         );
         fireEvent.click(await screen.findByRole('button', { name: 'Agregar promoción' }));
-        fireEvent.click(screen.getByLabelText('Activar franja semanal'));
-        fireEvent.click(screen.getByLabelText('Jue'));
-        fireEvent.change(screen.getByLabelText('Desde'), { target: { value: '22:00' } });
-        fireEvent.change(screen.getByLabelText('Hasta'), { target: { value: '01:00' } });
+        fireEvent.click(
+            screen.getByLabelText('venue.owner.editor.promotionsManager.window.enable')
+        );
+        fireEvent.click(screen.getByLabelText('venue.detail.promotions.window.days.3'));
+        fireEvent.change(
+            screen.getByLabelText('venue.owner.editor.promotionsManager.window.start'),
+            { target: { value: '22:00' } }
+        );
+        fireEvent.change(screen.getByLabelText('venue.owner.editor.promotionsManager.window.end'), {
+            target: { value: '01:00' }
+        });
 
         const overnightHint = screen.getByText(
             'Termina después de la medianoche, el día siguiente'
@@ -328,13 +335,15 @@ describe('VenuePromotionsManager', () => {
         expect(help.tagName).toBe('SMALL');
         expect(new Set([overnightHint, preview, help]).size).toBe(3);
 
-        expect(screen.getByLabelText('Título')).toHaveClass('input');
-        expect(screen.getByLabelText('Beneficio')).toHaveClass('input');
-        expect(screen.getByLabelText('Valor')).toHaveClass('input');
-        expect(screen.getByLabelText('Condición')).toHaveClass('textarea');
-        expect(screen.getByLabelText('Activar franja semanal').closest('label')).toHaveClass(
-            'checkbox'
-        );
+        expect(screen.getAllByRole('textbox')[0]).toHaveClass('control');
+        expect(screen.getByRole('combobox')).toHaveClass('select');
+        expect(screen.getByRole('spinbutton')).toHaveClass('control');
+        expect(screen.getAllByRole('textbox')[1]).toHaveClass('textarea');
+        expect(
+            screen
+                .getByLabelText('venue.owner.editor.promotionsManager.window.enable')
+                .closest('label')
+        ).toHaveClass('choice');
         expect(screen.getByRole('group', { name: 'Solo en ciertos días y horas' })).toHaveClass(
             'section'
         );

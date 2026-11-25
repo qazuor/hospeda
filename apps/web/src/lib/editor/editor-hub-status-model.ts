@@ -47,6 +47,19 @@ import {
     type AccommodationPublishReadinessInput,
     resolveMissingPublishRequirements
 } from '@repo/schemas';
+import type { ListingSectionStates } from './listing-editor-registry';
+
+/** The row lock reads the same resolved state as the section page, independently
+ * of completeness/status precedence (a publish blocker may coexist with a lock). */
+export function isEditorSectionLocked({
+    sectionId,
+    sectionStates
+}: {
+    readonly sectionId: string;
+    readonly sectionStates: ListingSectionStates;
+}): boolean {
+    return sectionStates[sectionId]?.state === 'locked';
+}
 
 // ---------------------------------------------------------------------------
 // Types

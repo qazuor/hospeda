@@ -278,7 +278,7 @@ describe('TEST:B13a:25 PromotionList effective-set gate', () => {
 
         // Confirm row should appear with confirm text
         expect(
-            screen.getByText(/¿Eliminar esta promoción\? Esta acción no se puede deshacer\./i)
+            screen.getByText(/La promoción dejará de estar disponible para los turistas/i)
         ).toBeInTheDocument();
     });
 

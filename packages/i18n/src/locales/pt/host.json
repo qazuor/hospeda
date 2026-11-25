@@ -948,7 +948,7 @@
             "save": "Salvar",
             "saving": "Salvando...",
             "cancel": "Cancelar",
-            "confirmDelete": "Excluir esta promoção? Esta ação não pode ser desfeita.",
+            "confirmDelete": "A promoção deixará de estar disponível para os turistas. Esta ação não pode ser desfeita.",
             "upgradePlan": "Ver planos",
             "pause": "Pausar"
         },
@@ -974,9 +974,9 @@
         "audience": {
             "legend": "Quem vê esta promoção?",
             "plusLabel": "Para todos",
-            "plusDescription_one": "Todos os turistas VIP a veem. Os turistas grátis veem até {{count}} promoção por página, escolhida ao acaso, então às vezes a veem e às vezes não.",
-            "plusDescription_other": "Todos os turistas VIP a veem. Os turistas grátis veem até {{count}} promoções por página, escolhidas ao acaso, então às vezes a veem e às vezes não.",
-            "plusDescriptionNoQuota": "Todos os turistas VIP a veem. Os turistas grátis veem algumas promoções por página, escolhidas ao acaso, então às vezes a veem e às vezes não.",
+            "plusDescription_one": "Escolha Para todos para disponibilizar a promoção a todos os turistas. Os turistas VIP sempre a veem; os turistas grátis veem até {{count}} promoção por página, escolhida ao acaso, por isso ela pode não aparecer em todas as visitas.",
+            "plusDescription_other": "Escolha Para todos para disponibilizar a promoção a todos os turistas. Os turistas VIP sempre a veem; os turistas grátis veem até {{count}} promoções por página, escolhidas ao acaso, por isso ela pode não aparecer em todas as visitas.",
+            "plusDescriptionNoQuota": "Escolha Para todos para disponibilizar a promoção a todos os turistas. Os turistas VIP sempre a veem; os turistas grátis veem uma seleção aleatória de promoções por página, por isso ela pode não aparecer em todas as visitas.",
             "vipLabel": "Só VIP",
             "vipDescription": "Só os turistas VIP a veem, e avisamos por e-mail. Os turistas grátis a veem desfocada, com um convite para se tornarem VIP.",
             "vipDescriptionPlan": "Só os turistas com o plano {{plan}} a veem, e avisamos por e-mail. Os turistas grátis a veem desfocada, com um convite para se tornarem VIP.",

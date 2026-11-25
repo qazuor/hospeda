@@ -317,10 +317,7 @@ export function VenuePromotionsManager({
     const remove = async (item: PromotionRow) => {
         const confirmed = await askConfirm({
             title: t('venue.owner.editor.promotionsManager.deleteTitle', 'Borrar promoción'),
-            description: t(
-                'venue.owner.editor.promotionsManager.deleteConfirm',
-                '¿Querés borrar esta promoción?'
-            ),
+            description: t('host.promotions.actions.confirmDelete'),
             confirmLabel: t('venue.owner.editor.promotionsManager.actions.delete'),
             cancelLabel: t('common.cancel', 'Cancelar')
         });

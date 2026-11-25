@@ -6,8 +6,23 @@
 import { describe, expect, it } from 'vitest';
 import {
     type EditorStatusInput,
+    isEditorSectionLocked,
     resolveEditorSectionStatuses
 } from '@/lib/editor/editor-hub-status-model';
+
+describe('editor row plan lock', () => {
+    it('uses the resolved section state for calendar and venue menu independently of status', () => {
+        const sectionStates = {
+            calendar: { state: 'locked' },
+            menu: { state: 'locked' },
+            media: { state: 'available' }
+        } as const;
+        expect(isEditorSectionLocked({ sectionId: 'calendar', sectionStates })).toBe(true);
+        expect(isEditorSectionLocked({ sectionId: 'menu', sectionStates })).toBe(true);
+        expect(isEditorSectionLocked({ sectionId: 'media', sectionStates })).toBe(false);
+        expect(isEditorSectionLocked({ sectionId: 'unknown', sectionStates })).toBe(false);
+    });
+});
 
 /** A fully-filled accommodation; each test overrides only what it is about. */
 const COMPLETE: EditorStatusInput = {

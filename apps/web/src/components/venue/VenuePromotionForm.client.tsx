@@ -1,7 +1,7 @@
 import type { VenuePromotionListOutput } from '@repo/schemas';
 import { OwnerPromotionDiscountTypeEnum } from '@repo/schemas';
 import type { Dispatch, FormEventHandler, ReactNode, RefObject, SetStateAction } from 'react';
-import { Button } from '@/components/account/ui/Button';
+import { Button, Checkbox, Field, Select, Textarea, TextInput } from '@/components/account/ui';
 import fieldStyles from '@/components/listing/editor/editor-fields.module.css';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -86,21 +86,25 @@ export function VenuePromotionForm({
             className={styles.form}
             onSubmit={onSubmit}
         >
-            <label>
-                {t('venue.owner.editor.promotionsManager.name', 'Título')}
-                <input
-                    className={fieldStyles.input}
+            <Field
+                locale={locale}
+                label={t('venue.owner.editor.promotionsManager.name')}
+                required
+            >
+                <TextInput
                     ref={titleInputRef}
                     required
                     maxLength={200}
                     value={title}
                     onChange={(event) => setTitle(event.target.value)}
                 />
-            </label>
-            <label>
-                {t('venue.owner.editor.promotionsManager.discountType', 'Beneficio')}
-                <select
-                    className={fieldStyles.input}
+            </Field>
+            <Field
+                locale={locale}
+                label={t('venue.owner.editor.promotionsManager.discountType')}
+                required
+            >
+                <Select
                     value={discountType}
                     onChange={(event) => {
                         const value = parseVenueDiscountType(event.target.value);
@@ -116,36 +120,35 @@ export function VenuePromotionForm({
                     <option value="special_offer">
                         {t('host.promotions.discountTypes.special_offer', 'Oferta especial')}
                     </option>
-                </select>
-            </label>
+                </Select>
+            </Field>
             {discountType === 'special_offer' ? (
-                <label>
-                    {t('host.promotions.specialOffer.label', 'Contá el beneficio')}
-                    <textarea
-                        className={fieldStyles.textarea}
+                <Field
+                    locale={locale}
+                    label={t('host.promotions.specialOffer.label')}
+                    required
+                    hint={t('host.promotions.specialOffer.help')}
+                    error={offerError || undefined}
+                >
+                    <Textarea
                         required
-                        maxLength={1000}
+                        limit={1000}
+                        locale={locale}
                         value={description}
                         onChange={(event) => {
                             setDescription(event.target.value);
                             setOfferError('');
                         }}
                     />
-                    <small>
-                        {t(
-                            'host.promotions.specialOffer.help',
-                            'Contá el beneficio en pocas palabras, por ejemplo 2x1 en tragos.'
-                        )}
-                    </small>
-                    <small>{description.length}/1000</small>
-                    {offerError && <small role="alert">{offerError}</small>}
-                </label>
+                </Field>
             ) : (
                 <>
-                    <label>
-                        {t('venue.owner.editor.promotionsManager.value', 'Valor')}
-                        <input
-                            className={fieldStyles.input}
+                    <Field
+                        locale={locale}
+                        label={t('venue.owner.editor.promotionsManager.value')}
+                        required
+                    >
+                        <TextInput
                             required
                             type="number"
                             min="0"
@@ -153,37 +156,42 @@ export function VenuePromotionForm({
                             value={discountValue}
                             onChange={(event) => setDiscountValue(event.target.value)}
                         />
-                    </label>
-                    <label>
-                        {t('venue.owner.editor.promotionsManager.condition', 'Condición')}
-                        <textarea
-                            className={fieldStyles.textarea}
-                            maxLength={1000}
+                    </Field>
+                    <Field
+                        locale={locale}
+                        label={t('venue.owner.editor.promotionsManager.condition')}
+                    >
+                        <Textarea
+                            limit={1000}
+                            locale={locale}
                             value={description}
                             onChange={(event) => setDescription(event.target.value)}
                         />
-                    </label>
+                    </Field>
                 </>
             )}
-            <label>
-                {t('venue.owner.editor.promotionsManager.validFrom', 'Válida desde')}
-                <input
-                    className={fieldStyles.input}
+            <Field
+                locale={locale}
+                label={t('venue.owner.editor.promotionsManager.validFrom')}
+                required
+            >
+                <TextInput
                     required
                     type="date"
                     value={validFrom}
                     onChange={(event) => setValidFrom(event.target.value)}
                 />
-            </label>
-            <label>
-                {t('venue.owner.editor.promotionsManager.validUntil', 'Válida hasta')}
-                <input
-                    className={fieldStyles.input}
+            </Field>
+            <Field
+                locale={locale}
+                label={t('venue.owner.editor.promotionsManager.validUntil')}
+            >
+                <TextInput
                     type="date"
                     value={validUntil}
                     onChange={(event) => setValidUntil(event.target.value)}
                 />
-            </label>
+            </Field>
             <fieldset className={fieldStyles.section}>
                 <legend>
                     {t(
@@ -191,62 +199,49 @@ export function VenuePromotionForm({
                         'Solo en ciertos días y horas'
                     )}
                 </legend>
-                <label className={fieldStyles.checkbox}>
-                    <input
-                        type="checkbox"
-                        checked={windowEnabled}
-                        onChange={(event) => setWindowEnabled(event.target.checked)}
-                    />
-                    {t(
-                        'venue.owner.editor.promotionsManager.window.enable',
-                        'Activar franja semanal'
-                    )}
-                </label>
+                <Checkbox
+                    label={t('venue.owner.editor.promotionsManager.window.enable')}
+                    checked={windowEnabled}
+                    onChange={(event) => setWindowEnabled(event.target.checked)}
+                />
                 {windowEnabled && (
                     <>
                         <div className={styles.weekdays}>
                             {[1, 2, 3, 4, 5, 6, 0].map((weekday, index) => (
-                                <label
+                                <Checkbox
                                     key={weekday}
-                                    className={fieldStyles.checkbox}
-                                >
-                                    <input
-                                        type="checkbox"
-                                        checked={windowWeekdays.includes(weekday)}
-                                        onChange={(event) =>
-                                            setWindowWeekdays((current) =>
-                                                event.target.checked
-                                                    ? [...current, weekday]
-                                                    : current.filter((day) => day !== weekday)
-                                            )
-                                        }
-                                    />
-                                    {t(
-                                        `venue.detail.promotions.window.days.${index}`,
-                                        ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'][index] ??
-                                            ''
-                                    )}
-                                </label>
+                                    label={t(`venue.detail.promotions.window.days.${index}`)}
+                                    checked={windowWeekdays.includes(weekday)}
+                                    onChange={(event) =>
+                                        setWindowWeekdays((current) =>
+                                            event.target.checked
+                                                ? [...current, weekday]
+                                                : current.filter((day) => day !== weekday)
+                                        )
+                                    }
+                                />
                             ))}
                         </div>
-                        <label>
-                            {t('venue.owner.editor.promotionsManager.window.start', 'Desde')}
-                            <input
-                                className={fieldStyles.input}
+                        <Field
+                            locale={locale}
+                            label={t('venue.owner.editor.promotionsManager.window.start')}
+                        >
+                            <TextInput
                                 type="time"
                                 value={windowStart}
                                 onChange={(event) => setWindowStart(event.target.value)}
                             />
-                        </label>
-                        <label>
-                            {t('venue.owner.editor.promotionsManager.window.end', 'Hasta')}
-                            <input
-                                className={fieldStyles.input}
+                        </Field>
+                        <Field
+                            locale={locale}
+                            label={t('venue.owner.editor.promotionsManager.window.end')}
+                        >
+                            <TextInput
                                 type="time"
                                 value={windowEnd}
                                 onChange={(event) => setWindowEnd(event.target.value)}
                             />
-                        </label>
+                        </Field>
                         {windowStart && windowEnd && windowEnd <= windowStart && (
                             <small className={fieldStyles.hint}>
                                 {t(

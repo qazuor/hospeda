@@ -110,7 +110,7 @@ describe('accommodation BasicInfoSection on the kit (HOS-2488)', () => {
         renderSection();
 
         // Assert
-        const notice = document.querySelector('[id$="-format-upsell"]') as HTMLElement;
+        const notice = document.getElementById('acc-description-hint') as HTMLElement;
         expect(notice.textContent).toContain('en la descripción');
     });
 });

@@ -158,7 +158,7 @@ export function FavoritesView({
                 locale={locale}
                 apiBase={base}
                 list={list}
-                onMove={setToMove}
+                onMove={collections.gate.kind === 'noPlan' ? undefined : setToMove}
                 onRemove={(bookmark) => {
                     void handleRemove(bookmark);
                 }}
@@ -168,7 +168,7 @@ export function FavoritesView({
                 state={collections.state}
                 gate={collections.gate}
             />
-            {toMove === null ? null : (
+            {toMove === null || collections.gate.kind === 'noPlan' ? null : (
                 <MoveToCollectionModal
                     isOpen
                     onClose={() => setToMove(null)}

@@ -1,5 +1,11 @@
 /* PlanEntitlementGate.module.css — locked state styling */
 
+.hint a {
+    color: var(--brand-primary);
+    text-decoration: underline;
+    text-underline-offset: var(--space-1);
+}
+
 .locked {
     padding: 0.75rem 1rem;
     border-radius: var(--radius-md);

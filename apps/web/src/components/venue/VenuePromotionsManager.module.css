@@ -19,11 +19,6 @@
     background: var(--core-card);
 }
 
-.form label {
-    display: grid;
-    gap: var(--space-2);
-}
-
 .formActions {
     display: flex;
     flex-wrap: wrap;
@@ -34,23 +29,6 @@
 
 .formActions > * {
     align-self: flex-start;
-}
-
-/* Checkboxes keep their intrinsic size: stretching them pushed the weekday
-   names out of their chips (HOS-2395). */
-.form input:not([type="checkbox"]),
-.form textarea,
-.form select {
-    width: 100%;
-}
-
-/* A checkbox row sits on one line. `.form label` above (0,1,1) would
-   otherwise beat the shared `.checkbox` class (0,1,0) and stack the box over
-   its text (HOS-2395). */
-.form label:has(> input[type="checkbox"]) {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
 }
 
 .weekdays {

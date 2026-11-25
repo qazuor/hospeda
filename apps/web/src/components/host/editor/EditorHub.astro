@@ -21,6 +21,9 @@
  */
 
 import { CompletenessMeter, StatusPill } from '@/components/account/ui';
+import { LockIcon } from '@repo/icons';
+import { isEditorSectionLocked } from '@/lib/editor/editor-hub-status-model';
+import type { ListingSectionStates } from '@/lib/editor/listing-editor-registry';
 import type { StatusTone } from '@/components/account/ui/status-tone';
 import type { EditorCompleteness } from '@/lib/editor/editor-completeness';
 import type { EditorSectionStatus, EditorStatusTone } from '@/lib/editor/editor-hub-status-model';
@@ -42,11 +45,12 @@ interface Props {
 	readonly visibility?: EditorSectionVisibility;
 	/** Status lines keyed by section id. A missing key renders no pill. */
 	readonly statuses: Readonly<Record<string, EditorSectionStatus>>;
+	readonly sectionStates?: ListingSectionStates;
 	/** What the listing still needs, by section. Omitted: no meter. */
 	readonly completeness?: EditorCompleteness;
 }
 
-const { locale, registry, entityId, visibility = {}, statuses, completeness } = Astro.props;
+const { locale, registry, entityId, visibility = {}, statuses, completeness, sectionStates = {} } = Astro.props;
 const { t, tPlural } = createTranslations(locale);
 
 /** Hub tone → kit pill tone. */
@@ -110,6 +114,7 @@ const missingItems = (completeness?.missing ?? []).map((sectionId) => {
 			<ul class="editor-hub__list">
 				{entry.sections.map((section) => {
 					const status = statuses[section.id];
+					const locked = isEditorSectionLocked({ sectionId: section.id, sectionStates });
 					return (
 						<li class="editor-hub__item">
 							<a
@@ -117,8 +122,12 @@ const missingItems = (completeness?.missing ?? []).map((sectionId) => {
 								href={buildEditorSectionUrl({ locale, registry, entityId, section })}
 							>
 								<span class="editor-hub__text">
-									<span class="editor-hub__title">{t(section.labelKey)}</span>
-									{status && (
+									<span class="editor-hub__title">
+										{locked && <LockIcon size="sm" aria-hidden="true" />}
+										{t(section.labelKey)}
+									</span>
+									{locked && <StatusPill tone="plan">{status?.tone === 'locked' ? statusText(status) : t('listing.owner.editor.hub.status.lockedEmpty')}</StatusPill>}
+									{status && (!locked || status.tone !== 'locked') && (
 										<StatusPill tone={PILL_TONE[status.tone]} className="editor-hub__status">
 											{statusText(status)}
 										</StatusPill>
@@ -195,6 +204,9 @@ const missingItems = (completeness?.missing ?? []).map((sectionId) => {
 	}
 
 	.editor-hub__title {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-2);
 		font: var(--app-ui);
 		color: var(--core-foreground);
 	}

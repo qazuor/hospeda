@@ -41,7 +41,7 @@ export function resolveCollectionsGate({
     readonly accessDenied: boolean;
     readonly usage: BookmarkCollectionUsage | null;
 }): CollectionsGate {
-    if (accessDenied) return { kind: 'noPlan' };
+    if (accessDenied || (usage !== null && usage.max === 0)) return { kind: 'noPlan' };
     if (usage !== null && usage.current >= usage.max) return { kind: 'atLimit', usage };
     return { kind: 'open', usage };
 }

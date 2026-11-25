@@ -1,19 +1,14 @@
 /**
  * @file VenuePromotionList.client.tsx
- * @description The rows of the venue promotions manager on the kit
- * `DataList` / `ListRow` (HOS-2504).
- *
- * A row carries up to three actions (edit, pause or reactivate, delete). The
- * kit row has two action slots, so edit and pause share the first slot as one
- * group and delete takes the second.
+ * @description Venue promotions use the same kit card and adaptive grid as
+ * accommodation promotions. Edit, pause/reactivate and delete share one footer.
  */
 
-import { formatCalendarDate } from '@repo/utils';
 import { Button } from '@/components/account/ui/Button';
-import { DataList } from '@/components/account/ui/DataList';
-import { ListRow } from '@/components/account/ui/ListRow';
 import { StatusPill } from '@/components/account/ui/StatusPill';
 import { toneFor } from '@/components/account/ui/status-tone';
+import { PromotionCard } from '@/components/host/PromotionCard';
+import styles from '@/components/host/PromotionCard.module.css';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { formatPromotionBenefit } from '@/lib/promotions/format-benefit';
@@ -22,7 +17,6 @@ import {
     type PromotionRow,
     resolvePromotionLifecycleState
 } from './promotion-lifecycle';
-import styles from './VenuePromotionList.module.css';
 
 /** Spanish fallbacks of the lifecycle labels. */
 const STATE_FALLBACK = {
@@ -46,10 +40,10 @@ export interface VenuePromotionListProps {
 }
 
 /**
- * Renders the owner's promotions as kit rows.
+ * Renders the owner's promotions as shared kit cards.
  *
  * @param props - See {@link VenuePromotionListProps}.
- * @returns The data list.
+ * @returns The promotion grid.
  */
 export function VenuePromotionList({
     locale,
@@ -66,7 +60,10 @@ export function VenuePromotionList({
         t(`venue.owner.editor.promotionsManager.actions.${key}`);
 
     return (
-        <DataList label={t('venue.owner.editor.promotionsManager.title', 'Promociones')}>
+        <ul
+            className={styles.grid}
+            aria-label={t('venue.owner.editor.promotionsManager.title')}
+        >
             {items.map((item) => {
                 const state = resolvePromotionLifecycleState(item, now);
                 const stateLabel =
@@ -77,54 +74,32 @@ export function VenuePromotionList({
                               STATE_FALLBACK[state]
                           );
                 return (
-                    <ListRow
+                    <PromotionCard
                         key={item.id}
-                        rowId={item.id}
+                        locale={locale}
                         title={item.title}
-                        meta={
-                            <span className={styles.meta}>
-                                <span>
-                                    {formatPromotionBenefit({
-                                        discountType: item.discountType,
-                                        discountValue: item.discountValue,
-                                        locale,
-                                        specialOfferText: item.description
+                        benefit={formatPromotionBenefit({
+                            discountType: item.discountType,
+                            discountValue: item.discountValue,
+                            locale,
+                            specialOfferText: item.description
+                        })}
+                        status={
+                            state !== null && stateLabel ? (
+                                <StatusPill
+                                    tone={toneFor({
+                                        domain: 'promotion',
+                                        status: PROMOTION_STATUS_BY_STATE[state]
                                     })}
-                                </span>
-                                {state !== null && stateLabel ? (
-                                    <StatusPill
-                                        tone={toneFor({
-                                            domain: 'promotion',
-                                            status: PROMOTION_STATUS_BY_STATE[state]
-                                        })}
-                                    >
-                                        {stateLabel}
-                                    </StatusPill>
-                                ) : null}
-                            </span>
+                                >
+                                    {stateLabel}
+                                </StatusPill>
+                            ) : null
                         }
-                        description={
+                        validFrom={item.validFrom}
+                        validUntil={item.validUntil}
+                        actions={
                             <>
-                                {formatCalendarDate({
-                                    value: item.validFrom,
-                                    locale,
-                                    options: { dateStyle: 'long' }
-                                })}{' '}
-                                –{' '}
-                                {item.validUntil
-                                    ? formatCalendarDate({
-                                          value: item.validUntil,
-                                          locale,
-                                          options: { dateStyle: 'long' }
-                                      })
-                                    : t('venue.detail.promotions.noEndDate', 'Sin fecha de fin')}
-                            </>
-                        }
-                        actions={[
-                            <span
-                                key="primary"
-                                className={styles.actionGroup}
-                            >
                                 {/* Owner decision 18: shown, but disabled, without the plan key. */}
                                 <Button
                                     variant="secondary"
@@ -151,19 +126,18 @@ export function VenuePromotionList({
                                         {actionLabel('activate')}
                                     </Button>
                                 ) : null}
-                            </span>,
-                            <Button
-                                key="delete"
-                                variant="danger-ghost"
-                                size="sm"
-                                onClick={() => onDelete(item)}
-                            >
-                                {actionLabel('delete')}
-                            </Button>
-                        ]}
+                                <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    onClick={() => onDelete(item)}
+                                >
+                                    {actionLabel('delete')}
+                                </Button>
+                            </>
+                        }
                     />
                 );
             })}
-        </DataList>
+        </ul>
     );
 }

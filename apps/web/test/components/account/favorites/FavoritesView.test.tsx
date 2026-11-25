@@ -55,6 +55,19 @@ describe('FavoritesView (HOS-2480)', () => {
     });
 
     describe('without the collections plan', () => {
+        it('treats a successful zero-quota read as the same single plan lock', async () => {
+            installFavoritesApi({
+                bookmarks: [bookmark(1)],
+                collections: [],
+                usage: { current: 0, max: 0 }
+            });
+            renderView({ initialUsage: { current: 0, max: 0 } });
+            expect(await screen.findByText('Lugar 1')).toBeInTheDocument();
+            await waitFor(() => expect(lockedRegions()).toHaveLength(1));
+            expect(screen.queryByTestId('create-collection-button')).not.toBeInTheDocument();
+            expect(screen.queryByTestId('move-bookmark-button-bm-1')).not.toBeInTheDocument();
+        });
+
         it('renders ONE plan LockedState with the catalog plan names', async () => {
             installFavoritesApi({ bookmarks: [bookmark(1)], collections: 'noPlan' });
             renderView({ initialAccessDenied: true });
@@ -75,35 +88,21 @@ describe('FavoritesView (HOS-2480)', () => {
             expect(within(locked).queryAllByRole('textbox')).toHaveLength(0);
         });
 
-        it('«Crear colección» is disabled AND says why', async () => {
+        it('hides «Crear colección» when the section already explains the plan lock', async () => {
             installFavoritesApi({ collections: 'noPlan' });
             renderView({ initialAccessDenied: true });
 
-            const create = screen.getByTestId('create-collection-button');
-            expect(create).toBeDisabled();
-            const reasonId = create.getAttribute('aria-describedby');
-            expect(reasonId).toBeTruthy();
-            expect(document.getElementById(reasonId as string)).toHaveTextContent(
-                'Tu plan no incluye colecciones.'
-            );
+            await waitFor(() => expect(lockedRegions()).toHaveLength(1));
+            expect(screen.queryByTestId('create-collection-button')).not.toBeInTheDocument();
         });
 
-        it('«Mover» agrees with «Crear colección»: no create entry, the same sentence', async () => {
+        it('hides «Mover» for a plan without collections instead of opening a dead dialog', async () => {
             installFavoritesApi({ bookmarks: [bookmark(1)], collections: 'noPlan' });
             renderView({ initialAccessDenied: true });
 
-            fireEvent.click(await screen.findByTestId('move-bookmark-button-bm-1'));
-            const dialog = await screen.findByRole('dialog');
-            expect(
-                within(dialog).queryByRole('button', { name: '+ Crear nueva colección' })
-            ).not.toBeInTheDocument();
-            const headerReason = document.getElementById(
-                screen.getByTestId('create-collection-button').getAttribute('aria-describedby') ??
-                    ''
-            );
-            expect(within(dialog).getByTestId('move-bookmark-create-locked').textContent).toBe(
-                headerReason?.textContent
-            );
+            expect(await screen.findByText('Lugar 1')).toBeInTheDocument();
+            expect(screen.queryByTestId('move-bookmark-button-bm-1')).not.toBeInTheDocument();
+            expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
         });
     });
 
