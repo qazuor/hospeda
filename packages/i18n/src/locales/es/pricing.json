@@ -1,4 +1,13 @@
 {
+    "noCost": "Sin costo",
+    "planStatus": {
+        "current": "Tu plan actual",
+        "named": "Tu plan actual: {{plan}}",
+        "manage": "Gestionar mi plan",
+        "upgrade": "Pasate a {{plan}}",
+        "offer": "{{free}} o {{paid}} desde {{price}}",
+        "compare": "{{free}} vs. {{paid}}"
+    },
     "hub": {
         "title": "Planes de Hospeda",
         "tagline": "Tu lugar en Hospeda",
@@ -99,7 +108,7 @@
         "tagline": "Planes y precios",
         "heading": "Un plan para cada audiencia",
         "subtitle": "Hospeda tiene cuatro formas de sumarse. Elegí la tuya y mirá qué incluye cada una.",
-        "cardsHeading": "Elegí tu audiencia",
+        "cardsHeading": "¿Querés viajar o publicar?",
         "highlightsLabel": "Qué obtenés",
         "from": "Desde {{price}}",
         "trial_one": "{{count}} día de prueba gratis",
@@ -121,7 +130,7 @@
                 "cta": "Ver planes para viajeros",
                 "highlights": {
                     "item1": "Guardá favoritos y organizalos en colecciones de viaje.",
-                    "item2": "Recibí alertas de precio y accedé a ofertas exclusivas.",
+                    "item2": "Descubrí destinos y planificá tus escapadas.",
                     "item3": "Compará alojamientos y escribí tus reseñas."
                 }
             },

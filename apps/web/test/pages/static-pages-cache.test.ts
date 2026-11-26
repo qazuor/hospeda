@@ -46,7 +46,6 @@ import { describe, expect, it } from 'vitest';
 /** Every page W2-2 makes cacheable, relative to `src/pages/[lang]/`. */
 const STATIC_PAGES = [
     'nosotros/index.astro',
-    'beneficios/index.astro',
     'contacto/index.astro',
     'preguntas-frecuentes/index.astro',
     'legal/cookies/index.astro',

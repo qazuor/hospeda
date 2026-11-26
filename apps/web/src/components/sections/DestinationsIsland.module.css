@@ -386,8 +386,8 @@
 }
 
 .arrowButton {
-    background: none;
-    border: none;
+    background: var(--core-card);
+    border: 1px solid var(--border);
     /* H-11: minimum 44×44px touch target */
     min-width: 44px;
     min-height: 44px;
@@ -396,7 +396,7 @@
     color: var(--core-foreground);
     cursor: pointer;
     line-height: 1;
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius-pill);
     transition:
         color var(--duration-fast) ease,
         opacity var(--duration-fast) ease;
@@ -461,7 +461,7 @@
 /* Compact slide counter shown instead of dots when there are too many slides */
 .slideCounter {
     font-family: var(--font-sans);
-    font-size: 0.875rem; /* 14px */
+    font-size: var(--text-body);
     font-weight: 500;
     color: var(--core-muted-foreground);
     letter-spacing: 0.05em;

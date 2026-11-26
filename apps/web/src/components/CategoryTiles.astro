@@ -139,9 +139,10 @@ const { tiles, sectionTitle, sectionTagline } = Astro.props;
        of the column count (e.g. 7 tiles on a 4-col viewport).
        ======================================================== */
     .category-tiles__grid {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: center;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        max-width: 55rem;
+        margin-inline: auto;
         gap: var(--space-5, 20px);
     }
 
@@ -151,8 +152,6 @@ const { tiles, sectionTitle, sectionTagline } = Astro.props;
        narrower viewports while staying centred.
        ======================================================== */
     .category-tiles__tile {
-        flex: 1 1 220px;
-        max-width: 280px;
         display: flex;
         flex-direction: column;
         border-radius: var(--radius-card, 24px);
@@ -253,12 +252,8 @@ const { tiles, sectionTitle, sectionTagline } = Astro.props;
        ======================================================== */
     @media (max-width: 640px) {
         .category-tiles__grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
             gap: 0.75rem;
-        }
-
-        .category-tiles__tile {
-            flex: 0 0 calc(50% - 0.375rem);
-            max-width: calc(50% - 0.375rem);
         }
 
         .category-tiles__visual {

@@ -58,7 +58,6 @@ const UPCOMING_ROW_IDS = [
  */
 const MENTIONS: Readonly<Record<string, Readonly<Record<Locale, readonly string[]>>>> = {
     aiSupport: { es: [], en: [], pt: [] },
-    alertsOffers: { es: [], en: [], pt: [] },
     branding: {
         es: ['branding personalizado'],
         en: ['custom branding'],

@@ -1,5 +1,9 @@
 import { type FetchPlansResult, fetchPublicPlans } from '@/lib/billing/fetch-plans';
-import { resolvePaidBenefit, touristBadgeCatalog } from '@/lib/billing/plan-badge';
+import {
+    resolvePaidBenefit,
+    selectInheritedTouristPlan,
+    touristBadgeCatalog
+} from '@/lib/billing/plan-badge';
 
 /**
  * The sellable Tourist VIP plan's own cells: what an owner plan that inherits
@@ -33,12 +37,8 @@ export function resolveTouristVipBenefitKeys({
 }): TouristVipBenefitKeys | null {
     if (!result.ok) return null;
     const { floor, plans: sellablePlans } = touristBadgeCatalog({ result });
-    const [first, ...rest] = sellablePlans;
-    if (first === undefined) return null;
-
-    // The catalog sells one tourist tier today (`tourist-vip`). Should it sell
-    // more, the inherited offer is the top one, read by `sortOrder`.
-    const top = rest.reduce((best, plan) => (plan.sortOrder > best.sortOrder ? plan : best), first);
+    const top = selectInheritedTouristPlan({ sellablePlans });
+    if (!top) return null;
 
     return {
         entitlements: new Set(sellablePlans.flatMap((plan) => plan.entitlements)),

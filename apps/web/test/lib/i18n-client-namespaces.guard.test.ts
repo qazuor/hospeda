@@ -74,6 +74,13 @@ describe('HOS-369 W3-2 — client i18n key prefixes', () => {
         expect(client['nav.userMenu.signOut']).toEqual(expect.stringMatching(/\S/));
     });
 
+    it.each(['es', 'en', 'pt'] as const)('ships localized tourist plan copy in %s', (locale) => {
+        const client = pickClientNamespaces(trans[locale]);
+
+        expect(client['pricing.planStatus.current']).toEqual(expect.stringMatching(/\S/));
+        expect(client['billing.entitlement.price_alerts']).toEqual(expect.stringMatching(/\S/));
+    });
+
     it('ships no prefix the browser cannot reach', () => {
         const nameableKeys = [...nameable.keys()];
         const dead = declared.filter(

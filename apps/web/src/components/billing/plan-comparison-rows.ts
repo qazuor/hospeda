@@ -143,7 +143,7 @@ export const TOURIST_EXPERIENCE_ROWS: readonly RowConfig[] = [
         id: 'alertsOffers',
         labelKey: 'billing.comparison.row.alertsOffers',
         cell: { kind: 'entitlement', key: EntitlementKeyEnum.PRICE_ALERTS },
-        status: 'upcoming'
+        status: 'available'
     },
     {
         id: 'whatsappDisplay',

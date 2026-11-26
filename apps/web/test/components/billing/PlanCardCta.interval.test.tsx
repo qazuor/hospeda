@@ -100,6 +100,30 @@ describe('plan card interval actions', () => {
         );
     });
 
+    it('marks the inherited paid card and offers management without checkout or cycle changes', async () => {
+        pricingSituation.mockResolvedValue({
+            ok: true,
+            data: { situation: 'TOURIST_VIP_INHERITED' }
+        });
+
+        render(
+            <PlanCardCta
+                {...props}
+                vertical="tourist"
+                inheritedPlanVersionId="v1"
+            />
+        );
+
+        expect(await screen.findByText('Tu plan actual')).toHaveAttribute('data-tone', 'success');
+        expect(screen.getByRole('link', { name: 'Gestionar mi plan' })).toHaveAttribute(
+            'href',
+            '/es/mi-cuenta/suscripcion/?domain=tourist'
+        );
+        expect(screen.getAllByRole('link')).toHaveLength(1);
+        expect(screen.queryByRole('button')).not.toBeInTheDocument();
+        expect(listMine).not.toHaveBeenCalled();
+    });
+
     it('keeps a monthly-only plan available under either grid interval', async () => {
         pricingSituation.mockResolvedValue({ ok: true, data: { situation: 'CHECKOUT' } });
         render(
