@@ -26,12 +26,14 @@ describe('reply routes: authorization declaration', () => {
         expect(replySource).toContain("idParam: 'accommodationId'");
     });
 
-    it('wires listingAccess on all three write routes', () => {
+    it('wires listingAccess on all three write routes; only delete skips the entitlement', () => {
         const routes = replySource.split('createProtectedRoute(').slice(1);
         expect(routes).toHaveLength(3);
-        for (const block of routes) {
-            expect(block).toContain('listingAccess,');
-        }
+        expect(routes[0]).toContain('listingAccess,');
+        expect(routes[1]).toContain('listingAccess,');
+        expect(routes[2]).toContain("operation: 'READ_OWN',");
+        expect(routes[2]).not.toContain('step6Key');
+        expect(routes[2]).not.toContain('respond_reviews');
     });
 
     it('passes the URL accommodation id to the service so a foreign review answers 404', () => {

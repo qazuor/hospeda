@@ -76,10 +76,12 @@ export const OwnerReceivedReviewsQuerySchema = z.object({
     page: z.coerce.number().int().min(1).default(1),
     pageSize: z.coerce.number().int().min(1).max(50).default(10),
     /** Only reviews with no live reply. */
+    // Accepts the raw query string AND an already-transformed boolean: the route
+    // factory validates the query once, and the handler must be able to parse again.
     unanswered: z
-        .enum(['true', 'false'])
+        .union([z.boolean(), z.enum(['true', 'false'])])
         .optional()
-        .transform((v) => v === 'true'),
+        .transform((v) => v === true || v === 'true'),
     /** Narrow to one of the owner's accommodations. */
     accommodationId: z.string().uuid().optional()
 });

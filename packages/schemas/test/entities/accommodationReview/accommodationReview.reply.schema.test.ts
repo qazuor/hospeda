@@ -53,6 +53,18 @@ describe('OwnerReceivedReviewsQuerySchema', () => {
         });
     });
 
+    it('is idempotent: parsing an already-parsed query still works (the route factory parses first)', () => {
+        const once = OwnerReceivedReviewsQuerySchema.parse({ unanswered: 'true' });
+        expect(OwnerReceivedReviewsQuerySchema.parse(once)).toEqual(once);
+        expect(
+            OwnerReceivedReviewsQuerySchema.parse(OwnerReceivedReviewsQuerySchema.parse({}))
+        ).toEqual({
+            page: 1,
+            pageSize: 10,
+            unanswered: false
+        });
+    });
+
     it('reads unanswered=true from the query string', () => {
         expect(OwnerReceivedReviewsQuerySchema.parse({ unanswered: 'true' }).unanswered).toBe(true);
     });

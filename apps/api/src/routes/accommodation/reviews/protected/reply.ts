@@ -101,16 +101,26 @@ export const protectedEditReviewReplyRoute = createProtectedRoute({
     options: { middlewares: [writeReplyRateLimit] }
 });
 
-/** DELETE: soft-delete the live reply. */
+/**
+ * Removing one's own reply needs no plan: a host who downgraded must still be
+ * able to take down what they published. Ownership is still decided by the
+ * listing chain (step 4) and the service.
+ *
+ * DELETE: soft-delete the live reply.
+ */
 export const protectedDeleteReviewReplyRoute = createProtectedRoute({
     method: 'delete',
     path: '/{accommodationId}/reviews/{reviewId}/reply',
     summary: 'Delete the reply to a review of an own accommodation',
     description:
-        'Soft-deletes the live reply. The host can answer the review again afterwards. Requires the respond_reviews entitlement.',
+        'Soft-deletes the live reply. The host can answer the review again afterwards. Needs no plan entitlement.',
     tags: ['Accommodation Reviews'],
     protectedTag: false,
-    listingAccess,
+    listingAccess: {
+        vertical: VerticalEnum.ACCOMMODATION,
+        operation: 'READ_OWN',
+        idParam: 'accommodationId'
+    },
     requestParams,
     responseSchema: z.object({ deleted: z.literal(true) }),
     handler: async (ctx: Context, params) => {

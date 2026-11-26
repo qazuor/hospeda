@@ -170,6 +170,17 @@ describe('ReceivedReviewsPanel', () => {
         expect(screen.queryByRole('button', { name: 'Responder' })).toBeNull();
     });
 
+    it('still lets a host without the entitlement delete an existing reply', async () => {
+        api.listReceived.mockResolvedValue(page([{ ...REVIEW, reply: REPLY }], false));
+
+        render(<ReceivedReviewsPanel locale="es" />);
+
+        expect(
+            await screen.findByRole('button', { name: 'Eliminar respuesta' })
+        ).toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: 'Editar respuesta' })).toBeNull();
+    });
+
     it('shows the entitlement message when the API refuses the write', async () => {
         api.listReceived.mockResolvedValue(page([REVIEW]));
         api.create.mockResolvedValue({

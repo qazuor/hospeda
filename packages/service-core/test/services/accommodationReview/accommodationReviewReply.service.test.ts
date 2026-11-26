@@ -399,3 +399,29 @@ describe('AccommodationReviewReplyService.getPublicRepliesByReviewIds', () => {
         expect(map.get(REVIEW_ID)).toEqual({ content: CONTENT, createdAt, editedAt: null });
     });
 });
+
+describe('AccommodationReviewReplyService.listReceived', () => {
+    it('always scopes the query to the actor as owner, whatever the filters', async () => {
+        const { service, model } = buildService();
+        (model as unknown as { findReceivedByOwner: unknown }).findReceivedByOwner = vi.fn(
+            async () => ({ items: [], total: 0 })
+        );
+
+        const result = await service.listReceived({
+            actor: ownerActor(),
+            unanswered: true,
+            accommodationId: OTHER_ACCOMMODATION_ID
+        });
+
+        expect(result.error).toBeUndefined();
+        expect(
+            firstArg((model as unknown as { findReceivedByOwner: unknown }).findReceivedByOwner)
+        ).toEqual({
+            ownerId: OWNER_ID,
+            unanswered: true,
+            accommodationId: OTHER_ACCOMMODATION_ID,
+            page: 1,
+            pageSize: 10
+        });
+    });
+});

@@ -373,28 +373,27 @@ function ReviewCard({ review, locale, canRespond, onReplyChange }: ReviewCardPro
                             {t(errorKey)}
                         </Alert>
                     ) : null}
-                    {canRespond ? (
-                        <div className={styles.actions}>
-                            {reply.moderationState === 'REJECTED' ? null : (
-                                <Button
-                                    variant="secondary"
-                                    size="sm"
-                                    onClick={startComposing}
-                                    disabled={busy}
-                                >
-                                    {t('account.receivedReviews.edit')}
-                                </Button>
-                            )}
+                    <div className={styles.actions}>
+                        {/* Delete needs no plan: a downgraded host can still take their reply down. */}
+                        {!canRespond || reply.moderationState === 'REJECTED' ? null : (
                             <Button
-                                variant="danger-ghost"
+                                variant="secondary"
                                 size="sm"
-                                onClick={() => void remove()}
+                                onClick={startComposing}
                                 disabled={busy}
                             >
-                                {t('account.receivedReviews.delete')}
+                                {t('account.receivedReviews.edit')}
                             </Button>
-                        </div>
-                    ) : null}
+                        )}
+                        <Button
+                            variant="danger-ghost"
+                            size="sm"
+                            onClick={() => void remove()}
+                            disabled={busy}
+                        >
+                            {t('account.receivedReviews.delete')}
+                        </Button>
+                    </div>
                 </div>
             ) : null}
 
