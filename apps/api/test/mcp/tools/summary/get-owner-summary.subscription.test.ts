@@ -296,13 +296,18 @@ describe('get_owner_summary subscription block (HOS-2328)', () => {
         // Arrange
         const tool = readFileSync(resolve(SRC, 'plan/get-my-plan.ts'), 'utf8');
         const summary = readFileSync(resolve(SRC, 'summary/get-owner-summary.ts'), 'utf8');
+        // The block reader the summary, get_listing_stats and list_my_listings share (HOS-2184 T-035).
+        const block = readFileSync(resolve(SRC, 'plan/my-plan-block.ts'), 'utf8');
         const reader = readFileSync(resolve(SRC, 'plan/my-plan-reader.ts'), 'utf8');
 
         // Assert
         expect(tool).toMatch(/import \{ readMyPlan \} from '\.\/my-plan-reader';/);
-        expect(summary).toMatch(/import \{ readMyPlan \} from '\.\.\/plan\/my-plan-reader';/);
+        expect(summary).toMatch(
+            /import \{ readSubscriptionBlock \} from '\.\.\/plan\/my-plan-block';/
+        );
+        expect(block).toMatch(/import \{ readMyPlan \} from '\.\/my-plan-reader';/);
         expect(reader).toMatch(/import \{ readOwnPlanState \} from '@repo\/service-core';/);
-        for (const source of [tool, summary]) {
+        for (const source of [tool, summary, block]) {
             expect(source).not.toMatch(/readOwnPlanState|readTrialSummary|effectiveSet\(/);
         }
     });

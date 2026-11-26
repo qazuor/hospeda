@@ -17,13 +17,17 @@
  *    server answers `tools/call` itself instead of through
  *    `McpServer.registerTool`, whose built-in English validation error
  *    bypassed both this message and the audit;
- * 4. runs the tool with `executeTool` (person-state check, handler, Spanish
+ * 4. on a well-formed call, runs the `ai_assistant_access` plan gate
+ *    (`ai-assistant-gate.ts`, T-040, MCP channel only): a refused or
+ *    undecidable call is answered with its failure, audited, and never run;
+ *    `aiAccessExempt` tools skip it;
+ * 5. runs the tool with `executeTool` (person-state check, handler, Spanish
  *    error mapping);
- * 5. audits every call that reached step 3, read or write, with
+ * 6. audits every call that reached step 3, read or write, with
  *    `recordMcpToolCall` (success, denied or error), malformed calls included
  *    (AC-12; D-12 of HOS-2335 added reads and the `isWrite` flag). A
  *    rate-limited call and a crash inside this binder leave no record (R-16);
- * 6. renders the outcome as an MCP result: text content on success,
+ * 7. renders the outcome as an MCP result: text content on success,
  *    `isError: true` with the Spanish message on failure (and, when the
  *    refusal has a portal page, its URL on a last line of the text and in
  *    `structuredContent.action`, HOS-2326), plus
@@ -48,6 +52,7 @@ import { buildMcpWwwAuthenticate } from '../../middlewares/mcp-auth';
 import { resolveRecipientLocale } from '../../services/notification-recipient-locale';
 import { env } from '../../utils/env';
 import { apiLogger } from '../../utils/logger';
+import { checkAiAssistantGate } from './ai-assistant-gate';
 import { getMcpCaller, type McpCaller, type McpCallerSource } from './caller';
 import { recordMcpToolCall } from './record-tool-call';
 import { consumeMcpToolCall } from './tool-rate-limit';
@@ -332,14 +337,26 @@ export async function handleMcpToolCall<TSchema extends z.ZodObject, TData>({
         const locale = await resolveRecipientLocale({ userId: actor.id });
 
         const parsed = parseToolInput({ definition, input: rawInput, locale });
-        const outcome: ToolRunOutcome<TData> = parsed.ok
-            ? await executeTool({
-                  definition,
-                  actor,
-                  input: parsed.input,
-                  context: { channel: 'mcp', clientId: mcpAuth.clientId, locale }
-              })
-            : parsed;
+        // The plan gate (T-040) runs on a well-formed call only, so a malformed
+        // one answers VALIDATION_ERROR first (error contract: input shape before
+        // business rules). A refused call never reaches the handler and is
+        // audited like any other refusal, with its validated target.
+        const gateFailure = parsed.ok
+            ? await checkAiAssistantGate({ definition, userId: actor.id, locale })
+            : undefined;
+        let outcome: ToolRunOutcome<TData>;
+        if (!parsed.ok) {
+            outcome = parsed;
+        } else if (gateFailure) {
+            outcome = { ok: false, failure: gateFailure };
+        } else {
+            outcome = await executeTool({
+                definition,
+                actor,
+                input: parsed.input,
+                context: { channel: 'mcp', clientId: mcpAuth.clientId, locale }
+            });
+        }
 
         recordToolCall({ definition, actor, mcpAuth, parsed, outcome });
 

@@ -29,100 +29,19 @@
  *     fires, and typing clears the per-field error (HOS-794 AC-1/AC-2).
  */
 
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { AccommodationFaqItem } from '@/components/host/editor/FaqSection.client';
-import { FaqSection } from '@/components/host/editor/FaqSection.client';
-import { createT } from '@/lib/i18n';
-import { addToast } from '@/store/toast-store';
-
-// ---------------------------------------------------------------------------
-// Hoisted mocks
-// ---------------------------------------------------------------------------
-
-const { mockAdd, mockUpdate, mockRemove, mockReorder, mockSuggest } = vi.hoisted(() => ({
-    mockAdd: vi.fn(),
-    mockUpdate: vi.fn(),
-    mockRemove: vi.fn(),
-    mockReorder: vi.fn(),
-    mockSuggest: vi.fn()
-}));
-
-vi.mock('@/hooks/use-faq-ai-draft', () => ({
-    useFaqAiDraft: () => ({ isLoading: false, feedback: null, suggest: mockSuggest })
-}));
-
-vi.mock('@/components/host/editor/PlanEntitlementGate.client', () => ({
-    PlanEntitlementGate: ({ children }: { children: React.ReactNode }) => <>{children}</>
-}));
-
-// ---------------------------------------------------------------------------
-// Module mocks
-// ---------------------------------------------------------------------------
-
-vi.mock('@/lib/i18n', async (importOriginal) => ({
-    ...(await importOriginal<typeof import('@/lib/i18n')>()),
-    createTranslations: (_locale: string) => ({
-        t: (key: string, fallback?: string, params?: Record<string, unknown>) => {
-            const raw = fallback ?? createT('es')(key);
-            if (!params) return raw;
-            return Object.keys(params).reduce(
-                (acc, k) => acc.replace(new RegExp(`\\{\\{${k}\\}\\}`, 'g'), String(params[k])),
-                raw
-            );
-        },
-        tPlural: (_key: string, _count: number, fallback?: string) => fallback ?? _key
-    })
-}));
-
-vi.mock('@/lib/logger', () => ({
-    webLogger: { warn: vi.fn(), error: vi.fn(), info: vi.fn() }
-}));
-
-vi.mock('@/store/toast-store', () => ({ addToast: vi.fn() }));
-
-vi.mock('@/lib/api/endpoints-protected', () => ({
-    accommodationFaqApi: {
-        add: mockAdd,
-        update: mockUpdate,
-        remove: mockRemove,
-        reorder: mockReorder
-    }
-}));
-
-// ---------------------------------------------------------------------------
-// Test data
-// ---------------------------------------------------------------------------
-
-const FAQ_1: AccommodationFaqItem = {
-    id: 'faq-1',
-    question: '¿Cuándo es el check-in?',
-    answer: 'A partir de las 14hs.',
-    category: null,
-    displayOrder: 0,
-    isVisibleOnListing: true,
-    isUsableByAi: true
-};
-
-const FAQ_2: AccommodationFaqItem = {
-    id: 'faq-2',
-    question: '¿Aceptan mascotas?',
-    answer: 'Sí, previa consulta.',
-    category: null,
-    displayOrder: 1,
-    isVisibleOnListing: true,
-    isUsableByAi: true
-};
-
-function renderSection(initialFaqs: readonly AccommodationFaqItem[] = []) {
-    return render(
-        <FaqSection
-            locale="es"
-            accommodationId="acc-1"
-            initialFaqs={initialFaqs}
-        />
-    );
-}
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { AccommodationFaqItem } from '@/lib/api/endpoints-protected';
+import {
+    addToast,
+    FAQ_1,
+    FAQ_2,
+    mockAdd,
+    mockRemove,
+    mockReorder,
+    mockUpdate,
+    renderSection
+} from './faq-accommodation-fixtures';
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -150,7 +69,6 @@ describe('FaqSection', () => {
         mockUpdate.mockReset();
         mockRemove.mockReset();
         mockReorder.mockReset();
-        mockSuggest.mockReset();
         vi.mocked(addToast).mockClear();
     });
 
@@ -259,94 +177,6 @@ describe('FaqSection', () => {
                 isUsableByAi: false
             });
         });
-    });
-
-    it('marks both add-form fields, toasts and focuses when saving with empty values', () => {
-        renderSection([]);
-        fireEvent.click(screen.getByRole('button', { name: 'Agregar pregunta' }));
-        fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
-
-        // No silent return: the fields are marked, nothing is sent (HOS-794).
-        expect(mockAdd).not.toHaveBeenCalled();
-        expect(screen.getByText('La pregunta es obligatoria')).toBeInTheDocument();
-        expect(screen.getByText('La respuesta es obligatoria')).toBeInTheDocument();
-        expect(screen.getByLabelText('Pregunta')).toHaveAttribute('aria-invalid', 'true');
-        expect(screen.getByLabelText('Pregunta')).toHaveFocus();
-        expect(vi.mocked(addToast)).toHaveBeenCalledWith({
-            type: 'error',
-            message: 'Revisá los campos marcados'
-        });
-    });
-
-    it('marks only the empty field when the other one is filled', () => {
-        renderSection([]);
-        fireEvent.click(screen.getByRole('button', { name: 'Agregar pregunta' }));
-
-        fireEvent.change(screen.getByLabelText('Pregunta'), {
-            target: { value: '¿Hay wifi en las habitaciones?' }
-        });
-        fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
-
-        expect(mockAdd).not.toHaveBeenCalled();
-        expect(screen.queryByText('La pregunta es obligatoria')).not.toBeInTheDocument();
-        expect(screen.getByText('La respuesta es obligatoria')).toBeInTheDocument();
-    });
-
-    it('surfaces the schema minimum instead of failing silently (HOS-794 AC-2)', () => {
-        renderSection([]);
-        fireEvent.click(screen.getByRole('button', { name: 'Agregar pregunta' }));
-
-        fireEvent.change(screen.getByLabelText('Pregunta'), {
-            target: { value: '¿Wifi?' }
-        });
-        fireEvent.change(screen.getByLabelText('Respuesta'), {
-            target: { value: 'Sí.' }
-        });
-        fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
-
-        // Under the mocked `t`, resolveValidationMessage cannot resolve the
-        // zodError key (the mock echoes it back, which reads as "missing"), so
-        // the raw schema key reaches the DOM. In production the interpolated
-        // "debe tener al menos {{min}} caracteres" copy renders instead — the
-        // point under test is that a min-length failure now MARKS the field.
-        // ('¿Wifi?' is 6 chars and 'Sí.' is 3 — both under the 10-char min.)
-        expect(mockAdd).not.toHaveBeenCalled();
-        expect(screen.getByLabelText('Pregunta')).toHaveAttribute('aria-invalid', 'true');
-        expect(screen.getByLabelText('Respuesta')).toHaveAttribute('aria-invalid', 'true');
-        expect(screen.getByLabelText('Pregunta')).toHaveAccessibleDescription(
-            /La pregunta debe tener al menos 10 caracteres/
-        );
-        expect(screen.getByLabelText('Respuesta')).toHaveAccessibleDescription(
-            /La respuesta debe tener al menos 10 caracteres/
-        );
-    });
-
-    it('clears a field error as soon as the user edits that field', () => {
-        renderSection([]);
-        fireEvent.click(screen.getByRole('button', { name: 'Agregar pregunta' }));
-        fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
-
-        expect(screen.getByText('La pregunta es obligatoria')).toBeInTheDocument();
-
-        fireEvent.change(screen.getByLabelText('Pregunta'), {
-            target: { value: '¿Hay wifi en las habitaciones?' }
-        });
-
-        expect(screen.queryByText('La pregunta es obligatoria')).not.toBeInTheDocument();
-        // The untouched field keeps its error.
-        expect(screen.getByText('La respuesta es obligatoria')).toBeInTheDocument();
-    });
-
-    it('marks the edit form fields instead of returning silently', () => {
-        renderSection([FAQ_1]);
-        fireEvent.click(screen.getByRole('button', { name: /^Editar/ }));
-
-        fireEvent.change(screen.getByLabelText('Pregunta'), { target: { value: '' } });
-        fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
-
-        expect(mockUpdate).not.toHaveBeenCalled();
-        expect(screen.getByText('La pregunta es obligatoria')).toBeInTheDocument();
-        expect(screen.getByLabelText('Pregunta')).toHaveFocus();
     });
 
     it('opens the edit form pre-filled and calls .update (PUT) on save', async () => {
@@ -630,45 +460,5 @@ describe('FaqSection', () => {
                 /una pregunta no visible en la ficha pero usable por la IA no es privada/
             )
         ).toBeInTheDocument();
-    });
-});
-
-describe('HOS-2101 — prefill from the AI questions tab', () => {
-    afterEach(() => {
-        window.history.replaceState(null, '', '/');
-    });
-
-    it('opens the add form with ?pregunta= filled in and clears the parameter', async () => {
-        // Arrange
-        window.history.replaceState(
-            null,
-            '',
-            '/es/editar/preguntas/?pregunta=%C2%BFHay%20cochera%3F'
-        );
-
-        // Act
-        renderSection();
-
-        // Assert
-        const question = (await screen.findByLabelText('Pregunta')) as HTMLInputElement;
-        expect(question.value).toBe('¿Hay cochera?');
-        expect(window.location.search).toBe('');
-    });
-
-    it('fills the response with a suggested draft and keeps the review notice visible', async () => {
-        window.history.replaceState(
-            null,
-            '',
-            '/es/editar/preguntas/?pregunta=%C2%BFHay%20cochera%3F&mensaje=22222222-2222-4222-8222-222222222222'
-        );
-        mockSuggest.mockImplementationOnce(
-            async ({ onDraft }: { onDraft: (draft: string) => void }) => onDraft('Hay cochera.')
-        );
-
-        renderSection();
-        fireEvent.click(await screen.findByText('Sugerir respuesta con IA'));
-
-        expect(await screen.findByLabelText('Respuesta')).toHaveValue('Hay cochera.');
-        expect(screen.getByText(/borrador editable/i)).toBeInTheDocument();
     });
 });

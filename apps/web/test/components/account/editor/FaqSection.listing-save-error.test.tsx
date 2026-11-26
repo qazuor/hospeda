@@ -6,7 +6,7 @@
  */
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ListingFaqManager } from '../../../src/components/listing/ListingFaqManager.client';
+import { FaqSection } from '@/components/account/editor/FaqSection.client';
 
 vi.mock('@/hooks/use-faq-ai-draft', () => ({
     useFaqAiDraft: () => ({ isLoading: false, feedback: null, suggest: vi.fn() })
@@ -14,7 +14,7 @@ vi.mock('@/hooks/use-faq-ai-draft', () => ({
 vi.mock('@/components/host/editor/PlanEntitlementGate.client', () => ({
     PlanEntitlementGate: ({ children }: { children: React.ReactNode }) => <>{children}</>
 }));
-vi.mock('../../../src/lib/api/client', () => ({
+vi.mock('@/lib/api/client', () => ({
     apiClient: {
         post: vi.fn(),
         postProtected: vi.fn(),
@@ -24,7 +24,7 @@ vi.mock('../../../src/lib/api/client', () => ({
     }
 }));
 
-import { apiClient } from '../../../src/lib/api/client';
+import { apiClient } from '@/lib/api/client';
 
 const mockPostProtected = vi.mocked(apiClient.postProtected);
 
@@ -39,7 +39,11 @@ describe('ListingFaqManager save errors (HOS-2428)', () => {
             error: { code: 'ENTITLEMENT_REQUIRED', message: 'Entitlement required', status: 403 }
         } as never);
         render(
-            <ListingFaqManager
+            <FaqSection
+                namespace="listing.owner.editor.faqManager"
+                showCategory={true}
+                errorSurface="inline"
+                validationMode="required"
                 vertical="venue"
                 listingId="listing-1"
                 locale="es"
