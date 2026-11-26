@@ -35,11 +35,10 @@
 // Straight from the component files, not the kit index: this lives inside
 // every bar section's island, and the index would pull the whole kit (and its
 // logger) into it.
-import { useEffect } from 'react';
 import { StickySaveBar } from '@/components/account/ui/StickySaveBar';
 import { type SaveOutcome, useSaveBar } from '@/components/account/ui/use-save-bar';
 import type { SupportedLocale } from '@/lib/i18n';
-import { reportEditorAutoSave } from './editor-auto-save-signal';
+import { useEditorSaveSignal } from './use-editor-save-signal';
 
 /** Props of {@link EditorSaveBar}. */
 export interface EditorSaveBarProps {
@@ -75,17 +74,7 @@ export function EditorSaveBar({
     errorMessage
 }: EditorSaveBarProps) {
     const bar = useSaveBar({ locale, isDirty, onSave, onDiscard, idPrefix, suffixes });
-    const { status, savedAt, save } = bar;
-
-    useEffect(() => {
-        reportEditorAutoSave({
-            status,
-            savedAt: status === 'saved' ? savedAt : undefined,
-            retry: status === 'error' ? () => void save() : undefined
-        });
-    }, [status, savedAt, save]);
-
-    useEffect(() => () => reportEditorAutoSave({ status: 'idle' }), []);
+    useEditorSaveSignal(bar);
 
     return (
         <div data-editor-save-signal="bar">
