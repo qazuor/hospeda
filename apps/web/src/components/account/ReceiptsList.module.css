@@ -1,0 +1,60 @@
+/* ReceiptsList.module.css (HOS-2566). Tokens only. */
+
+.root {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.title {
+    margin: 0;
+    font: var(--app-section);
+    color: var(--core-foreground);
+}
+
+.list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.item {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-surface);
+}
+
+.text {
+    display: flex;
+    flex-direction: column;
+    min-inline-size: 0;
+}
+
+.number {
+    color: var(--core-foreground);
+    font-weight: 600;
+}
+
+.line {
+    margin: 0;
+    color: var(--core-muted-foreground);
+}
+
+.link {
+    display: inline-flex;
+    align-items: center;
+    min-block-size: 2.75rem;
+    padding-inline: var(--space-4);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-surface);
+    color: var(--core-foreground);
+    text-decoration: none;
+}

@@ -948,6 +948,26 @@
             "ariaLabel": "Subscription sections",
             "plan": "Plan",
             "addons": "Add-ons"
+        },
+        "receipts": {
+            "title": "Your receipts",
+            "loadError": "We could not load your receipts.",
+            "number": "Receipt no. {{number}}",
+            "view": "View receipt",
+            "viewLabel": "View receipt no. {{number}}",
+            "kindPlan": "Subscription",
+            "kindAddon": "Add-on",
+            "page": {
+                "title": "Receipt",
+                "loading": "Preparing your receipt…",
+                "open": "Open receipt",
+                "download": "Download receipt",
+                "notFound": "We could not find that receipt.",
+                "notFoundHint": "Check that you are signed in with the account that made the payment.",
+                "error": "We could not open the receipt. Please try again in a moment.",
+                "retry": "Try again",
+                "back": "Back to My subscription"
+            }
         }
     },
     "favorites": {

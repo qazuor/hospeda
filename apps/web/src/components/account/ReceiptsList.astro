@@ -1,0 +1,66 @@
+---
+/**
+ * @file ReceiptsList.astro
+ * @description The owner's payment receipts on Mi Suscripción, each with a
+ * «Ver recibo» button (HOS-2566). The button leads to the authenticated receipt
+ * page; nothing here opens the file itself. Renders nothing when the owner has
+ * no receipts, and an inline notice when the read failed (a failed read is not
+ * «you have nothing»).
+ */
+import type { OwnReceipt } from '@repo/schemas';
+import { createTranslations, type SupportedLocale } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+import styles from './ReceiptsList.module.css';
+
+interface Props {
+    readonly locale: SupportedLocale;
+    /** The owner's receipts, or `null` when the read failed. */
+    readonly receipts: readonly OwnReceipt[] | null;
+}
+const { locale, receipts } = Astro.props;
+const { t } = createTranslations(locale);
+
+const dateOf = (iso: string) =>
+    new Date(iso).toLocaleDateString(locale === 'pt' ? 'pt-BR' : locale === 'en' ? 'en-US' : 'es-AR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        timeZone: 'America/Argentina/Buenos_Aires'
+    });
+const amountOf = (receipt: OwnReceipt) =>
+    receipt.amountMinor === null || receipt.currency === null
+        ? null
+        : new Intl.NumberFormat(locale === 'pt' ? 'pt-BR' : locale === 'en' ? 'en-US' : 'es-AR', {
+              style: 'currency',
+              currency: receipt.currency
+          }).format(receipt.amountMinor / 100);
+---
+{(receipts === null || receipts.length > 0) && (
+    <section class={styles.root} aria-labelledby="my-receipts-title" data-testid="receipts-list">
+        <h2 id="my-receipts-title" class={styles.title}>{t('account.subscription.receipts.title')}</h2>
+        {receipts === null && <p class={styles.line} role="alert">{t('account.subscription.receipts.loadError')}</p>}
+        {receipts !== null && (
+            <ul class={styles.list}>
+                {receipts.map((receipt) => (
+                    <li class={styles.item}>
+                        <div class={styles.text}>
+                            <span class={styles.number}>{t('account.subscription.receipts.number', undefined, { number: receipt.receiptNumber })}</span>
+                            <span class={styles.line}>
+                                {[
+                                    dateOf(receipt.issuedAt),
+                                    amountOf(receipt),
+                                    receipt.conceptName ?? t(receipt.conceptKind === 'ADDON' ? 'account.subscription.receipts.kindAddon' : 'account.subscription.receipts.kindPlan')
+                                ].filter(Boolean).join(' · ')}
+                            </span>
+                        </div>
+                        <a
+                            class={styles.link}
+                            href={`${buildUrl({ locale, path: 'mi-cuenta/suscripcion' })}?recibo=${receipt.id}`}
+                            aria-label={t('account.subscription.receipts.viewLabel', undefined, { number: receipt.receiptNumber })}
+                        >{t('account.subscription.receipts.view')}</a>
+                    </li>
+                ))}
+            </ul>
+        )}
+    </section>
+)}
