@@ -1,5 +1,5 @@
 {
-  "contentHash": "84a7c921950ac25aa400e3dfdd7ee7958915019922faf044bcd6f0861f3d12a9",
+  "contentHash": "f7567c06fdbc9f9c51a73497733dd340c1cd13a0fbfa5b7dad12ae68adfc4e56",
   "locales": {
     "es": [
       {
@@ -1099,8 +1099,8 @@
         ],
         "reviewedAt": "2026-11-26",
         "sections": {
-          "canDo": "Cargar la foto principal y sumar fotos a la galería desde la sección «Fotos» del editor:\n{{link:section:accommodation:fotos|Fotos de tu alojamiento}}, {{link:section:venue:fotos|Fotos de tu comercio}} o {{link:section:experience:fotos|Fotos de tu experiencia}}.\n\nEn alojamientos también podés reordenar la galería y elegir la portada.",
-          "expect": "- Cada cambio se guarda al instante, sin un botón de guardar.\n- La foto principal es obligatoria para publicar: sin ella, {{article:publish-requirements|los requisitos para publicar}} no se cumplen.\n- Fotos que entran en la galería de un alojamiento: {{limit:max_photos_per_accommodation:accommodation}}. El editor te avisa cuántas te quedan.\n- Fotos que incluye el plan para la galería de tu ficha de Comer y salir: {{limit:max_photos_per_venue:venue}}. Para una experiencia: {{limit:max_photos_per_experience:experience}}. Los packs de fotos amplían el tope sin contar la portada.",
+          "canDo": "Cargar la foto principal y sumar fotos a la galería desde la sección «Fotos» del editor:\n{{link:section:accommodation:fotos|Fotos de tu alojamiento}}, {{link:section:venue:fotos|Fotos de tu comercio}} o {{link:section:experience:fotos|Fotos de tu experiencia}}.\n\nEn los tres tipos de publicación podés reordenar la galería, elegir la portada y escribir el texto de cada foto.",
+          "expect": "- Cada cambio se guarda al instante, sin un botón de guardar.\n- La foto principal es obligatoria para publicar: sin ella, {{article:publish-requirements|los requisitos para publicar}} no se cumplen.\n- Fotos que entran en la galería de un alojamiento: {{limit:max_photos_per_accommodation:accommodation}}. El editor te avisa cuántas te quedan.\n- Fotos que incluye el plan para la galería de tu ficha de Comer y salir: {{limit:max_photos_per_venue:venue}}. Para una experiencia: {{limit:max_photos_per_experience:experience}}. Los packs de fotos amplían el tope sin contar la portada.\n- Si tenés más fotos que tu tope (por ejemplo, porque terminó un pack), no se borra ninguna: las que pasan el tope llevan la marca «No se muestra: superás tu tope» y el público no las ve. Podés editarlas, reordenarlas o usarlas de portada.\n- Sin un plan que incluya fotos, el editor te lo dice y te lleva a los planes; tus fotos siguen ahí.",
           "howTo": {
             "after": "",
             "steps": [
@@ -1108,13 +1108,13 @@
               "Entrá a la sección «Fotos».",
               "Cargá la imagen principal: arrastrá una imagen o hacé clic para elegirla. Es obligatoria para poder publicar.",
               "Sumá más fotos a la galería. Cada archivo puede ser JPG, PNG, WebP o HEIC y pesar hasta 10 MB.",
-              "El editor te avisa cuántas fotos entran en la galería. En alojamientos ese tope depende de tu plan.",
+              "El editor te avisa cuántas fotos entran en la galería y de dónde sale ese número: tu plan, tu prueba y los packs de fotos que tengas.",
               "No hace falta guardar: cada foto que agregás, quitás o cambiás se guarda al instante.",
-              "En alojamientos también podés reordenar la galería y elegir cuál es la portada."
+              "Reordená la galería y elegí cuál es la portada. El orden decide qué fotos se ven si tenés más que tu tope."
             ]
           },
           "notExpect": "- Subir más fotos que el tope de tu plan: para ampliarlo hay que {{article:change-plan|cambiar a otro plan}}.\n- Archivos de otros formatos o de más de 10 MB: el editor los rechaza.",
-          "troubleshooting": "### No me deja subir más fotos {#tope-de-fotos}\n\nLlegaste al tope de la galería. Quitá una foto o revisá {{link:plans:accommodation|los planes para alojamientos}}.\n\n### No encuentro dónde cargar las fotos {#donde-cargar}\n\nSi todavía no creaste la publicación, empezá por {{article:create-listing:como-se-hace|crear la publicación}}."
+          "troubleshooting": "### No me deja subir más fotos {#tope-de-fotos}\n\nLlegaste al tope de la galería. Quitá una foto, sumá un pack de fotos o revisá {{link:plans:accommodation|los planes para alojamientos}}.\n\n### No encuentro dónde cargar las fotos {#donde-cargar}\n\nSi todavía no creaste la publicación, empezá por {{article:create-listing:como-se-hace|crear la publicación}}."
         },
         "summary": "Cómo cargar la foto principal y la galería de tu publicación, y qué fotos acepta el editor.",
         "title": "Subir o cambiar las fotos de una publicación",

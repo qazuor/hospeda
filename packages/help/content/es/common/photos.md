@@ -54,7 +54,7 @@ reviewedAt: "2026-11-26"
 Cargar la foto principal y sumar fotos a la galería desde la sección «Fotos» del editor:
 {{link:section:accommodation:fotos|Fotos de tu alojamiento}}, {{link:section:venue:fotos|Fotos de tu comercio}} o {{link:section:experience:fotos|Fotos de tu experiencia}}.
 
-En alojamientos también podés reordenar la galería y elegir la portada.
+En los tres tipos de publicación podés reordenar la galería, elegir la portada y escribir el texto de cada foto.
 
 ## Cómo se hace
 
@@ -62,9 +62,9 @@ En alojamientos también podés reordenar la galería y elegir la portada.
 2. Entrá a la sección «Fotos».
 3. Cargá la imagen principal: arrastrá una imagen o hacé clic para elegirla. Es obligatoria para poder publicar.
 4. Sumá más fotos a la galería. Cada archivo puede ser JPG, PNG, WebP o HEIC y pesar hasta 10 MB.
-5. El editor te avisa cuántas fotos entran en la galería. En alojamientos ese tope depende de tu plan.
+5. El editor te avisa cuántas fotos entran en la galería y de dónde sale ese número: tu plan, tu prueba y los packs de fotos que tengas.
 6. No hace falta guardar: cada foto que agregás, quitás o cambiás se guarda al instante.
-7. En alojamientos también podés reordenar la galería y elegir cuál es la portada.
+7. Reordená la galería y elegí cuál es la portada. El orden decide qué fotos se ven si tenés más que tu tope.
 
 ## Qué esperar
 
@@ -72,6 +72,8 @@ En alojamientos también podés reordenar la galería y elegir la portada.
 - La foto principal es obligatoria para publicar: sin ella, {{article:publish-requirements|los requisitos para publicar}} no se cumplen.
 - Fotos que entran en la galería de un alojamiento: {{limit:max_photos_per_accommodation:accommodation}}. El editor te avisa cuántas te quedan.
 - Fotos que incluye el plan para la galería de tu ficha de Comer y salir: {{limit:max_photos_per_venue:venue}}. Para una experiencia: {{limit:max_photos_per_experience:experience}}. Los packs de fotos amplían el tope sin contar la portada.
+- Si tenés más fotos que tu tope (por ejemplo, porque terminó un pack), no se borra ninguna: las que pasan el tope llevan la marca «No se muestra: superás tu tope» y el público no las ve. Podés editarlas, reordenarlas o usarlas de portada.
+- Sin un plan que incluya fotos, el editor te lo dice y te lleva a los planes; tus fotos siguen ahí.
 
 ## Qué NO esperar
 
@@ -82,7 +84,7 @@ En alojamientos también podés reordenar la galería y elegir la portada.
 
 ### No me deja subir más fotos {#tope-de-fotos}
 
-Llegaste al tope de la galería. Quitá una foto o revisá {{link:plans:accommodation|los planes para alojamientos}}.
+Llegaste al tope de la galería. Quitá una foto, sumá un pack de fotos o revisá {{link:plans:accommodation|los planes para alojamientos}}.
 
 ### No encuentro dónde cargar las fotos {#donde-cargar}
 
