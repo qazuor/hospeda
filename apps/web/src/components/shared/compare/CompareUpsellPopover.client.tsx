@@ -166,6 +166,11 @@ export function CompareUpsellPopover({
         setMounted(true);
     }, []);
 
+    const dismiss = (): void => {
+        anchorRef.current?.focus({ preventScroll: true });
+        onClose();
+    };
+
     // Position the popover relative to the anchor, then animate it in.
     // Repositions on resize. Scroll dismisses the popover (capture: true catches
     // ancestor scrolls too) so it does not visually detach from the trigger as
@@ -207,11 +212,14 @@ export function CompareUpsellPopover({
     // Close on Escape key.
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent): void => {
-            if (event.key === 'Escape') onClose();
+            if (event.key === 'Escape') {
+                anchorRef.current?.focus({ preventScroll: true });
+                onClose();
+            }
         };
         document.addEventListener('keydown', handleKeyDown);
         return () => document.removeEventListener('keydown', handleKeyDown);
-    }, [onClose]);
+    }, [onClose, anchorRef]);
 
     // Close on click outside the popover (also ignore clicks on the anchor itself
     // so toggling via the trigger does not immediately re-close).
@@ -255,7 +263,7 @@ export function CompareUpsellPopover({
             {/* Close button */}
             <button
                 type="button"
-                onClick={onClose}
+                onClick={dismiss}
                 aria-label={closeLabel}
                 className={styles.closeButton}
             >
@@ -299,7 +307,7 @@ export function CompareUpsellPopover({
                     <button
                         type="button"
                         className={styles.dismissButton}
-                        onClick={onClose}
+                        onClick={dismiss}
                     >
                         {dismissLabel}
                     </button>

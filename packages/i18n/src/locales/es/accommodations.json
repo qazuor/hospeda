@@ -65,6 +65,7 @@
             "count_other": "Comparás {{count}} alojamientos"
         },
         "empty": {
+            "suggestions": "Alojamientos sugeridos para comparar",
             "title": "No hay alojamientos para comparar",
             "message": "Agregá alojamientos desde el listado para verlos lado a lado.",
             "cta": "Explorar alojamientos"
@@ -1065,7 +1066,14 @@
         "priceAlert": {
             "create": "Avisame si baja el precio",
             "creating": "Creando...",
-            "createSuccess": "Alerta creada",
+            "createSuccess": "Alerta creada. Te avisaremos por email si se alcanza el umbral.",
+            "gateTitle": "Alertas de precio",
+            "gateBenefit": "Recibí un aviso si baja el precio con el plan {{plan}}.",
+            "confirmCreate": "Crear alerta",
+            "targetPercent": "Baja de precio (%)",
+            "defaultThreshold": "Alerta activa con el umbral predeterminado.",
+            "activeThreshold": "Alerta activa para una baja del {{threshold}} %.",
+            "activeDate": "Creada el {{date}}.",
             "createError": "No se pudo crear la alerta",
             "cancel": "Cancelar alerta",
             "cancelling": "Cancelando...",

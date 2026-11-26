@@ -8,7 +8,7 @@
  * - Toggle: clicking adds the accommodation and flips the label to
  *   "En comparación"; clicking again removes it and restores the original
  *   label.
- * - Blocked / upsell (free / anonymous plan): info toast with a plans CTA.
+ * - Blocked / upsell (free / anonymous plan): catalog badge and plans popover.
  * - Blocked / limit (at per-plan cap): warning toast.
  *
  * Unlike CompareButton.test.tsx (which mocks `useCompareGuard` wholesale),
@@ -49,7 +49,9 @@ vi.mock('../../../src/lib/i18n', () => {
         interpolate(
             key === 'common.card.compareUsage'
                 ? 'Comparás {{count}} de {{max}}'
-                : (fallback ?? key),
+                : key === 'accommodations.comparison.gate.benefit'
+                  ? 'Compare up to {{count}} with {{plan}}'
+                  : (fallback ?? key),
             params
         );
     const tPlural = (key: string, count: number, params?: Record<string, unknown>): string =>
@@ -71,6 +73,7 @@ vi.mock('../../../src/components/accommodation/DetailCompareButton.module.css', 
 }));
 
 vi.mock('@repo/icons', () => ({
+    CrownIcon: () => null,
     ColumnIcon: ({ weight, size }: { weight?: string; size?: number }) => (
         <svg
             data-testid="compare-icon"
@@ -257,20 +260,29 @@ describe('DetailCompareButton — toggle reactivity', () => {
 // ---------------------------------------------------------------------------
 
 describe('DetailCompareButton — guard outcomes', () => {
-    it('shows an upsell toast with a plans CTA when the plan lacks the entitlement', () => {
+    it('shows the catalog badge before opening a capacity-aware plans popover', () => {
         // Arrange
         asFree();
-        render(<DetailCompareButton {...buildProps()} />);
+        render(
+            <DetailCompareButton
+                {...buildProps()}
+                planName="Explorer Plus"
+                planCapacity={7}
+            />
+        );
 
         // Act
+        expect(screen.getByText('Explorer Plus')).toBeVisible();
         fireEvent.click(screen.getByRole('button'));
 
         // Assert
         expect(screen.getByText('Agregar a comparación')).toBeInTheDocument();
-        expect(screen.getByRole('button')).toHaveAttribute('aria-pressed', 'false');
-        const arg = mockAddToast.mock.calls[0]?.[0];
-        expect(arg.type).toBe('info');
-        expect(arg.action?.href).toBe(`/es/${PRICING_PAGE_PATH_BY_AUDIENCE.tourist}/`);
+        expect(screen.getByRole('dialog')).toHaveTextContent('Compare up to 7 with Explorer Plus');
+        expect(screen.getByRole('link', { name: 'Ver planes' })).toHaveAttribute(
+            'href',
+            `/es/${PRICING_PAGE_PATH_BY_AUDIENCE.tourist}/`
+        );
+        expect(mockAddToast).not.toHaveBeenCalled();
     });
 
     it('shows a warning toast when the plan is at its per-plan cap', () => {
@@ -286,6 +298,27 @@ describe('DetailCompareButton — guard outcomes', () => {
         const arg = mockAddToast.mock.calls[0]?.[0];
         expect(arg.type).toBe('warning');
         expect(arg.action).toBeUndefined();
+    });
+
+    it.each([
+        undefined,
+        0,
+        -1,
+        1.5,
+        Infinity
+    ])('does not advertise a numeric cap of %s', (planCapacity) => {
+        asFree();
+        render(
+            <DetailCompareButton
+                {...buildProps()}
+                planName="Explorer Plus"
+                planCapacity={planCapacity}
+            />
+        );
+        fireEvent.click(screen.getByRole('button'));
+        expect(screen.getByRole('dialog')).toHaveTextContent(
+            'accommodations.comparison.gate.upsellMessage'
+        );
     });
 });
 

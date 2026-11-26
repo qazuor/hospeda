@@ -59,7 +59,8 @@ export type ListingActionBarVenueWhatsapp =
 export interface ListingActionBarCompare {
     readonly thumbnailUrl?: string;
     /** Public catalog names of the plans carrying the entitlement (HOS-2554). */
-    readonly gatePlanNames: readonly string[];
+    readonly planName?: string | null;
+    readonly planCapacity?: number;
 }
 
 /** Public, session-blind inputs of the action row. */
@@ -348,7 +349,8 @@ export function ListingActionBarButtons({
                         accommodationName={listingName}
                         accommodationThumbnailUrl={compare.thumbnailUrl}
                         locale={locale}
-                        gatePlanNames={compare.gatePlanNames}
+                        planName={compare.planName}
+                        planCapacity={compare.planCapacity}
                         labels={{
                             add: t('accommodations.detail.listingContact.bar.actions.compareAdd'),
                             remove: t(

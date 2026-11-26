@@ -39,7 +39,12 @@ vi.mock('../../../../src/lib/i18n', () => {
         );
     };
     const t = (key: string, fallback?: string, params?: Record<string, unknown>) =>
-        interpolate(fallback ?? key, params);
+        interpolate(
+            key === 'accommodations.comparison.gate.benefit'
+                ? 'Compare up to {{count}} with {{plan}}'
+                : (fallback ?? key),
+            params
+        );
     const tPlural = (key: string, count: number, params?: Record<string, unknown>) =>
         interpolate(key, { ...params, count });
     return {
@@ -96,6 +101,10 @@ vi.mock('../../../../src/lib/api/transforms', () => ({
 }));
 
 const mockCompare = vi.fn();
+const mockCanCompare = vi.hoisted(() => ({ value: false }));
+vi.mock('@/hooks/useCompareGuard', () => ({
+    useCompareGuard: () => ({ canCompare: mockCanCompare.value, isLoading: false, maxItems: 7 })
+}));
 vi.mock('../../../../src/lib/api/endpoints-protected', () => ({
     protectedAccommodationsApi: {
         compare: (...args: unknown[]) => mockCompare(...args)
@@ -122,6 +131,7 @@ function setIds(ids: string[]): void {
 beforeEach(() => {
     vi.clearAllMocks();
     mockStore.value = { ids: [], items: [] };
+    mockCanCompare.value = false;
 });
 
 afterEach(() => {
@@ -140,6 +150,51 @@ describe('ComparisonMatrix', () => {
 
         expect(screen.getByText('No hay alojamientos para comparar')).toBeInTheDocument();
         expect(mockCompare).not.toHaveBeenCalled();
+    });
+
+    it.each([
+        false,
+        true
+    ])('offers the correct empty CTA (entitled: %s) and describes the catalog limit', (canCompare) => {
+        mockCanCompare.value = canCompare;
+        render(
+            <ComparisonMatrix
+                locale="es"
+                planName="Explorer"
+                planCapacity={7}
+            />
+        );
+        expect(screen.getByText('Compare up to 7 with Explorer')).toBeVisible();
+        expect(
+            screen.getByRole('link', { name: canCompare ? 'Explorar alojamientos' : 'Ver planes' })
+        ).toBeVisible();
+    });
+
+    it('suggests unselected public accommodations only while the comparison is empty', () => {
+        setIds(['a']);
+        const { rerender } = render(
+            <ComparisonMatrix
+                locale="es"
+                suggestions={[
+                    { id: 'a', name: 'Selected cabin', slug: 'selected' },
+                    { id: 'b', name: 'Riverside cabin', slug: 'riverside' }
+                ]}
+            />
+        );
+        expect(screen.getByRole('link', { name: 'Riverside cabin' })).toHaveAttribute(
+            'href',
+            '/es/alojamientos/riverside/'
+        );
+        expect(screen.queryByRole('link', { name: 'Selected cabin' })).not.toBeInTheDocument();
+        setIds(['a', 'b']);
+        mockCompare.mockReturnValue(new Promise(() => undefined));
+        rerender(
+            <ComparisonMatrix
+                locale="es"
+                suggestions={[{ id: 'b', name: 'Riverside cabin', slug: 'riverside' }]}
+            />
+        );
+        expect(screen.queryByRole('link', { name: 'Riverside cabin' })).not.toBeInTheDocument();
     });
 
     it('hydrates and renders a column per accommodation', async () => {

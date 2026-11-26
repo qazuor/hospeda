@@ -24,8 +24,7 @@
  */
 
 import type { SupportedLocale } from '@/lib/i18n';
-import { fetchPublicPlans } from '@/lib/billing/fetch-plans';
-import { resolvePlanBadge, touristBadgeCatalog } from '@/lib/billing/plan-badge';
+import { readComparePlan } from '@/lib/billing/compare-plan';
 import { CompareModeToggle } from './CompareModeToggle.client';
 
 interface Props {
@@ -34,12 +33,7 @@ interface Props {
 }
 
 const { locale } = Astro.props;
-const result = await fetchPublicPlans({ vertical: 'tourist' });
-const entitlement = 'can_compare_accommodations';
-const planName = resolvePlanBadge({ result, entitlement });
-const planCapacity = planName ? touristBadgeCatalog({ result }).plans.find(
-	(plan) => plan.entitlements.includes(entitlement)
-)?.limits.max_compare_items : undefined;
+const { planName, planCapacity } = await readComparePlan();
 ---
 
 <div class="compare-mode-controls">

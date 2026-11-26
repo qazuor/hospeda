@@ -31,7 +31,8 @@ describe('CompareModeControls.astro (HOS-85 T-005)', () => {
         expect(src).toMatch(
             /<CompareModeToggle\s+client:idle\s+locale=\{locale\}[^>]*planName=\{planName\}/
         );
-        expect(src).toContain('resolvePlanBadge');
+        expect(src).toContain('await readComparePlan()');
+        expect(src).toContain('planCapacity={planCapacity}');
     });
 
     it('does not import or mount CompareModeBanner (removed post-review)', () => {

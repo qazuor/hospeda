@@ -65,6 +65,7 @@
             "count_other": "Comparing {{count}} accommodations"
         },
         "empty": {
+            "suggestions": "Suggested accommodations to compare",
             "title": "No accommodations to compare",
             "message": "Add accommodations from the listing to see them side by side.",
             "cta": "Browse accommodations"
@@ -727,7 +728,14 @@
         "priceAlert": {
             "create": "Alert me for price drops",
             "creating": "Creating...",
-            "createSuccess": "Alert created",
+            "createSuccess": "Alert created. We’ll email you if the price drop reaches your threshold.",
+            "gateTitle": "Price alerts",
+            "gateBenefit": "Get notified when the price drops with the {{plan}} plan.",
+            "confirmCreate": "Create alert",
+            "targetPercent": "Price drop (%)",
+            "defaultThreshold": "Alert active with the default threshold.",
+            "activeThreshold": "Alert active for a {{threshold}}% price drop.",
+            "activeDate": "Created on {{date}}.",
             "createError": "Couldn't create the alert",
             "cancel": "Cancel alert",
             "cancelling": "Cancelling...",

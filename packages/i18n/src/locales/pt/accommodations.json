@@ -65,6 +65,7 @@
             "count_other": "Comparando {{count}} hospedagens"
         },
         "empty": {
+            "suggestions": "Hospedagens sugeridas para comparar",
             "title": "Nenhuma hospedagem para comparar",
             "message": "Adicione hospedagens a partir da lista para vê-las lado a lado.",
             "cta": "Explorar hospedagens"
@@ -727,7 +728,14 @@
         "priceAlert": {
             "create": "Avise-me quando o preço baixar",
             "creating": "Criando...",
-            "createSuccess": "Alerta criado",
+            "createSuccess": "Alerta criado. Você receberá um e-mail se a queda atingir o limite definido.",
+            "gateTitle": "Alertas de preços",
+            "gateBenefit": "Receba um aviso se o preço baixar com o plano {{plan}}.",
+            "confirmCreate": "Criar alerta",
+            "targetPercent": "Queda de preço (%)",
+            "defaultThreshold": "Alerta ativo com o limite padrão.",
+            "activeThreshold": "Alerta ativo para uma queda de {{threshold}}% no preço.",
+            "activeDate": "Criado em {{date}}.",
             "createError": "Não foi possível criar o alerta",
             "cancel": "Cancelar alerta",
             "cancelling": "Cancelando...",

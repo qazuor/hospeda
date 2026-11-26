@@ -12,6 +12,7 @@ import {
 } from '@/store/compare-store';
 import styles from './CompareModeToggle.module.css';
 import { CompareUpsellPopover } from './CompareUpsellPopover.client';
+import { comparisonBenefit } from './comparison-benefit';
 
 /** Props for the compare-mode toggle island. Catalog metadata is public. */
 export interface CompareModeToggleProps {
@@ -45,13 +46,7 @@ export const CompareModeToggle: FC<CompareModeToggleProps> = ({
         'accommodations.comparison.mode.bannerHint',
         'Elegí los alojamientos que querés comparar'
     );
-    const benefit =
-        planName && planCapacity && Number.isSafeInteger(planCapacity) && planCapacity > 0
-            ? t('accommodations.comparison.gate.benefit', undefined, {
-                  count: planCapacity,
-                  plan: planName
-              })
-            : t('accommodations.comparison.gate.upsellMessage');
+    const benefit = comparisonBenefit({ t, planName, planCapacity });
 
     const handleClick = (): void => {
         if (isLoading) return;

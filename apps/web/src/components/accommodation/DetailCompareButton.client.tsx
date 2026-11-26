@@ -24,11 +24,13 @@
  */
 
 import { CheckIcon, ColumnIcon } from '@repo/icons';
-import type { FC, MouseEvent } from 'react';
+import { type FC, useRef, useState } from 'react';
+import { CompareUpsellPopover } from '@/components/shared/compare/CompareUpsellPopover.client';
+import { comparisonBenefit } from '@/components/shared/compare/comparison-benefit';
+import { PlanBadge } from '@/components/shared/ui/PlanBadge';
 import { UsageCounter } from '@/components/shared/ui/UsageCounter';
 import usageStyles from '@/components/shared/ui/UsageCounter.module.css';
 import { useCompareGuard } from '@/hooks/useCompareGuard';
-import { resolvePlanGateMessage } from '@/lib/billing/plan-name-list';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -50,7 +52,9 @@ export interface DetailCompareButtonProps {
      * HOS-2554: catalog names of the plans that carry this feature, read server-side and
      * handed down (the catalog reader is server-only). Empty when it could not be read.
      */
-    readonly gatePlanNames?: readonly string[];
+    readonly planName?: string | null;
+    /** Catalog limit for the advertised plan. */
+    readonly planCapacity?: number;
     /** Additional CSS classes forwarded to the root button element. */
     readonly className?: string;
     /**
@@ -90,12 +94,15 @@ export const DetailCompareButton: FC<DetailCompareButtonProps> = ({
     accommodationName,
     accommodationThumbnailUrl,
     locale = 'es',
-    gatePlanNames = [],
+    planName = null,
+    planCapacity,
     className,
     labels
 }) => {
     const { t, tPlural } = createTranslations(locale);
     const { isInList, isLoading, maxItems, count, canCompare, toggle } = useCompareGuard();
+    const buttonRef = useRef<HTMLButtonElement>(null);
+    const [upsellOpen, setUpsellOpen] = useState(false);
     const usage =
         !isLoading && canCompare && Number.isFinite(maxItems) && maxItems > 0
             ? t('common.card.compareUsage', undefined, { count, max: maxItems })
@@ -114,9 +121,13 @@ export const DetailCompareButton: FC<DetailCompareButtonProps> = ({
         ? (labels?.remove ?? t('accommodations.comparison.detail.added', 'En comparación'))
         : (labels?.add ?? t('accommodations.comparison.detail.add', 'Agregar a comparación'));
 
-    const handleClick = (_event: MouseEvent<HTMLButtonElement>): void => {
+    const handleClick = (): void => {
         // Defer while entitlements are still loading (guard fails closed until known).
         if (isLoading) return;
+        if (!canCompare) {
+            setUpsellOpen((open) => !open);
+            return;
+        }
 
         const result = toggle(accommodationId, {
             name: accommodationName,
@@ -144,23 +155,7 @@ export const DetailCompareButton: FC<DetailCompareButtonProps> = ({
         }
 
         // result.action === 'blocked'
-        if (result.reason === 'upsell') {
-            addToast({
-                type: 'info',
-                message: resolvePlanGateMessage({
-                    keyBase: 'accommodations.comparison.upsell.message',
-                    locale,
-                    noPlansFallback: 'Comparar alojamientos no está incluido en tu plan actual.',
-                    planNames: gatePlanNames,
-                    t
-                }),
-                action: {
-                    label: t('accommodations.comparison.upsell.cta', 'Ver planes'),
-                    href: pricingHref
-                }
-            });
-            return;
-        }
+        if (result.reason === 'upsell') return;
 
         // result.reason === 'limit'
         addToast({
@@ -171,9 +166,12 @@ export const DetailCompareButton: FC<DetailCompareButtonProps> = ({
 
     const button = (
         <button
+            ref={buttonRef}
             type="button"
             aria-pressed={selected}
             aria-busy={isLoading}
+            aria-haspopup={canCompare ? undefined : 'dialog'}
+            aria-expanded={canCompare ? undefined : upsellOpen}
             title={usage}
             aria-description={usage}
             data-selected={selected ? 'true' : undefined}
@@ -201,6 +199,19 @@ export const DetailCompareButton: FC<DetailCompareButtonProps> = ({
         <span className={usage ? usageStyles.group : undefined}>
             {button}
             {usage && <UsageCounter value={`${count}/${maxItems}`} />}
+            <PlanBadge name={planName} />
+            {upsellOpen && !canCompare && (
+                <CompareUpsellPopover
+                    anchorRef={buttonRef}
+                    message={comparisonBenefit({ t, planName, planCapacity })}
+                    ctaLabel={t('accommodations.comparison.gate.upsellCta', 'Ver planes')}
+                    ctaHref={pricingHref}
+                    onClose={() => setUpsellOpen(false)}
+                    dialogLabel={t('accommodations.comparison.upsell.title')}
+                    closeLabel={t('common.auth.close')}
+                    dismissLabel={t('common.vipGate.notNow')}
+                />
+            )}
         </span>
     );
 };
