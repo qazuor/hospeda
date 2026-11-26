@@ -8,8 +8,19 @@
  * untrusted: the helpers here only ever yield plain text or an https URL.
  */
 
-import type { AiConnection, AiConnectionPendingResetReview } from '@repo/schemas';
-import { AiConnectionListSchema, AiConnectionPendingResetReviewSchema } from '@repo/schemas';
+import type {
+    AiAssistantAccessResponse,
+    AiConnection,
+    AiConnectionPendingResetReview
+} from '@repo/schemas';
+import {
+    AiAssistantAccessResponseSchema,
+    AiConnectionListSchema,
+    AiConnectionPendingResetReviewSchema
+} from '@repo/schemas';
+import type { SupportedLocale } from '@/lib/i18n';
+import { PLANS_PAGE_PATH_BY_VERTICAL } from '@/lib/publish/publish-page-paths';
+import { buildUrl } from '@/lib/urls';
 
 /** Path of the protected AI connections collection. */
 export const AI_CONNECTIONS_API_PATH = '/api/v1/protected/ai-connections';
@@ -152,4 +163,58 @@ export function resolveAiAssistantsVisibility({
         return 'full';
     }
     return connectionCount > 0 ? 'manage-only' : 'unavailable';
+}
+
+/** Path of the "does my plan include the AI assistant?" check (HOS-2184 T-041). */
+export const AI_ASSISTANT_ACCESS_API_PATH = `${AI_CONNECTIONS_API_PATH}/access`;
+
+/**
+ * Builds the URL of the AI assistant access check.
+ *
+ * @param params.apiUrl - API base URL (trailing slash tolerated).
+ * @returns The absolute URL.
+ */
+export function buildAiAssistantAccessUrl({ apiUrl }: { readonly apiUrl: string }): string {
+    return `${apiUrl.replace(/\/$/, '')}${AI_ASSISTANT_ACCESS_API_PATH}`;
+}
+
+/**
+ * Validates the body of `GET /protected/ai-connections/access`.
+ *
+ * @param params.body - Parsed JSON body (unknown shape).
+ * @returns The access answer, or `null` when the envelope is not the expected one.
+ */
+export function parseAiAssistantAccess({
+    body
+}: {
+    readonly body: unknown;
+}): AiAssistantAccessResponse | null {
+    if (
+        typeof body !== 'object' ||
+        body === null ||
+        !('success' in body) ||
+        body.success !== true
+    ) {
+        return null;
+    }
+    const data = 'data' in body ? body.data : undefined;
+    const parsed = AiAssistantAccessResponseSchema.safeParse(data);
+    return parsed.success ? parsed.data : null;
+}
+
+/**
+ * Localized URL of the plans page the "not included in your plan" notice links to.
+ *
+ * @param params.locale - Active locale.
+ * @param params.vertical - Vertical reported by the API; absent falls back to accommodation.
+ * @returns The plans page URL.
+ */
+export function buildAiAssistantPlansUrl({
+    locale,
+    vertical
+}: {
+    readonly locale: SupportedLocale;
+    readonly vertical?: AiAssistantAccessResponse['vertical'];
+}): string {
+    return buildUrl({ locale, path: PLANS_PAGE_PATH_BY_VERTICAL[vertical ?? 'accommodation'] });
 }

@@ -17,7 +17,7 @@
  */
 
 import { AskToAiIcon } from '@repo/icons';
-import type { AiConnection } from '@repo/schemas';
+import type { AiAssistantAccessResponse, AiConnection } from '@repo/schemas';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     Alert,
@@ -29,12 +29,16 @@ import {
     ListRow,
     Section,
     Skeleton,
+    TextLink,
     useConfirm
 } from '@/components/account/ui';
 import {
     AI_CAPABILITY_FALLBACKS,
     AI_CAPABILITY_KEYS,
+    buildAiAssistantAccessUrl,
+    buildAiAssistantPlansUrl,
     buildAiConnectionsUrl,
+    parseAiAssistantAccess,
     parseAiConnections,
     resolveAiAssistantsVisibility
 } from '@/lib/ai-assistants';
@@ -73,6 +77,7 @@ export function AiAssistantsPanel({ locale, apiUrl, mcpUrl }: AiAssistantsPanelP
 
     const [load, setLoad] = useState<LoadState>({ kind: 'loading' });
     const [items, setItems] = useState<readonly AiConnection[]>([]);
+    const [access, setAccess] = useState<AiAssistantAccessResponse | null>(null);
     const [disconnectError, setDisconnectError] = useState<string | null>(null);
     const { confirm: ask, confirmDialog } = useConfirm({ locale });
     const mounted = useRef(true);
@@ -110,6 +115,23 @@ export function AiAssistantsPanel({ locale, apiUrl, mcpUrl }: AiAssistantsPanelP
     useEffect(() => {
         void loadConnections();
     }, [loadConnections]);
+
+    // Best effort: a failed check shows nothing extra and never blocks the panel.
+    useEffect(() => {
+        void (async () => {
+            try {
+                const res = await fetch(buildAiAssistantAccessUrl({ apiUrl }), {
+                    credentials: 'include'
+                });
+                const parsed = res.ok ? parseAiAssistantAccess({ body: await res.json() }) : null;
+                if (mounted.current) {
+                    setAccess(parsed);
+                }
+            } catch {
+                // Intentionally silent: the notice is an enhancement.
+            }
+        })();
+    }, [apiUrl]);
 
     const unnamed = t('account.aiAssistants.list.unnamed', 'Asistente sin nombre');
     const displayName = (item: AiConnection): string => item.name?.trim() || unnamed;
@@ -171,6 +193,23 @@ export function AiAssistantsPanel({ locale, apiUrl, mcpUrl }: AiAssistantsPanelP
 
     return (
         <div className={styles.root}>
+            {access?.hasAccess === false && (
+                <Alert
+                    tone="info"
+                    locale={locale}
+                >
+                    {t(
+                        'account.aiAssistants.noAccess.body',
+                        'El asistente de IA no está incluido en tu plan actual. Viene incluido, sin costo extra, en todos los planes pagos.'
+                    )}{' '}
+                    <TextLink
+                        href={buildAiAssistantPlansUrl({ locale, vertical: access.vertical })}
+                    >
+                        {t('account.aiAssistants.noAccess.cta', 'Ver planes')}
+                    </TextLink>
+                </Alert>
+            )}
+
             {mcpUrl && (
                 <Section
                     title={t('account.aiAssistants.connect.title', 'Cómo conectar un asistente')}
