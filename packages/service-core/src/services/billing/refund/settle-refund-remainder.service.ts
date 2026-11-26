@@ -2,7 +2,7 @@ import type { Clock } from '@repo/billing-verticals-contract';
 import type { DrizzleClient } from '@repo/db';
 import { and, eq, getDb, payments, refunds } from '@repo/db';
 import type { PaymentProvider } from '@repo/payments';
-import { ServiceErrorCode } from '@repo/schemas';
+import { ServiceErrorCode, type SettleRefundRemainderRejection } from '@repo/schemas';
 import { type Actor, ServiceError } from '../../../types';
 import { extractPostgresErrorCause } from '../../../utils/postgres-error-cause';
 import type { ApplyExecutedRefundResult } from '../payment/apply-executed-refund.service';
@@ -62,29 +62,14 @@ export type SettleRefundRemainderResult = {
     readonly settledStaleCallKeys: readonly string[];
 };
 
-/** Every `reason` a rejection of `settleRefundRemainder` carries, for an exhaustive HTTP mapping. */
-export const SETTLE_REFUND_REMAINDER_REJECTIONS = [
-    'REFUND_AMOUNT_INVALID',
-    'EXTERNAL_REFERENCE_INVALID',
-    'REFUND_NOT_FOUND',
-    'REFUND_SOURCE_NOT_FOUND',
-    'ADMINISTRATIVE_ACTION_FORBIDDEN',
-    'REFUND_NOT_CONFIRMED',
-    'REFUND_CALL_UNANSWERED',
-    'OTHER_REFUND_CALL_UNANSWERED',
-    'REFUND_HAS_NO_ACCEPTED_CALL',
-    'ACCEPTED_PART_NOT_ACCREDITED',
-    'REMAINDER_AMOUNT_MISMATCH',
-    'EXTERNAL_REFERENCE_ALREADY_SETTLED',
-    'REMAINDER_NOT_FOUND_AT_PROVIDER',
-    'UNCITED_PROVIDER_REFUND_ON_CHARGE',
-    'REFUND_STATE_CHANGED',
-    // Thrown by withRefundCallClaim: a retry (or another settlement) of this refund is running.
-    'REFUND_RETRY_IN_PROGRESS'
-] as const;
-
-/** A rejection reason of `settleRefundRemainder`. */
-export type SettleRefundRemainderRejection = (typeof SETTLE_REFUND_REMAINDER_REJECTIONS)[number];
+export type { SettleRefundRemainderRejection } from '@repo/schemas';
+/**
+ * Every `reason` a rejection of `settleRefundRemainder` carries, for an exhaustive HTTP mapping.
+ * The tuple and its type live in `@repo/schemas` (single source of truth) and are re-exported here
+ * so existing consumers keep importing them from `@repo/service-core`. `REFUND_RETRY_IN_PROGRESS`
+ * is thrown by `withRefundCallClaim`: a retry (or another settlement) of this refund is running.
+ */
+export { SETTLE_REFUND_REMAINDER_REJECTIONS } from '@repo/schemas';
 
 function reject(
     code: ServiceErrorCode,

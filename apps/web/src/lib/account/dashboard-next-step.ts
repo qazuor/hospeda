@@ -10,6 +10,8 @@ export type DashboardNextStepInput = {
 } & (
     | { readonly kind: 'favorites'; readonly count: number }
     | { readonly kind: 'reviews'; readonly count: number }
+    | { readonly kind: 'hostProperties'; readonly total: number; readonly draft: number }
+    | { readonly kind: 'hostMessages'; readonly unread: number }
     | {
           readonly kind: 'subscription';
           readonly text: SubscriptionStatText;
@@ -22,6 +24,19 @@ export type DashboardNextStepInput = {
 /** Returns exactly one localized next step, or a context line when no action is known. */
 export function resolveDashboardNextStep(input: DashboardNextStepInput): string {
     const { t, tPlural } = createTranslations(input.locale);
+    if (input.kind === 'hostProperties') {
+        if (input.draft > 0) return tPlural('host.dashboard.widgets.draftsNext', input.draft);
+        return t(
+            input.total === 0
+                ? 'host.dashboard.widgets.propertiesEmpty'
+                : 'host.dashboard.widgets.propertiesContext'
+        );
+    }
+    if (input.kind === 'hostMessages') {
+        return input.unread > 0
+            ? tPlural('host.dashboard.widgets.messagesNext', input.unread)
+            : t('host.dashboard.widgets.messagesContext');
+    }
     if (input.kind === 'favorites') {
         return input.count > 0
             ? tPlural('account.pages.dashboard.stats.favoritesNext', input.count)

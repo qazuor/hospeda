@@ -12,6 +12,10 @@ const src = readFileSync(
     resolve(__dirname, '../../../../src/components/shared/cards/AccommodationCard.astro'),
     'utf8'
 );
+const styles = readFileSync(
+    resolve(__dirname, '../../../../src/components/shared/cards/AccommodationCard.css'),
+    'utf8'
+);
 const sidebarStyles = readFileSync(
     resolve(__dirname, '../../../../src/components/maps/MapSidebarCard.module.css'),
     'utf8'
@@ -62,8 +66,8 @@ describe('AccommodationCard.astro', () => {
             // SPEC-046 GAP-046-09a: the badge colors are constants (status='new' /
             // status='featured' from getBadgeStatusColor) so we hard-code them in
             // the scoped <style> instead of threading via inline style= attributes.
-            expect(src).toContain('var(--hospeda-forest)');
-            expect(src).toContain('var(--brand-accent)');
+            expect(styles).toContain('var(--hospeda-forest)');
+            expect(styles).toContain('var(--brand-accent)');
             expect(src).not.toContain('getBadgeStatusColor');
         });
 
@@ -200,15 +204,15 @@ describe('AccommodationCard.astro', () => {
         });
 
         it('should give the card link position:relative so the overlay can anchor to it', () => {
-            expect(src).toContain('.acc-card__link {');
-            const linkRuleIndex = src.indexOf('.acc-card__link {');
-            const linkRule = src.slice(linkRuleIndex, src.indexOf('}', linkRuleIndex));
+            expect(styles).toContain('.acc-card__link {');
+            const linkRuleIndex = styles.indexOf('.acc-card__link {');
+            const linkRule = styles.slice(linkRuleIndex, styles.indexOf('}', linkRuleIndex));
             expect(linkRule).toContain('position: relative;');
         });
 
         it('should force the CompareCardSelect island wrapper to display:contents so it takes no layout space when hidden', () => {
-            expect(src).toContain('.acc-card__link > :global(astro-island)');
-            expect(src).toContain('display: contents;');
+            expect(styles).toContain('.acc-card__link > :global(astro-island)');
+            expect(styles).toContain('display: contents;');
         });
 
         it('should raise the "Ver más" CTA above the compare overlay so it still navigates in compare mode', () => {
@@ -216,9 +220,13 @@ describe('AccommodationCard.astro', () => {
             // <a> while compare mode is active. The CTA must sit above it so a
             // click on "Ver más" reaches the card link and navigates to the
             // detail page instead of toggling the compare selection.
-            const ctaRuleIndex = src.indexOf('.acc-card__cta-btn {');
+            const footer = readFileSync(
+                'src/components/shared/cards/CardPriceFooter.astro',
+                'utf8'
+            );
+            const ctaRuleIndex = footer.indexOf('.card-price-footer__cta {');
             expect(ctaRuleIndex).toBeGreaterThan(-1);
-            const ctaRule = src.slice(ctaRuleIndex, src.indexOf('}', ctaRuleIndex));
+            const ctaRule = footer.slice(ctaRuleIndex, footer.indexOf('}', ctaRuleIndex));
             expect(ctaRule).toContain('position: relative;');
             expect(ctaRule).toMatch(/z-index:\s*6/);
         });
@@ -310,7 +318,7 @@ describe('AccommodationCard.astro', () => {
 
     describe('featured badge', () => {
         it('should conditionally render a status corner when isFeatured is true', () => {
-            expect(src).toContain('data.isFeatured');
+            expect(src).toContain("photoBadge === 'featured'");
             expect(src).toContain('acc-card__status-corner');
         });
     });
@@ -318,7 +326,7 @@ describe('AccommodationCard.astro', () => {
     describe('verified badge (SPEC-291)', () => {
         it('should conditionally render the verified badge when data.isVerified is true', () => {
             expect(src).toContain('data.isVerified');
-            expect(src).toContain('acc-card__verified-badge');
+            expect(src).toMatch(/slot="meta"[\s\S]*data\.isVerified/);
         });
 
         it('should import and render CheckCircleIcon from @repo/icons', () => {
@@ -328,7 +336,7 @@ describe('AccommodationCard.astro', () => {
 
     describe('content', () => {
         it('should use font-heading for the accommodation name', () => {
-            expect(src).toContain('font-heading');
+            expect(styles).toContain('font-heading');
         });
 
         it('should render LocationIcon for location', () => {
@@ -340,14 +348,10 @@ describe('AccommodationCard.astro', () => {
         });
 
         it('keeps the price slot and CTA in both priced and no-price variants', () => {
-            const priceRow = src.split('<!-- Price + CTA row -->')[1] ?? '';
-
-            expect(src).toContain('formattedPrice ? (');
-            expect(src).toContain("home.accommodations.price.consult', 'Precio a consultar'");
-            expect(priceRow).toContain("!formattedPrice && 'acc-card__cta-btn--compact'");
-            expect(priceRow).toContain(
-                "home.accommodations.price.consultAvailability', 'Consultar disponibilidad'"
+            expect(src).toContain(
+                "price={formattedPrice} cta={t('account.recommendations.viewDetails')}"
             );
+            expect(src).not.toContain('consultAvailability');
         });
 
         it('anchors the divider + price/CTA footer to the bottom of the card (HOS-2035)', () => {
@@ -355,18 +359,25 @@ describe('AccommodationCard.astro', () => {
             // footer only lines up across a row when it is pushed to the bottom.
             // Without this, a card whose title wraps to one line puts its footer
             // ~28px higher than its neighbours (measured on the home "Destacados").
-            const contentRule = src.match(/\.acc-card__content\s*\{[^}]*\}/)?.[0] ?? '';
-            const dividerRule = src.match(/\.acc-card__divider\s*\{[^}]*\}/)?.[0] ?? '';
+            const contentRule = styles.match(/\.acc-card__content\s*\{[^}]*\}/)?.[0] ?? '';
+            const footer = readFileSync(
+                'src/components/shared/cards/CardPriceFooter.astro',
+                'utf8'
+            );
 
             // Assert
             expect(contentRule).toMatch(/flex:\s*1/);
             expect(contentRule).toMatch(/flex-direction:\s*column/);
-            expect(dividerRule).toMatch(/margin-top:\s*auto/);
+            expect(footer).toMatch(/margin-block-start:\s*auto/);
         });
 
         it('allows the consult label to wrap in narrow cards without widening the CTA row', () => {
-            expect(src).toMatch(/\.acc-card__price-value--consult\s*\{[^}]*white-space:\s*normal/);
-            expect(src).toMatch(/\.acc-card__price-block\s*\{[^}]*min-width:\s*0/);
+            const footer = readFileSync(
+                'src/components/shared/cards/CardPriceFooter.astro',
+                'utf8'
+            );
+            expect(footer).toContain('minmax(0, 1fr)');
+            expect(footer).toContain("<strong>{price || t('experience.priceOnRequest')}</strong>");
         });
 
         it('styles the map sidebar consult label like the accommodation card', () => {
@@ -409,33 +420,24 @@ describe('AccommodationCard.astro', () => {
         });
 
         it('should have focus-visible style on card link', () => {
-            expect(src).toContain('acc-card__link:focus-visible');
+            expect(
+                readFileSync('src/components/shared/cards/CardPriceFooter.astro', 'utf8')
+            ).toContain('card-price-footer__link:focus-visible');
         });
 
         it('should retain focus-visible CSS for the old fav-btn class (layout stability)', () => {
             // The .acc-card__fav-btn:focus-visible rule is kept in CSS for graceful
             // degradation even though the static button is replaced by FavoriteButton.
-            expect(src).toContain('acc-card__fav-btn:focus-visible');
+            expect(styles).toContain('acc-card__fav-btn:focus-visible');
         });
     });
 
-    // BETA-114: the photo-count badge sits over the photo, so it must use a
-    // theme-invariant dark pill + light text. Deriving from --core-foreground /
-    // --primary-foreground inverts it in dark mode.
-    describe('theme-invariant photo-count badge (BETA-114)', () => {
-        const badge = (() => {
-            const start = src.indexOf('.acc-card__photo-count {');
-            return start === -1 ? '' : src.slice(start, src.indexOf('}', start));
-        })();
-
-        it('uses a theme-invariant dark overlay background, not --core-foreground', () => {
-            expect(badge).toContain('--overlay-bg-strong');
-            expect(badge).not.toContain('--core-foreground');
-        });
-
-        it('uses theme-invariant light text, not --primary-foreground', () => {
-            expect(badge).toContain('--surface-dark-foreground');
-            expect(badge).not.toContain('--primary-foreground');
-        });
+    it('moves the visible and announced photo count off the photo and into the footer', () => {
+        const footer = src.slice(
+            src.indexOf('<CardPriceFooter'),
+            src.indexOf('</CardPriceFooter>')
+        );
+        expect(footer).toContain('class="sr-only">{tPlural(\'common.photos\'');
+        expect(footer).toContain('{data.photoCount}</span>');
     });
 });

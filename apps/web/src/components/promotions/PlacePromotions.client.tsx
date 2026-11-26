@@ -54,7 +54,8 @@ export function PlacePromotions({ locale, apiUrl, entityType, entityId }: PlaceP
         };
     }, [apiUrl, entityType, entityId]);
 
-    const hasLocked = data?.items.some((item) => item.kind === 'locked') ?? false;
+    const hasLocked =
+        data?.items.some((item) => item.kind === 'locked' || item.audience === 'vip') ?? false;
     const { vipPlanName } = useVipPlanName({ apiUrl, enabled: hasLocked });
 
     if (!data || data.items.length === 0) return null;

@@ -209,6 +209,39 @@ describe('HOS-2081 CA-3 el breadcrumb de las acciones enlaza al detalle', () => 
 });
 
 describe('breadcrumb semantics and overflow', () => {
+    it.each([
+        'gallery',
+        'seo'
+    ])('hides an unlabelled entity ID on posts/%s and marks only the leaf current', (leaf) => {
+        routerState.pathname.current = `/posts/${SUBSCRIPTION_ID}/${leaf}`;
+        routerState.routesByPath.current = { '/posts': {}, [`/posts/$id/${leaf}`]: {} };
+        render(<Breadcrumbs />);
+        const detail = screen.getByText('ui.navigation.detail');
+        expect(detail.tagName).toBe('SPAN');
+        expect(detail).not.toHaveAttribute('aria-current');
+        expect(document.body.textContent).not.toContain(SUBSCRIPTION_ID);
+        expect(document.querySelectorAll('[aria-current="page"]')).toHaveLength(1);
+        expect(
+            screen.getAllByRole('listitem').at(-1)?.querySelector('[aria-current="page"]')
+        ).not.toBeNull();
+    });
+
+    it.each([
+        '42',
+        '507f1f77bcf86cd799439011'
+    ])('uses the same detail fallback for entity ID %s even with empty context', (id) => {
+        routerState.pathname.current = `/posts/${id}/seo`;
+        render(<Breadcrumbs entityContext={{ name: ' ', slug: '' }} />);
+        expect(screen.getByText('ui.navigation.detail')).toBeInTheDocument();
+        expect(document.body.textContent).not.toContain(id);
+    });
+
+    it('preserves entity context on a nested post route', () => {
+        routerState.pathname.current = `/posts/${SUBSCRIPTION_ID}/gallery`;
+        render(<Breadcrumbs entityContext={{ name: 'My article' }} />);
+        expect(screen.getByText('My article')).not.toHaveAttribute('aria-current');
+        expect(screen.queryByText('ui.navigation.detail')).toBeNull();
+    });
     afterEach(() => {
         vi.unstubAllEnvs();
         vi.clearAllMocks();

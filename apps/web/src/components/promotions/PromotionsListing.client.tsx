@@ -66,7 +66,8 @@ export function PromotionsListing({ locale, apiUrl }: PromotionsListingProps) {
     }, [load, page]);
 
     const hasLocked =
-        state.kind === 'ready' && state.data.items.some((item) => item.kind === 'locked');
+        state.kind === 'ready' &&
+        state.data.items.some((item) => item.kind === 'locked' || item.audience === 'vip');
     const { vipPlanName } = useVipPlanName({ apiUrl, enabled: hasLocked });
 
     if (state.kind === 'loading') {

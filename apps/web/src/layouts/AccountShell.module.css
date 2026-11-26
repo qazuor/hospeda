@@ -75,32 +75,10 @@
     }
 
     .sidebar {
-        position: sticky;
-        /* Below the 64px account header (HOS-2550). */
-        inset-block-start: 4rem;
+        --sticky-sidebar-base: 4rem;
         display: block;
-        max-block-size: calc(100dvh - 4rem);
-        overflow-y: auto;
-        /* Tight inline padding (start 8px, end 4px beside the scrollbar) and a
-           stable gutter: the 240px column must fit the longest label on one
-           line, and the scrollbar appearing must not reflow the labels. */
         padding-block: var(--space-4);
         padding-inline: var(--space-2) var(--space-1);
-        scrollbar-gutter: stable;
         border-inline-end: 1px solid var(--border);
-
-        /* Thin, discreet scrollbar (HOS-2549) plus a fade at the edge that
-           still has content: the background-attachment pair paints a muted
-           shadow only while there is more to scroll in that direction. */
-        scrollbar-width: thin;
-        scrollbar-color: var(--border) transparent;
-        background:
-            linear-gradient(var(--core-background) 30%, transparent) top / 100% var(--space-8)
-            no-repeat local,
-            linear-gradient(transparent, var(--core-background) 70%) bottom / 100% var(--space-8)
-            no-repeat local,
-            linear-gradient(var(--border), transparent) top / 100% var(--space-3) no-repeat scroll,
-            linear-gradient(transparent, var(--border)) bottom / 100% var(--space-3) no-repeat
-            scroll;
     }
 }

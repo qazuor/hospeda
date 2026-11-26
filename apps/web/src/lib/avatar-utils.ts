@@ -62,7 +62,7 @@ interface GetInitialsInput {
 export function getInitials(input: GetInitialsInput = {}): string {
     const { name, email, placeholder = INITIALS_PLACEHOLDER } = input;
 
-    const trimmedName = name?.trim() ?? '';
+    const trimmedName = getAvatarDisplayName({ name });
     if (trimmedName.length > 0) {
         const words = trimmedName.match(/[\p{L}\p{N}]+/gu) ?? [];
         const significant = words.filter(
@@ -84,6 +84,14 @@ export function getInitials(input: GetInitialsInput = {}): string {
     }
 
     return placeholder;
+}
+
+/** Strip trailing parenthetical annotations from the avatar's display name. */
+export function getAvatarDisplayName({ name }: Pick<GetInitialsInput, 'name'>): string {
+    return (name ?? '')
+        .trim()
+        .replace(/(?:\s*\([^()]*\))+$/u, '')
+        .trim();
 }
 
 /**

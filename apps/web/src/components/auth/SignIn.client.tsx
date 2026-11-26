@@ -16,15 +16,19 @@
  */
 
 import { useState } from 'react';
+import { z } from 'zod';
 import { GradientButton } from '@/components/ui/GradientButtonReact';
 import { PasswordField, type PasswordFieldI18n } from '@/components/ui/PasswordField.client';
 import { translateApiError } from '@/lib/api-errors';
 import { clearCachedAuthMe } from '@/lib/auth-cache';
 import { signIn } from '@/lib/auth-client';
-import { EmailFormatSchema } from '@/lib/forms/email-format';
+import { authEmailSchema } from '@/lib/forms/auth-form-schemas';
+import { useZodForm } from '@/lib/forms/use-zod-form';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { resolvePostAuthRedirectUrl } from '@/lib/post-auth-redirect';
+import { buildUrl } from '@/lib/urls';
+import { AuthEmailField } from './AuthEmailField';
 import styles from './SignIn.module.css';
 
 /** Props for the SignIn component. */
@@ -71,7 +75,23 @@ export function SignIn({
 
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const {
+        fieldErrors,
+        formError: error,
+        setFormError: setError,
+        validate,
+        clearError
+    } = useZodForm({
+        schema: z.object({
+            email: authEmailSchema({
+                required: t('auth.signIn.errors.emailRequired'),
+                invalid: t('auth.signIn.errors.emailInvalid')
+            }),
+            password: z.string().min(1, t('auth.signIn.errors.passwordRequired'))
+        }),
+        fieldIdPrefix: 'signin',
+        validationToast: false
+    });
 
     /**
      * i18n strings for the shared `PasswordField`. Sign-in only uses the
@@ -92,23 +112,13 @@ export function SignIn({
         e.preventDefault();
         setError(null);
 
-        // HOS-190 slice 3: `required`/`type="email"` are decorative under
-        // `noValidate` — enforce presence + format for real before calling
-        // Better Auth, instead of letting any string through.
-        const trimmedEmail = email.trim();
-        if (!trimmedEmail) {
-            setError(t('auth.signIn.errors.emailRequired', 'Ingresá tu correo electrónico.'));
-            return;
-        }
-        if (!EmailFormatSchema.safeParse(trimmedEmail).success) {
-            setError(t('auth.signIn.errors.emailInvalid', 'Ingresá un correo electrónico válido.'));
-            return;
-        }
+        const parsed = validate({ email, password });
+        if (!parsed.success) return;
 
         setIsLoading(true);
 
         try {
-            const result = await signIn.email({ email: trimmedEmail, password });
+            const result = await signIn.email(parsed.data);
 
             if (result.error) {
                 setError(
@@ -148,6 +158,7 @@ export function SignIn({
 
     return (
         <form
+            method="post"
             className={styles.form}
             onSubmit={handleSubmit}
             noValidate
@@ -162,60 +173,43 @@ export function SignIn({
                 </div>
             )}
 
-            <div className={styles.field}>
-                <label
-                    htmlFor="signin-email"
-                    className={styles.label}
-                >
-                    {t('auth.signIn.email', 'Correo electrónico')}
-                    {/*
-                        The input has always carried `required` +
-                        `aria-required`, so assistive tech was already told;
-                        the VISIBLE marker was the only thing missing. Without
-                        it this was the one mandatory field on either tab that
-                        did not look mandatory — the password below it renders
-                        its own asterisk via `PasswordField`, and every field
-                        on the sign-up tab already had one (HOS-821), so it
-                        read as if e-mail were optional to sign in.
-
-                        Same span, class and `aria-hidden` as HOS-821 used on
-                        the sign-up label: hidden from the a11y tree precisely
-                        because `aria-required` already announces it, and
-                        saying it twice is worse than not at all.
-                    */}
-                    <span
-                        className={styles.required}
-                        aria-hidden="true"
-                    >
-                        {' *'}
-                    </span>
-                </label>
-                <input
-                    id="signin-email"
-                    type="email"
-                    className={styles.input}
-                    value={email}
-                    onChange={(e) => onEmailChange(e.target.value)}
-                    placeholder={t('auth.signIn.emailPlaceholder', 'tu@email.com')}
-                    required
-                    autoComplete="email"
-                    aria-required="true"
-                    disabled={isLoading}
-                />
-            </div>
-
-            <PasswordField
-                id="signin-password"
-                name="password"
-                label={t('auth.signIn.password', 'Contraseña')}
-                value={password}
-                onChange={setPassword}
-                placeholder={t('auth.signIn.passwordPlaceholder', 'Tu contraseña')}
-                autoComplete="current-password"
-                required
+            <AuthEmailField
+                prefix="signin"
+                label={t('auth.signIn.email')}
+                value={email}
+                onChange={(value) => {
+                    onEmailChange(value);
+                    clearError('email');
+                }}
+                placeholder={t('auth.signIn.emailPlaceholder')}
                 disabled={isLoading}
-                i18n={passwordI18n}
+                error={fieldErrors.email}
             />
+
+            <div className={styles.field}>
+                <PasswordField
+                    id="signin-password"
+                    name="password"
+                    label={t('auth.signIn.password', 'Contraseña')}
+                    value={password}
+                    onChange={(value) => {
+                        setPassword(value);
+                        clearError('password');
+                    }}
+                    error={fieldErrors.password}
+                    placeholder={t('auth.signIn.passwordPlaceholder', 'Tu contraseña')}
+                    autoComplete="current-password"
+                    required
+                    disabled={isLoading}
+                    i18n={passwordI18n}
+                />
+                <a
+                    className={styles.forgotLink}
+                    href={buildUrl({ locale, path: 'auth/forgot-password' })}
+                >
+                    {t('auth-ui.signIn.forgotPassword')}
+                </a>
+            </div>
 
             <GradientButton
                 as="button"

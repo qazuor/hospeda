@@ -1,7 +1,7 @@
 import type { Clock } from '@repo/billing-verticals-contract';
 import type { DrizzleClient, SelectRefund } from '@repo/db';
 import { and, coveredPeriods, eq, getDb, refunds, sql } from '@repo/db';
-import { ServiceErrorCode } from '@repo/schemas';
+import { ServiceErrorCode, type SettleExternalRefundRejection } from '@repo/schemas';
 import { type Actor, ServiceError } from '../../../types';
 import { extractPostgresErrorCause } from '../../../utils/postgres-error-cause';
 import {
@@ -59,28 +59,14 @@ export type SettleExternalRefundResult = {
     readonly coverageReleased: boolean;
 };
 
-/** Every `reason` a rejection of `settleExternalRefund` carries, for an exhaustive HTTP mapping. */
-export const SETTLE_EXTERNAL_REFUND_REJECTIONS = [
-    'REFUND_AMOUNT_INVALID',
-    'EXTERNAL_REFERENCE_INVALID',
-    'REFUND_SOURCE_NOT_FOUND',
-    'ADMINISTRATIVE_ACTION_FORBIDDEN',
-    'PAYMENT_NOT_REFUNDABLE',
-    'MANUAL_PAYMENT_SCOPE_REQUIRED',
-    'MANUAL_PAYMENT_SCOPE_NOT_ALLOWED',
-    'EXTERNAL_REFERENCE_ALREADY_SETTLED',
-    'REFUND_NOT_FOUND',
-    'REFUND_NOT_OPEN',
-    'OPEN_REQUESTS_AMBIGUOUS',
-    'REQUESTED_AMOUNT_MISMATCH',
-    'REFUND_EXCEEDS_BALANCE',
-    'REFUND_STATE_CHANGED',
-    // Thrown by assertRetainedPaymentRefundable (GUARD:G-R1-D, AC:B7:17, HOS-1561).
-    'RETAINED_PAYMENT_SUCCESSION_OPEN'
-] as const;
-
-/** A rejection reason of `settleExternalRefund`. */
-export type SettleExternalRefundRejection = (typeof SETTLE_EXTERNAL_REFUND_REJECTIONS)[number];
+export type { SettleExternalRefundRejection } from '@repo/schemas';
+/**
+ * Every `reason` a rejection of `settleExternalRefund` carries, for an exhaustive HTTP mapping.
+ * The tuple and its type live in `@repo/schemas` (single source of truth) and are re-exported here
+ * so existing consumers keep importing them from `@repo/service-core`. `RETAINED_PAYMENT_SUCCESSION_OPEN`
+ * is thrown by `assertRetainedPaymentRefundable` (GUARD:G-R1-D, AC:B7:17, HOS-1561).
+ */
+export { SETTLE_EXTERNAL_REFUND_REJECTIONS } from '@repo/schemas';
 
 function reject(
     code: ServiceErrorCode,

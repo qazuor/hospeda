@@ -1,4 +1,5 @@
 import { type FetchPlansResult, fetchPublicPlans } from '@/lib/billing/fetch-plans';
+import { resolvePaidBenefit, touristBadgeCatalog } from '@/lib/billing/plan-badge';
 
 /**
  * The sellable Tourist VIP plan's own cells: what an owner plan that inherits
@@ -20,6 +21,8 @@ export interface TouristVipBenefitKeys {
     readonly limits: ReadonlySet<string>;
     /** The top sellable tourist tier, whose values the inherited cells show. */
     readonly plan: TouristVipPlanCells;
+    /** Catalog name when the inherited tier adds an entitlement above the floor. */
+    readonly badgeName?: string | null;
 }
 
 /** Resolve the VIP key sets from purchasable tourist catalog plans only. */
@@ -29,7 +32,7 @@ export function resolveTouristVipBenefitKeys({
     readonly result: FetchPlansResult;
 }): TouristVipBenefitKeys | null {
     if (!result.ok) return null;
-    const sellablePlans = result.plans.filter((plan) => plan.billingOptions !== undefined);
+    const { floor, plans: sellablePlans } = touristBadgeCatalog({ result });
     const [first, ...rest] = sellablePlans;
     if (first === undefined) return null;
 
@@ -40,7 +43,12 @@ export function resolveTouristVipBenefitKeys({
     return {
         entitlements: new Set(sellablePlans.flatMap((plan) => plan.entitlements)),
         limits: new Set(sellablePlans.flatMap((plan) => Object.keys(plan.limits))),
-        plan: { slug: top.slug, entitlements: top.entitlements, limits: top.limits }
+        plan: { slug: top.slug, entitlements: top.entitlements, limits: top.limits },
+        badgeName: top.entitlements.reduce<string | null>(
+            (name, entitlement) =>
+                name ?? resolvePaidBenefit({ floor: floor ?? null, plans: [top], entitlement }),
+            null
+        )
     };
 }
 

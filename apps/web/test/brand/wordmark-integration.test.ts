@@ -36,7 +36,7 @@ describe('wordmark caller integration', () => {
         }
     });
 
-    it('feeds funcionalidades the bundled asset URL, because that static page awaits nothing (HOS-369)', () => {
+    it('feeds funcionalidades the bundled asset URL without awaiting image optimization', () => {
         const features = readSource({ file: 'pages/[lang]/funcionalidades/index.astro' });
         expect(features).toContain('const brandLogoSrc = logoSrc.src;');
         expect(features).not.toContain('await getImage(');

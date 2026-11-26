@@ -1047,6 +1047,13 @@
         "error": "Error loading the dashboard",
         "retry": "Retry",
         "widgets": {
+            "draftsNext_one": "You have {{count}} draft to complete and publish.",
+            "draftsNext_other": "You have {{count}} drafts to complete and publish.",
+            "propertiesEmpty": "Create your first property to get started.",
+            "propertiesContext": "Review and keep your properties up to date.",
+            "messagesNext_one": "You have {{count}} unanswered inquiry.",
+            "messagesNext_other": "You have {{count}} unanswered inquiries.",
+            "messagesContext": "You have no unanswered inquiries.",
             "properties": "Your properties",
             "total": "Total",
             "published": "Published",

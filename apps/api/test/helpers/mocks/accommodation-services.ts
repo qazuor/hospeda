@@ -466,6 +466,35 @@ export class AmenityService {
 }
 
 /**
+ * Mock AccommodationReviewReplyService (HOS-2199): no replies exist in route tests.
+ */
+export class AccommodationReviewReplyService {
+    async getPublicRepliesByReviewIds(_input: { reviewIds: readonly string[] }) {
+        return new Map<string, { content: string; createdAt: Date; editedAt: Date | null }>();
+    }
+
+    async listReceived(_input: Record<string, unknown>) {
+        return { data: { items: [], total: 0 } };
+    }
+
+    async respond(_input: Record<string, unknown>) {
+        return { error: { code: 'INTERNAL_ERROR', message: 'not mocked' } };
+    }
+
+    async editReply(_input: Record<string, unknown>) {
+        return { error: { code: 'INTERNAL_ERROR', message: 'not mocked' } };
+    }
+
+    async deleteReply(_input: Record<string, unknown>) {
+        return { error: { code: 'INTERNAL_ERROR', message: 'not mocked' } };
+    }
+
+    async moderateReply(_input: Record<string, unknown>) {
+        return { error: { code: 'INTERNAL_ERROR', message: 'not mocked' } };
+    }
+}
+
+/**
  * Mock AccommodationReviewService - returns predictable happy-path data.
  */
 export class AccommodationReviewService {

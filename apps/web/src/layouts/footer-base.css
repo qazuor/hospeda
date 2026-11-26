@@ -196,6 +196,7 @@
     text-transform: uppercase;
     letter-spacing: 0.08em;
     padding-block: 0.25rem;
+    min-height: 2.75rem;
 }
 
 .footer__nav-heading::-webkit-details-marker,
@@ -203,17 +204,11 @@
     display: none;
 }
 
-.footer__nav-heading::after {
-    /* Down-pointing chevron flips to up when the accordion is open —
-       a clearer expand/collapse affordance than the previous "+". */
-    content: "\25BE"; /* ▾ */
-    font-size: 0.875rem;
-    line-height: 1;
-    color: var(--footer-fg-muted);
+.footer__nav-heading svg {
     transition: transform var(--duration-normal) ease;
 }
 
-.footer__nav-col[open] .footer__nav-heading::after {
+.footer__nav-col[open] .footer__nav-heading svg {
     transform: rotate(180deg);
 }
 
@@ -411,25 +406,10 @@
     gap: var(--space-3);
 }
 
-.footer__legal li + li::before {
-    content: "·";
-    flex: none;
-    color: var(--footer-fg-muted);
-    opacity: 0.5;
-}
-
-/* A separator bound to its item strands at the start of a wrapped line;
-   on narrow screens the row wraps, so it relies on the gap alone. */
-@media (max-width: 639px) {
-    .footer__legal li + li::before {
-        display: none;
-    }
-}
-
 .footer__legal-link {
     font-family: var(--font-sans);
-    font-size: var(--text-caption);
-    color: var(--footer-fg-muted);
+    font-size: 0.75rem;
+    color: var(--footer-fg);
     text-decoration: none;
     background: none;
     border: none;

@@ -104,6 +104,14 @@ describe('mi-cuenta/proveedor/index.astro (HOS-278 §8 provider self-service)', 
         expect(source).not.toContain('provider-tabs__link');
     });
 
+    it('keeps desktop tabs in a spaced flex row rather than reverting to block layout', () => {
+        const desktop = source.slice(source.indexOf('@media (min-width: 48rem)'));
+        expect(desktop).toContain('display: flex;');
+        expect(desktop).toContain('gap: var(--space-1);');
+        expect(desktop).toContain('padding-inline: var(--space-4);');
+        expect(desktop).not.toContain('revert');
+    });
+
     it('owner decision 22: reads every count pill through ONE aggregated endpoint', () => {
         expect(source).toContain('hostTradesApi.tabCounts(');
         // The per-pill one-row list reads are gone.

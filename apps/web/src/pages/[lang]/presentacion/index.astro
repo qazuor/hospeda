@@ -37,7 +37,7 @@ import { applyCacheHeaders } from '@/lib/cache/response-cache';
 const locale = Astro.locals.locale as SupportedLocale;
 
 // --- Edge cacheability (HOS-369 W2-2) ---
-// No session and no API call: hardcoded copy, same class and tag as the presentations.
+// This presentation index is copy-only and does not read the tourist catalog.
 applyCacheHeaders({
 	locals: Astro.locals,
 	headers: Astro.response.headers,

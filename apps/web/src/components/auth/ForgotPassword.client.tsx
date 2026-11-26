@@ -7,13 +7,17 @@
  * Shows a success state after submission instead of redirecting.
  */
 
+import { EmailIcon } from '@repo/icons';
 import { useState } from 'react';
+import { z } from 'zod';
 import { GradientButton } from '@/components/ui/GradientButtonReact';
 import { translateApiError } from '@/lib/api-errors';
 import { forgetPassword } from '@/lib/auth-client';
-import { EmailFormatSchema } from '@/lib/forms/email-format';
+import { authEmailSchema } from '@/lib/forms/auth-form-schemas';
+import { useZodForm } from '@/lib/forms/use-zod-form';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { AuthEmailField } from './AuthEmailField';
 import styles from './ForgotPassword.module.css';
 
 /** Props for the ForgotPassword component. */
@@ -47,35 +51,36 @@ export function ForgotPassword({ locale, resetPasswordUrl, signInUrl }: ForgotPa
 
     const [email, setEmail] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const {
+        fieldErrors,
+        formError: error,
+        setFormError: setError,
+        validate,
+        clearError
+    } = useZodForm({
+        schema: z.object({
+            email: authEmailSchema({
+                required: t('auth.forgotPassword.emailRequired'),
+                invalid: t('auth.forgotPassword.emailInvalid')
+            })
+        }),
+        fieldIdPrefix: 'forgot',
+        validationToast: false
+    });
     const [isSent, setIsSent] = useState(false);
 
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>): Promise<void> {
         e.preventDefault();
         setError(null);
 
-        // HOS-190 slice 3: the presence check already existed, but the
-        // trimmed value was only used for the check itself and then
-        // discarded — the untrimmed `email` state was sent to
-        // `forgetPassword()` below. Also add a real format check (the form
-        // is `noValidate`, so the browser's native `type="email"` never ran).
-        const trimmedEmail = email.trim();
-        if (!trimmedEmail) {
-            setError(t('auth.forgotPassword.emailRequired', 'Ingresá tu correo electrónico'));
-            return;
-        }
-        if (!EmailFormatSchema.safeParse(trimmedEmail).success) {
-            setError(
-                t('auth.forgotPassword.emailInvalid', 'Ingresá un correo electrónico válido.')
-            );
-            return;
-        }
+        const parsed = validate({ email });
+        if (!parsed.success) return;
 
         setIsLoading(true);
 
         try {
             const result = await forgetPassword({
-                email: trimmedEmail,
+                email: parsed.data.email,
                 redirectTo: resetPasswordUrl
             });
 
@@ -110,7 +115,7 @@ export function ForgotPassword({ locale, resetPasswordUrl, signInUrl }: ForgotPa
                     className={styles.successIcon}
                     aria-hidden="true"
                 >
-                    <MailIcon />
+                    <EmailIcon size={48} />
                 </div>
                 <h2 className={styles.successTitle}>
                     {t('auth.forgotPassword.sentTitle', 'Revisá tu email')}
@@ -159,26 +164,18 @@ export function ForgotPassword({ locale, resetPasswordUrl, signInUrl }: ForgotPa
                 </div>
             )}
 
-            <div className={styles.field}>
-                <label
-                    htmlFor="forgot-email"
-                    className={styles.label}
-                >
-                    {t('auth.forgotPassword.email', 'Correo electrónico')}
-                </label>
-                <input
-                    id="forgot-email"
-                    type="email"
-                    className={styles.input}
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder={t('auth.forgotPassword.emailPlaceholder', 'tu@email.com')}
-                    required
-                    autoComplete="email"
-                    aria-required="true"
-                    disabled={isLoading}
-                />
-            </div>
+            <AuthEmailField
+                prefix="forgot"
+                label={t('auth.forgotPassword.email')}
+                value={email}
+                onChange={(value) => {
+                    setEmail(value);
+                    clearError('email');
+                }}
+                placeholder={t('auth.forgotPassword.emailPlaceholder')}
+                disabled={isLoading}
+                error={fieldErrors.email}
+            />
 
             <GradientButton
                 as="button"
@@ -206,31 +203,5 @@ export function ForgotPassword({ locale, resetPasswordUrl, signInUrl }: ForgotPa
                 </a>
             </div>
         </form>
-    );
-}
-
-function MailIcon() {
-    return (
-        <svg
-            width="48"
-            height="48"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-            focusable="false"
-        >
-            <rect
-                width="20"
-                height="16"
-                x="2"
-                y="4"
-                rx="2"
-            />
-            <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
-        </svg>
     );
 }

@@ -16,7 +16,10 @@ import { buildUrl } from '@/lib/urls';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import type { ExperienceCardData } from '@/data/types';
-import ExperiencePriceTag from './ExperiencePriceTag.astro';
+import CardPriceFooter from '@/components/shared/cards/CardPriceFooter.astro';
+import { selectCardPhotoBadge } from '@/components/shared/cards/utils/card-photo-badge';
+import { resolveExperiencePriceDisplay } from '@/lib/experience/price-display';
+import { formatPrice } from '@/lib/format-utils';
 
 interface Props {
     readonly data: ExperienceCardData;
@@ -31,6 +34,8 @@ interface Props {
 
 const { data, locale, eager = false } = Astro.props;
 const { t } = createTranslations(locale);
+const priceDisplay = resolveExperiencePriceDisplay(data);
+const price = priceDisplay.kind === 'on-request' ? null : formatPrice({ amount: priceDisplay.cents / 100, currency: 'ARS', locale });
 
 const detailUrl = buildUrl({ locale, path: `experiencias/${data.slug}/` });
 
@@ -39,11 +44,7 @@ const typeLabel = t(`experience.type.${data.type}`, data.type);
 
 const fullStars = Math.floor(data.averageRating);
 
-/** "Nuevo" badge: created less than 30 days ago. */
-const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
-const isNew = data.createdAt
-    ? Date.now() - new Date(data.createdAt).getTime() < THIRTY_DAYS_MS
-    : false;
+const photoBadge = selectCardPhotoBadge(data);
 
 const featuredLabel = t('experience.card.featured', 'Destacada');
 const shouldProxyFeaturedImage = isCloudinaryDeliveryUrl(data.featuredImage.url);
@@ -81,7 +82,7 @@ const shouldProxyFeaturedImage = isCloudinaryDeliveryUrl(data.featuredImage.url)
             )}
 
             <!-- NEW corner badge -->
-            {isNew && (
+            {photoBadge === 'new' && (
                 <div class="exp-card__status-corner" aria-hidden="true">
                     <span class="exp-card__status-text">
                         {t('home.accommodations.badge.new', 'Nuevo')}
@@ -90,7 +91,7 @@ const shouldProxyFeaturedImage = isCloudinaryDeliveryUrl(data.featuredImage.url)
             )}
 
             <!-- Featured badge -->
-            {data.isFeatured && (
+            {photoBadge === 'featured' && (
                 <div class="exp-card__featured-badge featured-badge">
                     <StarIcon size={12} weight="fill" aria-hidden="true" />
                     <span>{featuredLabel}</span>
@@ -169,20 +170,10 @@ const shouldProxyFeaturedImage = isCloudinaryDeliveryUrl(data.featuredImage.url)
             )}
 
             <!-- Divider -->
-            <div class="exp-card__divider" aria-hidden="true"></div>
 
             <!-- Price + CTA row -->
-            <div class="exp-card__price-row">
-                <ExperiencePriceTag
-                    priceFrom={data.priceFrom}
-                    priceUnit={data.priceUnit}
-                    isPriceOnRequest={data.isPriceOnRequest}
-                    locale={locale}
-                />
-                <span class="exp-card__cta-btn">
-                    {t('common.readMore', 'Ver más')} →
-                </span>
-            </div>
+            <CardPriceFooter locale={locale} price={price} cta={t('common.card.viewExperience')}
+                prefix={t('experience.priceFrom')} unit={data.priceUnit ? t(`experience.priceUnit.${data.priceUnit}`) : undefined} />
         </div>
     </a>
 </article>

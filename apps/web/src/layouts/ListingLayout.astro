@@ -1,4 +1,5 @@
 ---
+import SmartSticky from '@/components/shared/layout/SmartSticky.astro';
 /**
  * @file ListingLayout.astro
  * @description Layout for entity listing pages with optional filter sidebar,
@@ -137,7 +138,7 @@ const resultsSummaryLabel =
 			]}>
 				{/* Left sidebar filters */}
 				{hasLeftFilters && (
-					<aside class="listing-sidebar" aria-label="Filtros">
+					<aside class="listing-sidebar" data-smart-sticky aria-label="Filtros">
 						<slot name="filters" />
 					</aside>
 				)}
@@ -166,6 +167,7 @@ const resultsSummaryLabel =
 	     renders nothing until the user selects accommodations to compare. -->
 	<CompareBar locale={locale} client:idle />
 </BaseLayout>
+<SmartSticky />
 
 <style>
 	.listing-body {
@@ -205,8 +207,7 @@ const resultsSummaryLabel =
 	   band is now structurally identical to the compact detail band — same
 	   fallback as DetailLayout's --wave-bar-compact usage). */
 	.listing-sidebar {
-		position: sticky;
-		top: calc(var(--navbar-height, 80px) + var(--wave-bar-compact, 72px));
+		--sticky-sidebar-base: calc(var(--navbar-height, 80px) + var(--wave-bar-compact, 72px));
 		align-self: start;
 	}
 

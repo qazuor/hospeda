@@ -126,6 +126,7 @@ describe('NewsletterForm authed email CSS', () => {
     });
 
     it('HOS-1773 — the row wraps and the actions group is a single non-shrinking item', () => {
+        expect(ruleBody('.authInputRow')).toMatch(/flex-direction:\s*column;/);
         expect(ruleBody('.inputRow')).toMatch(/flex-wrap:\s*wrap;/);
         const actions = ruleBody('.actions');
         expect(actions).toMatch(/display:\s*flex;/);

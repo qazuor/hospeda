@@ -8,6 +8,24 @@ vi.mock('@/lib/api/endpoints-protected', () => ({ publishApi: { subscribeDestina
 beforeEach(() => vi.clearAllMocks());
 
 describe('SubscribeButton (TEST:V8a:3 / TEST:V8a:4)', () => {
+    it.each([
+        'accommodation',
+        'venue',
+        'experience'
+    ] as const)('uses the flat accent kit CTA for %s', async (vertical) => {
+        subscribeDestination.mockResolvedValue({
+            ok: true,
+            data: { destination: 'PUBLISH', trialDays: 14 }
+        });
+        render(
+            <SubscribeButton
+                locale="es"
+                vertical={vertical}
+            />
+        );
+        const container = await screen.findByTestId('subscribe-button');
+        expect(container.querySelector('a')).toHaveClass('accent');
+    });
     it('shows publish CTA and trial note with its destination', async () => {
         subscribeDestination.mockResolvedValue({
             ok: true,

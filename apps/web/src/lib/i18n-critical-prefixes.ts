@@ -104,11 +104,22 @@ export const CRITICAL_I18N_KEY_PREFIXES = [
     'account.doors.publish',
     'account.nav',
     'account.pages.dashboard',
+    'account.profileCompletion.fields',
     'account.title',
     'account.ui.cancel',
     'account.ui.confirmError',
     'account.ui.dialogClose',
+    'auth.signUp.submit',
     'common.cancel',
+    // UserMenu plan line (HOS-2649).
+    'common.card.currentPlan',
+    'common.card.planUntil',
+    'common.card.upgradePlan',
+    // Reached through the lazily imported protected API client of the menu
+    // plan line (tourist-menu-plan.ts); the graph scan counts dynamic imports.
+    'account.ui.status',
+    'listing.policies.paymentMethods',
+    'listing.policies.spokenLanguages',
     'conversations.inbox.guestInboxTitle',
     'conversations.inbox.ownerInboxTitle',
     'cookieConsent.buttons',
@@ -130,6 +141,8 @@ export const CRITICAL_I18N_KEY_PREFIXES = [
     'nav.publishCtaAria',
     'nav.signIn',
     'nav.theme',
+    'nav.userMenu.preferences',
+    'nav.userMenu.signOut',
     'ui.accessibility.closeToast',
     'venue.editOwn'
 ] as const;

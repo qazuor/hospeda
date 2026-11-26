@@ -27,11 +27,11 @@
  */
 
 import { type JSX, type ReactNode, useRef } from 'react';
+import { EditorSection } from '@/components/account/editor-shell/EditorSection';
 import { Alert } from '@/components/account/ui/Alert';
 import { Button } from '@/components/account/ui/Button';
 import { Field } from '@/components/account/ui/Field';
 import type { HelpAnchor } from '@/components/account/ui/help-anchor';
-import { Section } from '@/components/account/ui/Section';
 import { TextInput } from '@/components/account/ui/TextInput';
 import { buildFieldId } from '@/lib/forms/build-field-id';
 import { createT, type SupportedLocale } from '@/lib/i18n';
@@ -136,7 +136,8 @@ export function ListingLocationSection({
     };
 
     return (
-        <Section
+        <EditorSection
+            locale={locale}
             id={sectionId}
             title={title}
             description={description}
@@ -204,6 +205,6 @@ export function ListingLocationSection({
                 />
                 {trail}
             </div>
-        </Section>
+        </EditorSection>
     );
 }

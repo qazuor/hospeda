@@ -1,0 +1,121 @@
+---
+/** @file Plans hub linking visitors to the four public audience landings. */
+import { CACHE_TAG_PRICING } from '@repo/cache-tags';
+import { BuildingsIcon, CompassIcon, MapIcon, VenueIcon } from '@repo/icons';
+import MarketingHero from '@/components/marketing/MarketingHero.astro';
+import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import GradientButton from '@/components/shared/ui/GradientButton.astro';
+import MarketingLayout from '@/layouts/MarketingLayout.astro';
+import { applyCacheHeaders } from '@/lib/cache/response-cache';
+import { createTranslations } from '@/lib/i18n';
+import { breadcrumbLabel } from '@/lib/navigation/breadcrumb-labels';
+import { buildUrl } from '@/lib/urls';
+
+const locale = Astro.locals.locale;
+const { t } = createTranslations(locale);
+
+applyCacheHeaders({
+    locals: Astro.locals,
+    headers: Astro.response.headers,
+    cacheable: true,
+    cacheClass: 'pricing',
+    tags: [CACHE_TAG_PRICING]
+});
+
+const cards = [
+    { id: 'tourist', path: 'planes/turistas', Icon: MapIcon },
+    { id: 'host', path: 'planes/anfitriones', Icon: BuildingsIcon },
+    { id: 'experience', path: 'planes/experiencias', Icon: CompassIcon },
+    { id: 'venue', path: 'planes/comer-y-salir', Icon: VenueIcon }
+] as const;
+---
+
+<MarketingLayout
+    locale={locale}
+    title={t('pricing.hub.title')}
+    description={t('pricing.hub.description')}
+>
+    <Breadcrumbs slot="breadcrumbs" locale={locale} items={[{ label: breadcrumbLabel({ t, key: 'plans' }) }]} />
+    <MarketingHero
+        tagline={t('pricing.hub.tagline')}
+        titleAccent={t('pricing.hub.heading')}
+        subtitle={t('pricing.hub.description')}
+    >
+        <MapIcon slot="icon-1" size="md" weight="duotone" />
+        <BuildingsIcon slot="icon-2" size="md" weight="duotone" />
+        <CompassIcon slot="icon-3" size="md" weight="duotone" />
+    </MarketingHero>
+
+    <section class="plans-hub section" aria-labelledby="plans-audiences-heading">
+        <div class="section__container">
+            <h2 id="plans-audiences-heading" class="plans-hub__heading">{t('pricing.hub.cardsHeading')}</h2>
+            <ul class="plans-hub__grid">
+                {cards.map(({ id, path, Icon }) => (
+                    <li class="plans-hub__card">
+                        <span class="plans-hub__icon" aria-hidden="true"><Icon size="md" weight="bold" /></span>
+                        <h3 class="plans-hub__title">{t(`pricing.hub.cards.${id}.title`)}</h3>
+                        <p class="plans-hub__description">{t(`pricing.hub.cards.${id}.description`)}</p>
+                        <GradientButton
+                            href={buildUrl({ locale, path })}
+                            label={t(`pricing.hub.cards.${id}.cta`)}
+                            variant="accent"
+                            flat
+                            icon="true"
+                        />
+                    </li>
+                ))}
+            </ul>
+        </div>
+    </section>
+</MarketingLayout>
+
+<style>
+    .plans-hub__heading {
+        margin: 0 0 var(--space-8);
+        text-align: center;
+        font-family: var(--font-heading);
+        color: var(--core-foreground);
+    }
+
+    .plans-hub__grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--space-card-gap);
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .plans-hub__card {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--space-4);
+        padding: var(--space-8);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-card);
+        background: var(--core-card);
+    }
+
+    .plans-hub__icon {
+        color: var(--brand-accent);
+    }
+
+    .plans-hub__title {
+        margin: 0;
+        font-family: var(--font-heading);
+        color: var(--core-foreground);
+    }
+
+    .plans-hub__description {
+        flex: 1;
+        margin: 0;
+        color: var(--core-muted-foreground);
+    }
+
+    @media (max-width: 639px) {
+        .plans-hub__grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>

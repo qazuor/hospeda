@@ -21,7 +21,7 @@
     border-block-end: 0;
 }
 
-@media (hover: hover) {
+@media (hover: hover) and (pointer: fine) {
     .row:has(.link):hover {
         background-color: color-mix(in srgb, var(--surface-warm) 25%, var(--core-card));
     }
@@ -29,10 +29,10 @@
     .link:hover {
         text-decoration: underline;
     }
-}
 
-.row:focus-within {
-    background-color: var(--surface-warm);
+    .row:focus-within {
+        background-color: var(--surface-warm);
+    }
 }
 
 /* Accent rail for a row that needs attention (an unread conversation). */
@@ -107,10 +107,7 @@
     margin: 0;
     font: var(--app-ui);
     color: var(--core-muted-foreground);
-    overflow: hidden;
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
+    display: block;
     overflow-wrap: anywhere;
 }
 
@@ -153,6 +150,13 @@
 }
 
 @container (width >= 40rem) {
+    .description:not(.descriptionWrap) {
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+    }
+
     .row {
         grid-template-columns: auto minmax(0, 1fr) auto auto;
         grid-template-areas: "leading body trailing actions";

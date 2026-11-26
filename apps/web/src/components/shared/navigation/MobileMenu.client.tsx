@@ -1,13 +1,15 @@
-/** Site-only mobile menu. Account navigation is owned by the header account sheet. */
-import { CloseIcon } from '@repo/icons';
+/**
+ * Mobile site navigation with session-aware account shortcuts.
+ * D05 (owner decision): the desktop user dropdown is replicated directly in
+ * the menu (Favoritos, Suscripción, Mi cuenta, Cerrar sesión, Idioma, Tema).
+ */
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { CloseButton } from '@/components/account/ui/CloseButton';
 import { BrandWordmark } from '@/components/shared/brand/BrandWordmark';
 import { LanguageSwitcher } from '@/components/shared/preferences/LanguageSwitcher.client';
 import { ThemeControl } from '@/components/shared/preferences/ThemeControl.client';
-import { IconButton } from '@/components/ui/IconButtonReact';
 import { useAccountPermissions } from '@/hooks/use-account-permissions';
 import { useNavigationDialog } from '@/hooks/use-navigation-dialog';
-import { openAccountSheet } from '@/lib/account-sheet-events';
 import type { AuthMeUser } from '@/lib/auth-cache';
 import { cn } from '@/lib/cn';
 import { trapFocus } from '@/lib/focus-trap';
@@ -34,7 +36,7 @@ interface MobileMenuProps {
     readonly adminPanelUrl?: string;
 }
 
-/** Renders site links, publishing and a single account-sheet handoff row. */
+/** Renders site links, publishing, preferences and account actions. */
 export function MobileMenu({
     locale,
     navItems,
@@ -55,8 +57,9 @@ export function MobileMenu({
         initialRoles,
         syncAuthenticatedAttribute: false
     });
-    // HOS-312: do not flash guest controls while the session is unresolved.
-    const showGuestPreferences = user === null && permissions !== null;
+    // HOS-312: never flash the selectors while the session is unresolved.
+    // D05 (owner decision): once resolved, guests AND signed-in users see them.
+    const showPreferences = user !== null || permissions !== null;
 
     useEffect(() => {
         const toggle = () => setIsOpen((previous) => !previous);
@@ -110,20 +113,12 @@ export function MobileMenu({
                 >
                     <BrandWordmark logoSrc={logoSrc} />
                 </a>
-                <IconButton
+                <CloseButton
                     ref={closeButtonRef}
-                    ariaLabel={t('nav.closeMenu')}
-                    variant="ghost"
-                    size="md"
+                    aria-label={t('nav.closeMenu')}
                     onClick={close}
                     tabIndex={isOpen ? 0 : -1}
-                >
-                    <CloseIcon
-                        size={24}
-                        weight="regular"
-                        aria-hidden="true"
-                    />
-                </IconButton>
+                />
             </div>
             <nav
                 aria-label={t('nav.mainNavigation')}
@@ -140,10 +135,11 @@ export function MobileMenu({
                 t={t}
                 isOpen={isOpen}
                 user={user ? { name: user.name, email: user.email, image: user.avatarUrl } : null}
-                onOpenAccount={() => closeThen({ afterClose: openAccountSheet })}
+                permissions={permissions ?? []}
+                closeThen={closeThen}
                 onLinkClick={onLinkClick}
             />
-            {showGuestPreferences ? (
+            {isOpen && showPreferences ? (
                 <div className={styles.preferencesSection}>
                     <div className={styles.preferencesGroup}>
                         <span className={styles.preferencesLabel}>{t('nav.language')}</span>
@@ -156,6 +152,7 @@ export function MobileMenu({
                     <div className={styles.preferencesGroup}>
                         <span className={styles.preferencesLabel}>{t('nav.theme')}</span>
                         <ThemeControl
+                            locale={locale}
                             variant="mobile"
                             showLabels
                         />

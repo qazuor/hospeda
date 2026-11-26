@@ -54,7 +54,7 @@
         "errorMessage": "No se pudo enviar el mensaje. Intentá nuevamente.",
         "ariaLabel": "Formulario de contacto",
         "accommodationId": "ID de alojamiento",
-        "lastNameError": "El apellido debe tener al menos 2 caracteres",
+        "lastNameError": "Contanos tu apellido (mínimo 2 letras)",
         "emailError": "Por favor ingresá un email válido",
         "messageError": "El mensaje debe tener al menos 10 caracteres",
         "accommodationIdError": "El ID del alojamiento es requerido y debe ser un UUID válido",

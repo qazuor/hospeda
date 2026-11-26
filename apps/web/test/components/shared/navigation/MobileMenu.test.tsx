@@ -31,6 +31,15 @@ function setup() {
 }
 
 describe('MobileMenu site navigation', () => {
+    it('focuses the shared kit close control and closes on click', () => {
+        setup();
+        const close = screen.getByRole('button', { name: 'Cerrar menú de navegación' });
+        expect(close).toHaveClass('quiet', 'sm', 'iconOnly');
+        expect(close.querySelector('svg')).toHaveAttribute('fill', 'currentColor');
+        expect(close).toHaveFocus();
+        fireEvent.click(close);
+        expect(screen.queryByRole('dialog')).toBeNull();
+    });
     it('renders site links, guest sign-in and guest preferences', () => {
         setup();
         expect(screen.getByRole('link', { name: 'Destinations' })).toHaveAttribute(
@@ -41,6 +50,10 @@ describe('MobileMenu site navigation', () => {
             'href',
             '/es/auth/signin/'
         );
+        expect(screen.getByRole('link', { name: 'Crear cuenta' })).toHaveAttribute(
+            'href',
+            '/es/auth/signup/'
+        );
         expect(screen.getByText('Language')).toBeInTheDocument();
         expect(screen.getByText('Theme')).toBeInTheDocument();
     });
@@ -50,6 +63,30 @@ describe('MobileMenu site navigation', () => {
         fireEvent.keyDown(document, { key: 'Escape' });
         expect(screen.queryByRole('dialog')).toBeNull();
         expect(document.documentElement).not.toHaveAttribute('data-mobile-menu-open');
+    });
+    it('stacks full-width primary and secondary auth actions with 44px targets', () => {
+        const css = readFileSync(
+            resolve(
+                __dirname,
+                '../../../../src/components/shared/navigation/MobileMenu.module.css'
+            ),
+            'utf8'
+        );
+        setup();
+
+        const signIn = screen.getByRole('link', { name: 'Iniciar sesión' });
+        const signUp = screen.getByRole('link', { name: 'Crear cuenta' });
+        expect(signIn).toHaveClass('btn-gradient--primary');
+        expect(signUp).toHaveClass('btn-gradient--outline-primary');
+        expect(signIn.parentElement).toBe(signUp.parentElement);
+        expect(signIn.parentElement?.className).toMatch(/authActions/);
+        const actions = css.match(/\.authActions\s*\{([^}]*)}/)?.[1];
+        expect(actions).toContain('display: flex;');
+        expect(actions).toContain('flex-direction: column;');
+        expect(actions).toContain('gap: var(--space-2);');
+        const links = css.match(/\.authActions\s*>\s*a\s*\{([^}]*)}/)?.[1];
+        expect(links).toContain('width: 100%;');
+        expect(links).toContain('min-block-size: 2.75rem;');
     });
     it('closes on page swap', () => {
         setup();

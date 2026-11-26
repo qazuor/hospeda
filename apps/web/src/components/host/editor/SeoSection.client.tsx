@@ -31,8 +31,8 @@
  */
 
 import type { JSX } from 'react';
+import { EditorSection } from '@/components/account/editor-shell/EditorSection';
 import { Field } from '@/components/account/ui/Field';
-import { Section } from '@/components/account/ui/Section';
 import { Textarea } from '@/components/account/ui/Textarea';
 import { TextInput } from '@/components/account/ui/TextInput';
 import { CharacterCounter } from '@/components/ui/CharacterCounter';
@@ -113,7 +113,8 @@ export function SeoSection({ locale, data, errors, onFieldChange }: SeoSectionPr
     const showDescriptionPreview = data.seoDescription === '' && descriptionDefault !== '';
 
     return (
-        <Section
+        <EditorSection
+            locale={locale}
             id="editor-seo"
             title={t('host.properties.editor.section.seo', 'Buscadores (Google)')}
             description={t(
@@ -220,6 +221,6 @@ export function SeoSection({ locale, data, errors, onFieldChange }: SeoSectionPr
                     ) : null}
                 </Field>
             </div>
-        </Section>
+        </EditorSection>
     );
 }

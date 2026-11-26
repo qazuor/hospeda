@@ -7,6 +7,7 @@
  */
 
 import esAdminBilling from '@repo/i18n/locales/es/admin-billing.json';
+import { REVOKE_SUBSCRIPTION_REJECTIONS } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import { ApiError } from '@/lib/errors';
 import {
@@ -39,6 +40,11 @@ describe('HOS-1678 revocation reasons', () => {
         // Arrange + Act + Assert
         expect(KNOWN_REVOCATION_REASONS).toHaveLength(12);
         expect(new Set(KNOWN_REVOCATION_REASONS).size).toBe(12);
+    });
+
+    it('mirrors the schemas tuple by reference', () => {
+        // Arrange + Act + Assert
+        expect(KNOWN_REVOCATION_REASONS).toBe(REVOKE_SUBSCRIPTION_REJECTIONS);
     });
 
     it.each(KNOWN_REVOCATION_REASONS)('%s has a key that exists in the real es copy', (reason) => {

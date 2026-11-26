@@ -3,7 +3,9 @@
  * @description Tests the rebuilt navbar user menu with role-aware items.
  */
 
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
     UserMenuProps,
@@ -34,7 +36,8 @@ vi.mock('../../../../src/lib/analytics/umami-client', () => ({
 // doesn't interfere with the /auth/me fetch assertions in this suite.
 
 vi.mock('../../../../src/lib/env', () => ({
-    getApiUrl: () => 'https://api.test'
+    getApiUrl: () => 'https://api.test',
+    isLoggingEnabled: () => false
 }));
 
 const MOCK_USER: UserMenuUser = {
@@ -164,8 +167,22 @@ describe('UserMenu — authenticated render', () => {
             'Cerrar sesión'
         ]);
         expect(screen.queryByText('Administración')).not.toBeInTheDocument();
-        expect(screen.getByText('Idioma')).toBeInTheDocument();
-        expect(screen.getByText('Tema')).toBeInTheDocument();
+        const row = screen.getByText('Preferencias').parentElement;
+        expect(row).not.toBeNull();
+        if (!row) throw new Error('Missing preferences row');
+        expect(within(row).getByRole('group', { name: 'Cambiar idioma' })).toBeInTheDocument();
+        expect(within(row).getByRole('group', { name: 'Tema' })).toBeInTheDocument();
+        expect(screen.queryByText('Idioma')).not.toBeInTheDocument();
+        expect(screen.queryByText('Tema')).not.toBeInTheDocument();
+
+        // jsdom does not lay out CSS modules. Pin the space for both control groups.
+        const css = readFileSync(
+            resolve(__dirname, '../../../../src/components/shared/navigation/UserMenu.module.css'),
+            'utf8'
+        );
+        expect(css).toMatch(
+            /\.menu\s*\{[^}]*\bwidth: min\(24rem, calc\(100vw - var\(--space-8\)\)\);/
+        );
     });
 
     it('keeps preferences, newsletter and AI assistants in the full account menu only', async () => {
@@ -426,7 +443,10 @@ describe('UserMenu — TTL guard (rate-limit fix)', () => {
             expect(screen.getByRole('menuitem', { name: /modo anfitrión/i })).toBeInTheDocument();
         });
 
-        expect(fetchMock).not.toHaveBeenCalled();
+        // The rate-limit guard is about the auth round-trip: no /auth/me call.
+        // Opening the menu may load the tourist plan line (HOS-2649).
+        const authCalls = fetchMock.mock.calls.filter(([url]) => String(url).includes('/auth/me'));
+        expect(authCalls).toHaveLength(0);
     });
 
     it('fetches (ignores cache) when a fresh GUEST cache contradicts an authenticated SSR user', async () => {

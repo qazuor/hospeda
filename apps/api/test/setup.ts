@@ -259,9 +259,12 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     const { PostService, TagService, PostTagService, PostSponsorService, ServiceError } =
         await import('./helpers/mocks/content-services');
 
-    const { AccommodationService, AmenityService, AccommodationReviewService } = await import(
-        './helpers/mocks/accommodation-services'
-    );
+    const {
+        AccommodationService,
+        AmenityService,
+        AccommodationReviewService,
+        AccommodationReviewReplyService
+    } = await import('./helpers/mocks/accommodation-services');
 
     const { DestinationService, DestinationReviewService, AttractionService, FeatureService } =
         await import('./helpers/mocks/destination-services');
@@ -340,6 +343,7 @@ vi.mock('@repo/service-core', async (importOriginal) => {
         AccommodationService,
         AmenityService,
         AccommodationReviewService,
+        AccommodationReviewReplyService,
         DestinationService,
         DestinationReviewService,
         AttractionService,

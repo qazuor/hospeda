@@ -18,6 +18,7 @@ import { ContentMediaSection } from '@/components/account/editor/ContentMediaSec
 import styles from '@/components/account/editor/content-editor-layout.module.css';
 import type { PublicationSectionLabels } from '@/components/account/editor/PublicationSection.client';
 import { PublicationSection } from '@/components/account/editor/PublicationSection.client';
+import { useEditorSaveSignal } from '@/components/account/editor-shell/use-editor-save-signal';
 import {
     Alert,
     type SaveOutcome,
@@ -108,6 +109,7 @@ export function EventEditor({
         buildEventEditFormData({ detail: initialData })
     );
     const [visibility, setVisibility] = useState<EditorContentVisibility>(initialData.visibility);
+    const [hasFeaturedImage, setHasFeaturedImage] = useState(false);
     /*
      * Mirrors `visibility`: kept as local state, resynced from a successful
      * approve action, so the publication button re-derives its label/action
@@ -231,6 +233,7 @@ export function EventEditor({
         idPrefix: EVENT_FIELD_PREFIX,
         suffixes: EVENT_FIELD_ID_SUFFIXES
     });
+    useEditorSaveSignal(saveBar);
 
     const publicationLabels = useMemo<PublicationSectionLabels>(
         () => ({
@@ -362,6 +365,7 @@ export function EventEditor({
                 <ContentMediaSection
                     locale={locale}
                     entity="event"
+                    onFeaturedImageChange={setHasFeaturedImage}
                     entityId={initialData.id}
                     disabled={isEditLocked}
                 />
@@ -390,6 +394,10 @@ export function EventEditor({
                     canPublish={canPublish}
                     canDelete={canDelete}
                     hasUnsavedChanges={isDirty || startDateCleared}
+                    // Web editor publish prerequisite only; the shared section still allows unpublishing.
+                    publicationBlock={
+                        hasFeaturedImage ? undefined : t('common.card.eventCoverRequired')
+                    }
                     onVisibilityChange={setVisibility}
                     onModerationStateChange={setModerationState}
                 />
@@ -400,7 +408,7 @@ export function EventEditor({
              * the author can do makes saving work (OQ-3). The page's back link
              * stays as the exit.
              */}
-            {!isEditLocked && (
+            {!isEditLocked && (isDirty || startDateCleared) && (
                 <StickySaveBar
                     locale={locale}
                     status={saveBar.status}

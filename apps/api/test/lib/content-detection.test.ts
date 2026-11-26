@@ -156,6 +156,142 @@ describe('stripRichDescriptionSyntax', () => {
         expect(stripRichDescriptionSyntax('Código: `1234`')).toBe('Código: 1234');
     });
 
+    it('removes __bold__ markers, keeping the text', () => {
+        // Arrange
+        const value = 'Departamento __remodelado__';
+
+        // Act
+        const result = stripRichDescriptionSyntax(value);
+
+        // Assert
+        expect(result).toBe('Departamento remodelado');
+    });
+
+    it('removes ~~strikethrough~~ markers, keeping the text', () => {
+        // Arrange
+        const value = 'Precio ~~viejo~~ vigente';
+
+        // Act
+        const result = stripRichDescriptionSyntax(value);
+
+        // Assert
+        expect(result).toBe('Precio viejo vigente');
+    });
+
+    it('removes ordered-list markers, keeping each item as plain text', () => {
+        // Arrange
+        const value = '1. WiFi\n2) Pileta';
+
+        // Act
+        const result = stripRichDescriptionSyntax(value);
+
+        // Assert
+        expect(result).toBe('WiFi\nPileta');
+    });
+
+    it('removes blockquote markers, keeping the quoted text', () => {
+        // Arrange
+        const value = '> Cita importante\n> segunda línea';
+
+        // Act
+        const result = stripRichDescriptionSyntax(value);
+
+        // Assert
+        expect(result).toBe('Cita importante\nsegunda línea');
+    });
+
+    it('removes code fence lines, keeping the fenced content', () => {
+        // Arrange
+        const value = '```ts\nconst x = 1;\n```';
+
+        // Act
+        const result = stripRichDescriptionSyntax(value);
+
+        // Assert
+        expect(result).toBe('\nconst x = 1;\n');
+    });
+
+    it('removes HTML tags, keeping the inner text', () => {
+        // Arrange
+        const value = 'Bold y <b>html</b> y <a href="https://x.test">link</a>';
+
+        // Act
+        const result = stripRichDescriptionSyntax(value);
+
+        // Assert
+        expect(result).toBe('Bold y html y link');
+    });
+
+    it('keeps a bare less-than/greater-than comparison that is not an HTML tag', () => {
+        // Arrange
+        const value = 'Capacidad 2 < 4 personas y 6 > 5';
+
+        // Act
+        const result = stripRichDescriptionSyntax(value);
+
+        // Assert
+        expect(result).toBe(value);
+    });
+
+    describe('adversarial inputs (HOS-2209)', () => {
+        const hasHtml = (v: string) => /<[a-zA-Z/!?]/.test(v);
+
+        it.each([
+            ['nested tag', '<<b>b>bold</b>'],
+            ['script tag', 'hola <script>alert(1)</script> chau'],
+            ['markdown inside a tag', '<b>**x**</b>'],
+            ['tag hiding bold markers', '*<b>*x*</b>*'],
+            ['doubly nested', '<<<i>i>i>x'],
+            ['comment', 'a <!-- c --> b'],
+            ['autolink', '<https://evil.test>'],
+            ['unterminated tag', 'x <img src=x onerror=alert(1)'],
+            ['doubled opener before a tag', '<<img src=x onerror=alert(1)>'],
+            ['doubled opener before a comment', '<<!--'],
+            ['long run of openers', `${'<'.repeat(40)}!-- ${'<'.repeat(40)}script>`],
+            ['deeply nested tags', `${'<<b>'.repeat(200)}x${'b>'.repeat(200)}`]
+        ])('leaves no HTML opener for %s', (_name, input) => {
+            // Act
+            const result = stripRichDescriptionSyntax(input);
+
+            // Assert
+            expect(hasHtml(result)).toBe(false);
+        });
+
+        it('unwraps a tag split by another tag', () => {
+            expect(stripRichDescriptionSyntax('<<b>b>bold</b>')).toBe('bold');
+        });
+
+        it('keeps the alt text of an image and drops its URL', () => {
+            expect(stripRichDescriptionSyntax('![vista](https://x.test/a.png)')).toBe('vista');
+        });
+
+        it('keeps the text of links, nested or reference style', () => {
+            expect(stripRichDescriptionSyntax('[**a**](https://x.test)')).toBe('a');
+            expect(stripRichDescriptionSyntax('[a][1]\n\n[1]: https://x.test')).toBe('a\n');
+        });
+
+        it('removes horizontal rules and setext underlines', () => {
+            expect(stripRichDescriptionSyntax('Titulo\n=====\n---\n***')).toBe('Titulo\n\n\n');
+        });
+
+        it('keeps stripping past any fixed pass count (no half-cleaned output)', () => {
+            // Arrange: nested links, each pass can only unwrap the innermost one.
+            let input = 'a';
+            for (let depth = 0; depth < 60; depth += 1) input = `[${input}](https://x.test)`;
+
+            // Act
+            const result = stripRichDescriptionSyntax(input);
+
+            // Assert
+            expect(result).toBe('a');
+        });
+
+        it('is stable: stripping the result changes nothing', () => {
+            const once = stripRichDescriptionSyntax('<<b>b> **<i>*x*</i>** [a](u)');
+            expect(stripRichDescriptionSyntax(once)).toBe(once);
+        });
+    });
+
     it('leaves plain prose untouched', () => {
         const plain = 'Hermoso departamento con vista al río, a pasos de la playa.';
         expect(stripRichDescriptionSyntax(plain)).toBe(plain);

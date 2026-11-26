@@ -12,6 +12,11 @@
         "websiteLabel": "Website"
     },
     "claim": {
+        "instructionsTitle": "How to claim a Partner",
+        "instructions": "Open the invitation link we emailed you and use the same address to sign in or create your account. If you don't have the link, contact us.",
+        "invalidLinkTitle": "This link is invalid",
+        "contactCta": "Contact us",
+        "homeCta": "Back to home",
         "seo": {
             "title": "Claim your Partner",
             "description": "Link your approved Partner to your Hospeda account."
@@ -33,7 +38,7 @@
         "claiming": "Claiming…",
         "success": "Done: the Partner is now linked to your account.",
         "successCta": "Go to My Partner Account",
-        "notFound": "We couldn't find this Partner. Check that the link is complete.",
+        "notFound": "We couldn't validate the invitation. Open the full link from your email or contact us for help.",
         "alreadyClaimed": "This Partner already has an owner; if it wasn't you, contact support",
         "accountAlreadyOwns": "Your account already owns a Partner. Each account can manage one Partner: claim a second business with another account. If you need help, contact support.",
         "emailMismatch": "This Partner can only be claimed with the account for the email address the claim link was sent to. Sign out and sign in with that account. If the Partner is yours but you want to manage it with a different email address, contact Hospeda.",
