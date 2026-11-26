@@ -130,6 +130,11 @@ vi.mock('@repo/ai-core', () => {
             this.providerId = providerId;
         }
     }
+    // ai-translate.service checks `instanceof AiModerationBlockedError` to keep
+    // the spend of an output-moderation block (HOS-2658 AC-19). A whole-module
+    // mock that omits it leaves the export `undefined`, so that `instanceof`
+    // throws and turns a partial success into a 500.
+    class AiModerationBlockedError extends Error {}
 
     return {
         StubProvider,
@@ -137,6 +142,7 @@ vi.mock('@repo/ai-core', () => {
         AnthropicAdapter,
         AiEngineError,
         AiFeatureNotConfiguredError,
+        AiModerationBlockedError,
         createAiService: vi.fn(() => ({
             generateText: vi.fn(async (req: Record<string, unknown>) => {
                 generateTextCalls.push({
