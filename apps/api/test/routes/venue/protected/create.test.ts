@@ -116,6 +116,18 @@ describe('handleCreateVenueListing (HOS-166 §7.2, D-3)', () => {
         });
     });
 
+    it('accepts the four-field owner body and stores an empty description', async () => {
+        const { description: _description, ...body } = VALID_VENUE_BODY;
+        const validated = VenueOwnerCreateInputSchema.parse(body);
+        await handleCreateVenueListing(createMockContext() as never, validated);
+        expect(mockCreateForOwner).toHaveBeenCalledOnce();
+        expect(mockCreateForOwner.mock.calls[0]?.[1]).toMatchObject({
+            ...body,
+            description: '',
+            ownerId: OWNER_ID
+        });
+    });
+
     it('forces ownerId = actor.id even when the body supplies a different one', async () => {
         const ctx = createMockContext();
 

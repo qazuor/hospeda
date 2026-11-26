@@ -75,7 +75,7 @@ vi.mock('../../../../src/utils/actor', () => ({
     getActorFromContext: (ctx: { get: (key: string) => unknown }) => ctx.get('actor')
 }));
 
-import { PublicationStatusEnum } from '@repo/schemas';
+import { ExperienceOwnerCreateInputCheckedSchema, PublicationStatusEnum } from '@repo/schemas';
 import { handleCreateExperienceListing } from '../../../../src/routes/experience/protected/create';
 
 const OWNER_ID = '11111111-1111-4111-8111-111111111111';
@@ -111,6 +111,39 @@ describe('handleCreateExperienceListing (HOS-166 §7.2, D-3)', () => {
         mockCreateForOwner.mockResolvedValue({
             data: { id: 'listing-2', ...VALID_EXPERIENCE_BODY }
         });
+    });
+
+    it('accepts the four-field owner body and stores empty content and null pricing', async () => {
+        const {
+            description: _description,
+            priceFrom: _price,
+            priceUnit: _unit,
+            isPriceOnRequest: _onRequest,
+            ...body
+        } = VALID_EXPERIENCE_BODY;
+        const validated = ExperienceOwnerCreateInputCheckedSchema.parse(body);
+        await handleCreateExperienceListing(createMockContext() as never, validated);
+        expect(mockCreateForOwner).toHaveBeenCalledOnce();
+        expect(mockCreateForOwner.mock.calls[0]?.[1]).toMatchObject({
+            ...body,
+            description: '',
+            priceFrom: null,
+            priceUnit: null,
+            isPriceOnRequest: false,
+            ownerId: OWNER_ID
+        });
+    });
+
+    it('rejects a supplied price without its unit before calling the service', async () => {
+        const body = { ...VALID_EXPERIENCE_BODY, priceUnit: undefined };
+        expect(ExperienceOwnerCreateInputCheckedSchema.safeParse(body).success).toBe(false);
+        await expect(
+            handleCreateExperienceListing(createMockContext() as never, body)
+        ).rejects.toMatchObject({
+            code: 'VALIDATION_ERROR',
+            message: expect.stringContaining('priceUnit')
+        });
+        expect(mockCreateForOwner).not.toHaveBeenCalled();
     });
 
     it('forces ownerId = actor.id even when the body supplies a different one', async () => {

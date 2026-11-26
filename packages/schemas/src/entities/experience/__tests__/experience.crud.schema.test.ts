@@ -164,7 +164,7 @@ describe('ExperienceAdminCreateInputSchema', () => {
             }
         });
 
-        it('applies the same null-price rule to the owner create schema (HOS-1943)', () => {
+        it('allows owner drafts without pricing, including explicit null (HOS-2641)', () => {
             // Arrange
             const { ownerId: _ownerId, ...ownerBase } = buildAdminCreateInput();
             const onRequest = {
@@ -181,12 +181,7 @@ describe('ExperienceAdminCreateInputSchema', () => {
 
             // Assert
             expect(onRequestResult.success).toBe(true);
-            expect(pricedResult.success).toBe(false);
-            if (!pricedResult.success) {
-                expect(pricedResult.error.issues.map((i) => i.path.join('.'))).toContain(
-                    'priceFrom'
-                );
-            }
+            expect(pricedResult.success).toBe(true);
         });
 
         it('accepts an omitted priceUnit when the price is on request (H-156)', () => {

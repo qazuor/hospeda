@@ -79,10 +79,26 @@ export abstract class BaseCrudWrite<
         data: z.infer<TCreateSchema>,
         ctx?: ServiceContext
     ): Promise<ServiceOutput<TEntity>> {
+        // TYPE-WORKAROUND: Zod's generic object constraint widens _output; the concrete schema still produces exactly its own inferred output.
+        return this._createWithSchema(
+            actor,
+            data,
+            this.createSchema as unknown as z.ZodType<z.infer<TCreateSchema>>,
+            ctx
+        );
+    }
+
+    /** Runs the same create lifecycle with a caller-specific input contract. */
+    protected async _createWithSchema(
+        actor: Actor,
+        data: z.infer<TCreateSchema>,
+        schema: z.ZodType<z.infer<TCreateSchema>>,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<TEntity>> {
         return this.runWithLoggingAndValidation({
             methodName: 'create',
             input: { actor, ...data },
-            schema: this.createSchema,
+            schema,
             ctx,
             execute: async (validatedData, validatedActor, execCtx) => {
                 await this._canCreate(validatedActor, validatedData, execCtx);

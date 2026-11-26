@@ -50,6 +50,7 @@ import {
     type VenueAdminCreateInput,
     VenueAdminCreateInputSchema,
     VenueAdminSearchSchema,
+    VenueDraftCreateInputSchema,
     type VenueOwnerUpdateInput,
     VenueOwnerUpdateInputSchema,
     type VenueSearch,
@@ -146,6 +147,10 @@ export class VenueService extends BaseListingService<
 
     protected readonly model: VenueModel;
     protected readonly createSchema = VenueAdminCreateInputSchema;
+
+    protected override get ownerCreateSchema() {
+        return VenueDraftCreateInputSchema;
+    }
     protected readonly updateSchema = VenueUpdateInputSchema;
     protected readonly searchSchema = VenueSearchSchema;
     protected readonly normalizers: CrudNormalizersFromSchemas<
