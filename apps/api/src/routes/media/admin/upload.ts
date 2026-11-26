@@ -81,7 +81,9 @@ const ActorIdSchema = z.string().uuid();
  * truth shared with the admin frontend, preventing cap drift between the two
  * layers.
  *
- * The owner plan cap is resolved before the per-entity cap for accommodation galleries.
+ * HOS-2495: that literal cap applies to CONTENT entities only (destination, event,
+ * post). Accommodation galleries take the owner's effective photo limit (3d-i);
+ * venue and experience galleries take no cap on this staff path (D-7).
  */
 
 /**
@@ -436,9 +438,14 @@ export const adminUploadMediaRoute = createAdminRoute({
         // a doomed insert.
         // Featured / avatar / sponsorLogo / organizerLogo roles bypass this
         // check — only the gallery role is capped.
-        // The owner plan cap is enforced in 3d-i for accommodation galleries;
-        // this cap is the absolute upper bound for every entity gallery.
-        if (role === 'gallery') {
+        // HOS-2495: only CONTENT entities (destination, event, post) keep a
+        // literal cap. Listing galleries (accommodation, venue, experience) are
+        // capped by the owner's effective photo limit: 3d-i for accommodation,
+        // none for venue/experience on this staff path (D-7).
+        if (
+            role === 'gallery' &&
+            (entityType === 'destination' || entityType === 'event' || entityType === 'post')
+        ) {
             // Counted via the shared resolver so this path and the protected
             // upload path can never disagree about where an entity type's photos
             // live — see routes/media/gallery-count.ts.

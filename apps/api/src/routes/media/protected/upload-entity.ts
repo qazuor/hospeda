@@ -421,7 +421,10 @@ export const protectedUploadEntityRoute = createProtectedRoute({
         // Listing verticals are capped by step 7 above, against the owner's
         // effective photo limit (HOS-2495); only destination/event/post keep a
         // literal cap.
-        if (role === 'gallery' && !listingAccess) {
+        if (
+            role === 'gallery' &&
+            (entityType === 'destination' || entityType === 'event' || entityType === 'post')
+        ) {
             // Counted via the shared resolver so this path and the admin upload
             // path can never disagree about where an entity type's photos live —
             // see routes/media/gallery-count.ts.
