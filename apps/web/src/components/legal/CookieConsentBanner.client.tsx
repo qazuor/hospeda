@@ -20,7 +20,12 @@
 import { isBotUserAgent } from '@repo/utils';
 import { useEffect, useId, useRef, useState } from 'react';
 import { UMAMI_BLOCK_PROPS } from '@/lib/analytics/recording-block';
-import { getConsent, saveConsent } from '@/lib/cookie-consent';
+import {
+    COOKIE_CONSENT_REOPEN_EVENT,
+    consumeCookieConsentPreferencesRequest,
+    getConsent,
+    saveConsent
+} from '@/lib/cookie-consent';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import styles from './CookieConsentBanner.module.css';
@@ -53,6 +58,8 @@ export function CookieConsentBanner({ locale, cookiesPolicyUrl }: CookieConsentB
     const { t } = createTranslations(locale);
     const titleId = useId();
     const bannerRef = useRef<HTMLDialogElement>(null);
+    const openerRef = useRef<HTMLElement | null>(null);
+    const returnFocusRef = useRef<HTMLElement | null>(null);
 
     const [isOpen, setIsOpen] = useState(false);
     const [view, setView] = useState<BannerView>('main');
@@ -82,7 +89,7 @@ export function CookieConsentBanner({ locale, cookiesPolicyUrl }: CookieConsentB
         });
     }, []);
 
-    // Listen for the "reopen" custom event dispatched by the footer button
+    // Listen for preferences requests from the footer or the cookie policy.
     useEffect(() => {
         function handleReopen() {
             const existing = getConsent();
@@ -97,8 +104,19 @@ export function CookieConsentBanner({ locale, cookiesPolicyUrl }: CookieConsentB
             setIsOpen(true);
         }
 
-        window.addEventListener('cookie-consent:reopen', handleReopen);
-        return () => window.removeEventListener('cookie-consent:reopen', handleReopen);
+        function onReopen() {
+            const request = consumeCookieConsentPreferencesRequest();
+            if (request) openerRef.current = request.opener;
+            handleReopen();
+        }
+
+        window.addEventListener(COOKIE_CONSENT_REOPEN_EVENT, onReopen);
+        const pending = consumeCookieConsentPreferencesRequest();
+        if (pending) {
+            openerRef.current = pending.opener;
+            handleReopen();
+        }
+        return () => window.removeEventListener(COOKIE_CONSENT_REOPEN_EVENT, onReopen);
     }, []);
 
     // Move focus into the banner when it opens (accessibility requirement).
@@ -111,6 +129,10 @@ export function CookieConsentBanner({ locale, cookiesPolicyUrl }: CookieConsentB
     useEffect(() => {
         if (isOpen && bannerRef.current) {
             bannerRef.current.focus({ preventScroll: true });
+        } else if (!isOpen) {
+            const opener = returnFocusRef.current;
+            returnFocusRef.current = null;
+            if (opener?.isConnected) opener.focus();
         }
     }, [isOpen]);
 
@@ -151,14 +173,20 @@ export function CookieConsentBanner({ locale, cookiesPolicyUrl }: CookieConsentB
 
     // ─── Handlers ─────────────────────────────────────────────────────────────
 
+    function closeBanner() {
+        returnFocusRef.current = openerRef.current;
+        openerRef.current = null;
+        setIsOpen(false);
+    }
+
     function handleAcceptAll() {
         saveConsent({ crashReporting: true, analytics: true, marketing: true });
-        setIsOpen(false);
+        closeBanner();
     }
 
     function handleRejectAll() {
         saveConsent({ crashReporting: false, analytics: false, marketing: false });
-        setIsOpen(false);
+        closeBanner();
     }
 
     function handleSavePreferences() {
@@ -167,7 +195,7 @@ export function CookieConsentBanner({ locale, cookiesPolicyUrl }: CookieConsentB
             analytics: categories.analytics,
             marketing: categories.marketing
         });
-        setIsOpen(false);
+        closeBanner();
     }
 
     function toggleCategory(category: keyof CategoryState) {

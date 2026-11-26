@@ -73,8 +73,21 @@ const DETAIL_PAGES: ReadonlyArray<{
 const FAQ_PAGES: ReadonlyArray<{ name: string; file: string }> = [
     { name: 'cookies policy', file: 'legal/cookies/index.astro' },
     { name: 'privacy policy', file: 'legal/privacidad/index.astro' },
-    { name: 'terms', file: 'legal/terminos/index.astro' }
+    { name: 'terms', file: 'legal/terminos/index.astro' },
+    { name: 'FAQ directory', file: 'preguntas-frecuentes/index.astro' },
+    { name: 'destination detail', file: 'destinos/[...path].astro' }
 ];
+
+function matchesFaqSlot({
+    source,
+    legal
+}: {
+    readonly source: string;
+    readonly legal: boolean;
+}): boolean {
+    const slot = legal ? 'head' : 'head-extra';
+    return new RegExp(`<FAQPageJsonLd\\s+slot=["']${slot}["']\\s+sections=\\{`).test(source);
+}
 
 /** Pages that emit AboutPage JSON-LD. */
 const ABOUT_PAGES: ReadonlyArray<{ name: string; file: string }> = [
@@ -146,6 +159,7 @@ describe('JSON-LD coverage across pages (SPEC-096 REQ-096-37)', () => {
                     it('renders FAQPageJsonLd when faqSections has items', () => {
                         // Conditional emission pattern: faqSections.length > 0
                         expect(src).toMatch(/faqSections\.length\s*>\s*0[\s\S]*?<FAQPageJsonLd/);
+                        expect(matchesFaqSlot({ source: src, legal: false })).toBe(true);
                     });
                 }
                 if (page.name === 'venue detail') {
@@ -159,15 +173,25 @@ describe('JSON-LD coverage across pages (SPEC-096 REQ-096-37)', () => {
     });
 
     describe('FAQ-like pages emit FAQPage JSON-LD', () => {
+        it.each([
+            { legal: true, wrongSlot: 'head-extra' },
+            { legal: false, wrongSlot: 'head' }
+        ])('rejects $wrongSlot when legal is $legal', ({ legal, wrongSlot }) => {
+            const source = `<FAQPageJsonLd slot="${wrongSlot}" sections={sections} />`;
+
+            expect(matchesFaqSlot({ source, legal })).toBe(false);
+        });
+
         for (const page of FAQ_PAGES) {
             it(`${page.name} imports + mounts FAQPageJsonLd`, () => {
-                const src = readPage(page.file);
+                const pageSource = readPage(page.file);
+                const legal = page.file.startsWith('legal/');
+                const src = legal ? readPage('../../layouts/LegalLayout.astro') : pageSource;
+                if (legal) expect(pageSource).toMatch(/<LegalLayout\b[^>]*\barticles=\{articles\}/);
                 expect(src).toContain(
                     "import FAQPageJsonLd from '@/components/seo/FAQPageJsonLd.astro'"
                 );
-                expect(src).toMatch(
-                    /<FAQPageJsonLd[^>]*slot=["']head-extra["'][^>]*sections=\{[^}]+\}\s*\/>/
-                );
+                expect(matchesFaqSlot({ source: src, legal })).toBe(true);
             });
         }
     });

@@ -30,7 +30,8 @@
     "destinations": "Destinos",
     "legal": {
         "lastUpdated": "Última actualización",
-        "toc": "Contenido"
+        "toc": "Contenido",
+        "backToContents": "Volver al índice"
     },
     "enums": {
         "accommodationType": {

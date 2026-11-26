@@ -12,15 +12,29 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const src = readFileSync(resolve(__dirname, '../../src/layouts/Footer.astro'), 'utf8');
+const baseStyles = readFileSync(resolve(__dirname, '../../src/layouts/footer-base.css'), 'utf8');
+const responsiveStyles = readFileSync(
+    resolve(__dirname, '../../src/layouts/footer-responsive.css'),
+    'utf8'
+);
 
 describe('Footer.astro', () => {
+    it('keeps the layout below 500 lines', () => {
+        for (const contents of [src, baseStyles, responsiveStyles]) {
+            expect(contents.trimEnd().split('\n').length).toBeLessThan(500);
+        }
+        expect(src).toMatch(
+            /import "\.\/footer-base\.css";\s*import "\.\/footer-responsive\.css";/
+        );
+    });
+
     it('keeps legal separators in flow inside each wrapping item', () => {
-        const item = src.match(/\.footer__legal li\s*\{([^}]+)\}/)?.[1];
-        const separator = src.match(/\.footer__legal li \+ li::before\s*\{([^}]+)\}/)?.[1];
+        const item = baseStyles.match(/\.footer__legal li\s*\{([^}]+)\}/)?.[1];
+        const separator = baseStyles.match(/\.footer__legal li \+ li::before\s*\{([^}]+)\}/)?.[1];
         expect(item).toContain('display: inline-flex');
         expect(separator).toContain('content: "·"');
         expect(separator).not.toContain('position: absolute');
-        expect(src).toMatch(
+        expect(baseStyles).toMatch(
             /@media \(max-width: 639px\)\s*\{\s*\.footer__legal li \+ li::before\s*\{\s*display: none/
         );
     });
@@ -173,21 +187,21 @@ describe('Footer.astro', () => {
         });
 
         it('keeps accordion summary rows at a 44px minimum tap target on mobile', () => {
-            expect(src).toMatch(/\.footer__nav-heading \{\s*min-height: 2\.75rem;/);
+            expect(responsiveStyles).toMatch(/\.footer__nav-heading \{\s*min-height: 2\.75rem;/);
         });
 
         it('disables accordion behaviour on tablet+ via pointer-events: none', () => {
-            expect(src).toContain('pointer-events: none');
+            expect(responsiveStyles).toMatch(/\.footer__nav-heading\s*\{[^}]*pointer-events: none/);
         });
     });
 
     describe('responsive nav layout', () => {
         it('stacks the nav into a single column on mobile', () => {
-            expect(src).toContain('grid-template-columns: 1fr');
+            expect(baseStyles).toContain('grid-template-columns: 1fr');
         });
 
         it('uses a 3-column nav grid on tablet (≥768px)', () => {
-            expect(src).toContain('grid-template-columns: repeat(3, 1fr)');
+            expect(responsiveStyles).toContain('grid-template-columns: repeat(3, 1fr)');
         });
     });
 
@@ -280,23 +294,23 @@ describe('Footer.astro', () => {
 
     describe('styles', () => {
         it('uses --footer-bg token for background', () => {
-            expect(src).toContain('var(--footer-bg)');
+            expect(baseStyles).toContain('var(--footer-bg)');
         });
 
         it('uses --footer-fg for text color', () => {
-            expect(src).toContain('var(--footer-fg)');
+            expect(baseStyles).toContain('var(--footer-fg)');
         });
 
         it('uses --font-heading for nav headings', () => {
-            expect(src).toContain('var(--font-heading)');
+            expect(baseStyles).toContain('var(--font-heading)');
         });
 
         it('uses --font-sans for nav links', () => {
-            expect(src).toContain('var(--font-sans)');
+            expect(baseStyles).toContain('var(--font-sans)');
         });
 
         it('uses --duration-normal for transitions', () => {
-            expect(src).toContain('var(--duration-normal)');
+            expect(baseStyles).toContain('var(--duration-normal)');
         });
     });
 });

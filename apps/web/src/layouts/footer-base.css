@@ -1,0 +1,455 @@
+/* ════════════════════════════════════════════════════════════════════
+   Footer — base
+   ════════════════════════════════════════════════════════════════════ */
+.footer {
+    position: relative;
+    background-color: var(--footer-bg);
+    color: var(--footer-fg);
+}
+
+.footer__container {
+    max-width: var(--container-max);
+    margin-inline: auto;
+    padding-inline: var(--space-container-x);
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   Wave decoration — smoother, double-curve transition into the footer
+   ════════════════════════════════════════════════════════════════════ */
+.footer__wave {
+    position: absolute;
+    top: clamp(-3rem, -4vw, -4.5rem);
+    left: 0;
+    width: 100%;
+    height: 4rem;
+    pointer-events: none;
+}
+
+.footer__wave svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   ZONE 1: Brand + nav
+   ════════════════════════════════════════════════════════════════════ */
+.footer__main {
+    padding-block: clamp(2.5rem, 5vw, 4rem);
+}
+
+.footer__main-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: clamp(2rem, 4vw, 3.5rem);
+}
+
+/* Brand block — vertical stack on all sizes. On mobile every footer
+   zone is center-aligned, so the brand stack centers its children too;
+   tablet+ realigns to flex-start. */
+.footer__brand {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    align-items: center;
+    text-align: center;
+}
+
+.footer__logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.625rem;
+    text-decoration: none;
+    color: var(--footer-fg);
+    width: fit-content;
+}
+
+.footer__brand-desc {
+    font-family: var(--font-sans);
+    font-size: var(--text-body-sm);
+    line-height: 1.6;
+    color: var(--footer-fg-muted);
+    max-width: 30ch;
+    margin: 0;
+}
+
+.footer__brand-social {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   ZONE 1.5: Newsletter strip — full-width row, sits between nav & trust
+   ════════════════════════════════════════════════════════════════════ */
+.footer__newsletter-zone {
+    border-top: 1px solid var(--footer-border);
+    padding-block: clamp(1.5rem, 3vw, 2rem);
+}
+
+.footer__newsletter-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    /* Centered compact block: bloque limitado y centrado en el footer.
+       En mobile va column (texto arriba / form abajo); el media query
+       desktop lo pasa a row (texto + form lado a lado con gap chico). */
+    max-width: 52rem;
+    margin-inline: auto;
+    text-align: center;
+}
+
+.footer__newsletter-text {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.footer__newsletter-title {
+    font-family: var(--font-heading);
+    font-size: var(--text-h4);
+    font-weight: 600;
+    line-height: 1.2;
+    color: var(--footer-fg);
+    margin: 0;
+}
+
+.footer__newsletter-desc {
+    font-family: var(--font-sans);
+    font-size: var(--text-body-sm);
+    line-height: 1.5;
+    color: var(--footer-fg-muted);
+    margin: 0;
+}
+
+.footer__newsletter {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.footer__newsletter-input {
+    flex: 1;
+    min-width: 0;
+    background-color: var(--footer-fg-a08);
+    border: 1px solid var(--footer-border);
+    border-radius: var(--radius-button);
+    padding: 0.625rem 0.875rem;
+    font-family: var(--font-sans);
+    font-size: var(--text-body-sm);
+    color: var(--footer-fg);
+    outline: none;
+    transition:
+        border-color var(--duration-normal) ease,
+        background-color var(--duration-normal) ease;
+}
+
+.footer__newsletter-input::placeholder {
+    color: var(--footer-fg-muted);
+}
+
+.footer__newsletter-input:focus-visible {
+    outline: 2px solid var(--footer-link-hover);
+    outline-offset: 2px;
+    border-color: var(--footer-fg-a50);
+    background-color: var(--footer-fg-a12);
+}
+
+.footer__newsletter-btn {
+    align-self: flex-start;
+    white-space: nowrap;
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   Nav columns
+   ════════════════════════════════════════════════════════════════════ */
+.footer__nav {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+}
+
+.footer__nav-col {
+    border-bottom: 1px solid var(--footer-border);
+    padding-block: 0.5rem;
+}
+
+.footer__nav-heading {
+    list-style: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    /* Title hugs the left edge, chevron lands on the right — classic
+       accordion affordance and lines up with the link list below it. */
+    justify-content: space-between;
+    gap: 0.5rem;
+    font-family: var(--font-heading);
+    /* Title is a clearly different role from the links it groups:
+       bolder weight, brand-accent color, uppercase + letter-spacing so
+       it reads as a section label rather than a clickable link. */
+    font-size: 0.875rem;
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--brand-accent);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding-block: 0.25rem;
+}
+
+.footer__nav-heading::-webkit-details-marker,
+.footer__nav-heading::marker {
+    display: none;
+}
+
+.footer__nav-heading::after {
+    /* Down-pointing chevron flips to up when the accordion is open —
+       a clearer expand/collapse affordance than the previous "+". */
+    content: "\25BE"; /* ▾ */
+    font-size: 0.875rem;
+    line-height: 1;
+    color: var(--footer-fg-muted);
+    transition: transform var(--duration-normal) ease;
+}
+
+.footer__nav-col[open] .footer__nav-heading::after {
+    transform: rotate(180deg);
+}
+
+.footer__nav-list {
+    /* Mobile default: links arranged in 2 columns inside each accordion
+       so the open accordion takes about half the vertical space it
+       needed when links were stacked one per row. Items hug the left
+       edge of each cell (centering the whole list felt visually off
+       even though the surrounding mobile footer is centered). The
+       tablet+ media query below switches back to a single-column
+       flex stack. */
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 1rem;
+    row-gap: 0.625rem;
+    list-style: none;
+    padding: 0.75rem 0 0.5rem 0;
+    margin: 0;
+}
+
+.footer__nav-link {
+    font-family: var(--font-sans);
+    font-size: var(--text-body-sm);
+    line-height: 1.4;
+    color: var(--footer-fg-muted);
+    text-decoration: none;
+    transition: color var(--duration-normal) ease;
+}
+
+.footer__nav-link:hover,
+.footer__nav-link:focus-visible {
+    color: var(--footer-fg);
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   ZONE 2: Trust signals + payments
+   ════════════════════════════════════════════════════════════════════ */
+.footer__trust {
+    border-top: 1px solid var(--footer-border);
+    border-bottom: 1px solid var(--footer-border);
+    padding-block: 1.25rem;
+}
+
+.footer__trust-inner {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.footer__trust-list {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.footer__trust-item {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    /* Mobile: center each icon + label pair inside its grid cell.
+       Tablet+ leaves them flush-start so the 4-column inline row reads
+       as a left-aligned strip alongside the payment logos. */
+    justify-content: center;
+}
+
+.footer__trust-icon {
+    flex-shrink: 0;
+    width: 1.5rem;
+    height: 1.5rem;
+    color: var(--brand-accent);
+}
+
+.footer__trust-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    line-height: 1.3;
+    min-width: 0;
+}
+
+.footer__trust-strong {
+    font-family: var(--font-sans);
+    font-size: var(--text-body-sm);
+    font-weight: 600;
+    color: var(--footer-fg);
+}
+
+.footer__trust-meta {
+    font-family: var(--font-sans);
+    font-size: var(--text-caption);
+    color: var(--footer-fg-muted);
+}
+
+/* Payments row — square brand marks from @repo/icons (each is a 24x24
+ * single-color SVG, sized via the `size` prop on the component). The
+ * right-side spacer keeps the last mark from sliding under the
+ * fixed feedback FAB on desktop. */
+.footer__payments-list {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.875rem;
+    list-style: none;
+    padding: 0 4.5rem 0 0;
+    margin: 0;
+    flex-shrink: 0;
+}
+
+@media (max-width: 767px) {
+    .footer__payments-list {
+        padding-right: 0;
+    }
+}
+
+.footer__payment {
+    display: block;
+    flex-shrink: 0;
+    opacity: 0.75;
+    transition: opacity var(--duration-normal) ease;
+}
+
+.footer__payments-list li:hover .footer__payment {
+    opacity: 1;
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   ZONE 3: Bottom bar
+   ════════════════════════════════════════════════════════════════════ */
+.footer__bottom {
+    padding-block: 1rem;
+}
+
+.footer__bottom-inner {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: center;
+    text-align: center;
+}
+
+/* Reserve right padding on mobile so the copyright text is not hidden
+   behind the ScrollToTop fixed button (bottom:4rem; right:1rem). */
+@media (max-width: 48rem) {
+    .footer__bottom-inner {
+        padding-inline-end: 3.5rem;
+    }
+}
+
+.footer__bottom-contact {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 1.25rem;
+    justify-content: center;
+}
+
+.footer__contact-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: var(--font-sans);
+    font-size: var(--text-body-sm);
+    color: var(--footer-fg-muted);
+    text-decoration: none;
+    transition: color var(--duration-normal) ease;
+}
+
+.footer__contact-link:hover,
+.footer__contact-link:focus-visible {
+    color: var(--footer-fg);
+}
+
+.footer__contact-icon {
+    width: 1rem;
+    height: 1rem;
+    flex-shrink: 0;
+}
+
+.footer__legal {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem 0.875rem;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.footer__legal li {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.footer__legal li + li::before {
+    content: "·";
+    flex: none;
+    color: var(--footer-fg-muted);
+    opacity: 0.5;
+}
+
+/* A separator bound to its item strands at the start of a wrapped line;
+   on narrow screens the row wraps, so it relies on the gap alone. */
+@media (max-width: 639px) {
+    .footer__legal li + li::before {
+        display: none;
+    }
+}
+
+.footer__legal-link {
+    font-family: var(--font-sans);
+    font-size: var(--text-caption);
+    color: var(--footer-fg-muted);
+    text-decoration: none;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    transition: color var(--duration-normal) ease;
+}
+
+.footer__legal-link:hover,
+.footer__legal-link:focus-visible {
+    color: var(--footer-fg);
+}
+
+.footer__cookie-btn {
+    font-family: var(--font-sans);
+}
+
+.footer__copyright {
+    font-family: var(--font-sans);
+    font-size: var(--text-caption);
+    color: var(--footer-fg-muted);
+    margin: 0;
+}

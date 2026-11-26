@@ -24,7 +24,12 @@ describe('destination map layout integration', () => {
     });
 
     it('delegates result counts to the layout without reporting zero on failed reads', () => {
-        expect(source).toContain('totalCount={hasError ? undefined : total}');
+        // D34 (HOS-2655): the count lives on the List/Map selector line and is
+        // rendered only inside the successful-read branch, never as a zero.
+        expect(source).not.toContain('totalCount=');
+        expect(source).toMatch(
+            /\{!hasError && cards\.length > 0 && \(\s*<div class="map-toolbar">\s*<p>\{tPlural\('ui\.listing\.resultsFound', total\)\}<\/p>/
+        );
         expect(source).not.toContain('class="listing-results-summary"');
         expect(source).toContain('<ErrorBanner');
         expect(source).toContain('<EmptyState');

@@ -18,17 +18,15 @@
  */
 
 import type { IconProps } from '@repo/icons';
-import { GalleryIcon, LocationIcon, StarIcon } from '@repo/icons';
 import type { ComponentType } from 'react';
 import { useEffect, useState } from 'react';
 import { MapCardsSheetTrigger } from '@/components/maps/MapCardsSheetTrigger';
-import { CompareButton } from '@/components/shared/compare/CompareButton.client';
-import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
 import { Spinner } from '@/components/shared/feedback/Spinner';
-import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import sidebarStyles from './MapCardsSidebar.module.css';
+import { MapSidebarCard } from './MapSidebarCard';
 
+/** One icon and its localized label for the sidebar card amenities row. */
 export interface MapSidebarAmenity {
     readonly id: string;
     readonly label: string;
@@ -36,6 +34,7 @@ export interface MapSidebarAmenity {
     readonly Icon: ComponentType<IconProps>;
 }
 
+/** Preprocessed accommodation details for one map sidebar card. */
 export interface MapSidebarCardData {
     readonly id: string;
     readonly slug: string;
@@ -130,62 +129,7 @@ interface MapCardsSidebarProps {
 
 const MOBILE_BREAKPOINT_PX = 768;
 
-/**
- * Renders the card body inside either an `<a>` (mobile, taps go straight to
- * the detail page) or a `<button>` (desktop, click highlights the matching
- * marker on the map with a pulse halo; the trailing CTA inside is the only
- * link to the detail page). Pulling the conditional wrapper into its own
- * component keeps the long card JSX flat and identical between both modes.
- */
-function CardClickable({
-    isMobile,
-    href,
-    ariaLabel,
-    onSelect,
-    children
-}: {
-    readonly isMobile: boolean;
-    readonly href: string;
-    readonly ariaLabel: string;
-    readonly onSelect: () => void;
-    readonly children: React.ReactNode;
-}) {
-    if (isMobile) {
-        return (
-            <a
-                href={href}
-                className={sidebarStyles.cardLink}
-                aria-label={ariaLabel}
-            >
-                {children}
-            </a>
-        );
-    }
-    // Desktop: we need a clickable wrapper that can contain other interactive
-    // elements (the FavoriteButton is a real <button>; HTML forbids nesting
-    // <button> in <button>). Use a div with role="button" + keyboard handler
-    // instead, so the whole card stays focusable and clickable while keeping
-    // valid HTML for hydration.
-    return (
-        // biome-ignore lint/a11y/useSemanticElements: deliberate — a <button> here would nest the inner FavoriteButton's real <button> and break hydration. The div+role+tabIndex+onKeyDown combo keeps a11y semantics intact.
-        <div
-            role="button"
-            tabIndex={0}
-            className={sidebarStyles.cardLink}
-            aria-label={ariaLabel}
-            onClick={onSelect}
-            onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    onSelect();
-                }
-            }}
-        >
-            {children}
-        </div>
-    );
-}
-
+/** Lists visible map results in a desktop sidebar or mobile sheet. */
 export function MapCardsSidebar({
     items,
     hoveredItemId,
@@ -222,315 +166,18 @@ export function MapCardsSidebar({
             {items.length === 0 ? (
                 <li className={sidebarStyles.empty}>{i18n.emptyState}</li>
             ) : (
-                items.map((item) => {
-                    const fullStars = Math.floor(item.averageRating ?? 0);
-                    const hasRating =
-                        typeof item.averageRating === 'number' && item.averageRating > 0;
-                    const photos = item.photoCount ?? 0;
-                    return (
-                        <li
-                            key={item.id}
-                            className={`${sidebarStyles.card} ${
-                                hoveredItemId === item.id ? sidebarStyles.cardHovered : ''
-                            }`}
-                            onMouseEnter={() => onCardHover(item.id)}
-                            onMouseLeave={() => onCardHover(null)}
-                            onFocus={() => onCardHover(item.id)}
-                            onBlur={() => onCardHover(null)}
-                        >
-                            <CardClickable
-                                isMobile={isMobile}
-                                href={item.detailHref ?? `#${item.slug}`}
-                                ariaLabel={item.name}
-                                onSelect={() => onCardSelect?.(item.id)}
-                            >
-                                {/* IMAGE AREA */}
-                                <div className={sidebarStyles.cardImageArea}>
-                                    {item.thumbnailUrl ? (
-                                        <img
-                                            src={item.thumbnailUrl}
-                                            alt={item.name}
-                                            className={sidebarStyles.cardImage}
-                                            loading="lazy"
-                                        />
-                                    ) : (
-                                        <div
-                                            className={sidebarStyles.cardImagePlaceholder}
-                                            aria-hidden="true"
-                                        />
-                                    )}
-
-                                    {/* "Nuevo" status corner */}
-                                    {item.isNew && item.newLabel ? (
-                                        <div
-                                            className={sidebarStyles.cardStatusCorner}
-                                            aria-hidden="true"
-                                            style={
-                                                {
-                                                    '--corner-bg':
-                                                        item.newBg ?? 'var(--brand-accent)',
-                                                    '--corner-text':
-                                                        item.newText ?? 'var(--accent-foreground)'
-                                                } as React.CSSProperties
-                                            }
-                                        >
-                                            <span className={sidebarStyles.cardStatusText}>
-                                                {item.newLabel}
-                                            </span>
-                                        </div>
-                                    ) : null}
-
-                                    {/* Featured badge */}
-                                    {item.isFeatured && item.featuredLabel ? (
-                                        <div
-                                            className={`${sidebarStyles.cardFeaturedBadge} featured-badge`}
-                                        >
-                                            <StarIcon
-                                                size={12}
-                                                weight="fill"
-                                                aria-hidden="true"
-                                            />
-                                            <span>{item.featuredLabel}</span>
-                                        </div>
-                                    ) : null}
-
-                                    {/* Wave separator */}
-                                    <div
-                                        className={sidebarStyles.cardWave}
-                                        aria-hidden="true"
-                                    >
-                                        <svg
-                                            viewBox="0 0 432 40"
-                                            preserveAspectRatio="none"
-                                            fill="var(--core-card, white)"
-                                            aria-hidden="true"
-                                        >
-                                            <title>wave</title>
-                                            <path d="M0 40V22C72 8 144 0 216 6C288 12 360 24 432 22V40H0Z" />
-                                        </svg>
-                                    </div>
-
-                                    {/* Actions: favorite + photo count */}
-                                    {/* biome-ignore lint/a11y/useKeyWithClickEvents: this wrapper only stops mouse propagation so clicks on the inner FavoriteButton/photo count don't trigger the card's navigation; it isn't itself focusable or actionable */}
-                                    {/* biome-ignore lint/a11y/noStaticElementInteractions: purely a mouse-event-propagation stopper around real interactive children (FavoriteButton, photo count); it has no behavior of its own and isn't focusable or actionable */}
-                                    <div
-                                        className={sidebarStyles.cardActions}
-                                        onClick={(e) => e.stopPropagation()}
-                                        onMouseDown={(e) => e.stopPropagation()}
-                                    >
-                                        <FavoriteButton
-                                            entityId={item.id}
-                                            entityType="ACCOMMODATION"
-                                            count={item.bookmarkCount}
-                                            variant="standalone"
-                                            showCount={true}
-                                            locale={locale}
-                                        />
-                                        {photos > 0 && item.photosLabel ? (
-                                            <div
-                                                className={sidebarStyles.cardPhotoCount}
-                                                aria-hidden="true"
-                                            >
-                                                <GalleryIcon
-                                                    size={16}
-                                                    weight="fill"
-                                                    aria-hidden={true}
-                                                />
-                                                <span>{item.photosLabel}</span>
-                                            </div>
-                                        ) : null}
-                                    </div>
-                                </div>
-
-                                {/* CONTENT AREA */}
-                                <div className={sidebarStyles.cardContent}>
-                                    {/* Category + Location row */}
-                                    <div className={sidebarStyles.cardCategoryRow}>
-                                        {item.typeLabel ? (
-                                            <span className={sidebarStyles.cardTypePill}>
-                                                {item.TypeIcon ? (
-                                                    <item.TypeIcon
-                                                        size={14}
-                                                        weight="bold"
-                                                        aria-hidden={true}
-                                                    />
-                                                ) : null}
-                                                <span className={sidebarStyles.cardTypePillLabel}>
-                                                    {item.typeLabel}
-                                                </span>
-                                            </span>
-                                        ) : null}
-                                        {item.cityName ? (
-                                            <span className={sidebarStyles.cardLocation}>
-                                                <LocationIcon
-                                                    size={12}
-                                                    weight="fill"
-                                                    aria-hidden={true}
-                                                />
-                                                <span>{item.cityName}</span>
-                                            </span>
-                                        ) : null}
-                                    </div>
-
-                                    {/* Name */}
-                                    <h3 className={sidebarStyles.cardName}>{item.name}</h3>
-
-                                    {/* Description */}
-                                    {item.summary ? (
-                                        <p className={sidebarStyles.cardDescription}>
-                                            {item.summary}
-                                        </p>
-                                    ) : null}
-
-                                    {/* Amenities row */}
-                                    {item.amenities && item.amenities.length > 0 ? (
-                                        // biome-ignore lint/a11y/useSemanticElements: div+role=group+aria-label groups decorative amenity icons; a real <fieldset> would inherit user-agent border/padding/margin that fight this inline card layout
-                                        <div
-                                            className={sidebarStyles.cardAmenities}
-                                            role="group"
-                                            aria-label={item.amenitiesLabel}
-                                        >
-                                            {item.amenities.map((amenity) => {
-                                                const Icon = amenity.Icon;
-                                                return (
-                                                    <span
-                                                        key={amenity.id}
-                                                        className={sidebarStyles.cardAmenity}
-                                                        title={amenity.label}
-                                                    >
-                                                        <Icon
-                                                            size={16}
-                                                            weight="regular"
-                                                            aria-hidden={true}
-                                                        />
-                                                    </span>
-                                                );
-                                            })}
-                                            {item.extraAmenitiesCount &&
-                                            item.extraAmenitiesCount > 0 ? (
-                                                <span className={sidebarStyles.cardAmenitiesMore}>
-                                                    +{item.extraAmenitiesCount}
-                                                </span>
-                                            ) : null}
-                                        </div>
-                                    ) : null}
-
-                                    {/* Stars + rating */}
-                                    {hasRating ? (
-                                        <div className={sidebarStyles.cardStars}>
-                                            {Array.from({ length: 5 }).map((_, i) => (
-                                                <span
-                                                    // biome-ignore lint/suspicious/noArrayIndexKey: fixed-length list of decorative stars
-                                                    key={i}
-                                                    className={
-                                                        i < fullStars
-                                                            ? sidebarStyles.cardStarFilled
-                                                            : sidebarStyles.cardStarEmpty
-                                                    }
-                                                    aria-hidden="true"
-                                                >
-                                                    <StarIcon
-                                                        size={14}
-                                                        weight={i < fullStars ? 'fill' : 'regular'}
-                                                        aria-hidden={true}
-                                                    />
-                                                </span>
-                                            ))}
-                                            <span className={sidebarStyles.cardRatingValue}>
-                                                {item.averageRating?.toFixed(1)}
-                                            </span>
-                                            {item.reviewsLabel ? (
-                                                <span className={sidebarStyles.cardReviewsCount}>
-                                                    {item.reviewsLabel}
-                                                </span>
-                                            ) : null}
-                                        </div>
-                                    ) : null}
-
-                                    {/* Divider */}
-                                    <div className={sidebarStyles.cardDivider} />
-
-                                    {/* Contextual compare control (HOS-85): a labeled
-                                        add/remove button, only rendered while compare
-                                        mode is active — mirrors the placement in
-                                        AccommodationCard.astro so the map sidebar cards
-                                        behave identically to the listing cards. Unlike
-                                        the Astro island version, no `display: contents`
-                                        wrapper trick is needed here: this is a plain
-                                        React child, so it emits no DOM node at all when
-                                        it renders `null` (compare mode off), leaving the
-                                        `gap` layout of `.cardContent` unaffected. The
-                                        button's own `handleClick` already stops event
-                                        propagation, so it won't trigger the card's
-                                        hover-select/navigation handlers. */}
-                                    <CompareButton
-                                        accommodationId={item.id}
-                                        accommodationName={item.name}
-                                        accommodationThumbnailUrl={item.thumbnailUrl}
-                                        variant="contextual"
-                                        locale={locale}
-                                        gatePlanNames={gatePlanNames}
-                                    />
-
-                                    {/* Price + CTA */}
-                                    <div className={sidebarStyles.cardPriceRow}>
-                                        <div className={sidebarStyles.cardPriceBlock}>
-                                            {item.priceLabel ? (
-                                                <>
-                                                    {item.priceFromLabel ? (
-                                                        <span
-                                                            className={sidebarStyles.cardPriceLabel}
-                                                        >
-                                                            {item.priceFromLabel}
-                                                        </span>
-                                                    ) : null}
-                                                    <span className={sidebarStyles.cardPriceValue}>
-                                                        {item.priceLabel}
-                                                    </span>
-                                                    {item.pricePerNightLabel ? (
-                                                        <span
-                                                            className={sidebarStyles.cardPriceLabel}
-                                                        >
-                                                            {item.pricePerNightLabel}
-                                                        </span>
-                                                    ) : null}
-                                                </>
-                                            ) : (
-                                                <span
-                                                    className={cn(
-                                                        sidebarStyles.cardPriceValue,
-                                                        sidebarStyles.cardPriceValueConsult
-                                                    )}
-                                                >
-                                                    {item.priceConsultLabel ?? '—'}
-                                                </span>
-                                            )}
-                                        </div>
-                                        {item.ctaLabel && item.detailHref ? (
-                                            <a
-                                                href={item.detailHref}
-                                                className={cn(
-                                                    sidebarStyles.cardCta,
-                                                    !item.priceLabel && sidebarStyles.cardCtaCompact
-                                                )}
-                                                onClick={(e) => e.stopPropagation()}
-                                                onMouseDown={(e) => e.stopPropagation()}
-                                                aria-label={`${item.priceLabel ? item.ctaLabel : (item.noPriceCtaLabel ?? item.ctaLabel)} — ${item.name}`}
-                                            >
-                                                {item.priceLabel
-                                                    ? item.ctaLabel
-                                                    : (item.noPriceCtaLabel ?? item.ctaLabel)}
-                                                {!item.priceLabel && item.noPriceCtaLabel ? (
-                                                    <span aria-hidden="true"> →</span>
-                                                ) : null}
-                                            </a>
-                                        ) : null}
-                                    </div>
-                                </div>
-                            </CardClickable>
-                        </li>
-                    );
-                })
+                items.map((item) => (
+                    <MapSidebarCard
+                        key={item.id}
+                        item={item}
+                        isMobile={isMobile}
+                        isHovered={hoveredItemId === item.id}
+                        onCardHover={onCardHover}
+                        onCardSelect={onCardSelect}
+                        locale={locale}
+                        gatePlanNames={gatePlanNames}
+                    />
+                ))
             )}
         </ul>
     );
@@ -557,7 +204,6 @@ export function MapCardsSidebar({
                             : `${i18n.openSheet} · ${i18n.resultsCount(items.length)}`
                     }
                     shortLabel={i18n.openSheetCountShort?.(items.length)}
-                    count={items.length}
                     isSheetOpen={isSheetOpen}
                     onOpen={() => setIsSheetOpen(true)}
                 />
@@ -567,7 +213,6 @@ export function MapCardsSidebar({
                         isSheetOpen ? sidebarStyles.sheetOpen : ''
                     }`}
                     aria-hidden={!isSheetOpen}
-                    // biome-ignore lint/a11y/useSemanticElements: native <dialog> does not compose with the slide-in bottom-sheet animation
                     role="dialog"
                     aria-label={i18n.resultsHeading}
                     aria-busy={isFetching}

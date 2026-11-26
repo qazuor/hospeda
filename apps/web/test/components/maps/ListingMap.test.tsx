@@ -1,6 +1,11 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 
+const { useMap } = vi.hoisted(() => ({ useMap: vi.fn() }));
+
 vi.mock('react-leaflet', () => ({
+    useMap,
     MapContainer: ({ children, ...rest }: { children: React.ReactNode }) => (
         <div
             data-testid="map-container"
@@ -10,13 +15,25 @@ vi.mock('react-leaflet', () => ({
         </div>
     ),
     TileLayer: () => <div data-testid="tile-layer" />,
-    Marker: ({ children, position }: { children: React.ReactNode; position: number[] }) => (
-        <div
+    Marker: ({
+        children,
+        position,
+        eventHandlers
+    }: {
+        children: React.ReactNode;
+        position: number[];
+        eventHandlers?: { click?: (event: { target: { getElement: () => HTMLElement } }) => void };
+    }) => (
+        <button
+            type="button"
+            onClick={({ currentTarget }) => {
+                eventHandlers?.click?.({ target: { getElement: () => currentTarget } });
+            }}
             data-testid="marker"
             data-pos={position.join(',')}
         >
             {children}
-        </div>
+        </button>
     ),
     Popup: ({ children }: { children: React.ReactNode }) => (
         <div data-testid="popup">{children}</div>
@@ -69,8 +86,9 @@ vi.mock('@/components/shared/favorite/FavoriteButton.client', () => ({
     FavoriteButton: () => null
 }));
 
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { ListingMap } from '../../../src/components/maps/ListingMap.client';
+import { FitListingBounds } from '../../../src/components/maps/map-controls.client';
 
 // Pre-warm the lazy inner chunk (React.lazy, SPEC-269) so it resolves within the
 // default findBy timeout even on a cold module graph when this file runs alone.
@@ -90,6 +108,119 @@ const i18n = {
 };
 
 describe('ListingMap', () => {
+    it('reserves clearance for isolated stacked accommodation pills on a 360px canvas', async () => {
+        const canvas = document.createElement('div');
+        Object.defineProperties(canvas, {
+            clientWidth: { value: 360 },
+            clientHeight: { value: 480 }
+        });
+        const fitBounds = vi.fn();
+        useMap.mockReturnValue({ getContainer: () => canvas, fitBounds, invalidateSize: vi.fn() });
+        let measure: (() => void) | undefined;
+        vi.stubGlobal(
+            'ResizeObserver',
+            class {
+                constructor(callback: () => void) {
+                    measure = callback;
+                }
+                observe() {}
+                disconnect() {}
+            }
+        );
+        const bounds: [[number, number], [number, number]] = [
+            [-34, -59],
+            [-30, -57]
+        ];
+
+        try {
+            render(
+                <ListingMap
+                    mode="accommodation-list"
+                    initialCenter={[-32, -58]}
+                    initialBounds={bounds}
+                    items={[
+                        {
+                            id: 'north-east',
+                            slug: 'north-east',
+                            name: 'Long accommodation label at the northern and eastern edge',
+                            priceLabel: '$50,000',
+                            approximateLocation: { lat: -30, lng: -57, radiusMeters: 150 }
+                        },
+                        {
+                            id: 'south-west',
+                            slug: 'south-west',
+                            name: 'Long accommodation label at the western edge',
+                            priceLabel: '$40,000',
+                            approximateLocation: { lat: -34, lng: -59, radiusMeters: 150 }
+                        }
+                    ]}
+                    ariaLabel="map"
+                    i18nStrings={i18n}
+                />
+            );
+            await screen.findAllByTestId('marker');
+            measure?.();
+
+            expect(fitBounds).toHaveBeenCalledExactlyOnceWith(bounds, {
+                padding: [120, 56], // Leaflet Point: horizontal, then vertical.
+                maxZoom: expect.any(Number),
+                animate: false
+            });
+        } finally {
+            vi.unstubAllGlobals();
+        }
+    });
+
+    it('fits measured bounds and stops refitting after map interaction', () => {
+        const canvas = document.createElement('div');
+        Object.defineProperties(canvas, {
+            clientWidth: { value: 360 },
+            clientHeight: { value: 480 }
+        });
+        const fitBounds = vi.fn();
+        const invalidateSize = vi.fn();
+        const disconnect = vi.fn();
+        let measure: (() => void) | undefined;
+        vi.stubGlobal(
+            'ResizeObserver',
+            class {
+                constructor(callback: () => void) {
+                    measure = callback;
+                }
+                observe = vi.fn();
+                disconnect = disconnect;
+            }
+        );
+        useMap.mockReturnValue({ getContainer: () => canvas, fitBounds, invalidateSize });
+        const bounds: [[number, number], [number, number]] = [
+            [-34, -59],
+            [-30, -57]
+        ];
+
+        try {
+            const { unmount } = render(
+                <FitListingBounds
+                    bounds={bounds}
+                    maxZoom={8}
+                />
+            );
+            measure?.();
+            expect(fitBounds).toHaveBeenCalledWith(bounds, {
+                padding: [40, 52],
+                maxZoom: 8,
+                animate: false
+            });
+            fireEvent.pointerDown(canvas);
+            measure?.();
+
+            expect(invalidateSize).toHaveBeenCalledTimes(2);
+            expect(fitBounds).toHaveBeenCalledTimes(1);
+            unmount();
+            expect(disconnect).toHaveBeenCalledOnce();
+        } finally {
+            vi.unstubAllGlobals();
+        }
+    });
     it('renders a Circle per accommodation in accommodation-list mode', async () => {
         render(
             <ListingMap
@@ -124,7 +255,7 @@ describe('ListingMap', () => {
         expect(screen.getByText('Ubicación aproximada.')).toBeInTheDocument();
     });
 
-    it('renders a Marker per destination in destination-list mode', async () => {
+    it('focuses the named destination card and restores focus to its invoking marker on dismissal', async () => {
         render(
             <ListingMap
                 mode="destination-list"
@@ -134,7 +265,15 @@ describe('ListingMap', () => {
                         id: '1',
                         slug: 'chajari',
                         name: 'Chajarí',
-                        coordinates: { lat: -30.75, lng: -57.98 }
+                        coordinates: { lat: -30.75, lng: -57.98 },
+                        detailHref: '/es/destinos/chajari/'
+                    },
+                    {
+                        id: '2',
+                        slug: 'federacion',
+                        name: 'Federación',
+                        coordinates: { lat: -30.98, lng: -57.92 },
+                        detailHref: '/es/destinos/federacion/'
                     }
                 ]}
                 ariaLabel="map"
@@ -142,9 +281,51 @@ describe('ListingMap', () => {
             />
         );
 
-        expect(await screen.findByTestId('marker')).toBeInTheDocument();
+        const [, marker] = await screen.findAllByTestId('marker');
+        marker.focus();
+        fireEvent.click(marker);
+
+        const card = screen.getByRole('region', { name: 'Federación' });
+        expect(card).toHaveAttribute('tabindex', '-1');
+        expect(card).toHaveFocus();
+        expect(screen.getByTestId('map-container')).not.toContainElement(card);
+        const detailsLink = within(card).getByRole('link', { name: 'Ver más' });
+        expect(detailsLink).toHaveAttribute('href', '/es/destinos/federacion/');
+        expect(detailsLink).toHaveClass('detailsLink');
         expect(screen.queryByTestId('circle')).not.toBeInTheDocument();
         expect(screen.queryByText('Ubicación aproximada.')).not.toBeInTheDocument();
+        const close = screen.getByRole('button', { name: 'Cerrar' });
+        expect(close).toHaveClass('close');
+        close.focus();
+        fireEvent.click(close);
+        expect(card).not.toBeInTheDocument();
+        expect(marker).toHaveFocus();
+    });
+
+    it('gives the destination close control at least a 44 by 44 pixel target', () => {
+        // jsdom does not evaluate responsive layout; check the control's CSS rule.
+        const css = readFileSync(
+            resolve(__dirname, '../../../src/components/maps/DestinationMapCard.module.css'),
+            'utf8'
+        );
+        const [, rule] = css.match(/\.close\s*\{([^}]*)\}/) ?? [];
+
+        for (const axis of ['width', 'height']) {
+            const [, pixels] = rule?.match(new RegExp(`\\b${axis}:\\s*(\\d+)px`)) ?? [];
+            expect(Number(pixels), axis).toBeGreaterThanOrEqual(44);
+        }
+    });
+
+    it('gives the destination details link a minimum block size of 44 pixels', () => {
+        // jsdom does not evaluate layout, so check the rule for the rendered link's class.
+        const css = readFileSync(
+            resolve(__dirname, '../../../src/components/maps/DestinationMapCard.module.css'),
+            'utf8'
+        );
+
+        const [, pixels] = css.match(/\.detailsLink\s*\{[^}]*min-block-size:\s*(\d+)px/) ?? [];
+
+        expect(Number(pixels)).toBeGreaterThanOrEqual(44);
     });
 
     it('forwards items into a cluster group wrapper', async () => {

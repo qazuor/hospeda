@@ -7,7 +7,6 @@
  */
 
 import LegalLayout from '@/layouts/LegalLayout.astro';
-import FAQPageJsonLd from '@/components/seo/FAQPageJsonLd.astro';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 
@@ -45,7 +44,8 @@ const sections = [
 	{ id: 'contacto', titleKey: 'privacy.section8.title', titleFb: 'Contacto', contentKey: 'privacy.section8.content', contentFb: 'Para consultas sobre esta política de privacidad, podés escribirnos a info@hospeda.com.ar o a través de nuestro formulario de contacto.' },
 ] as const;
 
-const faqSections = sections.map((section) => ({
+const articles = sections.map((section) => ({
+	id: section.id,
 	heading: t(section.titleKey, section.titleFb),
 	body: t(section.contentKey, section.contentFb)
 }));
@@ -55,53 +55,6 @@ const faqSections = sections.map((section) => ({
 	locale={locale}
 	title={t('privacy.title', 'Política de privacidad')}
 	description={t('privacy.description', 'Política de privacidad de Hospeda. Cómo recopilamos y usamos tu información.')}
-	lastUpdated="23 de noviembre de 2026"
-	showToc={true}
->
-	<FAQPageJsonLd slot="head-extra" sections={faqSections} />
-	<Fragment slot="toc">
-		<ol class="toc-list">
-			{sections.map((section, i) => (
-				<li>
-					<a href={`#${section.id}`} class="toc-link">
-						{i + 1}. {t(section.titleKey, section.titleFb)}
-					</a>
-				</li>
-			))}
-		</ol>
-	</Fragment>
-
-	{sections.map((section, i) => (
-		<section id={section.id}>
-			<h2>{i + 1}. {t(section.titleKey, section.titleFb)}</h2>
-			<p>{t(section.contentKey, section.contentFb)}</p>
-		</section>
-	))}
-</LegalLayout>
-
-<style>
-	.toc-list {
-		list-style: none;
-		padding: 0;
-		margin: 0;
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-2);
-	}
-
-	.toc-link {
-		display: block;
-		padding: var(--space-2) var(--space-3);
-		font-family: var(--font-sans);
-		font-size: var(--text-body-sm);
-		color: var(--core-muted-foreground);
-		text-decoration: none;
-		border-left: 2px solid transparent;
-		transition: color var(--duration-fast) ease, border-color var(--duration-fast) ease;
-	}
-
-	.toc-link:hover {
-		color: var(--core-foreground);
-		border-left-color: var(--brand-accent);
-	}
-</style>
+	lastUpdated="2026-11-23"
+	articles={articles}
+/>
