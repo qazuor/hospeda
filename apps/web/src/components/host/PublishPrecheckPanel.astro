@@ -141,6 +141,7 @@ const deleteErrorText = t(
             action.kind === 'link' ? (
                 action.variant === 'primary' ? (
                     <LinkButton
+                        variant="accent"
                         href={action.href}
                         data-testid={`precheck-action-${action.labelKey}`}
                     >

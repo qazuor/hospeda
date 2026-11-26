@@ -217,15 +217,18 @@ describe('editor autosave signal', () => {
 });
 
 describe('EditorAutoSaveChip', () => {
-    it('renders a clean bar chip during SSR without mutating the shared server state', () => {
+    it.each([
+        'auto',
+        'bar'
+    ] as const)('renders a clean %s chip during SSR without mutating the shared server state', (saveModel) => {
         const html = renderToString(
             <EditorAutoSaveChip
                 locale="es"
-                saveModel="bar"
+                saveModel={saveModel}
             />
         );
         expect(html).toContain('Todo guardado');
-        expect(html).toContain('data-editor-save-signal="bar"');
+        expect(html).toContain(`data-editor-save-signal="${saveModel}"`);
         expect(getEditorAutoSave().status).toBe('idle');
     });
 
@@ -238,11 +241,11 @@ describe('EditorAutoSaveChip', () => {
         );
         expect(screen.getByRole('status')).toHaveTextContent('Todo guardado');
     });
-    it('renders the auto signal with no chip until a save is reported', () => {
+    it('renders the auto signal with a clean chip before a save is reported', () => {
         const { container } = render(<EditorAutoSaveChip locale="es" />);
 
         expect(container.querySelector('[data-editor-save-signal="auto"]')).not.toBeNull();
-        expect(screen.queryByRole('status')).toBeNull();
+        expect(screen.getByRole('status')).toHaveTextContent('Todo guardado');
     });
 
     it('shows the kit chip for whatever an island reports', () => {

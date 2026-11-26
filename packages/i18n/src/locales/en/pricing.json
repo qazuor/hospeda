@@ -1,4 +1,33 @@
 {
+    "hub": {
+        "title": "Hospeda plans",
+        "tagline": "Your place on Hospeda",
+        "heading": "A plan for every way to join",
+        "description": "Explore the options for travelling, hosting guests, offering experiences or promoting your business.",
+        "cardsHeading": "Find the plans for you",
+        "cards": {
+            "tourist": {
+                "title": "Travellers",
+                "description": "Discover destinations, save your favourite places and connect with hosts.",
+                "cta": "Explore traveller plans"
+            },
+            "host": {
+                "title": "Hosts",
+                "description": "Showcase your accommodation and connect with travellers looking for their next stay.",
+                "cta": "Explore host plans"
+            },
+            "experience": {
+                "title": "Experiences",
+                "description": "Share your activities and outings with people exploring the region.",
+                "cta": "Explore experience plans"
+            },
+            "venue": {
+                "title": "Businesses",
+                "description": "Help visitors discover your business and what makes it special.",
+                "cta": "Explore business plans"
+            }
+        }
+    },
     "cta": "Get started",
     "free": "Free",
     "recommended": "Recommended",

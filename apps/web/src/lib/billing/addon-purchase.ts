@@ -244,6 +244,9 @@ export function isOfferFullyActive(input: {
 /** Neutral plans entry (the five-audience index) used when no single audience applies. */
 export const NEUTRAL_PLANS_PATH = 'suscriptores/planes';
 
+/** Public plans hub used by the sales and pricing breadcrumb hierarchy. */
+export const PLANS_INDEX_PATH = 'planes';
+
 const PLANS_PATH_BY_VERTICAL: Readonly<Record<string, string>> = {
     accommodation: PRICING_PAGE_PATH_BY_AUDIENCE.owner,
     venue: PRICING_PAGE_PATH_BY_AUDIENCE.venue,

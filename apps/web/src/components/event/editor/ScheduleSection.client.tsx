@@ -18,7 +18,7 @@
  */
 
 import styles from '@/components/account/editor/content-editor-fields.module.css';
-import { TextField } from '@/components/ui/TextField';
+import { Field, TextInput } from '@/components/account/ui';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import type { EventEditFormData } from './event-edit-data';
@@ -75,40 +75,36 @@ export function ScheduleSection({
                 </p>
             )}
 
-            <div className={styles.field}>
-                <TextField
-                    prefix={EVENT_FIELD_PREFIX}
+            <Field
+                locale={locale}
+                idParts={{ prefix: EVENT_FIELD_PREFIX, name: 'startDate' }}
+                label={t('account.myContent.events.editor.field.startDate', 'Comienza')}
+                error={errors.startDate}
+                required
+            >
+                <TextInput
                     name="startDate"
-                    label={`${t('account.myContent.events.editor.field.startDate', 'Comienza')} *`}
-                    labelClassName={styles.fieldLabel}
-                    className={styles.fieldInput}
-                    error={errors.startDate}
                     type="datetime-local"
                     value={data.startDate}
                     onChange={(e) => onFieldChange('startDate', e.target.value)}
                     required
                 />
-            </div>
+            </Field>
 
-            <div className={styles.field}>
-                <TextField
-                    prefix={EVENT_FIELD_PREFIX}
+            <Field
+                locale={locale}
+                idParts={{ prefix: EVENT_FIELD_PREFIX, name: 'endDate' }}
+                label={t('account.myContent.events.editor.field.endDate', 'Termina')}
+                error={errors.endDate}
+                hint={t('account.myContent.events.editor.hint.endDate')}
+            >
+                <TextInput
                     name="endDate"
-                    label={t('account.myContent.events.editor.field.endDate', 'Termina')}
-                    labelClassName={styles.fieldLabel}
-                    className={styles.fieldInput}
-                    error={errors.endDate}
                     type="datetime-local"
                     value={data.endDate}
                     onChange={(e) => onFieldChange('endDate', e.target.value)}
                 />
-                <span className={styles.fieldHint}>
-                    {t(
-                        'account.myContent.events.editor.hint.endDate',
-                        'Opcional. Dejalo vacío si el evento dura un solo momento.'
-                    )}
-                </span>
-            </div>
+            </Field>
         </fieldset>
     );
 }

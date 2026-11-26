@@ -68,6 +68,22 @@ describe('plan card interval actions', () => {
         );
     });
 
+    it('uses the flat accent kit for both tourist checkout cycles', async () => {
+        pricingSituation.mockResolvedValue({ ok: true, data: { situation: 'CHECKOUT' } });
+        render(
+            <PlanCardCta
+                {...props}
+                vertical="tourist"
+            />
+        );
+        expect(
+            await screen.findByRole('link', { name: 'Suscribirme con pago mensual' })
+        ).toHaveClass('accent');
+        expect(screen.getByRole('link', { name: 'Suscribirme con pago anual' })).toHaveClass(
+            'accent'
+        );
+    });
+
     it('marks checkout links by cycle and opts dual options into filtering', async () => {
         pricingSituation.mockResolvedValue({ ok: true, data: { situation: 'CHECKOUT' } });
         render(<PlanCardCta {...props} />);
