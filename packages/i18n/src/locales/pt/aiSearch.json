@@ -6,7 +6,7 @@
         "title": "Busca conversacional",
         "close": "Fechar painel",
         "inputLabel": "Mensagem",
-        "placeholder": "Descreva o que procura, ex: chalé para 4 com piscina perto do rio",
+        "placeholder": "Ex.: chalé com piscina",
         "send": "Enviar mensagem",
         "sending": "Enviando…",
         "stop": "Parar",

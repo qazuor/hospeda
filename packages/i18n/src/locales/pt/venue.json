@@ -25,7 +25,7 @@
         "results_one": "{{count}} estabelecimento encontrado",
         "results_other": "{{count}} estabelecimentos encontrados",
         "search": "Busca por texto",
-        "searchPlaceholder": "Buscar por nome ou descrição...",
+        "searchPlaceholder": "Buscar estabelecimentos",
         "destination": "Destino",
         "type": "Tipo de estabelecimento",
         "priceRange": "Faixa de preço",
