@@ -364,6 +364,7 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'nav.publishCtaAria',
     'nav.signIn',
     'nav.theme',
+    'nav.userMenu',
     'nav.venue',
     'newsletter.confirmYourEmail',
     'newsletter.error',
