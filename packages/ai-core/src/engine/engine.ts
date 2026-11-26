@@ -717,6 +717,11 @@ export function createAiEngine(input: CreateAiEngineInput): AiEngine {
                 feature: req.feature,
                 direction: 'output',
                 text: response.text,
+                spend: {
+                    usage: response.usage,
+                    provider: response.provider,
+                    model: response.model
+                },
                 moderationProviderId,
                 getProvider,
                 recordEvent
@@ -892,6 +897,11 @@ export function createAiEngine(input: CreateAiEngineInput): AiEngine {
                 feature: req.feature,
                 direction: 'output',
                 text: JSON.stringify(response.object),
+                spend: {
+                    usage: response.usage,
+                    provider: response.provider,
+                    model: response.model
+                },
                 moderationProviderId,
                 getProvider,
                 recordEvent
