@@ -17,7 +17,8 @@ import {
     text,
     timestamp,
     uniqueIndex,
-    uuid
+    uuid,
+    varchar
 } from 'drizzle-orm/pg-core';
 import { accommodations } from '../accommodation/accommodation.dbschema.ts';
 import { destinations } from '../destination/destination.dbschema.ts';
@@ -87,6 +88,15 @@ export const users = pgTable(
             .$type<AuthProviderEnum>()
             .default(AuthProviderEnum.BETTER_AUTH),
         authProviderUserId: text('auth_provider_user_id'),
+        /**
+         * HOS-2616: the payer email DECLARED on the last approved charge of a subscription or
+         * complement of this account, copied from `subscription.declared_payer_email`. It only
+         * prefills the checkout. It is NEVER a confirmed email (the provider returns
+         * `payer_email` empty on a read), and no code may read it as the payer's identity.
+         * An authorized signup without an approved charge never writes it; the next approved
+         * charge replaces it.
+         */
+        lastSuccessfulPayerEmail: varchar('last_successful_payer_email', { length: 255 }),
         displayName: text('display_name'),
         firstName: text('first_name'),
         lastName: text('last_name'),

@@ -52,7 +52,9 @@ export const mockUser: InferredUser = {
     profileCompleted: false,
     setPasswordPrompted: false,
     // HOS-375 platform/service-account flag
-    isSystemAccount: false
+    isSystemAccount: false,
+    // HOS-2616 remembered payer email
+    lastSuccessfulPayerEmail: null
 };
 
 export const mockActor: Actor = new ActorFactoryBuilder()

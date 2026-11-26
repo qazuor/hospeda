@@ -39,6 +39,7 @@ import {
     unregisteredPromoExhaustion,
     unwiredCoverageNotices
 } from './payment-ports';
+import { rememberPayerEmail } from './remember-payer-email';
 
 const logger = createLogger('credit-payment');
 const PAYMENT_CREDITED_TEMPLATE = 'billing.payment-credited';
@@ -186,6 +187,10 @@ export async function creditPayment(
                     payer,
                     issuedAt: ports.clock.now()
                 });
+
+                // HOS-2616: an approved charge teaches the account its declared payer email.
+                // Same transaction as the credit; never reads it back as a confirmed identity.
+                await rememberPayerEmail({ tx, subscription });
 
                 let coverage: CreditPaymentResult['coverage'] = 'NOT_APPLICABLE';
                 const exhaustedPromos: { subscriptionId: string; redemptionId: string }[] = [];

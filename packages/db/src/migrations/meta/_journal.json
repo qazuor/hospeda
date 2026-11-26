@@ -1793,6 +1793,13 @@
       "when": 1795724431559,
       "tag": "0255_hos2196_plan_version_payment_methods",
       "breakpoints": true
+    },
+    {
+      "idx": 256,
+      "version": "7",
+      "when": 1795729908509,
+      "tag": "0256_hos2616_users_last_successful_payer_email",
+      "breakpoints": true
     }
   ]
 }
