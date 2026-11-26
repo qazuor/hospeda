@@ -1,4 +1,4 @@
-import type { Experience } from '@repo/schemas';
+import type { Experience, Venue } from '@repo/schemas';
 import { VerticalEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import { evaluateListingPublishCompleteness } from '../../../src/services/listing-publication/listing-publish-completeness';
@@ -33,6 +33,23 @@ const MEDIA = {
 } as never;
 
 describe('evaluateListingPublishCompleteness — experience price on request (HOS-1943)', () => {
+    it.each([
+        'venue',
+        'experience'
+    ] as const)('refuses a %s draft with an empty description', async (vertical) => {
+        const listing = makeOnRequestExperience({ description: '' });
+        const result = await evaluateListingPublishCompleteness(
+            vertical === 'venue'
+                ? {
+                      vertical: VerticalEnum.VENUE,
+                      listing: { ...listing, type: 'BAR' } as unknown as Venue,
+                      media: MEDIA
+                  }
+                : { vertical: VerticalEnum.EXPERIENCE, listing, media: MEDIA }
+        );
+        expect(result.complete).toBe(false);
+        expect(result.missing).toContain('description');
+    });
     it('does not require a price from a price-on-request experience', async () => {
         // Arrange
         const listing = makeOnRequestExperience();
@@ -51,7 +68,11 @@ describe('evaluateListingPublishCompleteness — experience price on request (HO
 
     it('still requires a price when the experience is not on request', async () => {
         // Arrange
-        const listing = makeOnRequestExperience({ isPriceOnRequest: false, priceUnit: null });
+        const listing = makeOnRequestExperience({
+            isPriceOnRequest: false,
+            priceFrom: null,
+            priceUnit: null
+        });
 
         // Act
         const result = await evaluateListingPublishCompleteness({

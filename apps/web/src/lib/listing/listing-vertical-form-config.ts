@@ -18,7 +18,6 @@ import {
     ExperienceOwnerCreateInputSchema,
     ExperienceOwnerUpdateInputSchema,
     ExperienceTypeEnum,
-    requirePricingUnlessOnRequest,
     resolveBusinessLineDefaults as resolveDefaults,
     VenueOwnerCreateInputSchema,
     VenueOwnerUpdateInputSchema,
@@ -68,8 +67,6 @@ export interface ListingVerticalFormConfig {
     readonly patchPath: (listingId: string) => string;
     /** Whether this vertical has a business-line selector and sends the field. */
     readonly showsBusinessLines: boolean;
-    /** Whether this vertical shows the experience price fields. */
-    readonly showsPriceFields: boolean;
     /** Whether the selected type's description is rendered under the select. */
     readonly showsTypeDescription: boolean;
     /** Resolves the localized label of one listing type. */
@@ -87,30 +84,21 @@ const VENUE_FORM_SCHEMA = VenueOwnerCreateInputSchema.pick({
     name: true,
     type: true,
     summary: true,
-    description: true,
     destinationId: true
-});
+}).required({ destinationId: true });
 
 /**
  * Fields the experience create form collects.
  *
- * The pick is taken from the PLAIN create schema and the cross-field pricing
- * rule is re-applied afterwards, deliberately in that order: Zod 4 throws
- * `.pick() cannot be used on object schemas containing refinements`, so picking
- * from `ExperienceOwnerCreateInputCheckedSchema` would crash this module on
- * load. Re-applying the shared predicate keeps the client and the server
- * enforcing the same rule from one definition instead of two (H-156).
+ * Pick from the refinement-free schema: Zod 4 rejects picks on refined objects.
+ * Description and pricing are completed later in the full editor.
  */
 const EXPERIENCE_FORM_SCHEMA = ExperienceOwnerCreateInputSchema.pick({
     name: true,
     type: true,
     summary: true,
-    description: true,
-    destinationId: true,
-    priceFrom: true,
-    priceUnit: true,
-    isPriceOnRequest: true
-}).superRefine(requirePricingUnlessOnRequest);
+    destinationId: true
+}).required({ destinationId: true });
 
 /** The per-vertical record both create-form consumers read. */
 export const LISTING_VERTICAL_FORM_CONFIG: Readonly<
@@ -122,7 +110,6 @@ export const LISTING_VERTICAL_FORM_CONFIG: Readonly<
         updateSchema: VenueOwnerUpdateInputSchema,
         patchPath: (listingId) => `/api/v1/protected/venues/${listingId}`,
         showsBusinessLines: true,
-        showsPriceFields: false,
         showsTypeDescription: true,
         resolveTypeLabel: resolveVenueTypeLabel,
         labels: {
@@ -151,7 +138,6 @@ export const LISTING_VERTICAL_FORM_CONFIG: Readonly<
         updateSchema: ExperienceOwnerUpdateInputSchema,
         patchPath: (listingId) => `/api/v1/protected/experiences/${listingId}`,
         showsBusinessLines: false,
-        showsPriceFields: true,
         showsTypeDescription: false,
         resolveTypeLabel: resolveExperienceTypeLabel,
         labels: {

@@ -485,6 +485,12 @@ export abstract class BaseListingService<
     // Owner self-service create — the listing IS the role grant
     // -----------------------------------------------------------------------
 
+    /** Default owner contract; concrete listing services can allow unfinished drafts. */
+    protected get ownerCreateSchema(): z.ZodType<z.infer<TCreateSchema>> {
+        // TYPE-WORKAROUND: the generic ZodObject constraint widens its output; the concrete schema still produces its own inferred output, as in BaseCrudWrite.create.
+        return this.createSchema as unknown as z.ZodType<z.infer<TCreateSchema>>;
+    }
+
     /**
      * Creates a listing on behalf of its own owner and grants that
      * owner the vertical's role in the SAME transaction (HOS-687 / HOS-589 §6.1).
@@ -522,8 +528,13 @@ export abstract class BaseListingService<
         ctx?: ServiceContext
     ): Promise<ServiceOutput<TEntity>> {
         const run = async (txCtx: ServiceContext): Promise<TEntity> => {
-            const created = await this.create(actor, data, txCtx);
-            // `create()` re-throws inside a transaction for every failure it
+            const created = await this._createWithSchema(
+                actor,
+                data,
+                this.ownerCreateSchema,
+                txCtx
+            );
+            // The create lifecycle re-throws inside a transaction for every failure it
             // raises itself, but its input-validation branch still returns the
             // envelope — so the error has to be checked here as well, or a
             // rejected payload would silently reach `grantRole`.

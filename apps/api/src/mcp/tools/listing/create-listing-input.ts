@@ -56,9 +56,11 @@ export const VenueCreateFieldsSchema = VenueOwnerCreateInputSchema.pick({
     type: true,
     destinationId: true,
     businessLines: true
-}).strict();
+})
+    .required({ description: true })
+    .strict();
 
-/** Experience: the owner create body, strict, plus the route's pricing rule. */
+/** Experience: strict assistant contract; description and pricing remain required. */
 export const ExperienceCreateFieldsSchema = ExperienceOwnerCreateInputSchema.pick({
     name: true,
     summary: true,
@@ -69,7 +71,9 @@ export const ExperienceCreateFieldsSchema = ExperienceOwnerCreateInputSchema.pic
     priceUnit: true,
     isPriceOnRequest: true,
     businessLines: true
-}).strict();
+})
+    .required({ description: true })
+    .strict();
 
 /** Street and number, as the shared postal address bounds them (venue, experience). */
 const PostalStreetNumberSchema = z
@@ -261,7 +265,7 @@ function refineForVertical(
     const base = { ...pick(input, own), ...priceOnRequestDefaults({ input }) };
     addIssues(ctx, schema.safeParse(base, SPANISH_PARSE_PARAMS));
     if (vertical === VerticalEnum.EXPERIENCE) {
-        // The route's CHECKED schema: a price needs a unit, unless it is on request.
+        // The assistant keeps its full pricing requirement even for draft creation.
         const pricing = z
             .looseObject({})
             .superRefine((value, refineCtx) => requirePricingUnlessOnRequest(value, refineCtx));

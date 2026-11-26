@@ -27,7 +27,10 @@ import {
 } from '../../fixtures/api-helpers.ts';
 import { seedCookieConsent } from '../../fixtures/browser-helpers.ts';
 import { execSQL, getDbPool } from '../../fixtures/db-helpers.ts';
-import { waitForListingCreateFormHydration } from '../../fixtures/listing-create-form-helpers.ts';
+import {
+    fillListingCreateForm,
+    waitForListingCreateFormHydration
+} from '../../fixtures/listing-create-form-helpers.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
 
 const WEB_URL = process.env.HOSPEDA_E2E_WEB_URL ?? 'http://localhost:18321';
@@ -74,17 +77,18 @@ async function createOwner(): Promise<VenueFixture> {
     return fixture;
 }
 
-/** Picks a seeded CITY destination, if the select is rendered. */
-async function selectDestination(page: Page): Promise<void> {
+/** Resolves a seeded CITY destination required by the create step. */
+async function firstDestinationId(page: Page): Promise<string> {
     const select = page.locator('#cc-destinationId');
-    if ((await select.count()) === 0) return;
+    await expect(select).toBeVisible();
 
     const values = await select
         .locator('option')
         .evaluateAll((options) =>
             options.map((option) => (option as HTMLOptionElement).value).filter(Boolean)
         );
-    if (values[0]) await select.selectOption(values[0]);
+    if (!values[0]) throw new Error('The create step needs a seeded CITY destination.');
+    return values[0];
 }
 
 /** Fills the create form and submits it, returning the new venue id. */
@@ -94,18 +98,12 @@ async function createVenue(
         readonly name: string;
         readonly type: string;
         readonly summary: string;
-        readonly description: string;
     }
 ): Promise<string> {
     await page.goto(`${WEB_URL}${VENUE_FORM_PATH}`, { waitUntil: 'load' });
     await waitForListingCreateFormHydration({ page });
 
-    await page.getByLabel('Categoría').selectOption(input.type);
-    await selectDestination(page);
-
-    await page.getByLabel('Nombre del comercio').fill(input.name);
-    await page.getByLabel('Resumen').fill(input.summary);
-    await page.getByLabel('Descripción').fill(input.description);
+    await fillListingCreateForm({ page, ...input, destinationId: await firstDestinationId(page) });
 
     await page.getByTestId('listing-create-submit').click();
 
@@ -167,8 +165,7 @@ test.describe('LISTING-OWNER-08: owner creates venues with business lines presel
         const barId = await createVenue(page, {
             name: `Bar de prueba ${Date.now()}`,
             type: 'BAR',
-            summary: 'Bar de prueba con música y tragos',
-            description: 'Un bar de prueba con barra, tragos y música para validar los rubros.'
+            summary: 'Bar de prueba con música y tragos'
         });
 
         expect(await readBusinessLines(barId)).toEqual(['food', 'nightlife']);
@@ -190,8 +187,7 @@ test.describe('LISTING-OWNER-08: owner creates venues with business lines presel
         const heladeriaId = await createVenue(page, {
             name: `Heladería de prueba ${Date.now()}`,
             type: 'HELADERIA',
-            summary: 'Heladería de prueba con sabores artesanales',
-            description: 'Una heladería de prueba con helados artesanales para validar los rubros.'
+            summary: 'Heladería de prueba con sabores artesanales'
         });
 
         expect(await readBusinessLines(heladeriaId)).toEqual(['food']);

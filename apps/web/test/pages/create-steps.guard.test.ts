@@ -4,11 +4,42 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { resolvePrecheckPanelContent } from '@/lib/host/publish-precheck-panel-content';
 import { createTranslations } from '@/lib/i18n';
+import { CLIENT_I18N_KEY_PREFIXES } from '@/lib/i18n-client-namespaces';
+import { MISSING_FIELD_I18N_SUFFIX } from '@/lib/listing/missing-field-labels';
 
 const srcPath = (path: string) => resolve(__dirname, '../../src', path);
 const read = (path: string) => readFileSync(srcPath(path), 'utf8');
 
 describe('minimal create step structure', () => {
+    it('keeps the full editor description and experience price controls', () => {
+        expect(read('components/listing/editor/BasicInfoSection.client.tsx')).toContain(
+            "idOf('description')"
+        );
+        const prices = read('components/listing/editor/PriceSection.client.tsx');
+        for (const field of ['priceFrom', 'priceUnit', 'isPriceOnRequest']) {
+            expect(prices).toContain(field);
+        }
+        const renderers = read('components/listing/editor/section-renderers.tsx');
+        expect(renderers).toContain('BasicInfoSection');
+        expect(renderers).toContain('PriceSection');
+    });
+
+    it.each([
+        'es',
+        'en',
+        'pt'
+    ] as const)('localizes draft publish requirements in %s, including in the client catalog', (locale) => {
+        const { t } = createTranslations(locale);
+        expect(CLIENT_I18N_KEY_PREFIXES).toContain('listing.owner');
+        for (const field of ['description', 'priceFrom']) {
+            const key = `listing.owner.checklist.field.${MISSING_FIELD_I18N_SUFFIX[field]}`;
+            const label = t(key);
+            expect(label).not.toBe(key);
+            expect(label).not.toContain('[MISSING:');
+            expect(label).not.toBe(field);
+        }
+    });
+
     it.each([
         'listing/ListingCreateForm',
         'event/editor/EventCreateForm',

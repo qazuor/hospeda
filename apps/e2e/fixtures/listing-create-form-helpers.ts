@@ -1,5 +1,27 @@
 import { expect, type Page } from '@playwright/test';
 
+/** Fills only the four fields shared by venue and experience draft creation. */
+export async function fillListingCreateForm({
+    page,
+    name,
+    type,
+    summary,
+    destinationId
+}: {
+    readonly page: Page;
+    readonly name: string;
+    readonly type: string;
+    readonly summary: string;
+    readonly destinationId: string;
+}): Promise<void> {
+    await waitForListingCreateFormHydration({ page });
+    await page.locator('#cc-name').fill(name);
+    await page.locator('#cc-type').selectOption(type);
+    await page.locator('#cc-summary').fill(summary);
+    await page.locator('#cc-destinationId').selectOption(destinationId);
+    await expect(page.locator('#cc-description, #cc-priceFrom, #cc-priceUnit')).toHaveCount(0);
+}
+
 /**
  * Waits until the `ListingCreateForm` island has attached its React handlers.
  *

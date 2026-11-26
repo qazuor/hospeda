@@ -4,10 +4,8 @@
  *   POST /api/v1/protected/experiences/
  *
  * Mirrors the accommodation owner create (`POST /protected/accommodations/`)
- * and the admin create at `experience/admin/create.ts`. The experience
- * owner-create payload has its own required shape (`openingHours`/
- * `priceRange`), so this vertical has its own route; the venue one lives
- * in `venue/protected/create.ts`.
+ * and the admin create at `experience/admin/create.ts`. Owners may leave draft
+ * description and pricing unfinished; the venue route lives in `venue/protected/create.ts`.
  *
  * ## D-3 — server-forced fields
  *
@@ -32,7 +30,7 @@
  */
 
 import {
-    ExperienceAdminCreateInputCheckedSchema,
+    ExperienceDraftCreateInputSchema,
     type ExperienceOwnerCreateInput,
     ExperienceOwnerCreateInputCheckedSchema,
     ExperienceProtectedSchema,
@@ -51,7 +49,7 @@ const experienceService = new ExperienceService({ logger: apiLogger });
 
 /**
  * Creates an experience listing for its owner exactly as this route does: the
- * server-forced `ownerId`, the re-parse through the checked admin create schema,
+ * server-forced `ownerId`, the re-parse through the owner draft persistence schema,
  * then `ExperienceService.createForOwner` (role grant + insert in one
  * transaction). Shared by this route and the owner assistant's `create_listing`
  * tool (HOS-2329, spec HOS-2335 C-6), which runs the route's listing-access step
@@ -59,7 +57,7 @@ const experienceService = new ExperienceService({ logger: apiLogger });
  *
  * @param input - The actor and the validated owner-create body
  * @returns The created experience
- * @throws {ServiceError} VALIDATION_ERROR on a body the admin schema refuses,
+ * @throws {ServiceError} VALIDATION_ERROR on a body the draft schema refuses,
  *   or the service's error
  */
 export async function createExperienceListingForOwner(input: {
@@ -69,18 +67,12 @@ export async function createExperienceListingForOwner(input: {
     const { actor } = input;
     const data = input.body as ExperienceOwnerCreateInput;
 
-    // Re-parse through the full admin create schema so reviewsCount/averageRating get
-    // their schema defaults.
-    //
-    // `safeParse`, not `.parse()` (H-156): the CHECKED schema carries the
-    // cross-field pricing rule. The route's own
-    // `ExperienceOwnerCreateInputCheckedSchema` already refuses a bad body with
-    // a 400 before this line runs (HOS-425); `safeParse` stays because this
-    // call re-checks a body that has had `ownerId` stamped onto it
-    // since validation, and an unmapped
-    // ZodError would surface as a 500 for what is plainly a bad request.
-    const parsed = ExperienceAdminCreateInputCheckedSchema.safeParse({
+    // Preserve admin defaults and required destination/owner fields while allowing
+    // unfinished content. Missing pricing persists as NULL/NULL/false (HOS-2641).
+    // safeParse maps re-validation errors to 4xx rather than a raw ZodError/500.
+    const parsed = ExperienceDraftCreateInputSchema.safeParse({
         ...data,
+        description: data.description ?? '',
         ownerId: actor.id
     });
 
@@ -141,8 +133,7 @@ export const protectedCreateExperienceListingRoute = createProtectedRoute({
         'Creates an experience listing owned by the authenticated caller and grants them the EXPERIENCE_OWNER role in the same transaction. Starts hidden (DRAFT) until the owner completes it. Requires an authenticated session and no experience permission.',
     tags: ['Experience'],
     // No `requiredPermissions` on purpose (HOS-687) — see the module docstring.
-    // H-156: the CHECKED variant carries the cross-field pricing rule
-    // (priceUnit required unless the price is on request).
+    // The checked draft contract requires a unit only when a price is supplied.
     requestBody: ExperienceOwnerCreateInputCheckedSchema,
     responseSchema: ExperienceProtectedSchema,
     successStatusCode: 201,
