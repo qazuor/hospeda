@@ -408,6 +408,56 @@ describe('loadTranslatableFields — pointOfInterest name fallback (HOS-143 G-6)
     });
 });
 
+describe('translateEntity — skipPairs (HOS-2658)', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('never calls the provider for a skipped pair', async () => {
+        // Arrange
+        setupAiServiceMock('Traduzido');
+
+        // Act
+        const result = await translateEntity({
+            entityType: 'venue',
+            entityId: 'venue-1',
+            fields: { description: 'Barra y música' },
+            targetLocales: ['en', 'pt'],
+            skipPairs: new Set(['description:en'])
+        });
+
+        // Assert
+        expect(mockGenerateText).toHaveBeenCalledTimes(1);
+        expect((mockGenerateText.mock.calls[0]?.[0] as { locale: string }).locale).toBe('pt');
+        expect(result.translations).toEqual([
+            {
+                fieldType: 'description',
+                locale: 'pt',
+                translatedText: 'Traduzido',
+                success: true
+            }
+        ]);
+    });
+
+    it('translates every pair when skipPairs is empty', async () => {
+        // Arrange
+        setupAiServiceMock('T');
+
+        // Act
+        const result = await translateEntity({
+            entityType: 'venue',
+            entityId: 'venue-1',
+            fields: { description: 'Barra y música' },
+            targetLocales: ['en', 'pt'],
+            skipPairs: new Set()
+        });
+
+        // Assert
+        expect(mockGenerateText).toHaveBeenCalledTimes(2);
+        expect(result.translations.map((t) => t.locale)).toEqual(['en', 'pt']);
+    });
+});
+
 describe('loadTranslatableFields — venue and experience (HOS-2658)', () => {
     beforeEach(() => {
         vi.clearAllMocks();

@@ -85,6 +85,12 @@ export interface TranslateEntityInput {
      * `false` by default (the batch / auto paths manage idempotency themselves).
      */
     onlyMissing?: boolean;
+    /**
+     * `"field:locale"` pairs never sent to the provider (HOS-2658). The metered
+     * runner fills it with the MANUAL pairs so no paid call is made for a
+     * translation the writer would throw away.
+     */
+    skipPairs?: ReadonlySet<string>;
 }
 
 export interface TranslateResult {
@@ -540,6 +546,10 @@ export async function translateEntity(input: TranslateEntityInput): Promise<Tran
             // Skip locales already filled when translating only the gaps.
             // Trim guards against whitespace-only values counting as "filled".
             if (existing?.[fieldType]?.[locale]?.trim()) {
+                continue;
+            }
+            // Skip pairs the caller excluded (MANUAL pairs) before any provider call.
+            if (input.skipPairs?.has(`${fieldType}:${locale}`)) {
                 continue;
             }
 
