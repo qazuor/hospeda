@@ -213,6 +213,42 @@ limiter below is the real governor of `/mcp`.
 - It **fails open**: if the store throws, the call is admitted and a warning is
   logged.
 
+## The assistant plan gate (HOS-2184 phase B)
+
+Every `tools/call`, after the rate limit and before input parsing, runs the
+`ai_assistant_access` gate (`lib/mcp/ai-assistant-gate.ts`, decision in
+`mcp/access/ai-assistant-access.ts`). The key is `global` but the effective set is
+per (user, vertical), so the gate reads accommodation, venue and experience with
+`probeEffectiveKeys` (it throws on a failed read; `readEffectiveKeys` would turn
+an outage into an upsell).
+
+- Any vertical grants the key: the call runs.
+- None grants and a read failed: `SERVICE_UNAVAILABLE`, no link.
+- None grants and the account holds no plan state in any of the three (billing's
+  coverage is only the implicit PRE_TRIAL + floor pair everywhere): not gated.
+  This covers providers, partners, editors and staff; each tool still authorizes.
+- Otherwise: `ENTITLEMENT_REQUIRED`, reason `AI_ASSISTANT_NOT_IN_PLAN`, a Spanish
+  message and a link to the plans page of the first vertical the owner has a plan
+  in. There is no add-on. In practice only a floor-only owner (trial over, nothing
+  bought) is refused: pre-trial and every sellable plan grant the key.
+
+A refused call never runs the handler and is audited as `denied` with
+`errorCode: AI_ASSISTANT_NOT_IN_PLAN` and no target. `get_help` and `get_my_plan`
+carry `aiAccessExempt` and skip the gate. The panel asks the same question with
+`GET /api/v1/protected/ai-connections/access` (`{ hasAccess }`, 503 when it cannot
+be decided).
+
+## Tool visibility (HOS-2184 T-042)
+
+A tool may declare `requiredPermissions` (any-of; absent or empty means any
+authenticated account). `tools/list` publishes only the tools the actor
+satisfies, and a `tools/call` to a hidden tool gets the same `-32602` "not found"
+as an unknown tool. Decided by `PermissionEnum`, never by role. The handler keeps
+its own check. Today: `get_my_plan` (`BILLING_VIEW_OWN`), `list_inquiries` and
+`get_inquiry` (`CONVERSATION_VIEW_OWN`), `reply_inquiry`
+(`CONVERSATION_REPLY_OWN`); `test/mcp/tools/required-permissions.registry.test.ts`
+pins them and compares them with the handler source.
+
 ## Audit events
 
 Both use the existing `auditLog()` pipeline (`audit_log_entries`). No new table.
@@ -282,13 +318,13 @@ Twenty-two tools. `readOnlyHint` is derived from `isWrite`, so the two cannot di
 
 | Tool | Kind | Annotations | Notes |
 |---|---|---|---|
-| `list_my_listings` | read | read-only | Accommodations, venues and experiences the user owns, in any state. At most 100 per vertical; `total` and `hasMore` say when the list is truncated. |
+| `list_my_listings` | read | read-only | Accommodations, venues and experiences the user owns, in any state. At most 100 per vertical; `total` and `hasMore` say when the list is truncated. With `BILLING_VIEW_OWN`, `plans`: the `get_my_plan` item per listing vertical with a plan, from one plan read per call. |
 | `get_owner_summary` | read | read-only | One summary of all the user's listings: counts per vertical and state, plan-gated metrics per vertical, and up to 10 "needs your attention" items with portal links. Period `7d` or `30d`. |
 | `get_my_plan` | read | read-only | The user's plan per vertical (live subscription, permanent grant, courtesy or running trial): catalog plan name and version, status with its label, next charge, service end, grace end, trial days left, labelled `includes`, recurring add-ons and the subscription page link. Optional `vertical`. Needs `BILLING_VIEW_OWN`. With no plan: an empty list and the plans pages. |
 | `get_listing` | read | read-only | Editable fields, amenities and features as `{ id, slug }`. |
 | `list_amenities_and_features` | read | read-only | Ids to use in `update_listing_basic`. Each entry carries its `category`. |
 | `get_listing_amenities` | read | read-only | The catalog of one listing grouped by category (amenity `type`, feature `category`) with `selected` marked, scoped to the listing's vertical. Truncates to the response budget and lists `omittedGroups`. |
-| `get_listing_stats` | read | read-only | Periods `7d`, `30d`, `90d`. Needs the plan's `view_basic_stats` entitlement. Reviews are untrusted text. |
+| `get_listing_stats` | read | read-only | Periods `7d`, `30d`, `90d`. Needs the plan's `view_basic_stats` entitlement. Reviews are untrusted text. With `BILLING_VIEW_OWN`, `plan`: the `get_my_plan` item of the listing's vertical (`null` without one); `omitted: { plan: 'unavailable' }` when it cannot be read. |
 | `list_reviews` | read | read-only | Reviews received on the user's listings, newest first, every moderation state with its `moderationState`. Filters: `vertical`, `listingId`, `minRating`, `maxRating`, `since`, `moderationState`, paging. Titles, texts and author names are untrusted text. |
 | `get_help` | read | read-only | "How do I do X in Hospeda" for owners and providers, from the curated Spanish help catalog (`@repo/help`). `question` (up to 300 characters) or `topicId`, optional `audience`. At most 3 topics with `steps` and portal `links`; no match returns no topics plus the FAQ and contact links. |
 | `get_listing_creation_guide` | read | read-only | Steps, field limits (read from the create schemas), labelled types, city destinations, venue business lines, the user's open drafts and an informational publish quota. |
@@ -633,7 +669,7 @@ Code lives in `src/mcp/tools/`. A tool is transport-agnostic. The MCP binding is
 |---|---|
 | HOS-2244 | Pausing a listing without a plan. |
 | HOS-2247 | MCP elicitation, to move reply confirmation to the user's side. |
-| Phase B | Entitlement gate on `/mcp`, plan status, ChatGPT directory. Blocked on HOS-1352 and HOS-2066. |
+| Phase B | The entitlement gate, tool visibility and plan status shipped (see above); the panel's use of the access endpoint and the ChatGPT directory remain. |
 | SDK `Server` | `createHospedaMcpServer` uses the low-level `Server`, which the SDK marks `@deprecated` ("advanced use"). It is deliberate: `McpServer` validates input in English and bypasses the Spanish message and the audit. Revisit on SDK upgrades. |
 | `NO_STATS_ENTITLEMENT` plan names | The note still names no plan; reading which plan versions carry `view_basic_stats` from the catalog is pending (the `subscription` block itself shipped with HOS-2328). |
 | Billing refusal mapping | `set_listing_publication` maps billing refusals to reasons by matching service message text. There is no guard that fails if the text changes. |
