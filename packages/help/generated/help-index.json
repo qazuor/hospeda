@@ -1,5 +1,5 @@
 {
-  "contentHash": "de7d000f0f7d8bb2ab5a5b6e9e581b6471fb665005c624bfb724d6113074104a",
+  "contentHash": "9c93797f17c53d31c08a3e15834325fbacf0d706cd9775a29398d5232ccf4471",
   "locales": {
     "es": [
       {
@@ -117,7 +117,7 @@
         "reviewedAt": "2026-11-26",
         "sections": {
           "canDo": "Conectar un asistente de IA a tu cuenta y desconectarlo cuando quieras, desde {{link:aiAssistants|Asistentes de IA}}.\n\nCon un asistente conectado podés, por ejemplo, {{article:reviews|leer tus reseñas}} o {{article:inquiries|responder consultas}}.",
-          "expect": "- Antes de aprobar el acceso, la pantalla te muestra qué puede hacer el asistente.\n- Al desconectarlo pierde el acceso de inmediato, y podés volver a conectarlo.\n- El asistente viene incluido en tu plan, sin costo extra y sin límite de uso. Si ya no tenés un plan activo, el asistente te avisa y te muestra los planes.",
+          "expect": "- Antes de aprobar el acceso, la pantalla te muestra qué puede hacer el asistente.\n- Al desconectarlo pierde el acceso de inmediato, y podés volver a conectarlo.\n- El asistente viene incluido en tu plan, sin costo extra y sin límite de uso. Si tu cuenta tiene solo el plan gratuito, el asistente te avisa y te muestra los planes, y en Mi cuenta → Asistentes de IA vas a ver el mismo aviso.",
           "howTo": {
             "after": "",
             "steps": [
