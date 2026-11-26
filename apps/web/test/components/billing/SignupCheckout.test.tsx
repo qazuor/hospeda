@@ -51,6 +51,7 @@ describe('SignupCheckout — B3 UI (B3.md:1045-1053)', () => {
                                 cycle: 'monthly'
                             },
                             vertical: 'partner',
+                            paymentMethods: ['CARD', 'MANUAL'],
                             touristVip: { status: 'NOT_AFFECTED' },
                             trial: { status: 'NOT_RUNNING' }
                         }
