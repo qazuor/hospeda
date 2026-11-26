@@ -646,7 +646,8 @@
         "subscribe_to_plan": "Subscribe to a plan",
         "activate_trial": "Start the trial period",
         "ai_faq_draft": "AI FAQ answer drafts",
-        "vip_only_promotions": "\"VIP only\" promotions"
+        "vip_only_promotions": "\"VIP only\" promotions",
+        "ai_assistant_access": "AI assistant (ChatGPT, Claude)"
     },
     "entitlementByAudience": {
         "venue": {

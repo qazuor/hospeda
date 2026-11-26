@@ -131,15 +131,16 @@ describe('TEST:V1:3 — catalog_key table after db:migrate from empty', () => {
 });
 
 describe('reference rows survive the integration clean slate', () => {
-    it('keeps the 5 verticals and the 84 keys after withCleanSlate', async () => {
+    it('keeps the 5 verticals and the 85 keys after withCleanSlate', async () => {
         await withCleanSlate(async () => {
             const verticals = await getTestPool().query('SELECT 1 FROM vertical');
             const keys = await getTestPool().query('SELECT 1 FROM catalog_key');
 
             expect(verticals.rowCount).toBe(Object.values(VerticalEnum).length);
             expect(keys.rowCount).toBe(CATALOG_KEY_DEFINITIONS.length);
-            // 82 + vip_only_promotions + max_free_visible_promotions (HOS-2589 D-4, M-4).
-            expect(keys.rowCount).toBe(84);
+            // 82 + vip_only_promotions + max_free_visible_promotions (HOS-2589 D-4, M-4)
+            // + ai_assistant_access (HOS-2184 G-6).
+            expect(keys.rowCount).toBe(85);
         });
     });
 });
@@ -159,6 +160,7 @@ describe('load-bearing catalog_key rows are pinned independently of the code cat
             'subscribe_to_plan'
         ]);
         expect(global.rows.map((r) => r.key)).toEqual([
+            'ai_assistant_access',
             'has_verification_badge',
             'priority_support',
             'vip_support'

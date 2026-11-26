@@ -68,6 +68,9 @@ const ROWS: readonly KeyRow[] = [
     ['ai_translate', 'vertical', 'MAX', 'NONE', 'COMMERCIAL'],
     ['ai_accommodation_import', 'vertical', 'MAX', 'NONE', 'COMMERCIAL'],
     ['ai_faq_draft', 'vertical', 'MAX', 'NONE', 'COMMERCIAL'],
+    // HOS-2184 G-6: may the account use the Hospeda AI assistant connector (MCP, from
+    // ChatGPT or Claude). Global: one answer per account, granted by any vertical's plan.
+    ['ai_assistant_access', 'global', 'MAX', 'NONE', 'COMMERCIAL'],
     // Two separate keys (HOS-1352 DEC-ENT-006): the public page is granted by Gold only,
     // the carousel presence by Gold and Silver. Who gets which is a plan assignment, not code.
     ['partner_public_page', 'vertical', 'MAX', 'NONE', 'COMMERCIAL'],

@@ -1765,6 +1765,13 @@
       "when": 1795538598790,
       "tag": "0251_hos2589_promotion_catalog_keys",
       "breakpoints": true
+    },
+    {
+      "idx": 252,
+      "version": "7",
+      "when": 1795657033361,
+      "tag": "0252_hos2184_ai_assistant_access_catalog",
+      "breakpoints": true
     }
   ]
 }

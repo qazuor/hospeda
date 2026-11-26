@@ -646,7 +646,8 @@
         "subscribe_to_plan": "Suscribirse a un plan",
         "activate_trial": "Activar el período de prueba",
         "ai_faq_draft": "Borradores de respuesta para preguntas frecuentes con IA",
-        "vip_only_promotions": "Promociones «Solo VIP»"
+        "vip_only_promotions": "Promociones «Solo VIP»",
+        "ai_assistant_access": "Asistente de IA (ChatGPT, Claude)"
     },
     "entitlementByAudience": {
         "venue": {

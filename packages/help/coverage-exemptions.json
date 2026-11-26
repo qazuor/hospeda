@@ -1,6 +1,7 @@
 [
 {"anchor":"entitlement:activate_trial","kind":"pending-content","reason":"HOS-2410 Phase 5: planned in docs/catalog.md.","plannedArticle":"free-trial"},
 {"anchor":"entitlement:ai_accommodation_import","kind":"pending-content","reason":"HOS-2410 Phase 5: planned in docs/catalog.md.","plannedArticle":"import-from-url"},
+{"anchor":"entitlement:ai_assistant_access","kind":"pending-content","reason":"HOS-2184 G-6: the AI assistant connector gate; covered with the connector article.","plannedArticle":"ai-assistant-tools"},
 {"anchor":"entitlement:ai_chat","kind":"pending-content","reason":"HOS-2410 Phase 5: planned in docs/catalog.md.","plannedArticle":"accommodation-ai-chat"},
 {"anchor":"entitlement:ai_faq_draft","kind":"pending-content","reason":"HOS-2410 Phase 5: planned in docs/catalog.md.","plannedArticle":"accommodation-faqs"},
 {"anchor":"entitlement:ai_search","kind":"out-of-scope","reason":"Tourist key (NG-1), inventory part D §2."},
