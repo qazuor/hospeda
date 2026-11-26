@@ -1426,6 +1426,11 @@
             "required": "El resumen es obligatorio"
         }
     },
+    "listingTranslation": {
+        "value": {
+            "max": "La traducción supera la longitud máxima de este campo."
+        }
+    },
     "listingLead": {
         "adminNote": {
             "max": "La nota de administrador no puede superar los {{max}} caracteres"
