@@ -25,6 +25,14 @@ import { describe, expect, it } from 'vitest';
 const src = readFileSync(resolve(__dirname, '../../../src/pages/[lang]/auth/signin.astro'), 'utf8');
 
 describe('signin.astro', () => {
+    it('shows the account explanation only for an explicit account return and preserves the redirect wiring', () => {
+        expect(src).toContain("searchParams.get('returnUrl')");
+        expect(src).toMatch(/const showAccountContext[\s\S]+?\.test\(returnPath\)/);
+        expect(src).toContain('showAccountContext && !activeSession');
+        expect(src).toContain("t('auth.signIn.accountContext')");
+        expect(src).toContain('signInConfig={signInConfig}');
+    });
+
     describe('renders the unified AuthTabs island (HOS-959)', () => {
         it('imports AuthTabs, not SignIn directly', () => {
             expect(src).toContain("import { AuthTabs } from '@/components/auth/AuthTabs.client'");

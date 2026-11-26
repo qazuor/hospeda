@@ -17,11 +17,6 @@ vi.mock('../../../src/components/auth/ForgotPassword.module.css', () => ({
     default: new Proxy({} as Record<string, string>, { get: (_t, prop) => String(prop) })
 }));
 
-vi.mock('../../../src/lib/i18n', () => {
-    const t = (key: string, fallback?: string): string => fallback ?? key;
-    return { createTranslations: () => ({ t }) };
-});
-
 const forgetPasswordMock = vi.fn();
 vi.mock('../../../src/lib/auth-client', () => ({
     forgetPassword: (...args: unknown[]) => forgetPasswordMock(...args)
@@ -53,13 +48,21 @@ describe('ForgotPassword email guard (HOS-190 slice 3)', () => {
         fireEvent.click(screen.getByRole('button', { name: 'Enviar enlace de recuperación' }));
 
         expect(screen.getByRole('alert')).toHaveTextContent('Ingresá tu correo electrónico');
+        const email = screen.getByRole('textbox', { name: 'Correo electrónico' });
+        expect(email).toHaveFocus();
+        expect(email).toBeRequired();
+        expect(email).toHaveAccessibleDescription('Ingresá tu correo electrónico');
+        expect(screen.getByRole('link', { name: 'Volver al inicio de sesión' })).toHaveAttribute(
+            'href',
+            '/es/auth/signin/'
+        );
         expect(forgetPasswordMock).not.toHaveBeenCalled();
     });
 
     it('blocks submit when email is malformed', () => {
         renderIsland();
 
-        fireEvent.change(screen.getByLabelText('Correo electrónico'), {
+        fireEvent.change(screen.getByRole('textbox', { name: 'Correo electrónico' }), {
             target: { value: 'not-an-email' }
         });
         fireEvent.click(screen.getByRole('button', { name: 'Enviar enlace de recuperación' }));
@@ -73,7 +76,7 @@ describe('ForgotPassword email guard (HOS-190 slice 3)', () => {
     it('sends the TRIMMED email (not the raw untrimmed state) to forgetPassword', async () => {
         renderIsland();
 
-        fireEvent.change(screen.getByLabelText('Correo electrónico'), {
+        fireEvent.change(screen.getByRole('textbox', { name: 'Correo electrónico' }), {
             target: { value: '  user@example.com  ' }
         });
         fireEvent.click(screen.getByRole('button', { name: 'Enviar enlace de recuperación' }));
@@ -89,7 +92,7 @@ describe('ForgotPassword email guard (HOS-190 slice 3)', () => {
     it('shows the success state after a valid submission', async () => {
         renderIsland();
 
-        fireEvent.change(screen.getByLabelText('Correo electrónico'), {
+        fireEvent.change(screen.getByRole('textbox', { name: 'Correo electrónico' }), {
             target: { value: 'user@example.com' }
         });
         fireEvent.click(screen.getByRole('button', { name: 'Enviar enlace de recuperación' }));
