@@ -1779,6 +1779,13 @@
       "when": 1795685632352,
       "tag": "0253_black_robin_chapel",
       "breakpoints": true
+    },
+    {
+      "idx": 254,
+      "version": "7",
+      "when": 1795707110071,
+      "tag": "0254_hos2196_plan_version_payment_methods",
+      "breakpoints": true
     }
   ]
 }

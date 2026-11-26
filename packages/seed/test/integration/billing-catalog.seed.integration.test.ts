@@ -71,10 +71,10 @@ beforeAll(async () => {
         entries: { idx: number; tag: string }[];
     };
     for (const entry of journal.entries
-        // The example seed writes `plan_version.payment_methods` (added by 0253, HOS-2196); the rest
+        // The example seed writes `plan_version.payment_methods` (added by 0254, HOS-2196); the rest
         // of the schema stays at 0143, before the production catalog loads.
         .filter(
-            (item) => item.idx < 144 || item.tag === '0253_hos2196_plan_version_payment_methods'
+            (item) => item.idx < 144 || item.tag === '0254_hos2196_plan_version_payment_methods'
         )
         .sort((a, b) => a.idx - b.idx)) {
         const sql = readFileSync(join(migrationDir, `${entry.tag}.sql`), 'utf8');
