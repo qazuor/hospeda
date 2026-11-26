@@ -90,7 +90,7 @@
     flex: none;
 }
 
-/* The quotas sit below the icons without spending any of the 360px width budget. */
+/* The reused islands each get one 44px-wide column. */
 .island[data-action="favorite"],
 .island[data-action="compare"] {
     inline-size: 44px;
@@ -152,7 +152,7 @@
 /* One glyph box for the whole row: the islands draw 18px (compare) and 20px
  * (share) glyphs of their own, the bar's own glyphs are 22px. */
 .row .island .favorite svg,
-.row .island .compare svg,
+.row .island .compare > svg,
 .share :global(button[aria-expanded] svg) {
     width: 22px;
     height: 22px;

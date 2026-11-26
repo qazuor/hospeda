@@ -351,6 +351,7 @@ export function ListingActionBarButtons({
                         locale={locale}
                         planName={compare.planName}
                         planCapacity={compare.planCapacity}
+                        compact
                         labels={{
                             add: t('accommodations.detail.listingContact.bar.actions.compareAdd'),
                             remove: t(

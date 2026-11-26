@@ -34,7 +34,7 @@ const { trackEvent, readCachedAuthMe, toggle, checkBulk, compareState } = vi.hoi
     readCachedAuthMe: vi.fn(),
     toggle: vi.fn(),
     checkBulk: vi.fn(),
-    compareState: { selected: false }
+    compareState: { selected: false, entitled: false }
 }));
 
 vi.mock('@/lib/analytics/umami-client', () => ({ trackEvent }));
@@ -52,6 +52,8 @@ vi.mock('@/hooks/useCompareGuard', () => ({
     useCompareGuard: () => ({
         isInList: () => compareState.selected,
         isLoading: false,
+        canCompare: compareState.entitled,
+        count: 2,
         maxItems: 4,
         toggle: () => ({ action: 'added', reason: null })
     })
@@ -69,7 +71,7 @@ const accommodation: ListingActionBarButtonsProps = {
     venueWhatsapp: null,
     phoneHref: 'tel:+5493442000000',
     shareUrl: 'https://hospeda.test/es/alojamientos/casa-del-rio/',
-    compare: { gatePlanNames: [] }
+    compare: { planName: 'Plan del catálogo con nombre largo', planCapacity: 4 }
 };
 
 const experience: ListingActionBarButtonsProps = {
@@ -142,6 +144,7 @@ beforeEach(() => {
     trackEvent.mockClear();
     resetFavoritesStore();
     compareState.selected = false;
+    compareState.entitled = false;
     readCachedAuthMe.mockReturnValue(guest());
     checkBulk.mockImplementation(({ entityIds }: { entityIds: readonly string[] }) =>
         Promise.resolve({
@@ -163,6 +166,30 @@ afterEach(() => {
 });
 
 describe('ListingActionBarButtons: render rules', () => {
+    it.each([
+        false,
+        true
+    ])('keeps compare metadata inside the 44px dock control (entitled: %s)', (entitled) => {
+        compareState.entitled = entitled;
+        const { container } = render(<ListingActionBarButtons {...accommodation} />);
+
+        const compare = screen.getByRole('button', { name: /Plan del catálogo con nombre largo/ });
+        const island = container.querySelector('[data-action="compare"]');
+        expect(island?.firstElementChild?.children).toHaveLength(1);
+        expect(island?.firstElementChild?.firstElementChild).toBe(compare);
+        expect(island?.lastElementChild).toHaveTextContent('Comparar');
+        expect(compare.querySelector('.compactBadge')).toContainElement(
+            compare.querySelector('.sr-only:last-child')
+        );
+        if (entitled) expect(compare.querySelector('.compactUsage')).toHaveTextContent('2/4');
+        else {
+            fireEvent.click(compare);
+            expect(screen.getByRole('dialog')).toHaveTextContent(
+                /hasta 4 alojamientos.*Plan del catálogo con nombre largo/
+            );
+        }
+    });
+
     it('links to an existing thread instead of opening the contact panel', () => {
         conversation.conversationId = 'thread-1';
         const receive = vi.fn();

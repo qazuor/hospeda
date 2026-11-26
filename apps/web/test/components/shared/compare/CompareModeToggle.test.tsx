@@ -69,6 +69,23 @@ describe('CompareModeToggle', () => {
         expect(toggle).toHaveBeenCalledOnce();
     });
 
+    it.each([
+        false,
+        true
+    ])('exits persisted compare mode without entitlement (loading: %s)', (loading) => {
+        state.active = true;
+        state.canCompare = false;
+        state.isLoading = loading;
+        render(<CompareModeToggle locale="es" />);
+
+        const exit = screen.getByRole('button', { name: 'Salir de comparar', pressed: true });
+        fireEvent.click(exit);
+
+        expect(exit).not.toHaveAttribute('aria-haspopup');
+        expect(toggle).toHaveBeenCalledOnce();
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    });
+
     it('does not enter compare mode or show the upsell while entitlements are unresolved', () => {
         state.canCompare = false;
         state.isLoading = true;

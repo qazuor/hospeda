@@ -51,6 +51,7 @@ function WhatsAppGlyph({ size }: { readonly size: number }) {
 
 /** GradientButton geometry with the WhatsApp brand colours from the module. */
 const WHATSAPP_CLASS = `btn-gradient btn-gradient--md ${styles.whatsapp}`;
+const INLINE_CHANNEL_CLASS = 'listing-contact__channel';
 
 /** What the page payload says about the button. Mirrors `VenueWhatsappState`. */
 export type VenueWhatsAppButtonMode =
@@ -136,7 +137,7 @@ export function VenueWhatsAppButton({
                     rel="noopener noreferrer"
                     variant="outline-primary"
                     size="sm"
-                    className="listing-contact__channel"
+                    className={INLINE_CHANNEL_CLASS}
                     leadingIcon={<WhatsAppGlyph size={16} />}
                     label={cta}
                     dataAttributes={{ 'data-interaction-kind': 'WHATSAPP_CLICK' }}
@@ -171,7 +172,7 @@ export function VenueWhatsAppButton({
                 href={signInHref}
                 variant="outline-primary"
                 size={inlineChannel ? 'sm' : 'md'}
-                className={inlineChannel ? 'listing-contact__channel' : undefined}
+                className={inlineChannel ? INLINE_CHANNEL_CLASS : undefined}
                 leadingIcon={<WhatsAppGlyph size={inlineChannel ? 16 : 20} />}
                 label={t(
                     'venue.detail.whatsapp.signInCta',
@@ -183,7 +184,11 @@ export function VenueWhatsAppButton({
     if (lookup.status === 'loading') {
         return (
             <span
-                className={WHATSAPP_CLASS}
+                className={
+                    inlineChannel
+                        ? `btn-gradient btn-gradient--sm btn-gradient--outline-primary ${INLINE_CHANNEL_CLASS}`
+                        : WHATSAPP_CLASS
+                }
                 aria-disabled="true"
                 role="status"
             >
@@ -191,7 +196,7 @@ export function VenueWhatsAppButton({
                     className="gradient-btn__icon gradient-btn__icon--leading"
                     aria-hidden="true"
                 >
-                    <WhatsAppGlyph size={20} />
+                    <WhatsAppGlyph size={inlineChannel ? 16 : 20} />
                 </span>
                 <span className="gradient-btn__label">
                     {t('venue.detail.whatsapp.loading', 'Cargando WhatsApp')}

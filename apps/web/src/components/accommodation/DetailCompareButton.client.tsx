@@ -23,7 +23,7 @@
  * @module components/accommodation/DetailCompareButton
  */
 
-import { CheckIcon, ColumnIcon } from '@repo/icons';
+import { CheckIcon, ColumnIcon, CrownIcon } from '@repo/icons';
 import { type FC, useRef, useState } from 'react';
 import { CompareUpsellPopover } from '@/components/shared/compare/CompareUpsellPopover.client';
 import { comparisonBenefit } from '@/components/shared/compare/comparison-benefit';
@@ -57,6 +57,8 @@ export interface DetailCompareButtonProps {
     readonly planCapacity?: number;
     /** Additional CSS classes forwarded to the root button element. */
     readonly className?: string;
+    /** Keep the badge and usage inside the dock's fixed-size button. */
+    readonly compact?: boolean;
     /**
      * Label pair that replaces «Agregar a comparación» / «En comparación», for a
      * surface with its own vocabulary (the listing action bar, HOS-2579 §6.10.2).
@@ -97,6 +99,7 @@ export const DetailCompareButton: FC<DetailCompareButtonProps> = ({
     planName = null,
     planCapacity,
     className,
+    compact = false,
     labels
 }) => {
     const { t, tPlural } = createTranslations(locale);
@@ -109,6 +112,7 @@ export const DetailCompareButton: FC<DetailCompareButtonProps> = ({
             : undefined;
 
     const selected = isInList(accommodationId);
+    const gated = !selected && !canCompare;
 
     const comparePageHref = `/${locale}/alojamientos/comparar/`;
     // Compare is a tourist feature → tourist plans page, not owner plans (BETA-200).
@@ -123,8 +127,8 @@ export const DetailCompareButton: FC<DetailCompareButtonProps> = ({
 
     const handleClick = (): void => {
         // Defer while entitlements are still loading (guard fails closed until known).
-        if (isLoading) return;
-        if (!canCompare) {
+        if (!selected && isLoading) return;
+        if (gated) {
             setUpsellOpen((open) => !open);
             return;
         }
@@ -169,13 +173,13 @@ export const DetailCompareButton: FC<DetailCompareButtonProps> = ({
             ref={buttonRef}
             type="button"
             aria-pressed={selected}
-            aria-busy={isLoading}
-            aria-haspopup={canCompare ? undefined : 'dialog'}
-            aria-expanded={canCompare ? undefined : upsellOpen}
+            aria-busy={!selected && isLoading}
+            aria-haspopup={gated ? 'dialog' : undefined}
+            aria-expanded={gated ? upsellOpen : undefined}
             title={usage}
             aria-description={usage}
             data-selected={selected ? 'true' : undefined}
-            className={cn(styles.button, className)}
+            className={cn(styles.button, compact && styles.compact, className)}
             onClick={handleClick}
         >
             {selected ? (
@@ -193,14 +197,32 @@ export const DetailCompareButton: FC<DetailCompareButtonProps> = ({
             )}
             <span className={styles.label}>{label}</span>
             <span className="sr-only">, {accommodationName}</span>
+            {compact && planName && (
+                <span className={styles.compactBadge}>
+                    <CrownIcon
+                        size={12}
+                        weight="fill"
+                        aria-hidden="true"
+                    />
+                    <span className="sr-only">, {planName}</span>
+                </span>
+            )}
+            {compact && usage && (
+                <span
+                    className={styles.compactUsage}
+                    aria-hidden="true"
+                >
+                    {count}/{maxItems}
+                </span>
+            )}
         </button>
     );
     return (
-        <span className={usage ? usageStyles.group : undefined}>
+        <span className={!compact && usage ? usageStyles.group : undefined}>
             {button}
-            {usage && <UsageCounter value={`${count}/${maxItems}`} />}
-            <PlanBadge name={planName} />
-            {upsellOpen && !canCompare && (
+            {!compact && usage && <UsageCounter value={`${count}/${maxItems}`} />}
+            {!compact && <PlanBadge name={planName} />}
+            {upsellOpen && gated && !isLoading && (
                 <CompareUpsellPopover
                     anchorRef={buttonRef}
                     message={comparisonBenefit({ t, planName, planCapacity })}

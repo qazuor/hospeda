@@ -81,9 +81,15 @@ vi.mock('../../../src/components/accommodation/AiChatWidget.module.css', () => (
 const mockUseAccommodationChat = vi.fn();
 const mockPlans = vi.fn();
 const mockSubscriptions = vi.fn();
+const mockPricingSituation = vi.fn();
+const mockEffectiveSet = vi.fn();
 vi.mock('@/lib/billing/fetch-plans', () => ({ fetchPublicPlans: () => mockPlans() }));
 vi.mock('@/lib/api/endpoints-protected', () => ({
-    billingSubscriptionApi: { listMine: () => mockSubscriptions() }
+    billingSubscriptionApi: {
+        listMine: () => mockSubscriptions(),
+        pricingSituation: () => mockPricingSituation()
+    },
+    effectiveSetApi: { get: () => mockEffectiveSet() }
 }));
 
 vi.mock('@/hooks/useAccommodationChat', () => ({
@@ -144,11 +150,18 @@ describe('AiChatWidget', () => {
                     isActive: true,
                     billingOptions: {},
                     name: 'Catalog Gold',
+                    entitlements: [],
+                    sortOrder: 1,
                     limits: { max_ai_chat_consumer_per_month: 271 }
                 }
             ]
         });
         mockSubscriptions.mockResolvedValue({ ok: true, data: { subscriptions: [] } });
+        mockPricingSituation.mockResolvedValue({ ok: true, data: { situation: 'CHECKOUT' } });
+        mockEffectiveSet.mockResolvedValue({
+            ok: true,
+            data: { limits: { max_ai_chat_consumer_per_month: 17 } }
+        });
         mockUseAccommodationChat.mockReturnValue(idleChatState);
         // Signed in by default: every suite here is about the chat UI, which
         // only exists for a signed-in visitor. The gate has its own suite below.
@@ -378,6 +391,10 @@ describe('AiChatWidget', () => {
     });
 
     it('shows the active paid catalog plan and its allowance without claiming unused quota', async () => {
+        mockPricingSituation.mockResolvedValue({
+            ok: true,
+            data: { situation: 'SUBSCRIBED', status: 'ACTIVE' }
+        });
         mockSubscriptions.mockResolvedValue({
             ok: true,
             data: {
@@ -397,6 +414,34 @@ describe('AiChatWidget', () => {
         expect(await screen.findByText('Catalog Gold')).toBeInTheDocument();
         expect(screen.getByText('271 monthly questions')).toBeInTheDocument();
         expect(screen.queryByText('Old name')).not.toBeInTheDocument();
+    });
+
+    it('shows the inherited catalog plan and allowance without a direct tourist subscription', async () => {
+        mockPricingSituation.mockResolvedValue({
+            ok: true,
+            data: { situation: 'TOURIST_VIP_INHERITED' }
+        });
+        const user = userEvent.setup();
+        render(<AiChatWidget {...defaultProps} />);
+        await user.click(screen.getByRole('button', { name: 'Ask AI about this accommodation' }));
+
+        expect(await screen.findByText('Catalog Gold')).toBeInTheDocument();
+        expect(screen.getByText('271 monthly questions')).toBeInTheDocument();
+        expect(screen.queryByText('17 monthly questions')).not.toBeInTheDocument();
+    });
+
+    it('shows the effective allowance for a grant without inventing a paid plan name', async () => {
+        mockEffectiveSet.mockResolvedValue({
+            ok: true,
+            data: { limits: { max_ai_chat_consumer_per_month: 83 } }
+        });
+        const user = userEvent.setup();
+        render(<AiChatWidget {...defaultProps} />);
+        await user.click(screen.getByRole('button', { name: 'Ask AI about this accommodation' }));
+
+        expect(await screen.findByText('83 monthly questions')).toBeInTheDocument();
+        expect(screen.queryByText('Catalog Gold')).not.toBeInTheDocument();
+        expect(screen.queryByText('17 monthly questions')).not.toBeInTheDocument();
     });
 
     it('uses an opaque high-contrast pair for the disabled Send icon', async () => {

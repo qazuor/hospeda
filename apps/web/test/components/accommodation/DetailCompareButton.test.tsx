@@ -260,6 +260,26 @@ describe('DetailCompareButton — toggle reactivity', () => {
 // ---------------------------------------------------------------------------
 
 describe('DetailCompareButton — guard outcomes', () => {
+    it.each([
+        false,
+        true
+    ])('removes an existing selection without entitlement (loading: %s)', (loading) => {
+        const props = buildProps();
+        const { rerender } = render(<DetailCompareButton {...props} />);
+        fireEvent.click(screen.getByRole('button'));
+        asFree();
+        mockEntitlements.value = { ...mockEntitlements.value, isLoading: loading };
+        rerender(<DetailCompareButton {...props} />);
+
+        const remove = screen.getByRole('button', { name: /En comparación/, pressed: true });
+        fireEvent.click(remove);
+
+        expect(
+            screen.getByRole('button', { name: /Agregar a comparación/, pressed: false })
+        ).toBeInTheDocument();
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    });
+
     it('shows the catalog badge before opening a capacity-aware plans popover', () => {
         // Arrange
         asFree();

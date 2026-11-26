@@ -39,7 +39,8 @@ export const CompareModeToggle: FC<CompareModeToggleProps> = ({
         loadCompareModeFromStorage();
     }, []);
 
-    const active = mode && canCompare;
+    const active = mode;
+    const gated = !active && !canCompare;
     const toggleLabel = t('accommodations.comparison.mode.toggleLabel', 'Comparar alojamientos');
     const activeLabel = t('accommodations.comparison.mode.activeLabel', 'Salir de comparar');
     const activeHint = t(
@@ -49,11 +50,12 @@ export const CompareModeToggle: FC<CompareModeToggleProps> = ({
     const benefit = comparisonBenefit({ t, planName, planCapacity });
 
     const handleClick = (): void => {
-        if (isLoading) return;
-        if (canCompare) {
+        if (active || (!isLoading && canCompare)) {
+            setIsUpsellPopoverOpen(false);
             toggleCompareMode();
             return;
         }
+        if (isLoading) return;
         setIsUpsellPopoverOpen((open) => !open);
     };
 
@@ -63,9 +65,9 @@ export const CompareModeToggle: FC<CompareModeToggleProps> = ({
                 ref={buttonRef}
                 type="button"
                 aria-pressed={active}
-                aria-busy={isLoading}
-                aria-haspopup={canCompare ? undefined : 'dialog'}
-                aria-expanded={canCompare ? undefined : isUpsellPopoverOpen}
+                aria-busy={!active && isLoading}
+                aria-haspopup={gated ? 'dialog' : undefined}
+                aria-expanded={gated ? isUpsellPopoverOpen : undefined}
                 data-active={active ? 'true' : undefined}
                 className={cn(styles.toggle, className)}
                 onClick={handleClick}
@@ -80,7 +82,7 @@ export const CompareModeToggle: FC<CompareModeToggleProps> = ({
             </button>
             {active && <span className={styles.hint}>{activeHint}</span>}
 
-            {isUpsellPopoverOpen && !canCompare && (
+            {isUpsellPopoverOpen && gated && !isLoading && (
                 <CompareUpsellPopover
                     anchorRef={buttonRef}
                     message={benefit}
