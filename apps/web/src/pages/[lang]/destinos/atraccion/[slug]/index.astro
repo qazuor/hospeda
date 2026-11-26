@@ -128,7 +128,7 @@ const itemListItems = cards.map((card) => ({
 		locale={locale}
 		tagline={t('destinations.byAttraction.tagline', 'Atracción')}
 		title={heading}
-		subtitle={description || undefined}
+		subtitle={t('destinations.byAttraction.subtitle', undefined, { attraction: name })}
 	/>
 
 	{hasError && !destinationsResult.ok && (
@@ -160,20 +160,25 @@ const itemListItems = cards.map((card) => ({
 
 <style>
 	.dest-grid {
-		display: grid;
-		grid-template-columns: repeat(3, 1fr);
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
 		gap: var(--space-card-gap);
+	}
+	.dest-grid > div {
+		flex: 0 0 calc((100% - 2 * var(--space-card-gap)) / 3);
+		min-width: 0;
 	}
 
 	@media (max-width: 1024px) {
-		.dest-grid {
-			grid-template-columns: repeat(2, 1fr);
+		.dest-grid > div {
+			flex-basis: calc((100% - var(--space-card-gap)) / 2);
 		}
 	}
 
 	@media (max-width: 640px) {
-		.dest-grid {
-			grid-template-columns: 1fr;
+		.dest-grid > div {
+			flex-basis: 100%;
 		}
 	}
 </style>

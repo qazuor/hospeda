@@ -49,6 +49,8 @@ interface Props {
 	readonly locale: SupportedLocale;
 	/** "no-results" shows clear-filters link, "empty" shows a link to related content. */
 	readonly variant?: 'no-results' | 'empty';
+	/** Optional heading for an empty state that also needs supporting text. */
+	readonly title?: string;
 	/** Main message text. Falls back to i18n defaults per variant. */
 	readonly message?: string;
 	/** Link URL for the action button. */
@@ -73,6 +75,7 @@ interface Props {
 const {
 	locale,
 	variant = 'no-results',
+	title,
 	message,
 	actionUrl,
 	actionLabel,
@@ -141,6 +144,7 @@ const hasIconSlot = Astro.slots.has('default');
 		)}
 	</div>
 
+	{title && <h2 class="empty-state__title">{title}</h2>}
 	<p class="empty-state__message">{resolvedMessage}</p>
 
 	{hasActiveFilters && (
@@ -201,6 +205,14 @@ const hasIconSlot = Astro.slots.has('default');
 </script>
 
 <style>
+	.empty-state__title {
+		font-family: var(--font-heading);
+		font-size: var(--text-body-lg);
+		font-weight: 700;
+		color: var(--core-foreground);
+		margin: 0 0 var(--space-2);
+	}
+
 	.empty-state {
 		display: flex;
 		flex-direction: column;
@@ -239,7 +251,7 @@ const hasIconSlot = Astro.slots.has('default');
 	.empty-state__message {
 		font-family: var(--font-sans);
 		font-size: var(--text-body-lg);
-		color: var(--core-muted-foreground);
+		color: var(--core-foreground);
 		max-width: 40ch;
 		line-height: 1.6;
 		margin: 0;
@@ -276,9 +288,9 @@ const hasIconSlot = Astro.slots.has('default');
 		align-items: center;
 		gap: 0.375rem;
 		padding: 0.4rem 0.75rem;
-		min-height: 36px;
+		min-height: 44px;
 		background-color: var(--brand-accent-a10);
-		color: var(--brand-accent);
+		color: var(--core-foreground);
 		border: 1px solid var(--brand-accent-a30);
 		border-radius: var(--radius-pill);
 		font-family: var(--font-sans);
@@ -332,6 +344,12 @@ const hasIconSlot = Astro.slots.has('default');
 	}
 
 	.empty-state__suggestion-link {
+		display: inline-flex;
+		align-items: center;
+		min-height: 44px;
+		padding-inline: var(--space-3);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-button);
 		font-family: var(--font-sans);
 		font-size: var(--text-body-sm);
 		color: var(--brand-primary);

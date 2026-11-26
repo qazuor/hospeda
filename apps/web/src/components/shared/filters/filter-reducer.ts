@@ -230,7 +230,8 @@ export function groupActiveCount(group: FilterGroup, state: FilterState): number
 
 /**
  * Computes the initial collapsed state for each filter group.
- * Groups with active values or the first group are expanded; the rest are collapsed.
+ * Active groups, opt-in groups and the first collapsible group are expanded,
+ * unless the group explicitly forces its initial state to collapsed.
  */
 export function computeInitialCollapsed({
     filters,
@@ -242,14 +243,15 @@ export function computeInitialCollapsed({
     const result: Record<string, boolean> = {};
     let isFirstCollapsible = true;
     for (const group of filters) {
-        // Section headers don't have collapsed state — skip them so they
+        // Section headers and inline toggles don't have collapsed state — skip them so they
         // don't burn the "expand the first group" allowance either.
-        if (group.type === 'section-header') continue;
+        if (group.type === 'section-header' || group.type === 'toggle') continue;
         const hasActive = groupHasActiveSelection(group, state);
         // Groups can opt into a forced-collapsed default so secondary sections
         // stay quiet until the user opens them, regardless of their position.
         const forcedCollapsed = group.type === 'geo-radius' && group.defaultCollapsed === true;
-        const expand = (hasActive || isFirstCollapsible) && !forcedCollapsed;
+        const expand =
+            (hasActive || isFirstCollapsible || group.defaultExpanded) && !forcedCollapsed;
         result[group.id] = !expand;
         isFirstCollapsible = false;
     }

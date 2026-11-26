@@ -1654,8 +1654,10 @@ export const venueApi = {
         readonly features?: string;
         readonly includeAmenities?: boolean;
         readonly includeFeatures?: boolean;
+        readonly cacheTtlMs?: number;
     }): Promise<ApiResult<PaginatedResponse<VenuePublic>>> {
-        return apiClient.getList({ path: `${BASE}/venues`, params });
+        const { cacheTtlMs, ...query } = params ?? {};
+        return apiClient.getList({ path: `${BASE}/venues`, params: query, cacheTtlMs });
     },
 
     /**

@@ -93,7 +93,12 @@ describe('AiSearchEntry (SPEC-265 D — hybrid layout)', () => {
             renderEntry();
             const entry = screen.getByTestId('ai-search-entry');
             // Mock t() returns the fallback — the placeholder text
-            expect(entry.textContent).toContain('Contame qué buscás');
+            expect(entry.textContent).toContain('Ej.: cabaña con pileta');
+        });
+
+        it('shows the active URL query instead of the onboarding example', () => {
+            renderEntry({ currentUrl: '/es/alojamientos/?q=zzzzqqq' });
+            expect(screen.getByTestId('ai-search-entry')).toHaveAccessibleName(/zzzzqqq/);
         });
 
         it('search bar is a <button> with type="button"', () => {
@@ -109,7 +114,7 @@ describe('AiSearchEntry (SPEC-265 D — hybrid layout)', () => {
             renderEntry();
             const entry = screen.getByTestId('ai-search-entry');
             expect(entry).not.toHaveAttribute('aria-label');
-            const placeholder = screen.getByText(/contame qué buscás/i).textContent ?? '';
+            const placeholder = screen.getByText('Ej.: cabaña con pileta').textContent ?? '';
             expect(placeholder).not.toBe('');
             expect(entry).toHaveAccessibleName(new RegExp(placeholder.slice(0, 20), 'i'));
             expect(entry).toHaveAccessibleName(/^Buscá con IA/);
