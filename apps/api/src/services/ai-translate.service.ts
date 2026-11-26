@@ -117,6 +117,19 @@ export interface TranslateEntityResult {
     completionTokens: number;
     provider: string;
     model: string;
+    /**
+     * Spend of provider calls that answered (and were billed) but whose output
+     * was rejected afterwards, e.g. a URL placeholder that did not round-trip
+     * (HOS-2658 AC-19). Kept apart from the success totals above so callers
+     * that bill only delivered translations keep their behaviour; absent when
+     * no such call happened.
+     */
+    failedSpend?: {
+        promptTokens: number;
+        completionTokens: number;
+        provider: string;
+        model: string;
+    };
 }
 
 export interface BatchTranslateInput {
@@ -390,6 +403,35 @@ function restoreUrls(text: string, urls: string[]): { restored: string; ok: bool
 }
 
 /**
+ * A provider call that answered — and was therefore billed — but whose output
+ * could not be used (HOS-2658 AC-19). Carries the call's usage so the spend can
+ * be metered as `error` instead of being dropped.
+ */
+class PaidTranslationOutputError extends Error {
+    readonly usage: { promptTokens: number; completionTokens: number };
+    readonly provider: string;
+    readonly model: string;
+
+    constructor({
+        message,
+        usage,
+        provider,
+        model
+    }: {
+        readonly message: string;
+        readonly usage: { promptTokens: number; completionTokens: number };
+        readonly provider: string;
+        readonly model: string;
+    }) {
+        super(message);
+        this.name = 'PaidTranslationOutputError';
+        this.usage = usage;
+        this.provider = provider;
+        this.model = model;
+    }
+}
+
+/**
  * Translates a single text field to a target locale using the AI engine.
  * Returns the translated text or the original on failure.
  */
@@ -425,9 +467,15 @@ async function translateField(
         // `translateFieldWithRetry`'s catch block treat it as an ordinary
         // translation failure: logged, and the source-locale value is kept
         // untouched instead of persisting anything corrupted.
-        throw new Error(
-            `ai-translate: URL placeholder mismatch translating field "${fieldType}" to ${targetLocale} — expected ${urls.length} URL(s) to round-trip intact, refusing to persist a corrupted translation`
-        );
+        throw new PaidTranslationOutputError({
+            message: `ai-translate: URL placeholder mismatch translating field "${fieldType}" to ${targetLocale} — expected ${urls.length} URL(s) to round-trip intact, refusing to persist a corrupted translation`,
+            usage: {
+                promptTokens: result.usage.promptTokens,
+                completionTokens: result.usage.completionTokens
+            },
+            provider: result.provider,
+            model: result.model
+        });
     }
 
     return {
@@ -448,6 +496,13 @@ interface FieldTranslationOutcome {
     completionTokens: number;
     provider: string | null;
     model: string | null;
+    /** Usage of a call that was billed but whose output was rejected (AC-19). */
+    paidFailure?: {
+        promptTokens: number;
+        completionTokens: number;
+        provider: string;
+        model: string;
+    };
 }
 
 /**
@@ -501,7 +556,17 @@ async function translateFieldWithRetry(
             promptTokens: 0,
             completionTokens: 0,
             provider: null,
-            model: null
+            model: null,
+            ...(error instanceof PaidTranslationOutputError
+                ? {
+                      paidFailure: {
+                          promptTokens: error.usage.promptTokens,
+                          completionTokens: error.usage.completionTokens,
+                          provider: error.provider,
+                          model: error.model
+                      }
+                  }
+                : {})
         };
     }
 }
@@ -532,6 +597,7 @@ export async function translateEntity(input: TranslateEntityInput): Promise<Tran
     let completionTokens = 0;
     let provider = '';
     let model = '';
+    let failedSpend: TranslateEntityResult['failedSpend'];
 
     for (const [fieldType, fieldValue] of Object.entries(fields)) {
         if (!fieldValue || fieldValue.trim().length === 0) {
@@ -576,6 +642,15 @@ export async function translateEntity(input: TranslateEntityInput): Promise<Tran
                 if (outcome.model) {
                     model = outcome.model;
                 }
+            } else if (outcome.paidFailure) {
+                failedSpend = {
+                    promptTokens:
+                        (failedSpend?.promptTokens ?? 0) + outcome.paidFailure.promptTokens,
+                    completionTokens:
+                        (failedSpend?.completionTokens ?? 0) + outcome.paidFailure.completionTokens,
+                    provider: outcome.paidFailure.provider,
+                    model: outcome.paidFailure.model
+                };
             }
         }
     }
@@ -587,7 +662,8 @@ export async function translateEntity(input: TranslateEntityInput): Promise<Tran
         promptTokens,
         completionTokens,
         provider,
-        model
+        model,
+        ...(failedSpend ? { failedSpend } : {})
     };
 }
 

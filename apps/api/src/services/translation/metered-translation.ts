@@ -102,8 +102,9 @@ async function loadTranslationMeta({
  * without calling the gate; (3) `enforceAiQuota` for the billed owner and
  * vertical; (4) `translateEntity` with `skipPairs`; (5) persist through the
  * writer, mirroring the Spanish sources; (6) meter `success` after persistence,
- * `error` when persistence throws, nothing when no call delivered; (7)
- * `all-failed` when at least one call was attempted and none succeeded.
+ * `error` when persistence throws; (7) `all-failed` when at least one call was
+ * attempted and none succeeded — nothing is persisted, and a paid attempt
+ * (provider answered, output rejected) is metered as `error` (AC-19).
  *
  * @param input - {@link RunMeteredTranslationInput}
  * @returns The run outcome.
@@ -173,15 +174,34 @@ export async function runMeteredTranslation(
     }
 
     const logContext = { entityType, entityId, trigger };
+    // Paid-but-rejected calls (AC-19) are spend too: billed with the delivered
+    // calls on success, metered alone as `error` when nothing was delivered.
+    const failedSpend = result.failedSpend;
     const spend =
-        succeeded > 0
+        succeeded > 0 || failedSpend
             ? {
-                  provider: result.provider || 'unknown',
-                  model: result.model || 'unknown',
-                  promptTokens: result.promptTokens,
-                  completionTokens: result.completionTokens
+                  provider: result.provider || failedSpend?.provider || 'unknown',
+                  model: result.model || failedSpend?.model || 'unknown',
+                  promptTokens: result.promptTokens + (failedSpend?.promptTokens ?? 0),
+                  completionTokens: result.completionTokens + (failedSpend?.completionTokens ?? 0)
               }
             : null;
+
+    // (7) Nothing delivered: no pair is written or converted; a paid attempt is
+    // still metered, as `error`, so it counts for cost but not for the quota.
+    if (succeeded === 0) {
+        if (spend) {
+            await meterAiUsage({
+                userId: billedUserId,
+                feature: FEATURE,
+                ...spend,
+                latencyMs: Date.now() - startedAtMs,
+                status: 'error',
+                logContext
+            });
+        }
+        return { outcome: 'all-failed' };
+    }
 
     // (5) Persist; (6) meter after persistence so a failed write never burns quota.
     let written = 0;
@@ -222,9 +242,5 @@ export async function runMeteredTranslation(
         });
     }
 
-    // (7)
-    if (succeeded === 0) {
-        return { outcome: 'all-failed' };
-    }
     return { outcome: 'translated', written, failed: attempted - succeeded };
 }

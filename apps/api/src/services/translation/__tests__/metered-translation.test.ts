@@ -229,6 +229,91 @@ describe('runMeteredTranslation', () => {
         // Assert
         expect(outcome).toEqual({ outcome: 'all-failed' });
         expect(meterAiUsage).not.toHaveBeenCalled();
+        expect(persistTranslations).not.toHaveBeenCalled();
+    });
+
+    it('meters a paid but rejected answer as one error row and writes nothing (AC-19)', async () => {
+        // Arrange
+        mockMeta({ description: { en: MANUAL } });
+        (translateEntity as Mock).mockResolvedValue({
+            ...engineResult([{ fieldType: 'description', locale: 'en', success: false }]),
+            totalTokens: 0,
+            promptTokens: 0,
+            completionTokens: 0,
+            provider: '',
+            model: '',
+            failedSpend: {
+                promptTokens: 20,
+                completionTokens: 10,
+                provider: 'stub',
+                model: 'stub-model'
+            }
+        });
+
+        // Act
+        const outcome = await runMeteredTranslation({
+            ...baseInput,
+            trigger: 'button',
+            targetLocales: ['en'],
+            overrideManual: true
+        });
+
+        // Assert
+        expect(outcome).toEqual({ outcome: 'all-failed' });
+        expect(persistTranslations).not.toHaveBeenCalled();
+        expect((meterAiUsage as Mock).mock.calls).toEqual([
+            [
+                {
+                    userId: OWNER_ID,
+                    feature: 'translate',
+                    provider: 'stub',
+                    model: 'stub-model',
+                    promptTokens: 20,
+                    completionTokens: 10,
+                    latencyMs: expect.any(Number),
+                    status: 'error',
+                    logContext: { entityType: 'venue', entityId: 'venue-1', trigger: 'button' }
+                }
+            ]
+        ]);
+    });
+
+    it('bills a paid but rejected answer together with the delivered ones on success (AC-19)', async () => {
+        // Arrange
+        mockMeta({});
+        (translateEntity as Mock).mockResolvedValue({
+            ...engineResult([
+                { fieldType: 'description', locale: 'en', success: true },
+                { fieldType: 'description', locale: 'pt', success: false }
+            ]),
+            failedSpend: {
+                promptTokens: 20,
+                completionTokens: 10,
+                provider: 'stub',
+                model: 'stub-model'
+            }
+        });
+
+        // Act
+        const outcome = await runMeteredTranslation(baseInput);
+
+        // Assert
+        expect(outcome).toEqual({ outcome: 'translated', written: 2, failed: 1 });
+        expect((meterAiUsage as Mock).mock.calls).toEqual([
+            [
+                {
+                    userId: OWNER_ID,
+                    feature: 'translate',
+                    provider: 'stub',
+                    model: 'stub-model',
+                    promptTokens: 70,
+                    completionTokens: 40,
+                    latencyMs: expect.any(Number),
+                    status: 'success',
+                    logContext: { entityType: 'venue', entityId: 'venue-1', trigger: 'on-save' }
+                }
+            ]
+        ]);
     });
 
     it('with overrideManual sends MANUAL pairs to the provider and asks the writer to override them (AC-16)', async () => {
