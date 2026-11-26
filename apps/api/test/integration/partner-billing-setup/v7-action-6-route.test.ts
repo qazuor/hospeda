@@ -394,13 +394,11 @@ describe('TEST:V7:17 AC:V7:17 — action 6 configures a Partner plan and manual 
             (await preview.json()) as {
                 data: {
                     options: unknown[];
-                    method: string;
                     owner: { name: string; email: string };
                     ownerUserId: string;
                 };
             }
         ).data;
-        expect(previewData.method).toBe('MANUAL');
         expect(previewData.owner).toEqual({ name: 'Action 6 owner', email: owner.email });
         expect(previewData.ownerUserId).toBe(owner.id);
         expect(

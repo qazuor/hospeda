@@ -1158,8 +1158,8 @@
         "confirmationTitleCard": "Você vai criar uma assinatura com cartão aguardando autorização. O link do Mercado Pago é gerado para o dono autorizá-la.",
         "linkTitle": "Link de autorização do Mercado Pago",
         "linkHelp": "Compartilhe com o dono do Partner. É de uso único, está atrelado a esta assinatura e deixa de valer quando a janela de cadastro fecha.",
-        "copy": "Copiar link",
-        "copied": "Link copiado",
+        "copy": "Copiar o link",
+        "copied": "Link copiado com sucesso",
         "close": "Fechar"
     },
     "partnerPresenceModeration": {
