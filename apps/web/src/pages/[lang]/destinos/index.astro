@@ -653,9 +653,12 @@ const itemListEntries = sortedCards.map((card) => ({
 		height: 1.125rem;
 		padding: 0 0.3125rem;
 		border-radius: var(--radius-pill);
-		background-color: var(--brand-primary-a12);
-		color: var(--brand-primary-link);
-		font-size: 0.6875rem;
+		/* Inherits the solid toggle's ink (HOS-2650): a tinted pill on the
+		 * filled button dropped to 1.35:1 in dark mode. */
+		background-color: transparent;
+		border: 1px solid currentColor;
+		color: inherit;
+		font-size: 0.75rem;
 		font-weight: 600;
 	}
 
