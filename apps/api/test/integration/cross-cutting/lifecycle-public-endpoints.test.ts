@@ -43,6 +43,10 @@ vi.mock('@repo/service-core', async (importOriginal) => {
                     accommodationReviewMock.listByAccommodation(...args)
             };
         }),
+        // HOS-2199: the public list also reads the host replies; none exist here.
+        AccommodationReviewReplyService: vi.fn().mockImplementation(function () {
+            return { getPublicRepliesByReviewIds: async () => new Map() };
+        }),
         DestinationReviewService: vi.fn().mockImplementation(function () {
             return {
                 listByDestination: (...args: unknown[]) =>
