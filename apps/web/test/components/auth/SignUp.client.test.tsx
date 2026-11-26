@@ -27,11 +27,6 @@ vi.mock('../../../src/components/auth/SignUp.module.css', () => ({
     default: new Proxy({} as Record<string, string>, { get: (_t, prop) => String(prop) })
 }));
 
-vi.mock('../../../src/lib/i18n', () => {
-    const t = (key: string, fallback?: string): string => fallback ?? key;
-    return { createTranslations: () => ({ t }) };
-});
-
 vi.mock('@repo/schemas', () => ({
     // Mirrors StrongPasswordSchema's bounds (HOS-190 slice 3: min 8, max 128,
     // upper/lower/digit/special) without pulling in the full package.
@@ -58,24 +53,29 @@ vi.mock('../../../src/components/ui/PasswordField.client', () => ({
         label,
         value,
         onChange,
+        hint,
         error
     }: {
         id: string;
         label: string;
         value: string;
         onChange: (value: string) => void;
+        hint?: string;
         error?: string;
     }) => (
-        <label htmlFor={id}>
-            {label}
-            <input
-                id={id}
-                type="password"
-                value={value}
-                onChange={(e) => onChange(e.target.value)}
-            />
+        <>
+            <label htmlFor={id}>
+                {label}
+                <input
+                    id={id}
+                    type="password"
+                    value={value}
+                    onChange={(e) => onChange(e.target.value)}
+                />
+            </label>
             {error && <p role="alert">{error}</p>}
-        </label>
+            {hint && <span>{hint}</span>}
+        </>
     )
 }));
 
@@ -119,6 +119,20 @@ describe('SignUp email + password guards (HOS-190 slice 3)', () => {
     beforeEach(() => {
         signUpEmailMock.mockReset();
         signUpEmailMock.mockResolvedValue({ error: null });
+    });
+
+    it('shows password requirements and localized legal links before submission', () => {
+        renderIsland();
+
+        expect(screen.getByText(/Usá entre 8 y 128 caracteres/)).toBeInTheDocument();
+        expect(screen.getByRole('link', { name: 'Términos' })).toHaveAttribute(
+            'href',
+            '/es/legal/terminos/'
+        );
+        expect(screen.getByRole('link', { name: 'Política de privacidad' })).toHaveAttribute(
+            'href',
+            '/es/legal/privacidad/'
+        );
     });
 
     it('blocks submit when email is empty', async () => {

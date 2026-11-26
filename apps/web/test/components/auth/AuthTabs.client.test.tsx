@@ -27,11 +27,6 @@ vi.mock('../../../src/components/auth/SignUp.module.css', () => ({
     default: new Proxy({} as Record<string, string>, { get: (_t, prop) => String(prop) })
 }));
 
-vi.mock('../../../src/lib/i18n', () => {
-    const t = (key: string, fallback?: string): string => fallback ?? key;
-    return { createTranslations: () => ({ t }) };
-});
-
 const signInSocialMock = vi.fn();
 const signInEmailMock = vi.fn();
 const signUpEmailMock = vi.fn();
@@ -130,7 +125,11 @@ describe('AuthTabs — tab structure and ARIA', () => {
             'aria-selected',
             'false'
         );
-        expect(screen.getByLabelText(/Correo electrónico/)).toBeInTheDocument();
+        expect(
+            within(screen.getByRole('tabpanel')).getByRole('textbox', {
+                name: 'Correo electrónico'
+            })
+        ).toHaveAttribute('type', 'email');
         // Sign-up-only field must NOT be mounted.
         expect(screen.queryByLabelText(/Confirmar contraseña/)).not.toBeInTheDocument();
     });

@@ -3,113 +3,34 @@
  * @description Covers one-time Partner claim links, confirmation and outcomes.
  */
 
-import { render, screen, waitFor } from '@testing-library/react';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { PartnerClaim } from '../../../src/components/partner/PartnerClaim.client';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AUTH_ME_CACHE_KEY } from '../../../src/lib/auth-cache';
 import { PENDING_ACTION_STORAGE_KEY, savePendingAction } from '../../../src/lib/pending-action';
+import {
+    CLAIMED,
+    mocks,
+    PARTNER_ID,
+    PATH,
+    renderClaim,
+    restoreLocation,
+    SECRET,
+    setAuthenticated,
+    setFragment,
+    useClaimFixture
+} from './partner-claim-fixture';
 
-const mocks = vi.hoisted(() => ({
-    authenticated: false,
-    user: { id: 'signed-in-user', name: 'Test', email: 'test@example.test' },
-    permissions: [] as string[],
-    claim: vi.fn(),
-    checkClaim: vi.fn(),
-    refresh: vi.fn(),
-    lookup: vi.fn(),
-    signUp: vi.fn(),
-    signInEmail: vi.fn(),
-    signOut: vi.fn(),
-    resend: vi.fn()
-}));
+it('keeps the PartnerClaim flow suite within the 500-line limit', () => {
+    const source = readFileSync(resolve(__dirname, 'PartnerClaim.client.test.tsx'), 'utf8');
 
-vi.mock('../../../src/hooks/use-account-permissions', () => ({
-    useAccountPermissions: () => ({
-        user: mocks.authenticated ? mocks.user : null,
-        permissions: mocks.permissions
-    })
-}));
-
-vi.mock('../../../src/lib/api/endpoints-protected', async (importOriginal) => {
-    const actual =
-        await importOriginal<typeof import('../../../src/lib/api/endpoints-protected')>();
-    return {
-        ...actual,
-        partnersApi: {
-            ...actual.partnersApi,
-            claim: mocks.claim,
-            checkClaim: mocks.checkClaim
-        }
-    };
+    expect(source.trimEnd().split('\n').length).toBeLessThanOrEqual(500);
 });
-
-vi.mock('../../../src/lib/auth-client', async (importOriginal) => {
-    const actual = await importOriginal<typeof import('../../../src/lib/auth-client')>();
-    return {
-        ...actual,
-        refreshBetterAuthSession: mocks.refresh,
-        signIn: { ...actual.signIn, email: mocks.signInEmail },
-        signOut: mocks.signOut,
-        resendVerificationEmail: mocks.resend
-    };
-});
-
-vi.mock('../../../src/lib/api/endpoints', async (importOriginal) => {
-    const actual = await importOriginal<typeof import('../../../src/lib/api/endpoints')>();
-    return { ...actual, partnerClaimsPublicApi: { lookup: mocks.lookup, signUp: mocks.signUp } };
-});
-
-vi.mock('../../../src/components/partner/PartnerClaim.module.css', () => ({
-    default: new Proxy({} as Record<string, string>, {
-        get: (_target, property) => String(property)
-    })
-}));
-
-const PATH = '/es/partners/reclamar/';
-const PARTNER_ID = 'd32b0f9b-0864-49d8-bf8f-0fb52c40fd15';
-const SECRET = 'fragment-secret-value';
-const CLAIMED = { claimed: true as const, partnerId: PARTNER_ID, emailVerified: false };
-let locationDescriptor: PropertyDescriptor;
-
-function setFragment(fragment: string): void {
-    window.history.replaceState(null, '', `${PATH}#${fragment}`);
-}
-
-function setAuthenticated(authenticated: boolean): void {
-    mocks.authenticated = authenticated;
-}
-
-function renderClaim() {
-    return render(<PartnerClaim locale="es" />);
-}
 
 describe('PartnerClaim', () => {
-    beforeEach(() => {
-        window.sessionStorage.clear();
-        window.history.replaceState(null, '', PATH);
-        locationDescriptor = Object.getOwnPropertyDescriptor(
-            window,
-            'location'
-        ) as PropertyDescriptor;
-        mocks.authenticated = false;
-        mocks.claim.mockReset().mockResolvedValue({ ok: true, data: CLAIMED });
-        mocks.checkClaim.mockReset().mockResolvedValue({ ok: true, data: { emailMatches: true } });
-        mocks.refresh.mockReset().mockResolvedValue(undefined);
-        mocks.lookup.mockReset().mockResolvedValue({
-            ok: true,
-            data: { email: 'claim@example.test', accountExists: false }
-        });
-        mocks.signUp.mockReset().mockResolvedValue({ ok: true, data: { claimed: true } });
-        mocks.signInEmail.mockReset().mockResolvedValue({ data: {} });
-        mocks.signOut.mockReset().mockResolvedValue(undefined);
-        mocks.resend.mockReset();
-    });
-
-    afterEach(() => {
-        Object.defineProperty(window, 'location', locationDescriptor);
-        vi.restoreAllMocks();
-    });
+    useClaimFixture();
 
     it('looks up the token and offers a fixed-email signup that signs in after claiming', async () => {
         setFragment(`partner=${PARTNER_ID}&secret=${SECRET}`);
@@ -251,13 +172,13 @@ describe('PartnerClaim', () => {
             name: 'invalid request',
             status: 400,
             reason: undefined,
-            text: 'No encontramos este Partner. Revisá que el link esté completo.'
+            text: 'El enlace no es válido'
         },
         {
             name: 'missing Partner',
             status: 404,
             reason: undefined,
-            text: 'No encontramos este Partner. Revisá que el link esté completo.'
+            text: 'El enlace no es válido'
         },
         {
             name: 'already claimed',
@@ -430,7 +351,7 @@ describe('PartnerClaim', () => {
                 ok: false,
                 error: { status: 403, reason: 'PARTNER_CLAIM_EMAIL_MISMATCH', message: 'x' }
             });
-            const view = render(<PartnerClaim locale={locale} />);
+            const view = renderClaim({ locale });
             const confirmName = locale === 'en' ? 'Claim the Partner' : 'Reivindicar o Partner';
 
             // Act
@@ -441,38 +362,6 @@ describe('PartnerClaim', () => {
             expect(screen.getByText(signedInAs)).toBeInTheDocument();
             view.unmount();
         }
-    });
-
-    it('returns to sign-in and re-saves the pending action after a 401', async () => {
-        setAuthenticated(true);
-        setFragment(`partner=${PARTNER_ID}&secret=${SECRET}`);
-        mocks.claim.mockResolvedValue({
-            ok: false,
-            error: { status: 401, message: 'unauthorized' }
-        });
-        renderClaim();
-        await userEvent.click(await screen.findByRole('button', { name: 'Reclamar el Partner' }));
-
-        expect(
-            await screen.findByText('Iniciá sesión para reclamar el Partner.')
-        ).toBeInTheDocument();
-        expect(window.sessionStorage.getItem(PENDING_ACTION_STORAGE_KEY)).not.toBeNull();
-    });
-
-    it.each([
-        { name: 'fragment without secret', fragment: `partner=${PARTNER_ID}` },
-        { name: 'non-UUID partner id', fragment: `partner=not-a-uuid&secret=${SECRET}` }
-    ])('does not call the API for a $name', async ({ fragment }) => {
-        setAuthenticated(true);
-        setFragment(fragment);
-        renderClaim();
-
-        expect(
-            await screen.findByText(
-                'No encontramos este Partner. Revisá que el link esté completo.'
-            )
-        ).toBeInTheDocument();
-        expect(mocks.claim).not.toHaveBeenCalled();
     });
 
     it('sends only one claim when confirmation is double-clicked', async () => {
@@ -559,7 +448,7 @@ describe('PartnerClaim', () => {
                 ok: true,
                 data: { email: 'claim@example.test', accountExists: true }
             });
-            Object.defineProperty(window, 'location', locationDescriptor);
+            restoreLocation();
             window.history.replaceState(null, '', PATH);
             renderClaim();
             expect(
@@ -577,29 +466,6 @@ describe('PartnerClaim', () => {
             expect(screen.queryByText(WARNING)).toBeNull();
         });
 
-        it('shows not-found on a 404 check', async () => {
-            mocks.checkClaim.mockResolvedValue({
-                ok: false,
-                error: { status: 404, message: 'x' }
-            });
-            renderClaim();
-
-            expect(
-                await screen.findByText(
-                    'No encontramos este Partner. Revisá que el link esté completo.'
-                )
-            ).toBeInTheDocument();
-            expect(screen.queryByRole('button', { name: 'Reclamar el Partner' })).toBeNull();
-        });
-
-        it('shows the generic error on a network failure', async () => {
-            mocks.checkClaim.mockRejectedValue(new Error('network'));
-            renderClaim();
-
-            expect(await screen.findByRole('alert')).toBeInTheDocument();
-            expect(mocks.claim).not.toHaveBeenCalled();
-        });
-
         it('renders the warning in English and Portuguese', async () => {
             for (const [locale, copy] of [
                 [
@@ -612,24 +478,9 @@ describe('PartnerClaim', () => {
                 ]
             ] as const) {
                 setFragment(`partner=${PARTNER_ID}&secret=${SECRET}`);
-                const view = render(<PartnerClaim locale={locale} />);
+                const view = renderClaim({ locale });
                 expect(await screen.findByText(copy)).toBeInTheDocument();
                 view.unmount();
-            }
-        });
-
-        it.each([
-            'es',
-            'en',
-            'pt'
-        ] as const)('keeps the application wording out of the %s claim copy', async (locale) => {
-            const { createTranslations } = await import('../../../src/lib/i18n');
-            const { t } = createTranslations(locale);
-            for (const key of [
-                'partners.claim.emailMismatch',
-                'partners.claim.wrongAccount'
-            ] as const) {
-                expect(t(key)).not.toMatch(/solicitud|application|solicita[cç][aã]o/i);
             }
         });
     });

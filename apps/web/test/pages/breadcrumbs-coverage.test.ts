@@ -63,7 +63,8 @@ const requiredPages = [
     ].map((page) => `${page}/index.astro`),
     'integraciones/google-calendar/index.astro',
     'partners/[slug].astro',
-    'partners/reclamar/index.astro',
+    // partners/reclamar is a status page on ErrorLayout since HOS-2653: its only
+    // ancestor is Inicio, so the trail rendered nothing under the HOS-2623 policy.
     'publicar/index.astro',
     'publicar/comer-y-salir/index.astro',
     'publicar/experiencias/index.astro'

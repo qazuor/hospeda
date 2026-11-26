@@ -12,6 +12,11 @@
         "websiteLabel": "Site"
     },
     "claim": {
+        "instructionsTitle": "Como reivindicar um Partner",
+        "instructions": "Abra o link de convite que enviamos por e-mail e use o mesmo endereço para entrar ou criar sua conta. Se não tiver o link, fale conosco.",
+        "invalidLinkTitle": "O link não é válido",
+        "contactCta": "Fale conosco",
+        "homeCta": "Voltar ao início",
         "seo": {
             "title": "Reivindique seu Partner",
             "description": "Vincule seu Partner aprovado à sua conta Hospeda."
@@ -33,7 +38,7 @@
         "claiming": "Reivindicando…",
         "success": "Pronto: o Partner foi vinculado à sua conta.",
         "successCta": "Ir para Minha Conta de Partner",
-        "notFound": "Não encontramos este Partner. Confira se o link está completo.",
+        "notFound": "Não conseguimos validar o convite. Abra o link completo do e-mail ou fale conosco para obter ajuda.",
         "alreadyClaimed": "Este Partner já tem proprietário; se não foi você, fale com o suporte",
         "accountAlreadyOwns": "Sua conta já é proprietária de um Partner. Cada conta administra apenas um Partner: reivindique o segundo negócio com outra conta. Se precisar de ajuda, fale com o suporte.",
         "emailMismatch": "Este Partner só pode ser reivindicado com a conta do e-mail para o qual o link de reivindicação foi enviado. Saia e entre com essa conta. Se o Partner é seu, mas você quer administrá-lo com outro e-mail, fale com a Hospeda.",

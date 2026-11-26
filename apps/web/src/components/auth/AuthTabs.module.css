@@ -3,7 +3,7 @@
 .authTabs {
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    gap: var(--space-4);
 }
 
 .heading {
@@ -80,26 +80,9 @@
     box-shadow: var(--shadow-card);
 }
 
-/*
- * Reserve the taller tab's height so switching tabs does not jolt the page.
- *
- * The sign-up form is one field taller than sign-in (the password
- * confirmation). Measured in the browser at 480px, 360px and 320px card
- * widths: sign-in 215px, sign-up 302px, an 87px delta that stays constant
- * because none of the labels wrap at any of those widths. Spanish is the
- * longest of the three locales, so it sets the ceiling.
- *
- * 19rem ≈ 304px at the default root size, and rem rather than px so the
- * reservation scales with the user's text size the same way the content does.
- * Re-measure if a field is added to either form.
- *
- * Content stays top-aligned rather than centred, so the fields the two forms
- * share (email, password) sit at the same vertical position on both tabs and
- * do not drift when switching.
- */
+/* Keep the social divider immediately after the active form on either tab. */
 .tabpanel {
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
-    min-height: 19rem;
 }

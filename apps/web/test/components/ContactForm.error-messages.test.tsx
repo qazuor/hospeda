@@ -11,7 +11,7 @@
  * pipeline. A green test that only checks a handler ran is not enough here.
  */
 
-import { fireEvent, render, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ContactForm } from '../../src/components/ContactForm.client';
 
@@ -54,6 +54,20 @@ describe('ContactForm — human validation messages (HOS-190 BETA-190)', () => {
         expect(err?.textContent ?? '').not.toMatch(RAW_KEY_RE);
         // No spanglish leak: the old value was "El first name ...".
         expect(err?.textContent ?? '').not.toContain('first name');
+    });
+
+    it('shows a summary and focuses the first field with its own message', () => {
+        render(<ContactForm locale="es" />);
+
+        fireEvent.submit(screen.getByRole('form'));
+
+        expect(screen.getByLabelText(/nombre/i)).toHaveFocus();
+        expect(screen.getByLabelText(/apellido/i)).toHaveAccessibleDescription(
+            'Contanos tu apellido (mínimo 2 letras)'
+        );
+        expect(
+            screen.getByText(/Revisá los campos marcados/i).closest('[role="alert"]')
+        ).toHaveAttribute('id', 'cf-summary');
     });
 
     it('does not call fetch while the form is invalid', () => {

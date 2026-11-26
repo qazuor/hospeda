@@ -135,15 +135,20 @@ describe('SignUp.client.tsx', () => {
         });
 
         it('imports StrongPasswordSchema from @repo/schemas (HOS-190 slice 3)', () => {
-            expect(src).toContain("import { StrongPasswordSchema } from '@repo/schemas'");
+            expect(readFileSync(resolve('src/lib/forms/auth-form-schemas.ts'), 'utf8')).toContain(
+                "import { StrongPasswordSchema } from '@repo/schemas'"
+            );
         });
 
         it('validates the password against StrongPasswordSchema before submit', () => {
-            expect(src).toContain('StrongPasswordSchema.safeParse(password)');
+            expect(src).toContain('password: signupPasswordSchema(');
+            expect(readFileSync(resolve('src/lib/forms/auth-form-schemas.ts'), 'utf8')).toContain(
+                'StrongPasswordSchema.safeParse(password)'
+            );
         });
 
         it('checks that password and confirmPassword match before submit', () => {
-            expect(src).toContain('password !== confirmPassword');
+            expect(src).toContain("values.password === values['confirm-password']");
         });
 
         it('passes a rules block (length / upper / lower / digit / special) to the PasswordField i18n', () => {
@@ -160,8 +165,9 @@ describe('SignUp.client.tsx', () => {
      * calling `signUp.email()`.
      */
     describe('email guard (HOS-190 slice 3)', () => {
-        it('checks the trimmed email against EmailFormatSchema before submit', () => {
-            expect(src).toContain('EmailFormatSchema.safeParse(trimmedEmail)');
+        it('uses shared auth email validation before submit', () => {
+            expect(src).toContain('email: authEmailSchema(');
+            expect(src).toContain('validate({ email, password');
         });
 
         it('sends the trimmed email to signUp.email', () => {
@@ -169,7 +175,7 @@ describe('SignUp.client.tsx', () => {
             // call is formatted by Biome, and a reformat must not read as a
             // behaviour regression. The distance bound keeps this from
             // matching an unrelated `trimmedEmail` elsewhere in the file.
-            expect(src).toMatch(/signUp\.email\(\{[\s\S]{0,120}?email:\s*trimmedEmail\b/);
+            expect(src).toMatch(/signUp\.email\(\{[\s\S]{0,120}?email:\s*parsed\.data\.email\b/);
         });
 
         it('tells the API where the verification link should land (HOS-838)', () => {

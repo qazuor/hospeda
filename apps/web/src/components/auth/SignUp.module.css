@@ -68,3 +68,12 @@
     font-size: var(--text-body-sm);
     font-family: var(--font-sans);
 }
+.legal {
+    margin: 0;
+    font-size: var(--text-body-sm);
+    color: var(--core-foreground);
+}
+
+.legal a {
+    text-decoration: underline;
+}

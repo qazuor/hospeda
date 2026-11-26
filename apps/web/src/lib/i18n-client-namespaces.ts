@@ -143,6 +143,8 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'auth.resetPassword',
     'auth.signIn',
     'auth.signUp',
+    'auth.verificationDelivery',
+    'error.forbidden',
     // HOS-959: the sign-in/sign-up tab strip.
     'auth.tabs',
     'auth.verifyEmail',

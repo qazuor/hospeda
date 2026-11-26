@@ -130,7 +130,9 @@ const signUpPath = buildUrl({ locale, path: 'auth/signup' });
 // Localized secondary link labels via i18n
 const noAccountLabel = t('auth-ui.signIn.dontHaveAccount', "Don't have an account?");
 const signUpLabel = t('auth-ui.signIn.signUpLink', 'Sign Up');
-const forgotPasswordLabel = t('auth-ui.signIn.forgotPassword', 'Forgot password?');
+const showAccountContext = Astro.url.searchParams.has('returnUrl') &&
+    /^\/(es|en|pt)\/mi-cuenta(?:[/?#]|$)/.test(returnPath) &&
+    /^\/(es|en|pt)\/mi-cuenta(?:[/?#]|$)/.test(Astro.url.searchParams.get('returnUrl') ?? '');
 ---
 
 <AuthLayout locale={locale} title={title} description={description}>
@@ -147,6 +149,7 @@ const forgotPasswordLabel = t('auth-ui.signIn.forgotPassword', 'Forgot password?
     </div>
 
     <div class="auth-page-content">
+            {showAccountContext && !activeSession && <p class="signin-context">{t('auth.signIn.accountContext')}</p>}
             <AuthTabs
                 client:load
                 locale={locale}
@@ -158,15 +161,6 @@ const forgotPasswordLabel = t('auth-ui.signIn.forgotPassword', 'Forgot password?
                 initialOAuthError={initialOAuthError}
                 activeSession={activeSession}
             />
-
-            <div class="auth-page__links">
-                <a
-                    href={buildUrl({ locale, path: 'auth/forgot-password' })}
-                    class="auth-page__link"
-                >
-                    {forgotPasswordLabel}
-                </a>
-            </div>
 
             <div class="auth-page__footer auth-page__footer--tight">
                 <span class="auth-page__footer-text">{noAccountLabel}</span>
@@ -182,6 +176,13 @@ const forgotPasswordLabel = t('auth-ui.signIn.forgotPassword', 'Forgot password?
 </AuthLayout>
 
 <style is:global>
+    .signin-context {
+        padding: var(--space-3);
+        margin: 0 0 var(--space-4);
+        border-radius: var(--radius-button);
+        background: var(--brand-primary-a10);
+        color: var(--core-foreground);
+    }
     /* Decoratives — rendered inside the AuthLayout 'decoratives' slot, outside .auth-card. */
     .signin-deco {
         position: absolute;

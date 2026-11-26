@@ -11,12 +11,6 @@ import { ContactForm } from '../../src/components/ContactForm.client';
 
 // ─── Module mocks ─────────────────────────────────────────────────────────────
 
-vi.mock('../../src/lib/i18n', () => ({
-    createTranslations: (_locale: string) => ({
-        t: (_key: string, fallback?: string) => fallback ?? _key
-    })
-}));
-
 vi.mock('../../src/components/ContactForm.module.css', () => ({
     default: new Proxy({} as Record<string, string>, {
         get: (_target, prop) => String(prop)
@@ -71,27 +65,27 @@ describe('ContactForm', () => {
     describe('Initial render', () => {
         it('renders firstName input', () => {
             renderContactForm();
-            expect(screen.getByLabelText(/nombre/i)).toBeInTheDocument();
+            expect(screen.getByRole('textbox', { name: 'Nombre' })).toBeRequired();
         });
 
         it('renders lastName input', () => {
             renderContactForm();
-            expect(screen.getByLabelText(/apellido/i)).toBeInTheDocument();
+            expect(screen.getByRole('textbox', { name: 'Apellido' })).toBeRequired();
         });
 
         it('renders email input', () => {
             renderContactForm();
-            expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
+            expect(screen.getByRole('textbox', { name: 'Email' })).toHaveAttribute('type', 'email');
         });
 
         it('renders message textarea', () => {
             renderContactForm();
-            expect(screen.getByLabelText(/mensaje/i)).toBeInTheDocument();
+            expect(screen.getByRole('textbox', { name: 'Mensaje' })).toBeRequired();
         });
 
         it('renders type select', () => {
             renderContactForm();
-            expect(screen.getByLabelText(/tipo de consulta/i)).toBeInTheDocument();
+            expect(screen.getByRole('combobox', { name: 'Tipo de consulta' })).toBeInTheDocument();
         });
 
         it('renders submit button', () => {
@@ -128,7 +122,7 @@ describe('ContactForm', () => {
             // accommodationId input never appears.
             for (const value of ['general', 'support', 'subscriptions', 'press']) {
                 fireEvent.change(typeSelect, { target: { value } });
-                expect(screen.queryByLabelText(/id del alojamiento/i)).not.toBeInTheDocument();
+                expect(screen.queryByLabelText(/id de(?:l)? alojamiento/i)).not.toBeInTheDocument();
             }
         });
 
@@ -288,7 +282,9 @@ describe('ContactForm', () => {
             await waitFor(() => {
                 const alerts = screen.getAllByRole('alert');
                 expect(
-                    alerts.find((el) => el.textContent?.includes('Ha ocurrido un error'))
+                    alerts.find((el) =>
+                        el.textContent?.includes('Ocurrió un error. Intentá de nuevo más tarde.')
+                    )
                 ).toBeDefined();
             });
             expect(screen.queryByText(/An unexpected error occurred/)).toBeNull();
