@@ -594,6 +594,10 @@
             "label": "Seções dos assistentes de IA",
             "assistants": "Assistentes",
             "history": "Histórico"
+        },
+        "noAccess": {
+            "body": "O assistente de IA não está incluído no seu plano atual. Ele vem incluído, sem custo extra, em todos os planos pagos.",
+            "cta": "Ver planos"
         }
     },
     "subscription": {

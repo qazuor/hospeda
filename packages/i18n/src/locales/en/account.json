@@ -594,6 +594,10 @@
             "label": "AI assistants sections",
             "assistants": "Assistants",
             "history": "History"
+        },
+        "noAccess": {
+            "body": "The AI assistant is not included in your current plan. It comes included at no extra cost in every paid plan.",
+            "cta": "See plans"
         }
     },
     "subscription": {
