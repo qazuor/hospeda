@@ -95,6 +95,15 @@ const strip = reviews.map((review) => {
                 )}
               </div>
               <p class="review-preview__text">{review.content}</p>
+              {review.reply && (
+                <div class="review-preview__reply" data-review-reply>
+                  <span class="review-preview__reply-label">
+                    {t('accommodations.detail.reviewsDetail.hostReply')}
+                    {review.reply.edited && ` · ${t('accommodations.detail.reviewsDetail.hostReplyEdited')}`}
+                  </span>
+                  <p class="review-preview__reply-text">{review.reply.content}</p>
+                </div>
+              )}
             </li>
           ))}
         </ul>
@@ -228,6 +237,31 @@ const strip = reviews.map((review) => {
     display: -webkit-box;
     -webkit-line-clamp: 5;
     line-clamp: 5;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .review-preview__reply {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1, 4px);
+    padding-inline-start: var(--space-3, 12px);
+    border-inline-start: 3px solid var(--border);
+  }
+  .review-preview__reply-label {
+    font-family: var(--font-sans);
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--core-muted-foreground);
+  }
+  .review-preview__reply-text {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: 0.88rem;
+    line-height: 1.45;
+    color: var(--core-foreground);
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
   }

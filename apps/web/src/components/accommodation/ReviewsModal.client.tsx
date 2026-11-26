@@ -24,6 +24,8 @@ interface ReviewItem {
     readonly rating?: Readonly<Record<string, number>>;
     readonly user?: { readonly name: string | null; readonly image: string | null };
     readonly createdAt?: string;
+    /** The host's public reply (HOS-2199). */
+    readonly reply?: { readonly content: string; readonly editedAt: string | null } | null;
 }
 
 const RATING_CATEGORIES = [
@@ -202,6 +204,22 @@ export function ReviewsModal({ accommodationId, reviewsCount, locale }: ReviewsM
                                 </div>
                                 {review.content && (
                                     <p className={styles.reviewContent}>{review.content}</p>
+                                )}
+                                {review.reply?.content && (
+                                    <div
+                                        className={styles.hostReply}
+                                        data-review-reply
+                                    >
+                                        <span className={styles.hostReplyLabel}>
+                                            {t('accommodations.detail.reviewsDetail.hostReply')}
+                                            {review.reply.editedAt
+                                                ? ` · ${t('accommodations.detail.reviewsDetail.hostReplyEdited')}`
+                                                : ''}
+                                        </span>
+                                        <p className={styles.hostReplyText}>
+                                            {review.reply.content}
+                                        </p>
+                                    </div>
                                 )}
                                 {review.rating && (
                                     <ul

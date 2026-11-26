@@ -224,7 +224,6 @@ function pushDataLayerEvent(event: string, properties?: Record<string, unknown>)
  * ```astro
  * <NewsletterForm
  *   isAuthenticated={!!user}
- *   userEmail={user?.email}
  *   apiUrl={import.meta.env.PUBLIC_API_URL}
  *   locale={locale}
  *   client:visible
@@ -770,7 +769,7 @@ export function NewsletterForm({
                 aria-busy={isLoading}
                 noValidate
             >
-                <div className={styles.inputRow}>
+                <div className={isAuthed ? styles.authInputRow : styles.inputRow}>
                     {/* Email field */}
                     <div className={styles.inputWrapper}>
                         {isAuthed ? (
@@ -842,7 +841,7 @@ export function NewsletterForm({
                     <div className={styles.actions}>
                         <button
                             type="submit"
-                            className={styles.submitButton}
+                            className={`btn-gradient btn-gradient--sm ${styles.submitButton}`}
                             disabled={isLoading}
                             aria-busy={isLoading}
                         >

@@ -15,13 +15,21 @@ export { MODERATION_PENDING_THRESHOLD };
  *   Defaults to APPROVED on STRONGER evidence than the accommodation case: not
  *   a conversation that happened, but a benefit usage the counterpart actively
  *   CONFIRMED.
+ * - `accommodationReply` — a host's answer to a review of their accommodation
+ *   (HOS-2199). Publishes at once (APPROVED) and only drops to PENDING when the
+ *   content filter flags it, so the right of response is not gated on a human.
  * - `hostTradeReply` — the provider's answer to that review. Defaults to
  *   PENDING, the only default in this table that gates publication, because
  *   its author has a wounded commercial interest and was physically at the
  *   host's address. Reply volume is a fraction of review volume, so the gate
  *   does not choke the funnel.
  */
-export type ReviewEntityType = 'accommodation' | 'destination' | 'hostTrade' | 'hostTradeReply';
+export type ReviewEntityType =
+    | 'accommodation'
+    | 'accommodationReply'
+    | 'destination'
+    | 'hostTrade'
+    | 'hostTradeReply';
 
 /**
  * Verification level of the review author.
@@ -172,7 +180,11 @@ export function resolveInitialModerationState(
     }
 
     // Priority 4: per-entity default
-    if (entityType === 'accommodation' || entityType === 'hostTrade') {
+    if (
+        entityType === 'accommodation' ||
+        entityType === 'accommodationReply' ||
+        entityType === 'hostTrade'
+    ) {
         return ModerationStatusEnum.APPROVED;
     }
 

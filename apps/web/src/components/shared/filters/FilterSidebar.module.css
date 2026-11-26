@@ -94,8 +94,6 @@
 .sidebar {
     flex-direction: column;
     gap: 0;
-    max-height: calc(100vh - 200px);
-    overflow: hidden;
     border: 1px solid var(--border);
     border-radius: 1rem;
     background-color: var(--core-card);
@@ -231,6 +229,14 @@
     padding: 0.5rem 1.5rem 1rem;
     display: flex;
     flex-direction: column;
+}
+
+.sidebarDesktop .sidebarBody {
+    overflow: visible;
+}
+
+.sidebarDesktop .sidebarHeader {
+    position: static;
 }
 
 /* Custom scrollbar */

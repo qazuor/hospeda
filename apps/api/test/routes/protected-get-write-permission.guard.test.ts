@@ -14,7 +14,8 @@ const ROOT = join(import.meta.dirname, '../../src/routes');
 // HOS-2475/HOS-2476: +2 (venue|experience/protected/mineStats.ts, owner dashboard aggregate scoped to actor.id, VENUE_EDIT_OWN / EXPERIENCE_EDIT_OWN).
 // Mi cuenta decision 22: +1 (host-trade/protected/mine-tab-counts.ts, the caller's own listing counts, auth-only, no permission).
 // HOS-2184 phase B: +1 (ai-connection/protected/access.ts, scope forced to the session user, no permission).
-const EXPECTED_GET_PROTECTED_COUNT = 112;
+// HOS-2199: +1 (user/protected/received-reviews.ts, scoped in SQL to accommodations.owner_id = actor.id, no write permission).
+const EXPECTED_GET_PROTECTED_COUNT = 113;
 // HOS-1703: empty on purpose; add a file only with a linked owner decision
 const PENDING_OWNER_DECISION: readonly string[] = [];
 

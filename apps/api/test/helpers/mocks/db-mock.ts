@@ -1478,6 +1478,7 @@ export function createDbMock() {
         AccommodationFaqModel: GenericMockModel,
         AccommodationIaDataModel: GenericMockModel,
         AccommodationReviewModel: GenericMockModel,
+        AccommodationReviewReplyModel: GenericMockModel,
         AmenityModel: GenericMockModel,
         AttractionModel: GenericMockModel,
         BillingAddonPurchaseModel: GenericMockModel,
