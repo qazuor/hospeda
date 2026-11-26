@@ -111,6 +111,17 @@
     border-top: 1px solid var(--border-a60);
 }
 
+.authActions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.authActions > a {
+    width: 100%;
+    min-block-size: 2.75rem;
+}
+
 .authButton {
     display: flex;
     align-items: center;
@@ -231,6 +242,7 @@
     display: flex;
     align-items: center;
     gap: 0.625rem;
+    min-block-size: 2.75rem;
     padding: 0.625rem 1rem;
     font-family: var(--font-sans);
     font-size: 0.9375rem;
@@ -257,6 +269,7 @@
     align-items: center;
     gap: 0.625rem;
     width: 100%;
+    min-block-size: 2.75rem;
     padding: 0.625rem 1rem;
     margin-top: 0.25rem;
     font-family: var(--font-sans);
@@ -348,4 +361,17 @@
 
 .ctaLink:focus-visible {
     box-shadow: 0 0 0 2px var(--brand-primary);
+}
+.navDisclosure > summary {
+    display: flex;
+    justify-content: space-between;
+    list-style: none;
+}
+
+.navDisclosure > summary::-webkit-details-marker {
+    display: none;
+}
+
+.navDisclosure[open] > summary svg {
+    rotate: 180deg;
 }

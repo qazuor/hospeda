@@ -23,6 +23,7 @@ import { MonitorIcon, MoonIcon, SunIcon } from '@repo/icons';
 import type { JSX } from 'react';
 import { useEffect, useState } from 'react';
 import { cn } from '@/lib/cn';
+import { createTranslations, type SupportedLocale } from '@/lib/i18n';
 import type { ThemeChoice } from '@/lib/theme';
 import {
     applyThemeAttribute,
@@ -49,6 +50,8 @@ const OPTIONS: ReadonlyArray<{
 ];
 
 export interface ThemeControlProps {
+    /** Locale for labels in localized navigation surfaces. */
+    readonly locale?: SupportedLocale;
     /**
      * Visual layout.
      * - "navbar": condensed segmented control for the desktop navbar.
@@ -71,12 +74,14 @@ export interface ThemeControlProps {
  * ```
  */
 export function ThemeControl({
+    locale,
     variant = 'navbar',
     showLabels,
     className
 }: ThemeControlProps): JSX.Element {
     const [choice, setChoice] = useState<ThemeChoice>('light');
     const labelsVisible = showLabels ?? variant !== 'navbar';
+    const t = locale ? createTranslations(locale).t : undefined;
 
     useEffect(() => {
         setChoice(readStoredThemeChoice());
@@ -116,18 +121,26 @@ export function ThemeControl({
         // biome-ignore lint/a11y/useSemanticElements: <fieldset> is for form controls; this is a group of toggle buttons that change document state
         <div
             role="group"
-            aria-label="Tema de la interfaz"
+            aria-label={t?.('nav.theme') ?? 'Tema de la interfaz'}
             className={cn(styles.root, styles[`root--${variant}`], className)}
         >
             {OPTIONS.map((option) => {
                 const Icon = option.Icon;
                 const isActive = option.value === choice;
+                const labelKey = {
+                    light: 'account.profileCompletion.fields.themeLight',
+                    system: 'account.profileCompletion.fields.themeSystem',
+                    dark: 'account.profileCompletion.fields.themeDark'
+                } as const;
+                const label = t?.(labelKey[option.value]) ?? option.label;
+                const accessibleLabel = t ? label : option.fullLabel;
                 return (
                     <button
                         key={option.value}
                         type="button"
                         aria-pressed={isActive}
-                        aria-label={option.fullLabel}
+                        aria-label={accessibleLabel}
+                        title={accessibleLabel}
                         onClick={() => handleSelect(option.value)}
                         className={cn(styles.option, isActive && styles.optionActive)}
                     >
@@ -136,7 +149,7 @@ export function ThemeControl({
                             weight="regular"
                             aria-hidden="true"
                         />
-                        {labelsVisible && <span className={styles.label}>{option.label}</span>}
+                        {labelsVisible && <span className={styles.label}>{label}</span>}
                     </button>
                 );
             })}

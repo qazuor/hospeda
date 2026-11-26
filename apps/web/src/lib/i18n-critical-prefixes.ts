@@ -104,10 +104,12 @@ export const CRITICAL_I18N_KEY_PREFIXES = [
     'account.doors.publish',
     'account.nav',
     'account.pages.dashboard',
+    'account.profileCompletion.fields',
     'account.title',
     'account.ui.cancel',
     'account.ui.confirmError',
     'account.ui.dialogClose',
+    'auth.signUp.submit',
     'common.cancel',
     // UserMenu plan line (HOS-2649).
     'common.card.currentPlan',
@@ -139,6 +141,8 @@ export const CRITICAL_I18N_KEY_PREFIXES = [
     'nav.publishCtaAria',
     'nav.signIn',
     'nav.theme',
+    'nav.userMenu.preferences',
+    'nav.userMenu.signOut',
     'ui.accessibility.closeToast',
     'venue.editOwn'
 ] as const;

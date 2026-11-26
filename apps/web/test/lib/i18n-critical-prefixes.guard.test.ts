@@ -140,6 +140,25 @@ describe('HOS-2572 — critical key prefixes', () => {
         ).toEqual([]);
     });
 
+    it.each([
+        'es',
+        'en',
+        'pt'
+    ] as const)('ships the early header control labels in %s', (locale) => {
+        const keys = [
+            'account.profileCompletion.fields.themeDark',
+            'account.profileCompletion.fields.themeLight',
+            'account.profileCompletion.fields.themeSystem',
+            'auth.signUp.submit',
+            'nav.userMenu.preferences',
+            'nav.userMenu.signOut'
+        ];
+
+        const { critical: body } = buildI18nAssetBodies({ locale, messages: trans[locale] });
+
+        for (const key of keys) expect(body, key).toContain(`${JSON.stringify(key)}:"`);
+    });
+
     it('ships the externally built key paths when an early island reaches them', () => {
         const relative = new Set([...graph.modules].map((m) => m.slice(REPO_ROOT.length + 1)));
         const missing = EXTERNAL_KEY_PATHS.filter(
