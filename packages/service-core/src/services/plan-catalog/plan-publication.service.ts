@@ -136,7 +136,10 @@ export async function publishPlanVersion(input: {
                 graceDays: context.content.graceDays,
                 trialDays: context.content.trialDays,
                 allowsPause: context.content.allowsPause,
-                inheritsTouristVip: context.content.inheritsTouristVip
+                inheritsTouristVip: context.content.inheritsTouristVip,
+                // HOS-2196: omitted keeps what the current version accepts.
+                paymentMethods: context.content.paymentMethods ??
+                    context.previous?.paymentMethods ?? ['CARD']
             })
             .returning();
         if (!published) {

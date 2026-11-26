@@ -266,7 +266,7 @@
                 "apps/web/test/pages/publicaciones-category-chips-active.test.ts": 5,
                 "apps/web/test/pages/publicaciones-facet-seo.test.ts": 5,
                 "apps/web/test/pages/publicaciones-multiselect-wiring.test.ts": 7,
-                "apps/web/src/components/venue/VenueReviewForm.client.tsx": 8,
+                "apps/web/src/components/venue/VenueReviewForm.client.tsx": 7,
                 "apps/web/src/components/venue/VenueReviewForm.module.css": 5,
                 "apps/web/test/middleware.test.ts": 5,
                 "apps/web/test/components/account/UserReviewsList.test.tsx": 1
@@ -343,10 +343,6 @@
                 "packages/i18n/src/locales/pt/blog.json#listPage.description": 1,
                 "packages/i18n/src/locales/pt/event.json#categoryPage.categories.WORKSHOP.description": 1,
                 "packages/i18n/src/locales/es/common.json#qrSheet.brandTagline": 1,
-                "packages/i18n/src/locales/es/faq.json#categories.about.items.different.answer": 1,
-                "packages/i18n/src/locales/es/faq.json#categories.contributors.items.placeReviews.answer": 1,
-                "packages/i18n/src/locales/es/faq.json#categories.contributors.items.submitPhotos.answer": 1,
-                "packages/i18n/src/locales/es/faq.json#categories.partners.items.officialPartner.answer": 1,
                 "packages/i18n/src/locales/es/features.json#gastro.title": 1,
                 "packages/i18n/src/locales/es/features.json#hero.stats.worlds.label": 1,
                 "packages/i18n/src/locales/es/features.json#meta.description": 1,
@@ -356,10 +352,6 @@
                 "packages/i18n/src/locales/es/features.json#vistazo.pillars.descubrir.description": 1,
                 "packages/i18n/src/locales/es/pricing.json#tourist.steps.1.desc": 1,
                 "packages/i18n/src/locales/pt/common.json#qrSheet.brandTagline": 1,
-                "packages/i18n/src/locales/pt/faq.json#categories.about.items.different.answer": 1,
-                "packages/i18n/src/locales/pt/faq.json#categories.contributors.items.placeReviews.answer": 1,
-                "packages/i18n/src/locales/pt/faq.json#categories.contributors.items.submitPhotos.answer": 1,
-                "packages/i18n/src/locales/pt/faq.json#categories.partners.items.officialPartner.answer": 1,
                 "packages/i18n/src/locales/pt/features.json#gastro.title": 1,
                 "packages/i18n/src/locales/pt/features.json#hero.stats.worlds.label": 1,
                 "packages/i18n/src/locales/pt/features.json#meta.description": 1,
@@ -408,5 +400,5 @@
         }
     },
     "historyWordFiles": 14,
-    "ledgerFingerprint": "588daabd30d216881abfe397b76ba989bf6d30623d2bda9454dc2cb11d1d3628"
+    "ledgerFingerprint": "9546370c041f5d62e82bce7de22f72c9b90d4e08127cc1b823078cc13242cc86"
 }

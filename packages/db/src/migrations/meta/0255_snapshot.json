@@ -1,5 +1,5 @@
 {
-  "id": "a3af3134-aabc-49d7-a6aa-155c60477cb6",
+  "id": "0e1d3b26-3764-4bd6-85fd-731312b389ce",
   "prevId": "c51ad629-ddc5-48a9-a931-48be83d979ab",
   "version": "7",
   "dialect": "postgresql",
@@ -11747,13 +11747,6 @@
           "type": "jsonb",
           "primaryKey": false,
           "notNull": false
-        },
-        "translation_meta": {
-          "name": "translation_meta",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "'{}'::jsonb"
         },
         "type": {
           "name": "type",
@@ -28074,13 +28067,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "translation_meta": {
-          "name": "translation_meta",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "'{}'::jsonb"
-        },
         "type": {
           "name": "type",
           "type": "venue_type_enum",
@@ -32358,6 +32344,13 @@
           "notNull": true,
           "default": false
         },
+        "payment_methods": {
+          "name": "payment_methods",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "ARRAY['CARD']::text[]"
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
@@ -32458,6 +32451,10 @@
         "ck_plan_version_trial_days": {
           "name": "ck_plan_version_trial_days",
           "value": "\"plan_version\".\"trial_days\" >= 0"
+        },
+        "ck_plan_version_payment_methods": {
+          "name": "ck_plan_version_payment_methods",
+          "value": "cardinality(\"plan_version\".\"payment_methods\") >= 1 AND \"plan_version\".\"payment_methods\" <@ ARRAY['CARD', 'MANUAL']::text[]"
         }
       },
       "isRLSEnabled": false

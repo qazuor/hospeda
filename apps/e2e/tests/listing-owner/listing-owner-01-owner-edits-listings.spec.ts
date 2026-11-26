@@ -324,13 +324,14 @@ test.describe('LISTING-OWNER-01: venue or experience owner edits listings — bo
 
         // ── Step 3 assertion: public venue ficha reflects new menuUrl ─────
 
-        // ListingContactBlock.astro (fed by buildVenueContactBlock) renders menuUrl as an anchor with class
-        // venue-contact__menu-btn. The page is SSR on-demand (prerender=false) so
-        // a fresh navigation serves the current DB value.
+        // HOS-2652 (CARD-052 H-1): the menu has ONE CTA, the price card's «Ver carta»
+        // (ListingPriceCard.astro, `data-contact-channel="menu"`); the contact block no
+        // longer repeats it. The page is SSR on-demand (prerender=false) so a fresh
+        // navigation serves the current DB value.
         await page.goto(`${WEB_URL}/es/comer-y-salir/${VENUE_SLUG}/`, {
             waitUntil: 'domcontentloaded'
         });
-        const menuLink = page.locator('a.venue-contact__menu-btn');
+        const menuLink = page.locator('a.listing-price-card__cta[data-contact-channel="menu"]');
         await expect(menuLink).toHaveAttribute('href', newMenuUrl);
 
         // ── Step 4: edit experience — change richDescription ──────────────────

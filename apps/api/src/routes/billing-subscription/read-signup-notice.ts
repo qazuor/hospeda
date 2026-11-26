@@ -8,6 +8,7 @@ import {
 } from '@repo/db';
 import {
     BillingCycleSchema,
+    PlanPaymentMethodsSchema,
     ServiceErrorCode,
     type SignupNoticeResponse,
     SignupNoticeResponseSchema,
@@ -133,12 +134,14 @@ export async function readSignupNotice(input: {
         .from(trials)
         .where(and(eq(trials.userId, input.userId), eq(trials.vertical, vertical.data)))
         .limit(1);
+    const paymentMethods = PlanPaymentMethodsSchema.parse(choice.paymentMethods);
     if (!isTrialRunning({ trial: trial ?? null, now }).running || !trial?.endsAt) {
         return {
             plan,
             pendingAttempt,
             ...(blockingCommitment ? { blockingCommitment } : {}),
             vertical: vertical.data,
+            paymentMethods,
             touristVip,
             trial: { status: 'NOT_RUNNING' }
         };
@@ -149,6 +152,7 @@ export async function readSignupNotice(input: {
         pendingAttempt,
         ...(blockingCommitment ? { blockingCommitment } : {}),
         vertical: vertical.data,
+        paymentMethods,
         touristVip,
         trial: {
             status: 'RUNNING',

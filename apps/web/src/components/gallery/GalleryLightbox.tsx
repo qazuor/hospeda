@@ -51,6 +51,7 @@ export function GalleryLightbox({
     resolvePlaceholder
 }: GalleryLightboxProps) {
     const [index, setIndex] = useState(initialIndex);
+    const [showDetails, setShowDetails] = useState(false);
     // Tracks whether the displayed image has finished loading, so a spinner can
     // show while navigating between photos. Set true in the nav handlers (same
     // update as the index change) rather than in an effect: `onLoad` then
@@ -169,7 +170,10 @@ export function GalleryLightbox({
             )}
 
             <DialogBody bare>
-                <figure className={styles.lightboxFigure}>
+                <figure
+                    className={styles.lightboxFigure}
+                    data-show-details={showDetails}
+                >
                     {isImgLoading && (
                         <Spinner
                             size="lg"
@@ -228,12 +232,25 @@ export function GalleryLightbox({
                 </button>
             )}
 
-            <GalleryLightboxThumbs
-                images={images}
-                index={index}
-                onSelect={goTo}
-                t={t}
-            />
+            <button
+                type="button"
+                className={styles.lightboxDetailsToggle}
+                aria-expanded={showDetails}
+                onClick={() => setShowDetails(!showDetails)}
+            >
+                {t('accommodations.detail.sectionTabs.details')}
+            </button>
+            <div
+                className={styles.lightboxThumbWrapper}
+                data-show-details={showDetails}
+            >
+                <GalleryLightboxThumbs
+                    images={images}
+                    index={index}
+                    onSelect={goTo}
+                    t={t}
+                />
+            </div>
         </Dialog>
     );
 }

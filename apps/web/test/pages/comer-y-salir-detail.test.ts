@@ -208,8 +208,8 @@ describe('HOS-2579 — venue slots and section tabs (AC-2b, AC-6)', () => {
 
     it('creates a tab only for a slot that renders', () => {
         expect(src).toContain('photos: galleryImages.length > 0');
-        expect(src).toContain('details: hasDescriptionSection');
-        expect(src).toContain('amenities: hasOffersSection');
+        expect(src).not.toContain('details: hasDescriptionSection');
+        expect(src).not.toContain('amenities: hasOffersSection');
         expect(src).toContain('hours: hasOpeningHours');
         expect(src).toContain('location: venueLocation !== null');
         expect(src).toContain(

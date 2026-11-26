@@ -1148,8 +1148,19 @@
             "partnerWithoutOwner": "Este Partner todavía no tiene dueño.",
             "commitmentTaken": "El dueño ya tiene una suscripción incompatible.",
             "planNotForSale": "El plan ya no está disponible para la venta.",
-            "generic": "No se pudo configurar el plan y el pago."
-        }
+            "generic": "No se pudo configurar el plan y el pago.",
+            "paymentMethodNotAccepted": "El plan no acepta ese método de pago.",
+            "providerRejected": "Mercado Pago rechazó la autorización. Revisá el plan y volvé a intentar.",
+            "providerUnavailable": "Mercado Pago no está disponible ahora. Probá de nuevo en un minuto."
+        },
+        "methodChoice": "Método de pago",
+        "card": "Tarjeta (suscripción de Mercado Pago)",
+        "confirmationTitleCard": "Vas a crear una suscripción con tarjeta en espera de autorización. Se genera el link de Mercado Pago para que el dueño la autorice.",
+        "linkTitle": "Link de autorización de Mercado Pago",
+        "linkHelp": "Compartilo con el dueño del Partner. Es de un solo uso, está atado a esta suscripción y deja de servir cuando se cierra la ventana de alta.",
+        "copy": "Copiar link",
+        "copied": "Link copiado",
+        "close": "Cerrar"
     },
     "partnerPresenceModeration": {
         "title": "Presencia pública",

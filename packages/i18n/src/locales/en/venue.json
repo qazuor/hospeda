@@ -87,6 +87,7 @@
             "messageTemplate": "Hi, I saw your listing for {{name}} on Hospeda and wanted to ask something."
         },
         "menuCarta": {
+            "viewExternal": "View menu (external site)",
             "title": "Menu",
             "attachmentImage": "Menu photo",
             "attachmentPdf": "Menu PDF",

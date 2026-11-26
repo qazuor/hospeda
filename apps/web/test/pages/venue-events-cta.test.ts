@@ -95,7 +95,7 @@ describe('comer-y-salir/[slug].astro — accepts-events CTA (HOS-1055)', () => {
         expect(VENUE_PAGE).toContain("key: 'eventsAllowed', value: undefined");
         // The else branch keeps every rule — the events line survives when
         // there is no contact channel to show a CTA with instead.
-        expect(VENUE_PAGE).toContain(': venue.policies;');
+        expect(VENUE_PAGE).toContain(': policiesWithoutPayments;');
     });
 
     it('mounts the CTA guarded by showEventsCta, with no href passed in', () => {

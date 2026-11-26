@@ -19,7 +19,6 @@ import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
 import MapPlaceholder from '@/components/MapPlaceholder.astro';
 import { AccommodationsListingMap } from '@/components/maps/AccommodationsListingMap.client';
 import { FilterSidebar } from '@/components/shared/filters/FilterSidebar.client';
-import type { FilterGroup } from '@/components/shared/filters/FilterSidebar.client';
 import { destinationsApi, SSR_PUBLIC_CACHE_TTL_MS } from '@/lib/api/endpoints';
 import { loadAccommodationMapResults } from '@/lib/accommodation-map-results';
 import { fetchAccommodationFilterCatalog } from '@/lib/filters/accommodation-filter-catalog';
@@ -32,9 +31,8 @@ import { buildListingViewHref } from '@/lib/listing-view-href';
 import { CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
 import { hasActiveAccommodationListingFilters } from '@/lib/cache/listing-cache';
 import { applyCacheHeaders } from '@/lib/cache/response-cache';
-import { getAccommodationTypeLabel, getBadgeStatusColor } from '@/lib/colors';
-import { formatPrice } from '@/lib/format-utils';
-import { AccommodationTypeEnum, EntitlementKeyEnum } from '@repo/schemas';
+import { EntitlementKeyEnum } from '@repo/schemas';
+import { buildAccommodationMapFilters, buildAccommodationMapLabels } from '@/lib/maps/accommodation-map-view-model';
 import { getGatePlanNames } from '@/lib/billing/gate-plan-names';
 
 const locale = Astro.locals.locale as SupportedLocale;
@@ -49,10 +47,6 @@ const consultAvailabilityLabel = t(
 	'home.accommodations.price.consultAvailability',
 	'Consultar disponibilidad'
 );
-
-// SPEC-098 T-044: Pass authentication state to AccommodationsListingMap so
-// the popup FavoriteButton can behave correctly for guests vs. signed-in users.
-
 // No visible pagination; cap the initial pins/cards independently of totals.
 const MAP_DISPLAY_CAP = 100;
 
@@ -173,113 +167,9 @@ const firstWithCoords = locatedCards[0];
 const mapCenter: [number, number] = firstWithCoords?.approximateLocation
 	? [firstWithCoords.approximateLocation.lat, firstWithCoords.approximateLocation.lng]
 	: LITORAL_CENTER;
-
-// Filter sidebar config (same as list view)
-const filterGroups: FilterGroup[] = [
-	{ id: 'q', label: t('accommodations.sidebar.search', 'Búsqueda por texto'), type: 'search', placeholder: t('accommodations.sidebar.searchPlaceholder', 'Buscar por nombre o descripción...') },
-	{ id: 'isFeatured', label: t('accommodations.sidebar.featured', 'Solo destacados'), type: 'toggle' },
-	{
-		id: 'types',
-		label: t('accommodations.sidebar.type', 'Tipo de Alojamiento'),
-		type: 'checkbox',
-		options: [
-			{ value: 'APARTMENT', label: getAccommodationTypeLabel({ type: 'APARTMENT', t }) },
-			{ value: 'HOUSE', label: getAccommodationTypeLabel({ type: 'HOUSE', t }) },
-			{ value: 'COUNTRY_HOUSE', label: getAccommodationTypeLabel({ type: 'COUNTRY_HOUSE', t }) },
-			{ value: 'CABIN', label: getAccommodationTypeLabel({ type: 'CABIN', t }) },
-			{ value: 'HOTEL', label: getAccommodationTypeLabel({ type: 'HOTEL', t }) },
-			{ value: 'HOSTEL', label: getAccommodationTypeLabel({ type: 'HOSTEL', t }) },
-			{ value: 'CAMPING', label: getAccommodationTypeLabel({ type: 'CAMPING', t }) },
-			{ value: 'ROOM', label: getAccommodationTypeLabel({ type: 'ROOM', t }) },
-			{ value: 'RESORT', label: getAccommodationTypeLabel({ type: 'RESORT', t }) },
-			{ value: 'APART_HOTEL', label: getAccommodationTypeLabel({ type: 'APART_HOTEL', t }) },
-			{ value: 'ESTANCIA', label: getAccommodationTypeLabel({ type: 'ESTANCIA', t }) },
-			{ value: 'BED_AND_BREAKFAST', label: getAccommodationTypeLabel({ type: 'BED_AND_BREAKFAST', t }) },
-		],
-	},
-	{
-		id: 'destinationIds',
-		label: t('accommodations.sidebar.destination', 'Destino'),
-		type: 'select-search',
-		options: destinations.map((d) => ({ value: d.id, label: d.name })),
-		maxVisible: 8,
-	},
-	{
-		id: 'amenities',
-		label: t('accommodations.sidebar.amenities', 'Comodidades'),
-		type: 'icon-chips',
-		// SPEC-266: `name` dropped; use `slug` as the i18n key segment.
-		options: amenities.map((a) => ({ value: a.id, label: t(`accommodations.amenityNames.${a.slug ?? ''}`, a.slug ?? undefined), icon: a.icon ?? undefined })),
-		maxVisible: 10,
-	},
-	{
-		id: 'features',
-		label: t('accommodations.sidebar.features', 'Características'),
-		type: 'icon-chips',
-		// SPEC-266: `name` dropped; resolve label from i18n by slug.
-		options: features.map((f) => ({ value: f.id, label: t(`accommodations.featureNames.${f.slug ?? ''}`, f.slug ?? undefined), icon: f.icon ?? undefined })),
-		maxVisible: 10,
-	},
-	{
-		id: 'dates',
-		label: t('accommodations.sidebar.dates', 'Llegada y salida'),
-		type: 'date-range',
-		mode: 'bounds',
-		checkInPlaceholder: t('accommodations.contextBar.checkIn', 'Llegada'),
-		checkOutPlaceholder: t('accommodations.contextBar.checkOut', 'Salida'),
-		description: t(
-			'accommodations.sidebar.dates.helper',
-			'Por ahora informativo: la disponibilidad en tiempo real está en desarrollo y todavía no afecta los resultados.'
-		),
-	},
-	{
-		id: 'adults',
-		label: t('accommodations.sidebar.adults', 'Adultos'),
-		type: 'stepper',
-		min: 1,
-		// Display default 1 (not 2), matching the shared buildAccommodationsFilterGroups
-		// config — BETA-161: never imply an unsolicited "2 adults" party size.
-		max: 10,
-		defaultValue: 1,
-		emitWhenAtDefault: true,
-	},
-	{
-		id: 'children',
-		label: t('accommodations.sidebar.children', 'Niños'),
-		type: 'stepper',
-		min: 0,
-		max: 6,
-		defaultValue: 0,
-		emitWhenAtDefault: true,
-		description: t('accommodations.sidebar.children.helper', '(menores de 5 años)'),
-	},
-	{ id: 'minBedrooms', label: t('accommodations.sidebar.bedrooms', 'Dormitorios'), type: 'stepper', min: 0, max: 10, defaultValue: 0 },
-	{ id: 'minBathrooms', label: t('accommodations.sidebar.bathrooms', 'Baños'), type: 'stepper', min: 0, max: 10, defaultValue: 0 },
-	{
-		id: 'price',
-		label: t('accommodations.sidebar.priceRange', 'Precio por noche'),
-		type: 'dual-range',
-		min: 5000,
-		max: 150000,
-		step: 1000,
-		format: 'currency',
-		includeNullLabel: t('accommodations.sidebar.includeNoPrice', 'Incluir sin precio'),
-		includeNullParam: 'includeNoPrice',
-		defaultIncludeNull: true,
-	},
-	{ id: 'minRating', label: t('accommodations.sidebar.rating', 'Calificación'), type: 'stars', includeNullLabel: t('accommodations.sidebar.includeNoReviews', 'Incluir sin calificación'), includeNullParam: 'includeNoReviews', defaultIncludeNull: true },
-];
-
-const sortOptions = [
-	{ value: 'relevance', label: t('accommodations.sort.relevance', 'Relevancia') },
-	{ value: 'price_asc', label: t('accommodations.sort.priceAsc', 'Precio: menor a mayor') },
-	{ value: 'price_desc', label: t('accommodations.sort.priceDesc', 'Precio: mayor a menor') },
-	{ value: 'rating', label: t('accommodations.sort.rating', 'Mejor valorados') },
-	{ value: 'recent', label: t('accommodations.sort.recent', 'Más recientes') },
-	// SPEC-098 T-052 — orders by total active bookmarks (descending) via the
-	// `mostSaved` synthetic sort field on the public accommodation list endpoint.
-	{ value: 'mostSaved', label: t('ui.sort.most_bookmarked', 'Más guardados') },
-];
+const { filterGroups, sortOptions } = buildAccommodationMapFilters({
+	locale, destinations, amenities, features
+});
 
 // Build initial filter params for the sidebar
 const initialParams: Record<string, string> = {};
@@ -310,40 +200,8 @@ const listHref = buildListingViewHref({
 	searchParams: url.searchParams
 }).href;
 
-// Build per-id maps for popup enrichment. Resolved on the page so the island
-// stays i18n-agnostic and we don't need to serialize functions.
-// Derived from the canonical enum so popup labels exist for every type,
-// including the SPEC-213 additions (apart_hotel, estancia, bed_and_breakfast)
-// and motel, which the previous hardcoded list omitted (Bug B10 fix).
-const typeLabels: Record<string, string> = {};
-for (const key of Object.values(AccommodationTypeEnum)) {
-	typeLabels[key] = getAccommodationTypeLabel({ type: key, t });
-}
-const detailHrefById: Record<string, string> = {};
-const reviewsLabelById: Record<string, string> = {};
-const photosLabelById: Record<string, string> = {};
-const priceLabelById: Record<string, string> = {};
-for (const card of locatedCards) {
-	detailHrefById[card.id] = buildUrl({ locale, path: `alojamientos/${card.slug}` });
-	if (card.reviewsCount > 0) {
-		reviewsLabelById[card.id] = `(${tPlural('review.list.totalReviews', card.reviewsCount, { count: card.reviewsCount })})`;
-	}
-	if ((card.photoCount ?? 0) > 0) {
-		photosLabelById[card.id] = tPlural('common.photos', card.photoCount ?? 0, { count: card.photoCount ?? 0 });
-	}
-	if (card.price?.amount != null && card.price?.currency) {
-		priceLabelById[card.id] = formatPrice({
-			amount: card.price.amount,
-			currency: card.price.currency,
-			locale,
-		});
-	}
-}
-
-// Sidebar cards (mobile bottom sheet / desktop pane) mirror AccommodationCard
-// visually. The page resolves all the locale-aware copy + status colors once
-// here so the island can stay i18n-agnostic.
-const newColors = getBadgeStatusColor({ status: 'new' });
+const { typeLabels, detailHrefById, reviewsLabelById, photosLabelById, priceLabelById, newColors } =
+	buildAccommodationMapLabels({ locale, cards: locatedCards });
 ---
 
 <ListingLayout
@@ -515,7 +373,8 @@ const newColors = getBadgeStatusColor({ status: 'new' });
 			 * first paint and the moment the script publishes the measured
 			 * value, which left a tile-less gray strip in the map. */
 			height: calc(
-				100svh - var(--navbar-height, 80px) - var(--wave-bar-compact, 77px)
+				100svh - var(--navbar-height, 80px) - var(--wave-bar-compact, 77px) -
+				var(--mobile-dock-height) - var(--bottom-safe-inset, 0px)
 			);
 			min-height: 0;
 			margin: 0;
@@ -538,33 +397,10 @@ const newColors = getBadgeStatusColor({ status: 'new' });
 			height: 100%;
 		}
 
-		/* Mobile fullscreen map: drop the rounded corners and translucent
-		 * disclaimer pane from the desktop card look. We still need the
-		 * disclaimer copy visible somewhere, so it's painted as a small
-		 * overlay pinned to the top-right corner instead. */
+		/* Mobile fullscreen map: drop the card chrome. */
 		.acc-listing-map :global([class*="root"]) {
 			border-radius: 0;
 			box-shadow: none;
-		}
-		.acc-listing-map :global([class*="disclaimer"]) {
-			position: absolute;
-			/* Slot the disclaimer below the floating Lista/Mapa toggle on
-			 * mobile (toggle ends ~57px into the map) so the two never
-			 * overlap, even on a 320px viewport where horizontal room is
-			 * tight. Top-LEFT keeps the right side clear for the user. */
-			top: 64px;
-			left: 8px;
-			max-width: 50%;
-			padding: 6px 10px;
-			font-size: 0.625rem;
-			line-height: 1.3;
-			border-radius: var(--radius-button, 8px);
-			border: none;
-			background-color: var(--core-card-a90);
-			backdrop-filter: blur(4px);
-			-webkit-backdrop-filter: blur(4px);
-			z-index: 500;
-			pointer-events: none;
 		}
 
 		/* HOS-84: the decorative wave SVG is gone (Opt-B "band puro"), so the old
@@ -575,65 +411,7 @@ const newColors = getBadgeStatusColor({ status: 'new' });
 </style>
 
 <script>
-	/*
-	 * Mobile fullscreen-map setup. On narrow viewports the map page collapses
-	 * to: navbar + compact wave header + map filling the rest of the viewport.
-	 * Steps on every astro:page-load (so View Transitions still trigger it):
-	 *   1. Add `data-locked-compact` + the compact class directly. The wave state
-	 *      machine honors data-locked-compact (pins compact, suppresses hidden),
-	 *      and on listing the --hidden translate is suppressed anyway, so the bar
-	 *      can't expand back out or slide away near the top.
-	 *   2. Wait one frame for the compact class + CSS transition to apply,
-	 *      then measure the bar and publish its height as
-	 *      `--wave-bar-compact`. The map's CSS uses that var to size itself
-	 *      so the bottom edge lands exactly at the viewport bottom.
-	 *   3. Smooth-scroll so the map top lands flush below the compact bar
-	 *      (only if the user landed at the top — respect restored scroll on
-	 *      back navigation).
-	 */
-	function setupMobileFullscreenMap() {
-		if (window.matchMedia('(min-width: 768px)').matches) return;
-		const waveHeader = document.querySelector<HTMLElement>('.wave-header');
-		const mapEl = document.getElementById('acc-listing-map');
-		if (!waveHeader || !mapEl) return;
-
-		// Opt out of the browser's automatic scroll restoration on this page:
-		// we always want the map fullscreen landing, even on reload. Otherwise
-		// the restored scroll position fires between DOMContentLoaded and our
-		// setTimeout below, leaving the map a strip below the fold.
-		if ('scrollRestoration' in history) {
-			history.scrollRestoration = 'manual';
-		}
-
-		// Lock the wave header in compact mode. The wave state machine honors
-		// data-locked-compact (pins compact, never hides), and on listing the
-		// --hidden translate is suppressed regardless, so nothing expands or
-		// slides the bar out. The manual compact class covers the pre-init frame.
-		waveHeader.dataset.lockedCompact = 'true';
-		waveHeader.classList.add('wave-header--compact');
-
-		const navbarHeight =
-			parseFloat(
-				getComputedStyle(document.documentElement).getPropertyValue('--navbar-height')
-			) || 80;
-
-		// Wait for the CSS transition (~300ms) before measuring.
-		window.setTimeout(() => {
-			const bar = waveHeader.querySelector<HTMLElement>('.wave-header__bar');
-			const barHeight = bar?.offsetHeight ?? 88;
-			document.documentElement.style.setProperty(
-				'--wave-bar-compact',
-				`${barHeight}px`
-			);
-
-			const target =
-				mapEl.getBoundingClientRect().top +
-				window.scrollY -
-				navbarHeight -
-				barHeight;
-			window.scrollTo({ top: Math.max(0, target), behavior: 'smooth' });
-		}, 340);
-	}
+	import { setupMobileFullscreenMap } from '@/lib/maps/accommodation-map-fullscreen.client';
 
 	// Fire on first paint (DOMContentLoaded) and on every SPA navigation
 	// (astro:page-load). The fullscreen-map setup is idempotent so re-runs

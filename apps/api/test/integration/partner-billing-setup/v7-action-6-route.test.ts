@@ -56,7 +56,8 @@ async function seedCatalog() {
             sellable: true,
             current: true,
             trialDays: 0,
-            allowsPause: false
+            allowsPause: false,
+            paymentMethods: ['CARD', 'MANUAL']
         })
         .returning();
     if (!version) throw new Error('Could not create sellable Partner version');
@@ -393,13 +394,11 @@ describe('TEST:V7:17 AC:V7:17 — action 6 configures a Partner plan and manual 
             (await preview.json()) as {
                 data: {
                     options: unknown[];
-                    method: string;
                     owner: { name: string; email: string };
                     ownerUserId: string;
                 };
             }
         ).data;
-        expect(previewData.method).toBe('MANUAL');
         expect(previewData.owner).toEqual({ name: 'Action 6 owner', email: owner.email });
         expect(previewData.ownerUserId).toBe(owner.id);
         expect(
@@ -416,7 +415,8 @@ describe('TEST:V7:17 AC:V7:17 — action 6 configures a Partner plan and manual 
                 planSlug: partnerOptions.planSlug,
                 cycle: 'monthly',
                 amountMinor: 25000,
-                currency: 'ARS'
+                currency: 'ARS',
+                paymentMethods: ['CARD', 'MANUAL']
             },
             {
                 billingOptionId: partnerOptions.quarterlyOptionId,
@@ -425,7 +425,8 @@ describe('TEST:V7:17 AC:V7:17 — action 6 configures a Partner plan and manual 
                 planSlug: partnerOptions.planSlug,
                 cycle: 'quarterly',
                 amountMinor: 70000,
-                currency: 'ARS'
+                currency: 'ARS',
+                paymentMethods: ['CARD', 'MANUAL']
             }
         ]);
         expect(await rowCounts(owner.id, partner.id)).toEqual(before);

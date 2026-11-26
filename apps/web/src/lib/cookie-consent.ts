@@ -15,6 +15,31 @@
 /** Cookie name used to persist consent state. */
 export const CONSENT_COOKIE_NAME = 'cookie-consent' as const;
 
+/** Opens the existing site-wide consent preferences dialog. */
+export const COOKIE_CONSENT_REOPEN_EVENT = 'cookie-consent:reopen';
+
+let preferencesRequest: { readonly opener: HTMLElement } | undefined;
+
+/** Requests the preferences dialog, including before the island has hydrated. */
+export function requestCookieConsentPreferences({
+    opener
+}: {
+    readonly opener: HTMLElement;
+}): void {
+    if (typeof window === 'undefined') return;
+    preferencesRequest = { opener };
+    window.dispatchEvent(new CustomEvent(COOKIE_CONSENT_REOPEN_EVENT));
+}
+
+/** Consumes a pending request once, on event delivery or at the island's first mount. */
+export function consumeCookieConsentPreferencesRequest():
+    | { readonly opener: HTMLElement }
+    | undefined {
+    const pending = preferencesRequest;
+    preferencesRequest = undefined;
+    return pending;
+}
+
 /**
  * Window event dispatched after every {@link saveConsent} call so listeners
  * (e.g. the Umami identify flush) can react to consent changes without a

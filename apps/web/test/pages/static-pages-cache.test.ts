@@ -48,7 +48,6 @@ const STATIC_PAGES = [
     'nosotros/index.astro',
     'beneficios/index.astro',
     'contacto/index.astro',
-    'preguntas-frecuentes/index.astro',
     'legal/cookies/index.astro',
     'legal/arrepentimiento/index.astro',
     'legal/privacidad/index.astro',

@@ -16,9 +16,11 @@
  */
 
 import { StarIcon } from '@repo/icons';
-import { useState } from 'react';
+import { type FormEvent, useId, useState } from 'react';
+import { ListingReviewCta } from '@/components/listing/ListingReviewCta';
 import { Spinner } from '@/components/shared/feedback/Spinner';
 import { useAccountPermissions } from '@/hooks/use-account-permissions';
+import { apiClient } from '@/lib/api/client';
 import type { ExperienceReviewPublicItem } from '@/lib/api/endpoints';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -41,6 +43,7 @@ export interface ExperienceReviewsProps {
     readonly averageRating: number;
     /** Active locale for i18n. */
     readonly locale: SupportedLocale;
+    readonly signInHref: string;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -85,6 +88,7 @@ export function ExperienceReviews({
     initialReviews,
     totalReviews,
     averageRating,
+    signInHref,
     locale
 }: ExperienceReviewsProps) {
     const { t, tPlural } = createTranslations(locale);
@@ -93,6 +97,32 @@ export function ExperienceReviews({
     // public and stay server-rendered; only the CTA depends on the visitor.
     const { user } = useAccountPermissions();
     const isAuthenticated = user !== null;
+    const [formOpen, setFormOpen] = useState(false);
+    const [submission, setSubmission] = useState<'idle' | 'sending' | 'pending' | 'error'>('idle');
+    const [ratingInvalid, setRatingInvalid] = useState(false);
+    const ratingErrorId = useId();
+
+    async function submitReview(event: FormEvent<HTMLFormElement>) {
+        event.preventDefault();
+        if (submission === 'sending') return;
+        const data = new FormData(event.currentTarget);
+        const overallRating = STAR_POSITIONS.find((stars) => String(stars) === data.get('rating'));
+        if (overallRating === undefined) {
+            setRatingInvalid(true);
+            return;
+        }
+        const content = String(data.get('content') ?? '').trim();
+        if (content && content.length < 10) {
+            setSubmission('error');
+            return;
+        }
+        setSubmission('sending');
+        const result = await apiClient.postProtected({
+            path: `/api/v1/protected/experiences/${encodeURIComponent(experienceId)}/reviews`,
+            body: { overallRating, ...(content ? { content } : {}) }
+        });
+        setSubmission(result.ok ? 'pending' : 'error');
+    }
 
     const [reviews, setReviews] = useState<readonly ExperienceReviewPublicItem[]>(initialReviews);
     const [page, setPage] = useState(1);
@@ -189,22 +219,6 @@ export function ExperienceReviews({
             </div>
 
             {/* Empty state */}
-            {reviews.length === 0 && (
-                <p
-                    style={{
-                        fontFamily: 'var(--font-sans)',
-                        fontSize: '0.95rem',
-                        color: 'var(--core-muted-foreground)',
-                        fontStyle: 'italic',
-                        margin: 0
-                    }}
-                >
-                    {t(
-                        'experience.reviews.empty',
-                        'Todavía no hay reseñas. ¡Sé el primero en opinar!'
-                    )}
-                </p>
-            )}
 
             {/* Review list */}
             {reviews.length > 0 && (
@@ -346,20 +360,71 @@ export function ExperienceReviews({
             )}
 
             {/* Submit CTA — authenticated users only */}
-            {isAuthenticated && (
-                <p
-                    style={{
-                        fontFamily: 'var(--font-sans)',
-                        fontSize: '0.875rem',
-                        color: 'var(--brand-primary)',
-                        fontWeight: 500,
-                        margin: 0,
-                        textAlign: 'center'
-                    }}
-                >
-                    {t('experience.reviews.submit', 'Dejar reseña')}
-                </p>
-            )}
+            <ListingReviewCta
+                locale={locale}
+                signInHref={signInHref}
+                empty={totalReviews === 0}
+                onOpen={isAuthenticated ? () => setFormOpen(true) : undefined}
+            >
+                {submission === 'pending' ? (
+                    <p role="status">{t('review.venueSidebar.pendingTitle')}</p>
+                ) : isAuthenticated && formOpen ? (
+                    <form onSubmit={submitReview}>
+                        <label>
+                            {t('review.form.overallLabel')}{' '}
+                            <select
+                                name="rating"
+                                required
+                                defaultValue=""
+                                aria-invalid={ratingInvalid || undefined}
+                                aria-describedby={ratingInvalid ? ratingErrorId : undefined}
+                                onInvalid={() => setRatingInvalid(true)}
+                                onChange={() => setRatingInvalid(false)}
+                            >
+                                <option
+                                    value=""
+                                    disabled
+                                >
+                                    {t('review.form.overallPlaceholder')}
+                                </option>
+                                {STAR_POSITIONS.map((stars) => (
+                                    <option
+                                        key={stars}
+                                        value={stars}
+                                    >
+                                        {stars}
+                                    </option>
+                                ))}
+                            </select>
+                        </label>
+                        {ratingInvalid && (
+                            <p
+                                id={ratingErrorId}
+                                role="alert"
+                            >
+                                {t('review.form.errors.overallRequired')}
+                            </p>
+                        )}
+                        <label>
+                            {t('review.form.contentLabel')}{' '}
+                            <textarea
+                                name="content"
+                                minLength={10}
+                                maxLength={2000}
+                            />
+                        </label>
+                        {submission === 'error' && (
+                            <p role="alert">{t('review.form.errors.submitFailed')}</p>
+                        )}
+                        <button
+                            type="submit"
+                            disabled={submission === 'sending'}
+                        >
+                            {t('review.form.submitButton')}
+                        </button>
+                    </form>
+                ) : null}
+            </ListingReviewCta>
         </section>
     );
 }

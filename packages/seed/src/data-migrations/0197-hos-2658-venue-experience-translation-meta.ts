@@ -1,6 +1,6 @@
 /**
  * HOS-2658 (spec §8.7, AC-26): backfills `translation_meta` of venues and
- * experiences, whose column arrived empty with drizzle 0255.
+ * experiences, whose column arrived empty with drizzle 0256.
  *
  * Every existing non-empty `en`/`pt` value whose Spanish source is non-empty and
  * that has no meta entry yet becomes AUTOMATIC: `{ autoTranslated: true,

@@ -37,9 +37,17 @@ describe('ClampedText (AC-2.4)', () => {
         expect(noscript).toContain('line-clamp: unset');
     });
 
-    it('is used by both description renderings', () => {
+    it('clamps both the plain and rich description through the same renderer', () => {
+        // D19 / CARD-022 H-6: the route deduplicates content before passing either body to Description.
         expect(read('components/accommodation/Description.astro')).toContain('<ClampedText');
-        expect(read('pages/[lang]/alojamientos/[slug].astro')).toContain('<ClampedText');
+        const page = read('pages/[lang]/alojamientos/[slug].astro');
+        expect(page).toMatch(
+            /displayDescription\s*=[\s\S]*?\? safeRichDescriptionHtml : safeDescriptionHtml;/
+        );
+        expect(page).toMatch(
+            /<Description\b[^>]*summary=\{displaySummary\} descriptionHtml=\{displayDescription\}/
+        );
+        expect(page).not.toMatch(/<ClampedText\b/);
     });
 
     it.each([

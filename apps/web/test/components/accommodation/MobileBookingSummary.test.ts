@@ -15,14 +15,16 @@ it('offers the WhatsApp shortcut directly at the desktop price', () => {
 const source = (path: string) => readFileSync(resolve(__dirname, '../../../src', path), 'utf8');
 
 describe('MobileBookingSummary', () => {
-    it('places the mobile alert inside the price summary, after its price and actions', () => {
+    it('places the mobile alert after description, amenities and promotions', () => {
+        // CARD-022/023/024 H-2: the alert moves out of the booking summary.
         const page = source('pages/[lang]/alojamientos/[slug].astro');
         expect(page).toMatch(
-            /<MobileBookingSummary\b[\s\S]*?>\s*<ListingPriceAlert\b[^>]*placement="summary"[^>]*\/>\s*<\/MobileBookingSummary>/
+            /<ListingDetailSlot name="description"[\s\S]*?<ListingDetailSlot name="offers"[\s\S]*?<ListingDetailSlot name="promotions">\s*<PlacePromotions\b[^>]*\/>\s*<ListingPriceAlert\b[^>]*placement="summary"[^>]*\/>\s*<\/ListingDetailSlot>/
         );
+        expect(page.match(/placement="summary"/g)).toHaveLength(1);
         const summary = source('components/accommodation/MobileBookingSummary.astro');
         expect(summary).toMatch(
-            /<MobileBookingSummaryActions\b[^>]*\/>\s*\)}\s*<\/ListingPriceCard>\s*<slot \/>/
+            /<MobileBookingSummaryActions\b[^>]*\/>\s*\)}\s*<\/ListingPriceCard>/
         );
         const alert = source('components/accommodation/ListingPriceAlert.astro');
         expect(alert).toContain(
@@ -88,7 +90,8 @@ describe('MobileBookingSummary', () => {
         );
     });
 
-    it('mounts the summary immediately after QuickFacts and preserves the contact and reviews cards in the sidebar', () => {
+    it('mounts the summary after QuickFacts and keeps the sidebar inquiry entry and review card', () => {
+        // CARD-022 H-4 and CARD-026 H-3: the form lives in the panel and the empty CTA in reviews.
         const page = source('pages/[lang]/alojamientos/[slug].astro');
         const sidebar = page.match(/<Fragment slot="sidebar">([\s\S]*?)<\/Fragment>/)?.[1];
 
@@ -96,13 +99,8 @@ describe('MobileBookingSummary', () => {
         expect(page.indexOf('<MobileBookingSummary')).toBeLessThan(
             page.indexOf('<RelatedCarousel')
         );
-        for (const element of [
-            'PricingSidebar',
-            'ContactCard',
-            'ListingContactCard',
-            'ReviewSidebarCard'
-        ]) {
-            expect(sidebar).toContain(`<${element}`);
-        }
+        expect(sidebar).toMatch(/<PricingSidebar\b[^>]*panelId=\{panelId\}/);
+        expect(sidebar).toMatch(/reviewsCount > 0 && <ReviewSidebarCard\b/);
+        expect(page).toMatch(/reviewsCount === 0 && \(\s*<ReviewSidebarCard\b/);
     });
 });

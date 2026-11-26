@@ -18,6 +18,7 @@
  */
 
 import { type FormEvent, useCallback, useEffect, useRef, useState } from 'react';
+import { ListingReviewCta } from '@/components/listing/ListingReviewCta';
 import { FieldError, fieldErrorId } from '@/components/ui/FieldError';
 import { useAccountPermissions } from '@/hooks/use-account-permissions';
 import { useDialogHistoryBack } from '@/hooks/useDialogHistoryBack';
@@ -51,6 +52,7 @@ interface VenueReviewFormProps {
     readonly apiUrl: string;
     /** Sign-in URL (with return path) shown to anonymous visitors. */
     readonly signInHref: string;
+    readonly empty?: boolean;
     /** Public bound-section states; absent on an older cached payload. */
     readonly sectionStates?: PublicReviewSectionStates;
 }
@@ -71,6 +73,7 @@ export function VenueReviewForm({
     locale,
     apiUrl,
     signInHref,
+    empty = false,
     sectionStates
 }: VenueReviewFormProps) {
     const { t } = createTranslations(locale);
@@ -236,98 +239,104 @@ export function VenueReviewForm({
 
     return (
         <>
-            <aside
-                className={styles.card}
-                aria-labelledby="gastronomy-review-card-title"
-            >
-                <div className={styles.cardHeader}>
-                    <span
-                        className={styles.cardBadge}
-                        aria-hidden="true"
-                    >
-                        <svg
-                            viewBox="0 0 24 24"
-                            width="18"
-                            height="18"
-                            fill="currentColor"
+            {submitted ? (
+                <aside className={styles.card}>
+                    <div className={styles.cardHeader}>
+                        <span
+                            className={styles.cardBadge}
                             aria-hidden="true"
-                            focusable="false"
                         >
-                            <title>Estrella</title>
-                            <path d="M12 2l2.92 5.92 6.53.95-4.72 4.6 1.11 6.5L12 17.6l-5.84 3.07 1.11-6.5-4.72-4.6 6.53-.95L12 2z" />
-                        </svg>
-                    </span>
-                    <h3
-                        id="gastronomy-review-card-title"
-                        className={styles.cardTitle}
-                    >
-                        {submitted
-                            ? t('review.venueSidebar.pendingTitle', 'Reseña en revisión')
-                            : t('review.venueSidebar.title', 'Tu opinión')}
-                    </h3>
-                </div>
-
-                {submitted ? (
-                    <output className={styles.cardPending}>
-                        {t(
-                            'review.venueSidebar.pendingBanner',
-                            'Tu reseña fue enviada y se publicará cuando nuestro equipo la apruebe.'
-                        )}
-                    </output>
-                ) : isAuthenticated ? (
-                    <>
-                        <p className={styles.cardText}>
-                            {t(
-                                'review.venueSidebar.canLeaveReview',
-                                'Compartí tu experiencia en este lugar para ayudar a otros comensales.'
-                            )}
-                        </p>
-                        <button
-                            type="button"
-                            className={styles.cardCta}
-                            onClick={handleOpen}
-                        >
-                            {t('review.venueSidebar.cta', 'Dejar reseña')}
                             <svg
                                 viewBox="0 0 24 24"
-                                width="16"
-                                height="16"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
+                                width="18"
+                                height="18"
+                                fill="currentColor"
                                 aria-hidden="true"
                                 focusable="false"
                             >
-                                <title>Abrir</title>
-                                <line
-                                    x1="5"
-                                    y1="12"
-                                    x2="19"
-                                    y2="12"
-                                />
-                                <polyline points="12 5 19 12 12 19" />
+                                <title>Estrella</title>
+                                <path d="M12 2l2.92 5.92 6.53.95-4.72 4.6 1.11 6.5L12 17.6l-5.84 3.07 1.11-6.5-4.72-4.6 6.53-.95L12 2z" />
                             </svg>
-                        </button>
-                    </>
-                ) : (
-                    <>
-                        <p className={styles.cardText}>
-                            {t(
-                                'review.venueSidebar.signInCtaHint',
-                                'Necesitás una cuenta para dejar tu reseña.'
-                            )}
-                        </p>
-                        <a
-                            className={styles.cardCta}
-                            href={signInHref}
+                        </span>
+                        <h3
+                            id="gastronomy-review-card-title"
+                            className={styles.cardTitle}
                         >
-                            {t('review.venueSidebar.signInCta', 'Iniciá sesión para opinar')}
-                        </a>
-                    </>
-                )}
-            </aside>
+                            {submitted
+                                ? t('review.venueSidebar.pendingTitle', 'Reseña en revisión')
+                                : t('review.venueSidebar.title', 'Tu opinión')}
+                        </h3>
+                    </div>
+
+                    {submitted ? (
+                        <output className={styles.cardPending}>
+                            {t(
+                                'review.venueSidebar.pendingBanner',
+                                'Tu reseña fue enviada y se publicará cuando nuestro equipo la apruebe.'
+                            )}
+                        </output>
+                    ) : isAuthenticated ? (
+                        <>
+                            <p className={styles.cardText}>
+                                {t(
+                                    'review.venueSidebar.canLeaveReview',
+                                    'Compartí tu experiencia en este lugar para ayudar a otros comensales.'
+                                )}
+                            </p>
+                            <button
+                                type="button"
+                                className={styles.cardCta}
+                                onClick={handleOpen}
+                            >
+                                {t('review.venueSidebar.cta', 'Dejar reseña')}
+                                <svg
+                                    viewBox="0 0 24 24"
+                                    width="16"
+                                    height="16"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    aria-hidden="true"
+                                    focusable="false"
+                                >
+                                    <title>Abrir</title>
+                                    <line
+                                        x1="5"
+                                        y1="12"
+                                        x2="19"
+                                        y2="12"
+                                    />
+                                    <polyline points="12 5 19 12 12 19" />
+                                </svg>
+                            </button>
+                        </>
+                    ) : (
+                        <>
+                            <p className={styles.cardText}>
+                                {t(
+                                    'review.venueSidebar.signInCtaHint',
+                                    'Necesitás una cuenta para dejar tu reseña.'
+                                )}
+                            </p>
+                            <a
+                                className={styles.cardCta}
+                                href={signInHref}
+                            >
+                                {t('review.venueSidebar.signInCta', 'Iniciá sesión para opinar')}
+                            </a>
+                        </>
+                    )}
+                </aside>
+            ) : (
+                <ListingReviewCta
+                    locale={locale}
+                    signInHref={signInHref}
+                    empty={empty}
+                    onOpen={isAuthenticated ? handleOpen : undefined}
+                />
+            )}
 
             <dialog
                 ref={dialogRef}

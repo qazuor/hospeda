@@ -19,6 +19,8 @@ import WaveHeader from '@/components/shared/ui/WaveHeader.astro';
 import { CompareBar } from '@/components/shared/compare/CompareBar.client';
 
 interface Props {
+	/** Smaller content gap below the same listing hero. */
+	readonly compactContentGap?: boolean;
 	readonly locale: SupportedLocale;
 	readonly title?: string;
 	readonly description?: string;
@@ -118,7 +120,7 @@ const showSort = Boolean(totalCount && sortOptions?.length);
 		</div>
 
 		<!-- Main content area (default slot of WaveHeader) -->
-		<div class="listing-body">
+		<div class:list={['listing-body', { 'listing-body--compact': Astro.props.compactContentGap }]}>
 		<div class="listing-body__container">
 			{/* Top filters (events use this) */}
 			{hasTopFilters && (
@@ -172,6 +174,8 @@ const showSort = Boolean(totalCount && sortOptions?.length);
 	.listing-body {
 		padding: var(--space-section-sm) 0;
 	}
+
+	.listing-body--compact { padding-block-start: var(--space-4); }
 
 	.listing-body__container {
 		max-width: var(--container-max);

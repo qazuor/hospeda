@@ -1,15 +1,12 @@
 /**
  * @file PromotionCards.tsx
- * @description The visible and blurred promotion cards of the free / VIP model
+ * @description The visible and locked promotion cards of the free / VIP model
  * (HOS-2589 §7.4, §7.6, §9). Shared by the detail-page island and the
  * `/promociones/` island.
  *
  * - A visible card shows the promotion; a «Solo VIP» one (seen by a VIP) carries
  *   the VIP badge as a mark of exclusivity (AC-13).
- * - A locked card shows only what the API sent: the discount value and type and a
- *   server-generated placeholder in place of the place name, blurred. It is a
- *   focusable `aria-disabled` button with an accessible name; click, Enter or
- *   Space opens the upsell dialog and never navigates (AC-9).
+ * - A locked card uses a neutral placeholder and links to sign-in or plan pricing.
  */
 
 import { LockIcon } from '@repo/icons';
@@ -19,16 +16,17 @@ import type {
     PromotionVisibleItem
 } from '@repo/schemas';
 import { formatCalendarDate } from '@repo/utils';
-import { useState } from 'react';
 import { PlanBadge } from '@/components/shared/ui/PlanBadge';
 import { PromotionWindowStatus } from '@/components/venue/PromotionWindowStatus.client';
+import { useSession } from '@/lib/auth-client';
+import { buildLoginRedirect } from '@/lib/auth-redirect';
 import { formatPrice } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { isRedundantText } from '@/lib/is-redundant-text';
 import { buildUrl } from '@/lib/urls';
 import { formatPromotionWindow } from '@/lib/venue/promotion-window';
 import styles from './PromotionCards.module.css';
-import { PromotionUpsellDialog } from './PromotionUpsellDialog';
 
 /** Props of {@link PromotionCards}. */
 export interface PromotionCardsProps {
@@ -89,6 +87,29 @@ function VisibleCard({
 }) {
     const { t, tPlural } = createTranslations(locale);
     const href = showPlace ? placeHref({ locale, item }) : null;
+    const headline = formatPromotionHeadline({
+        discountType: item.discountType,
+        discountValue: item.discountValue,
+        specialOfferText: null,
+        locale
+    });
+    const marketingTitle = isRedundantText({ a: item.title, b: item.description })
+        ? (item.description ?? item.title)
+        : item.title;
+    const title =
+        !marketingTitle.trim() || isRedundantText({ a: marketingTitle, b: headline })
+            ? headline
+            : marketingTitle;
+    const description =
+        item.description &&
+        !isRedundantText({ a: item.description, b: title }) &&
+        !isRedundantText({ a: item.description, b: headline })
+            ? item.description
+            : null;
+    const showHeadline =
+        headline !== title &&
+        !isRedundantText({ a: headline, b: title }) &&
+        !isRedundantText({ a: headline, b: description });
     const validUntil = item.validUntil
         ? formatCalendarDate({
               value: item.validUntil.toISOString(),
@@ -102,20 +123,11 @@ function VisibleCard({
             data-promotion-card="visible"
         >
             <div className={styles.cardTop}>
-                <p className={styles.headline}>
-                    {formatPromotionHeadline({
-                        discountType: item.discountType,
-                        discountValue: item.discountValue,
-                        specialOfferText: item.description,
-                        locale
-                    })}
-                </p>
+                <h3 className={styles.title}>{title}</h3>
                 {item.audience === 'vip' ? <PlanBadge name={vipPlanName} /> : null}
             </div>
-            <h3 className={styles.title}>{item.title}</h3>
-            {item.discountType !== 'special_offer' && item.description ? (
-                <p className={styles.description}>{item.description}</p>
-            ) : null}
+            {showHeadline ? <p className={styles.description}>{headline}</p> : null}
+            {description ? <p className={styles.description}>{description}</p> : null}
             {item.window ? (
                 <p className={styles.meta}>
                     <span>{formatPromotionWindow({ window: item.window, locale })}</span>
@@ -142,7 +154,11 @@ function VisibleCard({
                     className={styles.placeLink}
                     href={href}
                 >
-                    {t('common.promotions.viewPlace', undefined, { name: item.place.name })}
+                    {t(
+                        item.entityType === 'venue'
+                            ? 'common.promotions.viewVenue'
+                            : 'common.promotions.viewAccommodation'
+                    )}
                 </a>
             ) : null}
         </article>
@@ -153,103 +169,93 @@ function LockedCard({
     vipPlanName,
     locale,
     item,
-    onOpen
+    guest
 }: {
     readonly vipPlanName: string | null;
     readonly locale: SupportedLocale;
     readonly item: PromotionLockedItem;
-    readonly onOpen: () => void;
+    readonly guest: boolean;
 }) {
     const { t } = createTranslations(locale);
+    const vip = item.audience === 'vip';
     const name =
-        item.audience === 'vip' && vipPlanName
+        vip && vipPlanName
             ? t('common.promotions.lockedPlanName', undefined, { plan: vipPlanName })
-            : t('common.promotions.lockedHiddenName');
+            : t(
+                  vip || guest
+                      ? 'common.promotions.lockedHiddenName'
+                      : 'common.promotions.quotaReached'
+              );
     return (
-        <button
-            type="button"
+        <article
             className={`${styles.card} ${styles.locked}`}
-            aria-disabled="true"
-            aria-label={name}
-            aria-haspopup="dialog"
             data-promotion-card="locked"
-            onClick={onOpen}
+            data-promotion-audience={item.audience}
         >
-            <span className={styles.cardTop}>
-                <span className={styles.headline}>
-                    {formatPromotionHeadline({
-                        discountType: item.discountType,
-                        discountValue: item.discountValue,
-                        specialOfferText: null,
-                        locale
-                    })}
-                </span>
-                {item.audience === 'vip' ? <PlanBadge name={vipPlanName} /> : null}
-            </span>
-            <span className={styles.typeLabel}>
-                {t(`common.promotions.discountTypes.${item.discountType}`)}
-            </span>
-            <span
-                className={styles.placeholder}
-                aria-hidden="true"
-            >
-                {item.placeholderName}
-            </span>
-            <span className={styles.lockRow}>
+            <h3 className={styles.lockRow}>
                 <LockIcon
-                    size="sm"
+                    size="lg"
                     aria-hidden="true"
                 />
                 <span>{name}</span>
-            </span>
-        </button>
+            </h3>
+            <span
+                className={styles.placeholder}
+                aria-hidden="true"
+            />
+            <a
+                className={styles.placeLink}
+                href={
+                    guest
+                        ? buildLoginRedirect({
+                              locale,
+                              currentUrl:
+                                  typeof window === 'undefined'
+                                      ? `/${locale}/promociones/`
+                                      : window.location.pathname
+                          })
+                        : buildUrl({ locale, path: 'planes/turistas/precios' })
+                }
+            >
+                {guest
+                    ? t('common.auth.signIn')
+                    : vipPlanName
+                      ? t('common.promotions.explorePlan', undefined, { plan: vipPlanName })
+                      : t('common.promotions.viewPlans')}
+            </a>
+        </article>
     );
 }
 
 /**
- * Renders a grid of visible and locked cards plus the upsell dialog.
+ * Renders a grid of visible and locked cards.
  *
  * @param props - See {@link PromotionCardsProps}.
  * @returns The card list.
  */
-export function PromotionCards({
-    locale,
-    items,
-    freeQuota,
-    vipPlanName,
-    showPlace
-}: PromotionCardsProps) {
-    const [dialogOpen, setDialogOpen] = useState(false);
+export function PromotionCards({ locale, items, vipPlanName, showPlace }: PromotionCardsProps) {
+    const { data: session } = useSession();
     return (
-        <>
-            <ul className={styles.grid}>
-                {items.map((item) => (
-                    <li key={item.kind === 'visible' ? item.id : item.key}>
-                        {item.kind === 'visible' ? (
-                            <VisibleCard
-                                vipPlanName={vipPlanName}
-                                locale={locale}
-                                item={item}
-                                showPlace={showPlace}
-                            />
-                        ) : (
-                            <LockedCard
-                                vipPlanName={vipPlanName}
-                                locale={locale}
-                                item={item}
-                                onOpen={() => setDialogOpen(true)}
-                            />
-                        )}
-                    </li>
-                ))}
-            </ul>
-            <PromotionUpsellDialog
-                locale={locale}
-                open={dialogOpen}
-                onClose={() => setDialogOpen(false)}
-                freeQuota={freeQuota}
-                vipPlanName={vipPlanName}
-            />
-        </>
+        <ul className={styles.grid}>
+            {items.map((item) => (
+                <li key={item.kind === 'visible' ? item.id : item.key}>
+                    {item.kind === 'visible' ? (
+                        <VisibleCard
+                            vipPlanName={vipPlanName}
+                            locale={locale}
+                            item={item}
+                            showPlace={showPlace}
+                        />
+                    ) : (
+                        <LockedCard
+                            vipPlanName={vipPlanName}
+                            locale={locale}
+                            item={item}
+                            guest={!session?.user}
+                        />
+                    )}
+                </li>
+            ))}
+        </ul>
     );
 }

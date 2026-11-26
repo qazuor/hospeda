@@ -6,7 +6,7 @@
 **Critical Path:** T-005 -> T-006 -> T-008 -> T-009 -> T-012 -> T-016 -> T-023 -> T-035 -> T-043 (9 steps)
 **Parallel Tracks:** 6 identified (A schemas, B db + data-migrations, C api writer/runner/state/routes, D service-core hooks, E web section, F admin)
 
-> One PR to staging. Never run `pnpm db:fresh-dev` in a worktree. Run only the changed test files locally; CI runs the full suites. Migration numbers were planned as 0253, 0194, 0195 and landed as drizzle 0255 and seed data-migrations 0195 and 0197 after merging staging on 2026-11-26.
+> One PR to staging. Never run `pnpm db:fresh-dev` in a worktree. Run only the changed test files locally; CI runs the full suites. Migration numbers were planned as 0253, 0194, 0195 and landed as drizzle 0256 and seed data-migrations 0195 and 0197 after merging staging on 2026-11-26.
 
 ---
 

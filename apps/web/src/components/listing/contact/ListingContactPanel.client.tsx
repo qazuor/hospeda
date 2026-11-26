@@ -42,6 +42,7 @@ export interface ListingContactPanelProps {
     readonly phone?: string | null;
     readonly email?: string | null;
     readonly capacity?: number | null;
+    readonly initialMessage?: string;
     readonly locale: SupportedLocale;
 }
 
@@ -70,6 +71,7 @@ function ListingContactSheet({
     phone,
     email,
     capacity,
+    initialMessage,
     locale
 }: ListingContactPanelProps) {
     const [request, setRequest] = useState<ListingContactPanelOpen | null>(null);
@@ -82,7 +84,9 @@ function ListingContactSheet({
     const formRef = useRef<HTMLDivElement>(null);
     const controls = useRef<Partial<Record<(typeof fields)[number], HTMLInputElement | null>>>({});
     const [values, setValues] = useState(emptyFields);
-    const [draft, setDraft] = useState(() => buildInquiryMessage({ locale }).message ?? '');
+    const [draft, setDraft] = useState(
+        () => initialMessage ?? buildInquiryMessage({ locale }).message ?? ''
+    );
     const [errors, setErrors] = useState<ReturnType<typeof validateInquiryFields>>();
     const [contactDraft, setContactDraft] = useState(emptyContactDraft);
     const draftRevision = useRef(0);
@@ -104,6 +108,7 @@ function ListingContactSheet({
 
     useEffect(() => {
         const unsubscribe = onListingContactPanelOpen(setRequest);
+        if (window.location.hash === '#consult') setRequest({ origin: 'summary' });
         const clearReady = markListingContactPanelReady({ panelId });
         return () => {
             unsubscribe();

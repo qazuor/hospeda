@@ -43,7 +43,9 @@ const direct = 'href' in action ? action : undefined;
             data-listing-id={listingId}
             data-vertical={vertical}
             data-contact-origin="summary"
-        >{t(direct.labelKey)}</a>
+        >{direct.kind === 'menu'
+            ? t(/\.pdf(?:[?#]|$)/i.test(direct.href) ? 'venue.detail.menuCarta.viewPdf' : 'venue.detail.menuCarta.viewExternal')
+            : t(direct.labelKey)}</a>
     )}
     <slot />
 </div>

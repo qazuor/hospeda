@@ -68,6 +68,7 @@
 /* count=3,4,5+: 2fr featured + 1fr thumb column */
 .grid[data-count="3"],
 .grid[data-count="4"],
+.grid[data-count="5"],
 .grid[data-count="5plus"] {
     grid-template-columns: 2fr 1fr;
     aspect-ratio: 12 / 5;
@@ -368,6 +369,11 @@
     grid-template-rows: repeat(3, minmax(0, 1fr));
 }
 
+.grid[data-count="5"] .thumbGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: repeat(2, minmax(0, 1fr));
+}
+
 /* Thumb button wrapper */
 .thumbBtn {
     display: block;
@@ -626,6 +632,7 @@
     /* count=3,4,5+: stack featured + horizontal thumb strip */
     .grid[data-count="3"],
     .grid[data-count="4"],
+    .grid[data-count="5"],
     .grid[data-count="5plus"] {
         grid-template-columns: 1fr;
         max-height: none;
@@ -657,6 +664,10 @@
     .grid[data-count="4"] .thumbGrid,
     .grid[data-count="5plus"] .thumbGrid {
         grid-template-columns: repeat(3, 1fr);
+    }
+
+    .grid[data-count="5"] .thumbGrid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
     }
 
     /*

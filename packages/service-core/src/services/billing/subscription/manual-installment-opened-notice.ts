@@ -10,7 +10,6 @@ import {
     users
 } from '@repo/db';
 import { createLogger } from '@repo/logger';
-import { isManualPaymentOnlyVertical } from '@repo/schemas';
 import type {
     ExpectedAmount,
     ExpectedAmountPolicy
@@ -22,11 +21,15 @@ const logger = createLogger('manual-installment-opened-notice');
 /** Outbox template mailed to the owner when a manual installment opens (HOS-2130). */
 export const MANUAL_INSTALLMENT_OPENED_TEMPLATE = 'billing.manual-installment-opened';
 
-/** Whether the owner of a manual installment is mailed: only verticals that pay manually (HOS-2130). */
+/**
+ * Whether the owner of an installment is mailed: only a subscription paid manually has installments
+ * the owner must pay by hand (HOS-2130). The subscription's own method decides, never its vertical
+ * (HOS-2196).
+ */
 export function isManualInstallmentOwnerNotified(input: {
-    readonly vertical: string | null;
+    readonly paymentMethod: string | null;
 }): boolean {
-    return input.vertical !== null && isManualPaymentOnlyVertical({ vertical: input.vertical });
+    return input.paymentMethod === 'MANUAL';
 }
 
 /** Amount snapshot for the mail: ARS only, null when the policy cannot compute it (same rule as the c1 card). */
@@ -86,7 +89,7 @@ export async function enqueueManualInstallmentOpenedNotice(
     } = {}
 ): Promise<{ readonly enqueued: boolean }> {
     const { subscription, tx } = input;
-    if (!isManualInstallmentOwnerNotified({ vertical: subscription.vertical }))
+    if (!isManualInstallmentOwnerNotified({ paymentMethod: subscription.paymentMethod }))
         return { enqueued: false };
     const userId = subscription.userId;
     if (!userId) {

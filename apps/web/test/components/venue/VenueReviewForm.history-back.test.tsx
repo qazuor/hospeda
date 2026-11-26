@@ -28,7 +28,9 @@ import { __setNavigateImpl } from '../../stubs/astro-transitions-client';
 
 vi.mock('@/lib/i18n', () => ({
     createTranslations: (_locale: string) => ({
-        t: (_key: string, fallback?: string) => fallback ?? _key
+        // CARD-052 H-8: the CTA is supplied by the shared review card.
+        t: (key: string, fallback?: string) =>
+            fallback ?? (key === 'review.venueSidebar.cta' ? 'Dejar reseña' : key)
     })
 }));
 

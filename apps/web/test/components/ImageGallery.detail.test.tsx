@@ -166,9 +166,9 @@ describe('getDetailCountKey — data-count attribute mapping', () => {
         expect(grid?.dataset.count).toBe('4');
     });
 
-    it('count=5 → data-count="5plus"', () => {
+    it('count=5 → data-count="5"', () => {
         const { grid } = renderDetail(IMG_5);
-        expect(grid?.dataset.count).toBe('5plus');
+        expect(grid?.dataset.count).toBe('5');
     });
 
     it('count=9 → data-count="5plus"', () => {
@@ -280,11 +280,11 @@ describe('DetailVariant — rendered cell image count per total', () => {
         expect(imgs.length).toBe(4);
     });
 
-    it('5 images: 4 cell imgs (featured + 2 regular thumbs + 1 overlay bg img)', () => {
+    it('5 images: all 5 cells are rendered', () => {
         const { container } = renderDetail(IMG_5);
         // featured + 2 regular thumb buttons + 1 overlay div (contains 1 aria-hidden img)
         const imgs = container.querySelectorAll('[data-count] img');
-        expect(imgs.length).toBe(4);
+        expect(imgs.length).toBe(5);
     });
 
     it('7 images: still 4 cell imgs (bounded at featured + 3 thumb slots)', () => {
@@ -302,7 +302,7 @@ describe('DetailVariant — data-count attribute on .grid', () => {
         { images: IMG_2, expected: '2' },
         { images: IMG_3, expected: '3' },
         { images: IMG_4, expected: '4' },
-        { images: IMG_5, expected: '5plus' },
+        { images: IMG_5, expected: '5' },
         { images: IMG_9, expected: '5plus' }
     ])('$expected.length images → data-count="$expected"', ({ images, expected }) => {
         const { grid } = renderDetail(images);
@@ -319,10 +319,9 @@ describe('DetailVariant — "+N más" overlay', () => {
         expect(screen.queryByRole('button', { name: /más/i })).not.toBeInTheDocument();
     });
 
-    it('present at count=5 with correct +N label (N = total − 4 = 1)', () => {
+    it('does not render an overflow label for five photos', () => {
         renderDetail(IMG_5);
-        const overlayBtn = screen.getByRole('button', { name: /\+1 más/i });
-        expect(overlayBtn).toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: /\+\d+ más/i })).not.toBeInTheDocument();
     });
 
     it('present at count=7 with correct +N label (N = 7 − 4 = 3)', () => {
@@ -345,10 +344,10 @@ describe('DetailVariant — "+N más" overlay', () => {
         expect(label).toContain('3');
     });
 
-    it('overlay visible text matches the aria-label at count=5', () => {
-        renderDetail(IMG_5);
-        const overlayBtn = screen.getByRole('button', { name: /\+1 más/i });
-        expect(overlayBtn.textContent?.trim()).toMatch(/\+1 más/i);
+    it('overlay visible text matches the aria-label at count=7', () => {
+        renderDetail(IMG_7);
+        const overlayBtn = screen.getByRole('button', { name: /\+3 más/i });
+        expect(overlayBtn.textContent?.trim()).toMatch(/\+3 más/i);
     });
 
     it('absent at count=1 (no overlay)', () => {
@@ -382,7 +381,7 @@ describe('DetailVariant — overlay activates lightbox at first hidden image', (
      * The lightbox counter shows "{index+1} / {total}" so it should show "5/5".
      */
 
-    it('click on overlay opens lightbox dialog', () => {
+    it('click on fifth photo opens lightbox dialog', () => {
         render(
             <ImageGallery
                 images={IMG_5}
@@ -390,12 +389,12 @@ describe('DetailVariant — overlay activates lightbox at first hidden image', (
                 locale="es"
             />
         );
-        const overlayBtn = screen.getByRole('button', { name: /\+1 más/i });
+        const overlayBtn = screen.getAllByRole('button', { name: /ver en pantalla completa/i })[4]!;
         fireEvent.click(overlayBtn);
         expect(screen.getByRole('dialog')).toBeInTheDocument();
     });
 
-    it('click on overlay opens lightbox at index 4 (first hidden image, "5/5")', () => {
+    it('click on fifth photo opens lightbox at index 4 ("5/5")', () => {
         render(
             <ImageGallery
                 images={IMG_5}
@@ -403,7 +402,7 @@ describe('DetailVariant — overlay activates lightbox at first hidden image', (
                 locale="es"
             />
         );
-        const overlayBtn = screen.getByRole('button', { name: /\+1 más/i });
+        const overlayBtn = screen.getAllByRole('button', { name: /ver en pantalla completa/i })[4]!;
         fireEvent.click(overlayBtn);
         // Counter is "{index+1} / {total}" — first hidden image is index 4 → "5/5"
         expect(screen.getByText('5/5')).toBeInTheDocument();
@@ -417,7 +416,7 @@ describe('DetailVariant — overlay activates lightbox at first hidden image', (
                 locale="es"
             />
         );
-        const overlayBtn = screen.getByRole('button', { name: /\+1 más/i });
+        const overlayBtn = screen.getAllByRole('button', { name: /ver en pantalla completa/i })[4]!;
         fireEvent.click(overlayBtn);
 
         const dialog = screen.getByRole('dialog');
@@ -456,7 +455,7 @@ describe('DetailVariant — overlay activates lightbox at first hidden image', (
         expect(screen.getByText('5/7')).toBeInTheDocument();
     });
 
-    it('keyboard Enter on overlay button opens the lightbox', () => {
+    it('keyboard Enter on fifth photo opens the lightbox', () => {
         render(
             <ImageGallery
                 images={IMG_5}
@@ -464,7 +463,7 @@ describe('DetailVariant — overlay activates lightbox at first hidden image', (
                 locale="es"
             />
         );
-        const overlayBtn = screen.getByRole('button', { name: /\+1 más/i });
+        const overlayBtn = screen.getAllByRole('button', { name: /ver en pantalla completa/i })[4]!;
         // Buttons fire click on Enter by default in jsdom
         fireEvent.keyDown(overlayBtn, { key: 'Enter', code: 'Enter' });
         fireEvent.click(overlayBtn); // simulate the activation

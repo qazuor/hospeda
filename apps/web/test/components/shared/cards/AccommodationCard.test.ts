@@ -17,7 +17,7 @@ const styles = readFileSync(
     'utf8'
 );
 const sidebarStyles = readFileSync(
-    resolve(__dirname, '../../../../src/components/maps/MapCardsSidebar.module.css'),
+    resolve(__dirname, '../../../../src/components/maps/MapSidebarCard.module.css'),
     'utf8'
 );
 const popupStyles = readFileSync(

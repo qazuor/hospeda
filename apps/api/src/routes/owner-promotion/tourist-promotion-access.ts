@@ -81,11 +81,15 @@ export async function readGuestFreeQuota(): Promise<number> {
  * @returns `{ isVip, freeQuota }`, fail-closed.
  */
 export async function resolveTouristPromotionAccess({
-    actor
+    actor,
+    lockGuest = false
 }: {
     readonly actor: Actor;
+    readonly lockGuest?: boolean;
 }): Promise<TouristPromotionAccess> {
-    if (isGuestActor(actor)) return { isVip: false, freeQuota: await readGuestFreeQuota() };
+    if (isGuestActor(actor)) {
+        return { isVip: false, freeQuota: lockGuest ? 0 : await readGuestFreeQuota() };
+    }
     const keys = await readEffectiveKeys({
         userId: actor.id,
         vertical: VerticalEnum.TOURIST,

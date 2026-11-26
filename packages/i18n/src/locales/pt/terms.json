@@ -110,6 +110,48 @@
         "title": "Termos e Condições",
         "description": "Termos e condições de uso da plataforma Hospeda"
     },
+    "articles": {
+        "aceptacion": {
+            "title": "1. Aceitação dos termos",
+            "body": "Ao acessar e utilizar a plataforma Hospeda (doravante, o Serviço), você aceita estes Termos e Condições. Se não concordar com alguma parte destes termos, não poderá acessar o Serviço."
+        },
+        "uso-servicio": {
+            "title": "2. Uso do serviço",
+            "body": "O Serviço ajuda viajantes a descobrir hospedagens, estabelecimentos gastronômicos, experiências e outros recursos turísticos e a contatar os prestadores. Você se compromete a usar o Serviço apenas para fins legítimos e de acordo com estes Termos. Se usar as ferramentas de inteligência artificial, confirme com o prestador informações que afetem sua viagem, como preços e disponibilidade."
+        },
+        "registro": {
+            "title": "3. Cadastro de conta",
+            "body": "Para usar determinadas funcionalidades do Serviço, você deve criar uma conta com informações precisas, completas e atualizadas. Você é responsável por manter sua senha em sigilo e por todas as atividades realizadas em sua conta."
+        },
+        "publicacion": {
+            "title": "4. Publicação de anúncios",
+            "body": "Os prestadores que anunciarem hospedagens, estabelecimentos gastronômicos ou experiências garantem que as informações fornecidas são verdadeiras, precisas e completas. A Hospeda se reserva o direito de revisar, modificar ou remover anúncios que não estejam de acordo com nossas políticas."
+        },
+        "reservas": {
+            "title": "5. Reservas e pagamentos",
+            "body": "As reservas e seus pagamentos são combinados diretamente entre o viajante e o prestador. A Hospeda facilita o contato e não processa pagamentos de reservas. Os pagamentos das assinaturas da Hospeda são processados pelo Mercado Pago. As condições do plano são apresentadas antes da contratação."
+        },
+        "cancelaciones": {
+            "title": "6. Cancelamentos e reembolsos",
+            "body": "As condições de cancelamento e reembolso de uma reserva dependem do prestador e do que foi acordado na reserva. Para cancelar uma assinatura da Hospeda, use a seção de assinaturas da sua conta. O artigo 10 contém o link para exercer o direito de arrependimento."
+        },
+        "propiedad-intelectual": {
+            "title": "7. Propriedade intelectual",
+            "body": "Todo o conteúdo da plataforma, incluindo textos, imagens, logotipos, designs e software, pertence à Hospeda ou aos respectivos titulares. A reprodução sem autorização expressa é proibida."
+        },
+        "limitacion": {
+            "title": "8. Limitação de responsabilidade",
+            "body": "A Hospeda não garante a disponibilidade ininterrupta do Serviço nem a exatidão das informações fornecidas por terceiros. Em nenhuma hipótese seremos responsáveis por danos indiretos, incidentais ou consequentes."
+        },
+        "modificaciones": {
+            "title": "9. Alterações",
+            "body": "Reservamo-nos o direito de alterar estes Termos a qualquer momento. As alterações entram em vigor quando publicadas na plataforma. O uso continuado do Serviço constitui aceitação dos termos alterados."
+        },
+        "contacto": {
+            "title": "10. Contato",
+            "body": "Para dúvidas sobre estes Termos e Condições, escreva para info@hospeda.com.ar ou use nosso formulário de contato."
+        }
+    },
     "withdrawal": {
         "title": "Botão de arrependimento",
         "description": "Como revogar a contratação de uma assinatura da Hospeda em até 10 dias corridos a partir da cobrança.",

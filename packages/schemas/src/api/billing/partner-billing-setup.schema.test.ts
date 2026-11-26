@@ -16,7 +16,28 @@ describe('AC:V7:17 ACC:6 Partner billing setup schemas', () => {
                 reason: '  approved  ',
                 confirm: true
             })
-        ).toEqual({ billingOptionId: uuid, reason: 'approved', confirm: true });
+        ).toEqual({
+            billingOptionId: uuid,
+            paymentMethod: 'MANUAL',
+            reason: 'approved',
+            confirm: true
+        });
+        expect(
+            PartnerBillingSetupRequestSchema.parse({
+                billingOptionId: uuid,
+                paymentMethod: 'CARD',
+                reason: 'approved',
+                confirm: true
+            }).paymentMethod
+        ).toBe('CARD');
+        expect(
+            PartnerBillingSetupRequestSchema.safeParse({
+                billingOptionId: uuid,
+                paymentMethod: 'CASH',
+                reason: 'approved',
+                confirm: true
+            }).success
+        ).toBe(false);
         expect(
             PartnerBillingSetupRequestSchema.safeParse({
                 billingOptionId: uuid,
@@ -47,7 +68,6 @@ describe('AC:V7:17 ACC:6 Partner billing setup schemas', () => {
                 partner: { id: uuid, name: 'Partner' },
                 ownerUserId: uuid,
                 owner: { name: 'Ana García', email: 'ana@example.com' },
-                method: 'MANUAL',
                 options: [
                     {
                         billingOptionId: uuid,
@@ -56,28 +76,42 @@ describe('AC:V7:17 ACC:6 Partner billing setup schemas', () => {
                         planSlug: 'partner-silver',
                         cycle: 'monthly',
                         amountMinor: 1000,
-                        currency: 'ARS'
+                        currency: 'ARS',
+                        paymentMethods: ['CARD', 'MANUAL']
                     }
                 ],
-                effect: 'Creates a subscription pending authorization and opens its first installment.'
+                effect: 'Creates a subscription pending authorization: a manual one opens its first installment, a card one returns the Mercado Pago authorization link.'
             }).options
         ).toHaveLength(1);
         expect(
             PartnerBillingSetupPreviewResponseSchema.safeParse({
                 partner: { id: uuid, name: 'Partner' },
                 ownerUserId: uuid,
-                method: 'MANUAL',
                 options: [],
-                effect: 'Creates a subscription pending authorization and opens its first installment.'
+                effect: 'Creates a subscription pending authorization: a manual one opens its first installment, a card one returns the Mercado Pago authorization link.'
             }).success
         ).toBe(false);
         expect(
             PartnerBillingSetupResponseSchema.safeParse({
+                paymentMethod: 'MANUAL',
                 subscriptionId: uuid,
                 manualPaymentId: uuid,
                 periodStart: '2026-01-01T00:00:00Z',
+                checkoutUrl: null,
                 authorizationWindowEndsAt: '2026-01-08T00:00:00Z',
                 created: false
+            }).success
+        ).toBe(true);
+        expect(
+            PartnerBillingSetupResponseSchema.safeParse({
+                paymentMethod: 'CARD',
+                subscriptionId: uuid,
+                manualPaymentId: null,
+                periodStart: null,
+                checkoutUrl:
+                    'https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_id=a',
+                authorizationWindowEndsAt: '2026-01-08T00:00:00Z',
+                created: true
             }).success
         ).toBe(true);
     });

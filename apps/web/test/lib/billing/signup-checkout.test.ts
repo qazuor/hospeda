@@ -388,17 +388,29 @@ describe('TEST:1739:6 resolveSignupManualPaymentOnly', () => {
         pendingAttempt: null,
         plan: { name: 'Partner Gold', amount: 3000000, currency: 'ARS', cycle: 'monthly' },
         vertical: 'partner',
+        paymentMethods: ['CARD', 'MANUAL'],
         touristVip: { status: 'NOT_AFFECTED' },
         trial: { status: 'NOT_RUNNING' }
     };
 
-    it('returns true only for a parsed manual-payment-only notice', () => {
+    it('returns true only for a plan that is not card-only, whatever its vertical (HOS-2196)', () => {
         expect(resolveSignupManualPaymentOnly({ result: { ok: true, data } })).toBe(true);
         expect(
             resolveSignupManualPaymentOnly({
-                result: { ok: true, data: { ...data, vertical: 'tourist' } }
+                result: {
+                    ok: true,
+                    data: { ...data, vertical: 'tourist', paymentMethods: ['CARD'] }
+                }
             })
         ).toBe(false);
+        expect(
+            resolveSignupManualPaymentOnly({
+                result: {
+                    ok: true,
+                    data: { ...data, vertical: 'tourist', paymentMethods: ['CARD', 'MANUAL'] }
+                }
+            })
+        ).toBe(true);
         expect(resolveSignupManualPaymentOnly({ result: { ok: false } })).toBe(false);
         expect(
             resolveSignupManualPaymentOnly({ result: { ok: true, data: { vertical: 'partner' } } })

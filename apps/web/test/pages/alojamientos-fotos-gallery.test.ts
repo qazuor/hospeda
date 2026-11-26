@@ -348,6 +348,12 @@ describe('fotos.astro — no masonry-era orphan markup or CSS', () => {
 // 7. RENDERING MODE — SSR (consistent with accommodation detail pages)
 // ---------------------------------------------------------------------------
 describe('fotos.astro — rendering mode', () => {
+    it('keeps the grid lazy and exposes the fixed inquiry action', () => {
+        expect(fotosSrc).toMatch(/\.fotosCell\s*\{\s*background-color: var\(--surface-warm\)/);
+        expect(fotosSrc).toContain('loading="lazy"');
+        expect(fotosSrc).toContain('`${backUrl}#consult`');
+        expect(fotosSrc).toMatch(/\.fotos__booking\s*\{[^}]*position: sticky/);
+    });
     it('is SSR (prerender = false)', () => {
         expect(fotosSrc).toContain('export const prerender = false');
     });

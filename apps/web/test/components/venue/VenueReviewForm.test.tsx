@@ -18,7 +18,17 @@ import { trackTimers } from '../../helpers/track-timers';
 
 vi.mock('@/lib/i18n', () => ({
     createTranslations: (_locale: string) => ({
-        t: (_key: string, fallback?: string) => fallback ?? _key
+        // CARD-052 H-8: the shared card looks up its CTA without a fallback.
+        t: (key: string, fallback?: string) =>
+            fallback ??
+            (
+                {
+                    'review.venueSidebar.cta': 'Dejar reseña',
+                    'review.venueSidebar.signInCta': 'Iniciá sesión para opinar',
+                    'review.list.firstReview': 'Sé el primero en reseñar'
+                } as Record<string, string>
+            )[key] ??
+            key
     })
 }));
 
@@ -186,7 +196,22 @@ describe('VenueReviewForm — client-side session resolution (HOS-369 WB0-4)', (
 
     it('shows the sign-in card for a guest', () => {
         renderForm({ isAuthenticated: false });
-        expect(screen.getByText(/Necesitás una cuenta para dejar tu reseña/i)).toBeInTheDocument();
+        expect(screen.getByRole('link', { name: 'Iniciá sesión para opinar' })).toHaveAttribute(
+            'href',
+            DEFAULT_PROPS.signInHref
+        );
+        expect(screen.queryByRole('button', { name: /dejar reseña/i })).not.toBeInTheDocument();
+    });
+
+    it('offers a single first-review CTA in the empty state (CARD-052 H-8)', () => {
+        renderForm({ empty: true, isAuthenticated: false });
+        expect(screen.getByRole('link', { name: 'Sé el primero en reseñar' })).toHaveAttribute(
+            'href',
+            DEFAULT_PROPS.signInHref
+        );
+        expect(
+            screen.queryByRole('link', { name: 'Iniciá sesión para opinar' })
+        ).not.toBeInTheDocument();
     });
 
     it('no longer accepts isAuthenticated — removed from VenueReviewForm props (HOS-369 WB0-5)', () => {
@@ -209,7 +234,7 @@ describe('VenueReviewForm — client-side session resolution (HOS-369 WB0-4)', (
 
         expect(screen.getByRole('button', { name: /dejar reseña/i })).toBeInTheDocument();
         expect(
-            screen.queryByText(/Necesitás una cuenta para dejar tu reseña/i)
+            screen.queryByRole('link', { name: 'Iniciá sesión para opinar' })
         ).not.toBeInTheDocument();
     });
 });

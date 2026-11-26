@@ -1,0 +1,28 @@
+.card {
+    display: grid;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    border-radius: var(--radius-card);
+    background: var(--surface-warm);
+}
+
+.card h3 {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.action {
+    display: block;
+    padding: var(--space-3);
+    border: 1px solid currentColor;
+    border-radius: var(--radius-button);
+    background: var(--core-card);
+    color: var(--brand-primary-link);
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+    font: inherit;
+    font-weight: 600;
+}
