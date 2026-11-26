@@ -9,7 +9,11 @@ import {
     AccommodationReviewPublicSchema,
     AccommodationReviewsByAccommodationHttpSchema
 } from '@repo/schemas';
-import { AccommodationReviewService, ServiceError } from '@repo/service-core';
+import {
+    AccommodationReviewReplyService,
+    AccommodationReviewService,
+    ServiceError
+} from '@repo/service-core';
 import { inArray } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -127,12 +131,19 @@ export const publicListAccommodationReviewsRoute = createPublicListRoute({
             accommodation: true
         });
 
+        // HOS-2199: the host's live reply, only when publicly visible (APPROVED).
+        const replyService = new AccommodationReviewReplyService({ logger: apiLogger });
+        const repliesByReviewId = await replyService.getPublicRepliesByReviewIds({
+            reviewIds: reviews.map((r) => (r as { id: string }).id)
+        });
+
         const itemsWithUser = reviews.map((review) => {
             const userId = (review as Record<string, unknown>).userId as string | undefined;
             const userInfo = userId ? userMap.get(userId) : undefined;
             const stripped = ReviewWithoutRelations.parse(review);
             return {
                 ...stripped,
+                reply: repliesByReviewId.get(stripped.id) ?? null,
                 user: userInfo ?? { name: null, image: null }
             };
         });
