@@ -109,6 +109,7 @@
 {"anchor":"page:mi-cuenta/publicaciones","kind":"out-of-scope","reason":"Editorial posts, gated by POST_CREATE (NG-2)."},
 {"anchor":"page:mi-cuenta/publicaciones/[id]/editar","kind":"out-of-scope","reason":"Editorial posts, gated by POST_CREATE (NG-2)."},
 {"anchor":"page:mi-cuenta/publicaciones/nuevo","kind":"out-of-scope","reason":"Editorial posts, gated by POST_CREATE (NG-2)."},
+{"anchor":"page:mi-cuenta/recibo/[receiptId]","kind":"pending-content","reason":"HOS-2566: detail page behind every «Ver recibo» button; its parent list lives on mi-cuenta/suscripcion. A help article cannot link a dynamic page, so the receipts text is planned inside change-plan.","plannedArticle":"change-plan"},
 {"anchor":"page:mi-cuenta/recomendaciones","kind":"out-of-scope","reason":"Tourist page (NG-1)."},
 {"anchor":"page:mi-cuenta/resenas","kind":"out-of-scope","reason":"Tourist page (NG-1)."},
 {"anchor":"page:mi-cuenta/tablero-experiencias","kind":"pending-content","reason":"HOS-2476 owner dashboard; its help is the planned listing-stats article (HOS-2410 Phase 5, docs/catalog.md).","plannedArticle":"listing-stats"},
