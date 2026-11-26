@@ -646,11 +646,20 @@ describe('ListingGalleryManager — no client-side cap (HOS-2495)', () => {
     it.each([
         ['venue', 31],
         ['experience', 31]
-    ] as const)('keeps the add button and shows no cap alert with %s at %i photos', (vertical, count) => {
+    ] as const)('shows the bare count, keeps the add button usable and no cap alert with %s at %i photos', async (vertical, count) => {
         // Arrange: one past the old literal cap of 30.
         mockListData.data = Array.from({ length: count }, (_, index) =>
             makeGalleryRow(`g${index}`, index + 1)
         );
+        mockUploadEntityImageMutateAsync.mockResolvedValue({
+            url: 'https://cdn.example.com/new.jpg',
+            publicId: 'hospeda/dev/new'
+        });
+        mockAddMutateAsync.mockResolvedValue({
+            id: 'new-row',
+            url: 'https://cdn.example.com/new.jpg',
+            isFeatured: false
+        });
 
         // Act
         render(
@@ -659,9 +668,24 @@ describe('ListingGalleryManager — no client-side cap (HOS-2495)', () => {
                 entityId="ent-1"
             />
         );
+        const addButton = screen.getByRole('button', {
+            name: 'admin-pages.gallery.grid.actions.add'
+        });
+        const galleryInput = document.querySelectorAll('input[type="file"]')[1] as HTMLInputElement;
+        const openPicker = vi.spyOn(galleryInput, 'click');
+        fireEvent.click(addButton);
+        fireEvent.change(galleryInput, {
+            target: { files: [new File(['data'], 'photo.jpg', { type: 'image/jpeg' })] }
+        });
 
         // Assert
-        expect(screen.getAllByText('admin-pages.gallery.grid.actions.add')).toHaveLength(1);
+        expect(screen.getByTestId('gallery-photo-count').textContent).toBe(`(${count})`);
+        expect(screen.queryByText(/\/\s*\d+/)).toBeNull();
+        expect(addButton).toBeEnabled();
+        expect(openPicker).toHaveBeenCalledTimes(1);
+        await waitFor(() => {
+            expect(mockUploadEntityImageMutateAsync).toHaveBeenCalledTimes(1);
+        });
         expect(screen.queryByText(/admin-pages\.gallery\.grid\.cap/)).toBeNull();
         expect(screen.queryByRole('alert')).toBeNull();
     });

@@ -387,7 +387,13 @@ export function GalleryManager({
                     <section aria-label={t('admin-pages.gallery.grid.title')}>
                         <div className="mb-3 flex items-center justify-between">
                             <h2 className="font-semibold text-base">
-                                {t('admin-pages.gallery.grid.title')}
+                                {t('admin-pages.gallery.grid.title')}{' '}
+                                <span
+                                    data-testid="gallery-photo-count"
+                                    className="font-normal text-muted-foreground"
+                                >
+                                    ({galleryRows.length})
+                                </span>
                             </h2>
 
                             <Button
