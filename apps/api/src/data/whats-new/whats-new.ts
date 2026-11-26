@@ -152,6 +152,23 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4792
+    {
+        id: '2026-11-25-listing-whatsapp-official-logo',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'Las fichas muestran el logo oficial de WhatsApp en todos sus botones',
+            en: 'Listings show the official WhatsApp logo on every button',
+            pt: 'As fichas mostram o logo oficial do WhatsApp em todos os botões'
+        },
+        body: {
+            es: 'En la ficha de un alojamiento, el bloque de contacto y el lateral ahora usan el mismo logo oficial de WhatsApp que la barra del celular, así que el botón se reconoce igual en toda la página.',
+            en: 'On an accommodation page, the contact block and the sidebar now use the same official WhatsApp logo as the mobile bar, so the button looks the same across the whole page.',
+            pt: 'Na ficha de uma hospedagem, o bloco de contato e a lateral agora usam o mesmo logo oficial do WhatsApp que a barra do celular, então o botão é reconhecido igual em toda a página.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4746
     {
         id: '2026-11-24-site-shows-new-version-after-update',
