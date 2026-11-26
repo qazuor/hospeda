@@ -237,7 +237,8 @@ export const publicListAccommodationsRoute = createPublicListRoute({
         const rawItems = result.data?.items || [];
 
         const { items: gatedItems, aiChatByOwner } = await projectPublicAccommodationPage({
-            listings: rawItems
+            listings: rawItems,
+            onEffectiveSetFailure: () => ctx.header('Cache-Control', 'no-store')
         });
         const promotionPresence = await readAccommodationPromotionPresence({ listings: rawItems });
         const items = rawItems.map((item, index) => ({
