@@ -39,7 +39,7 @@ import { touristVipInheritance } from './tourist-vip-inheritance';
 
 const S1_REJECTIONS_WITH_UNPROCESSABLE_ENTITY_STATUS = new Set<StartSubscriptionRejectionReason>([
     'PLAN_NOT_FOR_SALE',
-    'PARTNER_MANUAL_ONLY'
+    'PLAN_NOT_SELF_SERVICE'
 ]);
 
 export const protectedStartSubscriptionRoute = createProtectedRoute({

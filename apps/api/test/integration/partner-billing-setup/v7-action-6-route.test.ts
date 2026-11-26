@@ -56,7 +56,8 @@ async function seedCatalog() {
             sellable: true,
             current: true,
             trialDays: 0,
-            allowsPause: false
+            allowsPause: false,
+            paymentMethods: ['CARD', 'MANUAL']
         })
         .returning();
     if (!version) throw new Error('Could not create sellable Partner version');
