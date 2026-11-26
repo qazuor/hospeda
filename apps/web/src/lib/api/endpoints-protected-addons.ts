@@ -44,10 +44,18 @@ export const billingAddonApi = {
     },
     /**
      * Read the current addon catalog with this owner's free grant options.
+     * Forward the request cookie during SSR.
      * @example const result = await billingAddonApi.offers();
      */
-    offers(): Promise<ApiResult<AddonOffersResponse>> {
-        return apiClient.getProtected({ path: `${PROTECTED}/billing/addons/offers` });
+    offers({
+        cookieHeader
+    }: {
+        readonly cookieHeader?: string;
+    } = {}): Promise<ApiResult<AddonOffersResponse>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/billing/addons/offers`,
+            cookieHeader
+        });
     },
     /**
      * Start or replay an addon purchase.

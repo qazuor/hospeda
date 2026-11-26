@@ -7,7 +7,6 @@
 
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { DetailCompareButton } from '../../../../src/components/accommodation/DetailCompareButton.client';
 import { WhatsAppContact } from '../../../../src/components/accommodation/WhatsAppContact.client';
 import { CompareButton } from '../../../../src/components/shared/compare/CompareButton.client';
 import { CompareCardSelect } from '../../../../src/components/shared/compare/CompareCardSelect.client';
@@ -31,7 +30,6 @@ for (const css of [
     'shared/compare/CompareButton',
     'shared/compare/CompareCardSelect',
     'shared/compare/ComparisonMatrix',
-    'accommodation/DetailCompareButton',
     'accommodation/WhatsAppContact'
 ]) {
     vi.doMock(`../../../../src/components/${css}.module.css`, () => ({
@@ -100,23 +98,6 @@ const SURFACES: readonly Surface[] = [
         run: async (names) => {
             render(
                 <CompareButton
-                    accommodationId="a"
-                    accommodationName="Cabaña"
-                    gatePlanNames={names}
-                />
-            );
-            fireEvent.click(screen.getByRole('button'));
-            return toastMessage();
-        }
-    },
-    {
-        label: 'DetailCompareButton',
-        planName: 'Aventurero',
-        keyBase: KEY_BASE,
-        noPlans: /Comparar alojamientos no está incluido en tu plan actual/,
-        run: async (names) => {
-            render(
-                <DetailCompareButton
                     accommodationId="a"
                     accommodationName="Cabaña"
                     gatePlanNames={names}

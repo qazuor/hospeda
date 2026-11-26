@@ -168,6 +168,8 @@
         }
     },
     "byAttraction": {
+        "filterTitle": "Filter by attraction",
+        "subtitle": "Explore the towns where you can visit this attraction: {{attraction}}.",
         "tagline": "Attraction",
         "heading": "Destinations with {{attraction}}",
         "seoSuffix": "Discover the Litoral destinations that offer it.",

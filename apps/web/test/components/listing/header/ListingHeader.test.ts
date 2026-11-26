@@ -191,7 +191,8 @@ describe('actions (AC-11)', () => {
 
     it('renders compare only when the builder passes it (accommodation only)', () => {
         expect(ACTIONS).toMatch(/\{compare && \(\s*<DetailCompareButton/);
-        expect(ACTIONS).toContain('EntitlementKeyEnum.CAN_COMPARE_ACCOMMODATIONS');
+        expect(ACTIONS).toContain('compare ? await readComparePlan()');
+        expect(ACTIONS).toMatch(/<DetailCompareButton[^>]*\{\.\.\.comparePlan\}/);
     });
 
     it('mounts the shared FavoriteButton for the vertical entity type', () => {

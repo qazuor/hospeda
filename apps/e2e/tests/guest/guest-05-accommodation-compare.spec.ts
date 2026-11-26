@@ -185,7 +185,7 @@ test.describe('GUEST-05: accommodation comparison gate + UI flow @p1 @guest @bil
         // is on. This spec used to click `button[name=/comparación/i]` twice, which
         // matched the single toggle — turning compare mode on and straight back off —
         // and then timed out looking for a second button that never existed.
-        const modeToggle = page.getByRole('button', { name: /comparaci[oó]n/i }).first();
+        const modeToggle = page.getByRole('button', { name: /comparar alojamientos/i }).first();
         await expect(modeToggle).toBeVisible({ timeout: 15_000 });
         // Guard against the hydration race: the island must have finished loading
         // entitlements (aria-busy back to false) before the click handler will act.

@@ -23,6 +23,8 @@
  */
 
 import type { PublishVerticalSlug } from '@/lib/api/endpoints-protected';
+import type { SupportedLocale } from '@/lib/i18n';
+import { buildUrl, buildUrlWithParams } from '@/lib/urls';
 
 /** Query parameter identifying a publish journey started on the plans pages. */
 export const PUBLISH_FROM_PLANS_PARAM = 'desde';
@@ -93,3 +95,26 @@ export const PRICING_PAGE_PATH_BY_VERTICAL: Readonly<Record<PublishVerticalSlug,
     venue: `${PLANS_PAGE_PATH_BY_VERTICAL.venue}/precios`,
     experience: `${PLANS_PAGE_PATH_BY_VERTICAL.experience}/precios`
 } as const;
+
+/**
+ * The subscription page, scoped to the vertical's own billing domain.
+ *
+ * `/mi-cuenta/suscripcion/` defaults to the accommodation subscription and takes
+ * `?domain=` for the others (HOS-689). Sending a venue/experience owner to the bare URL
+ * would show them a page about a subscription they may not even hold.
+ */
+export function buildVerticalSubscriptionUrl(input: {
+    readonly locale: SupportedLocale;
+    readonly vertical: PublishVerticalSlug;
+}): string {
+    const { locale, vertical } = input;
+
+    if (vertical === 'accommodation') {
+        return buildUrl({ locale, path: 'mi-cuenta/suscripcion' });
+    }
+    return buildUrlWithParams({
+        locale,
+        path: 'mi-cuenta/suscripcion',
+        params: { domain: vertical }
+    });
+}

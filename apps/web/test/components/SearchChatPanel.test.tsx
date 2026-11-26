@@ -988,7 +988,7 @@ describe('SearchChatPanel', () => {
             });
             renderPanel();
             const textarea = screen.getByRole('textbox') as HTMLTextAreaElement;
-            expect(textarea.placeholder).toMatch(/contame qué buscás/i);
+            expect(textarea.placeholder).toBe('Ej.: cabaña con pileta');
             expect(textarea.placeholder).not.toMatch(/afiná tu búsqueda/i);
         });
 
@@ -1088,7 +1088,7 @@ describe('SearchChatPanel', () => {
             renderPanel();
             expect(screen.getByRole('textbox')).toHaveAttribute(
                 'placeholder',
-                'Contame qué buscás, por ejemplo: cabaña para 4 con pileta cerca del río'
+                'Ej.: cabaña con pileta'
             );
         });
 
@@ -1119,7 +1119,7 @@ describe('SearchChatPanel', () => {
             renderPanel();
             expect(screen.getByRole('textbox')).toHaveAttribute(
                 'placeholder',
-                'Contame qué buscás, por ejemplo: cabaña para 4 con pileta cerca del río'
+                'Ej.: cabaña con pileta'
             );
         });
     });

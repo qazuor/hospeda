@@ -1,13 +1,8 @@
-.card {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-3, 12px);
-}
-
 .fields {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: var(--space-2, 8px);
+    margin-block-end: var(--space-3);
 }
 
 .field {
@@ -41,23 +36,5 @@
 
 .field small {
     font: var(--app-meta);
-    color: var(--core-muted-foreground);
-}
-
-.direct {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-2, 8px);
-    padding-block-start: var(--space-3, 12px);
-    border-block-start: 1px solid var(--border);
-}
-
-.directTitle {
-    margin: 0;
-    font-family: var(--font-sans);
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
     color: var(--core-muted-foreground);
 }

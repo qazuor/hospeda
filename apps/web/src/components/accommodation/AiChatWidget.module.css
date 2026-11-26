@@ -399,8 +399,14 @@
 }
 
 .sendButton:disabled {
-    opacity: 0.5;
+    background-color: var(--core-card);
+    color: var(--core-foreground);
+    border: 1px solid var(--core-muted-foreground);
     cursor: not-allowed;
+}
+
+.disclaimer summary {
+    cursor: pointer;
 }
 
 .sendButton:focus-visible {

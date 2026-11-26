@@ -108,7 +108,9 @@ export function SearchChatPanel({
     pageType
 }: SearchChatPanelProps) {
     const { t } = createTranslations(locale);
-    const [draft, setDraft] = useState('');
+    const [draft, setDraft] = useState(
+        () => new URL(currentUrl, 'https://hospeda.invalid').searchParams.get('q') ?? ''
+    );
 
     // Session resolved client-side (HOS-369 WB0-4). Until it resolves the login
     // CTA renders — the same thing the server emits — and the panel swaps in

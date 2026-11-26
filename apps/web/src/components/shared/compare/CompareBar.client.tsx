@@ -36,7 +36,7 @@
 import { ArrowRightIcon, XIcon } from '@repo/icons';
 import { getMediaUrl, stripCloudinaryTransform } from '@repo/media';
 import type { FC, MouseEvent } from 'react';
-import { useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useCompareGuard } from '@/hooks/useCompareGuard';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -189,6 +189,20 @@ export const CompareBar: FC<CompareBarProps> = ({ locale = 'es' }) => {
     const { maxItems, isLoading } = useCompareGuard();
     const { t, tPlural } = createTranslations(locale);
     const isVisible = items.length > 0;
+    const measureBar = useCallback((bar: HTMLElement | null) => {
+        if (!bar) return;
+        const root = document.documentElement;
+        const update = () => {
+            root.style.setProperty('--compare-bar-height', `${bar.offsetHeight}px`);
+        };
+        update();
+        const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(update);
+        observer?.observe(bar);
+        return () => {
+            observer?.disconnect();
+            root.style.removeProperty('--compare-bar-height');
+        };
+    }, []);
 
     // Publish/clear the `<html>` flag whenever visibility changes, and clean
     // up on unmount so a stale flag never survives this island going away
@@ -230,6 +244,7 @@ export const CompareBar: FC<CompareBarProps> = ({ locale = 'es' }) => {
         <DockPortal slot="above">
             {isVisible && (
                 <section
+                    ref={measureBar}
                     // `.barMobile` is the mobile-specific class (HOS-85 T-007): it carries
                     // the `<= 640px` overrides that keep the bar bottom-anchored above the
                     // site's own sticky navigation AND the mobile filters/list-map floating

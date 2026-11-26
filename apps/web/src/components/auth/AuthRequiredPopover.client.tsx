@@ -51,6 +51,8 @@ export interface AuthRequiredPopoverProps {
     readonly dialogLabel?: string;
     /** Accessible label for the close button. Defaults to 'Cerrar'. */
     readonly closeLabel?: string;
+    /** Optional feature-specific benefit shown beneath the main message. */
+    readonly benefit?: string;
     /** Sign-in button text. Defaults to 'Iniciar sesión'. */
     readonly signInLabel?: string;
     /** Register button text. Defaults to 'Crear cuenta'. */
@@ -145,6 +147,7 @@ function computePosition(
  * ```
  */
 export function AuthRequiredPopover({
+    benefit,
     anchorRef,
     message,
     onClose,
@@ -182,6 +185,7 @@ export function AuthRequiredPopover({
     // Repositions on resize. Scroll dismisses the popover (capture: true catches
     // ancestor scrolls too) so it does not visually detach from the trigger as
     // the page scrolls underneath.
+    // biome-ignore lint/correctness/useExhaustiveDependencies: the benefit can change the measured popover height after the catalog loads
     useLayoutEffect(() => {
         if (!mounted) return;
         const anchor = anchorRef.current;
@@ -225,7 +229,7 @@ export function AuthRequiredPopover({
             window.removeEventListener('scroll', handleScroll, { capture: true });
             window.removeEventListener('resize', handleResize);
         };
-    }, [mounted, anchorRef, onClose, hiddenAnchorFallbackRef]);
+    }, [mounted, anchorRef, onClose, hiddenAnchorFallbackRef, benefit]);
 
     useLayoutEffect(() => {
         if (mounted && keyboardEntryId) closeRef.current?.focus({ preventScroll: true });
@@ -319,6 +323,7 @@ export function AuthRequiredPopover({
                     />
                 </div>
                 <p className={styles.message}>{message}</p>
+                {benefit && <p className={styles.benefit}>{benefit}</p>}
             </div>
 
             {/* Action buttons */}

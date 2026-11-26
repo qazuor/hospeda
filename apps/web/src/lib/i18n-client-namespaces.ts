@@ -154,6 +154,7 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'billing.addon',
     'billing.addonPurchase',
     'billing.checkout',
+    'billing.common',
     'billing.limit',
     // HOS-1759 — the checkout island resolves the selected plan's localized
     // name through `billing/plan-name.ts`.
@@ -165,6 +166,8 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     // HOS-1977 — the publish button's LIMIT_REACHED rejection renders
     // these keys in the browser.
     'publish.limitReached',
+    // HOS-2632 — the same rejection also offers the catalog add-on that widens the cap.
+    'publish.capAddon',
     'blog.categories',
     'comments.form',
     'comments.thread',

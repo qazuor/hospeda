@@ -34,7 +34,7 @@ const { trackEvent, readCachedAuthMe, toggle, checkBulk, compareState } = vi.hoi
     readCachedAuthMe: vi.fn(),
     toggle: vi.fn(),
     checkBulk: vi.fn(),
-    compareState: { selected: false }
+    compareState: { selected: false, entitled: false }
 }));
 
 vi.mock('@/lib/analytics/umami-client', () => ({ trackEvent }));
@@ -52,6 +52,8 @@ vi.mock('@/hooks/useCompareGuard', () => ({
     useCompareGuard: () => ({
         isInList: () => compareState.selected,
         isLoading: false,
+        canCompare: compareState.entitled,
+        count: 2,
         maxItems: 4,
         toggle: () => ({ action: 'added', reason: null })
     })
@@ -69,7 +71,7 @@ const accommodation: ListingActionBarButtonsProps = {
     venueWhatsapp: null,
     phoneHref: 'tel:+5493442000000',
     shareUrl: 'https://hospeda.test/es/alojamientos/casa-del-rio/',
-    compare: { gatePlanNames: [] }
+    compare: { planName: 'Plan del catálogo con nombre largo', planCapacity: 4 }
 };
 
 const experience: ListingActionBarButtonsProps = {
@@ -81,6 +83,25 @@ const experience: ListingActionBarButtonsProps = {
     compare: null,
     fallbackHref: '#experience-contact'
 };
+
+it.each([
+    ['es', ['Chat', 'WhatsApp', 'Llamar', 'Guardar', 'Compartir', 'Comparar']],
+    ['en', ['Chat', 'WhatsApp', 'Call', 'Save', 'Share', 'Compare']],
+    ['pt', ['Chat', 'WhatsApp', 'Ligar', 'Salvar', 'Compartilhar', 'Comparar']]
+] as const)('labels all accommodation dock actions in %s', (locale, labels) => {
+    const { container } = render(
+        <ListingActionBarButtons
+            {...accommodation}
+            locale={locale}
+        />
+    );
+
+    const visibleLabels = Array.from(container.querySelectorAll('[data-action] > .label')).map(
+        (node) => node.textContent
+    );
+
+    expect(visibleLabels).toEqual(labels);
+});
 
 const venue: ListingActionBarButtonsProps = {
     ...accommodation,
@@ -123,6 +144,7 @@ beforeEach(() => {
     trackEvent.mockClear();
     resetFavoritesStore();
     compareState.selected = false;
+    compareState.entitled = false;
     readCachedAuthMe.mockReturnValue(guest());
     checkBulk.mockImplementation(({ entityIds }: { entityIds: readonly string[] }) =>
         Promise.resolve({
@@ -144,6 +166,30 @@ afterEach(() => {
 });
 
 describe('ListingActionBarButtons: render rules', () => {
+    it.each([
+        false,
+        true
+    ])('keeps compare metadata inside the 44px dock control (entitled: %s)', (entitled) => {
+        compareState.entitled = entitled;
+        const { container } = render(<ListingActionBarButtons {...accommodation} />);
+
+        const compare = screen.getByRole('button', { name: /Plan del catálogo con nombre largo/ });
+        const island = container.querySelector('[data-action="compare"]');
+        expect(island?.firstElementChild?.children).toHaveLength(1);
+        expect(island?.firstElementChild?.firstElementChild).toBe(compare);
+        expect(island?.lastElementChild).toHaveTextContent('Comparar');
+        expect(compare.querySelector('.compactBadge')).toContainElement(
+            compare.querySelector('.sr-only:last-child')
+        );
+        if (entitled) expect(compare.querySelector('.compactUsage')).toHaveTextContent('2/4');
+        else {
+            fireEvent.click(compare);
+            expect(screen.getByRole('dialog')).toHaveTextContent(
+                /hasta 4 alojamientos.*Plan del catálogo con nombre largo/
+            );
+        }
+    });
+
     it('links to an existing thread instead of opening the contact panel', () => {
         conversation.conversationId = 'thread-1';
         const receive = vi.fn();
@@ -557,7 +603,7 @@ describe('ListingActionBarButtons: HOS-2607 glyphs', () => {
 
         // Assert
         expect(menu).toHaveAttribute('data-menu-glyph', glyph);
-        expect(menu.innerHTML).toBe(
+        expect(menu.querySelector('svg')?.outerHTML).toBe(
             markupOf(
                 <Icon
                     size={22}
@@ -578,7 +624,7 @@ describe('ListingActionBarButtons: HOS-2607 glyphs', () => {
 
         const menu = screen.getByRole('link', { name: 'Ver carta' });
         expect(menu).toHaveAttribute('data-menu-glyph', 'food');
-        expect(menu.innerHTML).toBe(
+        expect(menu.querySelector('svg')?.outerHTML).toBe(
             markupOf(
                 <ForkKnifeIcon
                     size={22}
@@ -599,7 +645,7 @@ describe('ListingActionBarButtons: HOS-2607 glyphs', () => {
         render(<ListingActionBarButtons {...props} />);
 
         const link = screen.getByRole('link', { name: 'Escribir por WhatsApp' });
-        expect(link.innerHTML).toBe(
+        expect(link.querySelector('svg')?.outerHTML).toBe(
             markupOf(
                 <WhatsappIcon
                     size={22}
@@ -611,7 +657,7 @@ describe('ListingActionBarButtons: HOS-2607 glyphs', () => {
         // (The brand mark's own SVG <title> is not painted, and the svg is aria-hidden.)
         const outsideSvg = link.cloneNode(true) as HTMLElement;
         for (const svg of outsideSvg.querySelectorAll('svg')) svg.remove();
-        expect(outsideSvg.textContent?.trim()).toBe('');
+        expect(outsideSvg.textContent?.trim()).toBe('WhatsApp');
         expect(link.querySelector('svg text')).toBeNull();
         expect(link.querySelector('svg')).toHaveAttribute('aria-hidden', 'true');
     });

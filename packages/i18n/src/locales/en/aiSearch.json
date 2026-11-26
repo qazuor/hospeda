@@ -6,7 +6,7 @@
         "title": "Conversational search",
         "close": "Close panel",
         "inputLabel": "Message",
-        "placeholder": "Tell me what you're looking for, e.g. cabin for 4 with a pool near the river",
+        "placeholder": "E.g. cabin with a pool",
         "send": "Send message",
         "sending": "Sending…",
         "stop": "Stop",

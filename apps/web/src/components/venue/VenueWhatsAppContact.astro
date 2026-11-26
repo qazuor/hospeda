@@ -29,7 +29,6 @@ const whatsapp = venue.whatsapp ?? null;
 ---
 
 {whatsapp && (
-    <div class="venue-whatsapp">
         <VenueWhatsAppButton
             client:idle
             venueId={venue.id}
@@ -37,12 +36,6 @@ const whatsapp = venue.whatsapp ?? null;
             whatsapp={whatsapp}
             signInHref={signInHref}
             locale={locale}
+            inlineChannel
         />
-    </div>
 )}
-
-<style>
-    .venue-whatsapp {
-        margin-bottom: var(--space-6, 24px);
-    }
-</style>

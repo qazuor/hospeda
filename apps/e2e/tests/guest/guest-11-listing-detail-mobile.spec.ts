@@ -21,7 +21,7 @@ const RELATED_CAROUSEL = '.related-carousel';
 
 async function openContactSheet({ page }: { readonly page: Page }) {
     const trigger = page.locator(CONTACT_BAR).getByRole('link', { name: 'Consultar', exact: true });
-    const sheet = page.getByRole('dialog', { name: /^Consultá a \S/ });
+    const sheet = page.getByRole('dialog', { name: /^Consultá al anfitrión: \S/ });
     // The link jumps to #contact until the client-side panel is ready.
     await expect(trigger).toHaveAttribute('aria-haspopup', 'dialog');
     await trigger.tap();

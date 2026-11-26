@@ -136,12 +136,12 @@ describe('listing action bar: one secondary look (HOS-2607)', () => {
         }
     });
 
-    it('every secondary glyph is drawn in the same 22px box', () => {
+    it('every secondary action glyph uses the same 22px box without enlarging the compact crown', () => {
         const box = barRule('.row .island .favorite svg');
 
         expect(box.selectors).toEqual([
             '.row .island .favorite svg',
-            '.row .island .compare svg',
+            '.row .island .compare > svg',
             '.share :global(button[aria-expanded] svg)'
         ]);
         expect(box.decls).toEqual({ width: '22px', height: '22px' });

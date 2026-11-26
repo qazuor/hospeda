@@ -8,14 +8,21 @@
 
 import type { AmenityPublic, FeaturePublic } from '@repo/schemas';
 import { VenueTypeEnum } from '@repo/schemas';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import { SSR_PUBLIC_CACHE_TTL_MS, venueApi } from '@/lib/api/endpoints';
 import type { TranslationFn } from '@/lib/i18n';
 import {
     buildVenueFilterGroups,
     buildVenueTypeChips,
+    loadVenueTypeCounts,
     narrowVenueFilterCatalog
 } from '@/lib/venue/venue-listing-filters';
 import { VENUE_TYPE_OPTIONS } from '@/lib/venue/venue-type-options';
+
+vi.mock('@/lib/api/endpoints', () => ({
+    SSR_PUBLIC_CACHE_TTL_MS: 123_000,
+    venueApi: { list: vi.fn() }
+}));
 
 const AMENITY_A = '11111111-1111-4111-8111-111111111111';
 const AMENITY_B = '22222222-2222-4222-8222-222222222222';
@@ -260,6 +267,22 @@ describe('buildVenueFilterGroups — category grouping (HOS-2061 AC-5)', () => {
 describe('buildVenueTypeChips', () => {
     const baseUrl = '/es/comer-y-salir/rubro/coleccion/';
 
+    it('labels known counts including zero, but leaves unavailable counts unlabelled', () => {
+        const chips = buildVenueTypeChips({
+            t,
+            types: ['BAR', 'BOLICHE', 'RESTAURANT'],
+            baseUrl,
+            searchParams: new URLSearchParams(),
+            counts: { BAR: 17, BOLICHE: 0 }
+        });
+
+        expect(chips.map(({ label }) => label)).toEqual([
+            'venue.types.BAR (17)',
+            'venue.types.BOLICHE (0)',
+            'venue.types.RESTAURANT'
+        ]);
+    });
+
     it('emits one chip per received type, with the active one flagged', () => {
         const chips = buildVenueTypeChips({
             t,
@@ -289,5 +312,57 @@ describe('buildVenueTypeChips', () => {
         expect(inactive?.href).toContain('type=BAR');
         expect(inactive?.href).toContain('q=algo');
         expect(active?.href).not.toContain('type=');
+    });
+});
+
+describe('loadVenueTypeCounts', () => {
+    const list = vi.mocked(venueApi.list);
+    const failed = { ok: false, error: { status: 503, message: 'Unavailable' } } as const;
+
+    it('uses pagination totals and forwards business line and cache options for every type', async () => {
+        list.mockReset().mockResolvedValue({
+            ok: true,
+            data: { items: [], pagination: { total: 34, page: 1, pageSize: 1, totalPages: 34 } }
+        });
+
+        const counts = await loadVenueTypeCounts({
+            types: ['BAR', 'BOLICHE'],
+            businessLine: 'nightlife'
+        });
+
+        expect(counts).toEqual({ BAR: 34, BOLICHE: 34 });
+        expect(list.mock.calls).toEqual(
+            ['BAR', 'BOLICHE'].map((type) => [
+                {
+                    type,
+                    businessLine: 'nightlife',
+                    page: 1,
+                    pageSize: 1,
+                    cacheTtlMs: SSR_PUBLIC_CACHE_TTL_MS
+                }
+            ])
+        );
+    });
+
+    it('keeps successful totals even when other requests fail or reject', async () => {
+        list.mockReset()
+            .mockResolvedValueOnce({
+                ok: true,
+                data: { items: [], pagination: { total: 0, page: 1, pageSize: 1, totalPages: 0 } }
+            })
+            .mockResolvedValueOnce(failed)
+            .mockRejectedValueOnce(new Error('Transport failure'));
+
+        const counts = await loadVenueTypeCounts({ types: ['BAR', 'BOLICHE', 'RESTAURANT'] });
+
+        expect(counts).toEqual({ BAR: 0 });
+    });
+
+    it('returns no counts when every request fails', async () => {
+        list.mockReset().mockResolvedValue(failed);
+
+        const counts = await loadVenueTypeCounts({ types: ['BAR'] });
+
+        expect(counts).toEqual({});
     });
 });

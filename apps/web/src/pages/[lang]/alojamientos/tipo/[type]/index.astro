@@ -30,6 +30,10 @@ import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astr
 import CompareModeControls from '@/components/shared/compare/CompareModeControls.astro';
 import AccommodationCard from '@/components/shared/cards/AccommodationCard.astro';
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
+import FilterChips from '@/components/shared/ui/FilterChips.astro';
+import ActiveFacet from '@/components/shared/layout/ActiveFacet.astro';
+import { AccommodationTypeEnum } from '@repo/schemas';
+import { getAccommodationTypeLabel } from '@/lib/colors';
 import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
 import Pagination from '@/components/shared/feedback/Pagination.astro';
 import ItemListJsonLd from '@/components/seo/ItemListJsonLd.astro';
@@ -45,6 +49,7 @@ import { parseAccommodationListingFilters } from '@/lib/accommodation-listing-fi
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
+import { buildAccommodationTypeChipHref } from '@/lib/listing-navigation';
 import { buildPaginationLinks, isPageOutOfRange } from '@/lib/listing/listing-pagination';
 import { getApiUrl } from '@/lib/env';
 import { CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
@@ -187,6 +192,15 @@ const sortOptions = [
 ];
 
 const baseUrl = buildUrl({ locale, path: `alojamientos/tipo/${canonicalTypeSlug}` });
+const allAccommodationsHref = buildUrl({ locale, path: 'alojamientos' });
+const typeChips = Object.values(AccommodationTypeEnum).map((value) => ({
+	label: getAccommodationTypeLabel({ type: value, t }),
+	active: value === typeEnum,
+	href: buildAccommodationTypeChipHref({
+		path: value === typeEnum ? allAccommodationsHref : buildUrl({ locale, path: `alojamientos/tipo/${slugForAccommodationType({ type: value })}` }),
+		searchParams: url.searchParams,
+	}),
+}));
 
 // Self-canonical for paginated pages (mirrors alojamientos/index.astro). Pages
 // 2+ are served at `/{locale}/alojamientos/tipo/{type}/page/{n}/` via an
@@ -357,6 +371,9 @@ const collectionPageUrl = `${siteOrigin}${canonicalPath}`;
 	showFilters={true}
 	filterPosition="left"
 	totalCount={total}
+	noindex={hasError || total === 0}
+	resultKind="accommodations"
+	sortOptions={sortOptions}
 >
 	<CollectionPageJsonLd
 		slot="head-extra"
@@ -388,6 +405,7 @@ const collectionPageUrl = `${siteOrigin}${canonicalPath}`;
 		locale={locale}
 		tagline={t('accommodations.byType.tagline', 'Tipo de alojamiento')}
 		title={typeName}
+		subtitle={typeDescription}
 	/>
 
 	<CompareModeControls slot="page-header" locale={locale} />
@@ -397,9 +415,10 @@ const collectionPageUrl = `${siteOrigin}${canonicalPath}`;
 		client:load
 		locale={locale}
 		filters={filterGroups}
-		sortOptions={sortOptions}
 		initialParams={initialParams}
 	/>
+	<ActiveFacet slot="results-actions" locale={locale} label={typeName} clearHref={allAccommodationsHref} clearLabel={t('ui.listing.allAccommodations')} />
+	<FilterChips chips={typeChips} ariaLabel={t('accommodations.typeChips.ariaLabel')} showScrollButtons prevLabel={t('common.prev')} nextLabel={t('common.next')} />
 
 	{/* AI search entry — context-aware onboarding for this type (SPEC-265 B1b). */}
 	{!hasError && (
@@ -421,7 +440,9 @@ const collectionPageUrl = `${siteOrigin}${canonicalPath}`;
 		<EmptyState
 			locale={locale}
 			variant="no-results"
-			actionUrl={baseUrl}
+			actionUrl={allAccommodationsHref}
+			actionLabel={t('ui.listing.allAccommodations')}
+			suggestions={[{ label: t('accommodations.emptySuggestion.allDestinations'), url: buildUrl({ locale, path: 'destinos' }) }]}
 			activeFilters={activeFilterChips}
 			message={t('accommodations.byType.labels.emptyTitle', 'No hay alojamientos de tipo {{type}} disponibles', {
 				type: typeName
