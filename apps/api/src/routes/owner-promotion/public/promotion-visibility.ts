@@ -121,14 +121,16 @@ export async function resolveForReader({
     actor,
     promotions,
     places,
-    seed
+    seed,
+    lockGuest
 }: {
     readonly actor: Actor;
     readonly promotions: readonly OwnerPromotion[];
     readonly places: PromotionPlaces;
     readonly seed: string;
+    readonly lockGuest?: boolean;
 }) {
-    const { isVip, freeQuota } = await resolveTouristPromotionAccess({ actor });
+    const { isVip, freeQuota } = await resolveTouristPromotionAccess({ actor, lockGuest });
     const items = buildPromotionVisibilityItems({ promotions, places, isVip, freeQuota, seed });
     return { items, meta: { isVip, freeQuota } };
 }

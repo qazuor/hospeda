@@ -9,6 +9,7 @@
  */
 
 import { useEffect, useState } from 'react';
+import { syncTabScrollFade } from '@/lib/ui/tab-scroll-fade';
 import type { GalleryImage } from '../ImageGallery.client';
 import styles from './GalleryLightbox.module.css';
 import { buildLightboxThumbUrl } from './gallery-image-sources';
@@ -60,7 +61,19 @@ export function GalleryLightboxThumbs({ images, index, onSelect, t }: GalleryLig
     if (!painted || images.length <= 1) return null;
 
     return (
-        <ul className={styles.lightboxThumbs}>
+        <ul
+            className={styles.lightboxThumbs}
+            onScroll={(event) => syncTabScrollFade({ bar: event.currentTarget })}
+            ref={(bar) => {
+                if (!bar) return;
+                const sync = () => syncTabScrollFade({ bar });
+                sync();
+                if (typeof ResizeObserver === 'undefined') return;
+                const observer = new ResizeObserver(sync);
+                observer.observe(bar);
+                return () => observer.disconnect();
+            }}
+        >
             {images.map((img, i) => (
                 <li key={img.url}>
                     <button

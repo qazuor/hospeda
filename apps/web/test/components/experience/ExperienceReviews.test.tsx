@@ -22,7 +22,15 @@ import { buildAuthSnapshot } from '../../helpers/auth-session';
 
 vi.mock('@/lib/i18n', () => ({
     createTranslations: (_locale: string) => ({
-        t: (_key: string, fallback?: string) => fallback ?? _key,
+        t: (key: string, fallback?: string) =>
+            fallback ??
+            (
+                {
+                    'review.list.firstReview': 'Sé el primero en reseñar',
+                    'review.venueSidebar.cta': 'Dejar reseña'
+                } as Record<string, string>
+            )[key] ??
+            key,
         tPlural: (key: string, count: number) =>
             key === 'experience.reviews.more' ? `+ ${count} más reseñas` : `${key} ${count}`
     })
@@ -66,6 +74,7 @@ vi.mock('@/lib/auth-cache', () => ({
 }));
 
 const DEFAULT_PROPS = {
+    signInHref: '/es/auth/signin/',
     experienceId: 'exp-abc',
     initialReviews: [REVIEW_1] as readonly ExperienceReviewPublicItem[],
     totalReviews: 6,
@@ -115,7 +124,10 @@ describe('ExperienceReviews', () => {
 
         it('shows empty state when no reviews', () => {
             renderReviews({ initialReviews: [], totalReviews: 0 });
-            expect(screen.getByText(/Todavía no hay reseñas/i)).toBeInTheDocument();
+            expect(screen.getByRole('link', { name: 'Sé el primero en reseñar' })).toHaveAttribute(
+                'href',
+                DEFAULT_PROPS.signInHref
+            );
         });
 
         it('hides "load more" when total matches initial count', () => {

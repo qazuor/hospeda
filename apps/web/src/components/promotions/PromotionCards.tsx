@@ -19,16 +19,17 @@ import type {
     PromotionVisibleItem
 } from '@repo/schemas';
 import { formatCalendarDate } from '@repo/utils';
-import { useState } from 'react';
 import { PlanBadge } from '@/components/shared/ui/PlanBadge';
 import { PromotionWindowStatus } from '@/components/venue/PromotionWindowStatus.client';
+import { useSession } from '@/lib/auth-client';
+import { buildLoginRedirect } from '@/lib/auth-redirect';
 import { formatPrice } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { isRedundantText } from '@/lib/is-redundant-text';
 import { buildUrl } from '@/lib/urls';
 import { formatPromotionWindow } from '@/lib/venue/promotion-window';
 import styles from './PromotionCards.module.css';
-import { PromotionUpsellDialog } from './PromotionUpsellDialog';
 
 /** Props of {@link PromotionCards}. */
 export interface PromotionCardsProps {
@@ -89,6 +90,15 @@ function VisibleCard({
 }) {
     const { t, tPlural } = createTranslations(locale);
     const href = showPlace ? placeHref({ locale, item }) : null;
+    const headline = formatPromotionHeadline({
+        discountType: item.discountType,
+        discountValue: item.discountValue,
+        specialOfferText: null,
+        locale
+    });
+    const title = isRedundantText({ a: item.title, b: item.description })
+        ? (item.description ?? item.title)
+        : item.title;
     const validUntil = item.validUntil
         ? formatCalendarDate({
               value: item.validUntil.toISOString(),
@@ -102,18 +112,10 @@ function VisibleCard({
             data-promotion-card="visible"
         >
             <div className={styles.cardTop}>
-                <p className={styles.headline}>
-                    {formatPromotionHeadline({
-                        discountType: item.discountType,
-                        discountValue: item.discountValue,
-                        specialOfferText: item.description,
-                        locale
-                    })}
-                </p>
+                <h3 className={styles.title}>{title || headline}</h3>
                 {item.audience === 'vip' ? <PlanBadge name={vipPlanName} /> : null}
             </div>
-            <h3 className={styles.title}>{item.title}</h3>
-            {item.discountType !== 'special_offer' && item.description ? (
+            {item.description && !isRedundantText({ a: item.description, b: title }) ? (
                 <p className={styles.description}>{item.description}</p>
             ) : null}
             {item.window ? (
@@ -142,7 +144,11 @@ function VisibleCard({
                     className={styles.placeLink}
                     href={href}
                 >
-                    {t('common.promotions.viewPlace', undefined, { name: item.place.name })}
+                    {t(
+                        item.entityType === 'venue'
+                            ? 'common.promotions.viewVenue'
+                            : 'common.promotions.viewAccommodation'
+                    )}
                 </a>
             ) : null}
         </article>
@@ -153,56 +159,61 @@ function LockedCard({
     vipPlanName,
     locale,
     item,
-    onOpen
+    guest
 }: {
     readonly vipPlanName: string | null;
     readonly locale: SupportedLocale;
     readonly item: PromotionLockedItem;
-    readonly onOpen: () => void;
+    readonly guest: boolean;
 }) {
     const { t } = createTranslations(locale);
+    const vip = item.audience === 'vip';
     const name =
-        item.audience === 'vip' && vipPlanName
+        vip && vipPlanName
             ? t('common.promotions.lockedPlanName', undefined, { plan: vipPlanName })
-            : t('common.promotions.lockedHiddenName');
+            : t(
+                  vip || guest
+                      ? 'common.promotions.lockedHiddenName'
+                      : 'common.promotions.quotaReached'
+              );
     return (
-        <button
-            type="button"
+        <article
             className={`${styles.card} ${styles.locked}`}
-            aria-disabled="true"
-            aria-label={name}
-            aria-haspopup="dialog"
             data-promotion-card="locked"
-            onClick={onOpen}
+            data-promotion-audience={item.audience}
         >
-            <span className={styles.cardTop}>
-                <span className={styles.headline}>
-                    {formatPromotionHeadline({
-                        discountType: item.discountType,
-                        discountValue: item.discountValue,
-                        specialOfferText: null,
-                        locale
-                    })}
-                </span>
-                {item.audience === 'vip' ? <PlanBadge name={vipPlanName} /> : null}
-            </span>
-            <span className={styles.typeLabel}>
-                {t(`common.promotions.discountTypes.${item.discountType}`)}
-            </span>
-            <span
-                className={styles.placeholder}
-                aria-hidden="true"
-            >
-                {item.placeholderName}
-            </span>
-            <span className={styles.lockRow}>
+            <h3 className={styles.lockRow}>
                 <LockIcon
-                    size="sm"
+                    size="lg"
                     aria-hidden="true"
                 />
                 <span>{name}</span>
-            </span>
-        </button>
+            </h3>
+            <span
+                className={styles.placeholder}
+                aria-hidden="true"
+            />
+            <a
+                className={styles.placeLink}
+                href={
+                    guest
+                        ? buildLoginRedirect({
+                              locale,
+                              currentUrl:
+                                  typeof window === 'undefined'
+                                      ? `/${locale}/promociones/`
+                                      : window.location.pathname
+                          })
+                        : buildUrl({ locale, path: 'planes/turistas/precios' })
+                }
+            >
+                {guest
+                    ? t('common.auth.signIn')
+                    : vipPlanName
+                      ? t('common.promotions.explorePlan', undefined, { plan: vipPlanName })
+                      : t('common.promotions.viewPlans')}
+            </a>
+        </article>
     );
 }
 
@@ -212,14 +223,8 @@ function LockedCard({
  * @param props - See {@link PromotionCardsProps}.
  * @returns The card list.
  */
-export function PromotionCards({
-    locale,
-    items,
-    freeQuota,
-    vipPlanName,
-    showPlace
-}: PromotionCardsProps) {
-    const [dialogOpen, setDialogOpen] = useState(false);
+export function PromotionCards({ locale, items, vipPlanName, showPlace }: PromotionCardsProps) {
+    const { data: session } = useSession();
     return (
         <>
             <ul className={styles.grid}>
@@ -237,19 +242,12 @@ export function PromotionCards({
                                 vipPlanName={vipPlanName}
                                 locale={locale}
                                 item={item}
-                                onOpen={() => setDialogOpen(true)}
+                                guest={!session?.user}
                             />
                         )}
                     </li>
                 ))}
             </ul>
-            <PromotionUpsellDialog
-                locale={locale}
-                open={dialogOpen}
-                onClose={() => setDialogOpen(false)}
-                freeQuota={freeQuota}
-                vipPlanName={vipPlanName}
-            />
         </>
     );
 }

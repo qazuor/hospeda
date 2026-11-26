@@ -107,7 +107,8 @@ describe('detail pages — HTML sanitization (XSS regression)', () => {
         });
 
         it('passes the sanitized HTML to Description as descriptionHtml (HOS-817)', () => {
-            expect(src).toMatch(/descriptionHtml=\{safeDescriptionHtml\}/);
+            expect(src).toMatch(/descriptionHtml=\{displayDescription\}/);
+            expect(src).toMatch(/safeRichDescriptionHtml : safeDescriptionHtml/);
         });
 
         it('never pipes the raw description field straight into set:html', () => {

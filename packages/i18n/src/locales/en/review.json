@@ -84,6 +84,7 @@
         "close": "Close"
     },
     "list": {
+        "firstReview": "Be the first to leave a review",
         "title": "Reviews",
         "totalReviews_one": "{{count}} review",
         "totalReviews_other": "{{count}} reviews",

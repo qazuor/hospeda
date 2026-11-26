@@ -47,6 +47,7 @@ export async function handleListingPromotions(
         actor: getActorFromContext(ctx),
         promotions,
         places,
+        lockGuest: true,
         seed: `${resolveRequestSeed({ raw: query?.seed })}|p${page}`
     });
     return {

@@ -16,6 +16,7 @@ import JsonLd from '@/components/seo/JsonLd.astro';
 import { accommodationsApi } from '@/lib/api/endpoints';
 import { toAccommodationDetailPageProps } from '@/lib/api/transforms';
 import { createTranslations } from '@/lib/i18n';
+import { getListingPriceCardDisplay } from '@/lib/listing-contact/listing-contact-price';
 import type { SupportedLocale } from '@/lib/i18n';
 import ImageAttribution from '@/components/shared/ImageAttribution.astro';
 import type { MediaAttribution } from '@/lib/media';
@@ -181,6 +182,15 @@ for (const entry of accommodation.media.videos) {
 
 const seoTitle = `${t('accommodations.detail.gallery.photosSubpage')} - ${accommodation.name} | Hospeda`;
 const backUrl = `/${locale}/alojamientos/${slug}/`;
+const { title: priceTitle, unit: priceUnit } = getListingPriceCardDisplay({
+    locale,
+    price: {
+        amount: accommodation.price?.price ?? null,
+        currency: accommodation.price?.currency ?? null,
+        unitLabelKey: 'accommodations.detail.listingContact.units.perNight',
+        onRequest: (accommodation.price?.price ?? 0) <= 0
+    }
+});
 
 const jsonLd = {
     '@context': 'https://schema.org',
@@ -222,11 +232,12 @@ const jsonLd = {
             {/* data-astro-reload: full page load back to the detail page so the
             gallery island re-imports and re-injects its CSS-module stylesheet
             (the ClientRouter head swap drops it — T-018 smoke bug). */}
-            <a href={backUrl} class="fotos__back" data-astro-reload>
+            <a href={backUrl} class="fotos__back fotos__back--footer" data-astro-reload>
                 {t('accommodations.detail.gallery.backToAccommodation')}
             </a>
         </div>
 
+        <p>{t('accommodations.detail.gallery.photosSubpage')} ({galleryItems.filter((item) => item.type !== 'video').length})</p>
         <div class="fotosGrid">
             {galleryItems.map((item, i) => (
                 <div class="fotosCell">
@@ -262,6 +273,12 @@ const jsonLd = {
             ))}
         </div>
 
+        <div class="fotos__booking">
+            <p><strong>{priceTitle}</strong> {priceUnit}</p>
+            <a class="fotos__back fotos__back--footer" href={`${backUrl}#consult`} data-astro-reload>
+                {t('accommodations.detail.listingContact.bar.inquire')}
+            </a>
+        </div>
         <div class="fotos__footer">
             <a href={backUrl} class="fotos__back fotos__back--footer" data-astro-reload>
                 {t('accommodations.detail.gallery.backToAccommodation')}
@@ -271,6 +288,18 @@ const jsonLd = {
 </DetailLayout>
 
 <style>
+    .fotos__booking {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-3);
+        position: sticky;
+        bottom: var(--mobile-dock-height, 0px);
+        z-index: 1;
+        padding: var(--space-3);
+        background: var(--core-background);
+        border-block-start: 1px solid var(--border);
+    }
     .fotos__title {
         font-family: var(--font-heading);
         font-size: clamp(1.3rem, 3vw, 2rem);
@@ -317,6 +346,7 @@ const jsonLd = {
     }
 
     .fotosCell {
+        background-color: var(--surface-warm);
         /* Fixed 4:3 ratio reserves space before image loads → zero CLS. */
         aspect-ratio: 4 / 3;
         overflow: hidden;

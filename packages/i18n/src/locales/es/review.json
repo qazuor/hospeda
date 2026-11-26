@@ -84,6 +84,7 @@
         "close": "Cerrar"
     },
     "list": {
+        "firstReview": "Sé el primero en reseñar",
         "title": "Reseñas",
         "totalReviews_one": "{{count}} reseña",
         "totalReviews_other": "{{count}} reseñas",

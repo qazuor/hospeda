@@ -51,9 +51,9 @@ const strip = reviews.map((review) => {
 <section class="review-preview">
   <h2 class="review-preview__title">{t('accommodations.detail.reviews')}</h2>
 
-  {!hasReviews ? (
+  {!hasReviews && !Astro.slots.has('invitation') ? (
     <p class="review-preview__empty">{t('accommodations.detail.reviewsDetail.noReviews')}</p>
-  ) : (
+  ) : hasReviews && (
     <>
       <RatingBreakdown
         averageRating={accommodation.averageRating}
@@ -126,6 +126,7 @@ const strip = reviews.map((review) => {
   )}
 
   <slot />
+  <slot name="invitation" />
 </section>
 
 <style>
@@ -152,19 +153,15 @@ const strip = reviews.map((review) => {
     margin: 0;
   }
   .review-preview__strip {
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
     gap: var(--space-3, 12px);
     margin: 0;
     padding: 0 0 var(--space-2, 8px);
     list-style: none;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
-    scrollbar-width: thin;
-    -webkit-overflow-scrolling: touch;
   }
   .review-preview__card {
-    flex: 0 0 min(80%, 320px);
-    scroll-snap-align: start;
+    min-inline-size: 0;
     display: flex;
     flex-direction: column;
     gap: var(--space-2, 8px);
@@ -234,11 +231,7 @@ const strip = reviews.map((review) => {
     font-size: 0.92rem;
     line-height: 1.5;
     color: var(--core-foreground);
-    display: -webkit-box;
-    -webkit-line-clamp: 5;
-    line-clamp: 5;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+    overflow-wrap: anywhere;
   }
   .review-preview__reply {
     display: flex;
@@ -259,11 +252,7 @@ const strip = reviews.map((review) => {
     font-size: 0.88rem;
     line-height: 1.45;
     color: var(--core-foreground);
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    line-clamp: 3;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+    overflow-wrap: anywhere;
   }
   .review-preview__view-all {
     align-self: flex-start;

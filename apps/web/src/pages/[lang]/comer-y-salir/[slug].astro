@@ -271,9 +271,11 @@ const showEventsCta = acceptsEvents && hasVenueContact;
 // The events rule is left out of the house-rules list ONLY when the dedicated
 // CTA renders in its place — otherwise both would say "accepts events" two
 // centimeters apart.
+const paymentMethods = venue.policies?.paymentMethods;
+const policiesWithoutPayments = setListingPolicy({ policies: venue.policies ?? {}, key: 'paymentMethods', value: undefined });
 const houseRulePolicies = showEventsCta
-    ? setListingPolicy({ policies: venue.policies ?? {}, key: 'eventsAllowed', value: undefined })
-    : venue.policies;
+    ? setListingPolicy({ policies: policiesWithoutPayments, key: 'eventsAllowed', value: undefined })
+    : policiesWithoutPayments;
 
 // --- Mobile contact bar (HOS-2532) ---
 // No price and no form. The panel carries WhatsApp only through the HOS-2256 gate
@@ -459,8 +461,6 @@ const hasPoliciesSection = hasHouseRules({ policies: houseRulePolicies, locale }
 const sectionTabs = buildListingSectionTabs({
     present: {
         photos: galleryImages.length > 0,
-        details: hasDescriptionSection,
-        amenities: hasOffersSection,
         hours: hasOpeningHours,
         location: venueLocation !== null,
         // The review form always renders, so slot 8 always exists.
@@ -595,6 +595,7 @@ const headerProps = buildVenueHeader({
             locale={locale}
             vertical="venue"
             listingId={venue.id}
+            reviewCount={venue.reviewsCount}
             price={null}
             panelId={contactPanelId}
             primaryLabelKey={
@@ -641,9 +642,10 @@ const headerProps = buildVenueHeader({
         )}
 
         <!-- Slot 5: opening hours. -->
-        {hoursBlocks.length > 0 && (
+        {(hoursBlocks.length > 0 || paymentMethods?.length) && (
             <ListingDetailSlot name="hours">
                 {hoursBlocks.map(({ Component, props }) => <Component {...props} />)}
+                {paymentMethods?.length ? <ListingHouseRules policies={{ paymentMethods }} locale={locale} /> : null}
             </ListingDetailSlot>
         )}
 
@@ -680,6 +682,7 @@ const headerProps = buildVenueHeader({
                     locale={locale}
                     apiUrl={getApiUrl()}
                     signInHref={reviewSignInHref}
+                    empty={totalReviews === 0}
                 />
             </section>
         </ListingDetailSlot>

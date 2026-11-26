@@ -18,7 +18,8 @@
 import ClampedText from '@/components/listing/ClampedText.astro';
 import type { SupportedLocale } from '@/lib/i18n';
 import { renderContent } from '@/lib/render-content';
-import { renderPlain } from '@/lib/render-plain';
+import { stripMarkdownPlain } from '@/lib/render-plain';
+import { isRedundantText } from '@/lib/is-redundant-text';
 
 interface Props {
     /** Short summary shown above the full description with a warm accent border. */
@@ -41,15 +42,18 @@ const richHtml =
     richDescription && richDescription.trim().length > 0
         ? renderContent({ raw: richDescription, siteOrigin: '' })
         : null;
+const bodyText = richHtml && richDescription ? stripMarkdownPlain(richDescription) : descriptionText;
+const showSummary = summary && !isRedundantText({ a: summary, b: bodyText });
+const showBody = (richHtml || descriptionText) && !(showSummary && isRedundantText({ a: bodyText, b: summary }));
 ---
 
-{summary && (
+{showSummary && (
     <div class="venue-desc__summary">
         <p>{summary}</p>
     </div>
 )}
 
-{(richHtml || descriptionText) && (
+{showBody && (
     <ClampedText lang={locale}>
         {richHtml ? (
             <div class="venue-desc__body venue-desc__body--rich" set:html={richHtml} />
