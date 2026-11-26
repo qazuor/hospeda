@@ -31,6 +31,15 @@ function setup() {
 }
 
 describe('MobileMenu site navigation', () => {
+    it('focuses the shared kit close control and closes on click', () => {
+        setup();
+        const close = screen.getByRole('button', { name: 'Cerrar menú de navegación' });
+        expect(close).toHaveClass('quiet', 'sm', 'iconOnly');
+        expect(close.querySelector('svg')).toHaveAttribute('fill', 'currentColor');
+        expect(close).toHaveFocus();
+        fireEvent.click(close);
+        expect(screen.queryByRole('dialog')).toBeNull();
+    });
     it('renders site links, guest sign-in and guest preferences', () => {
         setup();
         expect(screen.getByRole('link', { name: 'Destinations' })).toHaveAttribute(

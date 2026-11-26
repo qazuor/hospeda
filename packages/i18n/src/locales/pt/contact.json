@@ -54,7 +54,7 @@
         "errorMessage": "Não foi possível enviar a mensagem. Tente novamente.",
         "ariaLabel": "Formulário de contato",
         "accommodationId": "ID da acomodação",
-        "lastNameError": "O sobrenome deve ter pelo menos 2 caracteres",
+        "lastNameError": "Informe seu sobrenome (pelo menos 2 letras)",
         "emailError": "Por favor insira um e-mail válido",
         "messageError": "A mensagem deve ter pelo menos 10 caracteres",
         "accommodationIdError": "O ID da acomodação é obrigatório e deve ser um UUID válido",

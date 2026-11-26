@@ -77,8 +77,8 @@ vi.mock('../../../../src/lib/auth-client', () => ({
 }));
 
 vi.mock('../../../../src/lib/env', () => ({
-    isLoggingEnabled: () => false,
-    getApiUrl: () => 'https://api.test'
+    getApiUrl: () => 'https://api.test',
+    isLoggingEnabled: () => false
 }));
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────

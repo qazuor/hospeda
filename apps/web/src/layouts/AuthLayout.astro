@@ -157,9 +157,10 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 		position: relative;
 		flex: 1;
 		display: flex;
-		align-items: center;
+		align-items: flex-start;
 		justify-content: center;
 		padding-inline: var(--space-6);
+		padding-block: var(--space-6);
 		overflow: hidden;
 	}
 
@@ -187,7 +188,6 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 	@media (max-width: 640px) {
 		.auth-card {
 			box-shadow: none;
-			background-color: transparent;
 			padding: var(--space-4);
 		}
 	}

@@ -35,10 +35,9 @@ function openingTags({ src, className }: { src: string; className: string }): st
 
 const CARD_LINKS: ReadonlyArray<{ file: string; className: string }> = [
     { file: 'shared/cards/DestinationCard.astro', className: 'dest-card__link' },
-    { file: 'shared/cards/AccommodationCard.astro', className: 'acc-card__link' },
+    { file: 'shared/cards/CardPriceFooter.astro', className: 'card-price-footer__link' },
     { file: 'shared/cards/EventCardHorizontal.astro', className: 'event-card-h__link' },
     { file: 'shared/cards/ArticleCard.astro', className: 'article-card__link' },
-    { file: 'venue/VenueCard.astro', className: 'venue-card__link' },
     { file: 'experience/ExperienceCard.astro', className: 'exp-card__link' },
     { file: 'post/PostRelatedEntityCard.astro', className: 'post-related-entity' },
     { file: 'shared/auth/SignInCtaCard.astro', className: 'signin-cta__link' },

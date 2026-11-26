@@ -23,7 +23,9 @@
         "description": "Your account doesn't have permission to enter the admin panel. If you think this is a mistake, write to us and we'll take a look.",
         "goToAccount": "Go to my account",
         "goHome": "Go to home",
-        "contact": "Contact"
+        "contact": "Contact us if you think this is a mistake",
+        "guestDescription": "Sign in with an authorized account to open the admin panel.",
+        "defaultDescription": "The admin panel is reserved for authorized accounts."
     },
     "form": {
         "validation-failed": "Form validation failed. Please fix the errors and try again.",

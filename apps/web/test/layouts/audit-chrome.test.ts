@@ -42,9 +42,10 @@ describe('public chrome audit', () => {
         expect(source('layouts/AccountShell.module.css')).not.toContain('overflow-y: auto');
     });
 
-    it('gives the public header one primary CTA and labels desktop preferences', () => {
+    it('keeps Publicar as the flat accent CTA beside a primary sign-in and labels desktop preferences', () => {
+        // HOS-2646 (owner smoke) owns the Publicar treatment: flat accent, not outline.
         expect(source('components/shared/navigation/PublishMenu.client.tsx')).toContain(
-            'btn-gradient--outline-primary'
+            'btn-gradient--accent btn-gradient--flat'
         );
         const userMenu = source('components/shared/navigation/UserMenu.client.tsx');
         expect(userMenu).toContain('btn-gradient--primary');

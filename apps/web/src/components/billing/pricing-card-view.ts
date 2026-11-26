@@ -306,7 +306,11 @@ export function buildPricingCardViews(input: BuildPricingCardViewsInput): Pricin
                   {
                       kind: 'feature' as const,
                       id: 'group-tourist-vip',
-                      label: t('pricing.group.touristVip')
+                      label: touristVipBenefits?.badgeName
+                          ? t('pricing.group.touristPlan', undefined, {
+                                plan: touristVipBenefits.badgeName
+                            })
+                          : t('pricing.group.touristVip')
                   }
               ]
             : [];

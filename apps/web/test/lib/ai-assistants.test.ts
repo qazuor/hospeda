@@ -5,8 +5,11 @@
 
 import { describe, expect, it } from 'vitest';
 import {
+    buildAiAssistantAccessUrl,
+    buildAiAssistantPlansUrl,
     buildAiConnectionsResetReviewUrl,
     buildAiConnectionsUrl,
+    parseAiAssistantAccess,
     parseAiConnections,
     resolveAiAssistantsVisibility
 } from '../../src/lib/ai-assistants';
@@ -107,5 +110,34 @@ describe('resolveAiAssistantsVisibility', () => {
         [false, 0, 'unavailable']
     ] as const)('flag %s with %s connections is %s', (mcpEnabled, connectionCount, expected) => {
         expect(resolveAiAssistantsVisibility({ mcpEnabled, connectionCount })).toBe(expected);
+    });
+});
+
+describe('AI assistant access helpers (T-041)', () => {
+    it('builds the access URL', () => {
+        expect(buildAiAssistantAccessUrl({ apiUrl: 'https://api.x/' })).toBe(
+            'https://api.x/api/v1/protected/ai-connections/access'
+        );
+    });
+
+    it('parses a refusal with its vertical and rejects a bad envelope', () => {
+        expect(
+            parseAiAssistantAccess({
+                body: { success: true, data: { hasAccess: false, vertical: 'venue' } }
+            })
+        ).toEqual({ hasAccess: false, vertical: 'venue' });
+        expect(parseAiAssistantAccess({ body: { success: false } })).toBeNull();
+        expect(
+            parseAiAssistantAccess({ body: { success: true, data: { hasAccess: 'no' } } })
+        ).toBeNull();
+    });
+
+    it.each([
+        ['accommodation', '/es/planes/anfitriones/'],
+        ['venue', '/es/planes/comer-y-salir/'],
+        ['experience', '/es/planes/experiencias/'],
+        [undefined, '/es/planes/anfitriones/']
+    ] as const)('links the plans page of %s', (vertical, expected) => {
+        expect(buildAiAssistantPlansUrl({ locale: 'es', vertical })).toBe(expected);
     });
 });

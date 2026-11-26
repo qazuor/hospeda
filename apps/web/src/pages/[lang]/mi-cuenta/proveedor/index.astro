@@ -339,14 +339,14 @@ const panelError = t(
 
     @media (min-width: 48rem) {
         .provider-tabs :global(nav) {
-            display: revert;
-            grid-template-columns: revert;
-            overflow: revert;
+            display: flex;
+            gap: var(--space-1);
+            overflow-x: auto;
         }
 
         .provider-tabs :global(nav > a) {
-            justify-content: revert;
-            padding-inline: revert;
+            justify-content: center;
+            padding-inline: var(--space-4);
         }
     }
 </style>

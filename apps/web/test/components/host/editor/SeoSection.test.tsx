@@ -150,7 +150,8 @@ function descriptionField(): HTMLTextAreaElement {
 describe('SeoSection', () => {
     it('should render the section title', () => {
         render(<SeoSection {...buildProps()} />);
-        expect(screen.getByText('Buscadores (Google)')).toBeInTheDocument();
+        expect(screen.getByRole('region', { name: 'Buscadores (Google)' })).toBeInTheDocument();
+        expect(screen.queryByRole('heading', { name: 'Buscadores (Google)' })).toBeNull();
     });
 
     describe('the default each empty field will publish', () => {

@@ -7,8 +7,39 @@ import { createTranslations } from '../../../../src/lib/i18n';
 import { signOutFromNavigation } from '../../../../src/lib/navigation/sign-out';
 
 vi.mock('../../../../src/lib/navigation/sign-out', () => ({ signOutFromNavigation: vi.fn() }));
+const plan = vi.hoisted(() => ({
+    current: null as null | {
+        name: string;
+        paid: boolean;
+        until: string | null;
+        upgrade: string | null;
+    }
+}));
+vi.mock('../../../../src/components/shared/navigation/use-tourist-menu-plan', () => ({
+    useTouristMenuPlan: () => plan.current
+}));
 
 describe('mobile account shortcuts (D05)', () => {
+    it('keeps the tourist plan line (HOS-2649) on the in-menu account row', () => {
+        plan.current = { name: 'Turista VIP', paid: true, until: null, upgrade: null };
+        const { t } = createTranslations('es');
+        render(
+            <MobileMenuAccountSection
+                locale="es"
+                t={t}
+                isOpen
+                user={{ name: 'Ana García', email: 'ana@example.test' }}
+                permissions={[]}
+                closeThen={vi.fn()}
+                onLinkClick={vi.fn()}
+            />
+        );
+
+        expect(
+            screen.getByRole('link', { name: /mi cuenta ana garcía turista vip/i })
+        ).toBeInTheDocument();
+        plan.current = null;
+    });
     it('renders the desktop shortcuts and signs out after closing the drawer', () => {
         const { t } = createTranslations('es');
         const actions: (() => void)[] = [];

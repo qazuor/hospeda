@@ -36,10 +36,12 @@
  */
 
 import { BellIcon, LockIcon } from '@repo/icons';
+import { EntitlementKeyEnum } from '@repo/schemas';
 import { lazy, type ReactNode, Suspense, useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/account/ui/Button';
-import { StatusPill } from '@/components/account/ui/StatusPill';
+import { useVipPlanName } from '@/components/promotions/use-promotion-policy';
 import { Spinner } from '@/components/shared/feedback/Spinner';
+import { PlanBadge } from '@/components/shared/ui/PlanBadge';
 import { useAccountPermissions } from '@/hooks/use-account-permissions';
 import { usePriceAlertGateState } from '@/hooks/use-price-alert-gate-state';
 import { translateApiError } from '@/lib/api-errors';
@@ -118,6 +120,12 @@ export function PriceAlertButton({
     // branch is what renders on the server and on first paint.
     const { user } = useAccountPermissions();
     const gate = usePriceAlertGateState({ accommodationId, skip: user === null });
+    const { vipPlanName } = useVipPlanName({
+        apiUrl,
+        enabled: true,
+        entitlement: EntitlementKeyEnum.PRICE_ALERTS
+    });
+    const entitledBadge = <PlanBadge name={gate.canCreateAlerts ? vipPlanName : null} />;
 
     // ── State ─────────────────────────────────────────────────────────────────
     // Local mirrors of the resolved gate so a successful create/cancel can flip
@@ -287,6 +295,7 @@ export function PriceAlertButton({
                     )}
                 </button>
                 {errorNode}
+                {entitledBadge}
             </div>
         );
     }
@@ -309,6 +318,7 @@ export function PriceAlertButton({
                         aria-hidden="true"
                     />
                     {t('accommodations.detail.priceAlert.create', 'Avisame si baja el precio')}
+                    {entitledBadge}
                 </button>
             </div>
         );
@@ -329,10 +339,7 @@ export function PriceAlertButton({
                         aria-hidden="true"
                     />
                     {t('accommodations.detail.priceAlert.locked', 'Avisame si baja el precio')}
-                    <StatusPill tone="plan">{t('common.promotions.vipBadge', 'VIP')}</StatusPill>
-                    <span className="sr-only">
-                        {t('accommodations.detail.priceAlert.vipOnly', 'Solo para turistas VIP')}
-                    </span>
+                    <PlanBadge name={vipPlanName} />
                 </Button>
                 {vipGateOpen && (
                     <Suspense
@@ -372,6 +379,7 @@ export function PriceAlertButton({
                         'Límite de alertas alcanzado'
                     )}
                 </button>
+                {entitledBadge}
             </div>
         );
     }
@@ -403,6 +411,7 @@ export function PriceAlertButton({
                 )}
             </button>
             {errorNode}
+            {entitledBadge}
         </div>
     );
 }

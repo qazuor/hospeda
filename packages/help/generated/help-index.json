@@ -1,5 +1,5 @@
 {
-  "contentHash": "de7d000f0f7d8bb2ab5a5b6e9e581b6471fb665005c624bfb724d6113074104a",
+  "contentHash": "45a076d97e45091754ed7979ca4923e46ac5232f2b88276eb6f5bc66a329bb1a",
   "locales": {
     "es": [
       {
@@ -117,7 +117,7 @@
         "reviewedAt": "2026-11-26",
         "sections": {
           "canDo": "Conectar un asistente de IA a tu cuenta y desconectarlo cuando quieras, desde {{link:aiAssistants|Asistentes de IA}}.\n\nCon un asistente conectado podés, por ejemplo, {{article:reviews|leer tus reseñas}} o {{article:inquiries|responder consultas}}.",
-          "expect": "- Antes de aprobar el acceso, la pantalla te muestra qué puede hacer el asistente.\n- Al desconectarlo pierde el acceso de inmediato, y podés volver a conectarlo.\n- El asistente viene incluido en tu plan, sin costo extra y sin límite de uso. Si ya no tenés un plan activo, el asistente te avisa y te muestra los planes.",
+          "expect": "- Antes de aprobar el acceso, la pantalla te muestra qué puede hacer el asistente.\n- Al desconectarlo pierde el acceso de inmediato, y podés volver a conectarlo.\n- El asistente viene incluido en tu plan, sin costo extra y sin límite de uso. Si tu cuenta tiene solo el plan gratuito, el asistente te avisa y te muestra los planes, y en Mi cuenta → Asistentes de IA vas a ver el mismo aviso.",
           "howTo": {
             "after": "",
             "steps": [
@@ -326,7 +326,7 @@
           "benefit-usage",
           "provider-directory"
         ],
-        "reviewedAt": "2026-11-25",
+        "reviewedAt": "2026-11-26",
         "sections": {
           "canDo": "Registrar usos, descargar tu código QR y confirmar los usos pendientes desde {{link:providerPanel|Mi ficha de proveedor}}.",
           "expect": "- Lo que registrás queda pendiente hasta que el anfitrión lo confirme (mirá {{article:benefit-usage|cómo lo ve el anfitrión}}).\n- Los usos confirmados suman a tus números.",
@@ -396,7 +396,7 @@
           "publish-requirements",
           "inquiries"
         ],
-        "reviewedAt": "2026-11-25",
+        "reviewedAt": "2026-11-26",
         "sections": {
           "canDo": "Bloquear y liberar fechas, y conectar calendarios externos, desde {{link:section:accommodation:calendario|Calendario}}.",
           "expect": "- Las fechas bloqueadas no aparecen disponibles en las búsquedas.\n- Un calendario conectado muestra su estado y se puede sincronizar a mano o desconectar.\n- El calendario y la sincronización dependen de tu plan: compará {{link:plans:accommodation|los planes para alojamientos}}.",
@@ -481,7 +481,7 @@
           "publish-requirements",
           "calendar"
         ],
-        "reviewedAt": "2026-11-25",
+        "reviewedAt": "2026-11-26",
         "sections": {
           "canDo": "Cambiar el plan o la frecuencia de cobro de una suscripción activa desde {{link:subscription|Suscripción}}.\n\nComparar los planes en {{link:plans:accommodation|planes para alojamientos}}, {{link:plans:venue|planes para comercios}} o {{link:plans:experience|planes para experiencias}}.",
           "expect": "- Si el cambio requiere autorización, pasás por el checkout de Mercado Pago y tu plan actual sigue hasta que autorices.\n- Si el cambio se programa, ves la fecha exacta desde la que rige.\n- Los importes se ven en la lista de opciones y en la página de planes.",

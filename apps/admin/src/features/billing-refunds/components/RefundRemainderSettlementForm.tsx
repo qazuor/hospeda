@@ -10,7 +10,8 @@
 import type { TranslationKey } from '@repo/i18n';
 import {
     type RefundRemainderSettlementRequest,
-    RefundRemainderSettlementRequestSchema
+    RefundRemainderSettlementRequestSchema,
+    type SettleRefundRemainderRejection
 } from '@repo/schemas';
 import { useEffect, useState } from 'react';
 import { z } from 'zod';
@@ -20,13 +21,20 @@ import { useTranslations } from '@/hooks/use-translations';
 import { isApiError } from '@/lib/errors';
 import {
     Action14Field,
+    type Action14Rejection,
     readAction14Rejection
 } from '../../billing-reconciliation/components/action14-shared';
 import { useSettleRefundRemainder } from '../hooks/useSettleRefundRemainder';
 import { StuckRefundPicker, type StuckRefundPickerProps } from './StuckRefundPicker';
 
-/** Rejections only the remainder settlement answers; the rest reuse action 14's messages. */
-const REMAINDER_REJECTION_KEYS: Readonly<Record<string, TranslationKey>> = {
+/**
+ * Rejections only the remainder settlement answers; the rest reuse action 14's messages. The map
+ * is exhaustive over the shared tuple minus action 14's reasons, so a new remainder-only code
+ * breaks the typecheck.
+ */
+const REMAINDER_REJECTION_KEYS: Readonly<
+    Record<Exclude<SettleRefundRemainderRejection, Action14Rejection>, TranslationKey>
+> = {
     REFUND_NOT_CONFIRMED: 'admin-billing.proposedRefunds.remainder.rejections.REFUND_NOT_CONFIRMED',
     REFUND_CALL_UNANSWERED:
         'admin-billing.proposedRefunds.remainder.rejections.REFUND_CALL_UNANSWERED',
@@ -57,9 +65,12 @@ const RefundIdSchema = z.string().uuid();
 export function readRemainderRejection({ error }: { readonly error: unknown }): TranslationKey {
     const payload = isApiError(error) ? error.body : null;
     const reason = (payload as { error?: { reason?: string } } | null)?.error?.reason;
-    return (
-        (reason ? REMAINDER_REJECTION_KEYS[reason] : undefined) ?? readAction14Rejection({ error })
-    );
+    if (typeof reason === 'string' && Object.hasOwn(REMAINDER_REJECTION_KEYS, reason)) {
+        return REMAINDER_REJECTION_KEYS[
+            reason as Exclude<SettleRefundRemainderRejection, Action14Rejection>
+        ];
+    }
+    return readAction14Rejection({ error });
 }
 
 /**

@@ -113,7 +113,7 @@ export function PublishMenu({ locale, className }: PublishMenuProps): JSX.Elemen
                 aria-expanded={isOpen}
                 aria-label={triggerAriaLabel}
                 className={cn(
-                    'btn-gradient btn-gradient--outline-primary btn-gradient--sm',
+                    'btn-gradient btn-gradient--accent btn-gradient--flat btn-gradient--sm',
                     className
                 )}
             >

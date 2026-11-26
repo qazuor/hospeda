@@ -1,16 +1,17 @@
 /**
  * @file MobileMenu.preferences.test.tsx
- * @description RTL tests for HOS-312 — the mobile menu's language/theme
- * selectors are guest-only. A signed-in visitor's preferences live on their
- * profile now, not as loose toggles in the menu.
+ * @description RTL tests for the mobile menu's language/theme selectors.
+ * HOS-312 made them guest-only; owner decision D05 (HOS-2648) supersedes that:
+ * the mobile menu replicates the desktop user dropdown, so a signed-in user
+ * sees Idioma and Tema directly in the menu too.
  *
  * Covers:
  * - Guest (resolved, `permissions !== null`): selectors render.
- * - Signed-in user (resolved): selectors do NOT render.
+ * - Signed-in user (resolved): selectors render (D05).
  * - Indeterminate state (auth resolution still pending, `permissions === null`):
- *   selectors do NOT render — fail-closed, since `initialUser: null` here
- *   could be a real guest OR a signed-in visitor on a page whose middleware
- *   didn't parse the session.
+ *   selectors do NOT render — fail-closed (HOS-312, still in force), since
+ *   `initialUser: null` here could be a real guest OR a signed-in visitor on a
+ *   page whose middleware didn't parse the session.
  */
 
 import { act, render, screen, waitFor } from '@testing-library/react';
@@ -110,7 +111,7 @@ function openMenu() {
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
-describe('MobileMenu — preference selectors are guest-only (HOS-312)', () => {
+describe('MobileMenu — preference selectors (HOS-312 fail-closed, D05 signed-in)', () => {
     beforeEach(() => {
         sessionStorage.clear();
     });
@@ -140,6 +141,7 @@ describe('MobileMenu — preference selectors are guest-only (HOS-312)', () => {
         expect(screen.getByTestId('theme-control')).toBeInTheDocument();
     });
 
+    // D05 (owner decision): signed-in users also get Idioma and Tema in the menu.
     it('renders the selectors for a resolved signed-in user', () => {
         sessionStorage.setItem(
             AUTH_ME_CACHE_KEY,

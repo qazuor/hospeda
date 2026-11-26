@@ -26,7 +26,7 @@
  *     (`#ef4444`), not a `var(--token)` — no static token to map to.
  *   - components/ShareButtons.module.css (1): base is `var(--primary, <fallback>)`,
  *     an undefined alias with an inline oklch fallback.
- *   - components/shared/cards/EventCardFeatured.astro (3): base is
+ *   - components/shared/cards/EventCardFeatured.css (3): base is
  *     `var(--event-cat-bg, ...)`, a CSS var injected at runtime per event category.
  *   - pages/500.astro (1): SVG fill is `oklch(from ${destructiveColor} ...)` with
  *     destructiveColor interpolated in the Astro frontmatter at runtime.
@@ -79,7 +79,7 @@ const ALLOWLIST = Object.freeze({
     'src/lib/colors.ts': 4,
     'src/components/GlobalAnnouncements.astro': 2,
     'src/components/ShareButtons.module.css': 1,
-    'src/components/shared/cards/EventCardFeatured.astro': 3,
+    'src/components/shared/cards/EventCardFeatured.css': 3,
     // HOS-294: the partner detail page's organization-type badge uses
     // oklch(from var(--brand-primary) l c h / 0.15) for theme-adaptive
     // background shading — no precomputed alpha token exists for it.

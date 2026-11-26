@@ -9,7 +9,8 @@
 import type { TranslationKey } from '@repo/i18n';
 import type {
     RefundProviderCallRetryCallOutcome,
-    RefundProviderCallRetryResponse
+    RefundProviderCallRetryResponse,
+    RetryRefundProviderCallsRejection
 } from '@repo/schemas';
 import { useEffect, useState } from 'react';
 import { z } from 'zod';
@@ -19,13 +20,21 @@ import { useTranslations } from '@/hooks/use-translations';
 import { isApiError } from '@/lib/errors';
 import { Action14Field } from '../../billing-reconciliation/components/action14-shared';
 import { useRetryRefundProviderCalls } from '../hooks/useRetryRefundProviderCalls';
-import { refundDecisionErrorKey } from '../refund-decision-reasons';
+import { type KnownRefundDecisionReason, refundDecisionErrorKey } from '../refund-decision-reasons';
 import { StuckRefundPicker, type StuckRefundPickerProps } from './StuckRefundPicker';
 
 const BASE = 'admin-billing.proposedRefunds.providerRetry';
 
-/** Rejections only the retry answers, or answers with its own advice; the rest reuse action 13's copy. */
-const RETRY_REJECTION_KEYS: Readonly<Record<string, TranslationKey>> = {
+/**
+ * Rejections only the retry answers, or answers with its own advice; the rest reuse action 13's
+ * copy. The map is exhaustive over the tuple minus action 13's reasons, plus the one code whose
+ * retry-specific advice overrides action 13's, so a new retry-only code breaks the typecheck.
+ */
+type RetryRejectionKey =
+    | Exclude<RetryRefundProviderCallsRejection, KnownRefundDecisionReason>
+    | Extract<RetryRefundProviderCallsRejection, 'REFUND_PAST_PROVIDER_WINDOW'>;
+
+const RETRY_REJECTION_KEYS: Readonly<Record<RetryRejectionKey, TranslationKey>> = {
     REFUND_NOT_CONFIRMED: `${BASE}.rejections.REFUND_NOT_CONFIRMED`,
     REFUND_HAS_NO_UNANSWERED_CALL: `${BASE}.rejections.REFUND_HAS_NO_UNANSWERED_CALL`,
     REFUND_PAST_PROVIDER_WINDOW: `${BASE}.rejections.REFUND_PAST_PROVIDER_WINDOW`,
@@ -53,7 +62,10 @@ const RefundIdSchema = z.string().uuid();
 export function readRetryRejection({ error }: { readonly error: unknown }): TranslationKey {
     const payload = isApiError(error) ? error.body : null;
     const reason = (payload as { error?: { reason?: string } } | null)?.error?.reason;
-    return (reason ? RETRY_REJECTION_KEYS[reason] : undefined) ?? refundDecisionErrorKey({ error });
+    if (typeof reason === 'string' && Object.hasOwn(RETRY_REJECTION_KEYS, reason)) {
+        return RETRY_REJECTION_KEYS[reason as RetryRejectionKey];
+    }
+    return refundDecisionErrorKey({ error });
 }
 
 /**

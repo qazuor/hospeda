@@ -1,6 +1,7 @@
 import { BuildingIcon, ChevronRightIcon, LogoutIcon } from '@repo/icons';
 import type { MouseEvent } from 'react';
 import { useEffect, useRef, useState } from 'react';
+import { PlanBadge } from '@/components/shared/ui/PlanBadge';
 import { PUBLISH_CTA_OPTIONS } from '@/config/discovery-doors';
 import { getAvatarDisplayName, getInitials } from '@/lib/avatar-utils';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -8,6 +9,7 @@ import { getCuratedAccountNav } from '@/lib/nav-avatar';
 import { signOutFromNavigation } from '@/lib/navigation/sign-out';
 import { buildUrl } from '@/lib/urls';
 import styles from './MobileMenu.module.css';
+import { useTouristMenuPlan } from './use-tourist-menu-plan';
 
 interface Props {
     readonly locale: SupportedLocale;
@@ -23,7 +25,11 @@ interface Props {
     readonly onLinkClick: (event: MouseEvent<HTMLAnchorElement>) => void;
 }
 
-/** Renders publishing destinations and the desktop registry's account shortcuts. */
+/**
+ * Renders publishing destinations and, per owner decision D05, the desktop
+ * dropdown's account shortcuts and sign-out directly in the mobile menu.
+ * The tourist plan line (HOS-2649) loads lazily while the menu is open.
+ */
 export function MobileMenuAccountSection({
     locale,
     t,
@@ -34,6 +40,7 @@ export function MobileMenuAccountSection({
     onLinkClick
 }: Props) {
     const tabIndex = isOpen ? 0 : -1;
+    const plan = useTouristMenuPlan({ account: user?.email, open: isOpen });
     const { dashboardItem, quickItems } = getCuratedAccountNav({ permissions });
     const [publishOpen, setPublishOpen] = useState(false);
     const publishRef = useRef<HTMLDivElement>(null);
@@ -122,7 +129,8 @@ export function MobileMenuAccountSection({
                             <span className={styles.userName}>
                                 {t('account.title')}
                                 <small className={styles.userSecondary}>
-                                    {getAvatarDisplayName(user)}
+                                    {getAvatarDisplayName(user) || user.email}
+                                    <PlanBadge name={plan?.paid ? plan.name : null} />
                                 </small>
                             </span>
                             <ChevronRightIcon

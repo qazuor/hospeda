@@ -28,3 +28,9 @@
 .errorSpacing.errorSpacing {
     margin-top: var(--space-1, 0.25rem);
 }
+
+.required {
+    color: var(--destructive);
+    font-size: var(--text-body);
+    font-weight: 700;
+}

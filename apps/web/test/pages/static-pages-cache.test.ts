@@ -47,7 +47,6 @@ import { describe, expect, it } from 'vitest';
 const STATIC_PAGES = [
     'nosotros/index.astro',
     'beneficios/index.astro',
-    'funcionalidades/index.astro',
     'contacto/index.astro',
     'preguntas-frecuentes/index.astro',
     'legal/cookies/index.astro',
@@ -58,6 +57,13 @@ const STATIC_PAGES = [
     'colaborar/editores/index.astro',
     'colaborar/fotos/index.astro',
     'colaborar/reportar/index.astro'
+] as const;
+
+const CATALOG_PAGES = [
+    'funcionalidades/index.astro',
+    'presentacion/alojamientos/index.astro',
+    'presentacion/comer-y-salir/index.astro',
+    'presentacion/experiencias/index.astro'
 ] as const;
 
 /** Argument text of a call, anchored on the call so it cannot match an import. */
@@ -80,6 +86,19 @@ function callArgsOf(source: string, call: string): string {
 function readPage(relative: string): string {
     return readFileSync(resolve(__dirname, '../../src/pages/[lang]', relative), 'utf8');
 }
+
+describe('tourist catalog marketing pages', () => {
+    it.each(CATALOG_PAGES)('%s opts into pricing invalidation on plan edits', (page) => {
+        const source = readPage(page);
+
+        const args = callArgsOf(source, 'applyCacheHeaders');
+
+        expect(args).toMatch(/cacheClass:\s*'pricing'/);
+        expect(args).toMatch(/tags:\s*\[\s*CACHE_TAG_PRICING\s*\]/);
+        expect(args).toMatch(/cacheable:\s*true/);
+        expect(source).not.toMatch(/export\s+const\s+prerender|Astro\.locals\.user/);
+    });
+});
 
 describe('static pages — edge cacheability (HOS-369 W2-2)', () => {
     it.each(STATIC_PAGES)('%s opts in through applyCacheHeaders', (page) => {

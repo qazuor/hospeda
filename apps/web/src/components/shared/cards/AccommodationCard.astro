@@ -25,6 +25,11 @@ import type { AccommodationCardData } from '@/data/types';
 import type { SupportedLocale } from '@/lib/i18n';
 import { EntitlementKeyEnum } from '@repo/schemas';
 import { getGatePlanNames } from '@/lib/billing/gate-plan-names';
+import { resolvePromotionBadges } from '@/lib/promotions/promotion-badges';
+import CardPromotionPills from './CardPromotionPills.astro';
+import CardTooltip from './CardTooltip.astro';
+import CardPriceFooter from './CardPriceFooter.astro';
+import { selectCardPhotoBadge } from './utils/card-photo-badge';
 
 interface Props {
 	readonly data: AccommodationCardData;
@@ -62,11 +67,7 @@ const extraAmenities = Math.max(0, (data.amenities?.length ?? 0) - MAX_AMENITIES
 const fullStars = Math.floor(data.averageRating);
 const hasHalfStar = data.averageRating - fullStars >= 0.5;
 
-/** Accommodation is "new" if created less than 30 days ago. */
-const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
-const isNew = data.createdAt
-	? (Date.now() - new Date(data.createdAt).getTime()) < THIRTY_DAYS_MS
-	: false;
+const photoBadge = selectCardPhotoBadge(data);
 
 // HOS-2554: the compare upsell names the catalog plans that carry comparison. The catalog is
 // public (not per-user), so reading it here keeps the page session-blind.
@@ -76,7 +77,7 @@ const compareGatePlanNames = await getGatePlanNames({
 ---
 
 <article class="acc-card">
-	<a href={detailUrl} class="acc-card__link">
+	<div class="acc-card__link">
 		<!-- Whole-card compare-selection overlay (HOS-85): rendered as an
 		     absolutely-positioned overlay covering the whole card, but ONLY
 		     while compare mode is active (renders null otherwise — see
@@ -124,7 +125,7 @@ const compareGatePlanNames = await getGatePlanNames({
 			)}
 
 			<!-- Status corner (diagonal) - shown for accommodations created in the last 30 days -->
-			{isNew && (
+			{photoBadge === 'new' && (
 				<div
 					class="acc-card__status-corner"
 					aria-hidden="true"
@@ -134,35 +135,13 @@ const compareGatePlanNames = await getGatePlanNames({
 			)}
 
 			<!-- Featured badge -->
-			{data.isFeatured && (
+			{photoBadge === 'featured' && (
 				<div class="acc-card__featured-badge featured-badge">
 					<StarIcon size={12} weight="fill" aria-hidden="true" />
 					<span>{t('home.accommodations.badge.featured', 'Destacado')}</span>
 				</div>
 			)}
 
-			<!-- Verified badge — shown when the accommodation has been manually
-			     verified by an admin AND the owner's plan grants the
-			     HAS_VERIFICATION_BADGE entitlement. The entitlement gate happens
-			     server-side (owner-entitlement.ts); the frontend only renders
-			     based on `isVerified`, mirroring the isFeatured/hasAiChat badges. -->
-			{data.isVerified && (
-				<div class="acc-card__verified-badge">
-					<CheckCircleIcon size={12} weight="fill" aria-hidden="true" />
-					<span>{t('home.accommodations.badge.verified', 'Verificado')}</span>
-				</div>
-			)}
-
-			<!-- AI chat badge — the owner's plan grants the per-listing AI assistant.
-			     Shown to everyone (incl. guests) by design: it advertises the
-			     listing's capability, like the "Nuevo"/"Destacado" badges. The chat
-			     itself still gates on auth on the detail page. -->
-			{data.hasAiChat && (
-				<div class="acc-card__ai-badge">
-					<AskToAiIcon size={12} weight="fill" aria-hidden="true" />
-					<span>{t('home.accommodations.badge.aiChat', 'Chat IA')}</span>
-				</div>
-			)}
 
 			<!-- Wave separator -->
 			<div class="acc-card__wave" aria-hidden="true">
@@ -186,12 +165,6 @@ const compareGatePlanNames = await getGatePlanNames({
 					showCount={true}
 					locale={locale}
 				/>
-				{(data.photoCount ?? 0) > 0 && (
-					<div class="acc-card__photo-count" aria-hidden="true">
-						<GalleryIcon size={18} weight="fill" aria-hidden="true" />
-						<span>{tPlural('common.photos', data.photoCount ?? 0)}</span>
-					</div>
-				)}
 			</div>
 		</div>
 
@@ -206,11 +179,9 @@ const compareGatePlanNames = await getGatePlanNames({
 				</div>
 			</div>
 
-			<!-- HOS-2589 D-6: «Promo» for a «Para todos» promotion, «VIP» for a «Solo VIP» one, both when both exist. -->
 			{(data.hasFreePromotion || data.hasVipPromotion) && (
 				<div class="acc-card__promo-badges" data-testid="accommodation-promo-badges">
-					{data.hasFreePromotion && <span class="acc-card__promo-badge">{t('common.promotions.badges.promo')}</span>}
-					{data.hasVipPromotion && <span class="acc-card__promo-badge acc-card__promo-badge--vip">{t('common.promotions.badges.vip')}</span>}
+					<CardPromotionPills badges={resolvePromotionBadges(data)} locale={locale} />
 				</div>
 			)}
 
@@ -252,631 +223,18 @@ const compareGatePlanNames = await getGatePlanNames({
 				</div>
 			)}
 
-			<!-- Divider -->
-			<div class="acc-card__divider"></div>
-
-			<!-- Price + CTA row -->
-			<div class="acc-card__price-row">
-				{formattedPrice ? (
-					<div class="acc-card__price-block">
-						<span class="acc-card__price-label">{t('home.accommodations.price.from', 'Desde')}</span>
-						<span class="acc-card__price-value">{formattedPrice}</span>
-						<span class="acc-card__price-label">{t('home.accommodations.price.perNight', '/noche')}</span>
-					</div>
-				) : (
-					<div class="acc-card__price-block">
-						<span class="acc-card__price-value acc-card__price-value--consult">{t('home.accommodations.price.consult', 'Precio a consultar')}</span>
-					</div>
-				)}
-				<span class:list={['acc-card__cta-btn', !formattedPrice && 'acc-card__cta-btn--compact']}>
-					{formattedPrice
-						? `${t('common.readMore', 'Ver más')} →`
-						: `${t('home.accommodations.price.consultAvailability', 'Consultar disponibilidad')} →`}
-				</span>
-			</div>
+			<CardPriceFooter locale={locale} href={detailUrl} listingName={data.name} price={formattedPrice} cta={t('account.recommendations.viewDetails')}
+				prefix={t('home.accommodations.price.from')} unit={t('home.accommodations.price.perNight')}>
+				<Fragment slot="meta">
+					{data.isVerified && <CardTooltip label={t('home.accommodations.badge.verified')} description={t('home.accommodations.badge.verified')}><CheckCircleIcon size={16} aria-hidden="true" /></CardTooltip>}
+					{data.hasAiChat && <CardTooltip label={t('home.accommodations.badge.aiChat')} description={t('home.accommodations.badge.aiChat')}><AskToAiIcon size={16} aria-hidden="true" /></CardTooltip>}
+					{(data.photoCount ?? 0) > 0 && <CardTooltip description={tPlural('common.photos', data.photoCount ?? 0)}><GalleryIcon size={16} aria-hidden="true" /><span class="sr-only">{tPlural('common.photos', data.photoCount ?? 0)}</span><span aria-hidden="true">{data.photoCount}</span></CardTooltip>}
+				</Fragment>
+			</CardPriceFooter>
 		</div>
-	</a>
+	</div>
 </article>
 
 <style>
-	/* `--acc-card-radius` lets a container opt into another corner (the listing
-	   detail's related carousels use `--radius-card`, HOS-2533); the default is
-	   unchanged. */
-	.acc-card {
-		background-color: var(--core-card);
-		border: 1px solid var(--border);
-		border-radius: var(--acc-card-radius, var(--radius-md, 12px));
-		box-shadow: var(--shadow-card);
-		display: flex;
-		flex-direction: column;
-		height: 100%;
-		transition: box-shadow 200ms ease-out;
-	}
-
-	.acc-card:hover {
-		box-shadow: var(--shadow-card-hover);
-	}
-
-	.acc-card__link {
-		/* position: relative anchors the CompareCardSelect overlay island
-		 * (HOS-85), which covers the whole card with `position: absolute;
-		 * inset: 0` only while compare mode is active — see the component
-		 * mounted at the top of this <a> and the astro-island rule below. */
-		position: relative;
-		text-decoration: none;
-		color: inherit;
-		display: flex;
-		flex-direction: column;
-		height: 100%;
-	}
-
-	.acc-card__link:focus-visible {
-		outline: 2px solid var(--brand-primary);
-		outline-offset: 2px;
-		border-radius: var(--acc-card-radius, var(--radius-md, 12px));
-	}
-
-	/* IMAGE AREA */
-	.acc-card__image-area {
-		position: relative;
-		height: clamp(160px, 30vw, 220px);
-		overflow: hidden;
-		border-radius: var(--acc-card-radius, var(--radius-md, 12px)) var(--acc-card-radius, var(--radius-md, 12px)) 0 0;
-		background-color: var(--muted);
-	}
-
-	.acc-card__img {
-		width: 100%;
-		height: 100%;
-		object-fit: cover;
-		transition: transform 200ms ease-out;
-	}
-
-	.acc-card:hover .acc-card__img {
-		transform: scale(1.08);
-	}
-
-	/* Status corner badge (diagonal) */
-	.acc-card__status-corner {
-		position: absolute;
-		top: 0;
-		left: 0;
-		width: 80px;
-		height: 80px;
-		overflow: hidden;
-	}
-
-	.acc-card__status-corner::before {
-		content: '';
-		position: absolute;
-		top: 0;
-		left: 0;
-		width: 0;
-		height: 0;
-		/* Status corner uses the "new" badge colors. They are constants so we
-		 * bake them directly instead of threading through inline style=
-		 * (SPEC-046 GAP-046-09a). */
-		border-top: 80px solid var(--hospeda-forest);
-		border-right: 80px solid transparent;
-	}
-
-	.acc-card__status-text {
-		position: absolute;
-		top: 16px;
-		left: 4px;
-		transform: rotate(-45deg);
-		font-family: var(--font-sans);
-		font-weight: 700;
-		font-size: 14px;
-		line-height: 22.4px;
-		color: var(--primary-foreground);
-		white-space: nowrap;
-	}
-
-	/* Featured badge — right edge matches the actions column above
-	 * (12px from card edge) so favorite, photo-count and featured stack
-	 * along the same vertical guideline. Look (color/font/padding/icon
-	 * gap) comes from the shared `.featured-badge` rule in components.css. */
-	.acc-card__featured-badge {
-		position: absolute;
-		bottom: 48px;
-		right: 12px;
-	}
-
-	/* Verified badge — stacked above the AI-chat badge on the bottom-LEFT,
-	 * not the bottom-right: the actions column (favorite + gallery-pause +
-	 * photo-count, ~126px tall) occupies the top-right down through most of
-	 * the image height, so a third badge stacked above `.acc-card__featured-badge`
-	 * on the right collides with it. The bottom-left corner (already safely
-	 * shared by the AI-chat badge, clear of the actions column) has room.
-	 * Uses the semantic "info" (trust) token instead of the accent/brand
-	 * colors already used by featured/AI badges, so a verified listing reads
-	 * apart from promotional badges at a glance. */
-	.acc-card__verified-badge {
-		position: absolute;
-		bottom: 88px;
-		left: 12px;
-		display: inline-flex;
-		align-items: center;
-		gap: 0.3rem;
-		background-color: var(--info);
-		color: var(--info-foreground);
-		font-family: var(--font-sans);
-		font-weight: 700;
-		font-size: 14px;
-		line-height: 22.4px;
-		padding: 4px 10px;
-		border-radius: var(--radius-pill);
-		white-space: nowrap;
-	}
-
-	/* AI chat badge — same height as the featured badge but on the OPPOSITE
-	 * bottom corner so the two never collide (featured: bottom-right desktop /
-	 * bottom-left mobile; this: bottom-left desktop / bottom-right mobile).
-	 * Its own `--brand-primary` surface reads apart from the accent featured
-	 * badge. Same pill metrics as the shared `.featured-badge`. */
-	.acc-card__promo-badges {
-		display: flex;
-		gap: 6px;
-		margin-top: 6px;
-	}
-
-	.acc-card__promo-badge {
-		display: inline-flex;
-		align-items: center;
-		padding: 2px 10px;
-		border: 1px solid var(--brand-accent);
-		border-radius: var(--radius-pill);
-		color: var(--core-foreground);
-		font-family: var(--font-sans);
-		font-size: 11px;
-		font-weight: 600;
-		line-height: 1.4;
-		white-space: nowrap;
-	}
-
-	.acc-card__promo-badge--vip {
-		background: var(--brand-accent);
-		color: var(--accent-foreground);
-	}
-
-	.acc-card__ai-badge {
-		position: absolute;
-		bottom: 48px;
-		left: 12px;
-		display: inline-flex;
-		align-items: center;
-		gap: 0.3rem;
-		background-color: var(--brand-primary);
-		color: var(--primary-foreground);
-		font-family: var(--font-sans);
-		font-weight: 700;
-		font-size: 14px;
-		line-height: 22.4px;
-		padding: 4px 10px;
-		border-radius: var(--radius-pill);
-		white-space: nowrap;
-	}
-
-	/* Wave separator */
-	.acc-card__wave {
-		position: absolute;
-		bottom: 0;
-		left: 0;
-		right: 0;
-		height: 40px;
-		pointer-events: none;
-	}
-
-	.acc-card__wave svg {
-		width: 100%;
-		height: 100%;
-		display: block;
-	}
-
-	/* Actions (favorite + photo count) — right-aligned column. Items have
-	 * different widths (40px circle button vs. "N fotos" pill) so flex-end
-	 * keeps both flush with the card's right edge, matching the featured
-	 * badge below. */
-	.acc-card__actions {
-		position: absolute;
-		top: 12px;
-		right: 12px;
-		display: flex;
-		flex-direction: column;
-		gap: 8px;
-		align-items: flex-end;
-	}
-
-	.acc-card__fav-btn {
-		min-width: 44px;
-		min-height: 44px;
-		border-radius: 9999px;
-		background-color: var(--core-card-a85);
-		border: none;
-		cursor: pointer;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		color: var(--core-foreground);
-		transition: color 200ms ease-out;
-	}
-
-	.acc-card__fav-btn:hover {
-		color: var(--brand-accent);
-	}
-
-	.acc-card__fav-btn:focus-visible {
-		outline: 2px solid var(--brand-primary);
-		outline-offset: 2px;
-	}
-
-	/* Photo-count pill: always visible. Bigger + labeled (e.g. "9 fotos")
-	 * so the meaning reads at a glance, but keeps the original translucent
-	 * surface so it doesn't overpower the photo. */
-	/* Badge sits over the photo → theme-invariant dark pill + light text, not the
-	   theme-flipping --core-foreground / --primary-foreground which invert the
-	   badge (dark-on-light) in dark mode (BETA-114). */
-	.acc-card__photo-count {
-		display: flex;
-		align-items: center;
-		gap: 6px;
-		background-color: var(--overlay-bg-strong);
-		padding: 6px 12px;
-		border-radius: 9999px;
-		color: var(--surface-dark-foreground);
-		font-family: var(--font-sans);
-		font-weight: 600;
-		font-size: 13px;
-		line-height: 1.2;
-	}
-
-	/* CONTENT AREA */
-	.acc-card__content {
-		background-color: var(--core-card);
-		padding: 0 16px 20px;
-		display: flex;
-		flex-direction: column;
-		gap: 10px;
-		flex: 1;
-	}
-
-	/* The CompareCardSelect overlay island (HOS-85) is mounted as the first
-	 * child of `.acc-card__link` so it can absolutely position itself over
-	 * the whole card once hydrated. Force its `astro-island` wrapper to
-	 * `display: contents` explicitly (rather than relying on Astro's own
-	 * runtime-injected stylesheet, which only lands at hydration time) so
-	 * that when compare mode is off — the default, including the initial SSR
-	 * render — the wrapper collapses out of the flex flow entirely instead of
-	 * consuming space as an empty flex item. Same technique as
-	 * `.acc-listing-map :global(astro-island)` in `pages/[lang]/alojamientos/mapa.astro`. */
-	.acc-card__link > :global(astro-island) {
-		display: contents;
-	}
-
-	/* Category + Location row. The category badge is a bounded enum label
-	 * (CASA, HOTEL, etc.) so it never needs to shrink — flex-shrink: 0
-	 * keeps it intact. The location is the unbounded text (city names
-	 * like "Concepción del Uruguay") so it absorbs the remaining width
-	 * and ellipsises when it would overflow. min-width: 0 on the row is
-	 * required for the inner ellipsis to engage inside a flex layout. */
-	.acc-card__category-row {
-		display: flex;
-		align-items: center;
-		gap: 10px;
-		min-width: 0;
-	}
-
-	.acc-card__category-row > :global(.acc-type-badge) {
-		flex-shrink: 0;
-	}
-
-	/* Destino: plain inline label, no surface. Reads as supporting text
-	 * to the category pill instead of a second competing badge. */
-	.acc-card__location-bar {
-		display: flex;
-		align-items: center;
-		gap: 6px;
-		min-width: 0;
-		font-family: var(--font-sans);
-		font-weight: 500;
-		font-size: 12px;
-		line-height: 1.4;
-		color: var(--core-muted-foreground);
-	}
-
-	.acc-card__location-bar > :global(svg) {
-		flex-shrink: 0;
-	}
-
-	.acc-card__location-bar > span {
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-		min-width: 0;
-	}
-
-	/* Name */
-	.acc-card__name {
-		font-family: var(--font-heading);
-		font-weight: 700;
-		font-size: clamp(1rem, 0.5vw + 0.875rem, 1.25rem);
-		line-height: clamp(1.375rem, 0.5vw + 1.25rem, 1.75rem);
-		color: var(--core-foreground);
-		overflow: hidden;
-		text-overflow: ellipsis;
-		margin: 0;
-	}
-
-	/* Description */
-	.acc-card__description {
-		font-family: var(--font-sans);
-		font-weight: 400;
-		font-size: clamp(0.75rem, 0.2vw + 0.625rem, 0.8125rem);
-		line-height: 20.8px;
-		color: var(--core-muted-foreground);
-		overflow: hidden;
-		text-overflow: ellipsis;
-		display: -webkit-box;
-		-webkit-line-clamp: 2;
-		-webkit-box-orient: vertical;
-	}
-
-	/* Amenities */
-	.acc-card__amenities {
-		display: flex;
-		align-items: center;
-		gap: 8px;
-		color: var(--core-muted-foreground);
-	}
-
-	.acc-card__amenity-icon {
-		position: relative;
-		display: inline-flex;
-		cursor: default;
-	}
-
-	.acc-card__amenity-icon::after {
-		content: attr(data-tooltip);
-		position: absolute;
-		bottom: calc(100% + 6px);
-		left: 50%;
-		transform: translateX(-50%) scale(0.9);
-		background-color: var(--core-foreground);
-		color: var(--core-background);
-		font-family: var(--font-sans);
-		font-weight: 500;
-		font-size: clamp(0.625rem, 0.15vw + 0.5rem, 0.6875rem);
-		line-height: 1.3;
-		padding: 4px 8px;
-		border-radius: 6px;
-		white-space: nowrap;
-		pointer-events: none;
-		opacity: 0;
-		transition: opacity 150ms ease-out, transform 150ms ease-out;
-		z-index: 10;
-	}
-
-	.acc-card__amenity-icon::before {
-		content: '';
-		position: absolute;
-		bottom: calc(100% + 2px);
-		left: 50%;
-		transform: translateX(-50%) scale(0.9);
-		border: 4px solid transparent;
-		border-top-color: var(--core-foreground);
-		pointer-events: none;
-		opacity: 0;
-		transition: opacity 150ms ease-out, transform 150ms ease-out;
-		z-index: 10;
-	}
-
-	.acc-card__amenity-icon:hover::after,
-	.acc-card__amenity-icon:hover::before,
-	.acc-card__amenity-icon:focus-visible::after,
-	.acc-card__amenity-icon:focus-visible::before,
-	.acc-card__amenity-icon:focus::after,
-	.acc-card__amenity-icon:focus::before {
-		opacity: 1;
-		transform: translateX(-50%) scale(1);
-	}
-
-	/* Touch devices: hide hover-dependent tooltip, keep icon at full scale */
-	@media (hover: none) {
-		.acc-card__amenity-icon {
-			transform: scale(1);
-		}
-
-		.acc-card__amenity-icon::after,
-		.acc-card__amenity-icon::before {
-			display: none;
-		}
-	}
-
-	.acc-card__amenities-more {
-		font-family: var(--font-sans);
-		font-weight: 400;
-		font-size: 11px;
-		line-height: 17.6px;
-		color: var(--core-muted-foreground);
-	}
-
-	/* Stars */
-	.acc-card__stars {
-		display: flex;
-		align-items: center;
-		gap: 4px;
-	}
-
-	.acc-card__star--filled {
-		color: var(--rating-star);
-		display: inline-flex;
-	}
-
-	.acc-card__star--empty {
-		color: var(--core-muted-foreground);
-		opacity: 0.4;
-		display: inline-flex;
-	}
-
-	.acc-card__rating-value {
-		font-family: var(--font-sans);
-		font-weight: 700;
-		font-size: 13px;
-		line-height: 19.2px;
-		color: var(--core-foreground);
-		margin-left: 4px;
-	}
-
-	.acc-card__reviews-count {
-		font-family: var(--font-sans);
-		font-weight: 400;
-		font-size: 12px;
-		line-height: 19.2px;
-		color: var(--core-muted-foreground);
-	}
-
-	/* Divider — `margin-top: auto` pushes it and the price/CTA row below it to
-	 * the bottom of the (flex: 1) content column, so the footer lines up across
-	 * a row of cards whatever the title/description length (HOS-2035). */
-	.acc-card__divider {
-		margin-top: auto;
-		height: 1px;
-		background-color: var(--border);
-		width: 100%;
-	}
-
-	/* Price + CTA row */
-	.acc-card__price-row {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		padding-top: 4px;
-	}
-
-	.acc-card__price-block {
-		display: flex;
-		align-items: baseline;
-		gap: 4px;
-		white-space: nowrap;
-		min-width: 0;
-	}
-
-	.acc-card__price-label {
-		font-family: var(--font-sans);
-		font-weight: 400;
-		font-size: 11px;
-		line-height: 17.6px;
-		color: var(--core-muted-foreground);
-	}
-
-	.acc-card__price-value {
-		font-family: var(--font-heading);
-		font-weight: 700;
-		font-size: 16px;
-		line-height: 24px;
-		color: var(--brand-accent-text);
-	}
-
-	.acc-card__price-value--consult {
-		font-family: var(--font-sans);
-		font-weight: 500;
-		font-size: 11px;
-		line-height: 17.6px;
-		color: var(--core-muted-foreground);
-		white-space: normal;
-	}
-
-	.acc-card__cta-btn {
-		/* Sits above the CompareCardSelect overlay (z-index: 5) so that, while
-		 * compare mode is active, clicking "Ver más" still navigates to the
-		 * detail page (the click reaches the card's <a>) while the rest of the
-		 * card toggles the compare selection. Harmless outside compare mode —
-		 * no overlay is rendered then (HOS-85 review fix). */
-		position: relative;
-		z-index: 6;
-		display: inline-flex;
-		align-items: center;
-		gap: 6px;
-		padding: 8px 16px;
-		border-radius: 9999px;
-		font-family: var(--font-sans);
-		font-weight: 500;
-		font-size: 12px;
-		line-height: 19.2px;
-		color: var(--core-foreground);
-		background: linear-gradient(135deg, var(--brand-secondary) 0%, var(--core-background) 100%);
-		white-space: nowrap;
-		transition: opacity 200ms ease-out;
-	}
-
-	.acc-card:hover .acc-card__cta-btn {
-		opacity: 0.85;
-	}
-
-	.acc-card__cta-btn--compact {
-		padding-inline: var(--space-3, 0.75rem);
-	}
-
-	/*
-	 * Mobile density tweaks (kept at the bottom so they override the base
-	 * rules above by source order — Astro scoped styles emit the same
-	 * specificity for `.acc-card__content` etc., so the later declaration
-	 * wins inside a matching media query).
-	 *
-	 * Tighter content area + 1-line description + hidden reviews count.
-	 * Net effect: ~2.4 cards per viewport vs ~1.9 before, without losing
-	 * amenities, stars, the numeric rating, or the price block.
-	 */
-	@media (max-width: 767px) {
-		.acc-card__image-area {
-			height: 200px;
-		}
-
-		.acc-card__content {
-			gap: 6px;
-			padding-bottom: 12px;
-		}
-
-		.acc-card__description {
-			-webkit-line-clamp: 3;
-		}
-
-		.acc-card__reviews-count {
-			display: none;
-		}
-
-		/* In mobile the image area shrinks via clamp(160px,…); placing the
-		 * featured badge at bottom-right made it collide vertically with the
-		 * actions column (favorite + photo count). Top-left is occupied by
-		 * the "Nuevo" status corner, top-right by the actions column —
-		 * bottom-left, just above the wave, is the only quadrant left clear. */
-		.acc-card__featured-badge {
-			bottom: 48px;
-			left: 12px;
-			right: auto;
-			top: auto;
-		}
-
-		/* Mirror: featured moves to bottom-left on mobile, so the AI badge
-		 * takes bottom-right to keep the two from colliding. */
-		.acc-card__ai-badge {
-			bottom: 48px;
-			right: 12px;
-			left: auto;
-			top: auto;
-		}
-
-		/* Verified badge follows FEATURED to bottom-left on mobile (not
-		 * AI-chat, which swapped to bottom-right here): the actions column
-		 * stays top-right in every viewport (see comment above), so
-		 * bottom-left is the only quadrant clear of it regardless of layout.
-		 * Stacks above featured, same 40px offset as the desktop pairing. */
-		.acc-card__verified-badge {
-			bottom: 88px;
-			left: 12px;
-			right: auto;
-			top: auto;
-		}
-	}
+    @import "./AccommodationCard.css";
 </style>

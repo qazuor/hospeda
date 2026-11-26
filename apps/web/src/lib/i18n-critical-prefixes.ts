@@ -111,6 +111,15 @@ export const CRITICAL_I18N_KEY_PREFIXES = [
     'account.ui.dialogClose',
     'auth.signUp.submit',
     'common.cancel',
+    // UserMenu plan line (HOS-2649).
+    'common.card.currentPlan',
+    'common.card.planUntil',
+    'common.card.upgradePlan',
+    // Reached through the lazily imported protected API client of the menu
+    // plan line (tourist-menu-plan.ts); the graph scan counts dynamic imports.
+    'account.ui.status',
+    'listing.policies.paymentMethods',
+    'listing.policies.spokenLanguages',
     'conversations.inbox.guestInboxTitle',
     'conversations.inbox.ownerInboxTitle',
     'cookieConsent.buttons',

@@ -35,7 +35,8 @@ const getLabelForPath = (path: string, entityContext?: EntityBreadcrumbContext):
     // If we have entity context and this looks like an entity ID path
     if (entityContext && lastSegment && isEntityId(lastSegment)) {
         // Use entity name if available, otherwise use slug
-        return { type: 'text', value: entityContext.name || entityContext.slug || lastSegment };
+        const name = entityContext.name?.trim() || entityContext.slug?.trim();
+        if (name) return { type: 'text', value: name };
     }
 
     // Check menu tree for predefined labels (returns titleKey for translation)
@@ -61,6 +62,10 @@ const getLabelForPath = (path: string, entityContext?: EntityBreadcrumbContext):
         if (matchesRoutePattern({ path, pattern })) {
             return { type: 'i18n', key };
         }
+    }
+
+    if (lastSegment && isEntityId(lastSegment)) {
+        return { type: 'i18n', key: 'ui.navigation.detail' };
     }
 
     // Fallback to the trailing-segment dictionary (e.g. nested routes like

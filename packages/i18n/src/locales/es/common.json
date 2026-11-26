@@ -321,14 +321,27 @@
         "codeError": "No pudimos mostrar el código acá, pero podés descargar la hoja igual.",
         "encodes": "El código lleva a: {{url}}"
     },
+    "card": {
+        "priceRange": "Precio: {{range}}",
+        "viewVenue": "Ver local",
+        "viewExperience": "Ver experiencia",
+        "eventCoverRequired": "Agregá una foto de portada antes de publicar el evento.",
+        "currentPlan": "Plan {{plan}}",
+        "compareUsage": "Comparás {{count}} de {{max}}",
+        "favoriteUsage": "Favoritos: {{count}} de {{max}}",
+        "favoritesUnlimited": "Favoritos ilimitados",
+        "planUntil": "{{plan}} hasta {{date}}",
+        "upgradePlan": "Mejorar a {{plan}}"
+    },
     "promotions": {
         "sectionTitle": "Promociones",
-        "vipBadge": "VIP",
         "badges": {
             "promo": "Promo",
-            "vip": "VIP"
+            "plan": "Promo {{plan}}",
+            "publicHint": "Promoción disponible para todos",
+            "planHint": "Promoción disponible con el plan {{plan}}"
         },
-        "lockedVipName": "Promoción solo para VIP",
+        "lockedPlanName": "Promoción exclusiva del plan {{plan}}",
         "lockedHiddenName": "Promoción oculta",
         "discountTypes": {
             "percentage": "Descuento",

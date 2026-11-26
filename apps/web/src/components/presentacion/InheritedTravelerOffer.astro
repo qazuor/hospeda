@@ -1,0 +1,13 @@
+---
+import { fetchTouristVipBenefitKeys } from '@/lib/billing/tourist-vip-benefits';
+import { createT, type SupportedLocale } from '@/lib/i18n';
+
+interface Props { readonly locale: SupportedLocale }
+const t = createT(Astro.props.locale);
+const plan = (await fetchTouristVipBenefitKeys())?.badgeName;
+---
+
+{plan && <div class="notice">
+    <h3>{t('pricing.group.inheritedTravelerHeading', undefined, { plan })}</h3>
+    <p>{t('pricing.group.inheritedTravelerBody')}</p>
+</div>}

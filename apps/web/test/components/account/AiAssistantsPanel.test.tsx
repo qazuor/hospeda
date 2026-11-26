@@ -43,6 +43,17 @@ function status(code: number): Response {
     return { ok: code >= 200 && code < 300, status: code, json: async () => ({}) } as Response;
 }
 
+const ACCESS_URL = `${API_URL}/api/v1/protected/ai-connections/access`;
+
+function accessResponse(data: object): Response {
+    return { ok: true, status: 200, json: async () => ({ success: true, data }) } as Response;
+}
+
+/** Calls that are not the access check (the check is a second, independent fetch). */
+function nonAccessCalls() {
+    return vi.mocked(fetch).mock.calls.filter(([url]) => url !== ACCESS_URL);
+}
+
 async function renderPanel({
     items,
     mcpUrl = MCP_URL
@@ -63,7 +74,16 @@ async function renderPanel({
 
 describe('AiAssistantsPanel', () => {
     beforeEach(() => {
-        vi.stubGlobal('fetch', vi.fn());
+        // The access check goes by URL; unless a test sets it, it fails (silent).
+        vi.stubGlobal(
+            'fetch',
+            vi.fn(async (url: string) => {
+                if (url === ACCESS_URL) {
+                    throw new Error('offline');
+                }
+                return undefined as unknown as Response;
+            })
+        );
     });
 
     afterEach(() => {
@@ -78,9 +98,7 @@ describe('AiAssistantsPanel', () => {
         expect(screen.getAllByText(/Conectado el/)).toHaveLength(2);
         expect(screen.getByText(/Último uso aprox\./)).toBeTruthy();
         expect(screen.getByText('Sin uso registrado')).toBeTruthy();
-        expect(vi.mocked(fetch).mock.calls[0]?.[0]).toBe(
-            `${API_URL}/api/v1/protected/ai-connections`
-        );
+        expect(nonAccessCalls()[0]?.[0]).toBe(`${API_URL}/api/v1/protected/ai-connections`);
     });
 
     it('shows the MCP URL, the capabilities and the empty state when the flag is on', async () => {
@@ -144,13 +162,13 @@ describe('AiAssistantsPanel', () => {
 
         fireEvent.click(screen.getByRole('button', { name: 'Desconectar Asistente sin nombre' }));
         // Nothing is sent until the user confirms.
-        expect(vi.mocked(fetch)).toHaveBeenCalledTimes(1);
+        expect(nonAccessCalls()).toHaveLength(1);
         expect(screen.getByText('¿Desconectar a Asistente sin nombre?')).toBeTruthy();
 
         fireEvent.click(screen.getByRole('button', { name: 'Sí, desconectar' }));
 
         await waitFor(() => expect(screen.queryByText('Asistente sin nombre')).toBeNull());
-        const [url, init] = vi.mocked(fetch).mock.calls[1] ?? [];
+        const [url, init] = nonAccessCalls()[1] ?? [];
         expect(url).toBe(
             `${API_URL}/api/v1/protected/ai-connections?clientId=https%3A%2F%2Fchat.example%2Fclient.json`
         );
@@ -165,7 +183,7 @@ describe('AiAssistantsPanel', () => {
         fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
 
         expect(screen.getByRole('button', { name: 'Desconectar Claude' })).toBeTruthy();
-        expect(vi.mocked(fetch)).toHaveBeenCalledTimes(1);
+        expect(nonAccessCalls()).toHaveLength(1);
     });
 
     it('rolls the row back in place and shows an error when the DELETE fails', async () => {
@@ -238,6 +256,72 @@ describe('AiAssistantsPanel', () => {
 
             expect(screen.getByText('Cómo conectar un asistente')).toBeTruthy();
             expect(screen.getByText('Asistentes conectados')).toBeTruthy();
+        });
+    });
+
+    describe('plan notice (T-041)', () => {
+        /** Routes the access URL to `answer`; everything else uses the once-queue. */
+        function mockAccess(answer: () => Promise<Response>) {
+            const fallback = vi.mocked(fetch).getMockImplementation();
+            vi.mocked(fetch).mockImplementation(async (url, init) =>
+                url === ACCESS_URL ? answer() : (fallback?.(url, init) as Promise<Response>)
+            );
+        }
+
+        const NOTICE = /no está incluido en tu plan actual/;
+
+        it('links the vertical plans page when the plan does not include it', async () => {
+            mockAccess(async () => accessResponse({ hasAccess: false, vertical: 'venue' }));
+            await renderPanel({ items: [] });
+
+            expect(await screen.findByText(NOTICE)).toBeTruthy();
+            expect(screen.getByText(/sin costo extra, en todos los planes pagos/)).toBeTruthy();
+            expect(screen.getByRole('link', { name: 'Ver planes' }).getAttribute('href')).toBe(
+                '/es/planes/comer-y-salir/'
+            );
+        });
+
+        it('falls back to the accommodation plans page without a vertical', async () => {
+            mockAccess(async () => accessResponse({ hasAccess: false }));
+            await renderPanel({ items: [] });
+
+            await screen.findByText(NOTICE);
+            expect(screen.getByRole('link', { name: 'Ver planes' }).getAttribute('href')).toBe(
+                '/es/planes/anfitriones/'
+            );
+        });
+
+        it('keeps listing and revoking existing connections when access is false', async () => {
+            mockAccess(async () => accessResponse({ hasAccess: false, vertical: 'accommodation' }));
+            await renderPanel({ items: [CLAUDE] });
+
+            await screen.findByText(NOTICE);
+            expect(screen.getByText('Claude')).toBeTruthy();
+            expect(screen.getByRole('button', { name: 'Desconectar Claude' })).toBeTruthy();
+        });
+
+        it('shows no notice when the plan includes the assistant', async () => {
+            const answered = vi.fn(async () => accessResponse({ hasAccess: true }));
+            mockAccess(answered);
+            await renderPanel({ items: [] });
+
+            await waitFor(() => expect(answered).toHaveBeenCalled());
+            expect(screen.queryByText(NOTICE)).toBeNull();
+        });
+
+        it('shows no notice, and does not block the panel, when the check fails', async () => {
+            await renderPanel({ items: [CLAUDE] });
+
+            expect(screen.queryByText(NOTICE)).toBeNull();
+            expect(screen.getByText('Claude')).toBeTruthy();
+        });
+
+        it('shows no notice when the check answers an error status', async () => {
+            mockAccess(async () => status(500));
+            await renderPanel({ items: [] });
+
+            await waitFor(() => expect(fetch).toHaveBeenCalledWith(ACCESS_URL, expect.anything()));
+            expect(screen.queryByText(NOTICE)).toBeNull();
         });
     });
 });

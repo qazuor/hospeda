@@ -182,11 +182,16 @@ const FEATURES_CONTENT_SRC = readFileSync(
     resolve(__dirname, '../../src/lib/features-content.ts'),
     'utf8'
 );
+const FEATURES_PLAN_TABLES_SRC = readFileSync(
+    resolve(__dirname, '../../src/lib/features-plan-tables.ts'),
+    'utf8'
+);
 
 describe('features-content — no price-looking strings', () => {
     it('the module source contains no "$" or "/mes" literal (no hardcoded prices)', () => {
-        expect(FEATURES_CONTENT_SRC).not.toMatch(/\$/);
-        expect(FEATURES_CONTENT_SRC).not.toMatch(/\/mes/);
+        const source = `${FEATURES_CONTENT_SRC}\n${FEATURES_PLAN_TABLES_SRC}`;
+        expect(source).not.toMatch(/\$/);
+        expect(source).not.toMatch(/\/mes/);
     });
 
     it('no plan-table cell carries a raw numeric price (only limit/unlimited/yes/no/addon/text/upcoming kinds)', () => {
