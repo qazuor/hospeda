@@ -17,6 +17,14 @@ export interface ReviewStripItem {
     readonly rating: number | null;
     readonly content: string;
     readonly createdAt: string | null;
+    /** The host's public reply (HOS-2199), when the review has one. */
+    readonly reply: ReviewStripReply | null;
+}
+
+/** The host's reply as a strip card shows it. */
+export interface ReviewStripReply {
+    readonly content: string;
+    readonly edited: boolean;
 }
 
 /**
@@ -49,8 +57,17 @@ export function toReviewStripItems({
                     ? item.averageRating
                     : null,
             content,
-            createdAt: typeof item.createdAt === 'string' ? item.createdAt : null
+            createdAt: typeof item.createdAt === 'string' ? item.createdAt : null,
+            reply: toStripReply({ reply: item.reply })
         });
     }
     return cards;
+}
+
+/** Reads the optional public reply of a review row; anything without text is dropped. */
+function toStripReply({ reply }: { readonly reply: unknown }): ReviewStripReply | null {
+    if (typeof reply !== 'object' || reply === null) return null;
+    const { content, editedAt } = reply as { content?: unknown; editedAt?: unknown };
+    if (typeof content !== 'string' || content.trim() === '') return null;
+    return { content: content.trim(), edited: typeof editedAt === 'string' && editedAt !== '' };
 }

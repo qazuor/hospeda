@@ -17,33 +17,33 @@ import type { SupportedLocale } from '@/lib/i18n';
 interface Props {
     readonly destinations: ReadonlyArray<unknown>;
     readonly locale: SupportedLocale;
+    readonly variant?: 'nearby' | 'cities';
 }
 
-const { destinations, locale } = Astro.props;
+const { destinations, locale, variant = 'nearby' } = Astro.props;
+const isCities = variant === 'cities';
+const headingId = isCities ? 'destination-cities' : 'dest-nearby-title';
 const { t } = createTranslations(locale);
 
 if (destinations.length === 0) return;
 
 const MAX_VISIBLE = 4;
 const visibleDestinations = (destinations as Record<string, unknown>[])
-    .slice(0, MAX_VISIBLE)
+    .slice(0, isCities ? undefined : MAX_VISIBLE)
     .map((item) => toDestinationCardProps({ item, locale }));
 ---
 
-<section class="dest-nearby" aria-labelledby="dest-nearby-title">
+<section class="dest-nearby" aria-labelledby={headingId}>
     <header class="dest-nearby__header">
-        <h2 class="dest-nearby__title" id="dest-nearby-title">
-            {t('destinations.detail.nearby.title', 'Otros destinos en la zona')}
+        <h2 class="dest-nearby__title" id={headingId}>
+            {isCities ? t('destinations.detail.nearby.exploreCities') : t('destinations.detail.nearby.title')}
         </h2>
-        <p class="dest-nearby__subtitle">
-            {t(
-                'destinations.detail.nearby.subtitle',
-                'Cercanos en la región — explorá lo que hay alrededor'
-            )}
-        </p>
+        {!isCities && <p class="dest-nearby__subtitle">
+            {t('destinations.detail.nearby.subtitle')}
+        </p>}
     </header>
 
-    <div class="dest-nearby__grid">
+    <div class:list={['dest-nearby__grid', { 'dest-nearby__grid--cities': isCities }]}>
         {visibleDestinations.map((card) => (
             <DestinationCard
                 destination={card}
@@ -100,5 +100,11 @@ const visibleDestinations = (destinations as Record<string, unknown>[])
         .dest-nearby__grid {
             grid-template-columns: repeat(4, 1fr);
         }
+    }
+    .dest-nearby__grid--cities {
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+    }
+    #destination-cities {
+        scroll-margin-top: calc(var(--navbar-height, 80px) + var(--wave-bar-compact, 72px));
     }
 </style>

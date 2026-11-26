@@ -452,7 +452,7 @@
         "all": "Todos",
         "hotels": "Hoteles",
         "cabins": "Cabañas",
-        "apartments": "Apartamentos",
+        "apartments": "Departamentos",
         "hostels": "Hostales"
     },
     "sort": {
@@ -538,7 +538,7 @@
         "reviews": "Reseñas"
     },
     "types": {
-        "apartment": "Apartamento",
+        "apartment": "Departamento",
         "house": "Casa",
         "country_house": "Casa quinta",
         "cabin": "Cabaña",
@@ -657,9 +657,9 @@
                 "pageTitle": "Alojamientos - Cabañas"
             },
             "apartment": {
-                "name": "Apartamentos",
-                "description": "Apartamentos equipados para estadías cortas y largas. La comodidad de sentirte como en casa durante tu viaje.",
-                "pageTitle": "Alojamientos - Apartamentos"
+                "name": "Departamentos",
+                "description": "Departamentos equipados para estadías cortas y largas. La comodidad de sentirte como en casa durante tu viaje.",
+                "pageTitle": "Alojamientos - Departamentos"
             },
             "camping": {
                 "name": "Campings",
@@ -687,9 +687,9 @@
         "tagline": "Tipo de alojamiento",
         "types": {
             "APARTMENT": {
-                "name": "Apartamentos",
-                "description": "Apartamentos equipados en Concepción del Uruguay y el Litoral entrerriano, ideales para estadías cortas y largas con la comodidad de sentirte como en casa.",
-                "pageTitle": "Apartamentos en Alquiler"
+                "name": "Departamentos",
+                "description": "Departamentos equipados en Concepción del Uruguay y el Litoral entrerriano, ideales para estadías cortas y largas con la comodidad de sentirte como en casa.",
+                "pageTitle": "Departamentos en Alquiler"
             },
             "HOUSE": {
                 "name": "Casas",
@@ -1010,7 +1010,9 @@
                 "error": "No se pudieron cargar las reseñas",
                 "retry": "Reintentar",
                 "loading": "Cargando reseñas…"
-            }
+            },
+            "hostReply": "Respuesta del anfitrión",
+            "hostReplyEdited": "editada"
         },
         "host": {
             "title": "Tu anfitrión",

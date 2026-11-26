@@ -357,3 +357,40 @@ describe('AC:V5:26 route capabilities on the subject', () => {
         expect(withEmptyResult).toEqual(withoutResult);
     });
 });
+
+describe('HOS-2199 answering a review is EDIT plus respond_reviews', () => {
+    const vertical = VerticalEnum.ACCOMMODATION;
+    const facts = { ownerId: 'owner', publicationStatus: PublicationStatusEnum.PUBLISHED };
+    const respond = (port: ReturnType<typeof ports>) =>
+        resolveListingAccess({
+            actorId: 'owner',
+            vertical,
+            facts,
+            operation: 'EDIT',
+            requiredKeys: ['respond_reviews'],
+            ...port
+        });
+
+    it('is refused with NO_COVERAGE once the owner coverage lapsed, even holding the key', async () => {
+        const port = ports(vertical, ['edit_accommodation_info', 'respond_reviews'], []);
+        expect(await respond(port)).toEqual({ allowed: false, reason: 'NO_COVERAGE' });
+    });
+
+    it('is refused with NO_CAPABILITY when covered but the plan lacks respond_reviews', async () => {
+        const port = ports(vertical, ['edit_accommodation_info']);
+        expect(await respond(port)).toEqual({
+            allowed: false,
+            reason: 'NO_CAPABILITY',
+            key: 'respond_reviews'
+        });
+    });
+
+    it('passes with coverage and the key', async () => {
+        const port = ports(vertical, ['edit_accommodation_info', 'respond_reviews']);
+        expect(await respond(port)).toEqual({
+            allowed: true,
+            subjectId: 'owner',
+            evaluatedSteps: [4, 5, 6]
+        });
+    });
+});

@@ -26,6 +26,7 @@
 }
 
 .root--mobile .option {
+    min-height: 2.75rem;
     flex: 1;
     justify-content: center;
     padding: 7px 0;

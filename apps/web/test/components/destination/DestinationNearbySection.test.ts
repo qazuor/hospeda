@@ -69,7 +69,9 @@ describe('DestinationNearbySection.astro', () => {
 
         it('should cap visible destinations at MAX_VISIBLE = 4', () => {
             expect(src).toContain('MAX_VISIBLE = 4');
-            expect(src).toContain('.slice(0, MAX_VISIBLE)');
+            expect(src).toContain("variant = 'nearby'");
+            expect(src).toContain("const isCities = variant === 'cities'");
+            expect(src).toContain('.slice(0, isCities ? undefined : MAX_VISIBLE)');
         });
 
         it('should apply toDestinationCardProps transform to each destination', () => {
@@ -97,14 +99,17 @@ describe('DestinationNearbySection.astro', () => {
         });
 
         it('should NOT use "cercanos" alone as a geographic claim', () => {
-            // The phrase "Cercanos en la región" is OK; "Cercanos" standalone claim is not.
-            // We check the subtitle uses the approved wording.
-            expect(src).toContain('en la región');
-        });
-
-        it('should use "en la zona" or "en la región" in the section content', () => {
-            const hasZone = src.includes('en la zona') || src.includes('en la región');
-            expect(hasZone).toBe(true);
+            const { detail } = JSON.parse(
+                readFileSync(
+                    resolve(
+                        __dirname,
+                        '../../../../../packages/i18n/src/locales/es/destination.json'
+                    ),
+                    'utf8'
+                )
+            );
+            expect(detail.nearby.title).toBe('Otros destinos en la zona');
+            expect(detail.nearby.subtitle).toMatch(/^Cercanos en la región\b/);
         });
     });
 
@@ -117,26 +122,30 @@ describe('DestinationNearbySection.astro', () => {
             expect(src).toContain("'destinations.detail.nearby.title'");
         });
 
-        it('should include Spanish fallback for section title', () => {
-            expect(src).toContain('Otros destinos en la zona');
+        it('uses the localized cities heading instead of the nearby heading for cities', () => {
+            expect(src).toMatch(
+                /isCities\s*\?\s*t\('destinations\.detail\.nearby\.exploreCities'\)\s*:\s*t\('destinations\.detail\.nearby\.title'\)/
+            );
         });
 
         it('should use t() for subtitle', () => {
             expect(src).toContain("'destinations.detail.nearby.subtitle'");
         });
 
-        it('should include Spanish fallback for subtitle', () => {
-            expect(src).toContain('Cercanos en la región');
+        it('shows the localized regional subtitle only for nearby, without inline fallback copy', () => {
+            expect(src).toMatch(
+                /!isCities\s*&&\s*<p[^>]*>\s*\{t\('destinations\.detail\.nearby\.subtitle'\)\}/
+            );
         });
     });
 
     describe('accessibility', () => {
-        it('should label section with aria-labelledby="dest-nearby-title"', () => {
-            expect(src).toContain('aria-labelledby="dest-nearby-title"');
-        });
-
-        it('should provide matching id on the section heading', () => {
-            expect(src).toContain('id="dest-nearby-title"');
+        it('labels each section with its own heading, preserving the nearby and cities anchors', () => {
+            expect(src).toContain(
+                "const headingId = isCities ? 'destination-cities' : 'dest-nearby-title'"
+            );
+            expect(src).toMatch(/<section[^>]*aria-labelledby=\{headingId\}/);
+            expect(src).toMatch(/<h2[^>]*\bid=\{headingId\}/);
         });
     });
 

@@ -14,15 +14,29 @@ import { describe, expect, it } from 'vitest';
 const src = readFileSync(resolve(__dirname, '../../src/layouts/Footer.astro'), 'utf8');
 
 describe('Footer.astro', () => {
-    it('keeps legal separators in flow inside each wrapping item', () => {
-        const item = src.match(/\.footer__legal li\s*\{([^}]+)\}/)?.[1];
-        const separator = src.match(/\.footer__legal li \+ li::before\s*\{([^}]+)\}/)?.[1];
-        expect(item).toContain('display: inline-flex');
-        expect(separator).toContain('content: "·"');
-        expect(separator).not.toContain('position: absolute');
+    it('allows legal links to wrap without orphaned separators and keeps legible type', () => {
+        expect(src).not.toContain('.footer__legal li + li::before');
         expect(src).toMatch(
-            /@media \(max-width: 639px\)\s*\{\s*\.footer__legal li \+ li::before\s*\{\s*display: none/
+            /\.footer__legal-link\s*\{[^}]*font-size: 0.75rem;[^}]*color: var\(--footer-fg\)/
         );
+    });
+    it('uses full-width disclosure rows and vector payment logos', () => {
+        expect(src.match(/<ChevronDownIcon size=\{20\} aria-hidden="true"/g)).toHaveLength(3);
+        expect(src).toMatch(/\.footer__nav-heading\s*\{[^}]*min-height: 2.75rem/);
+        expect(src).toContain('size={Icon === AmericanExpressIcon ? 44 : 32}');
+    });
+
+    it('keeps American Express at 44px in the compact footer and other marks at 24px', () => {
+        const compactStyles = src.split('@media (max-width: 47.99rem) {')[1];
+        const iconRule = compactStyles?.match(/:global\(\.footer__payment\)\s*\{([^}]*)}/)?.[1];
+        const amexRule = compactStyles?.match(/\.footer__payment-item--amex\s*\{([^}]*)}/)?.[1];
+
+        expect(src).toMatch(
+            /<li\s+class:list=\{\{\s*"footer__payment-item--amex": Icon === AmericanExpressIcon/
+        );
+        expect(iconRule).toContain('width: var(--footer-payment-size, 1.5rem);');
+        expect(iconRule).toContain('height: var(--footer-payment-size, 1.5rem);');
+        expect(amexRule).toContain('--footer-payment-size: 2.75rem;');
     });
     describe('file structure', () => {
         it('has a JSDoc file header', () => {
@@ -199,9 +213,9 @@ describe('Footer.astro', () => {
             expect(src).toMatch(/<NewsletterForm\s+client:load/);
         });
 
-        it('passes auth state, email, apiUrl and locale to the island', () => {
+        it('passes auth state, apiUrl and locale without serializing the account email', () => {
             expect(src).toContain('isAuthenticated={isAuthenticated}');
-            expect(src).toContain('userEmail={userEmail}');
+            expect(src).not.toContain('userEmail=');
             expect(src).toContain('apiUrl={apiUrl}');
             expect(src).toContain('locale={locale}');
         });

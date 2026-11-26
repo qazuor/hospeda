@@ -672,7 +672,9 @@
                 "error": "Could not load reviews",
                 "retry": "Retry",
                 "loading": "Loading reviews…"
-            }
+            },
+            "hostReply": "Reply from the host",
+            "hostReplyEdited": "edited"
         },
         "host": {
             "title": "Your host",

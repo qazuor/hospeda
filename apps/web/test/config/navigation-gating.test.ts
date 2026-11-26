@@ -31,7 +31,7 @@ describe('shared navigation selector', () => {
             nav([P.ACCOMMODATION_CREATE])
                 .find((group) => group.id === 'anfitrion')
                 ?.items.map((item) => item.id)
-        ).toEqual(['hostDashboard', 'properties', 'benefitUsages']);
+        ).toEqual(['hostDashboard', 'properties', 'receivedReviews', 'benefitUsages']);
     });
     it.each([
         P.VENUE_EDIT_OWN,

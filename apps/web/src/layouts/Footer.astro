@@ -33,6 +33,7 @@ import { PUBLISH_PAGE_PATH_BY_VERTICAL } from "@/lib/publish/publish-page-paths"
 import { buildUrl } from "@/lib/urls";
 import {
     AmericanExpressIcon,
+    ChevronDownIcon,
     MasterCardIcon,
     MercadoPagoIcon,
     VisaIcon,
@@ -64,7 +65,6 @@ const brandPhoneTelHref = getBrandPhoneTelHref();
 // in MobileMenuIsland.astro and the verify/unsubscribe pages.
 const locals = Astro.locals as { user?: { id: string; email: string } | null };
 const isAuthenticated = Boolean(locals.user);
-const userEmail = locals.user?.email;
 
 // Public API base URL the island fetches against. Validated at startup
 // by serverEnvSchema, so getApiUrl() never throws here.
@@ -237,7 +237,7 @@ const noCommissionsLabel = t("footer.trustSignals.noCommissions", "Sin comisione
             <!-- 3-column navigation -->
             <nav class="footer__nav" aria-label={t("footer.navigation", "Footer navigation")}>
                 <details class="footer__nav-col" open>
-                    <summary class="footer__nav-heading">{t("footer.exploreTitle")}</summary>
+                    <summary class="footer__nav-heading">{t("footer.exploreTitle")}<ChevronDownIcon size={20} aria-hidden="true" /></summary>
                     <ul class="footer__nav-list">
                         {
                             exploreLinks.map(({ label, href }) => (
@@ -252,7 +252,7 @@ const noCommissionsLabel = t("footer.trustSignals.noCommissions", "Sin comisione
                 </details>
 
                 <details class="footer__nav-col" open>
-                    <summary class="footer__nav-heading">{t("footer.forYouTitle", "Para vos")}</summary>
+                    <summary class="footer__nav-heading">{t("footer.forYouTitle", "Para vos")}<ChevronDownIcon size={20} aria-hidden="true" /></summary>
                     <ul class="footer__nav-list">
                         {
                             forYouLinks.map(({ label, href }) => (
@@ -267,7 +267,7 @@ const noCommissionsLabel = t("footer.trustSignals.noCommissions", "Sin comisione
                 </details>
 
                 <details class="footer__nav-col" open>
-                    <summary class="footer__nav-heading">{t("footer.hospedaTitle")}</summary>
+                    <summary class="footer__nav-heading">{t("footer.hospedaTitle")}<ChevronDownIcon size={20} aria-hidden="true" /></summary>
                     <ul class="footer__nav-list">
                         {
                             companyLinks.map(({ label, href }) => (
@@ -302,7 +302,6 @@ const noCommissionsLabel = t("footer.trustSignals.noCommissions", "Sin comisione
             <NewsletterForm
                 client:load
                 isAuthenticated={isAuthenticated}
-                userEmail={userEmail}
                 apiUrl={apiUrl}
                 locale={locale}
             />
@@ -354,10 +353,10 @@ const noCommissionsLabel = t("footer.trustSignals.noCommissions", "Sin comisione
             <ul class="footer__payments-list" aria-label={paymentsLabel}>
                 {
                     paymentMethods.map(({ Icon, label }) => (
-                        <li>
+                        <li class:list={{ "footer__payment-item--amex": Icon === AmericanExpressIcon }}>
                             <Icon
                                 className="footer__payment"
-                                size={32}
+                                size={Icon === AmericanExpressIcon ? 44 : 32}
                                 aria-label={label}
                             />
                         </li>
@@ -652,6 +651,7 @@ const noCommissionsLabel = t("footer.trustSignals.noCommissions", "Sin comisione
         text-transform: uppercase;
         letter-spacing: 0.08em;
         padding-block: 0.25rem;
+        min-height: 2.75rem;
     }
 
     .footer__nav-heading::-webkit-details-marker,
@@ -659,17 +659,11 @@ const noCommissionsLabel = t("footer.trustSignals.noCommissions", "Sin comisione
         display: none;
     }
 
-    .footer__nav-heading::after {
-        /* Down-pointing chevron flips to up when the accordion is open —
-           a clearer expand/collapse affordance than the previous "+". */
-        content: "\25BE"; /* ▾ */
-        font-size: 0.875rem;
-        line-height: 1;
-        color: var(--footer-fg-muted);
+    .footer__nav-heading :global(svg) {
         transition: transform var(--duration-normal) ease;
     }
 
-    .footer__nav-col[open] .footer__nav-heading::after {
+    .footer__nav-col[open] .footer__nav-heading :global(svg) {
         transform: rotate(180deg);
     }
 
@@ -867,25 +861,10 @@ const noCommissionsLabel = t("footer.trustSignals.noCommissions", "Sin comisione
         gap: var(--space-3);
     }
 
-    .footer__legal li + li::before {
-        content: "·";
-        flex: none;
-        color: var(--footer-fg-muted);
-        opacity: 0.5;
-    }
-
-    /* A separator bound to its item strands at the start of a wrapped line;
-       on narrow screens the row wraps, so it relies on the gap alone. */
-    @media (max-width: 639px) {
-        .footer__legal li + li::before {
-            display: none;
-        }
-    }
-
     .footer__legal-link {
         font-family: var(--font-sans);
-        font-size: var(--text-caption);
-        color: var(--footer-fg-muted);
+        font-size: 0.75rem;
+        color: var(--footer-fg);
         text-decoration: none;
         background: none;
         border: none;
@@ -970,6 +949,7 @@ const noCommissionsLabel = t("footer.trustSignals.noCommissions", "Sin comisione
         }
 
         .footer__nav-heading {
+            min-height: 0;
             cursor: default;
             pointer-events: none;
             margin-bottom: 0.875rem;
@@ -983,7 +963,7 @@ const noCommissionsLabel = t("footer.trustSignals.noCommissions", "Sin comisione
             justify-content: flex-start;
         }
 
-        .footer__nav-heading::after {
+        .footer__nav-heading :global(svg) {
             display: none;
         }
 
@@ -1017,10 +997,10 @@ const noCommissionsLabel = t("footer.trustSignals.noCommissions", "Sin comisione
             flex: 1;
         }
 
-        /* Bottom bar: 3 zones inline */
+        /* Give legal links the full row so they don't compete with contacts. */
         .footer__bottom-inner {
-            flex-direction: row;
-            justify-content: space-between;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
             align-items: center;
             text-align: left;
             gap: 1.25rem;
@@ -1031,7 +1011,8 @@ const noCommissionsLabel = t("footer.trustSignals.noCommissions", "Sin comisione
         }
 
         .footer__legal {
-            justify-content: center;
+            grid-column: 1 / -1;
+            grid-row: 2;
         }
     }
 
@@ -1172,9 +1153,13 @@ const noCommissionsLabel = t("footer.trustSignals.noCommissions", "Sin comisione
             gap: 0.625rem;
         }
 
-        .footer__payment {
-            width: 1.5rem;
-            height: 1.5rem;
+        .footer__payments-list :global(.footer__payment) {
+            width: var(--footer-payment-size, 1.5rem);
+            height: var(--footer-payment-size, 1.5rem);
+        }
+
+        .footer__payment-item--amex {
+            --footer-payment-size: 2.75rem;
         }
 
         /* Bottom bar */
@@ -1198,10 +1183,6 @@ const noCommissionsLabel = t("footer.trustSignals.noCommissions", "Sin comisione
 
         .footer__legal {
             gap: 0.25rem 0.75rem;
-        }
-
-        .footer__legal-link {
-            font-size: 0.6875rem;
         }
 
         .footer__copyright {

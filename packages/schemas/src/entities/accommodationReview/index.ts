@@ -10,4 +10,5 @@ export * from './accommodationReview.crud.schema.js';
 export * from './accommodationReview.http.schema.js';
 // Query schemas
 export * from './accommodationReview.query.schema.js';
+export * from './accommodationReview.reply.schema.js';
 export * from './accommodationReview.schema.js';
