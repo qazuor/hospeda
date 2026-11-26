@@ -11,6 +11,7 @@ Cloudflare R2 with zero egress fees.
 | `restore-from-r2.sh` | Manual restore script. Lists available backups, downloads the chosen one, and runs `pg_restore` after explicit confirmation. |
 | `.env.example` | Template for `/etc/hospeda-backup.env`. |
 | `install-on-vps.sh` | One-shot installer for the VPS. Copies scripts to `/opt/hospeda-backup`, sets up logrotate, and prints next-step instructions. |
+| `umami-restore-drill.sh` | Restore drill for the Umami backups. Restores the latest prod and staging dumps into a throwaway container and compares counts with live. See `docs/runbooks/umami.md`. |
 
 ## Backup format
 
