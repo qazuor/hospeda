@@ -60,6 +60,51 @@ describe('HOS-2655 public FAQ', () => {
         expect(page).toContain('getPlanName({ plan, t })');
         expect(page).toMatch(/cacheClass: 'pricing',[\s\S]*?tags: [^\n]*CACHE_TAG_PRICING/);
     });
+
+    it('keeps the hero contact CTA, its hint and the wave-underlined heading', () => {
+        const page = source('pages/[lang]/preguntas-frecuentes/index.astro');
+
+        expect(page).toMatch(
+            /<h1 class="faq-hero__title">[\s\S]*?class="faq-hero__title-underline"/
+        );
+        expect(page).toMatch(
+            /class="faq-hero__cta">\s*<span class="faq-hero__cta-hint">[^<]+<\/span>\s*<a\b[^>]*href=\{contactHref\}[^>]*class="faq-hero__cta-link"[^>]*>[\s\S]*?<ArrowRightIcon\b/
+        );
+    });
+
+    it('keeps the primary contact and secondary WhatsApp actions in the help section', () => {
+        const page = source('pages/[lang]/preguntas-frecuentes/index.astro');
+
+        expect(page).toMatch(
+            /class="faq-still__actions">\s*<a\b[^>]*href=\{contactHref\}[^>]*class="faq-still__btn faq-still__btn--primary"[^>]*>\s*<EmailIcon\b/
+        );
+        expect(page).toMatch(
+            /<a\b[^>]*href=\{getBrandPhoneWhatsAppUrl\(\)\}[^>]*class="faq-still__btn faq-still__btn--secondary"[^>]*>\s*<WhatsappIcon\b/
+        );
+    });
+
+    it('uses explicit token pairs for FAQ links rather than the browser link color', () => {
+        const pagePath = 'pages/[lang]/preguntas-frecuentes';
+        const page = source(`${pagePath}/index.astro`);
+
+        expect(page).toMatch(/<a href=\{href\} class="faq-plan-link">\{label\}<\/a>/);
+        expect(page).toMatch(/<a href="#faq-top" class="faq-top-link">/);
+        expect(page).toContain("import './faq-bands.css';");
+        const css = source(`${pagePath}/faq-bands.css`);
+        expect(css).toMatch(
+            /\.faq-hero__cta-link\s*\{[^}]*background-color: var\(--surface-warm\);\s*color: var\(--brand-primary-text\)/
+        );
+        expect(css).toMatch(
+            /\.faq-still__btn--primary\s*\{\s*background-color: var\(--brand-primary-link\);\s*color: var\(--primary-foreground\)/
+        );
+        expect(css).toMatch(
+            /\.faq-still__btn--secondary\s*\{\s*background-color: var\(--core-card\);\s*color: var\(--channel-whatsapp-text\)/
+        );
+        expect(page).toMatch(
+            /\.faq-plan-link,\s*\.faq-top-link\s*\{[^}]*color: var\(--brand-primary-link\)/
+        );
+    });
+
     it('uses the same native, initially open disclosure and named-category rule', () => {
         const accordion = source('components/shared/ui/FaqAccordion.astro');
         const adapters = [

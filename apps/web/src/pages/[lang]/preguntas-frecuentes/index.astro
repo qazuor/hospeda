@@ -1,20 +1,22 @@
 ---
 /** Public, session-blind FAQ with progressive search and shared disclosures. */
 import { CACHE_TAG_PRICING, CACHE_TAG_SITE_CONFIG } from '@repo/cache-tags';
+import { ArrowRightIcon, EmailIcon, WhatsappIcon } from '@repo/icons';
 import FAQPageJsonLd from '@/components/seo/FAQPageJsonLd.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import FaqAccordion from '@/components/shared/ui/FaqAccordion.astro';
 import ScrollableNav from '@/components/shared/ui/ScrollableNav.astro';
 import DefaultLayout from '@/layouts/DefaultLayout.astro';
 import { getBrandPhoneWhatsAppUrl } from '@/lib/brand-phone';
-import { getPlanName } from '@/lib/billing/plan-name';
 import { fetchAudiencePlans } from '@/lib/billing/audience-plans';
+import { getPlanName } from '@/lib/billing/plan-name';
 import { applyCacheHeaders } from '@/lib/cache/response-cache';
 import { buildFaqDirectory } from '@/lib/faq/directory';
 import { createTranslations } from '@/lib/i18n';
 import { breadcrumbLabel } from '@/lib/navigation/breadcrumb-labels';
 import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 import { buildUrl } from '@/lib/urls';
+import './faq-bands.css';
 
 const locale = Astro.locals.locale;
 const { t } = createTranslations(locale);
@@ -40,17 +42,49 @@ const faqSections = groups.flatMap(({ items }) => items.map(({ question, answer 
     heading: question, body: answer
 })));
 const contactHref = buildUrl({ locale, path: '/contacto/' });
+
+const splitHeading = ({ title }: { readonly title: string }) => {
+    const words = title.trim().split(/\s+/);
+    const accent = words.pop();
+    return { main: words.join(' '), accent };
+};
+const heroHeading = splitHeading({ title: t('faq.hero.title') });
+const stillHeading = splitHeading({ title: t('faq.stillNeedHelp.title') });
 ---
 
 <DefaultLayout locale={locale} title={t('faq.title')} description={t('faq.description')}>
     <FAQPageJsonLd slot="head-extra" sections={faqSections} name={t('faq.title')} description={t('faq.description')} inLanguage={locale} />
     <header class="faq-hero section section--warm">
-        <div class="faq-container">
+        <div class="faq-hero__decoratives" aria-hidden="true">
+            <span class="faq-hero__watermark">?</span>
+            <div class="faq-hero__blob"></div>
+            <svg class="faq-hero__trail" viewBox="0 0 200 80" preserveAspectRatio="none" aria-hidden="true">
+                <path d="M 4 60 Q 60 8, 110 40 T 196 24" stroke="currentColor" stroke-width="2" stroke-dasharray="3 7" stroke-linecap="round" fill="none" />
+            </svg>
+            <span class="faq-hero__dot faq-hero__dot--1"></span>
+            <span class="faq-hero__dot faq-hero__dot--2"></span>
+            <span class="faq-hero__dot faq-hero__dot--3"></span>
+        </div>
+        <div class="faq-hero__container">
             <Breadcrumbs locale={locale} items={[{ label: breadcrumbLabel({ t, key: 'faq' }) }]} />
-            <p>{t('faq.hero.tagline')}</p>
-            <h1>{t('faq.hero.title')}</h1>
-            <p>{t('faq.hero.subtitle')}</p>
-            <a href={contactHref}>{t('faq.hero.ctaContact')}</a>
+            <p class="faq-hero__tagline">{t('faq.hero.tagline')}</p>
+            <h1 class="faq-hero__title">
+                {heroHeading.main && <>{heroHeading.main}{' '}</>}
+                <span class="faq-title-accent">
+                    {heroHeading.accent}
+                    <svg class="faq-hero__title-underline" viewBox="0 0 200 18" preserveAspectRatio="none" aria-hidden="true">
+                        <path d="M 4 12 Q 50 2, 100 10 T 196 8" stroke="currentColor" stroke-width="4" stroke-linecap="round" fill="none" />
+                    </svg>
+                </span>
+            </h1>
+            <p class="faq-hero__subtitle">{t('faq.hero.subtitle')}</p>
+            <div class="faq-hero__cta">
+                <span class="faq-hero__cta-hint">{t('faq.hero.ctaContactHint')}</span>
+                <a href={contactHref} class="faq-hero__cta-link">
+                    {t('faq.hero.ctaContact')}
+                    <ArrowRightIcon size="sm" weight="bold" aria-hidden="true" />
+                </a>
+            </div>
         </div>
     </header>
 
@@ -67,19 +101,45 @@ const contactHref = buildUrl({ locale, path: '/contacto/' });
         <div class="faq-answers" id="faq-answers"><FaqAccordion groups={groups} /></div>
         <div class="faq-links">
             {audiencePlans.map(({ href, label, names }) => (
-                <div><a href={href}>{label}</a>{names.length > 0 && <p>{new Intl.ListFormat(locale).format(names)}</p>}</div>
+                <div class="faq-plan">
+                    <a href={href} class="faq-plan-link">{label}</a>
+                    {names.length > 0 && <p>{new Intl.ListFormat(locale).format(names)}</p>}
+                </div>
             ))}
-            <a href="#faq-top">{t('common.scrollToTop')}</a>
         </div>
+        <a href="#faq-top" class="faq-top-link">{t('common.scrollToTop')}</a>
     </faq-directory>
 
-    <section class="section section--warm">
-        <div class="faq-container">
-            <h2>{t('faq.stillNeedHelp.title')}</h2>
-            <p>{t('faq.stillNeedHelp.subtitle')}</p>
-            <div class="faq-links">
-                <a href={contactHref}>{t('faq.stillNeedHelp.ctaContact')}</a>
-                <a href={getBrandPhoneWhatsAppUrl()} target="_blank" rel="noopener noreferrer">{t('faq.stillNeedHelp.ctaWhatsApp')}</a>
+    <section class="faq-still section section--warm">
+        <div class="faq-still__decoratives" aria-hidden="true">
+            <div class="faq-still__blob"></div>
+            <svg class="faq-still__wave" viewBox="0 0 600 60" preserveAspectRatio="none" aria-hidden="true">
+                <path d="M 0 30 Q 100 5, 200 30 T 400 30 T 600 28" stroke="currentColor" stroke-width="2" stroke-dasharray="3 7" stroke-linecap="round" fill="none" />
+            </svg>
+            <span class="faq-still__dot faq-still__dot--1"></span>
+            <span class="faq-still__dot faq-still__dot--2"></span>
+        </div>
+        <div class="faq-still__container">
+            <p class="faq-still__tagline">{t('faq.stillNeedHelp.tagline')}</p>
+            <h2 class="faq-still__title">
+                {stillHeading.main && <>{stillHeading.main}{' '}</>}
+                <span class="faq-title-accent">
+                    {stillHeading.accent}
+                    <svg class="faq-still__title-underline" viewBox="0 0 200 18" preserveAspectRatio="none" aria-hidden="true">
+                        <path d="M 4 12 Q 50 2, 100 10 T 196 8" stroke="currentColor" stroke-width="4" stroke-linecap="round" fill="none" />
+                    </svg>
+                </span>
+            </h2>
+            <p class="faq-still__subtitle">{t('faq.stillNeedHelp.subtitle')}</p>
+            <div class="faq-still__actions">
+                <a href={contactHref} class="faq-still__btn faq-still__btn--primary">
+                    <EmailIcon size="md" weight="duotone" aria-hidden="true" />
+                    <span>{t('faq.stillNeedHelp.ctaContact')}</span>
+                </a>
+                <a href={getBrandPhoneWhatsAppUrl()} class="faq-still__btn faq-still__btn--secondary" target="_blank" rel="noopener noreferrer">
+                    <WhatsappIcon size="md" weight="duotone" aria-hidden="true" />
+                    <span>{t('faq.stillNeedHelp.ctaWhatsApp')}</span>
+                </a>
             </div>
         </div>
     </section>
@@ -116,10 +176,11 @@ const contactHref = buildUrl({ locale, path: '/contacto/' });
         padding-inline: var(--space-container-x);
         min-width: 0;
     }
-    .faq-hero { text-align: center; }
     faq-directory {
         padding-block: var(--space-6);
         scroll-margin-top: var(--navbar-height);
+        background-color: var(--core-background);
+        color: var(--core-foreground);
     }
     .faq-search:not([hidden]) {
         display: grid;
@@ -148,7 +209,39 @@ const contactHref = buildUrl({ locale, path: '/contacto/' });
         text-decoration: none;
         scroll-snap-align: start;
     }
-    .faq-chip:hover { border-color: var(--brand-primary); }
+    .faq-chip:hover { border-color: var(--brand-primary-link); }
     .faq-answers { margin-block: var(--space-6); }
-    .faq-links { display: flex; flex-wrap: wrap; gap: var(--space-3) var(--space-5); }
+    .faq-answers :global(summary) { color: var(--core-foreground); }
+    .faq-links {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+        gap: var(--space-3);
+    }
+    .faq-plan {
+        padding: var(--space-4);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-card);
+        background-color: var(--core-card);
+    }
+    .faq-plan p {
+        margin: var(--space-1) 0 0;
+        color: var(--core-muted-foreground);
+    }
+    .faq-plan-link,
+    .faq-top-link {
+        color: var(--brand-primary-link);
+        font-weight: 600;
+        text-decoration: underline;
+        text-underline-offset: 0.2em;
+    }
+    .faq-top-link {
+        display: inline-block;
+        margin-block-start: var(--space-4);
+    }
+    .faq-chip:focus-visible,
+    .faq-plan-link:focus-visible,
+    .faq-top-link:focus-visible {
+        outline: 2px solid var(--brand-primary-link);
+        outline-offset: 2px;
+    }
 </style>
