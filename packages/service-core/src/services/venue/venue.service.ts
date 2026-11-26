@@ -82,8 +82,13 @@ import {
     type LocationRuleCurrent,
     resolveLocationKeyPatch
 } from '../listing/listing-location-key';
+import { DEFAULT_LISTING_TRANSLATION_SOURCE_FIELDS } from '../listing/listing-translation-on-save';
 import { QrCodeService } from '../qr-code/qr-code.service';
 import { assertVenueCreateSectionsPresent } from './venue.create-sections';
+import {
+    resolveVenueEntryNoteSourcePatch,
+    type VenueEntryNoteI18n
+} from './venue.entry-note-source';
 import { attachComposedVenueMedia, attachComposedVenueMediaList } from './venue.media-read';
 import { resolveVenueNightInfoPatch, type VenueNightInfoCurrent } from './venue.night-info';
 import {
@@ -243,6 +248,14 @@ export class VenueService extends BaseListingService<
      */
     protected override get _revalidationEntityType(): 'venue' {
         return 'venue';
+    }
+
+    /**
+     * Venue translation sources: the listing defaults plus `entryNote`, whose
+     * Spanish lives in `entryNoteI18n.es` (HOS-2658).
+     */
+    protected override get _translationSourceFields(): readonly string[] {
+        return [...DEFAULT_LISTING_TRANSLATION_SOURCE_FIELDS, 'entryNote'];
     }
 
     /** Venue-amenity junction model (satisfies {@link ListingJunctionModel}). */
@@ -760,7 +773,20 @@ export class VenueService extends BaseListingService<
             stored: (current as { whatsappVisibility?: VenueWhatsappVisibilityEnum | null } | null)
                 ?.whatsappVisibility
         });
-        return { ...base, ...nightInfo, ...locationKey, ...whatsapp } as Partial<Venue>;
+        // HOS-2658 (AC-25): `entryNoteI18n.es` is the source; the stored en/pt
+        // pairs belong to the translation writer and are kept.
+        const { patch: entryNote } = resolveVenueEntryNoteSourcePatch({
+            body: (data as { entryNoteI18n?: unknown }).entryNoteI18n,
+            stored: (current as { entryNoteI18n?: Partial<VenueEntryNoteI18n> | null } | null)
+                ?.entryNoteI18n
+        });
+        return {
+            ...base,
+            ...nightInfo,
+            ...locationKey,
+            ...whatsapp,
+            ...entryNote
+        } as Partial<Venue>;
     }
 
     // -----------------------------------------------------------------------
