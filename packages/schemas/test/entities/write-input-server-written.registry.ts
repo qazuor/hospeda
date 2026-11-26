@@ -297,12 +297,14 @@ export const ENTITIES: readonly EntityEntry[] = [
                 name: 'ExperienceOwnerUpdateInputSchema',
                 schema: ExperienceOwnerUpdateInputSchema as unknown as Parseable,
                 tier: 'owner',
+                // HOS-2658: the four listing *I18n columns left the owner PATCH;
+                // their en/pt values are written only by PUT /{id}/translations.
                 accepts: fields(`
-                    contactInfo description descriptionI18n
+                    contactInfo description
                     destinationId durationMinutes isPriceOnRequest meetingPoint
-                    meetingPointDirections meetingPointLat meetingPointLong name nameI18n
+                    meetingPointDirections meetingPointLat meetingPointLong name
                     openingHours priceFrom priceUnit requirements richDescription
-                    richDescriptionI18n socialNetworks summary summaryI18n type videos whatToBring
+                    socialNetworks summary type videos whatToBring
                     policies
                 `)
             }
@@ -369,10 +371,12 @@ export const ENTITIES: readonly EntityEntry[] = [
                 name: 'VenueOwnerUpdateInputSchema',
                 schema: VenueOwnerUpdateInputSchema as unknown as Parseable,
                 tier: 'owner',
+                // HOS-2658: the four listing *I18n columns left the owner PATCH;
+                // their en/pt values are written only by PUT /{id}/translations.
                 accepts: fields(`
-                    location contactInfo description descriptionI18n destinationId menuUrl name nameI18n
-                    openingHours priceRange richDescription richDescriptionI18n socialNetworks
-                    summary summaryI18n type videos
+                    location contactInfo description destinationId menuUrl name
+                    openingHours priceRange richDescription socialNetworks
+                    summary type videos
                     entryKind entryNoteI18n entryPriceFrom
                     whatsappVisibility
                     policies
