@@ -22,20 +22,12 @@
  * is scoped to the actor by the service, and the tool takes no resource id.
  */
 
-import type { PortalLocale } from '@repo/portal-routes';
 import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import { z } from 'zod';
 import { getClock } from '../../../utils/clock';
-import { apiLogger } from '../../../utils/logger';
 import { readMyListingRows } from '../listing/list-my-listings';
 import { LISTING_TOOL_VERTICALS, type ListingToolVertical } from '../listing/listing-services';
-import { readMyPlan } from '../plan/my-plan-reader';
-import type {
-    MyPlanAddon,
-    MyPlanInheritedTouristVip,
-    MyPlanItem,
-    MyPlanVertical
-} from '../plan/my-plan-types';
+import { readSubscriptionBlock } from '../plan/my-plan-block';
 import { defineTool, type ToolHandlerResult } from '../tool-definition';
 import {
     capAttention,
@@ -54,44 +46,6 @@ import {
     type OwnerSummary,
     type VerticalMetrics
 } from './owner-summary-types';
-
-/**
- * The `subscription` block: the `get_my_plan` items keyed by vertical, from
- * the shared reader (AC-C15b). A failed plan read never fails the summary: the
- * block is left out, named in `omitted` and logged, and the rest still answers.
- */
-async function readSubscriptionBlock(args: {
-    readonly userId: string;
-    readonly locale: PortalLocale | undefined;
-    readonly now: Date;
-}): Promise<{
-    readonly subscription?: Partial<Record<MyPlanVertical, MyPlanItem>>;
-    readonly unattributedAddons?: readonly MyPlanAddon[];
-    readonly inheritedTouristVip?: MyPlanInheritedTouristVip;
-    readonly unavailable?: true;
-}> {
-    try {
-        const plan = await readMyPlan({
-            userId: args.userId,
-            ...(args.locale ? { locale: args.locale } : {}),
-            now: args.now
-        });
-        return {
-            subscription: Object.fromEntries(plan.items.map((item) => [item.vertical, item])),
-            ...(plan.unattributedAddons ? { unattributedAddons: plan.unattributedAddons } : {}),
-            ...(plan.inheritedTouristVip ? { inheritedTouristVip: plan.inheritedTouristVip } : {})
-        };
-    } catch (error) {
-        apiLogger.warn(
-            {
-                userId: args.userId,
-                error: error instanceof Error ? error.message : String(error)
-            },
-            'get_owner_summary: plan read failed; subscription block omitted'
-        );
-        return { unavailable: true };
-    }
-}
 
 /** Input schema of `get_owner_summary`. One flat object (C-2). */
 export const GetOwnerSummaryInputSchema = z

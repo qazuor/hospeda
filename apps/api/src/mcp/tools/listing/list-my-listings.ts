@@ -16,18 +16,33 @@
  *
  * Listing names are the owner's own text, not third-party content, so they
  * are returned as is (§6.6 covers guest-written text only).
+ *
+ * The `plans` block (HOS-2184 phase B, T-035): the `get_my_plan` item of each
+ * listing vertical the owner has a plan in, read ONCE per call with the shared
+ * reader (`plan/my-plan-block.ts`), never once per listing. Behind
+ * `BILLING_VIEW_OWN` like `get_my_plan`; without it the block is left out. A
+ * failed plan read never fails the list.
  */
 
 import {
     type Accommodation,
     type Experience,
+    PermissionEnum,
     type PublicationStatusEnum,
     type Venue,
     VerticalEnum
 } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import { z } from 'zod';
-import { defineTool, type ToolErrorPayload, type ToolHandlerResult } from '../tool-definition';
+import { getClock } from '../../../utils/clock';
+import { readSubscriptionBlock } from '../plan/my-plan-block';
+import type { MyPlanItem } from '../plan/my-plan-types';
+import {
+    defineTool,
+    type ToolContext,
+    type ToolErrorPayload,
+    type ToolHandlerResult
+} from '../tool-definition';
 import {
     LISTING_TOOL_VERTICALS,
     type ListingToolVertical,
@@ -68,6 +83,19 @@ export interface ListMyListingsResult {
      * rest are not shown. Tell the user the list is partial.
      */
     readonly hasMore: boolean;
+}
+
+/** Result of the `list_my_listings` tool: the listings plus the owner's plans. */
+export interface ListMyListingsToolResult extends ListMyListingsResult {
+    /**
+     * Per listing vertical the owner has a plan in, the `get_my_plan` item
+     * (status, expiry dates, what it includes); a vertical with no plan is
+     * absent. Absent without `BILLING_VIEW_OWN` and when the plan could not be
+     * read (then named in {@link omitted}).
+     */
+    readonly plans?: Readonly<Partial<Record<ListingToolVertical, MyPlanItem>>>;
+    /** Blocks left out because they could not be read. Absent when none was. */
+    readonly omitted?: Readonly<{ readonly plans: 'unavailable' }>;
 }
 
 /** Fields every vertical's entity carries that the summary needs. */
@@ -235,6 +263,39 @@ export async function readMyListings({
 }
 
 /**
+ * The `plans` part of the result: one shared plan read for the three listing
+ * verticals, or the omission.
+ *
+ * @param args - The owner and the link locale
+ * @returns `{ plans }` or `{ omitted }`
+ */
+async function readPlansPart({
+    userId,
+    locale
+}: {
+    readonly userId: string;
+    readonly locale: ToolContext['locale'];
+}): Promise<Pick<ListMyListingsToolResult, 'plans' | 'omitted'>> {
+    const block = await readSubscriptionBlock({
+        userId,
+        locale,
+        now: getClock().clock.now(),
+        tool: 'list_my_listings'
+    });
+    if (block.unavailable) {
+        return { omitted: { plans: 'unavailable' } };
+    }
+    const plans: Partial<Record<ListingToolVertical, MyPlanItem>> = {};
+    for (const vertical of LISTING_TOOL_VERTICALS) {
+        const item = block.subscription?.[vertical];
+        if (item) {
+            plans[vertical] = item;
+        }
+    }
+    return { plans };
+}
+
+/**
  * `list_my_listings`: read-only, available to an unverified email exactly as
  * the HTTP "list own" routes are (`READ_OWN`).
  */
@@ -242,9 +303,20 @@ export const listMyListingsTool = defineTool({
     name: 'list_my_listings',
     title: 'Mis publicaciones',
     description:
-        "Lists every listing the connected Hospeda user owns, across accommodations, venues (food and nightlife) and experiences, in any publication state (drafts and paused listings included). Returns each listing's id, vertical, name and publicationStatus. Use the id and vertical with get_listing to read a listing's editable details. The result carries `total` (everything the user owns) and `hasMore`: when hasMore is true the list is truncated (at most 100 listings per vertical are returned), so tell the user it is partial instead of presenting it as complete.",
+        "Lists every listing the connected Hospeda user owns, across accommodations, venues (food and nightlife) and experiences, in any publication state (drafts and paused listings included). Returns each listing's id, vertical, name and publicationStatus. Use the id and vertical with get_listing to read a listing's editable details. The result carries `total` (everything the user owns) and `hasMore`: when hasMore is true the list is truncated (at most 100 listings per vertical are returned), so tell the user it is partial instead of presenting it as complete. `plans` (only when the user may see their billing) holds, per vertical where the user has a plan (accommodation, venue, experience), the same item get_my_plan returns: plan name, status, expiry dates (nextChargeAt, serviceEndsAt, graceEndsAt, trialDaysLeft, coverageEndsAt) and `includes`; a vertical with no plan is absent. If the plans could not be read, `plans` is absent and `omitted` says {plans: 'unavailable'}.",
     inputSchema: ListMyListingsInputSchema,
     isWrite: false,
     emailUnverifiedOperation: 'READ_OWN',
-    handler: ({ actor }) => readMyListings({ actor })
+    handler: async ({ actor, context }): Promise<ToolHandlerResult<ListMyListingsToolResult>> => {
+        const [listings, plansPart] = await Promise.all([
+            readMyListings({ actor }),
+            actor.permissions.includes(PermissionEnum.BILLING_VIEW_OWN)
+                ? readPlansPart({ userId: actor.id, locale: context.locale })
+                : undefined
+        ]);
+        if (listings.error) {
+            return { error: listings.error };
+        }
+        return { data: { ...listings.data, ...plansPart } };
+    }
 });
