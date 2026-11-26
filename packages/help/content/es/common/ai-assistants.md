@@ -31,10 +31,11 @@ related:
   - amenities
   - help-center
 covers:
+  - "entitlement:ai_assistant_access"
   - "file:apps/web/src/components/account/AiAssistantsPanel.client.tsx"
 entryFor:
   - "page:mi-cuenta/asistentes-ia"
-reviewedAt: "2026-11-23"
+reviewedAt: "2026-11-26"
 ---
 
 ## Qué podés hacer
@@ -57,6 +58,7 @@ Con un asistente conectado podés, por ejemplo, {{article:reviews|leer tus rese�
 
 - Antes de aprobar el acceso, la pantalla te muestra qué puede hacer el asistente.
 - Al desconectarlo pierde el acceso de inmediato, y podés volver a conectarlo.
+- El asistente viene incluido en tu plan, sin costo extra y sin límite de uso. Si ya no tenés un plan activo, el asistente te avisa y te muestra los planes.
 
 ## Qué NO esperar
 
