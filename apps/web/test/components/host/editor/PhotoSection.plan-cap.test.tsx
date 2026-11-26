@@ -1,19 +1,17 @@
 /**
  * @file PhotoSection.plan-cap.test.tsx
- * @description HOS-1024 — the photo gallery cap shown and enforced in the
- * editor is the host's EFFECTIVE PLAN cap (`useMyEntitlements().limit(
- * 'max_photos_per_accommodation')`), not the flat `ENTITY_GALLERY_CAPS
- * .accommodation` ceiling (50) every host used to see regardless of plan.
+ * @description HOS-1024 / HOS-2495 — the photo gallery cap shown and enforced
+ * in the editor is the owner's EFFECTIVE cap as the listing's `photo-allowance`
+ * reports it (the number step 7 enforces), never a flat entity ceiling. The
+ * same component serves accommodation, venue and experience.
  *
  * Real i18n and a real toast store/viewport are used throughout (not a
  * hand-rolled translation stub) — the assertions below read the actual copy
  * and the actual upsell CTA the host would see, mirroring
  * `PhotoSection.limit.test.tsx`'s rationale for the same choice.
  *
- * `useMyEntitlements` is mocked directly (not `useSession`/`fetch`) — the
- * same convention `CalendarSyncLauncher.test.tsx` and
- * `PlanEntitlementGate.client.test.tsx` use — so each test controls
- * `limit()`/`isLoading` deterministically without touching the network.
+ * `listingPhotoAllowanceApi.getAllowance` is mocked, so each test controls the
+ * allowance answer (or keeps it in flight) without touching the network.
  */
 
 import { DRAFT_DESCRIPTION_PLACEHOLDER } from '@repo/schemas';
@@ -24,25 +22,22 @@ import { PhotoSection } from '@/components/host/editor/PhotoSection.client';
 import { ToastViewport } from '@/components/ui/ToastViewport.client';
 import { createTranslations } from '@/lib/i18n';
 import { clearToasts } from '@/store/toast-store';
+import { allowanceFailed, allowanceOk } from './photo-allowance-fixture';
 
 const {
     mockListMedia,
     mockAddMedia,
+    mockListingListMedia,
     mockUploadEntityImage,
-    mockLimit,
-    mockDraftLimit,
-    mockIsLoading,
-    mockError,
+    mockGetAllowance,
     mockFeaturedOverride,
     mockSubscribeDestination
 } = vi.hoisted(() => ({
     mockListMedia: vi.fn(),
     mockAddMedia: vi.fn(),
+    mockListingListMedia: vi.fn(),
     mockUploadEntityImage: vi.fn(),
-    mockLimit: vi.fn(),
-    mockDraftLimit: vi.fn(),
-    mockIsLoading: vi.fn(),
-    mockError: { current: null as Error | null },
+    mockGetAllowance: vi.fn(),
     mockFeaturedOverride: { current: null as null | Record<string, unknown> },
     mockSubscribeDestination: vi.fn()
 }));
@@ -56,6 +51,16 @@ vi.mock('@/lib/api/endpoints-protected', () => ({
         reorderMedia: vi.fn(),
         updateMedia: vi.fn()
     },
+    listingMediaApi: {
+        listMedia: mockListingListMedia,
+        addMedia: vi.fn(),
+        addFeaturedMedia: vi.fn(),
+        removeMedia: vi.fn(),
+        setFeaturedMedia: vi.fn(),
+        reorderMedia: vi.fn(),
+        updateMedia: vi.fn()
+    },
+    listingPhotoAllowanceApi: { getAllowance: mockGetAllowance },
     publishApi: {
         subscribeDestination: mockSubscribeDestination
     },
@@ -81,19 +86,12 @@ vi.mock('@/components/host/editor/use-photo-section', async () => {
     };
 });
 
-vi.mock('@/hooks/useMyEntitlements', () => ({
-    useMyEntitlements: () => ({
-        has: () => false,
-        limit: mockLimit,
-        draftLimit: mockDraftLimit,
-        plan: null,
-        isLoading: mockIsLoading(),
-        error: mockError.current
-    })
-}));
-
 const ACC_ID = 'acc-uuid-plan-cap';
-const defaultProps: PhotoSectionProps = { locale: 'es', accommodationId: ACC_ID };
+const defaultProps: PhotoSectionProps = {
+    locale: 'es',
+    vertical: 'accommodation',
+    listingId: ACC_ID
+};
 
 /**
  * Where the cap upsell points. It used to be the photos add-on
@@ -145,16 +143,14 @@ function makeAddOk(i: number) {
 beforeEach(() => {
     vi.clearAllMocks();
     mockFeaturedOverride.current = null;
-    mockError.current = null;
     mockSubscribeDestination.mockResolvedValue({
         ok: true,
         data: { destination: 'PUBLISH', trialDays: 14 }
     });
     clearToasts();
     mockListMedia.mockReturnValue(makeListOk());
-    mockIsLoading.mockReturnValue(false);
-    mockLimit.mockReturnValue(15); // Owner Básico
-    mockDraftLimit.mockReturnValue(0);
+    mockListingListMedia.mockReturnValue(makeListOk());
+    mockGetAllowance.mockImplementation(() => allowanceOk({ cap: 15 })); // Owner Básico
 });
 
 afterEach(() => {
@@ -222,7 +218,7 @@ describe('HOS-1024 — header + gallery label show the PLAN cap, not the entity 
         render(<PhotoSection {...defaultProps} />);
 
         const { tPlural } = createTranslations('es');
-        const expected = tPlural('host.properties.editor.section.photosDescription', 15, {
+        const expected = tPlural('account.listingPhotos.description.accommodation', 15, {
             cap: 15
         });
 
@@ -242,7 +238,7 @@ describe('HOS-1024 — header + gallery label show the PLAN cap, not the entity 
     });
 
     it('reflects a DIFFERENT plan cap for a different plan (Owner Pro, 30)', async () => {
-        mockLimit.mockReturnValue(30);
+        mockGetAllowance.mockImplementation(() => allowanceOk({ cap: 30 }));
         render(<PhotoSection {...defaultProps} />);
 
         await waitFor(() => {
@@ -251,42 +247,165 @@ describe('HOS-1024 — header + gallery label show the PLAN cap, not the entity 
     });
 });
 
-describe('HOS-2442 — an owner with no plan is told so instead of loading forever', () => {
-    it('never claims the host has no plan when the entitlements read failed', async () => {
-        mockIsLoading.mockReturnValue(false);
-        mockLimit.mockReturnValue(0);
-        mockDraftLimit.mockReturnValue(0);
-        mockError.current = new Error('');
+describe('HOS-2442 / AC-6 / AC-7 — no plan and a failed read, in every vertical', () => {
+    it('never claims the host has no plan when the allowance read failed (AC-7)', async () => {
+        mockGetAllowance.mockImplementation(() => allowanceFailed());
 
         render(<PhotoSection {...defaultProps} />);
-        await waitFor(() => expect(mockListMedia).toHaveBeenCalled());
 
-        expect(screen.getByText(/No pudimos cargar tu límite de fotos/)).toBeInTheDocument();
-        expect(screen.queryByText(/no incluye subir fotos/)).not.toBeInTheDocument();
+        await waitFor(() =>
+            expect(screen.getByText(/No pudimos cargar tu límite de fotos/)).toBeInTheDocument()
+        );
+        expect(screen.queryByText(/necesitás un plan/)).not.toBeInTheDocument();
         expect(screen.queryByRole('link', { name: 'Ver planes' })).not.toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Agregar fotos a la galería' })).toBeDisabled();
+        expect(document.querySelector('#gallery-image-input')).toBeDisabled();
+        expect(document.querySelector('#featured-image-input')).toBeDisabled();
     });
 
-    it('stops saying "loading" once entitlements resolved with no cap, and points to the plans', async () => {
-        mockIsLoading.mockReturnValue(false);
-        mockLimit.mockReturnValue(0);
-        mockDraftLimit.mockReturnValue(0);
+    it('treats a thrown allowance read as failed, not as loading (AC-7)', async () => {
+        mockGetAllowance.mockImplementation(() => Promise.reject(new Error('offline')));
 
         render(<PhotoSection {...defaultProps} />);
-        await waitFor(() => expect(mockListMedia).toHaveBeenCalled());
 
+        await waitFor(() =>
+            expect(screen.getByText(/No pudimos cargar tu límite de fotos/)).toBeInTheDocument()
+        );
         expect(screen.queryByText('Cargando tu límite de fotos…')).not.toBeInTheDocument();
-        expect(screen.getByText(/Tu plan actual no incluye subir fotos/)).toBeInTheDocument();
-        expect(screen.getByRole('link', { name: 'Ver planes' })).toHaveAttribute(
-            'href',
-            expect.stringMatching(/^\/es\//)
+    });
+
+    it.each([
+        {
+            vertical: 'accommodation' as const,
+            copy: 'Para subir fotos de tu alojamiento, necesitás un plan que las incluya.',
+            pricing: '/es/planes/anfitriones/precios/'
+        },
+        {
+            vertical: 'venue' as const,
+            copy: 'Para subir fotos de tu ficha de Comer y salir, necesitás un plan que las incluya.',
+            pricing: '/es/planes/comer-y-salir/precios/'
+        },
+        {
+            vertical: 'experience' as const,
+            copy: 'Para subir fotos de tu experiencia, necesitás un plan que las incluya.',
+            pricing: '/es/planes/experiencias/precios/'
+        }
+    ])('$vertical without a plan: no-plan copy, pricing link, uploads disabled, photos listed (AC-6)', async ({
+        vertical,
+        copy,
+        pricing
+    }) => {
+        mockGetAllowance.mockImplementation(() => allowanceOk({ vertical, cap: 'none' }));
+        mockListMedia.mockReturnValue(makeListOk(buildGalleryRows(2)));
+        mockListingListMedia.mockReturnValue(makeListOk(buildGalleryRows(2)));
+
+        render(
+            <PhotoSection
+                locale="es"
+                vertical={vertical}
+                listingId="listing-1"
+            />
+        );
+
+        await waitFor(() => expect(screen.getByText(copy)).toBeInTheDocument());
+        expect(screen.queryByText('Cargando tu límite de fotos…')).not.toBeInTheDocument();
+        expect(screen.getByRole('link', { name: 'Ver planes' })).toHaveAttribute('href', pricing);
+        expect(screen.getByRole('button', { name: 'Agregar fotos a la galería' })).toBeDisabled();
+        expect(document.querySelector('#gallery-image-input')).toBeDisabled();
+        expect(document.querySelector('#featured-image-input')).toBeDisabled();
+        // Existing photos stay listed (and, at cap 0, are marked over cap).
+        await waitFor(() => expect(screen.getAllByRole('img')).toHaveLength(2));
+        expect(screen.getAllByTestId('photo-over-cap-badge')).toHaveLength(2);
+        expect(mockGetAllowance).toHaveBeenCalledWith({ vertical, id: 'listing-1' });
+    });
+});
+
+describe('HOS-2495 — unlimited and breakdown states', () => {
+    it('reads "Sin límite de fotos", prints no "máx. N" and never reports full (AC-16)', async () => {
+        mockGetAllowance.mockImplementation(() => allowanceOk({ cap: 'unlimited', used: 60 }));
+        mockListMedia.mockReturnValue(makeListOk(buildGalleryRows(60)));
+
+        render(<PhotoSection {...defaultProps} />);
+
+        await waitFor(() => expect(screen.getByText('Sin límite de fotos')).toBeInTheDocument());
+        await waitFor(() => expect(screen.getAllByRole('img')).toHaveLength(60));
+        expect(screen.queryByText(/máx\. \d+\)/)).not.toBeInTheDocument();
+        expect(screen.getByText('Galería de fotos')).toBeInTheDocument();
+        expect(screen.queryByText(/Límite de galería alcanzado/)).not.toBeInTheDocument();
+        expect(screen.queryByTestId('photo-over-cap-badge')).not.toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Agregar fotos a la galería' })).toBeEnabled();
+        expect(document.querySelector('#gallery-image-input')).toHaveAttribute('multiple');
+    });
+
+    it('renders the breakdown that adds up to the cap (AC-5)', async () => {
+        mockGetAllowance.mockImplementation(() =>
+            allowanceOk({
+                vertical: 'venue',
+                cap: 50,
+                breakdown: {
+                    contributions: [
+                        { kind: 'PLAN', value: 30, sources: 1 },
+                        { kind: 'ADDON', value: 20, sources: 1 }
+                    ]
+                }
+            })
+        );
+
+        render(
+            <PhotoSection
+                locale="es"
+                vertical="venue"
+                listingId="venue-1"
+            />
+        );
+
+        await waitFor(() =>
+            expect(screen.getByTestId('photo-cap-breakdown')).toHaveTextContent(
+                '30 de tu plan + 20 de packs de fotos = 50'
+            )
+        );
+        expect(screen.getByText('Galería de fotos (máx. 50)')).toBeInTheDocument();
+    });
+
+    it('shows the total alone when the API returned no breakdown (AC-5)', async () => {
+        mockGetAllowance.mockImplementation(() => allowanceOk({ cap: 15, breakdown: null }));
+
+        render(<PhotoSection {...defaultProps} />);
+
+        await waitFor(() =>
+            expect(screen.getByText('Subí hasta 15 fotos de tu alojamiento.')).toBeInTheDocument()
+        );
+        expect(screen.queryByTestId('photo-cap-breakdown')).not.toBeInTheDocument();
+    });
+
+    it('names the trial as the only contribution (AC-8)', async () => {
+        mockGetAllowance.mockImplementation(() =>
+            allowanceOk({
+                vertical: 'venue',
+                cap: 15,
+                breakdown: { contributions: [{ kind: 'TRIAL', value: 15, sources: 1 }] }
+            })
+        );
+
+        render(
+            <PhotoSection
+                locale="es"
+                vertical="venue"
+                listingId="venue-1"
+            />
+        );
+
+        await waitFor(() =>
+            expect(screen.getByTestId('photo-cap-breakdown')).toHaveTextContent(
+                '15 de tu prueba = 15'
+            )
         );
     });
 });
 
 describe('HOS-1024 — the loading window shows no number and disables the upload control', () => {
     it('shows loading copy (no cap number) while entitlements resolve', async () => {
-        mockIsLoading.mockReturnValue(true);
-        mockLimit.mockReturnValue(-1); // the hook's own loading sentinel
+        mockGetAllowance.mockImplementation(() => new Promise(() => {}));
 
         render(<PhotoSection {...defaultProps} />);
         await waitFor(() => expect(mockListMedia).toHaveBeenCalled());
@@ -298,8 +417,7 @@ describe('HOS-1024 — the loading window shows no number and disables the uploa
     });
 
     it('disables the gallery add button and the hidden file input while loading', async () => {
-        mockIsLoading.mockReturnValue(true);
-        mockLimit.mockReturnValue(-1);
+        mockGetAllowance.mockImplementation(() => new Promise(() => {}));
 
         render(<PhotoSection {...defaultProps} />);
         await waitFor(() => expect(mockListMedia).toHaveBeenCalled());
@@ -313,8 +431,7 @@ describe('HOS-1024 — the loading window shows no number and disables the uploa
         // gallery that already has photos and no real cap yet, that formula
         // reads as "0 slots free" and would show "cap reached" even though the
         // real plan cap is unknown and may well have room.
-        mockIsLoading.mockReturnValue(true);
-        mockLimit.mockReturnValue(-1);
+        mockGetAllowance.mockImplementation(() => new Promise(() => {}));
         mockListMedia.mockReturnValue(makeListOk(buildGalleryRows(5)));
 
         render(<PhotoSection {...defaultProps} />);
@@ -323,18 +440,25 @@ describe('HOS-1024 — the loading window shows no number and disables the uploa
         expect(screen.queryByText(/Límite de galería alcanzado/)).not.toBeInTheDocument();
     });
 
-    it('enables the control and shows the real number once entitlements resolve', async () => {
-        mockIsLoading.mockReturnValue(true);
-        mockLimit.mockReturnValue(-1);
+    it('enables the control and shows the real number once the allowance resolves', async () => {
+        let resolveAllowance: (value: unknown) => void = () => {};
+        mockGetAllowance.mockImplementation(
+            () =>
+                new Promise((resolve) => {
+                    resolveAllowance = resolve;
+                })
+        );
 
-        const { rerender } = render(<PhotoSection {...defaultProps} />);
+        render(<PhotoSection {...defaultProps} />);
         await waitFor(() => expect(mockListMedia).toHaveBeenCalled());
         expect(screen.getByRole('button', { name: 'Agregar fotos a la galería' })).toBeDisabled();
+        expect(screen.getByText('Cargando tu límite de fotos…').closest('p')).toHaveAttribute(
+            'aria-busy',
+            'true'
+        );
 
-        // The plan resolves — same component instance, hook now answers real values.
-        mockIsLoading.mockReturnValue(false);
-        mockLimit.mockReturnValue(15);
-        rerender(<PhotoSection {...defaultProps} />);
+        // The allowance answers — same component instance.
+        resolveAllowance(await allowanceOk({ cap: 15 }));
 
         await waitFor(() => {
             expect(screen.getByText('Galería de fotos (máx. 15)')).toBeInTheDocument();
@@ -508,9 +632,14 @@ describe('HOS-1721 — a pre-trial owner can fill the photos of their DRAFT', ()
         expect(screen.queryByText(/Tu ficha ya está lista/i)).not.toBeInTheDocument();
     });
 
-    it('shows the trial cap and enables uploads on a DRAFT when the plan grants no cap', async () => {
-        mockLimit.mockReturnValue(0);
-        mockDraftLimit.mockReturnValue(15);
+    it('shows the pre-trial DRAFT cap the API answers and enables uploads (AC-9)', async () => {
+        mockGetAllowance.mockImplementation(() =>
+            allowanceOk({
+                cap: 15,
+                source: 'PRE_TRIAL_DRAFT',
+                breakdown: { contributions: [{ kind: 'PRE_TRIAL_DRAFT', value: 15, sources: 1 }] }
+            })
+        );
 
         render(
             <PhotoSection
@@ -522,16 +651,17 @@ describe('HOS-1721 — a pre-trial owner can fill the photos of their DRAFT', ()
         await waitFor(() => {
             expect(screen.getByText('Galería de fotos (máx. 15)')).toBeInTheDocument();
         });
+        expect(screen.getByTestId('photo-cap-breakdown')).toHaveTextContent(
+            '15 para tu borrador antes de la prueba = 15'
+        );
         expect(screen.queryByText('Cargando tu límite de fotos…')).not.toBeInTheDocument();
         expect(
             screen.getByRole('button', { name: 'Agregar fotos a la galería' })
         ).not.toBeDisabled();
-        expect(mockDraftLimit).toHaveBeenCalledWith('max_photos_per_accommodation');
     });
 
-    it('ignores the draft allowance on a listing that is not a DRAFT', async () => {
-        mockLimit.mockReturnValue(0);
-        mockDraftLimit.mockReturnValue(15);
+    it('keeps uploads closed when the API answers NONE for a listing that is not a DRAFT (AC-9)', async () => {
+        mockGetAllowance.mockImplementation(() => allowanceOk({ cap: 'none' }));
 
         render(
             <PhotoSection
@@ -539,7 +669,7 @@ describe('HOS-1721 — a pre-trial owner can fill the photos of their DRAFT', ()
                 publishContext={{ ...publishContext, isDraft: false }}
             />
         );
-        await waitFor(() => expect(mockListMedia).toHaveBeenCalled());
+        await waitFor(() => expect(screen.getByText(/necesitás un plan/)).toBeInTheDocument());
 
         expect(screen.queryByText('Galería de fotos (máx. 15)')).not.toBeInTheDocument();
         expect(screen.getByRole('button', { name: 'Agregar fotos a la galería' })).toBeDisabled();

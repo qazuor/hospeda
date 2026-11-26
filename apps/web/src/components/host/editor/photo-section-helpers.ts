@@ -9,7 +9,7 @@
  */
 
 import { DEFAULT_ENTITY_MAX_FILE_SIZE_MB, mbToBytes } from '@repo/media';
-import type { AccommodationMediaRow } from '@/lib/api/endpoints-protected';
+import type { ListingPhotoRow } from '@/lib/api/listing-photo-api';
 import type { AccommodationMediaItem } from '@/lib/api/types';
 import type { MediaAttribution } from '@/lib/media';
 import { resolveSafeExternalUrl } from '@/lib/safe-external-url';
@@ -48,84 +48,6 @@ export type PluralTranslate = (
  * used to be the only thing standing in the way.
  */
 const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic'] as const;
-
-// ----------------------------------------------------------------------------
-// Plan-derived gallery cap (HOS-1024)
-// ----------------------------------------------------------------------------
-
-/**
- * Client-safe wire-value literal for `LimitKey.MAX_PHOTOS_PER_ACCOMMODATION`
- * (`@repo/billing`). Kept as a plain string rather than importing the enum —
- * this module is reachable from `PhotoSection.client.tsx`, a client island,
- * and `@repo/billing`'s barrel is off-limits to any client-reachable module
- * (its runtime closure pulls in `@repo/logger`, which reads `process.env` at
- * module scope and throws during hydration — see
- * `test/static-guards/billing-barrel-client-isolation.test.ts`). Same
- * convention as `AnalyticsSection.client.tsx` / `PromotionList.client.tsx`.
- */
-export const MAX_PHOTOS_LIMIT_KEY = 'max_photos_per_accommodation';
-
-/**
- * Placeholder gallery cap used while the plan-derived limit is still in
- * flight (HOS-1024). Large enough that `galleryItems.length >= cap` can never
- * be true for a real gallery, so `usePhotoSection`'s `isGalleryFull` stays
- * `false` during the loading window instead of falsely reporting the gallery
- * as full. The actual gating during that window — disabling the upload
- * control — is `PhotoSection.client.tsx`'s job, not this value's.
- */
-export const GALLERY_CAP_PENDING_PLACEHOLDER = Number.MAX_SAFE_INTEGER;
-
-/**
- * Resolves the effective gallery cap shown to, and enforced against, the host
- * (HOS-1024).
- *
- * Before this, every host saw the SAME number regardless of plan —
- * `ENTITY_GALLERY_CAPS.accommodation` (50), the technical ceiling on the
- * entity, unrelated to what any given plan actually grants (Owner Básico
- * grants 15). That ceiling is untouched by this function and stays enforced
- * server-side as a hard floor above the plan cap (`upload-entity.ts`'s
- * `GALLERY_LIMIT_EXCEEDED` check) — this only decides what to show and what
- * to enforce CLIENT-side, one layer below that ceiling.
- *
- * @param params.planLimit - The raw value from
- *   `useMyEntitlements().limit(MAX_PHOTOS_LIMIT_KEY)`. `-1` is the hook's own
- *   "loading or no data" sentinel (see its JSDoc); no plan in the current
- *   catalogue grants `0` or a negative cap, so any non-positive value is
- *   treated the same way — not actually resolved yet.
- * @param params.isEntitlementsLoading - The hook's own `isLoading` flag.
- * @param params.draftLimit - HOS-1721: the cap a pre-trial owner's DRAFT
- *   accepts (`useMyEntitlements().draftLimit(MAX_PHOTOS_LIMIT_KEY)`), i.e.
- *   what the trial will grant at first publish. Pass it only for a DRAFT; it
- *   applies only when the plan grants no cap at all, which is exactly the
- *   pre-trial floor. Defaults to `0` (no draft allowance).
- * @returns `cap` — pass this to `usePhotoSection`'s `galleryCap` prop, and
- *   display it only when `isResolved` is `true`.
- *
- * @example
- * ```ts
- * const { limit, isLoading } = useMyEntitlements();
- * const { cap, isResolved } = resolveEffectiveGalleryCap({
- *   planLimit: limit(MAX_PHOTOS_LIMIT_KEY),
- *   isEntitlementsLoading: isLoading
- * });
- * ```
- */
-export function resolveEffectiveGalleryCap({
-    planLimit,
-    isEntitlementsLoading,
-    draftLimit = 0
-}: {
-    readonly planLimit: number;
-    readonly isEntitlementsLoading: boolean;
-    readonly draftLimit?: number;
-}): { readonly cap: number; readonly isResolved: boolean } {
-    const limit = planLimit > 0 ? planLimit : draftLimit;
-    const isResolved = !isEntitlementsLoading && limit > 0;
-    return {
-        cap: isResolved ? limit : GALLERY_CAP_PENDING_PLACEHOLDER,
-        isResolved
-    };
-}
 
 /**
  * Validate a single file's MIME type against the shared entity upload
@@ -168,11 +90,8 @@ export function validatePhotoFileSize(file: File, t: Translate): string | null {
 }
 
 /**
- * Full validation (type + size) for a file, in one call.
- *
- * Kept for callers that validate BEFORE any compression attempt (there are
- * none left in this editor as of HOS-332, but the pairing is a natural unit
- * worth keeping available and covered).
+ * Full validation (type + size) for a file, in one call (no caller left in this
+ * editor since HOS-332; kept as a covered unit).
  *
  * @param file - The file selected or dropped by the user
  * @param t - Active translator
@@ -278,7 +197,7 @@ export function moveArrayItem<T>(items: readonly T[], fromIndex: number, toIndex
 }
 
 /**
- * Build the `orderedIds` payload for `accommodationMediaApi.reorderMedia`.
+ * Build the `orderedIds` payload for the photo API's `reorderMedia`.
  *
  * The service validates the supplied set against ALL currently visible
  * rows — which includes the featured (portada) row, not just the gallery —
@@ -295,8 +214,8 @@ export function buildReorderPayload({
     return featuredId ? [featuredId, ...galleryIds] : [...galleryIds];
 }
 
-/** Map an `AccommodationMediaRow` (API) to the local display item shape. */
-export function mediaRowToItem(row: AccommodationMediaRow): AccommodationMediaItem {
+/** Map a `ListingPhotoRow` (API, any listing vertical) to the local display item shape. */
+export function mediaRowToItem(row: ListingPhotoRow): AccommodationMediaItem {
     return {
         id: row.id,
         url: row.url,
@@ -308,7 +227,10 @@ export function mediaRowToItem(row: AccommodationMediaRow): AccommodationMediaIt
         // time it opens, so a photo already credited must show its current
         // values instead of an empty form that would silently clear them.
         attribution: row.attribution ?? undefined,
-        isFeatured: row.isFeatured
+        isFeatured: row.isFeatured,
+        // HOS-2495: only an approved photo takes a public slot, so the over-cap
+        // marking needs to know which rows are still in moderation.
+        moderationState: row.moderationState
     };
 }
 
@@ -317,7 +239,7 @@ export function mediaRowToItem(row: AccommodationMediaRow): AccommodationMediaIt
  * echoed back by `reorderMedia`) into the featured slot and the ordered
  * gallery array.
  */
-export function splitMediaRows(rows: readonly AccommodationMediaRow[]): {
+export function splitMediaRows(rows: readonly ListingPhotoRow[]): {
     readonly featured: AccommodationMediaItem | null;
     readonly gallery: readonly AccommodationMediaItem[];
 } {

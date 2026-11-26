@@ -26,7 +26,6 @@
  */
 
 import { DEFAULT_ENTITY_MAX_FILE_SIZE_MB, mbToBytes } from '@repo/media';
-import { ENTITY_GALLERY_CAPS } from '@repo/schemas';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
@@ -88,10 +87,10 @@ vi.mock('@/lib/forms/leave-warning-registry', async (importOriginal) => ({
 // (BETA-98 regression: galleryAlt must interpolate {{index}} via params, not
 // via a pre-interpolated fallback string).
 const MOCK_TRANSLATIONS: Record<string, string> = {
-    'host.properties.editor.section.photosDescription_one':
-        'Subí hasta {{cap}} foto de tu propiedad para atraer más huéspedes',
-    'host.properties.editor.section.photosDescription_other':
-        'Subí hasta {{cap}} fotos de tu propiedad para atraer más huéspedes',
+    'account.listingPhotos.description.accommodation_one':
+        'Subí hasta {{cap}} foto de tu alojamiento.',
+    'account.listingPhotos.description.accommodation_other':
+        'Subí hasta {{cap}} fotos de tu alojamiento.',
     'host.properties.editor.photo.gallery': 'Galería de fotos (máx. {{cap}})',
     'host.properties.editor.photo.galleryAlt': 'Foto {{index}}',
     'host.properties.editor.photo.galleryCapReached_one':
@@ -140,6 +139,24 @@ vi.mock('@/lib/logger', () => ({
 }));
 
 vi.mock('@/lib/api/endpoints-protected', () => ({
+    listingPhotoAllowanceApi: {
+        // HOS-2495: the cap is the listing's photo allowance.
+        getAllowance: vi.fn(() =>
+            Promise.resolve({
+                ok: true,
+                data: {
+                    limitKey: 'max_photos_per_accommodation',
+                    status: 'LIMITED',
+                    cap: 50,
+                    source: 'EFFECTIVE_SET',
+                    used: 0,
+                    hiddenCount: 0,
+                    coverAllowed: true,
+                    breakdown: null
+                }
+            })
+        )
+    },
     accommodationMediaApi: {
         listMedia: mockListMedia,
         addMedia: mockAddMedia,
@@ -167,35 +184,12 @@ vi.mock('@/store/toast-store', () => ({
     addToast: mockAddToast
 }));
 
-// PARTIAL mock (HOS-724), same reason as `@/lib/i18n` above: the whole-module
-// form pinned the cap AND erased every other schema export, so the first
-// transitive import needing one (`ProductDomainEnum`, via `@repo/billing`)
-// failed the suite before a single test ran.
-vi.mock('@repo/schemas', async (importOriginal) => ({
-    ...(await importOriginal<typeof import('@repo/schemas')>()),
-    ENTITY_GALLERY_CAPS: { accommodation: 50 }
-}));
-
-// HOS-1024: the gallery cap this suite exercises is now the PLAN limit read
-// through `useMyEntitlements`, not `ENTITY_GALLERY_CAPS.accommodation`
-// directly. Fixed at 50 here — same numeric value the suite already used —
-// so every existing assertion below (which was written against "the cap is
-// 50") keeps meaning exactly what it said without being rewritten; the
-// plan-derived-vs-entity-ceiling distinction itself is covered by
-// `PhotoSection.plan-cap.test.tsx`.
-vi.mock('@/hooks/useMyEntitlements', () => ({
-    useMyEntitlements: () => ({
-        has: () => false,
-        limit: () => 50,
-        plan: null,
-        isLoading: false,
-        error: null
-    })
-}));
-
 // ---------------------------------------------------------------------------
 // Fixtures
 // ---------------------------------------------------------------------------
+
+/** The cap the mocked photo allowance answers for this suite (HOS-2495). */
+const GALLERY_CAP_UNDER_TEST = 50;
 
 const ACC_ID = 'acc-uuid-123';
 
@@ -242,7 +236,8 @@ const NEW_ROW = {
 /** Default props — minimal, self-contained. */
 const defaultProps: PhotoSectionProps = {
     locale: 'es',
-    accommodationId: ACC_ID
+    vertical: 'accommodation',
+    listingId: ACC_ID
 };
 
 // ---------------------------------------------------------------------------
@@ -324,9 +319,7 @@ describe('PhotoSection (SPEC-204 — self-contained)', () => {
             render(<PhotoSection {...defaultProps} />);
             await waitFor(() => {
                 expect(
-                    screen.getByText(
-                        'Subí hasta 50 fotos de tu propiedad para atraer más huéspedes'
-                    )
+                    screen.getByText('Subí hasta 50 fotos de tu alojamiento.')
                 ).toBeInTheDocument();
             });
         });
@@ -711,7 +704,7 @@ describe('PhotoSection (SPEC-204 — self-contained)', () => {
     // ── 5. Gallery cap enforcement ─────────────────────────────────────────
 
     describe('gallery cap enforcement', () => {
-        const GALLERY_CAP = ENTITY_GALLERY_CAPS.accommodation;
+        const GALLERY_CAP = GALLERY_CAP_UNDER_TEST;
 
         it('hides the add (+) button when gallery is at the cap', async () => {
             const fullGallery = Array.from({ length: GALLERY_CAP }, (_, i) => ({
@@ -896,7 +889,7 @@ describe('PhotoSection (SPEC-204 — self-contained)', () => {
         });
 
         it('rejects a selection that would exceed the remaining gallery slots, before uploading anything', async () => {
-            const cap = ENTITY_GALLERY_CAPS.accommodation;
+            const cap = GALLERY_CAP_UNDER_TEST;
             const nearFullGallery = Array.from({ length: cap - 2 }, (_, i) => ({
                 ...GALLERY_ROW_1,
                 id: `g-${i}`,
@@ -922,7 +915,7 @@ describe('PhotoSection (SPEC-204 — self-contained)', () => {
         });
 
         it('switches the native picker back to single-file mode when only one slot remains', async () => {
-            const cap = ENTITY_GALLERY_CAPS.accommodation;
+            const cap = GALLERY_CAP_UNDER_TEST;
             const nearFullGallery = Array.from({ length: cap - 1 }, (_, i) => ({
                 ...GALLERY_ROW_1,
                 id: `g-${i}`,

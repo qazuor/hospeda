@@ -221,6 +221,11 @@ export interface PhotoTileProps {
     readonly className?: string;
     /** Optional help anchor rendered as `data-help`. */
     readonly helpId?: HelpAnchor;
+    /**
+     * Id of a note that describes the photo to screen readers, set as the
+     * image's `aria-describedby` (HOS-2495: the over-cap badge).
+     */
+    readonly describedBy?: string;
 }
 
 /**
@@ -242,7 +247,8 @@ export function PhotoTile({
     dragStyle,
     sortableId,
     className,
-    helpId
+    helpId,
+    describedBy
 }: PhotoTileProps) {
     return (
         <div
@@ -261,6 +267,7 @@ export function PhotoTile({
                 <img
                     src={src}
                     alt={alt}
+                    aria-describedby={describedBy}
                     className={styles.image}
                     loading="lazy"
                 />

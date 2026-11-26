@@ -1,7 +1,8 @@
 /**
  * @file SortablePhotoGallery.client.tsx
- * @description Drag-and-drop reordering for the accommodation photo gallery
- * (HOS-2126), built on `@dnd-kit`.
+ * @description Drag-and-drop reordering for the shared listing photo gallery
+ * (HOS-2126; every listing vertical since HOS-2495), built on `@dnd-kit`. It
+ * also marks the tiles beyond the owner's photo cap (`overCapIds`).
  *
  * Drag-and-drop is ADDED on top of the move-up / move-down buttons, never a
  * replacement for them (owner decision, HOS-2126 — see the docblock in
@@ -79,6 +80,11 @@ export interface SortablePhotoGalleryProps {
         item: AccommodationMediaItem,
         body: PhotoMetadataUpdateBody
     ) => Promise<boolean>;
+    /**
+     * Tiles beyond the owner's photo cap (HOS-2495, `resolveOverCapIds`),
+     * keyed like the sortable id. They are marked, never removed or disabled.
+     */
+    readonly overCapIds?: ReadonlySet<string>;
 }
 
 /** Stable sortable id: the DB UUID, or the URL for an SSR placeholder without one. */
@@ -100,7 +106,8 @@ export function SortablePhotoGallery({
     onMoveUp,
     onMoveDown,
     onReorder,
-    onUpdateMetadata
+    onUpdateMetadata,
+    overCapIds
 }: SortablePhotoGalleryProps) {
     const { t } = createTranslations(locale);
     // Read once here, not per cell: one media-query listener for the grid.
@@ -202,6 +209,7 @@ export function SortablePhotoGallery({
                         onMoveUp={onMoveUp}
                         onMoveDown={onMoveDown}
                         onUpdateMetadata={onUpdateMetadata}
+                        isOverCap={overCapIds?.has(getSortableId(item)) ?? false}
                     />
                 ))}
             </SortableContext>
@@ -227,6 +235,7 @@ interface SortablePhotoCellProps {
         item: AccommodationMediaItem,
         body: PhotoMetadataUpdateBody
     ) => Promise<boolean>;
+    readonly isOverCap: boolean;
 }
 
 /** One sortable gallery cell: binds `useSortable` and forwards the handle props. */
