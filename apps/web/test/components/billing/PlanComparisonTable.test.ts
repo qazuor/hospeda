@@ -28,6 +28,10 @@ const helperSrc = readFileSync(
     resolve(__dirname, '../../../src/components/billing/plan-comparison-table.helpers.ts'),
     'utf8'
 );
+const headerActionsSrc = readFileSync(
+    resolve(__dirname, '../../../src/components/billing/PlanComparisonHeaderActions.astro'),
+    'utf8'
+);
 
 describe('PlanComparisonTable.astro — single source of truth (HOS-329)', () => {
     it('imports the row model instead of declaring it inline', () => {
@@ -137,9 +141,11 @@ describe('PlanComparisonTable.astro — rendering', () => {
     });
 
     it('renders a per-column CTA slot in each plan header, with no purchase island (HOS-1637)', () => {
-        expect(src).toContain('comparison-table__plan-cta');
-        expect(src).toContain('comparison-table__plan-link');
-        expect(src).not.toContain('PlanPurchaseButton');
+        expect(src).toContain('<PlanComparisonHeaderActions plan={plan}');
+        expect(src).toContain('ctaHref={isAccommodationAudience ? undefined : ctaHref}');
+        expect(headerActionsSrc).toContain('comparison-table__plan-cta');
+        expect(headerActionsSrc).toContain('comparison-table__plan-link');
+        expect(src + headerActionsSrc).not.toContain('PlanPurchaseButton');
     });
 });
 
@@ -172,6 +178,10 @@ describe('PlanComparisonTable.astro — accessibility', () => {
 });
 
 describe('PlanComparisonTable.astro — styling', () => {
+    it('keeps the comparison component within the 500-line budget', () => {
+        expect(src.trimEnd().split('\n').length).toBeLessThanOrEqual(500);
+    });
+
     it('uses CSS custom properties instead of hardcoded colors', () => {
         expect(src).toContain('var(--');
         expect(src).not.toContain('#000');
@@ -208,6 +218,17 @@ describe('PlanComparisonTable.astro — mobile layout (HOS-1753)', () => {
     const mediaIndex = src.lastIndexOf('@media (max-width: 768px)');
     const mobileBlock = src.slice(mediaIndex);
     const desktopBlock = src.slice(0, mediaIndex);
+
+    it('keeps the sticky fit-to-phone layout in the final mobile layer', () => {
+        expect(desktopBlock).not.toContain('@media (max-width: 768px)');
+        expect(mobileBlock).toMatch(
+            /\.comparison-table--fits-mobile thead \{[^}]*position: sticky;/
+        );
+        expect(mobileBlock).toMatch(
+            /\.comparison-table--fits-mobile thead \{[^}]*top: var\(--navbar-height, 80px\);/
+        );
+        expect(mobileBlock).toMatch(/\.comparison-table--fits-mobile tbody th \{[^}]*width: 100%;/);
+    });
 
     it('TEST:1753:2 — keeps the scroll hint visible only inside the mobile block', () => {
         // AC:1753:2 — the horizontal-scroll affordance stays `display: none`

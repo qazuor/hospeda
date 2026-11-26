@@ -14,7 +14,7 @@ import AboutPageJsonLd from '@/components/seo/AboutPageJsonLd.astro';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
-import { LocationIcon, TreeIcon, UsersIcon } from '@repo/icons';
+import { CheckIcon, EyeIcon, LocationIcon, TreeIcon, UsersIcon } from '@repo/icons';
 
 import { CACHE_TAG_SITE_CONFIG } from '@repo/cache-tags';
 import { applyCacheHeaders } from '@/lib/cache/response-cache';
@@ -177,11 +177,12 @@ const inLanguageMap: Record<SupportedLocale, string> = {
 					/>
 				</svg>
 				{[
-					{ titleKey: 'about.values.transparency.title', descKey: 'about.values.transparency.desc' },
-					{ titleKey: 'about.values.simplicity.title', descKey: 'about.values.simplicity.desc' },
-					{ titleKey: 'about.values.community.title', descKey: 'about.values.community.desc' },
+					{ Icon: EyeIcon, titleKey: 'about.values.transparency.title', descKey: 'about.values.transparency.desc' },
+					{ Icon: CheckIcon, titleKey: 'about.values.simplicity.title', descKey: 'about.values.simplicity.desc' },
+					{ Icon: UsersIcon, titleKey: 'about.values.community.title', descKey: 'about.values.community.desc' },
 				].map((value, i) => (
 					<div class="about-values__card" data-reveal="up" data-stagger-index={Math.min(i, 6)} data-stagger-step="100">
+						<value.Icon size="md" aria-hidden="true" />
 						<h3 class="about-values__card-title">{t(value.titleKey)}</h3>
 						<p class="about-values__card-desc">{t(value.descKey)}</p>
 					</div>
@@ -238,6 +239,7 @@ const inLanguageMap: Record<SupportedLocale, string> = {
 				</span>
 			</h2>
 			<p class="about-region__text">
+				{t('about.region.teamOrigin')}{' '}
 				{t('about.region.text')}
 			</p>
 		</div>
@@ -569,12 +571,12 @@ const inLanguageMap: Record<SupportedLocale, string> = {
 
 	.about-region__river {
 		position: absolute;
-		bottom: 18%;
+		bottom: 0;
 		left: -3%;
 		width: 106%;
 		height: 80px;
 		color: var(--brand-primary);
-		opacity: 0.4;
+		opacity: 0.15;
 		pointer-events: none;
 	}
 
@@ -584,8 +586,8 @@ const inLanguageMap: Record<SupportedLocale, string> = {
 		background-color: var(--brand-primary-a25);
 	}
 	.about-region__bubble--1 {
-		top: 25%;
-		right: 12%;
+		top: 12%;
+		right: 5%;
 		width: 14px;
 		height: 14px;
 	}

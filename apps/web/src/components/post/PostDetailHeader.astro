@@ -45,6 +45,7 @@ interface Props {
 	readonly updatedAt?: string | Date | null;
 	readonly readingTimeMinutes: number;
 	readonly bookmarkCount?: number;
+	readonly destination?: { readonly name: string; readonly href: string };
 	readonly postId: string;
 	readonly locale: SupportedLocale;
 	readonly author?: AuthorByline | null;
@@ -64,6 +65,7 @@ const {
 	updatedAt,
 	readingTimeMinutes,
 	bookmarkCount,
+	destination,
 	postId,
 	locale,
 	author = null,
@@ -169,7 +171,8 @@ const hasEngagement = likes > 0 || comments > 0 || shares > 0;
 					</span>
 				)}
 
-				{bookmarkCount !== undefined && (
+				{destination && <a href={destination.href} class="post-header__destination">{destination.name}</a>}
+				{bookmarkCount !== undefined && bookmarkCount > 0 && (
 					<span
 						class="post-header__bookmark-count"
 						aria-label={tPlural('blog.detail.bookmark_count', bookmarkCount)}
@@ -217,6 +220,12 @@ const hasEngagement = likes > 0 || comments > 0 || shares > 0;
 </header>
 
 <style>
+	.post-header__destination {
+		border: 1px solid var(--border);
+		border-radius: var(--radius-pill);
+		padding: var(--space-1) var(--space-3);
+		color: var(--brand-primary-link);
+	}
 	/* Vertical stack: back-button row on top, then the body row. */
 	.post-header {
 		display: flex;

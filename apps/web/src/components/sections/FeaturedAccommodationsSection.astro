@@ -156,6 +156,11 @@ const seeAllHref = buildUrl({ locale, path: '/alojamientos/' });
 </section>
 
 <style>
+    @media (max-width: 640px) {
+        .accommodations__grid > :nth-child(n + 5) {
+            display: none;
+        }
+    }
   .accommodations {
     background-color: var(--core-background);
   }

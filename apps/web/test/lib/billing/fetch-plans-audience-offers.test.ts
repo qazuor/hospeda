@@ -69,7 +69,7 @@ afterEach(() => vi.restoreAllMocks());
 describe('fetchAudienceOffers', () => {
     it('reads each vertical once, including tourist (AC:B13a:11)', async () => {
         stubCatalogs();
-        const { startingPrices } = await fetchAudienceOffers();
+        const { startingPrices, touristPlans } = await fetchAudienceOffers();
         const calls = (global.fetch as unknown as { mock: { calls: unknown[][] } }).mock.calls;
         expect(calls).toHaveLength(4);
         expect(calls.map(([url]) => String(url)).sort()).toEqual(
@@ -79,30 +79,46 @@ describe('fetchAudienceOffers', () => {
         );
         expect(startingPrices.host).toEqual({ kind: 'from', monthlyPriceArs: 1800000 });
         expect(startingPrices.tourist).toEqual({ kind: 'from', monthlyPriceArs: 150000 });
+        expect(touristPlans).toMatchObject([
+            { slug: 'tourist', vertical: 'tourist', monthlyPriceArs: 150000 }
+        ]);
     });
 
     it('keeps other audiences when one vertical fails', async () => {
         stubCatalogs({ failedVertical: 'venue' });
-        const { startingPrices } = await fetchAudienceOffers();
+        const { startingPrices, touristPlans } = await fetchAudienceOffers();
         expect(startingPrices.venue).toBeNull();
         expect(startingPrices.experience).toEqual({ kind: 'from', monthlyPriceArs: 1200000 });
+        expect(touristPlans.map(({ slug }) => slug)).toEqual(['tourist']);
+    });
+
+    it('returns no tourist plans when only the tourist vertical fails', async () => {
+        stubCatalogs({ failedVertical: 'tourist' });
+
+        const { startingPrices, touristPlans } = await fetchAudienceOffers();
+
+        expect(startingPrices.tourist).toBeNull();
+        expect(startingPrices.host).toEqual({ kind: 'from', monthlyPriceArs: 1800000 });
+        expect(touristPlans).toEqual([]);
     });
 
     it('derives price and trial from the same vertical response', async () => {
         stubCatalogs();
-        const { startingPrices, trialDays } = await fetchAudienceOffers();
+        const { startingPrices, trialDays, touristPlans } = await fetchAudienceOffers();
         expect(startingPrices.host).toEqual({ kind: 'from', monthlyPriceArs: 1800000 });
         expect(trialDays.host).toBe(14);
         expect(startingPrices.tourist).toEqual({ kind: 'from', monthlyPriceArs: 150000 });
         expect(trialDays.tourist).toBeNull();
         expect(trialDays.venue).toBe(7);
+        expect(touristPlans.map(({ slug }) => slug)).toEqual(['tourist']);
     });
 
     it('degrades every audience when the network throws', async () => {
         global.fetch = vi.fn().mockRejectedValue(new Error('offline'));
         await expect(fetchAudienceOffers()).resolves.toEqual({
             startingPrices: { host: null, tourist: null, venue: null, experience: null },
-            trialDays: { host: null, tourist: null, venue: null, experience: null }
+            trialDays: { host: null, tourist: null, venue: null, experience: null },
+            touristPlans: []
         });
     });
 });

@@ -192,13 +192,7 @@ const [heroPlaya, heroAtardecer, heroIsla] = await Promise.all(
 				<span class="social-proof__star" aria-hidden="true">★</span>
 				<span class="social-proof__score">{socialProof.rating}</span>
 				<span class="social-proof__separator">·</span>
-				<span class="social-proof__subtext">{t('home.hero.socialProof.subtext', 'viajeros que ya encontraron su lugar')}</span>
-
-				<!-- Decorative hand-drawn arrow pointing down toward search bar -->
-				<svg class="social-proof__deco-arrow" width="65" height="30" viewBox="0 0 65 30" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-					<path d="M3 4 C15 2, 35 0, 48 6 C56 10, 58 16, 55 24" stroke="var(--brand-accent)" stroke-width="2" stroke-linecap="round" fill="none" stroke-dasharray="4 3"/>
-					<path d="M59 21 L55 30 L50 21" stroke="var(--brand-accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-				</svg>
+				<span class="social-proof__subtext">{t('home.hero.socialProof.subtext')}</span>
 			</div>
 			)}
 
@@ -412,17 +406,7 @@ const [heroPlaya, heroAtardecer, heroIsla] = await Promise.all(
 	.social-proof__star { color: var(--rating-star); font-size: 14px; }
 	.social-proof__score { font-size: 13px; font-weight: 700; color: var(--brand-primary-link); }
 	.social-proof__separator { font-size: 13px; color: var(--core-muted-foreground); }
-	.social-proof__subtext { font-size: 13px; color: var(--core-muted-foreground); }
-
-	/* Decorative hand-drawn arrow pointing from social proof toward search bar */
-	.social-proof__deco-arrow {
-		flex-shrink: 0;
-		opacity: 0.75;
-		pointer-events: none;
-		margin-left: -4px;
-		position: relative;
-		top: 11px;
-	}
+	.social-proof__subtext { font-size: 0.875rem; color: var(--core-muted-foreground); }
 
 	/* Right column: blob image */
 	.hero__visual {
@@ -597,7 +581,6 @@ const [heroPlaya, heroAtardecer, heroIsla] = await Promise.all(
 		.hero__title { line-height: 1; }
 		.hero__description { max-width: min(600px, 100%); }
 		.social-proof { align-items: center; margin-left: 0; }
-		.social-proof__deco-arrow { display: none; }
 		.hero__cta-wrapper { justify-content: center; }
 		.hero__visual { margin: 0 auto; zoom: 0.62; }
 		/* The -80px pull-up only works beside a side column; stacked, it

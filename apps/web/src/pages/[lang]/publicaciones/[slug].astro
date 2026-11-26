@@ -414,6 +414,7 @@ const speakableSelectors: ReadonlyArray<string> = [
 	<Fragment slot="page-header">
 		<PostDetailHeader
 			title={title}
+			destination={relatedEntity?.type === 'destination' ? { name: relatedEntity.name, href: buildUrl({ locale, path: `destinos/${relatedEntity.slug}` }) } : undefined}
 			summary={summary}
 			category={category}
 			categoryColor={{ bg: categoryColors.bg, text: categoryColors.text }}

@@ -76,7 +76,7 @@ const officeLat = -32.4847;
 const officeLng = -58.2329;
 
 const trustSignals = [
-	t('contact.trust.responseTime', 'Respondemos en menos de 24 hs'),
+	t('contact.hours.subtitle'),
 	t('contact.trust.secure', 'Tus datos están protegidos'),
 	t('contact.trust.humans', 'Te atiende una persona, no un bot')
 ];
@@ -694,7 +694,7 @@ const contactPageJsonLd = {
 
 	.contact-channel__description {
 		font-family: var(--font-sans);
-		font-size: var(--text-body-sm);
+		font-size: max(0.875rem, var(--text-body-sm));
 		color: var(--core-muted-foreground);
 		margin: 0;
 		line-height: 1.5;
@@ -807,7 +807,7 @@ const contactPageJsonLd = {
 		align-items: baseline;
 		gap: var(--space-3, 0.75rem);
 		font-family: var(--font-sans);
-		font-size: var(--text-body-sm);
+		font-size: max(0.875rem, var(--text-body-sm));
 	}
 
 	.contact-visit-card__row dt {

@@ -573,3 +573,12 @@
         padding-bottom: env(safe-area-inset-bottom, 0);
     }
 }
+.popularHeading {
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--text-body-sm);
+    font-weight: 600;
+}
+
+.destinationOptions :global(.combobox__option) {
+    min-height: 48px;
+}

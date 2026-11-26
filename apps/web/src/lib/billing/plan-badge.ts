@@ -12,6 +12,18 @@ export function touristBadgeCatalog({ result }: { readonly result: FetchPlansRes
     };
 }
 
+/** Inherited tourist coverage follows the highest sellable tier in catalog order. */
+export function selectInheritedTouristPlan<Plan extends Pick<PublicPlanData, 'sortOrder'>>({
+    sellablePlans
+}: {
+    readonly sellablePlans: readonly Plan[];
+}): Plan | undefined {
+    return sellablePlans.reduce<Plan | undefined>(
+        (best, plan) => (!best || plan.sortOrder > best.sortOrder ? plan : best),
+        undefined
+    );
+}
+
 interface BadgePlan {
     readonly name: string;
     readonly entitlements: readonly string[];

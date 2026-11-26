@@ -5,6 +5,7 @@
         "institution": "Institución"
     },
     "detail": {
+        "newTab": "(se abre en otra pestaña)",
         "metaTitle": "{name} — Aliado de Hospeda",
         "metaDescription": "Conocé a {name}, aliado de Hospeda en el Litoral entrerriano.",
         "contactHeading": "Contacto",

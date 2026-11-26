@@ -312,6 +312,12 @@ describe('catalog row guards', () => {
         expect(row('branding').status).toBe('upcoming');
     });
 
+    it('advertises the live price alerts row', () => {
+        const alertRow = row('alertsOffers');
+
+        expect(alertRow.status).toBe('available');
+    });
+
     // HOS-1416: the two REAL-catalog baseline tests ("shows every entitlement
     // row as included for at least one plan of its own audience" and "matches
     // the real catalog for every row that used to be hardcoded all-yes") were
