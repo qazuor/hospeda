@@ -35,6 +35,7 @@ import type { JSX } from 'react';
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { LanguageSwitcher } from '@/components/shared/preferences/LanguageSwitcher.client';
 import { ThemeControl } from '@/components/shared/preferences/ThemeControl.client';
+import { PlanBadge } from '@/components/shared/ui/PlanBadge';
 import { useAccountPermissions } from '@/hooks/use-account-permissions';
 import { buildAdminPanelItem, STAFF_DISCRIMINATOR_PERMISSION } from '@/lib/admin-panel-link';
 import {
@@ -49,10 +50,12 @@ import { getInitials } from '@/lib/avatar-utils';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { ADMINISTRATION_LABEL_KEY, getCuratedAccountNav } from '@/lib/nav-avatar';
+import { getCuratedAccountNav } from '@/lib/nav-avatar';
 import { clearThemeSyncMarker } from '@/lib/theme';
 import { buildUrl } from '@/lib/urls';
 import styles from './UserMenu.module.css';
+import { UserMenuAdminLinks, UserMenuQuickLinks } from './UserMenuQuickLinks';
+import { useTouristMenuPlan } from './use-tourist-menu-plan';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -192,6 +195,7 @@ export function UserMenu({
     const { user, permissions, roles, ownsHostTradeListing, ownsPartner } = useAccountPermissions({
         initialUser
     });
+    const plan = useTouristMenuPlan({ account: user?.id, open: isOpen });
 
     // ── Umami identify ──────────────────────────────────────────────────
     // Fires whenever `user` resolves to a known, authenticated id (from the
@@ -236,7 +240,6 @@ export function UserMenu({
     // Sorted so the property value is stable across identify calls and
     // does not look like a property change on every page load.
     const rolesKey = [...roles].sort().join(',');
-    // biome-ignore lint/correctness/useExhaustiveDependencies: `rolesKey` is the stable, order-independent projection of `roles`; depending on the array itself would re-fire on every render since it is a new reference each time.
     useEffect(() => {
         if (!user) {
             if (permissions !== null) markVisitorAnonymous();
@@ -404,69 +407,28 @@ export function UserMenu({
                 >
                     {/* Identity header; quick links follow without a duplicate account link. */}
                     <div className={styles.menuHeader}>
-                        <p className={styles.menuHeaderName}>{displayName}</p>
+                        <p className={styles.menuHeaderName}>
+                            {displayName} <PlanBadge name={plan?.paid ? plan.name : null} />
+                        </p>
                         {showEmailLine && <p className={styles.menuHeaderEmail}>{user.email}</p>}
                     </div>
 
-                    <ul className={styles.menuList}>
-                        {avatarNav.quickItems.map((item) => (
-                            <li key={item.id}>
-                                <a
-                                    href={buildUrl({ locale, path: item.href })}
-                                    role="menuitem"
-                                    onClick={() => setIsOpen(false)}
-                                    className={styles.menuLink}
-                                >
-                                    <item.icon
-                                        size={18}
-                                        weight="regular"
-                                        aria-hidden="true"
-                                    />
-                                    <span>{t(item.i18nKey)}</span>
-                                </a>
-                            </li>
-                        ))}
-                    </ul>
+                    <UserMenuQuickLinks
+                        items={avatarNav.quickItems}
+                        locale={locale}
+                        plan={plan}
+                        t={t}
+                        onNavigate={() => setIsOpen(false)}
+                    />
 
                     {/* «Administración» (HOS-2551): one shortcut per business vertical */}
-                    {avatarNav.adminItems.length > 0 && (
-                        // biome-ignore lint/a11y/useSemanticElements: a <fieldset> is not allowed inside role="menu"; WAI-ARIA's grouped menu pattern uses role="group" with aria-labelledby.
-                        <div
-                            role="group"
-                            className={styles.adminSection}
-                            aria-labelledby={adminHeadingId}
-                        >
-                            <p
-                                id={adminHeadingId}
-                                className={styles.sectionTitle}
-                            >
-                                {t(ADMINISTRATION_LABEL_KEY)}
-                            </p>
-                            <ul className={styles.menuList}>
-                                {avatarNav.adminItems.map((item) => {
-                                    const Icon = item.icon;
-                                    return (
-                                        <li key={item.id}>
-                                            <a
-                                                href={buildUrl({ locale, path: item.href })}
-                                                role="menuitem"
-                                                onClick={() => setIsOpen(false)}
-                                                className={styles.menuLink}
-                                                data-admin-shortcut={item.id}
-                                            >
-                                                <Icon
-                                                    size={18}
-                                                    weight="regular"
-                                                    aria-hidden="true"
-                                                />
-                                                <span>{t(item.i18nKey)}</span>
-                                            </a>
-                                        </li>
-                                    );
-                                })}
-                            </ul>
-                        </div>
-                    )}
+                    <UserMenuAdminLinks
+                        items={avatarNav.adminItems}
+                        headingId={adminHeadingId}
+                        locale={locale}
+                        t={t}
+                        onNavigate={() => setIsOpen(false)}
+                    />
 
                     <hr className={styles.divider} />
 

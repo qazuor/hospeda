@@ -195,6 +195,7 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'common.auth',
     'common.back',
     'common.cancel',
+    'common.card',
     'common.close',
     'common.confirmations',
     'common.enums',

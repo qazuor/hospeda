@@ -54,6 +54,9 @@ vi.mock('@/lib/auth-cache', () => ({
 const mockAlertsList = vi.fn();
 const mockGetEffectiveSet = vi.fn();
 const mockFetchPublicPlans = vi.fn();
+vi.mock('@/components/promotions/use-promotion-policy', () => ({
+    useVipPlanName: () => ({ vipPlanName: 'Explorer' })
+}));
 vi.mock('@/components/account/ui/read-tourist-vip-plan', () => ({
     readTouristVipPlan: (params: unknown) => mockFetchPublicPlans(params)
 }));
@@ -136,6 +139,7 @@ describe('TEST:B13a:25 PriceAlertButton effective-set gate', () => {
 
         const button = await screen.findByRole('button', { name: /avisame si baja el precio/i });
         await waitFor(() => expect(button).not.toBeDisabled());
+        expect(screen.getByText('Explorer')).toBeVisible();
         expect(mockAlertsList).toHaveBeenCalledWith({});
         expect(screen.queryByRole('link')).not.toBeInTheDocument();
     });
@@ -157,10 +161,10 @@ describe('TEST:B13a:25 PriceAlertButton effective-set gate', () => {
         render(<PriceAlertButton {...PROPS} />);
 
         const upsell = await screen.findByRole('button', {
-            name: /avisame si baja el precio.*solo para turistas vip/i
+            name: /avisame si baja el precio.*explorer/i
         });
         expect(upsell).toHaveAttribute('aria-haspopup', 'dialog');
-        expect(upsell).toHaveTextContent('VIP');
+        expect(upsell).toHaveTextContent('Explorer');
         expect(upsell.querySelector('svg[aria-hidden="true"]')).toBeInTheDocument();
     });
     it('locks without capability and disables at the exact quota', async () => {
@@ -172,10 +176,10 @@ describe('TEST:B13a:25 PriceAlertButton effective-set gate', () => {
         mockAlertsList.mockResolvedValue({ ok: true, data: { items: [] } });
         const { unmount } = render(<PriceAlertButton {...PROPS} />);
         const upsell = await screen.findByRole('button', {
-            name: /avisame si baja el precio.*solo para turistas vip/i
+            name: /avisame si baja el precio.*explorer/i
         });
         expect(upsell).toHaveAttribute('aria-haspopup', 'dialog');
-        expect(upsell).toHaveTextContent('VIP');
+        expect(upsell).toHaveTextContent('Explorer');
         expect(upsell.querySelector('svg[aria-hidden="true"]')).toBeInTheDocument();
         unmount();
         mockGetEffectiveSet.mockResolvedValue({
@@ -216,7 +220,7 @@ describe('TEST:B13a:25 PriceAlertButton effective-set gate', () => {
         render(<PriceAlertButton {...PROPS} />);
         expect(
             await screen.findByRole('button', {
-                name: /avisame si baja el precio.*solo para turistas vip/i
+                name: /avisame si baja el precio.*explorer/i
             })
         ).toBeInTheDocument();
     });
@@ -227,7 +231,7 @@ describe('TEST:B13a:25 PriceAlertButton effective-set gate', () => {
         const href = window.location.href;
         render(<PriceAlertButton {...PROPS} />);
         const trigger = await screen.findByRole('button', {
-            name: /avisame si baja el precio.*solo para turistas vip/i
+            name: /avisame si baja el precio.*explorer/i
         });
         expect(mockFetchPublicPlans).not.toHaveBeenCalled();
         expect(screen.queryByRole('dialog')).not.toBeInTheDocument();

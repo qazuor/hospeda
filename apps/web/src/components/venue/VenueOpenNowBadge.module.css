@@ -24,10 +24,8 @@
 }
 
 .closed {
-    /* Darken the red fill (mix toward black, keeping the token so dark mode
-     * still adapts) so white text clears 4.5:1 in both themes — the raw
-     * `--destructive` fill only reaches ~4.2:1 against white. */
-    background-color: color-mix(in oklab, var(--destructive) 85%, black);
+    background-color: var(--core-card-lm03);
+    color: var(--core-foreground);
 }
 
 /* HOS-2252/2257 "opens later today" state. Solid amber, darkened toward black

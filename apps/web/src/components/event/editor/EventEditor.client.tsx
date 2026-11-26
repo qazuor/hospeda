@@ -108,6 +108,7 @@ export function EventEditor({
         buildEventEditFormData({ detail: initialData })
     );
     const [visibility, setVisibility] = useState<EditorContentVisibility>(initialData.visibility);
+    const [hasFeaturedImage, setHasFeaturedImage] = useState(false);
     /*
      * Mirrors `visibility`: kept as local state, resynced from a successful
      * approve action, so the publication button re-derives its label/action
@@ -362,6 +363,7 @@ export function EventEditor({
                 <ContentMediaSection
                     locale={locale}
                     entity="event"
+                    onFeaturedImageChange={setHasFeaturedImage}
                     entityId={initialData.id}
                     disabled={isEditLocked}
                 />
@@ -390,6 +392,10 @@ export function EventEditor({
                     canPublish={canPublish}
                     canDelete={canDelete}
                     hasUnsavedChanges={isDirty || startDateCleared}
+                    // Web editor publish prerequisite only; the shared section still allows unpublishing.
+                    publicationBlock={
+                        hasFeaturedImage ? undefined : t('common.card.eventCoverRequired')
+                    }
                     onVisibilityChange={setVisibility}
                     onModerationStateChange={setModerationState}
                 />

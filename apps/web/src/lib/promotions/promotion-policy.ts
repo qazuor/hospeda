@@ -6,11 +6,8 @@
  * @module lib/promotions/promotion-policy
  */
 import { EntitlementKeyEnum, LimitKeyEnum } from '@repo/schemas';
-import {
-    type FetchPlansResult,
-    FREE_TIER_CARD_SLUG,
-    planNamesWithEntitlement
-} from '@/lib/billing/fetch-plans';
+import { type FetchPlansResult, FREE_TIER_CARD_SLUG } from '@/lib/billing/fetch-plans';
+import { resolvePlanBadge } from '@/lib/billing/plan-badge';
 
 /** What the promotion texts need from the catalog; `null` when unreadable. */
 export interface PromotionPolicy {
@@ -28,12 +25,12 @@ export function readPromotionPolicy(input: { readonly result: FetchPlansResult }
     if (!input.result.ok) return { freeQuota: null, vipPlanName: null };
     const floor = input.result.plans.find((plan) => plan.slug === FREE_TIER_CARD_SLUG.tourist);
     const freeQuota = floor?.limits[LimitKeyEnum.MAX_FREE_VISIBLE_PROMOTIONS];
-    const [vipPlanName] = planNamesWithEntitlement({
+    const vipPlanName = resolvePlanBadge({
         result: input.result,
         entitlement: EntitlementKeyEnum.VIP_PROMOTIONS_ACCESS
     });
     return {
         freeQuota: typeof freeQuota === 'number' ? freeQuota : null,
-        vipPlanName: vipPlanName ?? null
+        vipPlanName
     };
 }

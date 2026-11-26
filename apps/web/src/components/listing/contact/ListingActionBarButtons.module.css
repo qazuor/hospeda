@@ -8,7 +8,7 @@
 .row {
     display: flex;
     flex-wrap: nowrap;
-    align-items: center;
+    align-items: flex-start;
     gap: var(--space-1);
     flex: none;
 }
@@ -66,6 +66,17 @@
 .island {
     display: inline-flex;
     flex: none;
+}
+
+/* The quotas sit below the icons without spending any of the 360px width budget. */
+.island[data-action="favorite"],
+.island[data-action="compare"] {
+    inline-size: 44px;
+}
+
+.island[data-action="favorite"] > *,
+.island[data-action="compare"] > * {
+    min-inline-size: 0;
 }
 
 /* The reused islands are resized to the bar's 44px round target and take the

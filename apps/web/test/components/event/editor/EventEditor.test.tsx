@@ -72,7 +72,7 @@ vi.mock('../../../../src/lib/api/endpoints-protected', () => ({
     }
 }));
 
-import { eventEditApi } from '../../../../src/lib/api/endpoints-protected';
+import { contentMediaApi, eventEditApi } from '../../../../src/lib/api/endpoints-protected';
 import { addToast } from '../../../../src/store/toast-store';
 
 const mockUpdate = vi.mocked(eventEditApi.update);
@@ -209,6 +209,12 @@ describe('EventEditor — saving', () => {
 
 describe('EventEditor — capability-gated controls', () => {
     beforeEach(() => {
+        vi.mocked(contentMediaApi.listMedia).mockResolvedValue({
+            ok: true,
+            data: {
+                media: [{ id: 'cover', url: 'https://example.com/cover.jpg', isFeatured: true }]
+            }
+        });
         mockUpdate.mockReset();
         mockSoftDelete.mockReset();
         mockSetPublishState.mockReset();
@@ -236,6 +242,7 @@ describe('EventEditor — capability-gated controls', () => {
         mockModerate.mockResolvedValueOnce({ ok: true, data: {} });
         renderEditor({ canPublish: true });
 
+        await waitFor(() => expect(screen.getByTestId('content-publish-toggle')).toBeEnabled());
         expect(screen.getByTestId('content-publish-toggle')).toHaveTextContent('Publicar');
 
         fireEvent.click(screen.getByTestId('content-publish-toggle'));
@@ -248,10 +255,10 @@ describe('EventEditor — capability-gated controls', () => {
         );
     });
 
-    it('unpublishes an already-live (approved + public) event', async () => {
+    it('can unpublish an already-live event even when the web editor has no cover', async () => {
         mockSetPublishState.mockResolvedValueOnce({ ok: true, data: {} });
         renderEditor({
-            event: { moderationState: 'APPROVED', visibility: 'PUBLIC' },
+            event: { moderationState: 'APPROVED', visibility: 'PUBLIC', media: [] },
             canPublish: true
         });
 
@@ -273,6 +280,7 @@ describe('EventEditor — capability-gated controls', () => {
             canPublish: true
         });
 
+        await waitFor(() => expect(screen.getByTestId('content-publish-toggle')).toBeEnabled());
         fireEvent.click(screen.getByTestId('content-publish-toggle'));
 
         await waitFor(() =>
@@ -284,8 +292,23 @@ describe('EventEditor — capability-gated controls', () => {
         expect(mockModerate).not.toHaveBeenCalled();
     });
 
-    it('blocks publishing while the form holds unsaved edits', () => {
+    it('blocks approval when the event has no cover', async () => {
+        vi.mocked(contentMediaApi.listMedia).mockResolvedValueOnce({
+            ok: true,
+            data: { media: [] }
+        });
         renderEditor({ canPublish: true });
+
+        await waitFor(() => expect(contentMediaApi.listMedia).toHaveBeenCalled());
+        fireEvent.click(screen.getByTestId('content-publish-toggle'));
+
+        expect(screen.getByTestId('content-publish-toggle')).toBeDisabled();
+        expect(mockModerate).not.toHaveBeenCalled();
+    });
+
+    it('blocks publishing while the form holds unsaved edits', async () => {
+        renderEditor({ canPublish: true });
+        await waitFor(() => expect(screen.getByTestId('content-publish-toggle')).toBeEnabled());
 
         fireEvent.change(screen.getByLabelText('Nombre *'), { target: { value: 'Otra fiesta' } });
 

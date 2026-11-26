@@ -9,6 +9,7 @@
  */
 
 import { type FetchPlansResult, fetchPublicPlans, planNamesWithEntitlement } from './fetch-plans';
+import { resolvePlanBadge } from './plan-badge';
 
 /** How long a successful catalog read is reused. A plan change shows up within this window. */
 export const CATALOG_TTL_MS = 60_000;
@@ -43,6 +44,11 @@ export async function getGatePlanNames({
 }: {
     readonly entitlement: string;
 }): Promise<readonly string[]> {
+    return planNamesWithEntitlement({ result: await readTouristCatalog(), entitlement });
+}
+
+/** Read the shared public tourist catalog without forwarding session information. */
+export async function readTouristCatalog(): Promise<FetchPlansResult> {
     if (!cached || Date.now() >= cached.expiresAt) {
         const pending = fetchPublicPlans({ vertical: 'tourist' });
         cached = { expiresAt: Date.now() + CATALOG_TTL_MS, pending };
@@ -57,5 +63,14 @@ export async function getGatePlanNames({
             failed: true
         };
     }
-    return planNamesWithEntitlement({ result, entitlement });
+    return result;
+}
+
+/** Resolve a paid-only badge against the shared public tourist catalog. */
+export async function getPlanBadgeName({
+    entitlement
+}: {
+    readonly entitlement: string;
+}): Promise<string | null> {
+    return resolvePlanBadge({ result: await readTouristCatalog(), entitlement });
 }

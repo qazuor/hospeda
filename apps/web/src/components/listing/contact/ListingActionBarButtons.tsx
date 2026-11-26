@@ -284,6 +284,7 @@ export function ListingActionBarButtons({
                     entityType={FAVORITE_ENTITY_TYPES[vertical]}
                     locale={locale}
                     origin="bar"
+                    showUsage
                     labels={{
                         add: t('accommodations.detail.listingContact.bar.actions.favoriteAdd'),
                         remove: t('accommodations.detail.listingContact.bar.actions.favoriteRemove')

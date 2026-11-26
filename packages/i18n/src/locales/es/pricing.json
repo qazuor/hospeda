@@ -39,7 +39,10 @@
     "baseHighlightText": "Todo lo esencial para arrancar, sin compromiso.",
     "group": {
         "tourist": "Todas las funciones de turista",
-        "touristVip": "Incluye todos los beneficios de Turista VIP",
+        "touristVip": "Incluye todos los beneficios para viajeros",
+        "touristPlan": "Incluye todos los beneficios de {{plan}}",
+        "inheritedTravelerHeading": "Además, tu plan incluye {{plan}}",
+        "inheritedTravelerBody": "Accedé a los beneficios para viajeros de tu plan sin pagar una segunda suscripción.",
         "ai": "Suite de IA: textos, traducción, importación y consultas"
     },
     "features": {

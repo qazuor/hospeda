@@ -20,8 +20,8 @@ import type { PlanTableRow } from '@/lib/features-content';
 interface Props {
 	/** Label for the left-most "feature name" column header. */
 	readonly headerLabel: string;
-	/** The three plan column labels, in order (index 1 = "popular"). */
-	readonly planLabels: readonly [string, string, string];
+	/** Plan column labels in editorial row order; null hides the associated column. */
+	readonly planLabels: readonly [string, string | null, string | null];
 	/** Table rows, each with a label and one cell per plan. */
 	readonly rows: readonly PlanTableRow[];
 	/** Optional footnote rendered below the table. */
@@ -38,7 +38,7 @@ const { headerLabel, planLabels, rows, noteLabel, t } = Astro.props;
 		<thead>
 			<tr>
 				<th class="fx-table__head">{headerLabel}</th>
-				{planLabels.map((label, i) => (
+				{planLabels.map((label, i) => label && (
 					<th class:list={['fx-table__plan', { 'fx-table__plan--popular': i === 1 }]}>
 						<span class="fx-table__pname">{label}</span>
 						{i === 1 && <span class="fx-table__badge">{t('features.popularBadge')}</span>}
@@ -53,7 +53,7 @@ const { headerLabel, planLabels, rows, noteLabel, t } = Astro.props;
 						{t(row.labelKey)}
 						{row.noteKey && <small>{t(row.noteKey)}</small>}
 					</td>
-					{row.cells.map((cell) => (
+					{row.cells.map((cell, i) => planLabels[i] && (
 						<td class="fx-table__cell">
 							{cell.kind === 'yes' && (
 								<span class="fx-table__yes" aria-label="Sí">

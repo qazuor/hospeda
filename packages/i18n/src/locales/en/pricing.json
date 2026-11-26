@@ -39,7 +39,10 @@
     "baseHighlightText": "Everything essential to begin, no commitment.",
     "group": {
         "tourist": "All tourist features",
-        "touristVip": "Includes every Tourist VIP benefit",
+        "touristVip": "Includes every traveler benefit",
+        "touristPlan": "Includes every {{plan}} benefit",
+        "inheritedTravelerHeading": "Your plan also includes {{plan}}",
+        "inheritedTravelerBody": "Access the traveler benefits included in your plan without paying for a second subscription.",
         "ai": "AI suite: text, translation, import and chat"
     },
     "features": {

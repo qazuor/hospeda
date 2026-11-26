@@ -109,6 +109,10 @@ export const CRITICAL_I18N_KEY_PREFIXES = [
     'account.ui.confirmError',
     'account.ui.dialogClose',
     'common.cancel',
+    // UserMenu plan line (HOS-2649).
+    'common.card.currentPlan',
+    'common.card.planUntil',
+    'common.card.upgradePlan',
     'conversations.inbox.guestInboxTitle',
     'conversations.inbox.ownerInboxTitle',
     'cookieConsent.buttons',
