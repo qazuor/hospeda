@@ -3,7 +3,9 @@
  *
  * One page of the `/promociones/` listing (HOS-2589 D-2, AC-31): the current
  * promotions that hang on one published place, newest activation first, resolved
- * for the reader with the same rule as a detail page. The quota applies per page.
+ * for the reader. D07 locks every item for anonymous listing readers; the
+ * separate detail endpoint retains its guest allowance. Signed-in free readers
+ * get the catalog quota per page, and VIP readers see every item.
  *
  * Optional actor, per-actor body: `Cache-Control: private, no-store` (AC-22).
  */
@@ -62,7 +64,7 @@ export const publicListingOwnerPromotionsRoute = createPublicRoute({
     path: '/listing',
     summary: 'The promotions listing, resolved for the reader',
     description:
-        'Returns one page of current promotions on published places as visible or locked items, with the same free/VIP rule as a detail page (the quota applies per page). Per-actor and never cached.',
+        'Returns one page of current promotions on published places. Under D07, all items are locked for anonymous readers on this route, unlike the detail endpoint. Signed-in free readers get the catalog quota per page; VIP readers see every item. Per-actor and never cached.',
     tags: ['Owner Promotions'],
     requestQuery: PromotionListingQuerySchema.shape,
     responseSchema: PromotionListingResponseSchema,

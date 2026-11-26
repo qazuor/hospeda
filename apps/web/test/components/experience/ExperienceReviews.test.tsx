@@ -15,10 +15,13 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ExperienceReviewsProps } from '@/components/experience/ExperienceReviews.client';
 import { ExperienceReviews } from '@/components/experience/ExperienceReviews.client';
+import { apiClient } from '@/lib/api/client';
 import type { ExperienceReviewPublicItem } from '../../../src/lib/api/endpoints';
 import { buildAuthSnapshot } from '../../helpers/auth-session';
 
 // ─── Module mocks ─────────────────────────────────────────────────────────────
+
+vi.mock('@/lib/api/client', () => ({ apiClient: { postProtected: vi.fn() } }));
 
 vi.mock('@/lib/i18n', () => ({
     createTranslations: (_locale: string) => ({
@@ -104,6 +107,7 @@ function renderReviews({
 describe('ExperienceReviews', () => {
     beforeEach(() => {
         global.fetch = vi.fn();
+        vi.mocked(apiClient.postProtected).mockReset().mockResolvedValue({ ok: true, data: {} });
     });
 
     afterEach(() => {
@@ -182,6 +186,84 @@ describe('ExperienceReviews', () => {
             render(<ExperienceReviews {...DEFAULT_PROPS} />);
 
             expect(screen.getByText('Dejar reseña')).toBeInTheDocument();
+        });
+    });
+
+    describe('Review submission', () => {
+        function openReviewForm() {
+            renderReviews({ isAuthenticated: true });
+            fireEvent.click(screen.getByRole('button', { name: 'Dejar reseña' }));
+            return {
+                rating: screen.getByRole<HTMLSelectElement>('combobox', {
+                    name: 'review.form.overallLabel'
+                }),
+                submit: screen.getByRole('button', { name: 'review.form.submitButton' })
+            };
+        }
+
+        it('posts the selected rating and trimmed comment and shows the moderation status', async () => {
+            vi.mocked(apiClient.postProtected).mockResolvedValue({ ok: true, data: {} });
+            const { rating, submit } = openReviewForm();
+
+            fireEvent.change(rating, { target: { value: '5' } });
+            fireEvent.change(screen.getByRole('textbox', { name: 'review.form.contentLabel' }), {
+                target: { value: '  A wonderful experience  ' }
+            });
+            fireEvent.click(submit);
+
+            expect(apiClient.postProtected).toHaveBeenCalledExactlyOnceWith({
+                path: '/api/v1/protected/experiences/exp-abc/reviews',
+                body: { overallRating: 5, content: 'A wonderful experience' }
+            });
+            expect(await screen.findByRole('status')).toHaveTextContent(
+                'review.venueSidebar.pendingTitle'
+            );
+            expect(submit).not.toBeInTheDocument();
+        });
+
+        it('shows an error and keeps the form open when the API rejects the review', async () => {
+            vi.mocked(apiClient.postProtected).mockResolvedValue({
+                ok: false,
+                error: { code: 'VALIDATION_ERROR', message: 'Rejected' }
+            });
+            const { rating, submit } = openReviewForm();
+
+            fireEvent.change(rating, { target: { value: '1' } });
+            fireEvent.click(submit);
+
+            expect(await screen.findByRole('alert')).toHaveTextContent(
+                'review.form.errors.submitFailed'
+            );
+            expect(submit).toBeEnabled();
+            expect(screen.queryByRole('status')).not.toBeInTheDocument();
+        });
+
+        it('starts with no rating selected and explains why the review was not sent', () => {
+            const { rating, submit } = openReviewForm();
+
+            fireEvent.click(submit);
+
+            expect(apiClient.postProtected).not.toHaveBeenCalled();
+            expect(rating).toHaveValue('');
+            expect(rating.selectedOptions[0]).toBeDisabled();
+            expect(rating).toHaveAttribute('aria-invalid', 'true');
+            expect(screen.getByRole('alert')).toHaveTextContent(
+                'review.form.errors.overallRequired'
+            );
+            expect(rating).toHaveAccessibleDescription('review.form.errors.overallRequired');
+        });
+
+        it('guards the submission handler when native rating validation is bypassed', () => {
+            const { rating } = openReviewForm();
+            const form = rating.closest('form');
+            if (!form) throw new Error('Review form not found');
+
+            fireEvent.submit(form);
+
+            expect(apiClient.postProtected).not.toHaveBeenCalled();
+            expect(screen.getByRole('alert')).toHaveTextContent(
+                'review.form.errors.overallRequired'
+            );
         });
     });
 

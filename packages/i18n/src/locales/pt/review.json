@@ -10,6 +10,7 @@
     "form": {
         "ratingLabel": "Avaliação",
         "overallLabel": "Avaliação geral",
+        "overallPlaceholder": "Escolha uma nota",
         "ratingAspects": {
             "cleanliness": "Limpeza",
             "hospitality": "Hospitalidade",
@@ -30,6 +31,7 @@
         "submitSuccess": "Sua avaliação foi enviada com sucesso",
         "errors": {
             "ratingRequired": "Avalie todas as categorias",
+            "overallRequired": "Escolha uma nota de 1 a 5.",
             "titleRequired": "O título é obrigatório",
             "titleMinLength": "O título deve ter pelo menos 3 caracteres",
             "contentRequired": "O comentário é obrigatório",

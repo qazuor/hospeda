@@ -1,15 +1,12 @@
 /**
  * @file PromotionCards.tsx
- * @description The visible and blurred promotion cards of the free / VIP model
+ * @description The visible and locked promotion cards of the free / VIP model
  * (HOS-2589 §7.4, §7.6, §9). Shared by the detail-page island and the
  * `/promociones/` island.
  *
  * - A visible card shows the promotion; a «Solo VIP» one (seen by a VIP) carries
  *   the VIP badge as a mark of exclusivity (AC-13).
- * - A locked card shows only what the API sent: the discount value and type and a
- *   server-generated placeholder in place of the place name, blurred. It is a
- *   focusable `aria-disabled` button with an accessible name; click, Enter or
- *   Space opens the upsell dialog and never navigates (AC-9).
+ * - A locked card uses a neutral placeholder and links to sign-in or plan pricing.
  */
 
 import { LockIcon } from '@repo/icons';
@@ -96,9 +93,23 @@ function VisibleCard({
         specialOfferText: null,
         locale
     });
-    const title = isRedundantText({ a: item.title, b: item.description })
+    const marketingTitle = isRedundantText({ a: item.title, b: item.description })
         ? (item.description ?? item.title)
         : item.title;
+    const title =
+        !marketingTitle.trim() || isRedundantText({ a: marketingTitle, b: headline })
+            ? headline
+            : marketingTitle;
+    const description =
+        item.description &&
+        !isRedundantText({ a: item.description, b: title }) &&
+        !isRedundantText({ a: item.description, b: headline })
+            ? item.description
+            : null;
+    const showHeadline =
+        headline !== title &&
+        !isRedundantText({ a: headline, b: title }) &&
+        !isRedundantText({ a: headline, b: description });
     const validUntil = item.validUntil
         ? formatCalendarDate({
               value: item.validUntil.toISOString(),
@@ -112,12 +123,11 @@ function VisibleCard({
             data-promotion-card="visible"
         >
             <div className={styles.cardTop}>
-                <h3 className={styles.title}>{title || headline}</h3>
+                <h3 className={styles.title}>{title}</h3>
                 {item.audience === 'vip' ? <PlanBadge name={vipPlanName} /> : null}
             </div>
-            {item.description && !isRedundantText({ a: item.description, b: title }) ? (
-                <p className={styles.description}>{item.description}</p>
-            ) : null}
+            {showHeadline ? <p className={styles.description}>{headline}</p> : null}
+            {description ? <p className={styles.description}>{description}</p> : null}
             {item.window ? (
                 <p className={styles.meta}>
                     <span>{formatPromotionWindow({ window: item.window, locale })}</span>
@@ -218,7 +228,7 @@ function LockedCard({
 }
 
 /**
- * Renders a grid of visible and locked cards plus the upsell dialog.
+ * Renders a grid of visible and locked cards.
  *
  * @param props - See {@link PromotionCardsProps}.
  * @returns The card list.
@@ -226,28 +236,26 @@ function LockedCard({
 export function PromotionCards({ locale, items, vipPlanName, showPlace }: PromotionCardsProps) {
     const { data: session } = useSession();
     return (
-        <>
-            <ul className={styles.grid}>
-                {items.map((item) => (
-                    <li key={item.kind === 'visible' ? item.id : item.key}>
-                        {item.kind === 'visible' ? (
-                            <VisibleCard
-                                vipPlanName={vipPlanName}
-                                locale={locale}
-                                item={item}
-                                showPlace={showPlace}
-                            />
-                        ) : (
-                            <LockedCard
-                                vipPlanName={vipPlanName}
-                                locale={locale}
-                                item={item}
-                                guest={!session?.user}
-                            />
-                        )}
-                    </li>
-                ))}
-            </ul>
-        </>
+        <ul className={styles.grid}>
+            {items.map((item) => (
+                <li key={item.kind === 'visible' ? item.id : item.key}>
+                    {item.kind === 'visible' ? (
+                        <VisibleCard
+                            vipPlanName={vipPlanName}
+                            locale={locale}
+                            item={item}
+                            showPlace={showPlace}
+                        />
+                    ) : (
+                        <LockedCard
+                            vipPlanName={vipPlanName}
+                            locale={locale}
+                            item={item}
+                            guest={!session?.user}
+                        />
+                    )}
+                </li>
+            ))}
+        </ul>
     );
 }

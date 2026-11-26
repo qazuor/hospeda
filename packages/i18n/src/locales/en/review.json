@@ -10,6 +10,7 @@
     "form": {
         "ratingLabel": "Rating",
         "overallLabel": "Overall rating",
+        "overallPlaceholder": "Choose a rating",
         "ratingAspects": {
             "cleanliness": "Cleanliness",
             "hospitality": "Hospitality",
@@ -30,6 +31,7 @@
         "submitSuccess": "Your review was submitted successfully",
         "errors": {
             "ratingRequired": "Rate all categories",
+            "overallRequired": "Choose a rating from 1 to 5.",
             "titleRequired": "Title is required",
             "titleMinLength": "Title must be at least 3 characters",
             "contentRequired": "Review is required",

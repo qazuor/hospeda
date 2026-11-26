@@ -16,7 +16,7 @@
  */
 
 import { StarIcon } from '@repo/icons';
-import { type FormEvent, useState } from 'react';
+import { type FormEvent, useId, useState } from 'react';
 import { ListingReviewCta } from '@/components/listing/ListingReviewCta';
 import { Spinner } from '@/components/shared/feedback/Spinner';
 import { useAccountPermissions } from '@/hooks/use-account-permissions';
@@ -99,11 +99,18 @@ export function ExperienceReviews({
     const isAuthenticated = user !== null;
     const [formOpen, setFormOpen] = useState(false);
     const [submission, setSubmission] = useState<'idle' | 'sending' | 'pending' | 'error'>('idle');
+    const [ratingInvalid, setRatingInvalid] = useState(false);
+    const ratingErrorId = useId();
 
     async function submitReview(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
         if (submission === 'sending') return;
         const data = new FormData(event.currentTarget);
+        const overallRating = STAR_POSITIONS.find((stars) => String(stars) === data.get('rating'));
+        if (overallRating === undefined) {
+            setRatingInvalid(true);
+            return;
+        }
         const content = String(data.get('content') ?? '').trim();
         if (content && content.length < 10) {
             setSubmission('error');
@@ -112,9 +119,9 @@ export function ExperienceReviews({
         setSubmission('sending');
         const result = await apiClient.postProtected({
             path: `/api/v1/protected/experiences/${encodeURIComponent(experienceId)}/reviews`,
-            body: { overallRating: Number(data.get('rating')), ...(content ? { content } : {}) }
+            body: { overallRating, ...(content ? { content } : {}) }
         });
-        setSubmission(result.success ? 'pending' : 'error');
+        setSubmission(result.ok ? 'pending' : 'error');
     }
 
     const [reviews, setReviews] = useState<readonly ExperienceReviewPublicItem[]>(initialReviews);
@@ -368,7 +375,18 @@ export function ExperienceReviews({
                             <select
                                 name="rating"
                                 required
+                                defaultValue=""
+                                aria-invalid={ratingInvalid || undefined}
+                                aria-describedby={ratingInvalid ? ratingErrorId : undefined}
+                                onInvalid={() => setRatingInvalid(true)}
+                                onChange={() => setRatingInvalid(false)}
                             >
+                                <option
+                                    value=""
+                                    disabled
+                                >
+                                    {t('review.form.overallPlaceholder')}
+                                </option>
                                 {STAR_POSITIONS.map((stars) => (
                                     <option
                                         key={stars}
@@ -379,6 +397,14 @@ export function ExperienceReviews({
                                 ))}
                             </select>
                         </label>
+                        {ratingInvalid && (
+                            <p
+                                id={ratingErrorId}
+                                role="alert"
+                            >
+                                {t('review.form.errors.overallRequired')}
+                            </p>
+                        )}
                         <label>
                             {t('review.form.contentLabel')}{' '}
                             <textarea

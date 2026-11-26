@@ -10,6 +10,7 @@
     "form": {
         "ratingLabel": "Calificación",
         "overallLabel": "Calificación general",
+        "overallPlaceholder": "Elegí una calificación",
         "ratingAspects": {
             "cleanliness": "Limpieza",
             "hospitality": "Hospitalidad",
@@ -30,6 +31,7 @@
         "submitSuccess": "Tu reseña fue enviada con éxito",
         "errors": {
             "ratingRequired": "Calificá todas las categorías",
+            "overallRequired": "Elegí una calificación del 1 al 5.",
             "titleRequired": "El título es requerido",
             "titleMinLength": "El título debe tener al menos 3 caracteres",
             "contentRequired": "El comentario es requerido",

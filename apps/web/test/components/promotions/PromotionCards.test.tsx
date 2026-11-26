@@ -20,11 +20,53 @@ describe('PromotionCards', () => {
             />
         );
 
+        expect(screen.getByRole('heading', { name: 'Finde largo' })).toBeVisible();
+        expect(screen.getByText('20% de descuento')).toBeVisible();
         expect(screen.getByText('Mínimo 2 noches')).toBeVisible();
         expect(screen.getByRole('link', { name: 'Ver alojamiento' })).toHaveAttribute(
             'href',
             '/es/alojamientos/casa-rio/'
         );
+    });
+
+    it('preserves a longer marketing title and shows the catalog badge and free-night benefit', () => {
+        render(
+            <PromotionCards
+                locale="es"
+                items={[
+                    visibleItem({
+                        audience: 'vip',
+                        title: 'Finde largo junto al río',
+                        description: 'Finde largo',
+                        discountType: 'free_night'
+                    })
+                ]}
+                freeQuota={3}
+                vipPlanName="Explorer"
+                showPlace
+            />
+        );
+
+        expect(screen.getByRole('heading', { name: 'Finde largo junto al río' })).toBeVisible();
+        expect(screen.queryByText('Finde largo', { exact: true })).not.toBeInTheDocument();
+        expect(screen.getByText('Noche gratis')).toBeVisible();
+        expect(screen.getByText('Explorer')).toBeVisible();
+    });
+
+    it('shows the benefit just once when marketing copy duplicates it', () => {
+        render(
+            <PromotionCards
+                locale="es"
+                items={[
+                    visibleItem({ title: '20% de descuento', description: '20% de descuento.' })
+                ]}
+                freeQuota={3}
+                vipPlanName={null}
+                showPlace
+            />
+        );
+
+        expect(screen.getByText(/^20% de descuento\.?$/i)).toBeVisible();
     });
 
     it('offers sign-in without rendering the locked benefit', () => {
