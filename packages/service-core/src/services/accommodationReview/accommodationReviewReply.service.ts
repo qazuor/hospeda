@@ -135,7 +135,15 @@ export class AccommodationReviewReplyService extends BaseService {
                         'This review already has a reply'
                     );
                 }
-                const moderationState = await this.resolveState(validated.content);
+                const filtered = await this.resolveState(validated.content);
+                // An admin decision must survive delete-and-repost: a review whose
+                // deleted reply an admin moderated gets its new reply held for a human.
+                const moderationState = (await this.model.hasAdminModeratedDeletedReply(
+                    { reviewId: validated.reviewId },
+                    ctx?.tx
+                ))
+                    ? ModerationStatusEnum.PENDING
+                    : filtered;
                 try {
                     const reply = await this.model.create(
                         {

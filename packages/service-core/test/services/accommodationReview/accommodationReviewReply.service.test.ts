@@ -64,6 +64,7 @@ function buildService(
         review?: Record<string, unknown> | null;
         accommodation?: Record<string, unknown> | null;
         liveReply?: Record<string, unknown> | null;
+        adminModeratedDeleted?: boolean;
     } = {}
 ) {
     const model = createModelMock();
@@ -95,6 +96,8 @@ function buildService(
         ...data
     }));
     model.softDelete = vi.fn(async () => 1);
+    (model as unknown as { hasAdminModeratedDeletedReply: unknown }).hasAdminModeratedDeletedReply =
+        vi.fn(async () => options.adminModeratedDeleted ?? false);
 
     const service = new AccommodationReviewReplyService(
         { logger: mockLogger },
@@ -237,6 +240,15 @@ describe('AccommodationReviewReplyService.respond', () => {
         const result = await service.respond(input());
 
         expect(result.error?.code).toBe(ServiceErrorCode.ALREADY_EXISTS);
+    });
+
+    it('holds the new reply as PENDING when an admin moderated the deleted one (no delete-and-repost bypass)', async () => {
+        const { service, model } = buildService({ liveReply: null, adminModeratedDeleted: true });
+
+        const result = await service.respond(input());
+
+        expect(result.error).toBeUndefined();
+        expect(firstArg(model.create).moderationState).toBe(ModerationStatusEnum.PENDING);
     });
 
     it('rejects an empty reply', async () => {

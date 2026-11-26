@@ -1,6 +1,6 @@
 import type { AccommodationReviewReply } from '@repo/schemas';
 import { VerticalEnum } from '@repo/schemas';
-import { and, count, desc, eq, inArray, isNull, type SQL } from 'drizzle-orm';
+import { and, count, desc, eq, inArray, isNotNull, isNull, or, type SQL } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { accommodations } from '../../schemas/accommodation/accommodation.dbschema.ts';
 import { accommodationReviews } from '../../schemas/accommodation/accommodation_review.dbschema.ts';
@@ -172,6 +172,47 @@ export class AccommodationReviewReplyModel extends BaseModelImpl<AccommodationRe
         } catch (error) {
             const err = error instanceof Error ? error : new Error(String(error));
             throw new DbError(this.entityName, 'findPublicByReviewIds', input, err.message, err);
+        }
+    }
+
+    /**
+     * Whether an admin ever moderated a DELETED reply of this review (it was
+     * rejected, or carries a moderator). A new reply on such a review must not
+     * skip human review, or deleting and re-posting would undo the admin's decision.
+     *
+     * @param input.reviewId - The review.
+     * @param tx - Optional transaction client.
+     */
+    async hasAdminModeratedDeletedReply(
+        input: { readonly reviewId: string },
+        tx?: DrizzleClient
+    ): Promise<boolean> {
+        const db = this.getClient(tx);
+        try {
+            const rows = await db
+                .select({ id: accommodationReviewReplies.id })
+                .from(accommodationReviewReplies)
+                .where(
+                    and(
+                        eq(accommodationReviewReplies.reviewId, input.reviewId),
+                        isNotNull(accommodationReviewReplies.deletedAt),
+                        or(
+                            eq(accommodationReviewReplies.moderationState, 'REJECTED'),
+                            isNotNull(accommodationReviewReplies.moderatedById)
+                        )
+                    )
+                )
+                .limit(1);
+            return rows.length > 0;
+        } catch (error) {
+            const err = error instanceof Error ? error : new Error(String(error));
+            throw new DbError(
+                this.entityName,
+                'hasAdminModeratedDeletedReply',
+                input,
+                err.message,
+                err
+            );
         }
     }
 }
