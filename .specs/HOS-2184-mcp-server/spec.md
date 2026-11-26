@@ -25,8 +25,13 @@ inquiries, and read their listing stats.
 The customer pastes one URL and logs in with their Hospeda account (OAuth 2.1).
 Better Auth is the authorization server; `apps/api` is the resource server.
 
-Access is gated by a plan entitlement (`ai_assistant_access`), delivered in a
-second phase because the entitlement catalog lives on the HOS-1352 umbrella.
+The feature is **included, unlimited, in every plan** (owner decision,
+2026-11-25): the model runs on the customer's own subscription, so Hospeda bears
+no LLM cost and nothing is sold for it. Access is still modelled as an
+entitlement (`ai_assistant_access`) granted by every plan, so a future plan can
+leave it out without touching code. Charging (plan tier or add-on) belongs only
+to the Hospeda-hosted WhatsApp assistant (HOS-2185), which does carry an LLM
+cost.
 
 ## 2. Problem
 
@@ -49,9 +54,12 @@ customer's subscription pays for the model), and is the foundation HOS-2185
 - G-5: Every tool inherits existing authorization (PermissionEnum, ownership,
   `resolveListingAccess`), the error contract (foreign resource → not found)
   and content moderation.
-- G-6 (phase B): access gated by the `ai_assistant_access` entitlement —
-  included in Pro and Premium and during the trial, purchasable as an add-on on
-  Básico, same key for all three verticals.
+- G-6 (phase B, revised 2026-11-25): access is gated by the
+  `ai_assistant_access` entitlement, and **every plan grants it** — Básico,
+  Profesional and Premium of accommodation, venue and experience, and the trial
+  (which derives from Premium). No add-on, no price, no usage quota. The gate
+  exists so a future plan can omit the key; today nobody on a plan is refused.
+  Stats show the customer's plan status (expiry and what it includes).
 - G-7 (phase B): ChatGPT app directory submission prepared and sent.
 - G-8: The customer can see and revoke connected AI clients from their panel.
 
@@ -70,6 +78,11 @@ customer's subscription pays for the model), and is the foundation HOS-2185
 - NG-6: Staff/admin use. HOS-40 (staff Custom GPT for social content) is a
   separate, related issue.
 - NG-7: Gemini as a launch blocker (owner decision, 2026-11-14 — see §10 R-5).
+- NG-8: Charging for the MCP server, or an add-on for it (owner decision,
+  2026-11-25). The customer-AI assistant stays included in all plans. Only
+  WhatsApp management (HOS-2185) is paid: included in the higher plans, and
+  sold as an add-on on the plans that do not include it. That is a separate
+  key, designed in HOS-2185.
 
 ## 5. Current baseline
 
@@ -77,6 +90,7 @@ Facts from the 2026-11-14 survey (checkout ≈ `origin/staging`; catalog facts
 also from `origin/epic/HOS-1352-post-mvp`).
 
 ### Auth
+
 - `apps/api/src/lib/auth.ts`, `better-auth ^1.7.14`. Plugins: `admin()`,
   `expo()` only. No `jwt`, `bearer`, `oauthProvider`, `mcp` or API-key plugin.
 - Actor: `apps/api/src/middlewares/actor.ts` builds it from the session user +
@@ -87,6 +101,7 @@ also from `origin/epic/HOS-1352-post-mvp`).
   per-token limiter.
 
 ### Inquiries (accommodation only)
+
 - Tables in `packages/db/src/schemas/conversation/`: `conversations`
   (`accommodation_id` only, `:40`), `messages`, …
 - `ConversationService`: `listForOwner` (`:914`), `getThread` (`:755`),
@@ -100,6 +115,7 @@ also from `origin/epic/HOS-1352-post-mvp`).
   `@repo/content-moderation`); a rejection is `VALIDATION_ERROR` → 422.
 
 ### Listing edits
+
 - Accommodation: `PATCH /{id}` → `AccommodationService.update`,
   `AccommodationUpdateHttpSchema`
   (`packages/schemas/src/entities/accommodation/accommodation.http.schema.ts:499`).
@@ -116,27 +132,25 @@ also from `origin/epic/HOS-1352-post-mvp`).
   `edit_<vertical>_info`, `PUBLISH` → `publish_*`.
 
 ### Stats available today
+
 | Metric | Availability |
 |---|---|
 | Views (7d/30d, daily series) | All 3 verticals — `EntityViewService` (`getStatsForOwnListings :1058`, `getDailySeriesForOwnListings :1098`) |
 | Reviews count / average | All 3 verticals — `reviewsCount`, `averageRating` columns |
 | Favorites count | Accommodation only — `UserBookmarkService.countBookmarksForEntity` |
 | Inquiries / avg response time | Accommodation only — `getHostMonthlyInquiries`, `getHostResponseRate` |
-| Plan status | Not available on staging (dashboard `plan` is always null since HOS-1416) |
+| Plan status | Available since phase A via the `get_my_plan` reader (the 2026-11-14 survey found the dashboard `plan` always null; superseded) |
 | Contact clicks | Not measured (HOS-2187) |
 
-### Entitlement catalog (umbrella only)
+### Entitlement catalog
+
 - Keys: `packages/schemas/src/catalog/entitlement-keys.ts` rows
   `[key, scope, aggregation, enforcement, class]`; scope `vertical | global`.
-  Global precedents: `priority_support`, `has_verification_badge`, `vip_support`.
-- Values: `plan_version_entitlement` (`planQuota`, `trialQuota`),
-  `plan_version_limit`; add-ons in `addon-catalog.dbschema.ts`
-  (`addon_version_entitlement`, scope `LISTING | VERTICAL_SUBSCRIPTION | USER | GLOBAL`).
-- Guards: G3 (`check-catalog-key-usage`), G18 (`check-catalog-sql`),
-  `check-addon-compatible-verticals`.
-- The staging checkout has 10 catalog files; the umbrella has the full catalog.
+- Values: `plan_version_entitlement`; the full catalog is on `staging`.
+- Guards: G3 (`check-catalog-key-usage`), G18 (`check-catalog-sql`).
 
 ### Better Auth capability (docs, 2026-11-14)
+
 - `@better-auth/oauth-provider` is the current OAuth 2.1/OIDC provider; `mcp()`
   wraps it (never register both). The legacy `oidcProvider`/old `mcp` plugin
   omit RFC 9207 `iss`, which ChatGPT requires.
@@ -168,10 +182,11 @@ and a feature flag.
 
 - **Phase A — cut from `staging`.** OAuth provider, MCP endpoint, all v1 tools,
   connections panel, audit, rate limit. Behind `HOSPEDA_MCP_ENABLED` (default
-  `false`), so nobody uses it without the entitlement gate.
-- **Phase B — after the HOS-1352 umbrella lands on `staging` and HOS-2066 is
-  done.** `ai_assistant_access` key + plan/add-on rows + gate + plan status in
-  stats + ChatGPT directory submission. Only then is the flag turned on in prod.
+  `false`) until phase B is done.
+- **Phase B — revised 2026-11-25.** `ai_assistant_access` key granted by every
+  plan + access gate + plan status in stats + panel state + ChatGPT directory
+  submission (privacy-policy section included). No add-on. Once it is done, the
+  flag is turned on in prod.
 
 ### 6.3 Authorization server (Better Auth)
 
@@ -216,9 +231,10 @@ and a feature flag.
   Extract the actor building in `middlewares/actor.ts` into a reusable function
   instead of duplicating it.
 - Feature flag off → `404` on `/mcp` and on the OAuth metadata endpoints.
-- Phase B: after the actor is built, check `ai_assistant_access` in the
-  effective set; missing → MCP error with a clear Spanish message pointing to
-  the plans page (not a 500, not a silent empty result).
+- Phase B: on each tool call, after the actor is built, check
+  `ai_assistant_access` in the effective set; missing → MCP tool error with a
+  clear Spanish message pointing to the plans page (not a 500, not a silent
+  empty result). Per-tool authorization (§6.5) still applies on top.
 - Rate limit: new Redis sliding window keyed on the **access token's client +
   user** (`rl:mcp:<clientId>:<userId>`), stacked with the existing per-user
   limiter. Limits come from config, not code literals.
@@ -278,12 +294,11 @@ No tool takes an action based on content it returned.
   Drizzle migration via `pnpm db:generate` — follow however existing Better Auth
   tables are named/mapped in `packages/db` (OQ-2).
 - Optional `mcp_audit_event` (OQ-4).
-- Phase B, catalog (on top of the umbrella catalog): key `ai_assistant_access`,
-  `scope: global`, boolean (no quota); `plan_version_entitlement` rows on Pro and
-  Premium of accommodation, venue and experience with `trialQuota` granting it;
-  one add-on (scope `USER`) granting it, compatible with the three verticals,
-  price as a catalog value (G7; price TBD per HOS-2185 decision 8). Generated
-  SQL migration (G18).
+- Phase B, catalog: key `ai_assistant_access`, `scope: global`, boolean (no
+  quota); `plan_version_entitlement` rows on **every** sellable plan (Básico,
+  Profesional, Premium) of accommodation, venue and experience, all versions.
+  The trial inherits it from Premium. No add-on. Generated SQL migration (G18)
+  for the key, plus a seed data-migration for the plan grants (dual-write).
 - Env vars (registry flow in `@repo/config` + app `env.ts` + `.env.example` +
   Coolify): `HOSPEDA_MCP_ENABLED`, `HOSPEDA_MCP_RESOURCE_URL` (canonical public
   URL), `HOSPEDA_MCP_RATE_LIMIT_*`. OAuth issuer derives from
@@ -299,13 +314,15 @@ No tool takes an action based on content it returned.
   inquiries), Permitir / Cancelar. es/en/pt.
 - **Panel → "Asistentes de IA"** (`apps/web`, client island): the MCP URL to
   copy, short per-client instructions (Claude, ChatGPT, Gemini), the list of
-  connected clients with last use, and Desconectar. Phase B: shows whether the
-  plan includes it and links to the add-on for Básico.
+  connected clients with last use, and Desconectar. Phase B: if the account's
+  plan does not grant the key, the panel says so and links to the plans page
+  (no add-on).
 - Tool responses and errors are in Spanish (the customer's locale when known).
 
 ## 9. Acceptance criteria
 
 Phase A
+
 - AC-1: With the flag off, `/mcp` and the OAuth metadata endpoints answer 404.
 - AC-2: From Claude (custom connector) a user pastes the staging URL, logs in,
   consents, and `list_my_listings` returns exactly their listings across all
@@ -335,10 +352,12 @@ Phase A
   after the Better Auth upgrade and plugin additions.
 
 Phase B
-- AC-14: A Pro/Premium or trial user can use the tools; a Básico user without
-  the add-on gets the "not included in your plan" message on every tool; buying
-  the add-on unlocks it.
-- AC-15: Catalog guards G3, G18 and `check-addon-compatible-verticals` pass.
+
+- AC-14 (revised 2026-11-25): a customer on any plan (Básico, Profesional,
+  Premium, trial) of any vertical can use every tool. An account whose plans do
+  not grant `ai_assistant_access` gets the "not included in your plan" message
+  (provable today only with a test plan without the key).
+- AC-15: Catalog guards G3 and G18 pass.
 - AC-16: Stats include plan status (expiry and what it includes).
 - AC-17: ChatGPT directory submission sent (privacy policy, tool descriptions,
   test account) — public listing depends on OpenAI's approval and does not
@@ -360,9 +379,8 @@ Phase B
 - R-5: Gemini consumer app OAuth-backed remote MCP is not officially
   documented; a forum report says the flow stops after the callback. Gemini is
   "tested if it works" in the smoke, not a blocker.
-- R-6: Global entitlement granted by a (vertical-scoped) trial: the effective
-  set must resolve a `global` key from a trial source. Verify on the umbrella
-  before writing phase B; adjust key scope if needed.
+- R-6: the key is `global` but the effective set is computed per vertical;
+  the gate must allow when any of the account's verticals grants it.
 - R-7: Pages in `src/pages` must stay session-blind (consent + panel as islands).
 
 ## 11. Open questions (for the implementer to resolve from code)
@@ -381,11 +399,13 @@ None of these needs an owner decision unless the answer changes scope.
 ## 12. Implementation notes
 
 - Smoke label: `status-needs-smoke-staging` (real Claude + ChatGPT connection,
-  Gemini best-effort). Phase B touches billing → follow
+  Gemini best-effort). Phase B adds catalog rows → follow the relevant part of
   `docs/billing/smoke-checklist.md`.
-- Release: phase A adds migrations (`release-migration`).
-- Branching: phase A from `staging`; phase B from `staging` after the umbrella
-  merge and HOS-2066.
+- Release: both phases add migrations (`release-migration`). Phase B's catalog
+  must be applied on staging (`db:seed:migrate`) before the gate merges, or the
+  gate refuses everyone.
+- Branching: both phases from `staging`. The HOS-2066 gate on phase B was lifted
+  by the owner on 2026-11-25.
 - HOS-2185 (WhatsApp) reuses the tool layer: keep tools as plain functions
   `(actor, input) → result` with the MCP binding as a thin wrapper, so a
   Hospeda-hosted agent can call them without MCP.
