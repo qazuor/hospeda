@@ -19,6 +19,16 @@ vi.mock('../../../../src/services/billing/read-anchored-billing-option.js', () =
     }))
 }));
 
+vi.mock(
+    '../../../../src/services/billing/subscription/plan-payment-methods.js',
+    async (importOriginal) => ({
+        ...(await importOriginal<
+            typeof import('../../../../src/services/billing/subscription/plan-payment-methods.js')
+        >()),
+        readPlanVersionPaymentMethods: vi.fn(async () => ['CARD'])
+    })
+);
+
 import { authorizePendingSubscription } from '../../../../src/services/billing/subscription/start-subscription.service.js';
 
 const subscriptionId = '123e4567-e89b-42d3-a456-426614174000';
