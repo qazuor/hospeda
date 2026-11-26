@@ -310,6 +310,7 @@ const itemListEntries = sortedCards.map((card) => ({
 			data-facet-max-active={FACET_CHIP_MAX_ACTIVE_VALUES}
 			data-valid-attraction-ids={JSON.stringify(availableAttractions.map((attr) => attr.id))}
 		>
+			<h2 class="dest-attractions-filter__title">{t('destinations.byAttraction.filterTitle')}</h2>
 			<ul class="dest-attractions-filter__list">
 				{availableAttractions.map((attr) => {
 					const active = activeIds.has(attr.id);
@@ -604,10 +605,15 @@ const itemListEntries = sortedCards.map((card) => ({
 		align-self: flex-start;
 	}
 
+	.dest-attractions-filter__title {
+		font-size: var(--text-body-sm);
+		margin: 0;
+	}
+
 	.dest-attractions-filter__more-toggle {
-		background-color: transparent;
-		color: var(--core-muted-foreground);
-		border: 1px dashed var(--core-muted-foreground);
+		background-color: var(--brand-primary);
+		color: var(--primary-foreground);
+		border: 1px solid var(--brand-primary);
 		cursor: pointer;
 		list-style: none;
 		user-select: none;
@@ -618,13 +624,7 @@ const itemListEntries = sortedCards.map((card) => ({
 	}
 
 	.dest-attractions-filter__more-toggle:hover {
-		color: var(--core-foreground);
-		border-color: var(--core-foreground);
-	}
-
-	.dest-attractions-filter__more[open] .dest-attractions-filter__more-toggle {
-		color: var(--core-foreground);
-		border-color: var(--core-foreground);
+		text-decoration: underline;
 	}
 
 	/* Two-state label inside the summary: closed = "Ver más", open =
@@ -698,7 +698,7 @@ const itemListEntries = sortedCards.map((card) => ({
 	/* Empty state shown when filters narrow the list to zero.
 	 * Distinct from EmptyState (which fires when the catalog itself is empty)
 	 * because we want to hint at the action: clear the filters. */
-	.dest-listing__empty-filter {
+	.dest-listing__empty-filter:not([hidden]) {
 		display: flex;
 		flex-direction: column;
 		align-items: center;

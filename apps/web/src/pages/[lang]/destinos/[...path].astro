@@ -498,6 +498,9 @@ const destCoords = destLocation?.coordinates;
 const destLat = destCoords?.lat ? Number.parseFloat(destCoords.lat) : null;
 const destLng = destCoords?.long ? Number.parseFloat(destCoords.long) : null;
 const hasDestCoords = Number.isFinite(destLat) && Number.isFinite(destLng);
+const nearbyStaysHref = hasDestCoords
+	? `${buildUrl({ locale, path: 'alojamientos' })}?${new URLSearchParams({ latitude: String(destLat), longitude: String(destLng), radius: '50', sortBy: 'distance' })}`
+	: undefined;
 
 const placeGeo =
 	hasDestCoords && destLat !== null && destLng !== null
@@ -766,6 +769,9 @@ const isThinContent = isThinDestination({
 							'Próximamente agregaremos alojamientos en este destino.'
 						)}
 					</p>
+					<a class="btn-gradient btn-gradient--outline-primary" href={nearbyStaysHref ?? buildUrl({ locale, path: 'alojamientos' })}>
+						{t(nearbyStaysHref ? 'ui.listing.nearbyAccommodations' : 'ui.listing.allAccommodations')}
+					</a>
 				</div>
 			)}
 		</section>
@@ -1015,6 +1021,18 @@ const isThinContent = isThinDestination({
 		font-size: 0.9rem;
 		color: var(--core-muted-foreground);
 		margin: 0;
+	}
+	/* The outline variant's brand text is too light against the empty-state card. */
+	.dest-detail__empty-state .btn-gradient--outline-primary {
+		color: var(--core-foreground);
+		white-space: normal;
+	}
+	.dest-detail__empty-state .btn-gradient--outline-primary:hover {
+		border-color: var(--brand-primary);
+		background: var(--core-background);
+	}
+	.dest-detail__empty-state .btn-gradient--outline-primary::before {
+		content: none;
 	}
 
 	.dest-sidebar {

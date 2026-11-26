@@ -6,7 +6,7 @@
         "title": "Búsqueda conversacional",
         "close": "Cerrar panel",
         "inputLabel": "Mensaje",
-        "placeholder": "Contame qué buscás, por ejemplo: cabaña para 4 con pileta cerca del río",
+        "placeholder": "Ej.: cabaña con pileta",
         "send": "Enviar mensaje",
         "sending": "Enviando…",
         "stop": "Detener",

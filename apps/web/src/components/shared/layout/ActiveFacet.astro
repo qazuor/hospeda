@@ -1,0 +1,38 @@
+---
+/** Removable route facet placed next to the results caption. */
+import { createT } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+
+interface Props {
+	readonly locale: SupportedLocale;
+	readonly label: string;
+	readonly clearHref: string;
+	readonly clearLabel: string;
+}
+
+const { locale, label, clearHref, clearLabel } = Astro.props;
+const t = createT(locale);
+---
+
+<div class="active-facet">
+	<a class="active-facet__chip" href={clearHref} aria-label={`${t('ui.emptyState.removeFilter')}: ${label}`}>
+		{label} <span aria-hidden="true">×</span>
+	</a>
+	<a href={clearHref}>{clearLabel}</a>
+</div>
+
+<style>
+	.active-facet { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); }
+	.active-facet a { text-decoration: underline; }
+	.active-facet .active-facet__chip {
+		display: inline-flex;
+		align-items: center;
+		min-height: 44px;
+		gap: var(--space-2);
+		padding-inline: var(--space-3);
+		border-radius: var(--radius-pill);
+		background: var(--brand-primary);
+		color: var(--primary-foreground);
+		text-decoration: none;
+	}
+</style>

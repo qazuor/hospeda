@@ -303,6 +303,7 @@ export function buildAccommodationsFilterGroups({
             id: 'price',
             label: t('accommodations.sidebar.priceRange', 'Precio por noche'),
             type: 'dual-range',
+            defaultExpanded: true,
             min: 5000,
             max: 150000,
             step: 1000,

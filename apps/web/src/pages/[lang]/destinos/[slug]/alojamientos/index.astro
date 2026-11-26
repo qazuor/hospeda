@@ -78,7 +78,18 @@ const heading = t('accommodations.typeInLocation', '{{type}} en {{location}}', {
 const page = Math.max(1, Number(Astro.url.searchParams.get('page')) || 1);
 const pageSize = 20;
 
-const result = await accommodationsApi.list({ destinationId: destId, page, pageSize });
+const sortOptions = [
+	{ value: 'featured', label: t('accommodations.sort.featured') },
+	{ value: 'priceAsc', label: t('accommodations.sort.priceAsc') },
+	{ value: 'priceDesc', label: t('accommodations.sort.priceDesc') },
+];
+const sortKey = Astro.url.searchParams.get('sortBy');
+const byPrice = sortKey === 'priceAsc' || sortKey === 'priceDesc';
+const result = await accommodationsApi.list({
+	destinationId: destId, page, pageSize,
+	sortBy: byPrice ? 'price' : 'isFeatured',
+	sortOrder: sortKey === 'priceAsc' ? 'asc' : 'desc',
+});
 const hasError = !result.ok;
 const items = result.ok ? result.data.items : [];
 const total = result.ok ? result.data.pagination.total : 0;
@@ -92,7 +103,7 @@ const baseUrl = buildUrl({ locale, path: `destinos/${slug}/alojamientos` });
 
 ---
 
-<ListingLayout locale={locale} title={heading} showFilters={false} totalCount={total}>
+<ListingLayout locale={locale} title={heading} showFilters={false} totalCount={total} resultKind="accommodations" sortOptions={sortOptions}>
 	<Breadcrumbs slot="breadcrumbs" locale={locale} items={[{ label: breadcrumbLabel({ t, key: 'destinations' }), path: 'destinos' }, { label: destName, path: `destinos/${slug}` }, { label: breadcrumbLabel({ t, key: 'accommodations' }) }]} />
 	<ListingPageHeader slot="page-header" locale={locale} tagline={t('accommodations.tagline', 'Encontrá tu lugar ideal')} title={heading} />
 	<CompareModeControls slot="page-header" locale={locale} />
@@ -101,7 +112,7 @@ const baseUrl = buildUrl({ locale, path: `destinos/${slug}/alojamientos` });
 	{!hasError && cards.length > 0 && (
 		<div class="grid">{cards.map((card, i) => (<div data-reveal="up" data-stagger-index={Math.min(i, 6)} data-stagger-step="100"><AccommodationCard data={card} locale={locale} /></div>))}</div>
 	)}
-	{totalPages > 1 && <Pagination slot="pagination" currentPage={page} totalPages={totalPages} baseUrl={baseUrl.slice(0, -1)} locale={locale} />}
+	{totalPages > 1 && <Pagination slot="pagination" currentPage={page} totalPages={totalPages} baseUrl={baseUrl.slice(0, -1)} locale={locale} searchParams={sortKey ? new URLSearchParams({ sortBy: sortKey }) : undefined} />}
 </ListingLayout>
 
 <style>

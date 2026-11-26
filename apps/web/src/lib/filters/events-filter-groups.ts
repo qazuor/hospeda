@@ -102,6 +102,7 @@ export function buildEventsFilterGroups({
             id: 'date',
             label: t('events.filters.date', 'Fecha'),
             type: 'date-range',
+            defaultExpanded: true,
             checkInPlaceholder: t('events.filters.dateFrom', 'Desde'),
             checkOutPlaceholder: t('events.filters.dateTo', 'Hasta'),
             fromParam: 'startDateAfter',
