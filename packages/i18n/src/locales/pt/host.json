@@ -576,32 +576,7 @@
                 "mapLoading": "Carregando mapa..."
             },
             "translation": {
-                "sectionTitle": "Traduções",
-                "sectionDescription": "Status de tradução dos campos principais do seu imóvel. As traduções ausentes são geradas automaticamente por IA a partir do conteúdo em espanhol.",
-                "fieldRichDescription": "Descrição enriquecida",
-                "generateButton": "Gerar traduções ausentes",
-                "generating": "Gerando traduções...",
-                "successMessage": "Traduções geradas.",
-                "errorGeneric": "Não foi possível gerar as traduções. Tente novamente.",
-                "errorNetwork": "Erro de conexão ao tentar gerar as traduções.",
-                "fieldPending": "Gerando...",
-                "fieldTranslated": "Traduzido",
-                "fieldFailed": "Não foi possível traduzir para {{locales}}",
-                "fieldFailedUnknown": "Não foi possível traduzir este campo",
-                "fieldUntouched": "Sem alterações",
-                "fieldNoSource": "Sem conteúdo para traduzir",
-                "nothingGenerated": "Não havia traduções pendentes para gerar.",
-                "allFailed": "Não foi possível gerar nenhuma tradução. Revise o detalhe por campo e tente novamente.",
-                "partialFailure": "Algumas traduções não foram geradas. Revise o detalhe por campo.",
-                "refresh": "Atualizar a página",
-                "roleSource": "Original",
-                "roleTranslated": "Gerado com IA",
-                "roleMissing": "Sem tradução",
-                "sourceEmpty": "Você ainda não escreveu este conteúdo.",
-                "translationEmpty": "Esta tradução ainda não foi gerada.",
-                "textUnavailable": "Foi gerada agora. Atualize a página para lê-la.",
-                "missingCount": "Campos sem tradução: {{count}}",
-                "missingNotice": "Faltam traduções em {{locales}}."
+                "sectionTitle": "Traduções"
             },
             "calendar": {
                 "title": "Calendário de ocupação",
