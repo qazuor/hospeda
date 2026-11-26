@@ -43,11 +43,14 @@ async function fingerprints(): Promise<Record<string, Fingerprint>> {
     ]) {
         // Later migrations may add columns; compare the original row shape. `plan.role` came
         // with the catalog work, and `users.role` is the nullable better-auth placeholder
-        // re-added by 0182 (HOS-1932), so both are excluded from the fingerprint.
+        // re-added by 0182 (HOS-1932), so both are excluded from the fingerprint. So is
+        // `plan_version.payment_methods`, added by 0253 (HOS-2196).
         const row =
             table === 'plan' || table === 'users'
                 ? "(row_to_json(t)::jsonb - 'role')::text"
-                : 'row_to_json(t)::text';
+                : table === 'plan_version'
+                  ? "(row_to_json(t)::jsonb - 'payment_methods')::text"
+                  : 'row_to_json(t)::text';
         const fixtureOnly =
             table === 'plan'
                 ? "WHERE t.slug = 'b3-over-data'"
