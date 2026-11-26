@@ -59,7 +59,7 @@ const ALL_SECTIONS = [
 /** Components that must appear on exactly one route each. */
 const SECTION_COMPONENTS: Readonly<Record<string, string>> = {
     MediaSection: 'fotos.astro',
-    ListingFaqManager: 'preguntas.astro',
+    FaqSection: 'preguntas.astro',
     // HOS-895. Listed for the same reason as the two above: the panel fetches
     // its own carta on mount, so a stray re-import onto another route would put
     // a `GET .../menu` on a page that does not show one — the weight the split

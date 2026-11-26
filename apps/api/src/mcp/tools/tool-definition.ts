@@ -12,7 +12,7 @@
  */
 
 import type { PortalDestination, PortalLocale } from '@repo/portal-routes';
-import type { ServiceErrorCode } from '@repo/schemas';
+import type { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import type { EmailUnverifiedAllowedOperation } from '@repo/verticals';
 import type { z } from 'zod';
@@ -171,6 +171,24 @@ export interface ToolDefinition<TSchema extends z.ZodObject = z.ZodObject, TData
      * `READ_OWN`; ordinary writes declare nothing.
      */
     readonly emailUnverifiedOperation?: EmailUnverifiedAllowedOperation;
+    /**
+     * Permissions that make the tool visible (HOS-2184 T-042), any-of: the
+     * actor needs at least one. Absent or empty means any authenticated
+     * account. `tools/list` publishes only the tools the actor satisfies and
+     * `tools/call` answers a hidden one like an unknown one.
+     *
+     * It mirrors the handler's own permission check and never replaces it: the
+     * handler keeps refusing on its own. `test/mcp/tools/required-permissions.registry.test.ts`
+     * pins it per tool and compares it with the handler source.
+     */
+    readonly requiredPermissions?: readonly PermissionEnum[];
+    /**
+     * `true` when the tool is never behind the `ai_assistant_access` plan gate
+     * (HOS-2184 T-040): the tools that explain the assistant and the plan itself
+     * (`get_help`, `get_my_plan`), so a refused owner can still learn why.
+     * Pinned in `test/lib/mcp/bind-tool.ai-gate.test.ts`.
+     */
+    readonly aiAccessExempt?: true;
     /**
      * Spanish messages for specific `reason` values (e.g.
      * `MESSAGE_CONTENT_BLOCKED`), shown instead of the code's default message.

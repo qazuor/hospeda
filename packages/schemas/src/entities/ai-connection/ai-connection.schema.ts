@@ -7,6 +7,7 @@
  * its own.
  */
 import { z } from 'zod';
+import { VerticalEnum } from '../../enums/vertical.enum.js';
 
 /**
  * OAuth `client_id` as it appears in a query parameter. A
@@ -108,3 +109,25 @@ export const AiConnectionResetReviewResultSchema = z.object({
 
 /** TypeScript type inferred from {@link AiConnectionResetReviewResultSchema}. */
 export type AiConnectionResetReviewResult = z.infer<typeof AiConnectionResetReviewResultSchema>;
+
+/**
+ * Response of `GET /api/v1/protected/ai-connections/access` (HOS-2184 T-041):
+ * whether the session user may use the AI assistant, decided exactly as the
+ * MCP tools decide it (the `ai_assistant_access` entitlement of any owner
+ * vertical; accounts with no plan in any of them are not gated).
+ */
+export const AiAssistantAccessResponseSchema = z.object({
+    /** `true` when the AI assistant tools answer this user. */
+    hasAccess: z.boolean(),
+    /**
+     * Present only when refused: the vertical whose plans page the panel links
+     * to (the first owner vertical the user holds a plan in), the same page
+     * the MCP refusal points to.
+     */
+    vertical: z
+        .enum([VerticalEnum.ACCOMMODATION, VerticalEnum.VENUE, VerticalEnum.EXPERIENCE])
+        .optional()
+});
+
+/** TypeScript type inferred from {@link AiAssistantAccessResponseSchema}. */
+export type AiAssistantAccessResponse = z.infer<typeof AiAssistantAccessResponseSchema>;

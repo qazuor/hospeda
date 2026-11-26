@@ -593,6 +593,10 @@
             "label": "Seções dos assistentes de IA",
             "assistants": "Assistentes",
             "history": "Histórico"
+        },
+        "noAccess": {
+            "body": "O assistente de IA não está incluído no seu plano atual. Ele vem incluído, sem custo extra, em todos os planos pagos.",
+            "cta": "Ver planos"
         }
     },
     "subscription": {
@@ -1612,7 +1616,9 @@
             "create": {
                 "pageTitle": "Nova publicação",
                 "sectionTitle": "Dados da publicação",
-                "placeholder": { "category": "Escolha uma categoria" },
+                "placeholder": {
+                    "category": "Escolha uma categoria"
+                },
                 "subtitle": "Preencha o básico agora — você vai poder adicionar fotos e mais detalhes depois no editor.",
                 "field": {
                     "title": "Título",

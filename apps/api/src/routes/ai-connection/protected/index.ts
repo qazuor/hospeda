@@ -7,6 +7,7 @@
  * remove what they connected while the feature is switched off.
  */
 import { createRouter } from '../../../utils/create-app';
+import { getAiAssistantAccessRoute } from './access';
 import { listOwnAiActivityRoute } from './activity';
 import { listAiConnectionsRoute } from './list';
 import { resolveResetReviewRoute } from './reset-review';
@@ -22,6 +23,9 @@ app.route('/', resolveResetReviewRoute);
 
 // GET / — list connected assistants
 app.route('/', listAiConnectionsRoute);
+
+// GET /access — whether the AI assistant answers the actor (HOS-2184 T-041)
+app.route('/', getAiAssistantAccessRoute);
 
 // GET /activity — what the assistants did on the actor's behalf (HOS-2348)
 app.route('/', listOwnAiActivityRoute);

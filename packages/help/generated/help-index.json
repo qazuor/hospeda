@@ -1,5 +1,5 @@
 {
-  "contentHash": "a9b13db8942c67e16bbcb4377f4852fc3d5321acc0d07b731f9825f9383a88ee",
+  "contentHash": "9c93797f17c53d31c08a3e15834325fbacf0d706cd9775a29398d5232ccf4471",
   "locales": {
     "es": [
       {
@@ -117,7 +117,7 @@
         "reviewedAt": "2026-11-26",
         "sections": {
           "canDo": "Conectar un asistente de IA a tu cuenta y desconectarlo cuando quieras, desde {{link:aiAssistants|Asistentes de IA}}.\n\nCon un asistente conectado podés, por ejemplo, {{article:reviews|leer tus reseñas}} o {{article:inquiries|responder consultas}}.",
-          "expect": "- Antes de aprobar el acceso, la pantalla te muestra qué puede hacer el asistente.\n- Al desconectarlo pierde el acceso de inmediato, y podés volver a conectarlo.\n- El asistente viene incluido en tu plan, sin costo extra y sin límite de uso. Si ya no tenés un plan activo, el asistente te avisa y te muestra los planes.",
+          "expect": "- Antes de aprobar el acceso, la pantalla te muestra qué puede hacer el asistente.\n- Al desconectarlo pierde el acceso de inmediato, y podés volver a conectarlo.\n- El asistente viene incluido en tu plan, sin costo extra y sin límite de uso. Si tu cuenta tiene solo el plan gratuito, el asistente te avisa y te muestra los planes, y en Mi cuenta → Asistentes de IA vas a ver el mismo aviso.",
           "howTo": {
             "after": "",
             "steps": [
@@ -1158,7 +1158,7 @@
           "benefit-usage",
           "benefit-usage-provider"
         ],
-        "reviewedAt": "2026-11-25",
+        "reviewedAt": "2026-11-26",
         "sections": {
           "canDo": "Buscar proveedores locales de confianza y ver su beneficio para anfitriones en {{link:providerDirectory|Directorio de proveedores}}.",
           "expect": "- Necesitás tener alojamientos registrados para ver el directorio.\n- Cada proveedor muestra su beneficio, su horario y las valoraciones de otros anfitriones.\n- Después de usar un servicio, {{article:benefit-usage|registrás el uso del beneficio}}.",

@@ -1,7 +1,7 @@
 ---
 /**
  * @file legal/privacidad/index.astro
- * @description Privacy policy page with 7 numbered sections and ToC.
+ * @description Privacy policy page with numbered sections and ToC.
  * @route /{lang}/legal/privacidad/
  * @rendering SSR + Cloudflare cache (HOS-74 — see [lang]/index.astro)
  */
@@ -41,6 +41,7 @@ const sections = [
 	{ id: 'seguridad', titleKey: 'privacy.section5.title', titleFb: 'Seguridad', contentKey: 'privacy.section5.content', contentFb: 'Implementamos medidas de seguridad técnicas y organizativas para proteger tu información contra accesos no autorizados, pérdida o alteración.' },
 	{ id: 'derechos', titleKey: 'privacy.section6.title', titleFb: 'Tus derechos', contentKey: 'privacy.section6.content', contentFb: 'Tenés derecho a acceder, rectificar, eliminar o limitar el uso de tus datos personales. Para ejercer estos derechos, contactanos a través de nuestro formulario de contacto.' },
 	{ id: 'datos-google', titleKey: 'privacy.section7.title', titleFb: 'Datos de tu cuenta de Google', contentKey: 'privacy.section7.content', contentFb: 'Si conectás tu cuenta de Google para sincronizar la disponibilidad de tu alojamiento, Hospeda accede únicamente a los eventos de tu Google Calendar necesarios para bloquear y desbloquear fechas entre tu calendario y la plataforma. El uso que Hospeda hace de la información recibida de las APIs de Google se ajusta a la Política de Datos de Usuario de los Servicios de las API de Google (Google API Services User Data Policy), incluidos sus requisitos de Uso Limitado (Limited Use). No vendemos ni transferimos estos datos a terceros, no los usamos con fines publicitarios ni para entrenar modelos de inteligencia artificial, y solo los utilizamos para brindar la función de sincronización de calendario que solicitaste. Podés desconectar tu cuenta de Google en cualquier momento desde tu panel; al hacerlo, eliminamos los tokens de acceso y los datos de calendario asociados.' },
+	{ id: 'asistentes-ia', titleKey: 'privacy.sections.aiAssistants.title', titleFb: 'Conectar un asistente de IA', contentKey: 'privacy.sections.aiAssistants.body', contentFb: 'Podés conectar un asistente de IA (por ejemplo ChatGPT, Claude o Gemini) a tu cuenta mediante el servidor MCP de Hospeda. La conexión es voluntaria: iniciás sesión con tu cuenta de Hospeda (OAuth) y aprobás el acceso. El asistente solo puede acceder a los datos de tu propia cuenta y realizar las acciones que tus permisos permiten: tus publicaciones, las consultas de huéspedes y tus respuestas, las estadísticas de tus publicaciones y el estado de tu plan. Las respuestas a huéspedes se envían únicamente con tu confirmación explícita del texto literal. El proveedor del asistente (OpenAI, Anthropic o Google) procesa lo que el asistente lee conforme a su propia política de privacidad y a tu cuenta con ese proveedor: Hospeda no usa inteligencia artificial propia para esto y solo entrega datos a esos proveedores como resultado de una consulta o acción que hace tu asistente. Hospeda conserva un registro de auditoría de cada acción de escritura realizada a través del asistente (cuenta, cliente, herramienta y momento). El texto de las consultas de huéspedes lo escriben terceros y se entrega al asistente como datos. Podés ver y desconectar tus asistentes conectados en cualquier momento desde Mi cuenta → Asistentes de IA (/mi-cuenta/asistentes-ia/); al desconectarlo, el asistente pierde el acceso.' },
 	{ id: 'contacto', titleKey: 'privacy.section8.title', titleFb: 'Contacto', contentKey: 'privacy.section8.content', contentFb: 'Para consultas sobre esta política de privacidad, podés escribirnos a info@hospeda.com.ar o a través de nuestro formulario de contacto.' },
 ] as const;
 
@@ -55,6 +56,6 @@ const articles = sections.map((section) => ({
 	locale={locale}
 	title={t('privacy.title', 'Política de privacidad')}
 	description={t('privacy.description', 'Política de privacidad de Hospeda. Cómo recopilamos y usamos tu información.')}
-	lastUpdated="2026-11-23"
+	lastUpdated="2026-11-26"
 	articles={articles}
 />
