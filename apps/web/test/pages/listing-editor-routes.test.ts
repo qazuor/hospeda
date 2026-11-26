@@ -58,7 +58,8 @@ const ALL_SECTIONS = [
 
 /** Components that must appear on exactly one route each. */
 const SECTION_COMPONENTS: Readonly<Record<string, string>> = {
-    MediaSection: 'fotos.astro',
+    // HOS-2495: the shared photo editor replaced the listing-only MediaSection.
+    PhotoSection: 'fotos.astro',
     FaqSection: 'preguntas.astro',
     // HOS-895. Listed for the same reason as the two above: the panel fetches
     // its own carta on mount, so a stray re-import onto another route would put

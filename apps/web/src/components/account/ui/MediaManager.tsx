@@ -2,8 +2,9 @@
  * MediaManager — the visual layer of the owner photo editors (HOS-2489, spec
  * HOS-2415 §6.4).
  *
- * The accommodation `PhotoSection` and the listing `MediaSection` keep their
- * own logic hooks (endpoints, caps, upload pipeline) and share only this skin:
+ * The listing `PhotoSection` (accommodation, venue and experience since
+ * HOS-2495) keeps its own logic hooks (endpoints, caps, upload pipeline) and
+ * shares only this skin:
  *
  * - {@link MediaDropzone}: the dashed «drop or pick» target, as a wide slot
  *   (the cover) or as a grid tile (add to the gallery).

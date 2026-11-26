@@ -167,7 +167,7 @@ export function ListingEditor({
         aggregateFields: LISTING_AGGREGATE_FIELDS
     });
 
-    // HOS-372: media is never buffered here (MediaSection persists per
+    // HOS-372: media is never buffered here (PhotoSection persists per
     // operation on its own route). The readers live in `listing-initial-data.ts`.
     const buildInitialEditData = (): ListingEditData =>
         buildListingInitialEditData({ initialData });

@@ -15,11 +15,13 @@ import { getGalleryCap } from '@repo/schemas';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ContentMediaSection } from '../../../../src/components/account/editor/ContentMediaSection.client';
-import { MediaSection } from '../../../../src/components/listing/editor/MediaSection.client';
+import { PhotoSection } from '../../../../src/components/host/editor/PhotoSection.client';
+import { allowanceOk } from '../../host/editor/photo-allowance-fixture';
 
-const { mockListContent, mockListListing } = vi.hoisted(() => ({
+const { mockListContent, mockListListing, mockGetAllowance } = vi.hoisted(() => ({
     mockListContent: vi.fn(),
-    mockListListing: vi.fn()
+    mockListListing: vi.fn(),
+    mockGetAllowance: vi.fn()
 }));
 
 vi.mock('../../../../src/lib/env', () => ({ getApiUrl: () => 'http://api.test' }));
@@ -36,9 +38,13 @@ vi.mock('../../../../src/lib/api/endpoints-protected', () => ({
     listingMediaApi: {
         listMedia: mockListListing,
         addMedia: vi.fn(),
+        addFeaturedMedia: vi.fn(),
         removeMedia: vi.fn(),
-        setFeaturedMedia: vi.fn()
+        setFeaturedMedia: vi.fn(),
+        reorderMedia: vi.fn(),
+        updateMedia: vi.fn()
     },
+    listingPhotoAllowanceApi: { getAllowance: mockGetAllowance },
     protectedMediaApi: { deleteMedia: vi.fn() }
 }));
 vi.mock('../../../../src/store/toast-store', () => ({ addToast: vi.fn() }));
@@ -114,12 +120,17 @@ describe('gallery cap interpolation (HOS-1934)', () => {
         ).toBeInTheDocument();
     });
 
-    it('interpolates the cap in the cap-reached error of the listing editor', async () => {
-        // Arrange
-        const cap = 30; // the legacy editor's fixed cap (HOS-2495: no listing literal in @repo/schemas)
+    it('interpolates the cap in the cap-reached alert of the listing photo editor (HOS-2495)', async () => {
+        // Arrange — the listing cap comes from the photo allowance now.
+        const cap = 30;
+        mockGetAllowance.mockImplementation(() =>
+            allowanceOk({ vertical: 'venue', cap, used: cap })
+        );
         mockListListing.mockReturnValue(listOk(fullGalleryOf(cap)));
+
+        // Act
         render(
-            <MediaSection
+            <PhotoSection
                 locale="es"
                 vertical="venue"
                 listingId="listing-uuid"
@@ -127,14 +138,13 @@ describe('gallery cap interpolation (HOS-1934)', () => {
         );
         await waitFor(() => expect(screen.getAllByRole('img')).toHaveLength(cap));
 
-        // Act
-        fireEvent.change(galleryInput(), {
-            target: { files: [new File(['a'], 'a.jpg', { type: 'image/jpeg' })] }
-        });
-
         // Assert
         expect(
-            await screen.findByText(`Límite de galería alcanzado (máx. ${cap} fotos)`)
+            await screen.findByText((text) =>
+                text.includes(`Límite de galería alcanzado (máx ${cap}`)
+            )
         ).toBeInTheDocument();
+        expect(screen.getByText(`Galería de fotos (máx. ${cap})`)).toBeInTheDocument();
+        expect(document.body.textContent).not.toContain('{{');
     });
 });

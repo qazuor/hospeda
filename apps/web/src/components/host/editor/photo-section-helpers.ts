@@ -275,7 +275,7 @@ export const PHOTO_PHOTOGRAPHER_MAX_LENGTH = 200;
  *
  * Widened out of `AccommodationMediaItem` by HOS-1036, when the same panel had
  * to serve post/event galleries (`ContentMediaSection`) and listing galleries
- * (`MediaSection`) as well. Those three local item shapes agree on exactly
+ * (`MediaSection`, replaced by `PhotoSection` in HOS-2495) as well. Those three local item shapes agree on exactly
  * these five fields and disagree on everything else (`publicId` required vs
  * optional, `width`/`height`, `isFeatured`), so the panel depends on the
  * intersection and nothing more.

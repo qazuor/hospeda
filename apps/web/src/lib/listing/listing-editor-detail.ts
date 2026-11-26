@@ -70,7 +70,7 @@ export function readListingFaqs({
 /**
  * Reads the media block's first-paint placeholders.
  *
- * These feed `MediaSection`'s SSR placeholders only. It hydrates its own state
+ * These feed `PhotoSection`'s SSR placeholders only. It hydrates its own state
  * from the relational media endpoints and persists every operation there
  * (HOS-372), so nothing read here is ever written back.
  *
