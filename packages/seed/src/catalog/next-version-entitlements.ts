@@ -199,3 +199,21 @@ export const PRODUCTION_PLAN_AI_ASSISTANT_ACCESS_GRANTS = [
     { vertical: 'experience', slug: 'experience-premium' },
     { vertical: 'experience', slug: 'pre-trial' }
 ] as const;
+
+/**
+ * HOS-2180 (owner decision PM-641 of 2026-11-13): the venue and experience Pro and
+ * Premium plans feature listings on day one. Read by data-migration 0194, which
+ * grants the global `featured_listing` key to EVERY version of these plans through
+ * the bounded additive-grant lane, so live subscribers (pinned to their version)
+ * receive it too.
+ *
+ * The accommodation plans already carry it in the 0144 baseline. Deliberately
+ * absent: the trial plans, because PM-627 says TRIAL never features listings.
+ * Restricting it later is a catalog edit: publish a version without the key.
+ */
+export const PRODUCTION_PLAN_FEATURED_LISTING_GRANTS = [
+    { vertical: 'venue', slug: 'venue-pro' },
+    { vertical: 'venue', slug: 'venue-premium' },
+    { vertical: 'experience', slug: 'experience-pro' },
+    { vertical: 'experience', slug: 'experience-premium' }
+] as const;
