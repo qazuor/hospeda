@@ -215,7 +215,8 @@ limiter below is the real governor of `/mcp`.
 
 ## The assistant plan gate (HOS-2184 phase B)
 
-Every `tools/call`, after the rate limit and before input parsing, runs the
+Every well-formed `tools/call` runs, after input parsing (a malformed call answers
+`VALIDATION_ERROR` first, per the order in `error-contract.md`), the
 `ai_assistant_access` gate (`lib/mcp/ai-assistant-gate.ts`, decision in
 `mcp/access/ai-assistant-access.ts`). The key is `global` but the effective set is
 per (user, vertical), so the gate reads accommodation, venue and experience with
@@ -233,10 +234,16 @@ an outage into an upsell).
   bought) is refused: pre-trial and every sellable plan grant the key.
 
 A refused call never runs the handler and is audited as `denied` with
-`errorCode: AI_ASSISTANT_NOT_IN_PLAN` and no target. `get_help` and `get_my_plan`
-carry `aiAccessExempt` and skip the gate. The panel asks the same question with
-`GET /api/v1/protected/ai-connections/access` (`{ hasAccess }`, 503 when it cannot
-be decided).
+`errorCode: AI_ASSISTANT_NOT_IN_PLAN`, with its target when the input names one.
+`get_help` and `get_my_plan` carry `aiAccessExempt` and skip the gate. The panel
+asks the same question with `GET /api/v1/protected/ai-connections/access`
+(`{ hasAccess, vertical? }`: `vertical` is set when refused and is the plans page
+to link to; 503 when it cannot be decided).
+
+The gate is MCP-channel-specific on purpose. It lives in the MCP binder
+(`handleMcpToolCall`), not in `executeTool`, because each assistant channel is
+gated by its own entitlement key: the WhatsApp channel (HOS-2185) will check its
+own key at its own entry point and must not inherit this one.
 
 ## Tool visibility (HOS-2184 T-042)
 
@@ -246,8 +253,12 @@ satisfies, and a `tools/call` to a hidden tool gets the same `-32602` "not found
 as an unknown tool. Decided by `PermissionEnum`, never by role. The handler keeps
 its own check. Today: `get_my_plan` (`BILLING_VIEW_OWN`), `list_inquiries` and
 `get_inquiry` (`CONVERSATION_VIEW_OWN`), `reply_inquiry`
-(`CONVERSATION_REPLY_OWN`); `test/mcp/tools/required-permissions.registry.test.ts`
-pins them and compares them with the handler source.
+(`CONVERSATION_REPLY_OWN`), `search_providers` (`HOST_TRADE_VIEW`, enforced inside
+`HostTradeService.listForHost`); `test/mcp/tools/required-permissions.registry.test.ts`
+pins them and compares them with the handler source. Its pattern sees inline
+handler checks only, so a check inside a service is pinned by an explicit table
+there, and the test header lists the checks audited and left undeclared because
+they are not tool-wide.
 
 ## Audit events
 
