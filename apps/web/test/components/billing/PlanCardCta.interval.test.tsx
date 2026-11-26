@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PlanCardCta } from '@/components/billing/PlanCardCta.client';
 import { resetPricingSituationCacheForTests } from '@/lib/billing/pricing-situation';
@@ -100,17 +100,56 @@ describe('plan card interval actions', () => {
         );
     });
 
-    it('marks the inherited paid card and offers management without checkout or cycle changes', async () => {
+    it('explains inherited VIP on the matching card without offering checkout or management', async () => {
         pricingSituation.mockResolvedValue({
             ok: true,
             data: { situation: 'TOURIST_VIP_INHERITED' }
         });
 
         render(
+            <>
+                <PlanCardCta
+                    {...props}
+                    vertical="tourist"
+                    inheritedPlanVersionId="v1"
+                />
+                <PlanCardCta
+                    {...props}
+                    vertical="tourist"
+                    inheritedPlanVersionId="v1"
+                    planVersionId="v2"
+                />
+            </>
+        );
+
+        const cards = screen.getAllByTestId('pricing-card-cta');
+        expect(
+            await within(cards[0]!).findByText(
+                'Tu plan ya incluye Turista VIP: no hace falta comprarlo.'
+            )
+        ).toBeInTheDocument();
+        expect(cards[1]).toBeEmptyDOMElement();
+        expect(screen.queryByText('Tu plan actual')).not.toBeInTheDocument();
+        expect(screen.queryByRole('link')).not.toBeInTheDocument();
+        expect(screen.queryByRole('button')).not.toBeInTheDocument();
+        expect(listMine).not.toHaveBeenCalled();
+    });
+
+    it('marks and links to management for a direct tourist subscription', async () => {
+        pricingSituation.mockResolvedValue({
+            ok: true,
+            data: {
+                situation: 'SUBSCRIBED',
+                status: 'ACTIVE',
+                planVersionId: 'v1',
+                billingOptionId: 'm1'
+            }
+        });
+
+        render(
             <PlanCardCta
                 {...props}
                 vertical="tourist"
-                inheritedPlanVersionId="v1"
             />
         );
 
@@ -121,7 +160,7 @@ describe('plan card interval actions', () => {
         );
         expect(screen.getAllByRole('link')).toHaveLength(1);
         expect(screen.queryByRole('button')).not.toBeInTheDocument();
-        expect(listMine).not.toHaveBeenCalled();
+        expect(screen.queryByText(/no hace falta comprarlo/)).not.toBeInTheDocument();
     });
 
     it('keeps a monthly-only plan available under either grid interval', async () => {

@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
-import { LinkButton } from '@/components/account/ui/LinkButton';
+import { GradientButton } from '@/components/ui/GradientButtonReact';
 import type { PublicPlanData } from '@/lib/billing/fetch-plans';
 import { resolvePaidBenefit, selectInheritedTouristPlan } from '@/lib/billing/plan-badge';
 import { loadPricingSituation } from '@/lib/billing/pricing-situation';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl, buildUrlWithParams } from '@/lib/urls';
+import styles from './TouristPlanAction.module.css';
 
 type Plan = Pick<
     PublicPlanData,
@@ -69,10 +70,11 @@ export function TouristPlanAction({
         .filter((plan) => plan.monthlyPriceArs > 0)
         .sort((a, b) => a.monthlyPriceArs - b.monthlyPriceArs)[0];
     const situation = result?.ok ? result.data : undefined;
+    const inheritsVip = situation?.situation === 'TOURIST_VIP_INHERITED';
     const current =
         state === 'free'
             ? free
-            : situation?.situation === 'TOURIST_VIP_INHERITED'
+            : inheritsVip
               ? selectInheritedTouristPlan({
                     sellablePlans: plans.filter((plan) => plan.isActive && plan.billingOptions)
                 })
@@ -119,10 +121,17 @@ export function TouristPlanAction({
                 entitlement: key
             })
     );
+    const canManage = state === 'paid' && !inheritsVip && mode !== 'freeCard';
+    const actionHref = canManage ? manage : href;
+    const actionLabel = canManage
+        ? t('pricing.planStatus.manage')
+        : state === 'free' && paid && showOffer
+          ? t('pricing.planStatus.upgrade', undefined, { plan: paid.name })
+          : label;
 
     return (
         <div>
-            {current && mode !== 'closing' && (
+            {current && !inheritsVip && mode !== 'closing' && (
                 <p>
                     <strong>
                         {mode === 'freeCard'
@@ -130,6 +139,9 @@ export function TouristPlanAction({
                             : t('pricing.planStatus.named', undefined, { plan: current.name })}
                     </strong>
                 </p>
+            )}
+            {inheritsVip && mode !== 'freeCard' && (
+                <p>{t('publish.subscribe.touristVipInherited')}</p>
             )}
             {copy && state !== 'paid' && <p>{copy}</p>}
             {mode === 'compare' && benefitLinks.length > 0 && (
@@ -147,25 +159,15 @@ export function TouristPlanAction({
                     ))}
                 </ul>
             )}
-            {state === 'paid' && mode !== 'freeCard' ? (
-                <LinkButton
-                    href={manage}
+            {!inheritsVip && actionHref && actionLabel && (
+                <GradientButton
+                    href={actionHref}
+                    label={actionLabel}
                     variant="accent"
-                    fullWidth={fullWidth}
-                >
-                    {t('pricing.planStatus.manage')}
-                </LinkButton>
-            ) : href && label ? (
-                <LinkButton
-                    href={href}
-                    variant="accent"
-                    fullWidth={fullWidth}
-                >
-                    {state === 'free' && paid && showOffer
-                        ? t('pricing.planStatus.upgrade', undefined, { plan: paid.name })
-                        : label}
-                </LinkButton>
-            ) : null}
+                    flat
+                    className={fullWidth ? styles.fullWidth : undefined}
+                />
+            )}
         </div>
     );
 }

@@ -157,10 +157,7 @@ export function PlanCardCta({
               : [];
     const blockedStatus =
         result?.ok && result.data.situation === 'SUBSCRIBED' ? result.data.status : null;
-    const isCurrentTouristPlan =
-        vertical === 'tourist' &&
-        (view.kind === 'current' ||
-            (view.kind === 'vipInherited' && planVersionId === inheritedPlanVersionId));
+    const isCurrentTouristPlan = vertical === 'tourist' && view.kind === 'current';
     return (
         <div
             data-testid="pricing-card-cta"
@@ -209,7 +206,7 @@ export function PlanCardCta({
                     </a>
                 </>
             )}
-            {(view.kind === 'current' || isCurrentTouristPlan) && (
+            {view.kind === 'current' && (
                 <StatusPill
                     tone="success"
                     className={styles.currentPlan}
@@ -231,6 +228,9 @@ export function PlanCardCta({
                 >
                     {t('pricing.planStatus.manage')}
                 </LinkButton>
+            )}
+            {view.kind === 'vipInherited' && planVersionId === inheritedPlanVersionId && (
+                <p>{t('publish.subscribe.touristVipInherited')}</p>
             )}
             {blockedStatus === 'PAUSED' && (
                 <p data-testid="pricing-plan-change-paused">

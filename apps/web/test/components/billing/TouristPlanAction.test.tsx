@@ -30,6 +30,25 @@ describe('tourist commercial action', () => {
         expect(load).not.toHaveBeenCalled();
     });
 
+    it.each([
+        false,
+        true
+    ])('uses the theme-aware flat accent CTA before hydration (full width: %s)', (fullWidth) => {
+        const html = renderToString(
+            <TouristPlanAction
+                {...props}
+                fullWidth={fullWidth}
+            />
+        );
+        const link = new DOMParser().parseFromString(html, 'text/html').querySelector('a');
+
+        expect(link?.textContent).toBe(props.label);
+        expect([...(link?.classList ?? [])]).toEqual(
+            expect.arrayContaining(['btn-gradient--accent', 'btn-gradient--flat'])
+        );
+        expect(link?.classList.contains('fullWidth')).toBe(fullWidth);
+    });
+
     it('names the catalog floor and upgrades a signed-in free traveler', async () => {
         load.mockResolvedValueOnce({ ok: true, data: { situation: 'CHECKOUT' } });
 
@@ -58,7 +77,7 @@ describe('tourist commercial action', () => {
         expect(screen.queryByText(/desde/)).not.toBeInTheDocument();
     });
 
-    it('shows inherited VIP with catalog benefits and a manage link instead of an upsell', async () => {
+    it('explains inherited VIP and links to usable benefits without offering management', async () => {
         load.mockResolvedValueOnce(inherited);
         const catalog = [
             ...plans,
@@ -81,11 +100,11 @@ describe('tourist commercial action', () => {
             />
         );
 
-        expect(await screen.findByText('Tu plan actual: Travel Premium')).toBeInTheDocument();
-        expect(screen.getByRole('link', { name: 'Gestionar mi plan' })).toHaveAttribute(
-            'href',
-            '/es/mi-cuenta/suscripcion/?domain=tourist'
-        );
+        expect(
+            await screen.findByText('Tu plan ya incluye Turista VIP: no hace falta comprarlo.')
+        ).toBeInTheDocument();
+        expect(screen.queryByRole('link', { name: 'Gestionar mi plan' })).not.toBeInTheDocument();
+        expect(screen.queryByRole('link', { name: props.label })).not.toBeInTheDocument();
         expect(screen.getByRole('link', { name: /promociones/i })).toHaveAttribute(
             'href',
             '/es/promociones/'
