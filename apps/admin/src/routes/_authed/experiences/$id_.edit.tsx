@@ -24,6 +24,7 @@ import { FaqManager } from '@/components/faqs/FaqManager';
 import { experienceTabs, PageTabs } from '@/components/layout/PageTabs';
 import { RevalidateEntityButton } from '@/components/RevalidateEntityButton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui-wrapped';
+import { TranslationSection } from '@/features/content/components/TranslationSection';
 import { useExperiencePage } from '@/features/experience';
 import { useTranslations } from '@/hooks/use-translations';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
@@ -85,6 +86,16 @@ function ExperienceEditPage() {
                                 entityType="experience"
                                 flat
                             />
+                            {/* HOS-2658: staff corrections follow the owner model (AC-30). */}
+                            {entityData.entity && (
+                                <div className="mt-6">
+                                    <TranslationSection
+                                        entityType="experience"
+                                        entityId={id}
+                                        entity={entityData.entity as Record<string, unknown>}
+                                    />
+                                </div>
+                            )}
                         </TabsContent>
 
                         <TabsContent
