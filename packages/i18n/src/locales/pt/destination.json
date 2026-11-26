@@ -168,6 +168,8 @@
         }
     },
     "byAttraction": {
+        "filterTitle": "Filtre por atração",
+        "subtitle": "Conheça as cidades onde você pode visitar esta atração: {{attraction}}.",
         "tagline": "Atração",
         "heading": "Destinos com {{attraction}}",
         "seoSuffix": "Descubra os destinos do Litoral que a oferecem.",

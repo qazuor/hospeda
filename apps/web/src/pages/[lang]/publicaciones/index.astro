@@ -46,10 +46,6 @@ import ItemListJsonLd from '@/components/seo/ItemListJsonLd.astro';
 import FilterChips from '@/components/shared/ui/FilterChips.astro';
 import { getPostCategoryIcon } from '@repo/icons';
 import { FilterSidebar } from '@/components/shared/filters/FilterSidebar.client';
-import {
-    buildPostListingSummary,
-    DEFAULT_POST_CATEGORIES
-} from '@/lib/post-listing-summary';
 import { destinationsApi, postsApi } from '@/lib/api/endpoints';
 import { toArticleCardProps } from '@/lib/api/transforms';
 import { createTranslations } from '@/lib/i18n';
@@ -187,27 +183,6 @@ const cards = items.map((item) => toArticleCardProps({ item: item as unknown as 
  * replace the generic "N resultados encontrados" line in the wave header.
  * Mirrors the events pattern via the parallel `post-listing-summary` module.
  */
-const destinationCatalog = destinations.map((d) => ({
-    key: d.id,
-    label: { es: d.name, en: d.name, pt: d.name } as const
-}));
-const filterSummary = buildPostListingSummary({
-    locale,
-    filters: {
-        text: q,
-        category,
-        destinationId,
-        publishedAfter: publishedAfterFilter,
-        publishedBefore: publishedBeforeFilter,
-        isFeatured
-    },
-    counts: { shown: cards.length, total },
-    sort: { sortKey },
-    catalogs: {
-        destinations: destinationCatalog,
-        categories: DEFAULT_POST_CATEGORIES
-    }
-});
 
 /**
  * Detect whether any non-default filters are active. Used to choose between
@@ -509,7 +484,8 @@ const postCategoryClearChip = buildClearFacetChip({
     showFilters={true}
     filterPosition="left"
     totalCount={total}
-    filterSummary={filterSummary}
+    resultKind="posts"
+    sortOptions={sortOptions}
 >
     {/* RSS feed-discovery hints — one per supported locale (SPEC-157 REQ-6) */}
     <link
@@ -546,7 +522,6 @@ const postCategoryClearChip = buildClearFacetChip({
         client:load
         locale={locale}
         filters={filterGroups}
-        sortOptions={sortOptions}
         defaultSort={DEFAULT_SORT_KEY}
         initialParams={sidebarInitialParams}
     />

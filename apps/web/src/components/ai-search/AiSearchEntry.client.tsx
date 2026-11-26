@@ -108,6 +108,7 @@ export function AiSearchEntry({
     pageType
 }: AiSearchEntryProps) {
     const { t } = createTranslations(locale);
+    const query = new URL(currentUrl, 'https://hospeda.invalid').searchParams.get('q')?.trim();
     const [isOpen, setIsOpen] = useState(false);
     const [isFabVisible, setIsFabVisible] = useState(false);
     // HOS-111 T-005: maximize toggle — widens the drawer to ~60% viewport on
@@ -220,10 +221,7 @@ export function AiSearchEntry({
                     sr-only text to keep the "search with AI" context. */}
                 <span className="sr-only">{t('aiSearch.triggerLabel', 'Buscá con IA')}. </span>
                 <span className={styles.searchBarPlaceholder}>
-                    {t(
-                        'aiSearch.chat.placeholder',
-                        'Contame qué buscás, por ejemplo: cabaña para 4 con pileta cerca del río'
-                    )}
+                    {query || t('aiSearch.chat.placeholder', 'Ej.: cabaña con pileta')}
                 </span>
                 <span
                     className={styles.searchBarBadge}

@@ -69,7 +69,8 @@ describe('alojamientos/mapa.astro — MapPlaceholder fallback (SPEC-228 T-016)',
 
 describe('alojamientos/mapa.astro — filters forwarded to the viewport-search refetch (BETA-166)', () => {
     it('builds mapExtraSearchParams from the same URL filters used for the SSR fetch', () => {
-        expect(src).toContain('const mapExtraSearchParams: Record<string, unknown> = {');
+        expect(src).toContain('const mapExtraSearchParams = {');
+        expect(src).toContain('loadAccommodationMapResults({ filters: mapExtraSearchParams,');
         const startIdx = src.indexOf('const mapExtraSearchParams');
         const endIdx = src.indexOf('};', startIdx);
         const block = src.slice(startIdx, endIdx);
