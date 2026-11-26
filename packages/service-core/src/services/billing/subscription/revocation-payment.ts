@@ -9,7 +9,7 @@ import {
     payments,
     subscriptions
 } from '@repo/db';
-import { ServiceErrorCode } from '@repo/schemas';
+import { type RevokeSubscriptionRejection, ServiceErrorCode } from '@repo/schemas';
 import { startOfMarketDay } from '@repo/utils';
 import { ServiceError } from '../../../types';
 import {
@@ -48,24 +48,14 @@ const CREDITED_PAYMENT_STATUSES = [
  * What already claims a payment is summed by `claimedRefundAmount` of the same module.
  */
 
-/** Every `reason` a rejection of S36 carries, for an exhaustive HTTP mapping (I-10). */
-export const REVOKE_SUBSCRIPTION_REJECTIONS = [
-    'SUBSCRIPTION_NOT_FOUND',
-    'ADMINISTRATIVE_ACTION_FORBIDDEN',
-    'REVOCATION_NOT_PRINCIPAL',
-    'REVOCATION_STATE_NOT_ALLOWED',
-    'REVOCATION_NO_CREDITED_PAYMENT',
-    'REVOCATION_WINDOW_CLOSED',
-    'REVOCATION_AMOUNT_UNAVAILABLE',
-    'REVOCATION_PAYMENT_CHANGED',
-    'REVOCATION_STATE_CHANGED',
-    'PAYMENT_NOT_REFUNDABLE',
-    'REFUND_EXCEEDS_BALANCE',
-    'REFUND_AMOUNT_INVALID'
-] as const;
-
-/** A rejection reason of S36. The last three are thrown by `requestRefund` as they are. */
-export type RevokeSubscriptionRejection = (typeof REVOKE_SUBSCRIPTION_REJECTIONS)[number];
+export type { RevokeSubscriptionRejection } from '@repo/schemas';
+/**
+ * Every `reason` a rejection of S36 carries, for an exhaustive HTTP mapping (I-10).
+ * The tuple and its type live in `@repo/schemas` (single source of truth) and are
+ * re-exported here so existing consumers keep importing them from `@repo/service-core`.
+ * The last three are thrown by `requestRefund` as they are.
+ */
+export { REVOKE_SUBSCRIPTION_REJECTIONS } from '@repo/schemas';
 
 const REJECTION_CODES: Readonly<Record<RevokeSubscriptionRejection, ServiceErrorCode>> = {
     SUBSCRIPTION_NOT_FOUND: ServiceErrorCode.NOT_FOUND,

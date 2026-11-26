@@ -12,7 +12,13 @@ import {
     subscriptions
 } from '@repo/db';
 import { createLogger } from '@repo/logger';
-import { BILLING_CYCLE_MONTHS, PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
+import {
+    BILLING_CYCLE_MONTHS,
+    PermissionEnum,
+    type RegisterLateManualPaymentRejection,
+    RoleEnum,
+    ServiceErrorCode
+} from '@repo/schemas';
 import { isAdministrativeActionPermitted, resolveAdministrativeActionStep } from '@repo/verticals';
 import { z } from 'zod';
 import { type Actor, ServiceError } from '../../../types';
@@ -58,23 +64,13 @@ const inputSchema = z.strictObject({
     proofRef: z.string().min(1).optional()
 });
 
-/** Stable reasons returned by MP4. */
-export const REGISTER_LATE_MANUAL_PAYMENT_REJECTIONS = [
-    'SUBSCRIPTION_NOT_FOUND',
-    'MANUAL_PAYMENT_NOT_FOUND',
-    'ADMINISTRATIVE_ACTION_FORBIDDEN',
-    'MANUAL_PAYMENT_NOT_MANUAL',
-    'MANUAL_PAYMENT_NOT_DECLARED_UNPAID',
-    'MANUAL_PAYMENT_NOT_SUSPENDED',
-    'MANUAL_PAYMENT_CONDITION_FAILED',
-    'MANUAL_PAYMENT_COVERAGE_CONFLICT',
-    'RETAINED_PAYMENT',
-    'LOST_RACE'
-] as const;
-
-/** One MP4 rejection. */
-export type RegisterLateManualPaymentRejection =
-    (typeof REGISTER_LATE_MANUAL_PAYMENT_REJECTIONS)[number];
+export type { RegisterLateManualPaymentRejection } from '@repo/schemas';
+/**
+ * Stable reasons returned by MP4. The tuple and its type live in `@repo/schemas`
+ * (single source of truth) and are re-exported here so existing consumers keep
+ * importing them from `@repo/service-core`.
+ */
+export { REGISTER_LATE_MANUAL_PAYMENT_REJECTIONS } from '@repo/schemas';
 
 /** Optional post-commit integrations for the S7 return. */
 export interface RegisterLateManualPaymentPorts {
