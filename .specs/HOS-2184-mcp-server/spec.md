@@ -56,8 +56,10 @@ customer's subscription pays for the model), and is the foundation HOS-2185
   and content moderation.
 - G-6 (phase B, revised 2026-11-25): access is gated by the
   `ai_assistant_access` entitlement, and **every plan grants it** — Básico,
-  Profesional and Premium of accommodation, venue and experience, and the trial
-  (which derives from Premium). No add-on, no price, no usage quota. The gate
+  Profesional and Premium of accommodation, venue and experience, the trial
+  (which derives from Premium) and the pre-trial plan (owner who has not
+  published yet). The **floor** plan (paid plan or trial ended) does **not**
+  grant it: that owner gets the "not included in your plan" message. No add-on, no price, no usage quota. The gate
   exists so a future plan can omit the key; today nobody on a plan is refused.
   Stats show the customer's plan status (expiry and what it includes).
 - G-7 (phase B): ChatGPT app directory submission prepared and sent.
@@ -296,8 +298,9 @@ No tool takes an action based on content it returned.
 - Optional `mcp_audit_event` (OQ-4).
 - Phase B, catalog: key `ai_assistant_access`, `scope: global`, boolean (no
   quota); `plan_version_entitlement` rows on **every** sellable plan (Básico,
-  Profesional, Premium) of accommodation, venue and experience, all versions.
-  The trial inherits it from Premium. No add-on. Generated SQL migration (G18)
+  Profesional, Premium) of accommodation, venue and experience, all versions,
+  and on their `pre-trial` plans. Not on `floor`. The trial inherits it from
+  Premium. No add-on. Generated SQL migration (G18)
   for the key, plus a seed data-migration for the plan grants (dual-write).
 - Env vars (registry flow in `@repo/config` + app `env.ts` + `.env.example` +
   Coolify): `HOSPEDA_MCP_ENABLED`, `HOSPEDA_MCP_RESOURCE_URL` (canonical public
@@ -354,9 +357,9 @@ Phase A
 Phase B
 
 - AC-14 (revised 2026-11-25): a customer on any plan (Básico, Profesional,
-  Premium, trial) of any vertical can use every tool. An account whose plans do
-  not grant `ai_assistant_access` gets the "not included in your plan" message
-  (provable today only with a test plan without the key).
+  Premium, trial, pre-trial) of any vertical can use every tool. An owner
+  whose only plans are `floor` gets the "not included in your plan" message
+  with the plans link.
 - AC-15: Catalog guards G3 and G18 pass.
 - AC-16: Stats include plan status (expiry and what it includes).
 - AC-17: ChatGPT directory submission sent (privacy policy, tool descriptions,
