@@ -1786,6 +1786,13 @@
       "when": 1795707262628,
       "tag": "0254_hos2495_listing_photo_keys_and_packs",
       "breakpoints": true
+    },
+    {
+      "idx": 255,
+      "version": "7",
+      "when": 1795724431559,
+      "tag": "0255_hos2196_plan_version_payment_methods",
+      "breakpoints": true
     }
   ]
 }

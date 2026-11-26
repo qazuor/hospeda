@@ -31,9 +31,9 @@ beforeAll(async () => {
         entries: { idx: number; tag: string }[];
     };
     for (const entry of journal.entries
-        // Extras 041 reads `plan_version.payment_methods`, which migration 0254 (HOS-2196) adds.
+        // Extras 041 reads `plan_version.payment_methods`, which migration 0255 (HOS-2196) adds.
         .filter(
-            (item) => item.idx < 144 || item.tag === '0254_hos2196_plan_version_payment_methods'
+            (item) => item.idx < 144 || item.tag === '0255_hos2196_plan_version_payment_methods'
         )
         .sort((a, b) => a.idx - b.idx)) {
         const sql = readFileSync(join(migrationDir, `${entry.tag}.sql`), 'utf8');
