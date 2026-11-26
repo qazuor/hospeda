@@ -18,14 +18,19 @@ import { eq } from 'drizzle-orm';
 import type { PgColumn } from 'drizzle-orm/pg-core';
 import { apiLogger } from '../../utils/logger.js';
 import {
+    type ContentLocale,
     getEntityTable,
     I18N_COLUMN_MAP,
     i18nColumn,
     type TranslatableEntityType
 } from './translatable-entities.js';
 
-/** A target locale a translation pair can be written for. */
-export type TranslationPairLocale = 'en' | 'pt';
+/**
+ * A locale a translation pair can be written for. Listing paths only ever
+ * write `en`/`pt` (Spanish is the source); the legacy admin/protected translate
+ * routes may translate OUT of `en`/`pt`, so `es` is a valid target there.
+ */
+export type TranslationPairLocale = ContentLocale;
 
 /** One `(field, locale)` write. */
 export interface TranslationPairWrite {
@@ -56,8 +61,10 @@ export interface WriteTranslationPairsInput {
     readonly entityType: TranslatableEntityType;
     readonly entityId: string;
     readonly writes: readonly TranslationPairWrite[];
-    /** Optional Spanish mirror per field, written into `<col>.es` of every written field. */
+    /** Optional source mirror per field, written into `<col>[sourceLocale]` of every written field. */
     readonly sourceMirror?: Readonly<Record<string, string>>;
+    /** Locale `sourceMirror` is written in. Defaults to `'es'`. */
+    readonly sourceLocale?: ContentLocale;
 }
 
 /** Result of {@link writeTranslationPairs}. */
@@ -81,8 +88,9 @@ function columnSchemaFor(column: string): typeof I18nTextSchema {
  *   skipped unless `overrideManual === true`;
  * - `ai` meta is `{ autoTranslated: true, translatedAt, provider, model, sourceHash }`,
  *   `manual` meta is `{ autoTranslated: false, translatedAt, sourceHash }`;
- * - a missing i18n value starts from `{ es: '', en: '', pt: '' }`; `es` comes from
- *   `sourceMirror[field]` when given, otherwise it is kept;
+ * - a missing i18n value starts from `{ es: '', en: '', pt: '' }`; the source
+ *   locale (`es` by default) comes from `sourceMirror[field]` when given,
+ *   otherwise it is kept;
  * - every written column is validated with its Zod schema and the merged metadata
  *   with `TranslationMetaSchema` before the update; a failure throws and nothing
  *   is written;
@@ -96,7 +104,7 @@ function columnSchemaFor(column: string): typeof I18nTextSchema {
 export async function writeTranslationPairs(
     input: WriteTranslationPairsInput
 ): Promise<WriteTranslationPairsResult> {
-    const { entityType, entityId, writes, sourceMirror } = input;
+    const { entityType, entityId, writes, sourceMirror, sourceLocale = 'es' } = input;
     const columnMap = I18N_COLUMN_MAP[entityType];
 
     for (const write of writes) {
@@ -154,10 +162,10 @@ export async function writeTranslationPairs(
                 en: (stored[column] as I18nText | null)?.en ?? '',
                 pt: (stored[column] as I18nText | null)?.pt ?? ''
             };
-            const mirroredEs = sourceMirror?.[field];
+            const mirrored = sourceMirror?.[field];
             nextColumns.set(column, {
                 ...current,
-                es: mirroredEs ?? current.es,
+                [sourceLocale]: mirrored ?? current[sourceLocale],
                 [locale]: write.value
             });
 

@@ -15,8 +15,8 @@
  */
 
 import { getDb } from '@repo/db';
-import type { AiFeature, I18nText, TranslationMeta } from '@repo/schemas';
-import { I18nTextSchema, TranslationMetaSchema } from '@repo/schemas';
+import type { AiFeature, I18nText } from '@repo/schemas';
+import { computeTranslationSourceHash } from '@repo/service-core';
 import { and, eq, gt, isNull } from 'drizzle-orm';
 import type { PgColumn } from 'drizzle-orm/pg-core';
 import { apiLogger } from '../utils/logger.js';
@@ -30,6 +30,11 @@ import {
     i18nColumn,
     type TranslatableEntityType
 } from './translation/translatable-entities.js';
+import {
+    type TranslationPairWrite,
+    type WriteTranslationPairsResult,
+    writeTranslationPairs
+} from './translation/translation-pair-writer.js';
 
 export type { ContentLocale, TranslatableEntityType };
 
@@ -612,7 +617,17 @@ async function loadExistingTranslations(
 
 /**
  * Persists translation results to the database.
- * Updates the I18nText columns and translation_meta for the entity.
+ *
+ * Builds one `ai` pair write per successful result (its `sourceHash` is the
+ * hash of the source value it was translated from) and delegates to the single
+ * writer, which merges under a row lock, never overwrites a MANUAL pair unless
+ * it is listed in `overrideManualPairs`, and gates every value with Zod.
+ * Failed results are never written, so the renderer falls back to Spanish and a
+ * later run can retry them.
+ *
+ * @param overrideManualPairs - `"field:locale"` keys that may be written even
+ *   onto a MANUAL pair ("Traducir con IA", HOS-2658).
+ * @returns The writer result (written / skipped pairs, whether the row exists).
  */
 export async function persistTranslations(
     entityType: TranslatableEntityType,
@@ -621,122 +636,37 @@ export async function persistTranslations(
     results: readonly TranslateResult[],
     provider: string,
     model: string,
-    sourceLocale: ContentLocale = 'es'
-): Promise<void> {
-    const table = getEntityTable(entityType);
+    sourceLocale: ContentLocale = 'es',
+    overrideManualPairs?: ReadonlySet<string>
+): Promise<WriteTranslationPairsResult> {
     const i18nColumnMap = I18N_COLUMN_MAP[entityType];
-
-    // Group successful results by field so each i18n column is written once.
-    const resultsByField = new Map<string, TranslateResult[]>();
+    const writes: TranslationPairWrite[] = [];
     for (const result of results) {
-        if (!i18nColumnMap[result.fieldType]) continue;
-        const bucket = resultsByField.get(result.fieldType) ?? [];
-        bucket.push(result);
-        resultsByField.set(result.fieldType, bucket);
+        if (!result.success || !i18nColumnMap[result.fieldType]) continue;
+        if (result.locale === sourceLocale) continue;
+        const { hash } = computeTranslationSourceHash({
+            text: fieldValues[result.fieldType] ?? ''
+        });
+        writes.push({
+            field: result.fieldType,
+            locale: result.locale,
+            value: result.translatedText,
+            origin: 'ai',
+            sourceHash: hash,
+            provider,
+            model,
+            overrideManual:
+                overrideManualPairs?.has(`${result.fieldType}:${result.locale}`) ?? false
+        });
     }
 
-    if (resultsByField.size === 0) {
-        return;
-    }
-
-    // Read the CURRENT i18n columns + meta so we MERGE rather than clobber.
-    // This preserves previously-translated locales and admin manual overrides
-    // (locales flagged `autoTranslated: false` are never overwritten).
-    const selection: Record<string, PgColumn> = { translationMeta: table.translationMeta };
-    for (const column of Object.values(i18nColumnMap)) {
-        selection[column] = i18nColumn(table, column);
-    }
-
-    const db = getDb();
-    const [existing] = await db
-        .select(selection)
-        .from(table)
-        .where(eq(table.id, entityId))
-        .limit(1);
-
-    const existingRow = (existing ?? {}) as Record<string, unknown>;
-    const existingMeta = (existingRow.translationMeta as TranslationMeta | null) ?? {};
-
-    const updateSet: Record<string, unknown> = {};
-    const mergedMeta: TranslationMeta = { ...existingMeta };
-    const fieldsUpdated: string[] = [];
-
-    for (const [fieldType, fieldResults] of resultsByField) {
-        const column = i18nColumnMap[fieldType];
-        if (!column) continue;
-        const existingValue = (existingRow[column] as I18nText | null) ?? {
-            es: '',
-            en: '',
-            pt: ''
-        };
-
-        // Start from the existing localized value, refresh the source locale
-        // from the provided source field value (Spanish by default).
-        const nextValue: I18nText = {
-            es: existingValue.es ?? '',
-            en: existingValue.en ?? '',
-            pt: existingValue.pt ?? ''
-        };
-        nextValue[sourceLocale] = fieldValues[fieldType] ?? existingValue[sourceLocale] ?? '';
-        const fieldMeta: TranslationMeta[string] = { ...(existingMeta[fieldType] ?? {}) };
-
-        for (const result of fieldResults) {
-            // Failed translations leave the locale untouched so the renderer
-            // can fall back to Spanish; they are not recorded as overrides.
-            if (!result.success) continue;
-
-            // `result.locale` is a target locale (es/en/pt), never the source.
-            const locale = result.locale;
-            // Never overwrite a human-curated manual override.
-            if (existingMeta[fieldType]?.[locale]?.autoTranslated === false) continue;
-
-            nextValue[locale] = result.translatedText;
-            fieldMeta[locale] = {
-                autoTranslated: true,
-                translatedAt: new Date().toISOString(),
-                provider,
-                model
-            };
-        }
-
-        updateSet[column] = nextValue;
-        mergedMeta[fieldType] = fieldMeta;
-        fieldsUpdated.push(fieldType);
-    }
-
-    updateSet.translationMeta = mergedMeta;
-
-    // HOS-190 slice 3: gate the write with Zod. This function previously built
-    // `updateSet` from AI-provider output (`result.translatedText`) and wrote
-    // it straight to the DB via `db.update()` with no runtime validation — a
-    // malformed provider response (wrong type, unexpected shape) would persist
-    // ungated. Validate every i18n column against the same `I18nTextSchema`
-    // the domain entity schemas use for `nameI18n`/`summaryI18n`/etc., and the
-    // merged metadata against `TranslationMetaSchema`, before the write. A
-    // failure here throws — the caller (the AI translate routes) already
-    // wraps this call in a try/catch and reports the error, so no invalid
-    // data ever reaches the table.
-    for (const column of Object.keys(updateSet)) {
-        if (column === 'translationMeta') continue;
-        const parsedValue = I18nTextSchema.safeParse(updateSet[column]);
-        if (!parsedValue.success) {
-            throw new Error(
-                `ai-translate: refusing to persist malformed i18n value for column "${column}" (${entityType}/${entityId}): ${parsedValue.error.message}`
-            );
-        }
-        updateSet[column] = parsedValue.data;
-    }
-    const parsedMeta = TranslationMetaSchema.safeParse(mergedMeta);
-    if (!parsedMeta.success) {
-        throw new Error(
-            `ai-translate: refusing to persist malformed translationMeta (${entityType}/${entityId}): ${parsedMeta.error.message}`
-        );
-    }
-    updateSet.translationMeta = parsedMeta.data;
-
-    await db.update(table).set(updateSet).where(eq(table.id, entityId));
-
-    apiLogger.info({ entityType, entityId, fieldsUpdated }, 'ai-translate: translations persisted');
+    return writeTranslationPairs({
+        entityType,
+        entityId,
+        writes,
+        sourceMirror: fieldValues,
+        sourceLocale
+    });
 }
 
 /**
@@ -857,75 +787,39 @@ export type ManualOverrideResult =
 /**
  * Applies an admin manual translation override for a single field/locale.
  *
- * Reads the current i18n value + meta, sets only the targeted locale, and flags
- * it as `autoTranslated: false` so future auto-translation never overwrites it.
+ * Reads the field's current Spanish source and delegates ONE `manual` pair
+ * write (with the source's hash, HOS-2658 DL-6) to the single writer, so the
+ * pair is flagged `autoTranslated: false` and future auto-translation never
+ * overwrites it, while the editor can still tell when the Spanish changed.
  */
 export async function applyManualOverride(
     input: ManualOverrideInput
 ): Promise<ManualOverrideResult> {
     const { entityType, entityId, fieldType, locale, value } = input;
 
-    const column = I18N_COLUMN_MAP[entityType][fieldType];
-    if (!column) {
+    if (!I18N_COLUMN_MAP[entityType][fieldType]) {
         return { ok: false, code: 'INVALID_FIELD' };
     }
 
     const table = getEntityTable(entityType);
-    const db = getDb();
-    const [existing] = await db
-        .select({ value: i18nColumn(table, column), translationMeta: table.translationMeta })
-        .from(table)
-        .where(eq(table.id, entityId))
-        .limit(1);
-
-    if (!existing) {
+    const [row] = await getDb().select().from(table).where(eq(table.id, entityId)).limit(1);
+    if (!row) {
         return { ok: false, code: 'NOT_FOUND' };
     }
 
-    const existingRow = existing as Record<string, unknown>;
-    const existingValue = (existingRow.value as I18nText | null) ?? { es: '', en: '', pt: '' };
-    const nextValue: I18nText = {
-        es: existingValue.es ?? '',
-        en: existingValue.en ?? '',
-        pt: existingValue.pt ?? ''
-    };
-    nextValue[locale] = value;
+    const { text } = readSourceText({
+        entityType,
+        row: row as Record<string, unknown>,
+        field: fieldType
+    });
+    const { hash } = computeTranslationSourceHash({ text });
+    const result = await writeTranslationPairs({
+        entityType,
+        entityId,
+        writes: [{ field: fieldType, locale, value, origin: 'manual', sourceHash: hash }]
+    });
 
-    const existingMeta = (existingRow.translationMeta as TranslationMeta | null) ?? {};
-    const nextMeta: TranslationMeta = {
-        ...existingMeta,
-        [fieldType]: {
-            ...(existingMeta[fieldType] ?? {}),
-            [locale]: {
-                autoTranslated: false,
-                translatedAt: new Date().toISOString()
-            }
-        }
-    };
-
-    // HOS-190 slice 3: gate the write with Zod, mirroring `persistTranslations`.
-    // This is a raw `db.update()` that writes an I18nText column + translation
-    // meta; validate both against the same schemas the domain entities use so a
-    // malformed shape can never persist ungated.
-    const parsedValue = I18nTextSchema.safeParse(nextValue);
-    if (!parsedValue.success) {
-        throw new Error(
-            `ai-translate: refusing to persist malformed manual override for column "${column}" (${entityType}/${entityId}): ${parsedValue.error.message}`
-        );
-    }
-    const parsedMeta = TranslationMetaSchema.safeParse(nextMeta);
-    if (!parsedMeta.success) {
-        throw new Error(
-            `ai-translate: refusing to persist malformed translationMeta on manual override (${entityType}/${entityId}): ${parsedMeta.error.message}`
-        );
-    }
-
-    await db
-        .update(table)
-        .set({ [column]: parsedValue.data, translationMeta: parsedMeta.data })
-        .where(eq(table.id, entityId));
-
-    return { ok: true };
+    return result.found ? { ok: true } : { ok: false, code: 'NOT_FOUND' };
 }
 
 /**

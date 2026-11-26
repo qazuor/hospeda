@@ -27,15 +27,20 @@ vi.mock('../ai-service.factory.js', () => ({
     createConfiguredAiService: vi.fn()
 }));
 
+vi.mock('../translation/translation-pair-writer.js', () => ({
+    writeTranslationPairs: vi.fn()
+}));
+
 // ---------------------------------------------------------------------------
 // Dynamic imports after mocks
 // ---------------------------------------------------------------------------
 
 const { getDb } = await import('@repo/db');
 const { createConfiguredAiService } = await import('../ai-service.factory.js');
-const { translateEntity, persistTranslations, loadTranslatableFields } = await import(
-    '../ai-translate.service.js'
-);
+const { writeTranslationPairs } = await import('../translation/translation-pair-writer.js');
+const { computeTranslationSourceHash } = await import('@repo/service-core');
+const { translateEntity, persistTranslations, loadTranslatableFields, applyManualOverride } =
+    await import('../ai-translate.service.js');
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -549,48 +554,23 @@ describe('translateEntity — source locale and direction', () => {
 // ============================================================================
 
 describe('persistTranslations', () => {
-    const mockGetDb = getDb as Mock;
-    const mockUpdate = vi.fn().mockReturnThis();
-    const mockSet = vi.fn().mockReturnThis();
-    const mockWhere = vi.fn().mockReturnThis();
-    const mockFrom = vi.fn().mockReturnThis();
-    const mockSelect = vi.fn().mockReturnThis();
-    const mockLimit = vi.fn().mockReturnThis();
+    const writerResult = { written: [], skippedManual: [], found: true };
 
     beforeEach(() => {
         vi.clearAllMocks();
-        mockGetDb.mockReturnValue({
-            select: mockSelect,
-            update: mockUpdate,
-            from: mockFrom,
-            where: mockWhere,
-            eq: vi.fn()
-        });
-        mockSelect.mockReturnValue({ from: mockFrom });
-        mockFrom.mockReturnValue({ where: mockWhere });
-        mockWhere.mockReturnValue({ limit: mockLimit });
-        mockLimit.mockResolvedValue([{ translationMeta: {} }]);
-        mockUpdate.mockReturnValue({ set: mockSet });
-        mockSet.mockReturnValue({ where: mockWhere });
+        (writeTranslationPairs as Mock).mockResolvedValue(writerResult);
     });
 
-    it('should update i18n columns with translated values', async () => {
+    it('delegates one ai write per successful result, with the source hash and a Spanish mirror', async () => {
         // Arrange
         const fieldValues = { name: 'Cabaña del Río', summary: 'Hermosa cabaña' };
         const translations: TranslateResult[] = [
             { fieldType: 'name', locale: 'en', translatedText: 'River Cabin', success: true },
-            { fieldType: 'name', locale: 'pt', translatedText: 'Cabana do Rio', success: true },
-            {
-                fieldType: 'summary',
-                locale: 'en',
-                translatedText: 'Beautiful cabin',
-                success: true
-            },
             { fieldType: 'summary', locale: 'pt', translatedText: 'Bela cabana', success: true }
         ];
 
         // Act
-        await persistTranslations(
+        const result = await persistTranslations(
             'accommodation',
             'test-uuid',
             fieldValues,
@@ -600,61 +580,40 @@ describe('persistTranslations', () => {
         );
 
         // Assert
-        expect(mockSet).toHaveBeenCalled();
-        const setArg = mockSet.mock.calls[0]?.[0] as Record<string, unknown>;
-        expect(setArg).toBeDefined();
-        expect(setArg.nameI18n).toBeDefined();
-        expect(setArg.summaryI18n).toBeDefined();
-        expect(setArg.translationMeta).toBeDefined();
+        expect(result).toEqual(writerResult);
+        expect(writeTranslationPairs).toHaveBeenCalledTimes(1);
+        expect(writeTranslationPairs).toHaveBeenCalledWith({
+            entityType: 'accommodation',
+            entityId: 'test-uuid',
+            writes: [
+                {
+                    field: 'name',
+                    locale: 'en',
+                    value: 'River Cabin',
+                    origin: 'ai',
+                    sourceHash: computeTranslationSourceHash({ text: 'Cabaña del Río' }).hash,
+                    provider: 'stub',
+                    model: 'stub-model',
+                    overrideManual: false
+                },
+                {
+                    field: 'summary',
+                    locale: 'pt',
+                    value: 'Bela cabana',
+                    origin: 'ai',
+                    sourceHash: computeTranslationSourceHash({ text: 'Hermosa cabaña' }).hash,
+                    provider: 'stub',
+                    model: 'stub-model',
+                    overrideManual: false
+                }
+            ],
+            sourceMirror: fieldValues,
+            sourceLocale: 'es'
+        });
     });
 
-    it('should preserve Spanish values in I18nText', async () => {
-        const fieldValues = { name: 'Cabaña del Río' };
-        const translations: TranslateResult[] = [
-            { fieldType: 'name', locale: 'en', translatedText: 'River Cabin', success: true }
-        ];
-
-        await persistTranslations(
-            'accommodation',
-            'test-uuid',
-            fieldValues,
-            translations,
-            'stub',
-            'stub-model'
-        );
-
-        const setArg = mockSet.mock.calls[0]?.[0] as Record<string, unknown>;
-        const nameI18n = setArg.nameI18n as Record<string, string>;
-        expect(nameI18n.es).toBe('Cabaña del Río');
-    });
-
-    it('should track autoTranslated status in metadata', async () => {
-        const fieldValues = { name: 'Cabaña' };
-        const translations: TranslateResult[] = [
-            { fieldType: 'name', locale: 'en', translatedText: 'Cabin', success: true }
-        ];
-
-        await persistTranslations(
-            'accommodation',
-            'test-uuid',
-            fieldValues,
-            translations,
-            'stub',
-            'stub-model'
-        );
-
-        const setArg = mockSet.mock.calls[0]?.[0] as Record<string, unknown>;
-        const meta = setArg.translationMeta as Record<
-            string,
-            Record<string, { autoTranslated: boolean }>
-        >;
-        expect(meta.name?.en?.autoTranslated).toBe(true);
-    });
-
-    it('does NOT record meta or a value for a failed translation (so it can be retried)', async () => {
-        mockLimit.mockResolvedValue([{ translationMeta: {} }]);
-
-        const fieldValues = { name: 'Cabaña' };
+    it('never writes a failed translation (so it can be retried)', async () => {
+        // Arrange
         const translations: TranslateResult[] = [
             {
                 fieldType: 'name',
@@ -665,72 +624,7 @@ describe('persistTranslations', () => {
             }
         ];
 
-        await persistTranslations(
-            'accommodation',
-            'test-uuid',
-            fieldValues,
-            translations,
-            'stub',
-            'stub-model'
-        );
-
-        const setArg = mockSet.mock.calls[0]?.[0] as Record<string, unknown>;
-
-        // A failed translation must NOT be flagged autoTranslated:false — that
-        // would alias a transient failure as a permanent manual override and
-        // block future retries. No meta entry is written for the failed locale.
-        const meta = setArg.translationMeta as Record<
-            string,
-            Record<string, { autoTranslated: boolean }>
-        >;
-        expect(meta.name?.en).toBeUndefined();
-
-        // The en value stays empty so the renderer falls back to Spanish.
-        const i18nValue = setArg.nameI18n as { es: string; en: string; pt: string };
-        expect(i18nValue.en).toBe('');
-        expect(i18nValue.es).toBe('Cabaña');
-    });
-
-    it('writes the source value to the given source locale (en source)', async () => {
-        // The editor worked in English, so the English column is the source of
-        // truth and Portuguese is the translated target.
-        const fieldValues = { name: 'River Cabin' };
-        const translations: TranslateResult[] = [
-            { fieldType: 'name', locale: 'pt', translatedText: 'Cabana do Rio', success: true }
-        ];
-
-        await persistTranslations(
-            'accommodation',
-            'test-uuid',
-            fieldValues,
-            translations,
-            'stub',
-            'stub-model',
-            'en'
-        );
-
-        const setArg = mockSet.mock.calls[0]?.[0] as Record<string, unknown>;
-        const nameI18n = setArg.nameI18n as { es: string; en: string; pt: string };
-        expect(nameI18n.en).toBe('River Cabin');
-        expect(nameI18n.pt).toBe('Cabana do Rio');
-        // The canonical Spanish column must NOT be touched when it is not a
-        // result locale (regression guard: locale typing must stay honest).
-        expect(nameI18n.es).toBe('');
-    });
-
-    it('preserves a manual override (autoTranslated:false) against re-translation', async () => {
-        // Existing en is a human override; an auto-translate run must NOT clobber it.
-        mockLimit.mockResolvedValue([
-            {
-                nameI18n: { es: 'Cabaña', en: 'Hand-curated cabin', pt: '' },
-                translationMeta: { name: { en: { autoTranslated: false, translatedAt: 'x' } } }
-            }
-        ]);
-
-        const translations: TranslateResult[] = [
-            { fieldType: 'name', locale: 'en', translatedText: 'Auto cabin', success: true }
-        ];
-
+        // Act
         await persistTranslations(
             'accommodation',
             'test-uuid',
@@ -740,47 +634,195 @@ describe('persistTranslations', () => {
             'stub-model'
         );
 
-        const setArg = mockSet.mock.calls[0]?.[0] as Record<string, unknown>;
-        const i18nValue = setArg.nameI18n as { es: string; en: string; pt: string };
-        expect(i18nValue.en).toBe('Hand-curated cabin');
-        const meta = setArg.translationMeta as Record<
-            string,
-            Record<string, { autoTranslated: boolean }>
-        >;
-        expect(meta.name?.en?.autoTranslated).toBe(false);
+        // Assert
+        const call = (writeTranslationPairs as Mock).mock.calls[0]?.[0] as { writes: unknown[] };
+        expect(call.writes).toEqual([]);
     });
 
-    it('refuses to persist a malformed translated value instead of writing it ungated (HOS-190 regression)', async () => {
-        // Regression guard: `persistTranslations` used to build `updateSet`
-        // straight from `result.translatedText` (AI-provider output) and
-        // write it via `db.update()` with zero runtime validation. A
-        // provider response that doesn't come back as a plain string (here
-        // simulated by force-casting a number past the `TranslateResult`
-        // type) must now be rejected by the `I18nTextSchema` gate BEFORE any
-        // DB write — never persisted silently.
-        const fieldValues = { name: 'Cabaña' };
+    it('marks only the pairs listed in overrideManualPairs as overrideManual', async () => {
+        // Arrange
         const translations: TranslateResult[] = [
-            {
-                fieldType: 'name',
-                locale: 'en',
-                translatedText: 12345 as unknown as string,
-                success: true
-            }
+            { fieldType: 'name', locale: 'en', translatedText: 'House', success: true },
+            { fieldType: 'name', locale: 'pt', translatedText: 'Casa', success: true }
         ];
 
-        await expect(
-            persistTranslations(
-                'accommodation',
-                'test-uuid',
-                fieldValues,
-                translations,
-                'stub',
-                'stub-model'
-            )
-        ).rejects.toThrow(/malformed i18n value/i);
+        // Act
+        await persistTranslations(
+            'accommodation',
+            'test-uuid',
+            { name: 'Casa' },
+            translations,
+            'stub',
+            'stub-model',
+            'es',
+            new Set(['name:en'])
+        );
 
-        // The gate must fire before the write — db.update() never runs.
-        expect(mockUpdate).not.toHaveBeenCalled();
+        // Assert
+        const call = (writeTranslationPairs as Mock).mock.calls[0]?.[0] as {
+            writes: Array<{ locale: string; overrideManual: boolean }>;
+        };
+        expect(call.writes.map((w) => [w.locale, w.overrideManual])).toEqual([
+            ['en', true],
+            ['pt', false]
+        ]);
+    });
+
+    it('mirrors the source into the given source locale (en source)', async () => {
+        // Arrange
+        const translations: TranslateResult[] = [
+            { fieldType: 'name', locale: 'es', translatedText: 'Cabaña', success: true }
+        ];
+
+        // Act
+        await persistTranslations(
+            'accommodation',
+            'test-uuid',
+            { name: 'River Cabin' },
+            translations,
+            'stub',
+            'stub-model',
+            'en'
+        );
+
+        // Assert
+        const call = (writeTranslationPairs as Mock).mock.calls[0]?.[0] as {
+            writes: Array<{ locale: string }>;
+            sourceLocale: string;
+            sourceMirror: Record<string, string>;
+        };
+        expect(call.sourceLocale).toBe('en');
+        expect(call.sourceMirror).toEqual({ name: 'River Cabin' });
+        expect(call.writes.map((w) => w.locale)).toEqual(['es']);
+    });
+
+    it('drops results for fields the entity type cannot translate', async () => {
+        // Arrange
+        const translations: TranslateResult[] = [
+            { fieldType: 'entryNote', locale: 'en', translatedText: 'x', success: true }
+        ];
+
+        // Act
+        await persistTranslations(
+            'accommodation',
+            'test-uuid',
+            { entryNote: 'x' },
+            translations,
+            'stub',
+            'stub-model'
+        );
+
+        // Assert
+        const call = (writeTranslationPairs as Mock).mock.calls[0]?.[0] as { writes: unknown[] };
+        expect(call.writes).toEqual([]);
+    });
+});
+
+describe('applyManualOverride', () => {
+    function mockRow(row: Record<string, unknown> | undefined): void {
+        (getDb as Mock).mockReturnValue({
+            select: vi.fn().mockReturnValue({
+                from: vi.fn().mockReturnValue({
+                    where: vi.fn().mockReturnValue({
+                        limit: vi.fn().mockResolvedValue(row ? [row] : [])
+                    })
+                })
+            })
+        });
+    }
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        (writeTranslationPairs as Mock).mockResolvedValue({
+            written: [{ field: 'entryNote', locale: 'en' }],
+            skippedManual: [],
+            found: true
+        });
+    });
+
+    it('writes one manual pair with the hash of the current Spanish source (AC-30)', async () => {
+        // Arrange
+        mockRow({ entryNoteI18n: { es: 'Gratis hasta la 1', en: '', pt: '' } });
+
+        // Act
+        const result = await applyManualOverride({
+            entityType: 'venue',
+            entityId: 'venue-1',
+            fieldType: 'entryNote',
+            locale: 'en',
+            value: 'Free until 1am'
+        });
+
+        // Assert
+        expect(result).toEqual({ ok: true });
+        expect(writeTranslationPairs).toHaveBeenCalledWith({
+            entityType: 'venue',
+            entityId: 'venue-1',
+            writes: [
+                {
+                    field: 'entryNote',
+                    locale: 'en',
+                    value: 'Free until 1am',
+                    origin: 'manual',
+                    sourceHash: computeTranslationSourceHash({ text: 'Gratis hasta la 1' }).hash
+                }
+            ]
+        });
+    });
+
+    it('answers INVALID_FIELD for a field the entity type cannot translate', async () => {
+        // Arrange / Act
+        const result = await applyManualOverride({
+            entityType: 'accommodation',
+            entityId: 'acc-1',
+            fieldType: 'entryNote',
+            locale: 'en',
+            value: 'x'
+        });
+
+        // Assert
+        expect(result).toEqual({ ok: false, code: 'INVALID_FIELD' });
+        expect(writeTranslationPairs).not.toHaveBeenCalled();
+    });
+
+    it('answers NOT_FOUND when the row does not exist', async () => {
+        // Arrange
+        mockRow(undefined);
+
+        // Act
+        const result = await applyManualOverride({
+            entityType: 'accommodation',
+            entityId: 'missing',
+            fieldType: 'name',
+            locale: 'pt',
+            value: 'x'
+        });
+
+        // Assert
+        expect(result).toEqual({ ok: false, code: 'NOT_FOUND' });
+        expect(writeTranslationPairs).not.toHaveBeenCalled();
+    });
+
+    it('answers NOT_FOUND when the writer no longer finds the row', async () => {
+        // Arrange
+        mockRow({ name: 'Casa' });
+        (writeTranslationPairs as Mock).mockResolvedValue({
+            written: [],
+            skippedManual: [],
+            found: false
+        });
+
+        // Act
+        const result = await applyManualOverride({
+            entityType: 'accommodation',
+            entityId: 'acc-1',
+            fieldType: 'name',
+            locale: 'pt',
+            value: 'x'
+        });
+
+        // Assert
+        expect(result).toEqual({ ok: false, code: 'NOT_FOUND' });
     });
 });
 

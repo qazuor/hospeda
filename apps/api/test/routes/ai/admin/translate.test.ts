@@ -102,12 +102,15 @@ vi.mock('../../../../src/utils/logger', () => ({
  * call (both `loadTranslatableFields` and `persistTranslations`'s merge
  * read); `update().set()` is captured for assertion.
  */
-vi.mock('@repo/db', () => ({
-    getDb: vi.fn(() => ({
+vi.mock('@repo/db', () => {
+    const rows = () => Promise.resolve(dbState.row ? [dbState.row] : []);
+    const db = {
         select: vi.fn(() => ({
             from: vi.fn(() => ({
                 where: vi.fn(() => ({
-                    limit: vi.fn(() => Promise.resolve(dbState.row ? [dbState.row] : []))
+                    limit: vi.fn(rows),
+                    // HOS-2658: the single writer reads the row FOR UPDATE.
+                    for: vi.fn(rows)
                 }))
             }))
         })),
@@ -116,9 +119,11 @@ vi.mock('@repo/db', () => ({
                 dbState.updateSetCalls.push(setArg);
                 return { where: vi.fn().mockResolvedValue(undefined) };
             })
-        }))
-    }))
-}));
+        })),
+        transaction: vi.fn(async (fn: (tx: unknown) => Promise<unknown>) => fn(db))
+    };
+    return { getDb: vi.fn(() => db) };
+});
 
 /**
  * `@repo/db/schemas` — POI (HOS-138) has no plain `name` column, only
