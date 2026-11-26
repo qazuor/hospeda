@@ -49,6 +49,7 @@ import { subscribeEffectiveSetCoverageInvalidation } from './utils/effective-set
 import { env, validateApiEnv } from './utils/env';
 import { listRoutes } from './utils/list-routes';
 import { subscribeListingFeaturedSync } from './utils/listing-featured/featured-sync-listener';
+import { subscribeListingGalleryRevalidation } from './utils/listing-media/gallery-coverage-revalidation';
 import { subscribeListingCoverageRecalculation } from './utils/listing-publication/coverage-listener';
 import { subscribeListingPurgedAddonCancellation } from './utils/listing-publication/listing-purged-addon-listener';
 import { apiLogger } from './utils/logger';
@@ -365,6 +366,7 @@ const startServer = async (): Promise<void> => {
         const app = initApp();
         const unsubscribeCoverage = subscribeListingCoverageRecalculation();
         const unsubscribeListingFeatured = subscribeListingFeaturedSync();
+        const unsubscribeListingGalleryRevalidation = subscribeListingGalleryRevalidation();
         const unsubscribeListingPurgedAddons = subscribeListingPurgedAddonCancellation();
         const unsubscribeTrialConversion = subscribeTrialCoverageConversion();
         const unsubscribeEffectiveSetInvalidation = subscribeEffectiveSetCoverageInvalidation();
@@ -472,6 +474,7 @@ const startServer = async (): Promise<void> => {
             apiLogger.info(`Received ${signal}, shutting down gracefully...`);
             unsubscribeCoverage?.();
             unsubscribeListingFeatured?.();
+            unsubscribeListingGalleryRevalidation?.();
             unsubscribeListingPurgedAddons?.();
             unsubscribeTrialConversion?.();
             unsubscribeEffectiveSetInvalidation?.();
