@@ -8,6 +8,7 @@
  */
 import { createRouter } from '../../../utils/create-app';
 import { ownerAccommodationLocationRoutes } from '../../listing-location/index';
+import { ownerAccommodationTranslationRoutes } from '../../listing-translations/index';
 import { protectedAccommodationReviewRoutes } from '../reviews/protected/index.js';
 import { addFaqRoute } from './addFaq';
 import { protectedAddFeaturedMediaRoute } from './addFeaturedMedia';
@@ -73,6 +74,10 @@ ownershipRoutes.route('/', protectedAccommodationSupportEditsRoute);
 ownershipRoutes.route('/', protectedAccommodationReportFixedRoute);
 // POST /:id/location-exception-request - owner asks for an address exception (HOS-2192)
 ownershipRoutes.route('/', ownerAccommodationLocationRoutes.requestException);
+// GET/PUT /:id/translations + POST /:id/translations/ai - owner translations (HOS-2658)
+ownershipRoutes.route('/', ownerAccommodationTranslationRoutes.get);
+ownershipRoutes.route('/', ownerAccommodationTranslationRoutes.putManual);
+ownershipRoutes.route('/', ownerAccommodationTranslationRoutes.postAi);
 // POST /:id/publish - Transition DRAFT (or INACTIVE) → ACTIVE (HOS-110)
 ownershipRoutes.route('/', protectedPublishAccommodationRoute);
 
