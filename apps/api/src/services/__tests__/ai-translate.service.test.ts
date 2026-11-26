@@ -1129,3 +1129,99 @@ describe('translateEntity — URL protection (HOS-1030)', () => {
         expect(result.translations[0]?.translatedText).toBe('[en] Cabaña del Río');
     });
 });
+
+describe('translateEntity — paid failures (HOS-2658 AC-19)', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        (createConfiguredAiService as Mock).mockResolvedValue({
+            generateText: mockGenerateText,
+            streamText: vi.fn()
+        });
+    });
+
+    it('keeps the spend of a generation whose OUTPUT moderation blocked', async () => {
+        // Arrange
+        const { AiModerationBlockedError } = await import('@repo/ai-core');
+        mockGenerateText.mockRejectedValue(
+            new AiModerationBlockedError({
+                feature: 'translate',
+                direction: 'output',
+                categories: { hate: true },
+                spend: {
+                    usage: { promptTokens: 12, completionTokens: 8, totalTokens: 20 },
+                    provider: 'stub',
+                    model: 'stub-model'
+                }
+            })
+        );
+
+        // Act
+        const result = await translateEntity({
+            entityType: 'venue',
+            entityId: 'venue-1',
+            fields: { description: 'Barra y música' },
+            targetLocales: ['en']
+        });
+
+        // Assert
+        expect(result.translations.map((translation) => translation.success)).toEqual([false]);
+        expect(result.promptTokens).toBe(0);
+        expect(result.failedSpend).toEqual({
+            promptTokens: 12,
+            completionTokens: 8,
+            provider: 'stub',
+            model: 'stub-model'
+        });
+    });
+
+    it('reports no spend when INPUT moderation blocked before the provider', async () => {
+        // Arrange
+        const { AiModerationBlockedError } = await import('@repo/ai-core');
+        mockGenerateText.mockRejectedValue(
+            new AiModerationBlockedError({
+                feature: 'translate',
+                direction: 'input',
+                categories: { hate: true }
+            })
+        );
+
+        // Act
+        const result = await translateEntity({
+            entityType: 'venue',
+            entityId: 'venue-1',
+            fields: { description: 'Barra y música' },
+            targetLocales: ['en']
+        });
+
+        // Assert
+        expect(result.translations.map((translation) => translation.success)).toEqual([false]);
+        expect(result.failedSpend).toBeUndefined();
+    });
+
+    it('keeps the spend of an answer refused for a lost URL placeholder', async () => {
+        // Arrange
+        mockGenerateText.mockResolvedValue({
+            text: 'no placeholder here',
+            usage: { promptTokens: 30, completionTokens: 10, totalTokens: 40 },
+            provider: 'stub',
+            model: 'stub-model',
+            finishReason: 'stop'
+        });
+
+        // Act
+        const result = await translateEntity({
+            entityType: 'venue',
+            entityId: 'venue-1',
+            fields: { description: 'Mirá https://hospeda.example/carta' },
+            targetLocales: ['en']
+        });
+
+        // Assert
+        expect(result.failedSpend).toEqual({
+            promptTokens: 30,
+            completionTokens: 10,
+            provider: 'stub',
+            model: 'stub-model'
+        });
+    });
+});

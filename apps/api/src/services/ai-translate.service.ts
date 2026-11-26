@@ -14,6 +14,7 @@
  * @module services/ai-translate
  */
 
+import { AiModerationBlockedError } from '@repo/ai-core';
 import { getDb } from '@repo/db';
 import type { AiFeature, I18nText, TranslationMeta } from '@repo/schemas';
 import { computeTranslationSourceHash } from '@repo/service-core';
@@ -509,6 +510,40 @@ interface FieldTranslationOutcome {
 }
 
 /**
+ * The spend of a failed call that the provider already charged for (HOS-2658
+ * AC-19): an answer refused after `generateText` returned
+ * ({@link PaidTranslationOutputError}), or a generation whose OUTPUT the engine's
+ * moderation blocked (`AiModerationBlockedError` carrying `spend`). An input
+ * moderation block never reached the provider and yields nothing.
+ *
+ * @param error - The error the translation call threw.
+ * @returns `{ paidFailure }` when the call was paid, otherwise `{}`.
+ */
+function resolvePaidFailure(error: unknown): Pick<FieldTranslationOutcome, 'paidFailure'> {
+    if (error instanceof PaidTranslationOutputError) {
+        return {
+            paidFailure: {
+                promptTokens: error.usage.promptTokens,
+                completionTokens: error.usage.completionTokens,
+                provider: error.provider,
+                model: error.model
+            }
+        };
+    }
+    if (error instanceof AiModerationBlockedError && error.direction === 'output' && error.spend) {
+        return {
+            paidFailure: {
+                promptTokens: error.spend.usage.promptTokens,
+                completionTokens: error.spend.usage.completionTokens,
+                provider: error.spend.provider,
+                model: error.spend.model
+            }
+        };
+    }
+    return {};
+}
+
+/**
  * Translates a single field with retry logic.
  * On failure, returns the original Spanish text and null usage metadata.
  */
@@ -560,16 +595,7 @@ async function translateFieldWithRetry(
             completionTokens: 0,
             provider: null,
             model: null,
-            ...(error instanceof PaidTranslationOutputError
-                ? {
-                      paidFailure: {
-                          promptTokens: error.usage.promptTokens,
-                          completionTokens: error.usage.completionTokens,
-                          provider: error.provider,
-                          model: error.model
-                      }
-                  }
-                : {})
+            ...resolvePaidFailure(error)
         };
     }
 }

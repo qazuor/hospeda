@@ -38,24 +38,53 @@ import {
 
 const { plan, provider } = vi.hoisted(() => ({
     plan: { keys: [] as string[], monthlyLimit: 100 },
-    provider: { fail: false, calls: [] as { prompt: string; locale: string }[] }
+    provider: {
+        fail: false,
+        /** HOS-2658 AC-19: the engine's moderation verdict the stub reproduces. */
+        moderation: null as 'input' | 'output' | null,
+        calls: [] as { prompt: string; locale: string }[]
+    }
 }));
 
-vi.mock('../../../src/services/ai-service.factory.js', () => ({
-    createConfiguredAiService: async () => ({
-        generateText: async (args: { prompt: string; locale: string }) => {
-            provider.calls.push({ prompt: args.prompt, locale: args.locale });
-            if (provider.fail) throw new Error('stub provider down');
-            return {
-                text: `AI (${args.locale})`,
-                usage: { promptTokens: 20, completionTokens: 10, totalTokens: 30 },
-                provider: 'stub',
-                model: 'stub-model',
-                finishReason: 'stop'
-            };
-        }
-    })
-}));
+vi.mock('../../../src/services/ai-service.factory.js', async () => {
+    const { AiModerationBlockedError } = await import('@repo/ai-core');
+    return {
+        createConfiguredAiService: async () => ({
+            generateText: async (args: { prompt: string; locale: string }) => {
+                provider.calls.push({ prompt: args.prompt, locale: args.locale });
+                if (provider.fail) throw new Error('stub provider down');
+                // The engine boundary: an input block happens before generation (no
+                // spend); an output block happens after the provider charged.
+                if (provider.moderation === 'input') {
+                    throw new AiModerationBlockedError({
+                        feature: 'translate',
+                        direction: 'input',
+                        categories: { hate: true }
+                    });
+                }
+                if (provider.moderation === 'output') {
+                    throw new AiModerationBlockedError({
+                        feature: 'translate',
+                        direction: 'output',
+                        categories: { hate: true },
+                        spend: {
+                            usage: { promptTokens: 20, completionTokens: 10, totalTokens: 30 },
+                            provider: 'stub',
+                            model: 'stub-model'
+                        }
+                    });
+                }
+                return {
+                    text: `AI (${args.locale})`,
+                    usage: { promptTokens: 20, completionTokens: 10, totalTokens: 30 },
+                    provider: 'stub',
+                    model: 'stub-model',
+                    finishReason: 'stop'
+                };
+            }
+        })
+    };
+});
 
 vi.mock('../../../src/utils/listing-access/ports', async (importOriginal) => {
     const actual = await importOriginal<typeof import('../../../src/utils/listing-access/ports')>();
@@ -223,6 +252,7 @@ beforeEach(() => {
     plan.keys = [...ENTITLED];
     plan.monthlyLimit = 100;
     provider.fail = false;
+    provider.moderation = null;
     provider.calls.length = 0;
 });
 
@@ -522,6 +552,74 @@ describe.each(['venue', 'accommodation'] as const)('%s translation routes', (ver
                 tokens_out: 10
             }
         ]);
+    });
+
+    it('POST ai whose OUTPUT moderation blocked a paid generation answers 502, keeps the MANUAL pair and meters one error row (AC-19)', async () => {
+        // Arrange
+        provider.moderation = 'output';
+        const { ownerId, id } = await seedListing(vertical);
+        await setRow(vertical, id, {
+            description: SPANISH,
+            descriptionI18n: { es: SPANISH, en: 'Mine', pt: '' },
+            translationMeta: {
+                description: {
+                    en: {
+                        autoTranslated: false,
+                        translatedAt: '2026-01-01T00:00:00.000Z',
+                        sourceHash: hash(SPANISH)
+                    }
+                }
+            }
+        });
+        const before = await readRow(vertical, id);
+
+        // Act
+        const res = await call('POST', `${BASE[vertical]}/${id}/translations/ai`, ownerId, {
+            field: 'description',
+            locales: ['en']
+        });
+
+        // Assert
+        expect(res.status).toBe(502);
+        expect((await json(res)).error?.code).toBe('PROVIDER_ERROR');
+        expect(await readRow(vertical, id)).toEqual(before);
+        expect(provider.calls.map((callArgs) => callArgs.locale)).toEqual(['en']);
+        const usage = await getDb().execute(
+            sql`SELECT feature, status, provider, model, tokens_in, tokens_out FROM ai_usage WHERE user_id = ${ownerId}::uuid`
+        );
+        expect(usage.rows).toEqual([
+            {
+                feature: 'translate',
+                status: 'error',
+                provider: 'stub',
+                model: 'stub-model',
+                tokens_in: 20,
+                tokens_out: 10
+            }
+        ]);
+    });
+
+    it('POST ai whose INPUT moderation blocked before the provider answers 502 and meters nothing (AC-19)', async () => {
+        // Arrange
+        provider.moderation = 'input';
+        const { ownerId, id } = await seedListing(vertical);
+        await setRow(vertical, id, {
+            description: SPANISH,
+            descriptionI18n: { es: SPANISH, en: 'Mine', pt: '' }
+        });
+        const before = await readRow(vertical, id);
+
+        // Act
+        const res = await call('POST', `${BASE[vertical]}/${id}/translations/ai`, ownerId, {
+            field: 'description',
+            locales: ['en']
+        });
+
+        // Assert
+        expect(res.status).toBe(502);
+        expect((await json(res)).error?.code).toBe('PROVIDER_ERROR');
+        expect(await readRow(vertical, id)).toEqual(before);
+        expect(await usageRows(ownerId)).toEqual([]);
     });
 
     it('POST ai on an empty Spanish source answers 400 with details.reason NO_SOURCE_TEXT, debug off (AC-20)', async () => {
