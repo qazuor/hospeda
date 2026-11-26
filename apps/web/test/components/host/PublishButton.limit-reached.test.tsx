@@ -96,6 +96,7 @@ describe('PublishButton plan cap (HOS-1977 review)', () => {
         const link = await screen.findByTestId('publish-limit-reached-addon');
         expect(link).toHaveAttribute('href', expect.stringContaining('#addons-accommodation'));
         expect(link).toHaveTextContent(/Propiedad extra/);
+        expect(link).toHaveTextContent(/5\.000/);
         expect(screen.getByRole('link', { name: 'Mejorar mi plan' })).toBeInTheDocument();
     });
 
