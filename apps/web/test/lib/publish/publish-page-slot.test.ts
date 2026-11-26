@@ -18,9 +18,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const precheck = vi.hoisted(() => vi.fn());
+const offers = vi.hoisted(() => vi.fn());
 
 vi.mock('@/lib/api/endpoints-protected', () => ({
     publishApi: { precheck }
+}));
+
+vi.mock('@/lib/api/endpoints-protected-addons', () => ({
+    billingAddonApi: { offers }
 }));
 
 vi.mock('@/lib/logger', () => ({
@@ -63,6 +68,7 @@ function ok(
 beforeEach(() => {
     vi.clearAllMocks();
     precheck.mockResolvedValue(ok('create_direct'));
+    offers.mockResolvedValue({ ok: true, data: { items: [] } });
 });
 
 describe('resolvePublishPageSlot — the signed-out state (D-1, AC-5)', () => {
@@ -205,5 +211,69 @@ describe('resolvePublishPageSlot — every URL is per-vertical', () => {
         precheck.mockResolvedValue(ok('upgrade_only'));
         const slot = await resolvePublishPageSlot(BASE);
         expect(slot.editUrl).toBeUndefined();
+    });
+});
+
+/** A catalog offer that widens the accommodation cap. */
+const CAP_OFFER = {
+    productId: '11111111-1111-4111-8111-111111111111',
+    addonVersionId: '22222222-2222-4222-8222-222222222222',
+    slug: 'extra-accommodation',
+    name: 'Propiedad extra',
+    description: null,
+    chargeKind: 'PERIODICO',
+    cycle: 'monthly',
+    price: 500000,
+    currency: 'ARS',
+    compatibleVerticals: ['accommodation'],
+    grantedKeys: ['max_accommodations'],
+    scopeType: 'VERTICAL_SUBSCRIPTION',
+    validity: 'WHILE_SUBSCRIPTION_ALIVE',
+    validityDays: null,
+    freeUnderGrantVerticals: []
+};
+
+describe('resolvePublishPageSlot — the cap add-on (HOS-2632)', () => {
+    it.each([
+        'upgrade_only',
+        'resume_delete_or_upgrade',
+        'pick_draft_delete_or_upgrade'
+    ])('offers the catalog add-on on %s', async (decision) => {
+        precheck.mockResolvedValue(ok(decision));
+        offers.mockResolvedValue({ ok: true, data: { items: [CAP_OFFER] } });
+        const slot = await resolvePublishPageSlot(BASE);
+        expect(slot.capAddon).toEqual({
+            slug: 'extra-accommodation',
+            name: 'Propiedad extra',
+            price: 500000,
+            currency: 'ARS'
+        });
+        expect(offers).toHaveBeenCalledWith({ cookieHeader: 'session=abc' });
+    });
+
+    it('offers only the plan change when the catalog has no compatible add-on', async () => {
+        precheck.mockResolvedValue(ok('upgrade_only'));
+        offers.mockResolvedValue({
+            ok: true,
+            data: { items: [{ ...CAP_OFFER, compatibleVerticals: ['venue'] }] }
+        });
+        expect((await resolvePublishPageSlot(BASE)).capAddon).toBeNull();
+    });
+
+    it('does not read the catalog when the owner is not at the cap', async () => {
+        precheck.mockResolvedValue(ok('resume_or_create'));
+        const slot = await resolvePublishPageSlot(BASE);
+        expect(slot.capAddon).toBeNull();
+        expect(offers).not.toHaveBeenCalled();
+    });
+
+    it('falls back to the plan change alone when the offers read fails or throws', async () => {
+        precheck.mockResolvedValue(ok('upgrade_only'));
+        offers.mockResolvedValueOnce({ ok: false, error: { status: 500 } });
+        expect((await resolvePublishPageSlot(BASE)).capAddon).toBeNull();
+        offers.mockRejectedValueOnce(new Error('boom'));
+        const slot = await resolvePublishPageSlot(BASE);
+        expect(slot.capAddon).toBeNull();
+        expect(slot.state).toBe('precheck_panel');
     });
 });

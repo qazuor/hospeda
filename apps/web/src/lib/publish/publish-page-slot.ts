@@ -40,10 +40,15 @@ import type {
     PublishVerticalSlug
 } from '@/lib/api/endpoints-protected';
 import { publishApi } from '@/lib/api/endpoints-protected';
+import { billingAddonApi } from '@/lib/api/endpoints-protected-addons';
+import { type CapAddonOffer, findCapAddonOffer } from '@/lib/billing/addon-cap-offer';
 import type { SupportedLocale } from '@/lib/i18n';
 import { webLogger as logger } from '@/lib/logger';
-import { buildUrl, buildUrlWithParams } from '@/lib/urls';
-import { ACCOUNT_LISTINGS_PATH_BY_VERTICAL } from './publish-page-paths';
+import { buildUrl } from '@/lib/urls';
+import {
+    ACCOUNT_LISTINGS_PATH_BY_VERTICAL,
+    buildVerticalSubscriptionUrl
+} from './publish-page-paths';
 
 /** Which of the three §6 states the form slot is in. */
 export type PublishSlotState = 'signup_cta' | 'form' | 'precheck_panel';
@@ -73,7 +78,19 @@ export interface PublishPageSlot {
     readonly signupUrl: string;
     /** Sign-in, returning to this same page — for a visitor who already has an account. */
     readonly signinUrl: string;
+    /**
+     * The catalog add-on that widens this vertical's cap (HOS-2632). Set only on an at-cap
+     * panel, and only when the catalog has a compatible one; `null` otherwise (plan change only).
+     */
+    readonly capAddon: CapAddonOffer | null;
 }
+
+/** The decisions that stand at the plan's publishing cap. */
+const AT_CAP_DECISIONS: ReadonlySet<HostOnboardingPrecheckDecision> = new Set([
+    'upgrade_only',
+    'resume_delete_or_upgrade',
+    'pick_draft_delete_or_upgrade'
+]);
 
 /** Input for {@link resolvePublishPageSlot}. */
 export interface ResolvePublishPageSlotParams {
@@ -113,29 +130,6 @@ function buildDraftEditUrl(input: {
 }
 
 /**
- * The subscription page, scoped to the vertical's own billing domain.
- *
- * `/mi-cuenta/suscripcion/` defaults to the accommodation subscription and takes
- * `?domain=` for the others (HOS-689). Sending a venue/experience owner to the bare URL
- * would show them a page about a subscription they may not even hold.
- */
-function buildSubscriptionUrl(input: {
-    readonly locale: SupportedLocale;
-    readonly vertical: PublishVerticalSlug;
-}): string {
-    const { locale, vertical } = input;
-
-    if (vertical === 'accommodation') {
-        return buildUrl({ locale, path: 'mi-cuenta/suscripcion' });
-    }
-    return buildUrlWithParams({
-        locale,
-        path: 'mi-cuenta/suscripcion',
-        params: { domain: vertical }
-    });
-}
-
-/**
  * Resolves which of the three states the form slot renders, and the URLs it
  * needs.
  *
@@ -165,7 +159,7 @@ export async function resolvePublishPageSlot(
             locale,
             path: ACCOUNT_LISTINGS_PATH_BY_VERTICAL[vertical]
         }),
-        subscriptionUrl: buildSubscriptionUrl({ locale, vertical }),
+        subscriptionUrl: buildVerticalSubscriptionUrl({ locale, vertical }),
         signupUrl: `${buildUrl({ locale, path: 'auth/signup' })}?returnUrl=${returnUrl}`,
         signinUrl: `${buildUrl({ locale, path: 'auth/signin' })}?returnUrl=${returnUrl}`
     };
@@ -180,6 +174,7 @@ export async function resolvePublishPageSlot(
             currentCount: 0,
             maxAllowed: 0,
             drafts: [],
+            capAddon: null,
             ...urls
         };
     }
@@ -217,6 +212,19 @@ export async function resolvePublishPageSlot(
 
     const firstDraft = drafts[0];
 
+    // HOS-2632: at the cap the owner is also offered the add-on that widens it, read from
+    // the catalog. Any failure leaves the plan change as the only way out.
+    let capAddon: CapAddonOffer | null = null;
+    if (!showForm && cookieHeader && AT_CAP_DECISIONS.has(decision)) {
+        try {
+            const offers = await billingAddonApi.offers({ cookieHeader });
+            if (offers.ok) capAddon = findCapAddonOffer({ offers: offers.data.items, vertical });
+            else logger.warn('publish slot: addon offers returned an error', { vertical });
+        } catch (error) {
+            logger.warn('publish slot: addon offers threw', { vertical, error });
+        }
+    }
+
     return {
         state: showForm ? 'form' : 'precheck_panel',
         decision,
@@ -226,6 +234,7 @@ export async function resolvePublishPageSlot(
         editUrl: firstDraft
             ? buildDraftEditUrl({ locale, vertical, draftId: firstDraft.id })
             : undefined,
+        capAddon,
         ...urls
     };
 }
