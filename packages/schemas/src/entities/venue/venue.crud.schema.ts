@@ -175,10 +175,13 @@ export type VenueAdminCreateOutput = z.infer<typeof VenueAdminCreateOutputSchema
  * - `type`             — listing sub-category (SPEC-253 D1: YES; removed from
  *                        identity-strip guard, AC-5)
  * - `summary`          — short marketing summary
- * - `nameI18n`         — localized name translations (SPEC-212 pattern)
- * - `summaryI18n`      — localized summary translations
- * - `descriptionI18n`  — localized description translations
- * - `richDescriptionI18n` — localized rich-text translations
+ *
+ * **Translations are NOT part of this PATCH (HOS-2658 DL-4, AC-22):**
+ * `nameI18n`, `summaryI18n`, `descriptionI18n` and `richDescriptionI18n` are
+ * written per pair through `PUT /venues/{id}/translations` only. Any of these
+ * keys in an owner PATCH body is silently stripped. `entryNoteI18n` stays:
+ * it carries the Spanish source of the entry note (no plain column), and the
+ * service keeps the stored `en`/`pt` (AC-25).
  *
  * Previously-permitted operational sections (unchanged):
  * - `openingHours`   — schedule (gated by `the vertical's EDIT_OWN`)
@@ -220,10 +223,6 @@ export const VenueOwnerUpdateInputSchema = VenueSchema.pick({
     menuUrl: true,
     priceRange: true,
     richDescription: true,
-    nameI18n: true,
-    summaryI18n: true,
-    descriptionI18n: true,
-    richDescriptionI18n: true,
     // HOS-1846 nightInfo (DEC-FAC-040): the owner PATCH owns the section's six
     // writable fields. `entryPriceUpdatedAt` is intentionally absent: it is
     // server-managed (see the `.omit` schemas). A field missing from this

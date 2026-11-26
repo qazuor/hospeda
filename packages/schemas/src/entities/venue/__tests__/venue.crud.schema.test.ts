@@ -194,60 +194,34 @@ describe('VenueOwnerUpdateInputSchema', () => {
             expect(result.success).toBe(false);
         });
 
-        it('should accept nameI18n with valid locale keys', () => {
+        it('should strip the four translation columns (HOS-2658 AC-22)', () => {
             // Arrange
-            const i18nValue = {
-                es: 'Nombre en español',
-                en: 'Name in English',
-                pt: 'Nome em português'
-            };
-            const input = { nameI18n: i18nValue };
+            const i18nValue = { es: 'Texto ES', en: 'Text EN', pt: 'Texto PT' };
 
             // Act
-            const result = VenueOwnerUpdateInputSchema.safeParse(input);
-
-            // Assert
-            expect(result.success).toBe(true);
-            if (result.success) {
-                expect(result.data.nameI18n).toEqual(i18nValue);
-            }
-        });
-
-        it('should accept summaryI18n with valid locale keys', () => {
-            const i18nValue = { es: 'Resumen ES', en: 'Summary EN', pt: 'Resumo PT' };
-            const result = VenueOwnerUpdateInputSchema.safeParse({ summaryI18n: i18nValue });
-            expect(result.success).toBe(true);
-        });
-
-        it('should accept descriptionI18n with valid locale keys', () => {
-            const i18nValue = { es: 'Descripción ES', en: 'Description EN', pt: 'Descrição PT' };
             const result = VenueOwnerUpdateInputSchema.safeParse({
-                descriptionI18n: i18nValue
-            });
-            expect(result.success).toBe(true);
-        });
-
-        it('should accept richDescriptionI18n with valid locale keys', () => {
-            const i18nValue = {
-                es: '<p>Descripción rica ES</p>',
-                en: '<p>Rich EN</p>',
-                pt: '<p>PT</p>'
-            };
-            const result = VenueOwnerUpdateInputSchema.safeParse({
-                richDescriptionI18n: i18nValue
-            });
-            expect(result.success).toBe(true);
-        });
-
-        it('should accept all four i18n fields simultaneously', () => {
-            const i18nValue = { es: 'Texto ES', en: 'Text EN', pt: 'Texto PT' };
-            const result = VenueOwnerUpdateInputSchema.safeParse({
+                name: 'Nombre valido',
                 nameI18n: i18nValue,
                 summaryI18n: i18nValue,
                 descriptionI18n: i18nValue,
                 richDescriptionI18n: i18nValue
             });
+
+            // Assert
             expect(result.success).toBe(true);
+            expect(result.data).toEqual({ name: 'Nombre valido' });
+        });
+
+        it('should still accept entryNoteI18n (Spanish source of the entry note)', () => {
+            // Arrange
+            const entryNoteI18n = { es: 'Gratis hasta la 1', en: 'Free', pt: 'Grátis' };
+
+            // Act
+            const result = VenueOwnerUpdateInputSchema.safeParse({ entryNoteI18n });
+
+            // Assert
+            expect(result.success).toBe(true);
+            expect(result.data).toEqual({ entryNoteI18n });
         });
     });
 
