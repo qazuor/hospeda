@@ -1,11 +1,19 @@
 import type { TranslationKey } from '@repo/i18n';
+import type { SettleExternalChargeRejection, SettleExternalRefundRejection } from '@repo/schemas';
 import { useId } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { isApiError } from '@/lib/errors';
 
+/**
+ * The action 14 rejection codes `action14-shared` has copy for: settling an external refund and
+ * settling an external charge. Lifting a reconciliation mark (S15) has its own map in
+ * `../../lift-reasons`.
+ */
+export type Action14Rejection = SettleExternalRefundRejection | SettleExternalChargeRejection;
+
 /** Translation keys for action 14 settlement rejections. */
-export const ACTION14_REJECTION_KEYS: Readonly<Record<string, TranslationKey>> = {
+export const ACTION14_REJECTION_KEYS: Readonly<Record<Action14Rejection, TranslationKey>> = {
     REFUND_AMOUNT_INVALID:
         'admin-billing.reconciliationMarks.action14.rejections.REFUND_AMOUNT_INVALID',
     EXTERNAL_REFERENCE_INVALID:
@@ -52,10 +60,10 @@ export function readAction14Rejection({ error }: { readonly error: unknown }): T
     const reason =
         (payload as { error?: { reason?: string }; reason?: string } | null)?.error?.reason ??
         (payload as { reason?: string } | null)?.reason;
-    return (
-        (reason ? ACTION14_REJECTION_KEYS[reason] : undefined) ??
-        'admin-billing.reconciliationMarks.action14.genericError'
-    );
+    if (typeof reason === 'string' && Object.hasOwn(ACTION14_REJECTION_KEYS, reason)) {
+        return ACTION14_REJECTION_KEYS[reason as Action14Rejection];
+    }
+    return 'admin-billing.reconciliationMarks.action14.genericError';
 }
 
 /** Renders one labeled action 14 input. */

@@ -11,7 +11,8 @@ import {
     LateManualPaymentBodySchema,
     type LateManualPaymentPreviewResponse,
     type LateManualPaymentResponse,
-    type ManualPaymentListItem
+    type ManualPaymentListItem,
+    type RegisterLateManualPaymentRejection
 } from '@repo/schemas';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchApi } from '@/lib/api/client';
@@ -103,11 +104,12 @@ export function lateManualPaymentPreviewQueryKey({
 }
 
 /** MP4 rejections that mean the screen is reading a stale installment or subscription. */
-const STALE_REJECTIONS: ReadonlySet<string> = new Set([
-    'LOST_RACE',
-    'MANUAL_PAYMENT_NOT_DECLARED_UNPAID',
-    'MANUAL_PAYMENT_NOT_SUSPENDED'
-]);
+const STALE_REJECTIONS: ReadonlySet<RegisterLateManualPaymentRejection> =
+    new Set<RegisterLateManualPaymentRejection>([
+        'LOST_RACE',
+        'MANUAL_PAYMENT_NOT_DECLARED_UNPAID',
+        'MANUAL_PAYMENT_NOT_SUSPENDED'
+    ]);
 
 /**
  * Whether an MP4 error says the state moved under the screen.
@@ -118,7 +120,10 @@ const STALE_REJECTIONS: ReadonlySet<string> = new Set([
 export function isStaleLateManualPaymentRejection({ error }: { readonly error: unknown }): boolean {
     const payload = isApiError(error) ? error.body : null;
     const reason = (payload as { error?: { reason?: string } } | null)?.error?.reason;
-    return reason !== undefined && STALE_REJECTIONS.has(reason);
+    return (
+        typeof reason === 'string' &&
+        STALE_REJECTIONS.has(reason as RegisterLateManualPaymentRejection)
+    );
 }
 
 /**

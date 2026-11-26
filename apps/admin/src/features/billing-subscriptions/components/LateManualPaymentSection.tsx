@@ -7,7 +7,7 @@
  */
 
 import type { TranslationKey } from '@repo/i18n';
-import { PermissionEnum } from '@repo/schemas';
+import { PermissionEnum, type RegisterLateManualPaymentRejection } from '@repo/schemas';
 import { useId, useState } from 'react';
 import { PermissionGate } from '@/components/auth/PermissionGate';
 import { Button } from '@/components/ui/button';
@@ -23,7 +23,8 @@ import {
 } from '../hooks/useLateManualPayment';
 import { LateManualPaymentPreview } from './LateManualPaymentPreview';
 
-const REJECTION_KEYS: Readonly<Record<string, TranslationKey>> = {
+/** Copy of every MP4 rejection; exhaustive over the shared tuple, so a new code breaks the typecheck. */
+const REJECTION_KEYS: Readonly<Record<RegisterLateManualPaymentRejection, TranslationKey>> = {
     SUBSCRIPTION_NOT_FOUND:
         'admin-billing.subscriptionAdmin.lateManualPayment.rejections.SUBSCRIPTION_NOT_FOUND',
     MANUAL_PAYMENT_NOT_FOUND:
@@ -58,10 +59,10 @@ export function readLateManualPaymentRejection({
 }): TranslationKey {
     const payload = isApiError(error) ? error.body : null;
     const reason = (payload as { error?: { reason?: string } } | null)?.error?.reason;
-    return (
-        (reason ? REJECTION_KEYS[reason] : undefined) ??
-        'admin-billing.subscriptionAdmin.lateManualPayment.rejections.generic'
-    );
+    if (typeof reason === 'string' && Object.hasOwn(REJECTION_KEYS, reason)) {
+        return REJECTION_KEYS[reason as RegisterLateManualPaymentRejection];
+    }
+    return 'admin-billing.subscriptionAdmin.lateManualPayment.rejections.generic';
 }
 
 /**
