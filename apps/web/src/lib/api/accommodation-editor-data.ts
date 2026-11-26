@@ -13,8 +13,8 @@
  * and the destinations list.
  */
 
-import type { AccommodationFaqItem } from '@/components/host/editor/FaqSection.client';
 import { amenitiesApi, destinationsApi, featuresApi } from '@/lib/api/endpoints';
+import type { AccommodationFaqItem } from '@/lib/api/endpoints-protected';
 import { accommodationEditApi, accommodationFaqApi } from '@/lib/api/endpoints-protected';
 import {
     transformAccommodationEdit,
