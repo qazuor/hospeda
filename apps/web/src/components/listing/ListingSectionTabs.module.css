@@ -48,6 +48,24 @@
     display: none;
 }
 
+.list[data-fade-end="true"] {
+    mask-image: linear-gradient(to right, black calc(100% - var(--space-6)), transparent);
+}
+
+.list[data-fade-start="true"] {
+    mask-image: linear-gradient(to right, transparent, black var(--space-6));
+}
+
+.list[data-fade-start="true"][data-fade-end="true"] {
+    mask-image: linear-gradient(
+        to right,
+        transparent,
+        black var(--space-6),
+        black calc(100% - var(--space-6)),
+        transparent
+    );
+}
+
 .list li {
     flex: none;
 }

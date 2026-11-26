@@ -287,7 +287,7 @@
     gap: var(--space-2, 8px);
     max-width: 90vw;
     overflow-x: auto;
-    scrollbar-width: none;
+    scrollbar-width: thin;
     padding: var(--space-1, 4px);
     z-index: 10;
     list-style: none;
@@ -300,8 +300,59 @@
     contain-intrinsic-size: 52px 52px;
 }
 
-.lightboxThumbs::-webkit-scrollbar {
+.lightboxThumbs[data-fade-end="true"] {
+    mask-image: linear-gradient(to right, black calc(100% - var(--space-6)), transparent);
+}
+
+.lightboxThumbs[data-fade-start="true"] {
+    mask-image: linear-gradient(to right, transparent, black var(--space-6));
+}
+
+.lightboxThumbs[data-fade-start="true"][data-fade-end="true"] {
+    mask-image: linear-gradient(
+        to right,
+        transparent,
+        black var(--space-6),
+        black calc(100% - var(--space-6)),
+        transparent
+    );
+}
+
+.lightboxDetailsToggle {
     display: none;
+}
+
+@media (max-width: 767px) {
+    .lightboxDetailsToggle {
+        display: block;
+        position: absolute;
+        z-index: 11;
+        inset-block-start: var(--space-3);
+        inset-inline-start: var(--space-3);
+        padding: var(--space-2) var(--space-3);
+        border-radius: var(--radius-button);
+        background: var(--core-card);
+        color: var(--core-foreground);
+    }
+
+    .lightboxFigure[data-show-details="false"] {
+        max-width: 100vw;
+        max-height: 100svh;
+    }
+
+    .lightboxFigure[data-show-details="false"] .lightboxStage {
+        width: 100vw;
+        height: 100svh;
+    }
+
+    .lightboxFigure[data-show-details="false"] .lightboxImg {
+        max-height: 100svh;
+    }
+
+    .lightboxFigure[data-show-details="false"] .lightboxCaption,
+    .lightboxThumbWrapper[data-show-details="false"] {
+        display: none;
+    }
 }
 
 .lightboxThumb {

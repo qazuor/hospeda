@@ -1,4 +1,5 @@
 ---
+import { ExternalLinkIcon } from '@repo/icons';
 /**
  * @file VenueEvents.astro
  * @description Renders a venue listing's OWN agenda on the public detail
@@ -165,6 +166,7 @@ const entries = venueEvents.map((event) => ({
                         data-interaction-event-id={event.id}
                     >
                         {buyTicketLabel}
+                        <ExternalLinkIcon size={16} aria-hidden="true" />
                     </a>
                 )}
             </li>
@@ -224,7 +226,7 @@ const entries = venueEvents.map((event) => ({
     .venue-venue-events__item-schedule {
         font-size: 0.875rem;
         font-weight: 600;
-        color: var(--brand-primary);
+        color: var(--core-muted-foreground);
         white-space: nowrap;
     }
 

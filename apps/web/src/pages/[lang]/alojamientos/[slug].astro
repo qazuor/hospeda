@@ -37,17 +37,18 @@ import { ReviewSidebarCard } from '@/components/accommodation/ReviewSidebarCard.
 import FaqAccordion from '@/components/accommodation/FaqAccordion.astro';
 import LocationSection from '@/components/listing/location/LocationSection.astro';
 import WhatsNearbySection from '@/components/accommodation/WhatsNearbySection.astro';
-import WaveDivider from '@/components/shared/ui/WaveDivider.astro';
+import { isRedundantText } from '@/lib/is-redundant-text';
+import { stripMarkdownPlain } from '@/lib/render-plain';
 import RelatedCarousel from '@/components/accommodation/RelatedCarousel.astro';
 import PricingSidebar from '@/components/accommodation/PricingSidebar.astro';
-import ContactHostShell from '@/components/accommodation/ContactHostShell.astro';
-import ContactCard from '@/components/accommodation/ContactCard.astro';
 import HostSection from '@/components/accommodation/HostSection.astro';
 import { toReviewStripItems } from '@/lib/review-strip';
 import SignInCtaCard from '@/components/shared/auth/SignInCtaCard.astro';
+import { ListingReviewCta } from '@/components/listing/ListingReviewCta';
+import { buildLoginRedirect } from '@/lib/auth-redirect';
 import { ListingContactBar } from '@/components/listing/contact/ListingContactBar.client';
 import { ListingContactPanel } from '@/components/listing/contact/ListingContactPanel.client';
-import { ListingContactCard } from '@/components/listing/contact/ListingContactCard.client';
+import ContactHostShell from '@/components/accommodation/ContactHostShell.astro';
 import { EntityViewTracker } from '@/components/analytics/EntityViewTracker.client';
 import { InternalEntryTracker } from '@/components/analytics/InternalEntryTracker.client';
 import { AiChatWidget } from '@/components/accommodation/AiChatWidget';
@@ -66,7 +67,6 @@ import type { NearbyPoi } from '@repo/schemas';
 import { toAccommodationDetailPageProps, toAccommodationCardProps, toEventCardProps } from '@/lib/api/transforms';
 import { createTranslations } from '@/lib/i18n';
 import { buildListingPolicyStructuredData } from '@/lib/seo/listing-policies-jsonld';
-import ClampedText from '@/components/listing/ClampedText.astro';
 import ListingHouseRules from '@/components/listing/ListingHouseRules.astro';
 import { ListingSectionTabs } from '@/components/listing/ListingSectionTabs.client';
 import ListingDetailSlot from '@/components/listing/ListingDetailSlot.astro';
@@ -548,6 +548,11 @@ const siteOrigin = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
 const hasDescriptionSection = Boolean(
     accommodation.summary || accommodation.description || accommodation.richDescription
 );
+const descriptionText = stripMarkdownPlain(accommodation.richDescription || accommodation.description || '');
+const displaySummary = isRedundantText({ a: accommodation.summary, b: descriptionText }) ? '' : accommodation.summary;
+const displayDescription = displaySummary && isRedundantText({ a: descriptionText, b: displaySummary })
+    ? ''
+    : accommodation.richDescription ? safeRichDescriptionHtml : safeDescriptionHtml;
 const hasAmenitiesSection = accommodation.features.length > 0 || accommodation.amenities.length > 0;
 // AC-2.5: a host section needs a real owner. Without one neither the section nor its tab render.
 const hasHostSection = Boolean(accommodation.owner.id);
@@ -679,6 +684,7 @@ const { sections: faqSections, inLanguage: faqInLanguage } = buildFaqJsonLdSecti
             locale={locale}
             vertical="accommodation"
             listingId={accommodation.id}
+            reviewCount={accommodation.reviewsCount}
             price={contactPrice}
             panelId={panelId}
             primaryLabelKey="accommodations.detail.listingContact.bar.inquire"
@@ -695,36 +701,12 @@ const { sections: faqSections, inLanguage: faqInLanguage } = buildFaqJsonLdSecti
                 minNights={accommodation.policies?.minNights}
                 maxNights={accommodation.policies?.maxNights}
                 hasWhatsapp={accommodation.hasWhatsapp}
-            >
-                <ListingPriceAlert accommodationId={accommodation.id} apiUrl={getApiUrl()} locale={locale} placement="summary" />
-            </MobileBookingSummary>
-            <!-- Promotions also sit right under the price summary in the
-                 single-column layout (owner smoke, HOS-2520): a discount is a
-                 booking argument, so it belongs next to the price. Rendered twice
-                 on purpose: this copy shows up to 1024px (where
-                 MobileBookingSummary shows), the slot-6 copy above it, so DOM
-                 order and visual order match at every width. -->
-            <div class="acc-promos acc-promos--summary">
-                <PlacePromotions client:idle locale={locale} apiUrl={getApiUrl()} entityType="accommodation" entityId={accommodation.id} />
-            </div>
+            />
         </ListingDetailSlot>
         <!-- Slot 3: description with «Leer más». -->
         {hasDescriptionSection && (
         <ListingDetailSlot name="description" anchorId={LISTING_SECTION_IDS.details}>
-        {accommodation.richDescription ? (
-            <section class="description-rich">
-                {accommodation.summary && (
-                    <div class="description-rich__summary">
-                        <p>{accommodation.summary}</p>
-                    </div>
-                )}
-                <ClampedText lang={locale}>
-                    <div class="description-rich__body" set:html={safeRichDescriptionHtml} />
-                </ClampedText>
-            </section>
-        ) : (
-            <Description lang={locale} summary={accommodation.summary} descriptionHtml={safeDescriptionHtml} />
-        )}
+            <Description lang={locale} summary={displaySummary} descriptionHtml={displayDescription} />
         </ListingDetailSlot>
         )}
         <!-- Slot 4: features and amenities. -->
@@ -734,11 +716,12 @@ const { sections: faqSections, inLanguage: faqInLanguage } = buildFaqJsonLdSecti
                 <AmenitiesGrid amenities={accommodation.amenities} lang={locale} />
             </ListingDetailSlot>
         )}
-        <!-- Slot 6: promotions (the wide-layout copy, see slot 2). -->
+        <!-- Slot 6: promotions, followed by the narrow-layout price alert. -->
         <!-- HOS-2589: promotions are per reader, so the cached page carries none of
              them; the island reads the per-actor endpoint in the browser. -->
-        <ListingDetailSlot name="promotions" class="acc-promos--content">
+        <ListingDetailSlot name="promotions">
             <PlacePromotions client:idle locale={locale} apiUrl={getApiUrl()} entityType="accommodation" entityId={accommodation.id} />
+            <ListingPriceAlert accommodationId={accommodation.id} apiUrl={getApiUrl()} locale={locale} placement="summary" />
         </ListingDetailSlot>
         <!-- Slot 7: location, then what's nearby. -->
         <ListingDetailSlot name="location">
@@ -754,6 +737,13 @@ const { sections: faqSections, inLanguage: faqInLanguage } = buildFaqJsonLdSecti
                     reviewsCount={accommodation.reviewsCount}
                     locale={locale}
                 />
+                <Fragment slot="invitation">
+                    {accommodation.reviewsCount === 0 && (
+                        <ReviewSidebarCard client:idle accommodationId={accommodation.id} accommodationName={accommodation.name} locale={locale} apiUrl={getApiUrl()}>
+                            <ListingReviewCta locale={locale} empty signInHref={buildLoginRedirect({ locale, currentUrl: `${Astro.url.pathname}#${LISTING_SECTION_IDS.reviews}` })} />
+                        </ReviewSidebarCard>
+                    )}
+                </Fragment>
             </ReviewPreview>
             {/* AC-4.4: external reputation block is isolated — does NOT touch
                 averageRating / reviewsCount from internal reviews */}
@@ -772,8 +762,7 @@ const { sections: faqSections, inLanguage: faqInLanguage } = buildFaqJsonLdSecti
         )}
         <!-- Slot 10: contact + social block (H-118: phone/email/website/Facebook/
              Instagram the host filled in via the editor's contact form). The
-             WhatsApp button (sidebar, ContactCard) is untouched — this block never
-             carries that number. -->
+             gated WhatsApp action lives outside this public block. -->
         {contactBlock && (
             <ListingDetailSlot name="contact">
                 <ListingContactBlock {...contactBlock} />
@@ -795,9 +784,8 @@ const { sections: faqSections, inLanguage: faqInLanguage } = buildFaqJsonLdSecti
 
     <Fragment slot="after-content">
     <!-- Slot 13: full-width related content after the main article and host sidebar. -->
-    {hasRelatedContent && <WaveDivider />}
     {hasRelatedContent && (
-    <ListingDetailSlot name="related" gap="none">
+    <ListingDetailSlot name="related" gap="none" class="acc-related">
         {similarCards.length > 0 && (
             <RelatedCarousel title={t('accommodations.detail.related.similar')} ariaLabel={t('accommodations.detail.related.similar')} lang={locale} count={similarCards.length}>
                 {similarCards.map((card) => <AccommodationCard data={card} locale={locale} />)}
@@ -896,50 +884,38 @@ const { sections: faqSections, inLanguage: faqInLanguage } = buildFaqJsonLdSecti
         }}
         panelId={panelId}
     />
-    <ListingContactPanel
-        client:idle
-        panelId={panelId}
-        accommodation={contactAccommodation}
-        accommodationName={accommodation.name}
-        ownerName={accommodation.owner.name}
-        price={contactPrice}
-        hasWhatsapp={accommodation.hasWhatsapp}
-        whatsappPlansHref={whatsappPlansHref}
-        gatePlanNames={whatsappGatePlanNames}
-        phone={accommodation.contactInfo?.phone}
-        email={accommodation.contactInfo?.email}
-        capacity={accommodation.extraInfo?.capacity}
-        locale={locale}
-    />
+    <div id="contact">
+        <ContactHostShell contactInfo={accommodation.contactInfo} locale={locale}>
+            <ListingContactPanel
+                client:idle
+                panelId={panelId}
+                accommodation={contactAccommodation}
+                accommodationName={accommodation.name}
+                ownerName={accommodation.owner.name}
+                price={contactPrice}
+                hasWhatsapp={accommodation.hasWhatsapp}
+                whatsappPlansHref={whatsappPlansHref}
+                gatePlanNames={whatsappGatePlanNames}
+                phone={accommodation.contactInfo?.phone}
+                email={accommodation.contactInfo?.email}
+                capacity={accommodation.extraInfo?.capacity}
+                initialMessage={prefilledMessage}
+                locale={locale}
+            />
+        </ContactHostShell>
+    </div>
 
     <!-- Sidebar -->
     <Fragment slot="sidebar">
         <div class="acc-sidebar">
             <PricingSidebar accommodationId={accommodation.id} panelId={panelId} hasWhatsapp={accommodation.hasWhatsapp} price={accommodation.price} contactPrice={contactPrice} extraInfo={accommodation.extraInfo} policies={accommodation.policies} lang={locale} />
             <ListingPriceAlert accommodationId={accommodation.id} apiUrl={getApiUrl()} locale={locale} placement="sidebar" />
-            <ContactCard>
-                <ContactHostShell contactInfo={accommodation.contactInfo} locale={locale}>
-                    <ListingContactCard
-                        client:media="(min-width: 768px)"
-                        accommodation={contactAccommodation}
-                        accommodationName={accommodation.name}
-                        hasWhatsapp={accommodation.hasWhatsapp}
-                        whatsappPlansHref={whatsappPlansHref}
-                        gatePlanNames={whatsappGatePlanNames}
-                        phone={accommodation.contactInfo?.phone}
-                        email={accommodation.contactInfo?.email}
-                        capacity={accommodation.extraInfo?.capacity}
-                        initialMessage={prefilledMessage}
-                        locale={locale}
-                    />
-                </ContactHostShell>
-            </ContactCard>
             <!-- client:idle, NOT client:visible (which it used to be). The
                  island now SSRs the anonymous sign-in CTA and swaps itself in
                  after resolving a session; with client:visible a signed-in
                  visitor would keep seeing that CTA until they scrolled the
                  sidebar far enough to intersect it. -->
-            <ReviewSidebarCard
+            {accommodation.reviewsCount > 0 && <ReviewSidebarCard
                 client:idle
                 accommodationId={accommodation.id}
                 accommodationName={accommodation.name}
@@ -954,7 +930,7 @@ const { sections: faqSections, inLanguage: faqInLanguage } = buildFaqJsonLdSecti
                     hint={t('review.sidebar.signInHint', 'Necesitás una cuenta para dejar tu reseña.')}
                     ctaLabel={t('review.sidebar.signInCta', 'Iniciá sesión para opinar')}
                 />
-            </ReviewSidebarCard>
+            </ReviewSidebarCard>}
         </div>
     </Fragment>
 </DetailLayout>
@@ -985,18 +961,9 @@ const { sections: faqSections, inLanguage: faqInLanguage } = buildFaqJsonLdSecti
     .acc-anchor {
         scroll-margin-top: calc(var(--listing-tabs-height) + 8px);
     }
-    /* See the comment on the summary copy: one promotions block per width.
-       The slot-6 wrapper is another component's element, hence :global. */
-    .acc-promos--summary {
-        display: none;
-    }
-    @media (max-width: 1024px) {
-        .acc-promos--summary {
-            display: block;
-        }
-        .acc-detail :global(.acc-promos--content) {
-            display: none;
-        }
+    :global(.acc-related) {
+        border-block-start: 1px solid var(--border);
+        margin-block-start: var(--space-6);
     }
     .acc-sidebar {
         display: flex;

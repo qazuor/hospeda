@@ -62,12 +62,7 @@ const { t, tPlural } = createTranslations(locale);
         </div>
     )}
     {reviews.length === 0 ? (
-        <p class="venue-detail__reviews-empty">
-            {t(
-                'venue.detail.reviews.empty',
-                'Todavía no hay reseñas. ¡Sé el primero en opinar!'
-            )}
-        </p>
+        null
     ) : (
         <ul class="venue-detail__reviews-list">
             {reviews.slice(0, 3).map((review) => (

@@ -5,6 +5,7 @@
  */
 
 import { useId, useState } from 'react';
+import { isRedundantText } from '@/lib/is-redundant-text';
 import type { GalleryImage } from '../ImageGallery.client';
 import styles from './GalleryLightbox.module.css';
 
@@ -26,7 +27,12 @@ export interface LightboxCaptionProps {
 export function LightboxCaption({ image, t }: LightboxCaptionProps) {
     const [expanded, setExpanded] = useState(false);
     const descriptionId = useId();
-    const { caption, description, credit } = image;
+    const { credit } = image;
+    const caption = isRedundantText({ a: image.caption, b: image.description })
+        ? null
+        : image.caption;
+    const description =
+        caption && isRedundantText({ a: image.description, b: caption }) ? null : image.description;
     const isLongDescription = (description?.length ?? 0) > DESCRIPTION_TOGGLE_THRESHOLD;
 
     return (

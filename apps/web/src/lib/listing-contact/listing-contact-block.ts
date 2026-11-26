@@ -280,7 +280,11 @@ export function buildVenueContactBlock(input: {
                   {
                       kind: 'phone' as const,
                       href: toTelHref(value),
-                      label: value,
+                      label: value.replace(
+                          /^\+54(9?)344([26])(\d{6})$/,
+                          (_, mobile: string, area: string, local: string) =>
+                              `+54 ${mobile ? `${mobile} ` : ''}344${area} ${local}`
+                      ),
                       srHint: `, ${ariaLabel}`,
                       interactionKind: 'PHONE_CLICK'
                   }
@@ -307,7 +311,11 @@ export function buildVenueContactBlock(input: {
         });
     }
 
-    const menuHref = resolveSafeExternalUrl(menuUrl);
+    if (
+        channels.length === 0 &&
+        !Object.values(socialNetworks ?? {}).some((url) => resolveSafeExternalUrl(url))
+    )
+        return null;
 
     return {
         ...(channels.length > 0 ? { heading: t('venue.detail.contactTitle', 'Contacto') } : {}),
@@ -321,10 +329,7 @@ export function buildVenueContactBlock(input: {
         trackingData,
         shell: 'plain',
         id: VENUE_CONTACT_ANCHOR_ID,
-        blockProps: UMAMI_BLOCK_PROPS,
-        ...(menuHref
-            ? { menuLink: { href: menuHref, label: t('venue.detail.menu', 'Ver menú') } }
-            : {})
+        blockProps: UMAMI_BLOCK_PROPS
     };
 }
 

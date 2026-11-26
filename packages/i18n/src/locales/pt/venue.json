@@ -87,6 +87,7 @@
             "messageTemplate": "Olá, vi a ficha de {{name}} na Hospeda e queria perguntar uma coisa."
         },
         "menuCarta": {
+            "viewExternal": "Ver cardápio (site externo)",
             "title": "Cardápio",
             "attachmentImage": "Cardápio em imagem",
             "attachmentPdf": "Cardápio em PDF",

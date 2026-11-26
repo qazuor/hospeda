@@ -220,11 +220,13 @@ describe('HOS-817 wiring — the page feeds description through the sanitizing p
     it('the page no longer routes description through the escape-only helper', () => {
         // This is the regression that produced the literal asterisks.
         expect(PAGE_CODE).not.toContain('renderPlain');
-        expect(PAGE_CODE).not.toContain('render-plain');
+        // Plain normalization is only for comparing duplicate text, never for the HTML body.
+        expect(PAGE_CODE).toMatch(/descriptionText = stripMarkdownPlain\(/);
+        expect(PAGE_CODE).toMatch(/safeRichDescriptionHtml : safeDescriptionHtml/);
     });
 
     it('the page passes the sanitized HTML into the component', () => {
-        expect(PAGE_CODE).toContain('descriptionHtml={safeDescriptionHtml}');
+        expect(PAGE_CODE).toContain('descriptionHtml={displayDescription}');
     });
 
     it('the page still gates rich HTML on richDescription presence only, with no entitlement logic', () => {

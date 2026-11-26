@@ -100,7 +100,7 @@ interface ImageGalleryProps {
  */
 function getDetailCountKey(count: number): string {
     if (count <= 0) return '0';
-    if (count >= 5) return '5plus';
+    if (count > 5) return '5plus';
     return String(count);
 }
 
@@ -120,6 +120,7 @@ function getVisibleThumbCount(imageCount: number): number {
     if (imageCount <= 1) return 0;
     if (imageCount === 2) return 1;
     if (imageCount === 3) return 2;
+    if (imageCount === 5) return 4;
     return 3; // 4 and 5+
 }
 
@@ -151,7 +152,7 @@ function DetailVariant({
     const visibleThumbCount = getVisibleThumbCount(count);
     const visibleThumbs = rest.slice(0, visibleThumbCount);
     // N in "+N más" = total images minus visible inline images (featured + visible thumbs).
-    const moreCount = count >= 5 ? count - 4 : 0;
+    const moreCount = count > 5 ? count - 4 : 0;
     const countKey = getDetailCountKey(count);
     const mosaicMedia = mobile ? DESKTOP_GALLERY_MEDIA : undefined;
     const mosaicTriggerRef = useRef<HTMLButtonElement>(null);

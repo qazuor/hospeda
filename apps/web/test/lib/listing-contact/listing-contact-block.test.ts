@@ -164,17 +164,15 @@ describe('buildVenueContactBlock (HOS-2042, HOS-2256)', () => {
         expect(SOURCE).toContain(`accommodations.detail.listingContact.social.\${key}`);
     });
 
-    it('adds the allow-listed menu link, drops an unsafe one', () => {
-        expect(venue({ menuUrl: 'https://carta.bar.ar' })?.menuLink?.href).toBe(
-            'https://carta.bar.ar'
-        );
+    it('leaves the menu to the primary action even when the URL is safe', () => {
+        expect(venue({ menuUrl: 'https://carta.bar.ar' })).toBeNull();
         expect(
             venue({ menuUrl: UNSAFE, socialNetworks: { instagram: 'https://i.com/b' } })?.menuLink
         ).toBeUndefined();
     });
 
     it('carries the anchor id, the plain shell and the Umami block marker (D-6)', () => {
-        const block = venue({ menuUrl: 'https://carta.bar.ar' });
+        const block = venue({ socialNetworks: { instagram: 'https://i.com/b' } });
         expect(block?.id).toBe(VENUE_CONTACT_ANCHOR_ID);
         expect(block?.shell).toBe('plain');
         expect(block?.blockProps).toEqual({ 'data-umami-block': '' });
