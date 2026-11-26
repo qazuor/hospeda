@@ -1,4 +1,4 @@
-import { ServiceErrorCode } from '@repo/schemas';
+import { type PromoCodeAdminRejection, ServiceErrorCode } from '@repo/schemas';
 import { isAdministrativeActionPermitted } from '@repo/verticals';
 import type { Actor } from '../../../types/index.js';
 import { ServiceError } from '../../../types/index.js';
@@ -8,17 +8,13 @@ import { isSystemActor } from '../../../utils/system-actor.js';
 /** ACC_21: administrative action for creating and closing promotional codes. */
 export const PROMO_CODE_ACTION = 'ACC_21' as const;
 
-/** Rejection reasons for ACC_21 promotional code administration. */
-export const PROMO_CODE_ADMIN_REJECTIONS = [
-    'ADMINISTRATIVE_ACTION_FORBIDDEN',
-    'PROMO_CODE_NOT_FOUND',
-    'PROMO_CODE_ALREADY_EXISTS',
-    'PROMO_CODE_ALREADY_CLOSED',
-    'INVALID_PROMO_CODE_INPUT'
-] as const;
-
-/** A typed rejection reason produced by a promotional code admin act. */
-export type PromoCodeAdminRejection = (typeof PROMO_CODE_ADMIN_REJECTIONS)[number];
+export type { PromoCodeAdminRejection } from '@repo/schemas';
+/**
+ * Rejection reasons for ACC_21 promotional code administration. The tuple and its type live in
+ * `@repo/schemas` (single source of truth) and are re-exported here so existing consumers keep
+ * importing them from `@repo/service-core`.
+ */
+export { PROMO_CODE_ADMIN_REJECTIONS } from '@repo/schemas';
 
 const REJECTION_CODES: Readonly<Record<PromoCodeAdminRejection, ServiceErrorCode>> = {
     ADMINISTRATIVE_ACTION_FORBIDDEN: ServiceErrorCode.FORBIDDEN,

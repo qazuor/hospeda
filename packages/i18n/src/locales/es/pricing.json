@@ -1,4 +1,33 @@
 {
+    "hub": {
+        "title": "Planes de Hospeda",
+        "tagline": "Tu lugar en Hospeda",
+        "heading": "Un plan para cada forma de sumarse",
+        "description": "Explorá las opciones para viajar, recibir huéspedes, ofrecer experiencias o dar a conocer tu comercio.",
+        "cardsHeading": "Encontrá los planes para vos",
+        "cards": {
+            "tourist": {
+                "title": "Turistas",
+                "description": "Descubrí destinos, guardá tus lugares favoritos y conectá con anfitriones.",
+                "cta": "Ver planes para turistas"
+            },
+            "host": {
+                "title": "Anfitriones",
+                "description": "Mostrá tu alojamiento y conectá con viajeros que buscan su próxima estadía.",
+                "cta": "Ver planes para anfitriones"
+            },
+            "experience": {
+                "title": "Experiencias",
+                "description": "Compartí tus actividades y paseos con quienes exploran la región.",
+                "cta": "Ver planes de experiencias"
+            },
+            "venue": {
+                "title": "Comercios",
+                "description": "Ayudá a los visitantes a descubrir tu comercio y lo que lo hace especial.",
+                "cta": "Ver planes para comercios"
+            }
+        }
+    },
     "cta": "Empezar",
     "free": "Gratis",
     "recommended": "Recomendado",
@@ -39,7 +68,10 @@
     "baseHighlightText": "Todo lo esencial para arrancar, sin compromiso.",
     "group": {
         "tourist": "Todas las funciones de turista",
-        "touristVip": "Incluye todos los beneficios de Turista VIP",
+        "touristVip": "Incluye todos los beneficios para viajeros",
+        "touristPlan": "Incluye todos los beneficios de {{plan}}",
+        "inheritedTravelerHeading": "Además, tu plan incluye {{plan}}",
+        "inheritedTravelerBody": "Accedé a los beneficios para viajeros de tu plan sin pagar una segunda suscripción.",
         "ai": "Suite de IA: textos, traducción, importación y consultas"
     },
     "features": {

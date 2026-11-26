@@ -34,7 +34,8 @@ vi.mock('../../../../src/lib/analytics/umami-client', () => ({
 // doesn't interfere with the /auth/me fetch assertions in this suite.
 
 vi.mock('../../../../src/lib/env', () => ({
-    getApiUrl: () => 'https://api.test'
+    getApiUrl: () => 'https://api.test',
+    isLoggingEnabled: () => false
 }));
 
 const MOCK_USER: UserMenuUser = {
@@ -426,7 +427,10 @@ describe('UserMenu — TTL guard (rate-limit fix)', () => {
             expect(screen.getByRole('menuitem', { name: /modo anfitrión/i })).toBeInTheDocument();
         });
 
-        expect(fetchMock).not.toHaveBeenCalled();
+        // The rate-limit guard is about the auth round-trip: no /auth/me call.
+        // Opening the menu may load the tourist plan line (HOS-2649).
+        const authCalls = fetchMock.mock.calls.filter(([url]) => String(url).includes('/auth/me'));
+        expect(authCalls).toHaveLength(0);
     });
 
     it('fetches (ignores cache) when a fresh GUEST cache contradicts an authenticated SSR user', async () => {

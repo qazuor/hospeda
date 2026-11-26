@@ -171,6 +171,8 @@ import {
 
 const MOBILE_MENU = 'components/shared/navigation/MobileMenu.client.tsx';
 const NAV_AVATAR = 'lib/nav-avatar.ts';
+/** An island with no billing import at all: the clean baseline for the type-only edge tests. */
+const PLAIN_ISLAND = 'components/shared/preferences/ThemeControl.client.tsx';
 /** Island that imports `nav-avatar` directly (MobileMenu no longer does, HOS-2622). */
 const USER_MENU = 'components/shared/navigation/UserMenu.client.tsx';
 const abs = (relative: string) => path.join(WEB_SRC, relative);
@@ -631,11 +633,16 @@ describe('HOS-360 static guard — @repo/billing never enters the web client gra
     });
 
     it('does not follow type-only edges into SSR-only modules', () => {
-        // No island reaches lib/billing/fetch-plans.ts today. The three that
-        // imported a TYPE from it were removed with the old billing (HOS-1637);
-        // the mutation test below plants that type-only edge on a live island
-        // and proves the erasure rule, not a dead resolver, keeps it out.
-        expect(visited.has(abs('lib/billing/fetch-plans.ts'))).toBe(false);
+        // Since HOS-2649 the account menus reach lib/billing/fetch-plans.ts BY
+        // VALUE, through the lazily imported tourist-menu-plan loader, so the
+        // whole corpus is no longer a clean baseline for this module. The
+        // baseline is a plain island that imports nothing from billing; the
+        // mutation test below plants a type-only edge on it and proves the
+        // erasure rule, not a dead resolver, keeps fetch-plans out.
+        const plainVisited = new Set<string>();
+        findOffenders([abs(PLAIN_ISLAND)], plainVisited);
+        expect(plainVisited.has(abs(PLAIN_ISLAND))).toBe(true);
+        expect(plainVisited.has(abs('lib/billing/fetch-plans.ts'))).toBe(false);
     });
 
     it('no client island reaches a forbidden package at runtime', () => {
@@ -740,7 +747,7 @@ describe('HOS-360 static guard — the corpus walk goes RED on a planted violati
         // one hop from an island — it is excluded by the erasure rule alone.
         // The island that used to carry the type-only import naturally was
         // removed with the old billing (HOS-1637), so the edge is planted.
-        const island = abs(MOBILE_MENU);
+        const island = abs(PLAIN_ISLAND);
         const readFileSync = fs.readFileSync.bind(fs);
         const plantImport = (line: string) =>
             vi.spyOn(fs, 'readFileSync').mockImplementation(((

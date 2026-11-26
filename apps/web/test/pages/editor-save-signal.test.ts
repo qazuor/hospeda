@@ -4,7 +4,7 @@
  *
  * Vitest cannot render `.astro`, so this reads the sources:
  *
- * - the shell mounts the one `EditorAutoSaveChip` only for an `auto` section;
+ * - the shell mounts the one `EditorAutoSaveChip` for auto and bar sections;
  * - every page's section island belongs to its model: a `bar` page mounts an
  *   island that renders `EditorSaveBar` (and no `ActionBar`), an `auto` page
  *   mounts one that does not.
@@ -101,6 +101,17 @@ describe('editor save signal per page (HOS-2487, AC-3)', () => {
         expect(shell).toContain('saveModel={saveModel}');
         expect(shell).not.toContain('client:only');
         expect(shell).toContain('data-save-model={saveModel}');
+    });
+
+    it.each([
+        'eventos',
+        'publicaciones'
+    ])('the %s editor mounts the same SSR header chip', (area) => {
+        const page = codeOf(read(`src/pages/[lang]/mi-cuenta/${area}/[id]/editar.astro`));
+        expect(page).toMatch(
+            /<EditorAutoSaveChip\s+slot="actions"\s+client:idle\s+locale=\{locale\}\s+saveModel="bar"/
+        );
+        expect(page).not.toContain('client:only');
     });
 
     it.each(

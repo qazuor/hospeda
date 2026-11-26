@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { LinkButton } from '@/components/account/ui/LinkButton';
 import { type PublishVerticalSlug, publishApi } from '@/lib/api/endpoints-protected';
 import { createTranslations, type SupportedLocale } from '@/lib/i18n';
 import {
@@ -56,12 +57,12 @@ export function SubscribeButton({ locale, vertical }: SubscribeButtonProps) {
                 data-testid="subscribe-button"
                 data-destination="signed-out"
             >
-                <a
-                    className={styles.primary}
+                <LinkButton
+                    variant="accent"
                     href={view.href}
                 >
                     {t('publish.subscribe.publishCta')}
-                </a>
+                </LinkButton>
             </div>
         );
     }
@@ -72,12 +73,12 @@ export function SubscribeButton({ locale, vertical }: SubscribeButtonProps) {
             data-testid="subscribe-button"
             data-destination="publish"
         >
-            <a
-                className={styles.primary}
+            <LinkButton
+                variant="accent"
                 href={view.href}
             >
                 {t('publish.subscribe.publishCta')}
-            </a>
+            </LinkButton>
             <p className={styles.note}>
                 {tPlural('publish.subscribe.trialNote', view.trialDays, {
                     trialDays: view.trialDays

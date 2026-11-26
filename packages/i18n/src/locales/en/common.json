@@ -321,14 +321,27 @@
         "codeError": "We couldn't show the code here, but you can still download the sheet.",
         "encodes": "The code leads to: {{url}}"
     },
+    "card": {
+        "priceRange": "Price: {{range}}",
+        "viewVenue": "View venue",
+        "viewExperience": "View experience",
+        "eventCoverRequired": "Add a cover photo before publishing the event.",
+        "currentPlan": "{{plan}} plan",
+        "compareUsage": "Comparing {{count}} of {{max}}",
+        "favoriteUsage": "Favorites: {{count}} of {{max}}",
+        "favoritesUnlimited": "Unlimited favorites",
+        "planUntil": "{{plan}} until {{date}}",
+        "upgradePlan": "Upgrade to {{plan}}"
+    },
     "promotions": {
         "sectionTitle": "Promotions",
-        "vipBadge": "VIP",
         "badges": {
             "promo": "Promo",
-            "vip": "VIP"
+            "plan": "{{plan}} promo",
+            "publicHint": "Promotion available to everyone",
+            "planHint": "Promotion available with the {{plan}} plan"
         },
-        "lockedVipName": "VIP-only promotion",
+        "lockedPlanName": "Promotion exclusive to the {{plan}} plan",
         "lockedHiddenName": "Hidden promotion",
         "discountTypes": {
             "percentage": "Discount",

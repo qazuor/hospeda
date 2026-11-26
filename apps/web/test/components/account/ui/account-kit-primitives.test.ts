@@ -13,10 +13,14 @@ const rule = (text: string, selector: string) => {
 
 describe('ListRow styling', () => {
     const text = css('ListRow');
-    it('uses control hierarchy, a two-line description and an unbounded override', () => {
+    it('uses control hierarchy, wraps descriptions on mobile and clamps them in the wide container', () => {
         expect(rule(text, '.title')).toContain('font: var(--app-control)');
         expect(rule(text, '.description')).toContain('font: var(--app-ui)');
-        expect(rule(text, '.description')).toContain('-webkit-line-clamp: 2');
+        // HOS-2621 AC-2: no clamp on mobile; the two-line clamp lives in the wide container query.
+        expect(rule(text, '.description')).not.toContain('-webkit-line-clamp');
+        expect(text).toMatch(
+            /@container \(width >= 40rem\)\s*{\s*\.description:not\(\.descriptionWrap\)\s*{[^}]*-webkit-line-clamp: 2/
+        );
         expect(rule(text, '.descriptionWrap')).toContain('-webkit-line-clamp: unset');
         expect(rule(text, '.meta')).toContain('overflow-wrap: anywhere');
         expect(rule(text, '.trailing')).toContain('flex-wrap: wrap');
@@ -26,7 +30,9 @@ describe('ListRow styling', () => {
         expect(rule(text, '.leading')).toContain('align-self: center');
     });
     it('limits hover painting to linked rows on hover-capable devices', () => {
-        expect(text).toMatch(/@media \(hover: hover\)\s*{\s*\.row:has\(\.link\):hover/);
+        expect(text).toMatch(
+            /@media \(hover: hover\) and \(pointer: fine\)\s*{\s*\.row:has\(\.link\):hover/
+        );
         const hover = rule(text, '.row:has(.link):hover');
         expect(hover).toContain(
             'background-color: color-mix(in srgb, var(--surface-warm) 25%, var(--core-card))'

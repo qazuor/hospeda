@@ -1,0 +1,441 @@
+/* --- feature list (benefit rows) --- */
+.fx-flist {
+    display: grid;
+    gap: var(--space-3);
+    grid-template-columns: repeat(2, 1fr);
+    margin-bottom: var(--space-8);
+}
+@media (max-width: 640px) {
+    .fx-flist {
+        grid-template-columns: 1fr;
+    }
+}
+.fx-frow {
+    display: flex;
+    gap: var(--space-3);
+    align-items: flex-start;
+    background-color: var(--fx-card);
+    border: 1px solid var(--fx-line);
+    border-radius: var(--fx-r-md);
+    padding: 15px 17px;
+}
+.fx-tick {
+    flex: none;
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    display: grid;
+    place-items: center;
+    background-color: var(--fx-forest-soft);
+    color: var(--fx-forest-ink);
+    margin-top: 1px;
+}
+.fx-tick--sun {
+    background-color: var(--fx-sun-soft);
+    color: var(--fx-sun-ink);
+}
+.fx-tick--river {
+    background-color: var(--fx-river-soft);
+    color: var(--fx-river-ink);
+}
+.fx-frow b {
+    font-weight: 600;
+    font-size: var(--text-body-sm);
+    display: block;
+    color: var(--fx-ink);
+}
+.fx-frow span {
+    color: var(--fx-ink-2);
+    font-size: var(--text-caption);
+    line-height: 1.5;
+    display: block;
+    margin-top: 2px;
+}
+
+/* --- highlight banner (anfitriones trial) --- */
+.fx-banner {
+    display: flex;
+    gap: var(--space-6);
+    align-items: center;
+    flex-wrap: wrap;
+    background: linear-gradient(120deg, var(--fx-river-soft), var(--fx-sun-soft));
+    border: 1px solid var(--fx-line);
+    border-radius: var(--fx-r-card);
+    padding: var(--space-6) var(--space-8);
+    margin-bottom: var(--space-8);
+}
+.fx-banner__ico {
+    flex: none;
+    width: 56px;
+    height: 56px;
+    border-radius: 16px;
+    background-color: var(--fx-card);
+    display: grid;
+    place-items: center;
+    color: var(--fx-sun-ink);
+    box-shadow: var(--fx-shadow-sm);
+}
+.fx-banner__tx {
+    flex: 1 1 300px;
+}
+.fx-banner__tx h3 {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: clamp(1.15rem, 2.4vw, 1.5rem);
+    margin: 0 0 4px;
+    letter-spacing: -0.01em;
+    color: var(--fx-ink);
+}
+.fx-banner__tx p {
+    margin: 0;
+    color: var(--fx-ink-2);
+    font-size: var(--text-body-sm);
+}
+
+/* --- plan table (shared markup lives in PlanTable.astro) --- */
+:global(.fx-tscroll) {
+    overflow-x: auto;
+    border: 1px solid var(--fx-line, var(--border));
+    border-radius: var(--fx-r-card, var(--radius-card));
+    background-color: var(--fx-card, var(--core-card));
+    box-shadow: var(--fx-shadow-sm, var(--shadow-card));
+    -webkit-overflow-scrolling: touch;
+}
+:global(.fx-table) {
+    border-collapse: collapse;
+    width: 100%;
+    min-width: 620px;
+    font-size: var(--text-body-sm);
+}
+:global(.fx-table__head),
+:global(.fx-table__plan) {
+    text-align: left;
+    padding: 18px 18px 16px;
+    border-bottom: 1px solid var(--fx-line, var(--border));
+    vertical-align: bottom;
+    background-color: color-mix(
+        in oklab,
+        var(--fx-sand, var(--surface-warm)) 55%,
+        var(--fx-card, var(--core-card))
+    );
+    /* Sticky header row while scrolling a tall plan table (keeps the plan
+	 * names visible). Offset below the page's own sticky top bar (never
+	 * `0` — that would collide with it), and a hairline bottom shadow
+	 * gives a visible seam so the two sticky layers never look like one
+	 * fused block when they meet mid-scroll. */
+    position: sticky;
+    top: calc(var(--fx-topbar-h, 60px) + 1px);
+    z-index: 5;
+    box-shadow: 0 1px 0 var(--fx-line, var(--border));
+}
+:global(.fx-table__plan) {
+    text-align: center;
+    position: relative;
+}
+:global(.fx-table__pname) {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: var(--text-body);
+    display: block;
+    letter-spacing: -0.01em;
+}
+:global(.fx-table__plan--popular .fx-table__pname) {
+    color: var(--fx-sun-ink, var(--brand-accent));
+}
+:global(.fx-table__badge) {
+    display: inline-block;
+    margin-top: 4px;
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--fx-sun-ink, var(--brand-accent));
+    background-color: var(--fx-sun-soft, var(--brand-accent-a12));
+    padding: 3px 7px;
+    border-radius: var(--fx-r-pill, var(--radius-pill));
+}
+:global(.fx-table__feat) {
+    font-weight: 500;
+    min-width: 210px;
+    padding: 13px 18px;
+    border-bottom: 1px solid var(--fx-line, var(--border));
+    vertical-align: top;
+}
+:global(.fx-table__feat small) {
+    display: block;
+    color: var(--fx-ink-2, var(--core-muted-foreground));
+    font-weight: 400;
+    font-size: var(--text-caption);
+    margin-top: 2px;
+}
+:global(.fx-table__cell) {
+    text-align: center;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+    padding: 13px 18px;
+    border-bottom: 1px solid var(--fx-line, var(--border));
+    vertical-align: top;
+}
+:global(.fx-table tbody tr:last-child td) {
+    border-bottom: 0;
+}
+:global(.fx-table tbody tr:hover td) {
+    background-color: color-mix(
+        in oklab,
+        var(--fx-river-soft, var(--brand-primary-a12)) 45%,
+        transparent
+    );
+}
+:global(.fx-table__yes) {
+    display: inline-grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 7px;
+    background-color: var(
+        --fx-forest-soft,
+        color-mix(in oklab, var(--hospeda-forest) 12%, transparent)
+    );
+    color: var(--fx-forest-ink, var(--hospeda-forest));
+}
+:global(.fx-table__no) {
+    color: var(--fx-line, var(--border));
+    font-weight: 700;
+}
+:global(.fx-table__lim) {
+    display: inline-block;
+    background-color: var(--fx-river-soft, var(--brand-primary-a12));
+    color: var(--fx-river-ink, var(--brand-primary));
+    font-weight: 600;
+    font-size: var(--text-caption);
+    padding: 3px 9px;
+    border-radius: var(--fx-r-pill, var(--radius-pill));
+}
+:global(.fx-table__inf) {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--fx-river-ink, var(--brand-primary));
+}
+:global(.fx-table__addon) {
+    display: inline-block;
+    background-color: var(--fx-sun-soft, var(--brand-accent-a12));
+    color: var(--fx-sun-ink, var(--brand-accent));
+    font-weight: 600;
+    font-size: 0.72rem;
+    padding: 3px 9px;
+    border-radius: var(--fx-r-pill, var(--radius-pill));
+}
+:global(.fx-table__upcoming) {
+    display: inline-block;
+    background-color: var(--brand-primary-a15);
+    color: var(--brand-accent);
+    font-weight: 600;
+    font-size: 0.72rem;
+    padding: 3px 9px;
+    border-radius: var(--fx-r-pill, var(--radius-pill));
+}
+:global(.fx-table__note) {
+    font-size: var(--text-body-sm);
+    color: var(--fx-ink-2, var(--core-muted-foreground));
+    margin: var(--space-3) 2px 0;
+    line-height: 1.5;
+}
+
+/* --- addon cards --- */
+.fx-addons-title {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 1.25rem;
+    margin: var(--space-10) 0 var(--space-4);
+    letter-spacing: -0.01em;
+    color: var(--fx-ink);
+}
+.fx-addon {
+    background-color: var(--fx-card);
+    border: 1px solid var(--fx-line);
+    border-radius: var(--fx-r-md);
+    padding: var(--space-4) var(--space-5);
+}
+.fx-addon h4 {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: var(--text-body);
+    margin: 0 0 4px;
+    color: var(--fx-ink);
+}
+.fx-addon p {
+    margin: var(--space-2) 0 0;
+    color: var(--fx-ink-2);
+    font-size: var(--text-caption);
+    line-height: 1.5;
+}
+
+/* --- "y además" chips --- */
+.fx-extras {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-4);
+}
+@media (max-width: 820px) {
+    .fx-extras {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+@media (max-width: 520px) {
+    .fx-extras {
+        grid-template-columns: 1fr;
+    }
+}
+.fx-extra {
+    display: flex;
+    gap: var(--space-3);
+    align-items: flex-start;
+}
+.fx-extra__ico {
+    flex: none;
+    width: 38px;
+    height: 38px;
+    border-radius: 11px;
+    display: grid;
+    place-items: center;
+    background-color: var(--fx-river-soft);
+    color: var(--fx-river-ink);
+}
+.fx-extra:nth-child(3n + 2) .fx-extra__ico {
+    background-color: var(--fx-sun-soft);
+    color: var(--fx-sun-ink);
+}
+.fx-extra:nth-child(3n) .fx-extra__ico {
+    background-color: var(--fx-forest-soft);
+    color: var(--fx-forest-ink);
+}
+.fx-extra b {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: var(--text-body-sm);
+    display: block;
+    color: var(--fx-ink);
+}
+.fx-extra span {
+    display: block;
+    color: var(--fx-ink-2);
+    font-size: var(--text-caption);
+    line-height: 1.5;
+    margin-top: 2px;
+}
+
+/* --- próximamente --- */
+.fx-soon-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-4);
+}
+@media (max-width: 860px) {
+    .fx-soon-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+@media (max-width: 560px) {
+    .fx-soon-grid {
+        grid-template-columns: 1fr;
+    }
+}
+.fx-soon-card {
+    position: relative;
+    background-color: var(--fx-card);
+    border: 1.5px dashed var(--fx-line);
+    border-radius: var(--fx-r-md);
+    padding: var(--space-5);
+}
+.fx-soon-badge {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--fx-gold);
+    background-color: var(--fx-gold-soft);
+    padding: 4px 9px;
+    border-radius: var(--fx-r-pill);
+}
+.fx-soon-ico {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: grid;
+    place-items: center;
+    background-color: var(--fx-gold-soft);
+    color: var(--fx-gold);
+    margin-bottom: var(--space-3);
+}
+.fx-soon-card h4 {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 0.97rem;
+    margin: 0 0 6px;
+    padding-right: 56px;
+    letter-spacing: -0.01em;
+    color: var(--fx-ink);
+}
+.fx-soon-card p {
+    margin: 0;
+    color: var(--fx-ink-2);
+    font-size: var(--text-caption);
+    line-height: 1.5;
+}
+
+/* --- closing CTA --- */
+.fx-cta {
+    background-color: var(--surface-dark, oklch(0.24 0.04 252));
+    color: var(--surface-dark-foreground, oklch(0.96 0.01 240));
+    border-radius: var(--fx-r-card);
+    padding: clamp(2.1rem, 5vw, 3.5rem);
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+.fx-cta__sun {
+    position: absolute;
+    width: 180px;
+    height: 180px;
+    border-radius: 50%;
+    top: -60px;
+    right: -40px;
+    background: radial-gradient(circle, var(--fx-sun), transparent 70%);
+    opacity: 0.5;
+    filter: blur(8px);
+}
+.fx-cta__hand {
+    color: var(--fx-sky);
+    position: relative;
+}
+.fx-cta__title {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: clamp(1.5rem, 3.6vw, 2.35rem);
+    margin: 6px 0 var(--space-3);
+    letter-spacing: -0.02em;
+    position: relative;
+}
+.fx-cta__desc {
+    max-width: 52ch;
+    margin: 0 auto var(--space-6);
+    position: relative;
+    opacity: 0.85;
+}
+.fx-cta__footnote {
+    margin-top: var(--space-6);
+    font-size: var(--text-caption);
+    opacity: 0.7;
+    position: relative;
+}
+
+@media (max-width: 900px) {
+    .fx-hero__blobs {
+        opacity: 0.4;
+    }
+}

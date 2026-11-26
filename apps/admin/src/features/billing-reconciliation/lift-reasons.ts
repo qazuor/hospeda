@@ -6,21 +6,20 @@
  */
 
 import type { TranslationKey } from '@repo/i18n';
+import {
+    LIFT_RECONCILIATION_MARK_REJECTIONS,
+    type LiftReconciliationMarkRejection
+} from '@repo/schemas';
 import { isApiError } from '@/lib/errors';
 
-/** Reasons documented for action 7 in `apps/api/docs/error-contract.md`. */
-export const KNOWN_LIFT_REASONS = [
-    'MARK_NOT_FOUND',
-    'ADMINISTRATIVE_ACTION_FORBIDDEN',
-    'MARK_ALREADY_LIFTED',
-    'MARK_VERSION_CONFLICT',
-    'MARK_HAS_UNRESOLVED_PAYMENTS',
-    'MARK_PAYMENT_NOT_HUNG',
-    'MARK_CLOSES_ONLY_BY_REFUND'
-] as const;
+/**
+ * Reasons documented for action 7 in `apps/api/docs/error-contract.md`. Shared tuple from
+ * `@repo/schemas`, the single source of truth the API uses.
+ */
+export const KNOWN_LIFT_REASONS = LIFT_RECONCILIATION_MARK_REJECTIONS;
 
 /** A refusal reason the lift panel has translated copy for. */
-export type KnownLiftReason = (typeof KNOWN_LIFT_REASONS)[number];
+export type KnownLiftReason = LiftReconciliationMarkRejection;
 
 /** Translation key for each known refusal reason. */
 export const LIFT_REASON_KEYS: Readonly<Record<KnownLiftReason, TranslationKey>> = {

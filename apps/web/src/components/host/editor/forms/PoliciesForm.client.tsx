@@ -19,7 +19,7 @@
  */
 
 import { EditorSaveBar } from '@/components/account/editor-shell/EditorSaveBar';
-import { Section } from '@/components/account/ui/Section';
+import { EditorSection } from '@/components/account/editor-shell/EditorSection';
 import { PoliciesPanel } from '@/components/listing/editor/PoliciesPanel.client';
 import type { AccommodationEditData } from '@/lib/api/types';
 import { sectionHelpId } from '@/lib/help/section-help-id';
@@ -100,7 +100,8 @@ export function PoliciesForm({ locale, accommodationId, initialData }: PoliciesF
             onSubmit={form.handleSubmit}
             noValidate
         >
-            <Section
+            <EditorSection
+                locale={locale}
                 id="editor-policies"
                 title={t('listing.policies.panelTitle', 'Políticas')}
                 helpId={sectionHelpId({ vertical: 'accommodation', slug: 'politicas' })}
@@ -118,7 +119,7 @@ export function PoliciesForm({ locale, accommodationId, initialData }: PoliciesF
                         )
                     }
                 />
-            </Section>
+            </EditorSection>
 
             <EditorSaveBar
                 locale={locale}

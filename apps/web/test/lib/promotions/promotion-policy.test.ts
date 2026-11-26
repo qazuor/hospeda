@@ -35,6 +35,7 @@ describe('readPromotionPolicy', () => {
                 plan({
                     slug: 'tourist-vip',
                     name: 'Viajero VIP',
+                    billingOptions: { monthly: 'monthly', annual: null },
                     entitlements: ['vip_promotions_access']
                 })
             ]

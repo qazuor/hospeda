@@ -15,6 +15,10 @@ const src = readFileSync(
     resolve(__dirname, '../../../src/components/venue/VenueCard.astro'),
     'utf8'
 );
+const styles = readFileSync(
+    resolve(__dirname, '../../../src/components/venue/VenueCard.css'),
+    'utf8'
+);
 
 /**
  * The badge now lives in a React island, so its styles moved to a CSS Module.
@@ -92,7 +96,7 @@ describe('VenueCard.astro', () => {
 
     describe('featured badge', () => {
         it('renders the featured badge when data.isFeatured is true', () => {
-            expect(src).toContain('data.isFeatured');
+            expect(src).toContain("photoBadge === 'featured'");
             expect(src).toContain('featured-badge');
         });
     });
@@ -100,8 +104,7 @@ describe('VenueCard.astro', () => {
     describe('promotion badges (HOS-2271, HOS-2589 D-6)', () => {
         it('shows «Promo» and «VIP» as separate fixed badges, never the promotion text', () => {
             expect(src).toContain('resolveVenuePromoBadges({ badge: data.promoBadge })');
-            expect(src).toContain('common.promotions.badges.promo');
-            expect(src).toContain('common.promotions.badges.vip');
+            expect(src).toContain('<CardPromotionPills badges={promoBadges}');
             expect(src).not.toContain('venue.card.promoVip');
             expect(src).not.toContain('specialOfferText');
         });
@@ -110,7 +113,7 @@ describe('VenueCard.astro', () => {
     describe('open-now badge', () => {
         it('TEST:6.3:3 mounts the badge island with client:idle only when openingHours is present', () => {
             expect(src).toMatch(
-                /\{data\.openingHours && \(\s*<VenueOpenNowBadge\s+client:idle\s+locale=\{locale\}\s+openingHours=\{data\.openingHours\}\s*\/>\s*\)\}/
+                /\{data\.openingHours &&\s*<VenueOpenNowBadge\s+client:idle\s+variant="inline"\s+locale=\{locale\}\s+openingHours=\{data\.openingHours\}\s*\/>\s*\}/
             );
         });
 
@@ -158,10 +161,9 @@ describe('VenueCard.astro', () => {
             expect(badgeCss).toContain('.open {\n    background-color: var(--hospeda-forest);');
         });
 
-        it('darkens the red fill for the closed state (dark-mode contrast)', () => {
-            expect(badgeCss).toContain('.closed {\n');
-            expect(badgeCss).toContain(
-                'background-color: color-mix(in oklab, var(--destructive) 85%, black);'
+        it('uses a solid neutral fill with a matching foreground for closed venues', () => {
+            expect(badgeCss).toMatch(
+                /\.closed\s*\{[^}]*background-color: var\(--core-card-lm03\);[^}]*color: var\(--core-foreground\);/
             );
         });
 
@@ -229,7 +231,7 @@ describe('VenueCard.astro', () => {
 
     describe('accessibility', () => {
         it('has an aria-label on the card link', () => {
-            expect(src).toMatch(/<a href=\{detailUrl\} class="venue-card__link">/);
+            expect(src).toMatch(/<CardPriceFooter[^>]+href=\{detailUrl\}/);
         });
 
         it('marks decorative elements as aria-hidden', () => {
@@ -239,15 +241,15 @@ describe('VenueCard.astro', () => {
 
     describe('CSS tokens', () => {
         it('uses --core-card for background color', () => {
-            expect(src).toContain('var(--core-card)');
+            expect(styles).toContain('var(--core-card)');
         });
 
         it('uses --radius-md for border radius', () => {
-            expect(src).toContain('var(--radius-md');
+            expect(styles).toContain('var(--radius-md');
         });
 
         it('uses --brand-accent-text for the price range color', () => {
-            expect(src).toContain('var(--brand-accent-text)');
+            expect(styles).toContain('var(--brand-accent-text)');
         });
 
         it('does not contain Tailwind utility class patterns', () => {

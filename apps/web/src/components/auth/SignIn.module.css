@@ -30,6 +30,20 @@
     composes: control from "../account/ui/Control.module.css";
 }
 
+.input[aria-invalid="true"] {
+    border-color: var(--status-danger-fg);
+}
+
+.forgotLink {
+    align-self: flex-end;
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    font-size: var(--text-body-sm);
+    color: var(--core-foreground);
+    text-decoration: underline;
+}
+
 .submitButton {
     width: 100%;
     padding: 0.625rem 1.25rem;

@@ -20,17 +20,21 @@
  */
 
 import { AnalyticsEvents } from '@repo/analytics';
-import { StrongPasswordSchema } from '@repo/schemas';
 import { useState } from 'react';
+import { z } from 'zod';
 import { GradientButton } from '@/components/ui/GradientButtonReact';
 import { PasswordField, type PasswordFieldI18n } from '@/components/ui/PasswordField.client';
 import { trackEvent } from '@/lib/analytics/umami-client';
 import { translateApiError } from '@/lib/api-errors';
 import { signUp } from '@/lib/auth-client';
-import { EmailFormatSchema } from '@/lib/forms/email-format';
+import { authEmailSchema, signupPasswordSchema } from '@/lib/forms/auth-form-schemas';
+import { useZodForm } from '@/lib/forms/use-zod-form';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { resolvePostAuthRedirectUrl } from '@/lib/post-auth-redirect';
+import { buildUrl } from '@/lib/urls';
+import { saveVerificationDelivery } from '@/lib/verification-delivery';
+import { AuthEmailField } from './AuthEmailField';
 import styles from './SignUp.module.css';
 
 /** Props for the SignUp component. */
@@ -82,10 +86,37 @@ export function SignUp({
 
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
-    const [confirmError, setConfirmError] = useState<string | null>(null);
-    const [passwordError, setPasswordError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const {
+        fieldErrors,
+        formError: error,
+        setFormError: setError,
+        validate,
+        clearError
+    } = useZodForm({
+        schema: z
+            .object({
+                email: authEmailSchema({
+                    required: t('auth.signUp.errors.emailRequired'),
+                    invalid: t('auth.signUp.errors.emailInvalid')
+                }),
+                password: signupPasswordSchema({
+                    weak: t('auth.signUp.errors.passwordWeak'),
+                    tooLong: t('auth.signUp.errors.passwordMax')
+                }),
+                'confirm-password': z.string()
+            })
+            .refine(
+                (values) =>
+                    values['confirm-password'] && values.password === values['confirm-password'],
+                {
+                    path: ['confirm-password'],
+                    message: t('auth.signUp.errors.passwordsDoNotMatch')
+                }
+            ),
+        fieldIdPrefix: 'signup',
+        validationToast: false
+    });
 
     /**
      * i18n strings for the PasswordField component. Built from the same
@@ -121,57 +152,8 @@ export function SignUp({
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>): Promise<void> {
         e.preventDefault();
         setError(null);
-        setPasswordError(null);
-        setConfirmError(null);
-
-        // HOS-190 slice 3: `required`/`type="email"` are decorative under
-        // `noValidate` — enforce presence + format for real before submitting.
-        const trimmedEmail = email.trim();
-        if (!trimmedEmail) {
-            setError(t('auth.signUp.errors.emailRequired', 'Ingresá tu correo electrónico.'));
-            return;
-        }
-        if (!EmailFormatSchema.safeParse(trimmedEmail).success) {
-            setError(t('auth.signUp.errors.emailInvalid', 'Ingresá un correo electrónico válido.'));
-            return;
-        }
-
-        // Unified with SetPassword/ResetPassword (HOS-190 slice 3): validate
-        // against the shared StrongPasswordSchema (min 8, max 128, upper/
-        // lower/digit/special) instead of the regex directly, so bounds and
-        // messaging stay consistent across every password-setting form. This
-        // does NOT change the complexity policy itself (still upper/lower/
-        // digit/special) — only adds the missing 128-char cap.
-        const passwordResult = StrongPasswordSchema.safeParse(password);
-        if (!passwordResult.success) {
-            const issue = passwordResult.error.issues[0];
-            if (issue?.code === 'too_big') {
-                // NOTE (HOS-190 i18n gap): no dedicated i18n key exists yet
-                // for this case — the fallback below is shown for every
-                // locale until `auth.signUp.errors.passwordMax` is added.
-                setPasswordError(
-                    t(
-                        'auth.signUp.errors.passwordMax',
-                        'La contraseña no puede superar los 128 caracteres.'
-                    )
-                );
-            } else {
-                setPasswordError(
-                    t(
-                        'auth.signUp.errors.passwordWeak',
-                        'La contraseña debe tener mayúsculas, minúsculas, un número y un carácter especial (por ejemplo ! @ # $ - _).'
-                    )
-                );
-            }
-            return;
-        }
-
-        if (password !== confirmPassword) {
-            setConfirmError(
-                t('auth.signUp.errors.passwordsDoNotMatch', 'Las contraseñas no coinciden.')
-            );
-            return;
-        }
+        const parsed = validate({ email, password, 'confirm-password': confirmPassword });
+        if (!parsed.success) return;
 
         setIsLoading(true);
         trackEvent(AnalyticsEvents.signUpStarted, {
@@ -189,7 +171,7 @@ export function SignUp({
             // link, so it is the only channel by which the destination reaches
             // a person who opens the email on a different device (HOS-838).
             const result = await signUp.email({
-                email: trimmedEmail,
+                email: parsed.data.email,
                 password,
                 name: '',
                 callbackURL: verificationCallbackUrl
@@ -214,6 +196,10 @@ export function SignUp({
                 // Auth `databaseHooks.user.create.after` hook (apps/api) so it
                 // covers email AND OAuth signups uniformly and fires exactly once
                 // per new user. Do NOT re-emit it here or it double-counts.
+                saveVerificationDelivery({
+                    email: parsed.data.email,
+                    callbackURL: verificationCallbackUrl
+                });
                 window.location.replace(
                     resolvePostAuthRedirectUrl({
                         target: redirectTo,
@@ -244,44 +230,18 @@ export function SignUp({
                 </div>
             )}
 
-            <div className={styles.field}>
-                <label
-                    htmlFor="signup-email"
-                    className={styles.label}
-                >
-                    {t('auth.signUp.email', 'Correo electrónico')}
-                    {/*
-                        HOS-821: the email input has always carried
-                        `required` + `aria-required`, so assistive tech was
-                        already told. The VISIBLE marker was the only thing
-                        missing, which left the one mandatory field on the
-                        sign-up form that did not look mandatory next to two
-                        that did. Same span, same class and same
-                        `aria-hidden` as `PasswordField` renders for the two
-                        password labels below — hidden from the a11y tree
-                        precisely because `aria-required` already says it, and
-                        announcing it twice is worse than not at all.
-                    */}
-                    <span
-                        className={styles.required}
-                        aria-hidden="true"
-                    >
-                        {' *'}
-                    </span>
-                </label>
-                <input
-                    id="signup-email"
-                    type="email"
-                    className={styles.input}
-                    value={email}
-                    onChange={(e) => onEmailChange(e.target.value)}
-                    placeholder={t('auth.signUp.emailPlaceholder', 'tu@email.com')}
-                    required
-                    autoComplete="email"
-                    aria-required="true"
-                    disabled={isLoading}
-                />
-            </div>
+            <AuthEmailField
+                prefix="signup"
+                label={t('auth.signUp.email')}
+                value={email}
+                onChange={(value) => {
+                    onEmailChange(value);
+                    clearError('email');
+                }}
+                placeholder={t('auth.signUp.emailPlaceholder')}
+                disabled={isLoading}
+                error={fieldErrors.email}
+            />
 
             <PasswordField
                 id="signup-password"
@@ -289,8 +249,8 @@ export function SignUp({
                 value={password}
                 onChange={(value) => {
                     setPassword(value);
-                    if (passwordError) setPasswordError(null);
-                    if (confirmError) setConfirmError(null);
+                    clearError('password');
+                    clearError('confirm-password');
                 }}
                 placeholder={t('auth.signUp.passwordPlaceholder', 'Tu contraseña')}
                 autoComplete="new-password"
@@ -298,7 +258,8 @@ export function SignUp({
                 disabled={isLoading}
                 showStrength
                 showRuleChecklist
-                error={passwordError ?? undefined}
+                hint={t('auth.signUp.passwordHint')}
+                error={fieldErrors.password}
                 i18n={passwordI18n}
             />
 
@@ -308,16 +269,27 @@ export function SignUp({
                 value={confirmPassword}
                 onChange={(value) => {
                     setConfirmPassword(value);
-                    if (confirmError) setConfirmError(null);
+                    clearError('confirm-password');
                 }}
                 placeholder={t('auth.signUp.confirmPasswordPlaceholder', 'Repetí tu contraseña')}
                 autoComplete="new-password"
                 required
                 disabled={isLoading}
-                error={confirmError ?? undefined}
+                error={fieldErrors['confirm-password']}
                 i18n={confirmI18n}
             />
 
+            <p className={styles.legal}>
+                {t('auth.signUp.legalIntro')}{' '}
+                <a href={buildUrl({ locale, path: 'legal/terminos' })}>
+                    {t('auth.signUp.legalTerms')}
+                </a>{' '}
+                {t('auth.signUp.legalAnd')}{' '}
+                <a href={buildUrl({ locale, path: 'legal/privacidad' })}>
+                    {t('auth.signUp.legalPrivacy')}
+                </a>
+                .
+            </p>
             <GradientButton
                 as="button"
                 type="submit"

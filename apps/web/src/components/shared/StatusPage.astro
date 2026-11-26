@@ -23,6 +23,7 @@
  */
 
 import type { EmailIcon } from '@repo/icons';
+import actionStyles from './StatusActions.module.css';
 
 interface Props {
 	/** Color palette and semantic role. Drives blob, dots, icon-wrap, and underline colors. */
@@ -42,9 +43,11 @@ interface Props {
 	 * treatment, or when the page should feel quieter.
 	 */
 	readonly hideBlob?: boolean | undefined;
+	/** Use the surrounding auth card's padding instead of a page-sized inset. */
+	readonly compact?: boolean;
 }
 
-const { variant, Icon, title, description, hideBlob = false } = Astro.props;
+const { variant, Icon, title, description, hideBlob = false, compact = false } = Astro.props;
 
 // Split the title to underline the last word.
 const titleWords = title.trim().split(/\s+/);
@@ -57,7 +60,7 @@ const hasActions = Astro.slots.has('actions');
 const hasFooter = Astro.slots.has('footer');
 ---
 
-<section class:list={['status-page', `status-page--${variant}`]}>
+<section class:list={['status-page', `status-page--${variant}`, { 'status-page--compact': compact }]}>
 	<div class="status-page__decoratives" aria-hidden="true">
 		{!hideBlob && <div class="status-page__blob"></div>}
 		<span class="status-page__dot status-page__dot--1"></span>
@@ -108,7 +111,7 @@ const hasFooter = Astro.slots.has('footer');
 		)}
 
 		{hasActions && (
-			<div class="status-page__actions">
+			<div class:list={['status-page__actions', actionStyles.actions]}>
 				<slot name="actions" />
 			</div>
 		)}
@@ -130,6 +133,10 @@ const hasFooter = Astro.slots.has('footer');
 		margin: 0 auto;
 		padding: clamp(5rem, 12vw, 10rem) var(--space-4, 1rem);
 		overflow: hidden;
+	}
+
+	.status-page--compact {
+		padding: 0;
 	}
 
 	/* ─── Decoratives (per-variant color via CSS custom prop) ───────────── */
@@ -286,8 +293,11 @@ const hasFooter = Astro.slots.has('footer');
 	   don't have to redeclare it. Uses :global() because slot content lives
 	   in the caller's scope. */
 	.status-page__footer :global(a) {
-		color: var(--core-muted-foreground);
-		text-decoration: none;
+		display: inline-flex;
+		align-items: center;
+		min-block-size: 44px;
+		color: var(--core-foreground);
+		text-decoration: underline;
 		transition: color 0.2s ease;
 	}
 

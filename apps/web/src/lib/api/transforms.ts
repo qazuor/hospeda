@@ -697,7 +697,9 @@ export function toEventCardProps({
         fallback: '/assets/images/placeholder-event.svg'
     });
 
-    const dateObj = item.date as { start?: string; end?: string; precision?: string } | undefined;
+    const dateObj = item.date as
+        | { start?: string; end?: string; precision?: string; isAllDay?: boolean }
+        | undefined;
     const locationObj = item.location as Record<string, unknown> | undefined;
     const organizerObj = item.organizer as Record<string, unknown> | undefined;
     const { cityName, cityPath, cityDestinationSlug } = deriveCityFields(locationObj);
@@ -736,7 +738,10 @@ export function toEventCardProps({
                   ? String(item.endDate)
                   : undefined,
             // HOS-280: precision is nested at item.date.precision.
-            precision: dateObj?.precision === 'MONTH' ? 'MONTH' : 'EXACT'
+            precision: dateObj?.precision === 'MONTH' ? 'MONTH' : 'EXACT',
+            ...(dateObj?.isAllDay === true || (dateObj?.isAllDay == null && item.isAllDay === true)
+                ? { isAllDay: true }
+                : {})
         },
         isFeatured: Boolean(item.isFeatured),
         location: locationObj

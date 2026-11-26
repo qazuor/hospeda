@@ -1,5 +1,5 @@
 {
-  "contentHash": "f7567c06fdbc9f9c51a73497733dd340c1cd13a0fbfa5b7dad12ae68adfc4e56",
+  "contentHash": "af8f1e1ce5e9ded3588116c1f9008149bd936beee48f321beb85c370d9d658e3",
   "locales": {
     "es": [
       {
@@ -326,7 +326,7 @@
           "benefit-usage",
           "provider-directory"
         ],
-        "reviewedAt": "2026-11-25",
+        "reviewedAt": "2026-11-26",
         "sections": {
           "canDo": "Registrar usos, descargar tu código QR y confirmar los usos pendientes desde {{link:providerPanel|Mi ficha de proveedor}}.",
           "expect": "- Lo que registrás queda pendiente hasta que el anfitrión lo confirme (mirá {{article:benefit-usage|cómo lo ve el anfitrión}}).\n- Los usos confirmados suman a tus números.",
@@ -396,7 +396,7 @@
           "publish-requirements",
           "inquiries"
         ],
-        "reviewedAt": "2026-11-25",
+        "reviewedAt": "2026-11-26",
         "sections": {
           "canDo": "Bloquear y liberar fechas, y conectar calendarios externos, desde {{link:section:accommodation:calendario|Calendario}}.",
           "expect": "- Las fechas bloqueadas no aparecen disponibles en las búsquedas.\n- Un calendario conectado muestra su estado y se puede sincronizar a mano o desconectar.\n- El calendario y la sincronización dependen de tu plan: compará {{link:plans:accommodation|los planes para alojamientos}}.",
@@ -481,7 +481,7 @@
           "publish-requirements",
           "calendar"
         ],
-        "reviewedAt": "2026-11-25",
+        "reviewedAt": "2026-11-26",
         "sections": {
           "canDo": "Cambiar el plan o la frecuencia de cobro de una suscripción activa desde {{link:subscription|Suscripción}}.\n\nComparar los planes en {{link:plans:accommodation|planes para alojamientos}}, {{link:plans:venue|planes para comercios}} o {{link:plans:experience|planes para experiencias}}.",
           "expect": "- Si el cambio requiere autorización, pasás por el checkout de Mercado Pago y tu plan actual sigue hasta que autorices.\n- Si el cambio se programa, ves la fecha exacta desde la que rige.\n- Los importes se ven en la lista de opciones y en la página de planes.",

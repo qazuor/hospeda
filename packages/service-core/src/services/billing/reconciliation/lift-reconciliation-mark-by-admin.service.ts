@@ -20,19 +20,13 @@ import type { HangablePayment } from './reconciliation-mark-payments.port.js';
 
 const ACTION = 'ACC_7' as const;
 
-/** Every typed rejection of the admin S15 action. */
-export const LIFT_RECONCILIATION_MARK_REJECTIONS = [
-    'MARK_NOT_FOUND',
-    'ADMINISTRATIVE_ACTION_FORBIDDEN',
-    'MARK_ALREADY_LIFTED',
-    'MARK_VERSION_CONFLICT',
-    'MARK_HAS_UNRESOLVED_PAYMENTS',
-    'MARK_PAYMENT_NOT_HUNG',
-    'MARK_CLOSES_ONLY_BY_REFUND'
-] as const;
-
-/** A typed rejection of the admin S15 action. */
-export type LiftReconciliationMarkRejection = (typeof LIFT_RECONCILIATION_MARK_REJECTIONS)[number];
+export type { LiftReconciliationMarkRejection } from '@repo/schemas';
+/**
+ * Every typed rejection of the admin S15 action. The tuple and its type live in `@repo/schemas`
+ * (single source of truth) and are re-exported here so existing consumers keep importing them
+ * from `@repo/service-core`.
+ */
+export { LIFT_RECONCILIATION_MARK_REJECTIONS } from '@repo/schemas';
 
 /** Input for lifting one mark and naming any payments resolved without a refund. */
 export type LiftReconciliationMarkByAdminInput = {

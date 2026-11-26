@@ -11,11 +11,18 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { ANFITRIONES_LIST } from '@/lib/features-content';
+import { createT } from '@/lib/i18n';
 
 const src = readFileSync(
     resolve(__dirname, '../../../src/pages/[lang]/funcionalidades/index.astro'),
     'utf8'
 );
+const styles = ['features-shell.css', 'features-sections.css']
+    .map((file) =>
+        readFileSync(resolve(__dirname, '../../../src/pages/[lang]/funcionalidades', file), 'utf8')
+    )
+    .join('\n');
 
 /**
  * Removes every balanced `var(...)` call from a CSS/astro source string,
@@ -49,6 +56,27 @@ function stripVarCalls(css: string): string {
 }
 
 describe('Funcionalidades marketing page (funcionalidades/index.astro)', () => {
+    it('renders the inherited traveler row only when the paid delta has a catalog name', () => {
+        expect(ANFITRIONES_LIST.map(({ titleKey }) => titleKey)).not.toContain(
+            'features.anfitriones.list.vipTraveler.title'
+        );
+        expect(src).toMatch(
+            /\{paidTouristLabel && \([\s\S]*?t\('pricing\.group\.inheritedTravelerHeading', undefined, \{ plan: paidTouristLabel \}\)[\s\S]*?t\('pricing\.group\.inheritedTravelerBody'\)/
+        );
+    });
+
+    it.each(['es', 'en', 'pt'] as const)('avoids legacy tourist tiers in %s copy', (locale) => {
+        const catalog = JSON.parse(
+            readFileSync(`../../packages/i18n/src/locales/${locale}/features.json`, 'utf8')
+        );
+        const t = createT(locale);
+
+        expect(catalog.viajeros.description).not.toMatch(/\b(?:Plus|VIP)\b/i);
+        expect(catalog.anfitriones.list).not.toHaveProperty('vipTraveler');
+        expect(
+            t('pricing.group.inheritedTravelerHeading', undefined, { plan: 'Explorer' })
+        ).toContain('Explorer');
+    });
     it('uses StandaloneLayout (page must have zero site chrome, HOS-119)', () => {
         expect(src).toContain('StandaloneLayout');
         expect(src).not.toContain('MarketingLayout');
@@ -71,12 +99,15 @@ describe('Funcionalidades marketing page (funcionalidades/index.astro)', () => {
     });
 
     it('uses CSS custom properties (the page-scoped --fx-* token bridge)', () => {
-        expect(src).toContain('var(--fx-');
-        expect(src).toContain('--fx-river: var(--hospeda-river)');
+        expect(src).toMatch(
+            /<style>\s*@import "\.\/features-shell\.css";\s*@import "\.\/features-sections\.css";\s*<\/style>/
+        );
+        expect(styles).toContain('var(--fx-');
+        expect(styles).toContain('--fx-river: var(--hospeda-river)');
     });
 
     it('contains no hardcoded color literal outside of an allowed var() fallback', () => {
-        const stripped = stripVarCalls(src);
+        const stripped = stripVarCalls(`${src}\n${styles}`);
         expect(stripped).not.toMatch(/#[0-9a-fA-F]{3,8}\b/);
         expect(stripped).not.toMatch(/rgba?\(/);
         expect(stripped).not.toMatch(/oklch\(/);
@@ -94,7 +125,7 @@ describe('Funcionalidades marketing page (funcionalidades/index.astro)', () => {
     });
 
     it('renders the audience subnav anchors driven by SUBNAV_LINKS ids', () => {
-        expect(src).toContain('href={`#${link.id}`}');
+        expect(src).toMatch(/href=\{`#\$\{link\.id\}`}\s/);
         expect(src).toContain('data-subnav-link={link.id}');
         expect(src).toContain('SUBNAV_LINKS.map((link)');
     });
@@ -132,7 +163,7 @@ describe('Funcionalidades marketing page (funcionalidades/index.astro)', () => {
         // Two `prefers-reduced-motion` blocks exist on this page (one for the
         // subnav smooth-scroll, one for the blob drift animation) — match the
         // specific block whose body targets `.fx-blob`.
-        const blobReducedMotionMatch = src.match(
+        const blobReducedMotionMatch = styles.match(
             /@media \(prefers-reduced-motion: reduce\) \{\s*\.fx-blob \{\s*animation: none[^}]*\}\s*\}/
         );
         expect(blobReducedMotionMatch).not.toBeNull();

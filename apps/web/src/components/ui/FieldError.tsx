@@ -20,6 +20,7 @@
  * ```
  */
 
+import { AlertCircleIcon } from '@repo/icons';
 import { cn } from '@/lib/cn';
 import styles from './FieldError.module.css';
 
@@ -62,7 +63,11 @@ export function FieldError({ id, message, className }: FieldErrorProps) {
             className={cn(styles.error, className)}
             role="alert"
         >
-            {message}
+            <AlertCircleIcon
+                size={16}
+                aria-hidden="true"
+            />
+            <span>{message}</span>
         </p>
     );
 }
