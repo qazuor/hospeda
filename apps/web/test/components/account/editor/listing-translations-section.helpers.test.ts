@@ -6,7 +6,8 @@ import {
     type ListingTranslationPairState,
     needsReview,
     pillLabelKeyFor,
-    pillToneFor
+    pillToneFor,
+    sourceSectionLabelKeysFor
 } from '@/components/account/editor/listing-translations-section.helpers';
 
 const STATES: readonly ListingTranslationPairState[] = [
@@ -113,5 +114,25 @@ describe('listing translations section helpers (spec §6.1)', () => {
             'noQuota',
             'noEntitlement'
         ]);
+    });
+
+    it('points each source field to the section where it is edited', () => {
+        expect(sourceSectionLabelKeysFor({ vertical: 'venue' })).toEqual({
+            labelKeys: {
+                name: 'listing.owner.editor.sectionNav.basicInfo',
+                summary: 'listing.owner.editor.sectionNav.basicInfo',
+                description: 'listing.owner.editor.sectionNav.basicInfo',
+                richDescription: 'listing.owner.editor.sectionNav.basicInfo',
+                entryNote: 'listing.owner.editor.sectionNav.nightInfo'
+            }
+        });
+        expect(sourceSectionLabelKeysFor({ vertical: 'accommodation' })).toEqual({
+            labelKeys: {
+                name: 'host.properties.editor.section.basicInfo',
+                summary: 'host.properties.editor.section.basicInfo',
+                description: 'host.properties.editor.section.basicInfo',
+                richDescription: 'host.properties.editor.section.basicInfo'
+            }
+        });
     });
 });

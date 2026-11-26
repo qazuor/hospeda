@@ -79,6 +79,7 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'account.editProfile',
     'account.editorFields',
     'account.editorPresentation',
+    'account.editorTranslations',
     'account.favorites',
     'account.help',
     // HOS-2413 — the account kit (`components/account/ui/`) renders these in islands.

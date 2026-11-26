@@ -6,8 +6,13 @@
  * looks and which actions it allows. Type-only imports from `@repo/schemas` keep
  * server code out of the island bundle (R-10).
  */
-import type { ListingTranslationsResponse } from '@repo/schemas';
+import type {
+    ListingTranslationField,
+    ListingTranslationsResponse,
+    ListingTranslationVertical
+} from '@repo/schemas';
 import type { StatusTone } from '@/components/account/ui/status-tone';
+import { LISTING_SECTION_PRESENTATION } from '@/lib/editor/listing-section-presentation';
 
 /** Display state of one `(field, locale)` pair, as answered by the API. */
 export type ListingTranslationPairState =
@@ -109,4 +114,35 @@ export function needsReview({ state }: { readonly state: ListingTranslationPairS
             state === 'noQuota' ||
             state === 'noEntitlement'
     };
+}
+
+/** Catalog section where each field's Spanish source is edited. */
+const SOURCE_SECTION_ID: Readonly<Record<ListingTranslationField, string>> = {
+    name: 'basicInfo',
+    summary: 'basicInfo',
+    description: 'basicInfo',
+    richDescription: 'basicInfo',
+    entryNote: 'nightInfo'
+};
+
+/**
+ * i18n label keys of the editor sections that hold each field's Spanish source,
+ * read from the editor presentation (one source of truth for section names).
+ * A field whose section the vertical does not have is left out.
+ */
+export function sourceSectionLabelKeysFor({
+    vertical
+}: {
+    readonly vertical: ListingTranslationVertical;
+}): { readonly labelKeys: Readonly<Partial<Record<ListingTranslationField, string>>> } {
+    const presentation = LISTING_SECTION_PRESENTATION[vertical];
+    const labelKeys: Partial<Record<ListingTranslationField, string>> = {};
+    for (const [field, sectionId] of Object.entries(SOURCE_SECTION_ID) as [
+        ListingTranslationField,
+        string
+    ][]) {
+        const labelKey = presentation[sectionId]?.labelKey;
+        if (labelKey) labelKeys[field] = labelKey;
+    }
+    return { labelKeys };
 }
