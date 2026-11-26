@@ -48,7 +48,28 @@ describe('toReviewStripItems', () => {
             image: null,
             rating: null,
             content: 'Hola',
-            createdAt: null
+            createdAt: null,
+            reply: null
         });
+    });
+
+    it('carries the host public reply and whether it was edited (HOS-2199)', () => {
+        const cards = toReviewStripItems({
+            items: [
+                review(1, { reply: { content: ' Gracias! ', createdAt: 'x', editedAt: null } }),
+                review(2, {
+                    reply: { content: 'Ajustada', createdAt: 'x', editedAt: '2026-11-02' }
+                }),
+                review(3, { reply: { content: '   ', createdAt: 'x', editedAt: null } }),
+                review(4)
+            ]
+        });
+
+        expect(cards.map((card) => card.reply)).toEqual([
+            { content: 'Gracias!', edited: false },
+            { content: 'Ajustada', edited: true },
+            null,
+            null
+        ]);
     });
 });

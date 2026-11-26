@@ -1,5 +1,5 @@
 {
-  "contentHash": "45a076d97e45091754ed7979ca4923e46ac5232f2b88276eb6f5bc66a329bb1a",
+  "contentHash": "d69c701ce3d4b038aed68a7b693acb18bb8fe4944b3503e2f86c50f5484c8524",
   "locales": {
     "es": [
       {
@@ -1296,7 +1296,9 @@
           "tool:list_reviews"
         ],
         "destinations": [],
-        "entryFor": [],
+        "entryFor": [
+          "page:mi-cuenta/resenas-recibidas"
+        ],
         "folder": "common",
         "id": "reviews",
         "keywords": [
@@ -1317,23 +1319,24 @@
           "ai-assistants",
           "inquiries"
         ],
-        "reviewedAt": "2026-11-20",
+        "reviewedAt": "2026-11-26",
         "sections": {
-          "canDo": "Leer las reseñas de tus publicaciones con un asistente de IA conectado (mirá {{article:ai-assistants|cómo conectarlo}}), filtradas por publicación, rubro, puntaje, fecha o estado.",
-          "expect": "- Cada reseña muestra su estado: publicada, pendiente de aprobación o rechazada.\n- Solo las aprobadas se ven en el sitio.",
+          "canDo": "Ver las reseñas que recibieron tus alojamientos y responderlas desde {{link:page:receivedReviews|Reseñas recibidas}}, en el área anfitrión de tu cuenta. También podés leerlas con un asistente de IA conectado (mirá {{article:ai-assistants|cómo conectarlo}}), filtradas por publicación, rubro, puntaje, fecha o estado.",
+          "expect": "- Una sola respuesta por reseña, visible en la ficha pública debajo de la reseña.\n- Si editás la respuesta, vuelve a pasar por el filtro automático y se marca como «editada».\n- Cada reseña muestra su estado: publicada, pendiente de aprobación o rechazada.\n- Solo las aprobadas se ven en el sitio.",
           "howTo": {
-            "after": "",
+            "after": "### Responder una reseña {#received}\n\nCada reseña admite una sola respuesta. Se publica sin que nadie la revise antes, pero un filtro automático mira el texto: si lo marca, la respuesta queda en revisión y no se ve en la ficha hasta que un administrador la apruebe. Un administrador también puede ocultar una respuesta después de publicada.\n\nResponder reseñas es parte de algunos planes. Si el tuyo no lo incluye, la pantalla te lo avisa y te lleva a los planes.",
             "steps": [
-              "El portal no tiene una pantalla con las reseñas que recibieron tus publicaciones: «Mis reseñas» muestra las que escribiste vos como usuario.",
-              "Pedile a este asistente que te muestre las reseñas de tus publicaciones. Puede filtrar por publicación, rubro, puntaje, fecha y estado.",
-              "Cada reseña indica su estado: publicada, pendiente de aprobación o rechazada. Solo las aprobadas se ven en el sitio.",
-              "Hospeda no permite que el propietario responda las reseñas de sus publicaciones, ni desde el portal ni desde el asistente."
+              "Entrá a «Reseñas recibidas» en el área anfitrión.",
+              "Elegí «Sin responder» para ver solo las reseñas a las que todavía no contestaste.",
+              "Tocá «Responder», escribí tu respuesta y publicala. Se muestra al instante en la ficha de tu alojamiento, debajo de la reseña.",
+              "Para cambiarla, tocá «Editar respuesta»: queda marcada como «editada». Para sacarla, tocá «Eliminar respuesta»; después podés responder de nuevo.",
+              "Cada reseña indica su estado: publicada, pendiente de aprobación o rechazada. Solo las aprobadas se ven en el sitio, y solo esas se pueden responder."
             ]
           },
-          "notExpect": "- Una pantalla del portal con las reseñas de tus publicaciones.\n- Responder reseñas, ni desde el portal ni desde el asistente.",
-          "troubleshooting": "### «Mis reseñas» no muestra las de mis huéspedes {#mis-resenas}\n\nEsa pantalla lista las reseñas que escribiste vos. Para hablar con un huésped, usá {{article:inquiries|los mensajes de huéspedes}}."
+          "notExpect": "- Responder desde la ficha pública: se responde desde «Reseñas recibidas».\n- Responder con un asistente de IA: el asistente solo lee las reseñas.\n- Responder una reseña que todavía no está aprobada.",
+          "troubleshooting": "### «Mis reseñas» no muestra las de mis huéspedes {#mis-resenas}\n\nEsa pantalla lista las reseñas que escribiste vos. Las que recibieron tus alojamientos están en «Reseñas recibidas». Para hablar con un huésped, usá {{article:inquiries|los mensajes de huéspedes}}.\n\n### Mi respuesta no aparece en la ficha {#respuesta-no-aparece}\n\nSi el filtro automático marcó tu texto, la respuesta queda en revisión y solo la ves vos. También puede haberla ocultado un administrador. En ese caso podés eliminarla y escribir una nueva."
         },
-        "summary": "Cómo ver hoy las reseñas de tus publicaciones y por qué todavía no se pueden responder.",
+        "summary": "Cómo ver las reseñas que recibieron tus alojamientos y cómo responderlas desde tu cuenta.",
         "title": "Ver las reseñas de mis publicaciones",
         "translation": null,
         "verticals": [

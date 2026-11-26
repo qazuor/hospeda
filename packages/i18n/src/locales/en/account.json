@@ -199,7 +199,8 @@
         "help": "Help",
         "venueDashboard": "Venues dashboard",
         "experienceDashboard": "Experiences dashboard",
-        "addons": "Add-ons"
+        "addons": "Add-ons",
+        "receivedReviews": "Received reviews"
     },
     "doors": {
         "sectionLabel": "Discover more",
@@ -1272,6 +1273,11 @@
         "recommendations": {
             "title": "Suggestions for you",
             "description": "Accommodations picked especially for you, based on your favorites, searches, and recent activity on Hospeda"
+        },
+        "receivedReviews": {
+            "title": "Received reviews",
+            "description": "See and answer the reviews your accommodations received on Hospeda",
+            "headingDesc": "Answer the guests who reviewed your accommodations."
         }
     },
     "newsletter": {
@@ -2488,6 +2494,54 @@
             "enterCoordinates": "Enter coordinates",
             "latitude": "Latitude",
             "longitude": "Longitude"
+        }
+    },
+    "receivedReviews": {
+        "sectionTitle": "Reviews of your accommodations",
+        "listLabel": "Received reviews",
+        "filterLabel": "Filter reviews",
+        "filterAll": "All",
+        "filterUnanswered": "Unanswered",
+        "total_one": "{{count}} review",
+        "total_other": "{{count}} reviews",
+        "emptyTitle": "You have not received any reviews yet",
+        "empty": "When a guest reviews your accommodation, you will see it here so you can answer.",
+        "emptyUnansweredTitle": "No unanswered reviews",
+        "emptyUnanswered": "You have already answered every review you received.",
+        "loadError": {
+            "title": "We could not load your reviews",
+            "body": "Try again in a few seconds."
+        },
+        "ratingAria": "Rating: {{value}} out of {{max}}",
+        "anonymous": "Guest",
+        "viewListing": "View accommodation",
+        "respond": "Reply",
+        "edit": "Edit reply",
+        "delete": "Delete reply",
+        "publish": "Post reply",
+        "save": "Save changes",
+        "cancel": "Cancel",
+        "replyLabel": "Your reply",
+        "replyPlaceholder": "Write your reply…",
+        "charCount": "{{count}} of {{max}}",
+        "edited": "edited",
+        "pendingNotice": "Your reply is under review and is not shown on the public listing yet.",
+        "hiddenNotice": "An administrator hid this reply. You can delete it and write a new one.",
+        "deleteConfirm": "Delete your reply? You will be able to reply again afterwards.",
+        "saving": "Saving…",
+        "deleting": "Deleting…",
+        "upsell": {
+            "title": "Replying to reviews is not in your plan",
+            "body": "Upgrade your plan to reply to your guests' reviews.",
+            "cta": "See plans"
+        },
+        "errors": {
+            "generic": "We could not save your reply. Please try again.",
+            "required": "Write a reply.",
+            "tooLong": "The reply cannot exceed {{max}} characters.",
+            "alreadyReplied": "This review already has a reply.",
+            "notFound": "We could not find this review.",
+            "noEntitlement": "Your current plan does not include replying to reviews."
         }
     }
 }
