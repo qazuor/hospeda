@@ -841,7 +841,7 @@ export function NewsletterForm({
                     <div className={styles.actions}>
                         <button
                             type="submit"
-                            className={`btn-gradient btn-gradient--primary btn-gradient--sm ${styles.submitButton}`}
+                            className={`btn-gradient btn-gradient--sm ${styles.submitButton}`}
                             disabled={isLoading}
                             aria-busy={isLoading}
                         >

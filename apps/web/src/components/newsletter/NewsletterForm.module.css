@@ -187,7 +187,9 @@
 /* ---- Submit button ---- */
 
 .submitButton {
-    white-space: nowrap;
+    /* Keep the kit sizing and focus ring, with the HOS-2572 AA pair in both themes. */
+    background-color: var(--brand-primary-text);
+    color: var(--core-card);
 }
 
 .submitButton:disabled {

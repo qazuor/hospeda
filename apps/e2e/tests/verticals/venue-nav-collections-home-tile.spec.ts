@@ -70,6 +70,8 @@ test.describe('AC:6:13 home food-events tile and venue menu collections @p0 @ver
         const mobileDialog = page.locator('[role="dialog"][aria-modal="true"]');
         await expect(mobileDialog).toHaveAttribute('aria-hidden', 'false');
         const mobileMenu = mobileDialog.locator('nav');
+        // Nested links live in a collapsed native disclosure since HOS-2648 (CARD-004).
+        await mobileMenu.locator('summary', { hasText: 'Comer y salir' }).click();
         for (const href of collectionHrefs)
             await expect(mobileMenu.locator(`a[href="${href}"]`)).toBeVisible();
     });
