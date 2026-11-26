@@ -1,4 +1,4 @@
-/** Site-only mobile menu. Account navigation is owned by the header account sheet. */
+/** Mobile site navigation with session-aware account shortcuts. */
 import { CloseIcon } from '@repo/icons';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { BrandWordmark } from '@/components/shared/brand/BrandWordmark';
@@ -7,7 +7,6 @@ import { ThemeControl } from '@/components/shared/preferences/ThemeControl.clien
 import { IconButton } from '@/components/ui/IconButtonReact';
 import { useAccountPermissions } from '@/hooks/use-account-permissions';
 import { useNavigationDialog } from '@/hooks/use-navigation-dialog';
-import { openAccountSheet } from '@/lib/account-sheet-events';
 import type { AuthMeUser } from '@/lib/auth-cache';
 import { cn } from '@/lib/cn';
 import { trapFocus } from '@/lib/focus-trap';
@@ -34,7 +33,7 @@ interface MobileMenuProps {
     readonly adminPanelUrl?: string;
 }
 
-/** Renders site links, publishing and a single account-sheet handoff row. */
+/** Renders site links, publishing, preferences and account actions. */
 export function MobileMenu({
     locale,
     navItems,
@@ -56,7 +55,7 @@ export function MobileMenu({
         syncAuthenticatedAttribute: false
     });
     // HOS-312: do not flash guest controls while the session is unresolved.
-    const showGuestPreferences = user === null && permissions !== null;
+    const showPreferences = user !== null || permissions !== null;
 
     useEffect(() => {
         const toggle = () => setIsOpen((previous) => !previous);
@@ -140,10 +139,11 @@ export function MobileMenu({
                 t={t}
                 isOpen={isOpen}
                 user={user ? { name: user.name, email: user.email, image: user.avatarUrl } : null}
-                onOpenAccount={() => closeThen({ afterClose: openAccountSheet })}
+                permissions={permissions ?? []}
+                closeThen={closeThen}
                 onLinkClick={onLinkClick}
             />
-            {showGuestPreferences ? (
+            {isOpen && showPreferences ? (
                 <div className={styles.preferencesSection}>
                     <div className={styles.preferencesGroup}>
                         <span className={styles.preferencesLabel}>{t('nav.language')}</span>
@@ -156,6 +156,7 @@ export function MobileMenu({
                     <div className={styles.preferencesGroup}>
                         <span className={styles.preferencesLabel}>{t('nav.theme')}</span>
                         <ThemeControl
+                            locale={locale}
                             variant="mobile"
                             showLabels
                         />

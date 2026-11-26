@@ -40,17 +40,15 @@ import { buildAdminPanelItem, STAFF_DISCRIMINATOR_PERMISSION } from '@/lib/admin
 import {
     identifyUser,
     markVisitorAnonymous,
-    resetUser,
     setPersonProperties
 } from '@/lib/analytics/umami-client';
-import { AUTH_ME_CACHE_KEY, type AuthMeUser, clearCachedAuthMe } from '@/lib/auth-cache';
-import { signOut } from '@/lib/auth-client';
+import { AUTH_ME_CACHE_KEY, type AuthMeUser } from '@/lib/auth-cache';
 import { getInitials } from '@/lib/avatar-utils';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { ADMINISTRATION_LABEL_KEY, getCuratedAccountNav } from '@/lib/nav-avatar';
-import { clearThemeSyncMarker } from '@/lib/theme';
+import { signOutFromNavigation } from '@/lib/navigation/sign-out';
 import { buildUrl } from '@/lib/urls';
 import styles from './UserMenu.module.css';
 
@@ -302,16 +300,7 @@ export function UserMenu({
     // ── Sign out handler ────────────────────────────────────────────────
     const handleSignOut = useCallback(async () => {
         setIsOpen(false);
-        try {
-            // HOS-1206: shared helper — it also swallows a throwing storage,
-            // which the bare `removeItem` let skip `signOut()` entirely.
-            clearCachedAuthMe();
-            resetUser();
-            clearThemeSyncMarker();
-            await signOut();
-        } finally {
-            window.location.href = buildUrl({ locale, path: '/' });
-        }
+        await signOutFromNavigation({ locale });
     }, [locale]);
 
     // ── Account nav (identity + «Administración», HOS-2551) ──────────────
@@ -340,8 +329,8 @@ export function UserMenu({
             <a
                 href={buildUrl({ locale, path: 'auth/signin' })}
                 className={cn(
-                    styles.signInLink,
-                    variant === 'hero' ? styles.signInLinkHero : styles.signInLinkScrolled
+                    'btn-gradient btn-gradient--primary btn-gradient--sm',
+                    styles.signInLink
                 )}
             >
                 {texts.signIn}
@@ -473,16 +462,16 @@ export function UserMenu({
                     {/* Inline preferences */}
                     <div className={styles.prefsSection}>
                         <div className={styles.prefsRow}>
-                            <span className={styles.prefsLabel}>{texts.language}</span>
+                            <span className={styles.prefsLabel}>
+                                {t('nav.userMenu.preferences')}
+                            </span>
                             <LanguageSwitcher
                                 locale={locale}
                                 currentPath={currentPath}
                                 variant="menu"
                             />
-                        </div>
-                        <div className={styles.prefsRow}>
-                            <span className={styles.prefsLabel}>{texts.theme}</span>
                             <ThemeControl
+                                locale={locale}
                                 variant="menu"
                                 showLabels={false}
                             />
