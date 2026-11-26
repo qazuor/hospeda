@@ -118,6 +118,7 @@ export const listInquiriesTool = defineTool({
     inputSchema: ListInquiriesInputSchema,
     refusalAction: ({ error }) => inquiryRefusalLink({ error }),
     isWrite: false,
+    requiredPermissions: [PermissionEnum.CONVERSATION_VIEW_OWN],
     handler: async ({ actor, input }): Promise<ToolHandlerResult<ListInquiriesResult>> => {
         if (!actor.permissions.includes(PermissionEnum.CONVERSATION_VIEW_OWN)) {
             return {

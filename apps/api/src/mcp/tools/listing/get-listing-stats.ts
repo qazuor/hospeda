@@ -23,12 +23,20 @@
  *
  * Review titles and texts are written by third parties, so they are returned
  * inside the untrusted-data envelope (spec §6.6).
+ *
+ * The `plan` block (HOS-2184 phase B, T-035, AC-16) is the `get_my_plan` item
+ * of the listing's vertical, from the shared reader (`plan/my-plan-block.ts`),
+ * behind `BILLING_VIEW_OWN` like `get_my_plan`: without it the block is left
+ * out, never a refusal. A failed plan read never fails the stats.
  */
 
-import { EntityTypeEnum, ServiceErrorCode, VerticalEnum } from '@repo/schemas';
+import { EntityTypeEnum, PermissionEnum, ServiceErrorCode, VerticalEnum } from '@repo/schemas';
 import { entityViewService, type HostViewDailySeriesOutputItem } from '@repo/service-core';
 import { z } from 'zod';
-import { defineTool, type ToolHandlerResult } from '../tool-definition';
+import { getClock } from '../../../utils/clock';
+import { readSubscriptionBlock } from '../plan/my-plan-block';
+import type { MyPlanItem } from '../plan/my-plan-types';
+import { defineTool, type ToolContext, type ToolHandlerResult } from '../tool-definition';
 import { UNTRUSTED_DATA_NOTICE, wrapUntrustedText } from '../untrusted-data';
 import { type OwnListingRow, readOwnListingRow } from './get-listing';
 import {
@@ -138,6 +146,35 @@ export interface ListingStats {
     readonly reviews: ListingReviewsStats;
     /** Accommodation-only metrics. Absent for venues and experiences. */
     readonly accommodation?: AccommodationStatsExtras;
+    /**
+     * The owner's plan in the listing's vertical (HOS-2184 AC-16): exactly the
+     * `get_my_plan` item (status, expiry dates, what it includes), `null` when the
+     * owner has no plan there. Absent without `BILLING_VIEW_OWN`, the permission
+     * `get_my_plan` requires, and when it could not be read (then named in
+     * {@link omitted}).
+     */
+    readonly plan?: MyPlanItem | null;
+    /** Blocks left out because they could not be read. Absent when none was. */
+    readonly omitted?: Readonly<{ readonly plan: 'unavailable' }>;
+}
+
+/** The `plan` part of the result: the vertical's item, or the omission. */
+async function readPlanPart(input: {
+    readonly userId: string;
+    readonly vertical: ListingToolVertical;
+    readonly locale: ToolContext['locale'];
+}): Promise<Pick<ListingStats, 'plan' | 'omitted'>> {
+    const block = await readSubscriptionBlock({
+        userId: input.userId,
+        locale: input.locale,
+        now: getClock().clock.now(),
+        verticals: [input.vertical],
+        tool: 'get_listing_stats'
+    });
+    if (block.unavailable) {
+        return { omitted: { plan: 'unavailable' } };
+    }
+    return { plan: block.subscription?.[input.vertical] ?? null };
 }
 
 /** `reason` of the refusal when the plan has no stats; its Spanish text is below. */
@@ -232,7 +269,7 @@ async function readReviews(input: {
 export const getListingStatsTool = defineTool({
     name: 'get_listing_stats',
     title: 'Estadísticas de la publicación',
-    description: `Reads the statistics of one listing the connected Hospeda user owns. Returns "views": visits in the chosen period (last 7, 30 or 90 days, today included, Argentina calendar days; a visitor returning within 30 minutes counts once) next to the previous period of the same length, with the change and the percent change (percent is null when the previous period had no views). For 90d there is NO comparison: views are only kept for 120 days, so "comparison" is "unavailable_beyond_retention" and previous, change and changePercent are null. Returns "reviews": approved review count and average rating, ALL TIME and not tied to the period (average is null when there are no reviews), plus the latest reviews with title, comment and rating. Requires the plan's basic stats; without it the call is refused with "Tu plan no incluye estadísticas". Works for accommodations, venues and experiences. For accommodations only it also returns "accommodation": "favorites" (users who currently saved it, not tied to the period; only with the plan's advanced stats, otherwise left out and "omitted": {"favorites": "not_in_plan"} says why), "inquiriesThisListing" (inquiries THIS accommodation received in the selected period) and "allMyAccommodations" (scope all_my_accommodations: inquiries per calendar month, this month and the previous one, plus reply rate in percent and average minutes to the first reply, all time; these cover ALL the owner's accommodations, never present them as this listing's). Inquiries figures are omitted if the user may not read inquiries. Venues and experiences have no "accommodation" block at all. Metrics that do not exist for a vertical are omitted, never reported as zero. A listing that does not exist or belongs to someone else is reported as not found. Take vertical and listingId from list_my_listings. ${UNTRUSTED_DATA_NOTICE}`,
+    description: `Reads the statistics of one listing the connected Hospeda user owns. Returns "views": visits in the chosen period (last 7, 30 or 90 days, today included, Argentina calendar days; a visitor returning within 30 minutes counts once) next to the previous period of the same length, with the change and the percent change (percent is null when the previous period had no views). For 90d there is NO comparison: views are only kept for 120 days, so "comparison" is "unavailable_beyond_retention" and previous, change and changePercent are null. Returns "reviews": approved review count and average rating, ALL TIME and not tied to the period (average is null when there are no reviews), plus the latest reviews with title, comment and rating. Requires the plan's basic stats; without it the call is refused with "Tu plan no incluye estadísticas". Works for accommodations, venues and experiences. For accommodations only it also returns "accommodation": "favorites" (users who currently saved it, not tied to the period; only with the plan's advanced stats, otherwise left out and "omitted": {"favorites": "not_in_plan"} says why), "inquiriesThisListing" (inquiries THIS accommodation received in the selected period) and "allMyAccommodations" (scope all_my_accommodations: inquiries per calendar month, this month and the previous one, plus reply rate in percent and average minutes to the first reply, all time; these cover ALL the owner's accommodations, never present them as this listing's). Inquiries figures are omitted if the user may not read inquiries. Venues and experiences have no "accommodation" block at all. Returns "plan" (only when the user may see their billing): the user's plan in the listing's vertical, the same item get_my_plan returns (plan name, status, nextChargeAt, serviceEndsAt, graceEndsAt, trialDaysLeft, coverageEndsAt and "includes", what the plan includes); null means the user has no plan in that vertical. If the plan could not be read, "plan" is absent and "omitted" says {"plan": "unavailable"}. Metrics that do not exist for a vertical are omitted, never reported as zero. A listing that does not exist or belongs to someone else is reported as not found. Take vertical and listingId from list_my_listings. ${UNTRUSTED_DATA_NOTICE}`,
     inputSchema: GetListingStatsInputSchema,
     isWrite: false,
     emailUnverifiedOperation: 'READ_OWN',
@@ -246,7 +283,7 @@ export const getListingStatsTool = defineTool({
             ? { destination: { kind: 'plans', vertical: ref.vertical } }
             : listingRefusalLink({ error, ref });
     },
-    handler: async ({ actor, input }): Promise<ToolHandlerResult<ListingStats>> => {
+    handler: async ({ actor, input, context }): Promise<ToolHandlerResult<ListingStats>> => {
         const { vertical, listingId, period } = input;
 
         // The same capability the HTTP stats routes require of this vertical.
@@ -269,7 +306,7 @@ export const getListingStatsTool = defineTool({
         // Favorites need the advanced capability, as `hostFavoritesBreakdown` does.
         const includeFavorites =
             isAccommodation && (await hasAdvancedStatsEntitlement({ userId: actor.id, vertical }));
-        const [viewsResult, reviews, extras] = await Promise.all([
+        const [viewsResult, reviews, extras, planPart] = await Promise.all([
             entityViewService.getDailySeriesComparisonForOwnListing({
                 actor,
                 entityType: ENTITY_TYPE_FOR[vertical],
@@ -285,6 +322,9 @@ export const getListingStatsTool = defineTool({
                       windowDays: LISTING_STATS_PERIOD_DAYS[period],
                       includeFavorites
                   })
+                : undefined,
+            actor.permissions.includes(PermissionEnum.BILLING_VIEW_OWN)
+                ? readPlanPart({ userId: actor.id, vertical, locale: context.locale })
                 : undefined
         ]);
         if (viewsResult.error) {
@@ -302,7 +342,8 @@ export const getListingStatsTool = defineTool({
                 period,
                 views: toViewsStats(viewsResult.data),
                 reviews,
-                ...(extras?.extras ? { accommodation: extras.extras } : {})
+                ...(extras?.extras ? { accommodation: extras.extras } : {}),
+                ...planPart
             }
         };
     }

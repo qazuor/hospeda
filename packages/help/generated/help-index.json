@@ -1,5 +1,5 @@
 {
-  "contentHash": "a9b13db8942c67e16bbcb4377f4852fc3d5321acc0d07b731f9825f9383a88ee",
+  "contentHash": "de7d000f0f7d8bb2ab5a5b6e9e581b6471fb665005c624bfb724d6113074104a",
   "locales": {
     "es": [
       {
@@ -1158,7 +1158,7 @@
           "benefit-usage",
           "benefit-usage-provider"
         ],
-        "reviewedAt": "2026-11-25",
+        "reviewedAt": "2026-11-26",
         "sections": {
           "canDo": "Buscar proveedores locales de confianza y ver su beneficio para anfitriones en {{link:providerDirectory|Directorio de proveedores}}.",
           "expect": "- Necesitás tener alojamientos registrados para ver el directorio.\n- Cada proveedor muestra su beneficio, su horario y las valoraciones de otros anfitriones.\n- Después de usar un servicio, {{article:benefit-usage|registrás el uso del beneficio}}.",
