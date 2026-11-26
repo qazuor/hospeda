@@ -61,7 +61,6 @@ const makeExperience = (overrides: Record<string, unknown> = {}) => ({
     ...overrides
 });
 
-// biome-ignore lint/suspicious/noExplicitAny: test seam over protected members
 type AnyService = any;
 
 function buildService(input: {
