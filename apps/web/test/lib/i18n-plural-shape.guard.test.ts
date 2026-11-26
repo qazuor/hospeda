@@ -474,6 +474,21 @@ function findCallSiteOffences(pluralKeys: ReadonlySet<string>): CallSiteOffence[
 // ---------------------------------------------------------------------------
 
 describe('HOS plural audit — i18n `_one`/`_other` shape guard', () => {
+    it('has singular and plural promotion status labels in every locale', () => {
+        for (const locale of LOCALES) {
+            const common = readLocale(locale).get('common');
+            for (const key of ['promotions.visibleStatus', 'promotions.allAccess']) {
+                expect(common?.get(`${key}_one`), `${locale}: ${key}_one`).toEqual(
+                    expect.any(String)
+                );
+                expect(common?.get(`${key}_other`), `${locale}: ${key}_other`).toEqual(
+                    expect.any(String)
+                );
+                expect(common?.has(key), `${locale}: ${key}`).toBe(false);
+            }
+        }
+    });
+
     it('scans a non-empty locale corpus', () => {
         const namespaces = readLocale('es');
         expect(namespaces.size).toBeGreaterThan(40);

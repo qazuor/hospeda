@@ -349,8 +349,10 @@
         "viewVenue": "Ver local",
         "viewAccommodation": "Ver alojamiento",
         "guestPrompt": "Creá tu cuenta gratis o iniciá sesión para ver promociones",
-        "visibleStatus": "Ves {{visible}} de {{total}} promociones",
-        "allAccess": "Tenés acceso a las {{total}} promociones",
+        "visibleStatus_one": "Ves {{visible}} de {{total}} promoción",
+        "visibleStatus_other": "Ves {{visible}} de {{total}} promociones",
+        "allAccess_one": "Tenés acceso a {{total}} promoción",
+        "allAccess_other": "Tenés acceso a las {{total}} promociones",
         "onlyExclusive": "Solo exclusivas del plan {{plan}}",
         "discountTypes": {
             "percentage": "Descuento",

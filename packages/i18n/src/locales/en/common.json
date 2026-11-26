@@ -349,8 +349,10 @@
         "viewVenue": "View venue",
         "viewAccommodation": "View accommodation",
         "guestPrompt": "Create a free account or sign in to see promotions",
-        "visibleStatus": "You can see {{visible}} of {{total}} promotions",
-        "allAccess": "You have access to all {{total}} promotions",
+        "visibleStatus_one": "You can see {{visible}} of {{total}} promotion",
+        "visibleStatus_other": "You can see {{visible}} of {{total}} promotions",
+        "allAccess_one": "You have access to {{total}} promotion",
+        "allAccess_other": "You have access to all {{total}} promotions",
         "onlyExclusive": "Only {{plan}} exclusives",
         "discountTypes": {
             "percentage": "Discount",

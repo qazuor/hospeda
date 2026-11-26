@@ -49,7 +49,15 @@ describe('VenueReviewsPreview.astro — dimension averages (TEST:6.6:3, AC:6:10)
         const markup = src.split('---').slice(2).join('---');
         const firstHeading = markup.match(/<h([1-6])\b/);
         expect(firstHeading?.[1]).toBe('2');
-        expect(markup).toMatch(/t\(\s*'venue\.detail\.reviews\.empty'/);
+        // CARD-052 H-8: one invitation is the empty state, not a second paragraph.
+        expect(markup).not.toMatch(/t\(\s*'venue\.detail\.reviews\.empty'/);
+        const page = readFileSync(
+            resolve(__dirname, '../../../src/pages/[lang]/comer-y-salir/[slug].astro'),
+            'utf8'
+        );
+        expect(page).toMatch(
+            /<ListingDetailSlot name="reviews">\s*<VenueReviewsPreview\b[^>]*>[\s\S]*?<VenueReviewForm\b[^>]*empty=\{totalReviews === 0\}[^>]*\/>\s*<\/section>\s*<\/ListingDetailSlot>/
+        );
     });
 
     it('styles the block with design tokens, not Tailwind', () => {

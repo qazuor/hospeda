@@ -81,19 +81,35 @@ const MIGRATED: readonly MigratedLink[] = [
         file: 'lib/listing-contact/listing-contact-block.ts',
         renders: [
             'const href = resolveSafeExternalUrl(input.socialNetworks?.[key] ?? undefined)',
-            'const menuHref = resolveSafeExternalUrl(menuUrl)',
             'const websiteHref = resolveSafeExternalUrl(contactInfo?.website)',
             'const facebookHref = resolveSafeExternalUrl(socialNetworks?.facebook)',
             'const instagramHref = resolveSafeExternalUrl(socialNetworks?.instagram)',
-            "menuLink: { href: menuHref, label: t('venue.detail.menu', 'Ver menú') }",
             'return [{ href, ariaLabel: label'
         ],
         neverRenders: [
-            'href: menuUrl',
+            'menuLink:',
             'href: url',
             'href: contactInfo.website',
             'href: socialNetworks.'
         ]
+    },
+    {
+        // CARD-052 H-1: the single menu CTA now uses the shared contact mode, not the contact block.
+        file: 'lib/listing-contact/listing-channels.ts',
+        renders: [
+            'const href = resolveSafeExternalUrl(menuUrl)',
+            "if (href) return { kind: 'menu', href }"
+        ],
+        neverRenders: ['href: menuUrl']
+    },
+    {
+        file: 'pages/[lang]/comer-y-salir/[slug].astro',
+        renders: [
+            'const contactMode = resolveVenueContactMode({',
+            'href: contactMode.href',
+            "'accommodations.detail.listingContact.bar.viewMenu'"
+        ],
+        neverRenders: ['href: venue.menuUrl', 'href={venue.menuUrl}']
     },
     {
         file: 'components/account/PartnerMentionsSection.astro',

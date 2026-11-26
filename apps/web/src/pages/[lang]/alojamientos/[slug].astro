@@ -48,6 +48,7 @@ import { ListingReviewCta } from '@/components/listing/ListingReviewCta';
 import { buildLoginRedirect } from '@/lib/auth-redirect';
 import { ListingContactBar } from '@/components/listing/contact/ListingContactBar.client';
 import { ListingContactPanel } from '@/components/listing/contact/ListingContactPanel.client';
+import ContactHostShell from '@/components/accommodation/ContactHostShell.astro';
 import { EntityViewTracker } from '@/components/analytics/EntityViewTracker.client';
 import { InternalEntryTracker } from '@/components/analytics/InternalEntryTracker.client';
 import { AiChatWidget } from '@/components/accommodation/AiChatWidget';
@@ -761,8 +762,7 @@ const { sections: faqSections, inLanguage: faqInLanguage } = buildFaqJsonLdSecti
         )}
         <!-- Slot 10: contact + social block (H-118: phone/email/website/Facebook/
              Instagram the host filled in via the editor's contact form). The
-             WhatsApp button (sidebar, ContactCard) is untouched — this block never
-             carries that number. -->
+             gated WhatsApp action lives outside this public block. -->
         {contactBlock && (
             <ListingDetailSlot name="contact">
                 <ListingContactBlock {...contactBlock} />
@@ -884,22 +884,26 @@ const { sections: faqSections, inLanguage: faqInLanguage } = buildFaqJsonLdSecti
         }}
         panelId={panelId}
     />
-    <ListingContactPanel
-        client:idle
-        panelId={panelId}
-        accommodation={contactAccommodation}
-        accommodationName={accommodation.name}
-        ownerName={accommodation.owner.name}
-        price={contactPrice}
-        hasWhatsapp={accommodation.hasWhatsapp}
-        whatsappPlansHref={whatsappPlansHref}
-        gatePlanNames={whatsappGatePlanNames}
-        phone={accommodation.contactInfo?.phone}
-        email={accommodation.contactInfo?.email}
-        capacity={accommodation.extraInfo?.capacity}
-        initialMessage={prefilledMessage}
-        locale={locale}
-    />
+    <div id="contact">
+        <ContactHostShell contactInfo={accommodation.contactInfo} locale={locale}>
+            <ListingContactPanel
+                client:idle
+                panelId={panelId}
+                accommodation={contactAccommodation}
+                accommodationName={accommodation.name}
+                ownerName={accommodation.owner.name}
+                price={contactPrice}
+                hasWhatsapp={accommodation.hasWhatsapp}
+                whatsappPlansHref={whatsappPlansHref}
+                gatePlanNames={whatsappGatePlanNames}
+                phone={accommodation.contactInfo?.phone}
+                email={accommodation.contactInfo?.email}
+                capacity={accommodation.extraInfo?.capacity}
+                initialMessage={prefilledMessage}
+                locale={locale}
+            />
+        </ContactHostShell>
+    </div>
 
     <!-- Sidebar -->
     <Fragment slot="sidebar">

@@ -45,7 +45,7 @@ type ListingState =
  * @returns The list region.
  */
 export function PromotionsListing({ locale, apiUrl }: PromotionsListingProps) {
-    const { t } = createTranslations(locale);
+    const { t, tPlural } = createTranslations(locale);
     const [page, setPage] = useState(1);
     const [onlyExclusive, setOnlyExclusive] = useState(false);
     const { data: session, isPending: sessionPending } = useSession();
@@ -121,8 +121,10 @@ export function PromotionsListing({ locale, apiUrl }: PromotionsListingProps) {
             <div className={styles.status}>
                 <p>
                     {meta.isVip
-                        ? t('common.promotions.allAccess', undefined, { total: pagination.total })
-                        : t('common.promotions.visibleStatus', undefined, {
+                        ? tPlural('common.promotions.allAccess', pagination.total, {
+                              total: pagination.total
+                          })
+                        : tPlural('common.promotions.visibleStatus', items.length, {
                               visible,
                               total: items.length
                           })}

@@ -141,6 +141,28 @@ describe('PromotionsListing', () => {
         expect(screen.getAllByRole('article')).toHaveLength(2);
     });
 
+    it.each([
+        { isVip: false, expected: 'Ves 1 de 1 promoción' },
+        { isVip: true, expected: 'Tenés acceso a 1 promoción' }
+    ])('uses singular status copy for one promotion (VIP: $isVip)', async ({ isVip, expected }) => {
+        fetchMock.mockResolvedValue(
+            envelope({
+                items: [visibleItem()],
+                meta: { isVip, freeQuota: 3 },
+                pagination: { page: 1, pageSize: 12, total: 1, totalPages: 1 }
+            })
+        );
+
+        render(
+            <PromotionsListing
+                locale="es"
+                apiUrl="http://localhost:3001"
+            />
+        );
+
+        expect(await screen.findByText(expected)).toBeVisible();
+    });
+
     it('shows the empty state', async () => {
         fetchMock.mockResolvedValue(
             envelope({
