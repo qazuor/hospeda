@@ -4,11 +4,6 @@
  * This is a PRIMARY affordance (the discoverability fix for compare mode), so
  * unlike CompareButton (a mute circular icon) it renders as a labeled,
  * pill-shaped button with visible text at rest, not just on hover/selection.
- *
- * Post-review fix: the separate `CompareModeBanner` explainer was removed —
- * the toggle now communicates the active state itself (filled/solid style +
- * an inline guidance line inside `.labelGroup`), so `[data-active="true"]`
- * allows the button to grow into two lines instead of staying `nowrap`.
  */
 
 /* Wraps the button + (when open) the gate popovers. `inline-flex` keeps the
@@ -20,6 +15,11 @@
 .wrapper {
     position: relative;
     display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    inline-size: 21rem;
+    max-inline-size: 100%;
 }
 
 /* --- Base toggle --- */
@@ -28,6 +28,7 @@
     align-items: center;
     gap: 0.5rem;
     height: 2.75rem;
+    inline-size: 100%;
     padding: 0 1.125rem;
     border-radius: var(--radius-pill);
     border: 1.5px solid var(--brand-primary-a35);
@@ -74,43 +75,29 @@
 
 .label {
     display: inline-block;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-/* Wraps the label + (when active) the inline hint, stacked vertically. */
-.labelGroup {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.0625rem;
-}
-
-/* Secondary guidance line, only rendered while compare mode is active —
- * replaces the copy the removed `CompareModeBanner` used to show. Uses
- * `color: inherit` (not a muted token) so it stays readable against the
- * solid `--brand-primary` fill the active toggle switches to. */
+/* Guidance is outside the button so it cannot change the trigger width. */
 .hint {
     display: block;
     font-weight: 400;
-    font-size: 0.75rem;
+    font-size: 0.8125rem;
     line-height: 1.3;
-    color: inherit;
+    color: var(--core-foreground);
+    white-space: nowrap;
 }
 
 /* --- Active (compare mode ON) --- */
 .toggle[data-active="true"] {
-    color: var(--primary-foreground);
-    background-color: var(--brand-primary);
+    color: var(--brand-primary);
+    background-color: var(--brand-primary-a12);
     border-color: var(--brand-primary);
-    /* The active label + hint can wrap to two lines — let the button grow
-     * instead of clipping/overflowing like the single-line "off" state. */
-    height: auto;
-    min-height: 2.75rem;
-    padding: 0.5rem 1.125rem;
-    white-space: normal;
 }
 
 .toggle[data-active="true"]:hover {
-    background-color: var(--brand-primary);
+    background-color: var(--brand-primary-a12);
     box-shadow: var(--shadow-card-hover);
 }
 

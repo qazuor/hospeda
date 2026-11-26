@@ -25,7 +25,8 @@
  */
 
 import { WhatsappIcon } from '@repo/icons';
-import { useEffect, useState } from 'react';
+import type { ReactNode } from 'react';
+import { useEffect, useId, useState } from 'react';
 import { useAccountPermissions } from '@/hooks/use-account-permissions';
 import { WebEvents } from '@/lib/analytics/events';
 import { UMAMI_BLOCK_PROPS } from '@/lib/analytics/recording-block';
@@ -70,6 +71,11 @@ export interface WhatsAppContactProps {
      * handed down (the catalog reader is server-only). Empty when it could not be read.
      */
     readonly gatePlanNames?: readonly string[];
+    /** Embed the compact channel in a form layout, keeping its protected lookup here. */
+    readonly renderLayout?: (input: {
+        readonly channel: ReactNode;
+        readonly primary: boolean;
+    }) => ReactNode;
 }
 
 /**
@@ -87,13 +93,15 @@ export function WhatsAppContact({
     plansHref,
     locale,
     origin = 'sidebar',
-    gatePlanNames = []
+    gatePlanNames = [],
+    renderLayout
 }: WhatsAppContactProps) {
     const { t } = createTranslations(locale);
     // Simple mode (no `initialUser`): `user` starts null, so the server and the
     // first paint render the upsell — the anonymous variant (HOS-369 D-11).
     const { user } = useAccountPermissions();
     const [viewer, setViewer] = useState<WhatsAppViewerState>(UPSELL_ONLY);
+    const descriptionId = useId();
 
     useEffect(() => {
         // Anonymous visitor → upsell, never hit the protected endpoint.
@@ -145,7 +153,8 @@ export function WhatsAppContact({
     }, [accommodationId, user]);
 
     // Nothing to render unless we have a number to show or an upsell to offer.
-    if (!viewer.showUpsell && !viewer.number) return null;
+    if (!viewer.showUpsell && !viewer.number)
+        return renderLayout?.({ channel: null, primary: false }) ?? null;
 
     const title = t('accommodations.detail.whatsapp.title', 'Contacto por WhatsApp');
     const ctaLabel = t('accommodations.detail.whatsapp.cta', 'Consultar por WhatsApp');
@@ -154,23 +163,46 @@ export function WhatsAppContact({
     // --- wa.me deep link (direct tier only) ---
     // Built by the shared helper so the phone is sanitized the one way wa.me
     // accepts (bare digits, no leading '+') — see `@/lib/whatsapp`.
-    let waUrl: string | null = null;
-    if (viewer.number && viewer.direct) {
-        const message = t(
-            'accommodations.detail.whatsapp.messageTemplate',
-            'Hola, me interesa obtener más información sobre {{name}}'
-        ).replace('{{name}}', accommodationName);
-        waUrl = buildWhatsAppLink({ phone: viewer.number, message }).url;
-    }
+    const message = t('accommodations.detail.whatsapp.messageTemplate', undefined, {
+        name: accommodationName
+    });
+    const waUrl =
+        viewer.number && viewer.direct
+            ? buildWhatsAppLink({ phone: viewer.number, message }).url
+            : null;
 
-    return (
+    const channel = (
         <section
-            className={styles.root}
+            className={renderLayout ? styles.compact : styles.root}
             {...UMAMI_BLOCK_PROPS}
         >
-            <h3 className={styles.title}>{title}</h3>
+            {!renderLayout && <h3 className={styles.title}>{title}</h3>}
 
-            {viewer.showUpsell ? (
+            {viewer.showUpsell && renderLayout ? (
+                <p className={styles.gateLine}>
+                    {t('accommodations.detail.whatsapp.compactGate')}
+                    {' · '}
+                    <a
+                        className={styles.plansLink}
+                        href={plansHref}
+                        aria-describedby={gatePlanNames.length ? descriptionId : undefined}
+                    >
+                        {t('accommodations.detail.whatsapp.upsellCta')}
+                    </a>
+                    {gatePlanNames.length > 0 && (
+                        <>
+                            {' '}
+                            (
+                            {
+                                <span id={descriptionId}>
+                                    {new Intl.ListFormat(locale).format(gatePlanNames)}
+                                </span>
+                            }
+                            )
+                        </>
+                    )}
+                </p>
+            ) : viewer.showUpsell ? (
                 <div className={styles.upsell}>
                     <p className={styles.upsellText}>
                         {resolvePlanGateMessage({
@@ -190,29 +222,46 @@ export function WhatsAppContact({
                     </a>
                 </div>
             ) : waUrl ? (
-                <a
-                    href={waUrl}
-                    className={styles.button}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={ctaLabel}
-                    onClick={() =>
-                        trackEvent(WebEvents.ListingContactClicked, {
-                            listing_id: accommodationId,
-                            vertical: 'accommodation',
-                            channel: 'whatsapp',
-                            origin,
-                            is_whatsapp_entitled: true,
-                            locale
-                        })
-                    }
-                >
-                    <WhatsappIcon
-                        size={20}
-                        aria-hidden="true"
-                    />
-                    <span>{ctaLabel}</span>
-                </a>
+                <>
+                    <a
+                        href={waUrl}
+                        className={styles.button}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label={ctaLabel}
+                        aria-describedby={renderLayout ? descriptionId : undefined}
+                        onClick={() =>
+                            trackEvent(WebEvents.ListingContactClicked, {
+                                listing_id: accommodationId,
+                                vertical: 'accommodation',
+                                channel: 'whatsapp',
+                                origin,
+                                is_whatsapp_entitled: true,
+                                locale
+                            })
+                        }
+                    >
+                        <WhatsappIcon
+                            size={20}
+                            aria-hidden="true"
+                        />
+                        <span>{ctaLabel}</span>
+                    </a>
+                    {renderLayout && (
+                        <div
+                            id={descriptionId}
+                            className={styles.preview}
+                        >
+                            <p>
+                                {numberLabel}: {viewer.number}
+                            </p>
+                            <p>
+                                {t('accommodations.detail.whatsapp.previewLabel')}:{' '}
+                                <span>{message}</span>
+                            </p>
+                        </div>
+                    )}
+                </>
             ) : (
                 <p className={styles.number}>
                     <WhatsappIcon
@@ -231,4 +280,5 @@ export function WhatsAppContact({
             )}
         </section>
     );
+    return renderLayout ? renderLayout({ channel, primary: Boolean(waUrl) }) : channel;
 }

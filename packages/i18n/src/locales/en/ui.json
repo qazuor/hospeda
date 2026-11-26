@@ -177,6 +177,20 @@
         "progress": "Progress"
     },
     "favorite": {
+        "audit": {
+            "usage_one": "{{current}} of {{count}} favorite",
+            "usage_other": "{{current}} of {{count}} favorites",
+            "savedUsage": "Saved · {{usage}}",
+            "savedUnlimited": "Saved · Unlimited favorites",
+            "guestBenefit_one": "{{count}} favorite for free · unlimited with {{plan}}",
+            "guestBenefit_other": "{{count}} favorites for free · unlimited with {{plan}}",
+            "guestFree_one": "Save up to {{count}} favorite for free",
+            "guestFree_other": "Save up to {{count}} favorites for free",
+            "limit_one": "Save more than {{count}} favorite with another plan",
+            "limit_other": "Save more than {{count}} favorites with another plan",
+            "limitUnknown": "Explore plans to save more favorites",
+            "manage": "Manage my favorites"
+        },
         "add": "Add to favorites",
         "loading": "Checking favorite...",
         "auth_required": {

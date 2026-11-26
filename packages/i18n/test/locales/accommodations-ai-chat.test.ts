@@ -48,6 +48,13 @@ const AI_CHAT_KEYS = [
     'guestExample3',
     'guestExamplesLead',
     'guestFree',
+    'dockLabel',
+    'guestMonthlyQuota_one',
+    'guestMonthlyQuota_other',
+    'monthlyAllowance_one',
+    'monthlyAllowance_other',
+    'noticeLabel',
+    'greeting',
     'guestSignUp',
     'guestSignIn'
 ] as const;
@@ -66,6 +73,16 @@ function resolveKey(obj: Record<string, unknown>, key: string): unknown {
 }
 
 describe('accommodations aiChat keys (SPEC-200 REQ-200-7 AC-7.1)', () => {
+    it.each([
+        esAccommodations,
+        enAccommodations,
+        ptAccommodations
+    ])('keeps the catalog quota placeholder in both quota messages', ({ aiChat }) => {
+        expect(aiChat.guestMonthlyQuota_one).toContain('{{count}}');
+        expect(aiChat.guestMonthlyQuota_other).toContain('{{count}}');
+        expect(aiChat.monthlyAllowance_one).toContain('{{count}}');
+        expect(aiChat.monthlyAllowance_other).toContain('{{count}}');
+    });
     it('has all aiChat keys in es locale with non-empty values', () => {
         const aiChat = (esAccommodations as Record<string, unknown>).aiChat;
         expect(aiChat).toBeDefined();

@@ -294,15 +294,18 @@ function ContactForm({
         t
     });
 
-    const _remaining = MAX_MESSAGE_LENGTH - message.length;
+    const showCounter = message.length >= MAX_MESSAGE_LENGTH * 0.9;
     const isOverLimit = message.length > MAX_MESSAGE_LENGTH;
-    const isRequiredEmpty = isAuthenticated
-        ? message.trim().length === 0
-        : name.trim().length === 0 || email.trim().length === 0 || message.trim().length === 0;
+    const missingFields = [
+        !isAuthenticated && !name.trim() ? t('conversations.form.name') : null,
+        !isAuthenticated && !email.trim() ? t('conversations.form.email') : null,
+        message.trim() ? null : t('conversations.form.message')
+    ].filter((field): field is string => field !== null);
+    const missingFieldsId = `${formId}-missing`;
     const isSubmitDisabled =
         (initialMessageInvalid && editedMessage === undefined) ||
         isOverLimit ||
-        isRequiredEmpty ||
+        missingFields.length > 0 ||
         submitState.phase === 'submitting' ||
         submitState.phase === 'rateLimit';
 
@@ -739,6 +742,10 @@ function ContactForm({
                             id={messageId}
                             required
                             value={message}
+                            onFocus={(event) => {
+                                if (editedMessage === undefined && initialMessage)
+                                    event.currentTarget.select();
+                            }}
                             onChange={(e) => {
                                 if (editedMessage === undefined) onMessageEdited?.();
                                 const value = e.currentTarget.value;
@@ -755,24 +762,31 @@ function ContactForm({
                             aria-invalid={
                                 submitState.phase === 'fieldError' || !!fieldErrors.message
                             }
-                            aria-describedby={`${messageDescId} ${
-                                submitState.phase === 'fieldError'
-                                    ? messageErrorId
-                                    : fieldErrors.message
-                                      ? scopedErrorId('message')
-                                      : ''
-                            }`}
+                            aria-describedby={
+                                [
+                                    showCounter ? messageDescId : null,
+                                    submitState.phase === 'fieldError'
+                                        ? messageErrorId
+                                        : fieldErrors.message
+                                          ? scopedErrorId('message')
+                                          : null
+                                ]
+                                    .filter(Boolean)
+                                    .join(' ') || undefined
+                            }
                         />
-                        <span
-                            id={messageDescId}
-                            className={`${styles.charCount} ${isOverLimit ? styles.charCountOver : ''}`}
-                            aria-live="polite"
-                        >
-                            {t('conversations.form.charCount', undefined, {
-                                current: message.length,
-                                max: MAX_MESSAGE_LENGTH
-                            })}
-                        </span>
+                        {showCounter && (
+                            <span
+                                id={messageDescId}
+                                className={`${styles.charCount} ${isOverLimit ? styles.charCountOver : ''}`}
+                                aria-live="polite"
+                            >
+                                {t('conversations.form.charCount', undefined, {
+                                    current: message.length,
+                                    max: MAX_MESSAGE_LENGTH
+                                })}
+                            </span>
+                        )}
                         {submitState.phase === 'fieldError' && submitState.field === 'message' && (
                             <p
                                 id={messageErrorId}
@@ -788,9 +802,20 @@ function ContactForm({
                         />
                     </div>
 
+                    {missingFields.length > 0 && (
+                        <p
+                            id={missingFieldsId}
+                            className={styles.missingFields}
+                        >
+                            {t('conversations.form.missingFields', undefined, {
+                                fields: new Intl.ListFormat(locale).format(missingFields)
+                            })}
+                        </p>
+                    )}
                     <button
                         type="submit"
                         disabled={isSubmitDisabled}
+                        aria-describedby={missingFields.length ? missingFieldsId : undefined}
                         aria-busy={submitState.phase === 'submitting'}
                         className={styles.submitButton}
                     >

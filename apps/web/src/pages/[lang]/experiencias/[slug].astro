@@ -372,9 +372,9 @@ const headerProps = buildExperienceHeader({
             <ExperienceSummary
                 listingId={experience.id}
                 locale={locale}
-                priceFrom={experience.priceFrom}
-                priceUnit={experience.priceUnit}
-                isPriceOnRequest={experience.isPriceOnRequest}
+                price={contactPrice}
+                phoneHref={barPhoneHref}
+                email={experience.contactInfo?.workEmail}
                 durationMinutes={experience.durationMinutes}
                 hasContactChannel={contactChannels.length > 0}
                 panelId={panelId}
@@ -510,6 +510,8 @@ const headerProps = buildExperienceHeader({
         client:idle
         entityType="experience"
         entityId={experience.id}
+        listingPrice={contactPrice}
+        canConsult={contactChannels.length > 0}
         locale={locale}
         apiUrl={getApiUrl()}
     />

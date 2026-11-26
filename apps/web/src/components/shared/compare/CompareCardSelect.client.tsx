@@ -228,11 +228,16 @@ export const CompareCardSelect: FC<CompareCardSelectProps> = ({
             onClick={handleClick}
             onKeyDown={handleKeyDown}
         >
-            {/* Unselected: render nothing here — no badge, no icon — so the
-                card's FavoriteButton (same top-right corner) is never
-                covered. Selected: a large check, centered over the photo,
-                on top of the border/tint already applied to `.overlay`
-                above via `[aria-checked='true']`. */}
+            <span
+                className={styles.selectLabel}
+                aria-hidden="true"
+            >
+                <span
+                    className={styles.selectBox}
+                    data-checked={selected}
+                />
+                {t('accommodations.detail.listingContact.bar.dockCompare', 'Comparar')}
+            </span>
             {selected && (
                 <span
                     className={styles.selectedCheck}

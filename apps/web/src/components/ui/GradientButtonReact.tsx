@@ -166,6 +166,7 @@ export function GradientButton({
         <a
             href={loading ? undefined : href}
             className={classes}
+            onClick={loading ? undefined : onClick}
             target={target}
             rel={rel}
             aria-disabled={loading ? 'true' : undefined}

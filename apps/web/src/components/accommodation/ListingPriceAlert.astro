@@ -1,18 +1,19 @@
 ---
-/** @file Shared responsive mount of the existing price-alert island and anonymous fallback. */
+/** @file Shared responsive mount of the price-alert island with public catalog metadata. */
 import { PriceAlertButton } from './PriceAlertButton';
-import SignInCtaCard from '@/components/shared/auth/SignInCtaCard.astro';
-import { createTranslations, type SupportedLocale } from '@/lib/i18n';
+import { fetchPublicPlans } from '@/lib/billing/fetch-plans';
+import { resolvePlanBadge } from '@/lib/billing/plan-badge';
+import type { SupportedLocale } from '@/lib/i18n';
 
 interface Props {
     readonly accommodationId: string;
     readonly apiUrl: string;
     readonly locale: SupportedLocale;
-    readonly slug: string;
     readonly placement: 'summary' | 'sidebar';
 }
-const { accommodationId, apiUrl, locale, slug, placement } = Astro.props;
-const { t } = createTranslations(locale);
+const { accommodationId, apiUrl, locale, placement } = Astro.props;
+const result = await fetchPublicPlans({ vertical: 'tourist' });
+const planName = resolvePlanBadge({ result, entitlement: 'price_alerts' });
 ---
 <div class:list={['listing-price-alert', `listing-price-alert--${placement}`]}>
     <PriceAlertButton
@@ -20,16 +21,8 @@ const { t } = createTranslations(locale);
         accommodationId={accommodationId}
         apiUrl={apiUrl}
         locale={locale}
-    >
-        <SignInCtaCard
-            locale={locale}
-            returnPath={`alojamientos/${slug}`}
-            icon="bell"
-            title={t('accommodations.detail.priceAlert.signInTitle')}
-            hint={t('accommodations.detail.priceAlert.signInHint')}
-            ctaLabel={t('accommodations.detail.priceAlert.signInCta')}
-        />
-    </PriceAlertButton>
+        planName={planName}
+    />
 </div>
 <style>
     .listing-price-alert--summary { display: none; flex-basis: 100%; }
