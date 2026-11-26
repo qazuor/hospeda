@@ -53,3 +53,18 @@ it('never reports partial totals when a later page fails', async () => {
 
     expect(result).toEqual(failure);
 });
+
+it('never reads more than MAP_RESULTS_MAX_PAGES pages upstream', async () => {
+    const { loadAccommodationMapResults, MAP_RESULTS_MAX_PAGES } = await import(
+        '@/lib/accommodation-map-results'
+    );
+    list.mockResolvedValue({
+        ok: true,
+        data: { items: [located], pagination: { totalPages: 500, total: 50_000 } }
+    } as Awaited<ReturnType<typeof list>>);
+
+    const result = await loadAccommodationMapResults({ filters, displayCap: 100 });
+
+    expect(list).toHaveBeenCalledTimes(MAP_RESULTS_MAX_PAGES);
+    expect(result).toMatchObject({ ok: true, data: { locatedCount: MAP_RESULTS_MAX_PAGES } });
+});

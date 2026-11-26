@@ -7,6 +7,13 @@ type ListFilters = Omit<
     'page' | 'pageSize'
 >;
 
+/**
+ * Hard ceiling on upstream page reads per map render (100 rows each). The
+ * public inventory is far below it; the ceiling bounds the fan-out a crafted
+ * filter combination can trigger. Past it the counts cover the pages read.
+ */
+export const MAP_RESULTS_MAX_PAGES = 10;
+
 interface MapResults {
     readonly items: readonly AccommodationPublic[];
     readonly locatedCount: number;
@@ -26,7 +33,7 @@ export async function loadAccommodationMapResults({
     let unlocatedCount = 0;
     let totalPages = 1;
 
-    for (let page = 1; page <= totalPages; page += 1) {
+    for (let page = 1; page <= Math.min(totalPages, MAP_RESULTS_MAX_PAGES); page += 1) {
         const result = await accommodationsApi.list({ ...filters, page, pageSize: 100 });
         if (!result.ok) return result;
         if (page === 1) totalPages = result.data.pagination.totalPages;
