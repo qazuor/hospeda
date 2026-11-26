@@ -13,6 +13,49 @@
         "translationTitle": "Contenido por idioma",
         "missingHint": "Faltan traducciones en {{locales}}. Abre cada pestaña de idioma para revisar los campos pendientes."
     },
+    "editorTranslations": {
+        "title": "Traducciones",
+        "description": "Cuando guardás un texto en español, lo traducimos al inglés y al portugués. Podés corregir cualquier traducción: la tuya no se pisa.",
+        "sourceHint": "Este texto se edita en la sección «{{section}}».",
+        "field": {
+            "name": "Nombre",
+            "summary": "Resumen",
+            "description": "Descripción",
+            "richDescription": "Descripción ampliada",
+            "entryNote": "Nota de entrada"
+        },
+        "state": {
+            "auto": "Traducción automática",
+            "manual": "Corregida por vos",
+            "manualEmpty": "Sin traducción: se muestra el español",
+            "stale": "El texto en español cambió, esta traducción puede estar desactualizada",
+            "pending": "Traducción pendiente",
+            "noQuota": "Sin traducción automática: llegaste al cupo del mes",
+            "noEntitlement": "Sin traducción automática: tu plan no la incluye",
+            "noSource": "Todavía no hay texto en español"
+        },
+        "action": {
+            "save": "Guardar",
+            "translateAi": "Traducir con IA",
+            "translateAiDisabled": {
+                "noQuota": "Llegaste al cupo de traducciones de este mes",
+                "noEntitlement": "Tu plan no incluye traducción con IA",
+                "noSource": "Escribí primero el texto en español"
+            },
+            "refresh": "Actualizar",
+            "retry": "Reintentar"
+        },
+        "toast": {
+            "saved": "Traducción guardada",
+            "aiDone": "Traducción generada",
+            "aiFailed": "No pudimos traducir ahora. Probá de nuevo en un rato.",
+            "loadFailed": "No pudimos cargar las traducciones"
+        },
+        "manualHint": "Si la editás, queda como tuya y la IA no la vuelve a cambiar.",
+        "pendingHint": "Hay traducciones en curso. Tocá «Actualizar» para ver si ya están listas.",
+        "reviewCount": "{{count}} para revisar",
+        "loading": "Cargando traducciones…"
+    },
     "whatsNewModal": {
         "title": "Novedades",
         "close": "Cerrar",
