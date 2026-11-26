@@ -2,9 +2,9 @@
     "$schema": "../../schemas/destination.schema.json",
     "id": "102-destination-entre-rios",
     "slug": "entre-rios",
-    "name": "Entre Rios",
-    "summary": "Provincia mesopotamica entre los rios Parana y Uruguay, tierra de termas y carnavales",
-    "description": "Entre Rios es una provincia argentina ubicada en la region mesopotamica, delimitada por los rios Parana y Uruguay. Conocida como la 'Tierra de los Carnavales' y cuna del turismo termal argentino, ofrece una combinacion unica de playas fluviales, complejos termales, historia y tradicion. Sus ciudades costeras como Colon, Gualeguaychu y Concepcion del Uruguay son destinos turisticos consolidados que atraen visitantes durante todo el anio.",
+    "name": "Entre Ríos",
+    "summary": "Provincia mesopotámica entre los ríos Paraná y Uruguay, tierra de termas y carnavales",
+    "description": "Entre Ríos es una provincia argentina ubicada en la región mesopotámica, delimitada por los ríos Paraná y Uruguay. Conocida como la 'Tierra de los Carnavales' y cuna del turismo termal argentino, ofrece una combinación única de playas fluviales, complejos termales, historia y tradición. Sus ciudades costeras como Colón, Gualeguaychú y Concepción del Uruguay son destinos turísticos consolidados que atraen visitantes durante todo el año.",
     "isFeatured": true,
     "moderationState": "APPROVED",
     "reviewsCount": 0,
@@ -12,7 +12,7 @@
     "destinationType": "PROVINCE",
     "parentDestinationId": "101-destination-litoral",
     "location": {
-        "state": "Entre Rios",
+        "state": "Entre Ríos",
         "zipCode": null,
         "country": "Argentina",
         "city": null,
@@ -23,16 +23,20 @@
     },
     "media": {
         "featuredImage": {
-            "url": "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=800&h=600&fit=crop",
-            "caption": "Entre Rios - Provincia mesopotamica",
+            "url": "https://res.cloudinary.com/djqdu6u93/image/upload/v1779178231/hospeda/seed/required/destinations/010-destination-ubajay/featured.webp",
+            "caption": "Palmeras al atardecer en Ubajay",
+            "attribution": {
+                "photographer": "qazuor",
+                "license": "Owned"
+            },
             "moderationState": "APPROVED"
         },
         "gallery": []
     },
     "seo": {
-        "title": "Entre Rios - Turismo y Alojamiento",
-        "description": "Descubre Entre Rios: termas, carnavales, playas fluviales y naturaleza.",
-        "keywords": ["Entre Rios", "termas", "carnavales", "turismo", "alojamiento"]
+        "title": "Entre Ríos - Turismo y Alojamiento",
+        "description": "Descubre Entre Ríos: termas, carnavales, playas fluviales y naturaleza.",
+        "keywords": ["Entre Ríos", "termas", "carnavales", "turismo", "alojamiento"]
     },
     "tagIds": ["016-tag-entre-rios"],
     "attractionIds": [],

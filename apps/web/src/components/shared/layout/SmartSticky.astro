@@ -1,0 +1,35 @@
+---
+/** Enables sticky positioning only after the sidebar height has been measured (D01). */
+---
+
+<script>
+    let observer: ResizeObserver | undefined;
+    const connect = () => {
+        observer?.disconnect();
+        if (!('ResizeObserver' in window)) return;
+        observer = new ResizeObserver((entries) => {
+            for (const { target } of entries) {
+                if (target instanceof HTMLElement) {
+                    target.style.setProperty('--sticky-sidebar-height', `${target.offsetHeight}px`);
+                }
+            }
+        });
+        for (const sidebar of document.querySelectorAll('[data-smart-sticky]')) {
+            observer.observe(sidebar, { box: 'border-box' });
+        }
+    };
+    connect();
+    document.addEventListener('astro:page-load', connect);
+</script>
+
+<style is:global>
+    [data-smart-sticky] {
+        --sticky-sidebar-height: 0px;
+        align-self: start;
+    }
+
+    :where([data-smart-sticky][style*="--sticky-sidebar-height"]) {
+        position: sticky;
+        top: min(var(--sticky-sidebar-base), calc(100dvh - var(--sticky-sidebar-height) - var(--space-4)));
+    }
+</style>
