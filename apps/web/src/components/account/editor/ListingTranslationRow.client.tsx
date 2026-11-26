@@ -165,7 +165,8 @@ export function ListingTranslationPairRow({
                     error={error}
                 >
                     <TranslationTextControl
-                        singleLine={entry.field === 'name'}
+                        // AC-21: every field, the one-line name included, edits in a textarea.
+                        singleLine={false}
                         value={value}
                         placeholder={label}
                         readOnly={!saveVisible}

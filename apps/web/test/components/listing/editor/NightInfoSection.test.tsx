@@ -308,14 +308,14 @@ describe('NightInfoSection — localized note tabs (HOS-2504)', () => {
     it('mounts only the selected locale of a note, with the bare id on es', () => {
         renderWithErrors({});
 
-        expect(document.getElementById('ce-entryNoteI18n')).not.toBeNull();
-        expect(document.getElementById('ce-entryNoteI18n-en')).toBeNull();
+        expect(document.getElementById('ce-policies-dressCodeNote')).not.toBeNull();
+        expect(document.getElementById('ce-policies-dressCodeNote-en')).toBeNull();
     });
 
     it('selects the first locale with an error so its control is focusable', () => {
-        renderWithErrors({ 'entryNoteI18n.pt': 'Demasiado largo' });
+        renderWithErrors({ 'policies.dressCodeNote.pt': 'Demasiado largo' });
 
-        const control = document.getElementById('ce-entryNoteI18n-pt');
+        const control = document.getElementById('ce-policies-dressCodeNote-pt');
         expect(control).not.toBeNull();
         expect(screen.getByRole('tab', { name: 'Portugués (Con error)' })).toHaveAttribute(
             'aria-selected',
@@ -330,13 +330,13 @@ describe('NightInfoSection — localized note tabs (HOS-2504)', () => {
             <NightInfoSection
                 locale="es"
                 data={buildEditData({ entryKind: 'free' })}
-                errors={{ 'entryNoteI18n.en': 'Demasiado largo' }}
+                errors={{ 'policies.dressCodeNote.en': 'Demasiado largo' }}
                 onFieldChange={vi.fn()}
                 onPolicyChange={vi.fn()}
             />
         );
 
-        expect(document.getElementById('ce-entryNoteI18n-en')).not.toBeNull();
+        expect(document.getElementById('ce-policies-dressCodeNote-en')).not.toBeNull();
     });
 
     it('names every localized note with a visible legend (HOS-2600)', () => {
@@ -350,7 +350,6 @@ describe('NightInfoSection — localized note tabs (HOS-2504)', () => {
 
         // Assert: one labelled group per note, the legend is real text (not only an aria-label)
         for (const name of [
-            'Nota sobre la entrada (es/en/pt)',
             'Nota sobre el código de vestimenta (es/en/pt)',
             'Sector o actividad (es/en/pt)'
         ]) {
@@ -359,5 +358,33 @@ describe('NightInfoSection — localized note tabs (HOS-2504)', () => {
             expect(legend).toHaveTextContent(name);
             expect(within(group).getByRole('tablist')).toBeInTheDocument();
         }
+    });
+});
+
+describe('NightInfoSection — entry note is a translation source (HOS-2658 AC-25)', () => {
+    it('edits only the Spanish entry note and points to the Translations section', () => {
+        // Arrange
+        const { onFieldChange } = renderSection('free', {
+            entryNoteI18n: { es: 'Gratis hasta la 1', en: 'Free until 1', pt: 'Grátis até 1' }
+        });
+
+        // Act
+        fireEvent.change(document.getElementById('ce-entryNoteI18n') as HTMLElement, {
+            target: { value: 'Gratis hasta las 2' }
+        });
+
+        // Assert
+        expect(screen.getByLabelText('Nota sobre la entrada')).toHaveValue('Gratis hasta la 1');
+        expect(document.getElementById('ce-entryNoteI18n-en')).toBeNull();
+        expect(document.getElementById('ce-entryNoteI18n-pt')).toBeNull();
+        expect(screen.queryByRole('group', { name: /Nota sobre la entrada/ })).toBeNull();
+        expect(
+            screen.getByText(
+                'Escribila en español. Las versiones en inglés y portugués se editan en la sección Traducciones.'
+            )
+        ).toBeInTheDocument();
+        expect(onFieldChange.mock.calls).toEqual([
+            ['entryNoteI18n', { es: 'Gratis hasta las 2', en: 'Free until 1', pt: 'Grátis até 1' }]
+        ]);
     });
 });

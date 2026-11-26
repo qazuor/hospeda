@@ -87,6 +87,12 @@ describe('ListingTranslationsSection', () => {
             'PT'
         ]);
         expect(screen.getByLabelText('Nombre (EN)')).toHaveValue('The Grill');
+        // AC-21: one labelled TEXTAREA per field, the one-line name included.
+        expect(
+            ['Nombre (EN)', 'Descripción (EN)', 'Nota de entrada (EN)'].map(
+                (label) => screen.getByLabelText(label).tagName
+            )
+        ).toEqual(['TEXTAREA', 'TEXTAREA', 'TEXTAREA']);
         expect(screen.getAllByRole('button', { name: 'Guardar' })).toHaveLength(3);
         expect(screen.getAllByRole('button', { name: 'Traducir con IA' })).toHaveLength(3);
     });

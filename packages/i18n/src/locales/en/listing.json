@@ -395,7 +395,8 @@
             },
             "nightInfo": {
                 "entryPriceFrom": "Price from (in pesos)",
-                "entryNoteLabel": "Entry note (es/en/pt)",
+                "entryNoteLabel": "Entry note",
+                "entryNoteTranslationsHint": "Write it in Spanish. The English and Portuguese versions are edited in the Translations section.",
                 "dressCodeNoteLabel": "Dress code note (es/en/pt)",
                 "notInformed": "Not informed",
                 "priceUpdatedAt": "Updated {{month}}",
