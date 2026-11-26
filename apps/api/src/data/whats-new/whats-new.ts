@@ -152,6 +152,95 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4783
+    {
+        id: '2026-11-25-account-form-controls-kit',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
+        title: {
+            es: 'Los formularios de tu cuenta se ven y se usan igual en todas partes',
+            en: 'Your account forms look and work the same everywhere',
+            pt: 'Os formulários da sua conta têm a mesma aparência e funcionam igual em todo lugar'
+        },
+        body: {
+            es: 'Las opciones, las horas, los precios y los selectores de Mi cuenta tienen ahora el mismo estilo, con el foco bien visible al navegar con teclado. La barra de guardado aparece solo cuando hay cambios y, al guardar, vuelve «Todo guardado».',
+            en: 'Options, times, prices and selectors in My account now share the same style, with a clearly visible focus when navigating by keyboard. The save bar appears only when there are changes and, once saved, goes back to "All saved".',
+            pt: 'As opções, os horários, os preços e os seletores de Minha conta agora têm o mesmo estilo, com o foco bem visível ao navegar pelo teclado. A barra de salvamento aparece só quando há alterações e, ao salvar, volta para «Tudo salvo».'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4788
+    {
+        id: '2026-11-25-account-menu-by-permissions',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'El menú de tu cuenta muestra solo lo que podés hacer',
+            en: 'Your account menu shows only what you can do',
+            pt: 'O menu da sua conta mostra apenas o que você pode fazer'
+        },
+        body: {
+            es: 'El menú del avatar ahora lista únicamente las secciones de administración a las que tu cuenta tiene acceso, y las pantallas de negocio te llevan de vuelta a Mi cuenta si no corresponden. En el celular, la ficha muestra las estrellas y la cantidad de reseñas en una sola línea.',
+            en: 'The avatar menu now lists only the management sections your account can access, and business screens send you back to My account if they do not apply. On mobile, a listing shows its stars and review count on a single line.',
+            pt: 'O menu do avatar agora lista apenas as seções de administração às quais sua conta tem acesso, e as telas de negócio levam você de volta a Minha conta se não se aplicarem. No celular, a ficha mostra as estrelas e a quantidade de avaliações em uma única linha.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4785
+    {
+        id: '2026-11-25-listing-editor-shared-sections',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST', 'VENUE_OWNER'],
+        title: {
+            es: 'Los editores de tu ficha comparten las mismas secciones y son más claros',
+            en: 'Your listing editors share the same sections and are clearer',
+            pt: 'Os editores da sua ficha compartilham as mesmas seções e são mais claros'
+        },
+        body: {
+            es: 'Preguntas frecuentes, fotos y traducciones se editan igual en tu alojamiento y en tu comercio. El resumen te dice qué falta y qué es solo recomendado, y los horarios del comercio se guardan y quedan después de recargar.',
+            en: 'Frequently asked questions, photos and translations are edited the same way in your accommodation and your venue. The summary tells you what is missing and what is only recommended, and venue opening hours are saved and remain after reloading.',
+            pt: 'Perguntas frequentes, fotos e traduções são editadas da mesma forma na sua hospedagem e no seu comércio. O resumo diz o que falta e o que é apenas recomendado, e os horários do comércio são salvos e permanecem após recarregar.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4786
+    {
+        id: '2026-11-25-listings-grouped-by-state',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
+        title: {
+            es: 'Tus fichas aparecen ordenadas por estado',
+            en: 'Your listings appear grouped by state',
+            pt: 'Suas fichas aparecem organizadas por estado'
+        },
+        body: {
+            es: 'En Mis alojamientos, Mis locales y Mis experiencias ves tus fichas en secciones con contador: publicadas, borradores, archivadas y borradas. Archivadas y borradas llegan plegadas, y una ficha moderada muestra el motivo. Además, en tus consultas las no leídas se destacan con una marca naranja.',
+            en: 'In My accommodations, My venues and My experiences you see your listings in sections with a counter: published, drafts, archived and deleted. Archived and deleted ones come collapsed, and a moderated listing shows the reason. In your inquiries, unread ones are highlighted with an orange mark.',
+            pt: 'Em Minhas hospedagens, Meus comércios e Minhas experiências você vê suas fichas em seções com contador: publicadas, rascunhos, arquivadas e excluídas. As arquivadas e excluídas chegam recolhidas, e uma ficha moderada mostra o motivo. Além disso, nas suas consultas as não lidas são destacadas com uma marca laranja.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4787
+    {
+        id: '2026-11-25-addons-page-and-plan-badge',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST'],
+        title: {
+            es: 'Tus complementos activos, en una página propia y más fáciles de elegir',
+            en: 'Your active add-ons, on their own page and easier to choose',
+            pt: 'Seus complementos ativos, em uma página própria e mais fáceis de escolher'
+        },
+        body: {
+            es: 'En Suscripción ves solo los complementos que sirven para tu alojamiento, con su categoría y filtros. La página Complementos muestra únicamente los que tenés activos, y en los planes para anfitriones tu plan actual aparece marcado.',
+            en: 'In Subscription you see only the add-ons that work for your accommodation, with their category and filters. The Add-ons page shows only the ones you have active, and on the host plans your current plan is marked.',
+            pt: 'Em Assinatura você vê apenas os complementos que servem para a sua hospedagem, com categoria e filtros. A página Complementos mostra somente os que você tem ativos, e nos planos para anfitriões o seu plano atual aparece marcado.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4799
     {
         id: '2026-11-26-venue-experience-minimal-create-step',
