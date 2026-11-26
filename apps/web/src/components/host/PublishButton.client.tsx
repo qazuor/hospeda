@@ -36,12 +36,21 @@ import {
     DUPLICATE_LOCATION_REASON,
     parsePublishRequirementsReason
 } from '@repo/schemas';
-import { type JSX, useState } from 'react';
+import { type JSX, useEffect, useState } from 'react';
 import { Button } from '@/components/account/ui/Button';
 import { LinkButton } from '@/components/account/ui/LinkButton';
 import { PaidSignupsPausedNotice } from '@/components/billing/PaidSignupsPausedNotice';
 import { LocationExceptionRequestForm } from '@/components/listing/LocationExceptionRequestForm.client';
 import type { PublishVerticalSlug } from '@/lib/api/endpoints-protected';
+import { billingAddonApi } from '@/lib/api/endpoints-protected-addons';
+import {
+    CAP_ADDON_CTA_KEY,
+    type CapAddonOffer,
+    capAddonHref,
+    findCapAddonOffer
+} from '@/lib/billing/addon-cap-offer';
+import { getAddonName } from '@/lib/billing/addon-purchase';
+import { formatPrice } from '@/lib/format-utils';
 import { createTranslations, type SupportedLocale } from '@/lib/i18n';
 import { buildSubscribeToPublishCopy } from '@/lib/listing/listing-notices';
 import {
@@ -49,6 +58,7 @@ import {
     resolvePublishEditorPath,
     resolvePublishPricingPath
 } from '@/lib/publish/publish-listing';
+import { buildVerticalSubscriptionUrl } from '@/lib/publish/publish-page-paths';
 import { NO_PLANS_AVAILABLE_MESSAGE, type PublishAffordance } from '@/lib/publish/subscribe-button';
 import { buildUrl } from '@/lib/urls';
 import styles from './PublishButton.module.css';
@@ -187,7 +197,26 @@ export function PublishButton({
     const [missingRequirements, setMissingRequirements] = useState<
         readonly AccommodationPublishRequirementId[]
     >([]);
+    /** HOS-2632: the catalog add-on that widens the cap, read once the cap is hit. */
+    const [capAddon, setCapAddon] = useState<CapAddonOffer | null>(null);
     const { t } = createTranslations(locale);
+    useEffect(() => {
+        if (state !== 'limitReached') return;
+        let alive = true;
+        void billingAddonApi
+            .offers()
+            .then((result) => {
+                if (alive && result.ok) {
+                    setCapAddon(findCapAddonOffer({ offers: result.data.items, vertical }));
+                }
+            })
+            .catch(() => {
+                // The plan change stays as the only way out.
+            });
+        return () => {
+            alive = false;
+        };
+    }, [state, vertical]);
     /**
      * Row 21 (AC:V8a:4, HOS-1492): "subscribe to publish". Only the copy; it
      * shows where the affordance (`checkout`) or the server
@@ -436,6 +465,25 @@ export function PublishButton({
                 >
                     {t('publish.limitReached.cta')}
                 </LinkButton>
+                {capAddon && (
+                    <LinkButton
+                        variant="secondary"
+                        href={capAddonHref({
+                            subscriptionUrl: buildVerticalSubscriptionUrl({ locale, vertical }),
+                            vertical
+                        })}
+                        data-testid="publish-limit-reached-addon"
+                    >
+                        {t(CAP_ADDON_CTA_KEY, undefined, {
+                            name: getAddonName({ offer: { ...capAddon, description: null }, t }),
+                            price: formatPrice({
+                                amount: capAddon.price / 100,
+                                currency: capAddon.currency,
+                                locale
+                            })
+                        })}
+                    </LinkButton>
+                )}
             </span>
         );
     }

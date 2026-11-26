@@ -177,6 +177,20 @@
         "progress": "Progress"
     },
     "favorite": {
+        "audit": {
+            "usage_one": "{{current}} of {{count}} favorite",
+            "usage_other": "{{current}} of {{count}} favorites",
+            "savedUsage": "Saved · {{usage}}",
+            "savedUnlimited": "Saved · Unlimited favorites",
+            "guestBenefit_one": "{{count}} favorite for free · unlimited with {{plan}}",
+            "guestBenefit_other": "{{count}} favorites for free · unlimited with {{plan}}",
+            "guestFree_one": "Save up to {{count}} favorite for free",
+            "guestFree_other": "Save up to {{count}} favorites for free",
+            "limit_one": "Save more than {{count}} favorite with another plan",
+            "limit_other": "Save more than {{count}} favorites with another plan",
+            "limitUnknown": "Explore plans to save more favorites",
+            "manage": "Manage my favorites"
+        },
         "add": "Add to favorites",
         "loading": "Checking favorite...",
         "auth_required": {
@@ -246,6 +260,33 @@
         "dismiss": "Dismiss announcement"
     },
     "listing": {
+        "accommodations_one": "{{count}} stay",
+        "accommodations_other": "{{count}} stays",
+        "venues_one": "{{count}} venue",
+        "venues_other": "{{count}} venues",
+        "experiences_one": "{{count}} experience",
+        "experiences_other": "{{count}} experiences",
+        "events_one": "{{count}} event",
+        "events_other": "{{count}} events",
+        "posts_one": "{{count}} article",
+        "posts_other": "{{count}} articles",
+        "results_one": "{{count}} result",
+        "results_other": "{{count}} results",
+        "facet": "Showing {{results}} in {{facet}}",
+        "applySort": "Apply sort",
+        "unlocated_one": "{{count}} stay without a map location",
+        "unlocated_other": "{{count}} stays without a map location",
+        "viewList": "View in list",
+        "allAccommodations": "See all stays",
+        "noAccommodationQuery": "We couldn’t find any stays for “{{query}}”.",
+        "nearbyAccommodations": "See nearby stays",
+        "allEvents": "See all events",
+        "allVenues": "See all venues",
+        "experienceGroups": {
+            "tours": "Guided tours",
+            "adventure": "Adventure",
+            "rentals": "Rentals"
+        },
         "resultsFound_one": "{{count}} result found",
         "resultsFound_other": "{{count}} results found"
     },

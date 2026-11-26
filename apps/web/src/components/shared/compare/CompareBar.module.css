@@ -61,7 +61,7 @@
 .guidance {
     font-family: var(--font-sans);
     font-weight: 400;
-    font-size: var(--text-caption, 0.75rem);
+    font-size: var(--text-body-sm, 0.875rem);
     color: var(--core-muted-foreground);
     white-space: nowrap;
     margin: 0;
@@ -201,7 +201,9 @@
 
 /* Disabled CTA (fewer than the minimum items selected). */
 .cta[data-disabled="true"] {
-    opacity: 0.5;
+    opacity: 1;
+    background-color: var(--muted);
+    color: var(--core-muted-foreground);
     cursor: not-allowed;
     pointer-events: auto;
 }

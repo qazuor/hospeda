@@ -5,16 +5,20 @@ import { ListingContactActions } from '@/components/listing/contact/ListingConta
 export type MobileBookingSummaryActionsProps = Pick<
     ListingContactActionsProps,
     'listingId' | 'panelId' | 'locale' | 'hasWhatsapp'
->;
+> &
+    Partial<Pick<ListingContactActionsProps, 'primaryLabelKey'>>;
 
 /** Opens the contact sheet from the inline price and host summary. */
-export function MobileBookingSummaryActions(props: MobileBookingSummaryActionsProps) {
+export function MobileBookingSummaryActions({
+    primaryLabelKey = 'accommodations.detail.listingContact.bar.inquire',
+    ...props
+}: MobileBookingSummaryActionsProps) {
     return (
         <ListingContactActions
             {...props}
             vertical="accommodation"
             origin="summary"
-            primaryLabelKey="accommodations.detail.listingContact.bar.inquire"
+            primaryLabelKey={primaryLabelKey}
         />
     );
 }

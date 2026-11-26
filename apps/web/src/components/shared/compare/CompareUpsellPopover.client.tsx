@@ -59,6 +59,8 @@ export interface CompareUpsellPopoverProps {
     readonly dialogLabel: string;
     /** Accessible label for the close button. */
     readonly closeLabel: string;
+    /** Visible secondary action that dismisses the offer. */
+    readonly dismissLabel?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -75,7 +77,7 @@ interface PopoverPosition {
 /** Vertical gap between the trigger and the popover (in px). */
 const ANCHOR_GAP = 10;
 /** Minimum distance the popover must keep from the viewport edges (in px). */
-const VIEWPORT_PADDING = 8;
+const VIEWPORT_PADDING = 16;
 
 /**
  * Compute the popover position from the anchor and popover bounding rects,
@@ -99,7 +101,7 @@ function computePosition(
             ? anchorRect.bottom + ANCHOR_GAP
             : anchorRect.top - popoverRect.height - ANCHOR_GAP;
 
-    let left = anchorRect.right - popoverRect.width;
+    let left = anchorRect.left + (anchorRect.width - popoverRect.width) / 2;
 
     const minLeft = VIEWPORT_PADDING;
     const maxLeft = viewport.width - popoverRect.width - VIEWPORT_PADDING;
@@ -151,7 +153,8 @@ export function CompareUpsellPopover({
     onClose,
     className = '',
     dialogLabel,
-    closeLabel
+    closeLabel,
+    dismissLabel
 }: CompareUpsellPopoverProps): JSX.Element | null {
     const popoverRef = useRef<HTMLDivElement>(null);
     const [isVisible, setIsVisible] = useState(false);
@@ -162,6 +165,11 @@ export function CompareUpsellPopover({
     useEffect(() => {
         setMounted(true);
     }, []);
+
+    const dismiss = (): void => {
+        anchorRef.current?.focus({ preventScroll: true });
+        onClose();
+    };
 
     // Position the popover relative to the anchor, then animate it in.
     // Repositions on resize. Scroll dismisses the popover (capture: true catches
@@ -204,11 +212,14 @@ export function CompareUpsellPopover({
     // Close on Escape key.
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent): void => {
-            if (event.key === 'Escape') onClose();
+            if (event.key === 'Escape') {
+                anchorRef.current?.focus({ preventScroll: true });
+                onClose();
+            }
         };
         document.addEventListener('keydown', handleKeyDown);
         return () => document.removeEventListener('keydown', handleKeyDown);
-    }, [onClose]);
+    }, [onClose, anchorRef]);
 
     // Close on click outside the popover (also ignore clicks on the anchor itself
     // so toggling via the trigger does not immediately re-close).
@@ -228,7 +239,6 @@ export function CompareUpsellPopover({
     const popoverNode = (
         <div
             ref={popoverRef}
-            // biome-ignore lint/a11y/useSemanticElements: Using div with role="dialog" for a non-modal popover
             role="dialog"
             aria-label={dialogLabel}
             className={cn(
@@ -253,7 +263,7 @@ export function CompareUpsellPopover({
             {/* Close button */}
             <button
                 type="button"
-                onClick={onClose}
+                onClick={dismiss}
                 aria-label={closeLabel}
                 className={styles.closeButton}
             >
@@ -293,6 +303,15 @@ export function CompareUpsellPopover({
                 >
                     {ctaLabel}
                 </a>
+                {dismissLabel && (
+                    <button
+                        type="button"
+                        className={styles.dismissButton}
+                        onClick={dismiss}
+                    >
+                        {dismissLabel}
+                    </button>
+                )}
             </div>
         </div>
     );

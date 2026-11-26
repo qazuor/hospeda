@@ -81,6 +81,9 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'account.editorPresentation',
     'account.favorites',
     'account.help',
+    // HOS-2495 — the shared photo editor island (`host/editor/PhotoSection`)
+    // renders its cap breakdown and over-cap marks from these.
+    'account.listingPhotos',
     // HOS-2413 — the account kit (`components/account/ui/`) renders these in islands.
     'account.menu',
     'account.myContent',
@@ -154,6 +157,7 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'billing.addon',
     'billing.addonPurchase',
     'billing.checkout',
+    'billing.common',
     'billing.entitlement',
     'billing.limit',
     // HOS-1759 — the checkout island resolves the selected plan's localized
@@ -167,6 +171,8 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     // HOS-1977 — the publish button's LIMIT_REACHED rejection renders
     // these keys in the browser.
     'publish.limitReached',
+    // HOS-2632 — the same rejection also offers the catalog add-on that widens the cap.
+    'publish.capAddon',
     'blog.categories',
     'comments.form',
     'comments.thread',

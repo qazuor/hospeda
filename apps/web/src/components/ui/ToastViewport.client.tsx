@@ -241,7 +241,12 @@ function ToastItem({ toast, closeLabel }: ToastItemProps) {
             // `role=alert` interrupts; reserve for errors. Everything else uses
             // `status` so it joins the polite announcement queue.
             role={toast.type === 'error' ? 'alert' : 'status'}
-            className={cn(styles.toast, 'overlay-surface', isExiting && styles.exiting)}
+            className={cn(
+                styles.toast,
+                'overlay-surface',
+                toast.layout === 'compact' && styles.compact,
+                isExiting && styles.exiting
+            )}
             data-toast-type={toast.type}
             style={style}
             onPointerEnter={handlePointerEnter}

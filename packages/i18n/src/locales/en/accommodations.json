@@ -11,14 +11,16 @@
         },
         "mode": {
             "toggleLabel": "Compare accommodations",
-            "activeLabel": "Comparing",
+            "activeLabel": "Exit comparison",
             "on": "Comparison mode on",
             "off": "Comparison mode off",
             "bannerHint": "Choose the accommodations you want to compare"
         },
         "gate": {
             "authMessage": "Sign in to compare accommodations.",
-            "upsellMessage": "Your plan does not include accommodation comparison.",
+            "upsellMessage": "Compare accommodations side by side.",
+            "benefit_one": "Compare up to {{count}} accommodation side by side with {{plan}}.",
+            "benefit_other": "Compare up to {{count}} accommodations side by side with {{plan}}.",
             "upsellCta": "View plans"
         },
         "toast": {
@@ -64,6 +66,7 @@
             "count_other": "Comparing {{count}} accommodations"
         },
         "empty": {
+            "suggestions": "Suggested accommodations to compare",
             "title": "No accommodations to compare",
             "message": "Add accommodations from the listing to see them side by side.",
             "cta": "Browse accommodations"
@@ -449,6 +452,11 @@
         },
         "listingContact": {
             "bar": {
+                "dockMenu": "Menu",
+                "dockChat": "Chat",
+                "dockSave": "Save",
+                "dockShare": "Share",
+                "dockCompare": "Compare",
                 "actions": {
                     "inquire": "Send an inquiry",
                     "viewMenu": "View menu",
@@ -466,7 +474,7 @@
                 "priceOnRequest": "Ask for pricing"
             },
             "panel": {
-                "title": "Contact {{name}}",
+                "title": "Contact the host: {{name}}",
                 "shortcuts": { "whatsapp": "WhatsApp", "phone": "Call", "email": "Email" },
                 "trust": "Your inquiry goes directly to the host. No commission."
             },
@@ -501,7 +509,15 @@
                 "withGuests": "Hello, is it available {{guests}}?",
                 "withDatesAndGuests": "Hello, is it available {{dates}} {{guests}}?"
             },
-            "summary": { "title": "Price and contact" },
+            "summary": {
+                "title": "Price and contact",
+                "fromPrice": "From {{amount}}",
+                "priceOnRequest": "Price on request",
+                "requestPrice": "Request a price",
+                "writeEmail": "Send an email",
+                "requestByEmail": "Ask for the price by email.",
+                "hostReply": "The host will reply with the price."
+            },
             "units": {
                 "perNight": "/night",
                 "perDay": "/day",
@@ -532,6 +548,8 @@
             "cta": "Contact via WhatsApp",
             "messageTemplate": "Hi, I'm interested in more information about {{name}}",
             "numberLabel": "Host's WhatsApp",
+            "compactGate": "View the host's WhatsApp",
+            "previewLabel": "Message to send",
             "upsellText_one": "Subscribe to the {{plans}} plan to see the host's WhatsApp.",
             "upsellText_other": "Subscribe to one of the {{plans}} plans to see the host's WhatsApp.",
             "upsellTextNoPlans": "Your current plan does not include seeing the host's WhatsApp.",
@@ -723,7 +741,14 @@
         "priceAlert": {
             "create": "Alert me for price drops",
             "creating": "Creating...",
-            "createSuccess": "Alert created",
+            "createSuccess": "Alert created. We’ll email you if the price drop reaches your threshold.",
+            "gateTitle": "Price alerts",
+            "gateBenefit": "Get notified when the price drops with the {{plan}} plan.",
+            "confirmCreate": "Create alert",
+            "targetPercent": "Price drop (%)",
+            "defaultThreshold": "Alert active with the default threshold.",
+            "activeThreshold": "Alert active for a {{threshold}}% price drop.",
+            "activeDate": "Created on {{date}}.",
             "createError": "Couldn't create the alert",
             "cancel": "Cancel alert",
             "cancelling": "Cancelling...",
@@ -1125,9 +1150,16 @@
         "guestExample3": "How does check-in work?",
         "guestExamplesLead": "For example:",
         "guestFree": "It is free with your account.",
+        "guestMonthlyQuota_one": "Create a free account and ask up to {{count}} question per month.",
+        "guestMonthlyQuota_other": "Create a free account and ask up to {{count}} questions per month.",
+        "monthlyAllowance_one": "Your plan includes {{count}} question per month.",
+        "monthlyAllowance_other": "Your plan includes {{count}} questions per month.",
+        "noticeLabel": "About AI and your privacy",
+        "greeting": "Hi! What would you like to know?",
         "guestSignUp": "Create a free account",
         "guestSignIn": "Sign in",
         "fabLabel": "Ask AI about this accommodation",
+        "dockLabel": "AI",
         "panelLabel": "AI Chat — Accommodation Questions",
         "headerDisclaimer": "Responses are AI-generated and may contain errors. Always verify information with the accommodation.",
         "readNotice": "The host can read the questions you ask in this chat. Do not share personal data.",

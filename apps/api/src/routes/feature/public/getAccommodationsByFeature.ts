@@ -38,7 +38,8 @@ export const publicGetAccommodationsByFeatureRoute = createPublicListRoute({
         // each row owner's effective capabilities before response serialization.
         const rawAccommodations = result.data.accommodations ?? [];
         const strippedAccommodations = await projectPublicAccommodations({
-            listings: rawAccommodations
+            listings: rawAccommodations,
+            onEffectiveSetFailure: () => ctx.header('Cache-Control', 'no-store')
         });
 
         const accommodations = strippedAccommodations;

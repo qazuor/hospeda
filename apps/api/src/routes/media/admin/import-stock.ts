@@ -140,7 +140,16 @@ export const adminImportStockMediaRoute = createAdminRoute({
             );
         }
 
-        if (parsedBody.role === 'gallery') {
+        // HOS-2495: only CONTENT entities keep a literal gallery cap; listing
+        // galleries are capped by the owner's effective photo limit (step 7),
+        // so staff are not cut at the old 50/30 literal either.
+        const contentEntityType =
+            parsedBody.entityType === 'destination' ||
+            parsedBody.entityType === 'event' ||
+            parsedBody.entityType === 'post'
+                ? parsedBody.entityType
+                : null;
+        if (parsedBody.role === 'gallery' && contentEntityType) {
             // Counted via the shared resolver so this path, the protected upload
             // and the admin upload can never disagree about where an entity
             // type's photos live — see routes/media/gallery-count.ts.
@@ -150,7 +159,7 @@ export const adminImportStockMediaRoute = createAdminRoute({
                 entity: entityResult.data
             });
 
-            const galleryLimit = getGalleryCap(parsedBody.entityType);
+            const galleryLimit = getGalleryCap(contentEntityType);
             if (currentGalleryCount >= galleryLimit) {
                 return createErrorResponse(
                     {

@@ -1,4 +1,37 @@
 {
+    "listingPhotos": {
+        "description": {
+            "accommodation_one": "Subí hasta {{cap}} foto de tu alojamiento.",
+            "accommodation_other": "Subí hasta {{cap}} fotos de tu alojamiento.",
+            "venue_one": "Subí hasta {{cap}} foto de tu ficha de Comer y salir.",
+            "venue_other": "Subí hasta {{cap}} fotos de tu ficha de Comer y salir.",
+            "experience_one": "Subí hasta {{cap}} foto de tu experiencia.",
+            "experience_other": "Subí hasta {{cap}} fotos de tu experiencia."
+        },
+        "noPlan": {
+            "accommodation": "Para subir fotos de tu alojamiento, necesitás un plan que las incluya.",
+            "venue": "Para subir fotos de tu ficha de Comer y salir, necesitás un plan que las incluya.",
+            "experience": "Para subir fotos de tu experiencia, necesitás un plan que las incluya."
+        },
+        "plansCta": "Ver planes",
+        "unlimited": "Sin límite de fotos",
+        "breakdown": {
+            "plan": "{{value}} de tu plan",
+            "trial": "{{value}} de tu prueba",
+            "addons": "{{value}} de packs de fotos",
+            "courtesy": "{{value}} de tu cortesía",
+            "permanentGrant": "{{value}} de tu beneficio permanente",
+            "base": "{{value}} de tu cupo base",
+            "preTrialDraft": "{{value}} para tu borrador antes de la prueba",
+            "total": "{{parts}} = {{cap}}",
+            "unlimitedValue": "sin límite"
+        },
+        "overCapBadge": "No se muestra: superás tu tope",
+        "overCapSummary_one": "{{count}} foto no se muestra porque superás tu tope. Sumá un pack de fotos o reordená para elegir cuáles se ven.",
+        "overCapSummary_other": "{{count}} fotos no se muestran porque superás tu tope. Sumá un pack de fotos o reordená para elegir cuáles se ven.",
+        "loading": "Cargando tu límite de fotos…",
+        "readFailed": "No pudimos cargar tu límite de fotos. Probá recargar la página."
+    },
     "editorHub": {
         "publicationStatus": "Estado de publicación",
         "publicationUnavailable": "Estado de publicación no disponible",

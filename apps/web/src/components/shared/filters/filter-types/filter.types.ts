@@ -222,7 +222,7 @@ export interface GeoRadiusState {
 }
 
 /** Union of all supported filter group configurations. */
-export type FilterGroup =
+export type FilterGroup = (
     | SearchFilterGroup
     | CheckboxFilterGroup
     | RadioFilterGroup
@@ -236,7 +236,8 @@ export type FilterGroup =
     | DateRangeFilterConfig
     | PriceCompositeFilterConfig
     | GeoRadiusFilterConfig
-    | SectionHeaderConfig;
+    | SectionHeaderConfig
+) & { readonly defaultExpanded?: boolean };
 
 /** Shared reducer state shape. */
 export interface FilterState {

@@ -36,6 +36,8 @@ export interface Toast {
     readonly id: string;
     readonly type: ToastType;
     readonly message: string;
+    /** Two-row snackbar for short messages with link actions. */
+    readonly layout?: 'compact';
     /**
      * Auto-dismiss delay in ms. `0` means persistent (no auto-dismiss).
      * `loading` toasts are always persistent regardless of this value.
@@ -116,6 +118,7 @@ function scheduleDismiss(id: string, ms: number, totalDuration: number): void {
 export function addToast(params: {
     readonly type: ToastType;
     readonly message: string;
+    readonly layout?: Toast['layout'];
     /** Auto-dismiss delay in ms. Defaults to 5000. Pass 0 to persist. */
     readonly duration?: number;
     readonly action?: ToastAction;
@@ -131,6 +134,7 @@ export function addToast(params: {
         id,
         type,
         message,
+        layout: params.layout,
         duration,
         action,
         secondaryAction,
@@ -282,7 +286,7 @@ export function pauseToast(id: string): void {
  */
 export function resumeToast(id: string): void {
     const timer = timers.get(id);
-    if (!timer || !timer.paused) {
+    if (!timer?.paused) {
         return;
     }
     if (timer.remaining <= 0) {

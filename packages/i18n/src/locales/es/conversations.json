@@ -69,6 +69,7 @@
     },
     "form": {
         "charCount": "{current}/{max} caracteres",
+        "missingFields": "Completá estos campos: {fields}.",
         "email": "Email",
         "emailPlaceholder": "tu@email.com",
         "message": "Mensaje",

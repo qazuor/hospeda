@@ -21,7 +21,10 @@
  * service creates the row already featured, in one transaction, and
  * `uq_venue_media_single_featured` permits exactly one per listing.
  *
- * No cap needs waiving, because none is spent: the replaced cover is DELETED
+ * Step 7 still asks for `requested: 1` on the listing's photo key (HOS-2495):
+ * a cover never counts toward the cap, but adding one needs a cap of at least 1.
+ *
+ * No gallery slot is spent: the replaced cover is DELETED
  * (soft-deleted) in the same transaction, so one row enters the featured slot
  * and one leaves the table and the visible gallery never moves.
  *
@@ -45,6 +48,7 @@ import type { Context } from 'hono';
 import { z } from 'zod';
 
 import { getActorFromContext } from '../../../utils/actor';
+import { listingCoverPhotoLimit } from '../../../utils/listing-access/photo-limit';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
@@ -68,7 +72,12 @@ export const protectedAddVenueFeaturedMediaRoute = createProtectedRoute({
         'is kept. Unlike POST /:id/media this does not ' +
         'consume a gallery slot, because the cover is not a gallery item ' +
         '(HOS-791). Requires VENUE_EDIT_OWN (listing owner) or VENUE_EDIT_ALL (staff).',
-    listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
+    listingAccess: {
+        vertical: VerticalEnum.VENUE,
+        operation: 'EDIT',
+        idParam: 'id',
+        limit: listingCoverPhotoLimit({ vertical: VerticalEnum.VENUE })
+    },
     tags: ['Venue', 'Venue Media'],
     protectedTag: false,
     requestParams: {

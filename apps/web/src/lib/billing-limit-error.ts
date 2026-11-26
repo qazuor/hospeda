@@ -66,6 +66,8 @@ export const KNOWN_LIMIT_KEYS = new Set([
     'max_favorites',
     'max_accommodations',
     'max_photos_per_accommodation',
+    'max_photos_per_venue',
+    'max_photos_per_experience',
     'max_active_promotions',
     'max_properties',
     'max_staff_accounts',

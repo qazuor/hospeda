@@ -5,14 +5,14 @@
 
 .fab {
     position: fixed;
-    bottom: 24px;
-    right: 24px;
+    bottom: var(--floating-chat-bottom);
+    right: var(--space-6);
     z-index: 1000;
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 56px;
-    height: 56px;
+    width: var(--floating-chat-size);
+    height: var(--floating-chat-size);
     border: none;
     border-radius: var(--radius-pill, 9999px);
     background-color: var(--brand-primary, #2563eb);
@@ -22,6 +22,10 @@
     transition:
         transform 0.2s ease,
         box-shadow 0.2s ease;
+}
+
+.dockLabel {
+    display: none;
 }
 
 @media (max-width: 767px) {
@@ -34,6 +38,14 @@
         position: static;
         width: 44px;
         height: 44px;
+        flex-direction: column;
+        padding: 0;
+    }
+
+    :global([data-mobile-dock]) .dockLabel {
+        display: block;
+        font-size: 0.625rem;
+        line-height: 1;
     }
 }
 

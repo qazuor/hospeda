@@ -14,7 +14,10 @@ import {
 import { resetFavoritesStore } from '../../../../src/store/favorites-store';
 
 vi.mock('../../../../src/lib/i18n', () => ({
-    createT: (_locale: string) => (key: string, fallback?: string) => fallback ?? key
+    createTranslations: () => ({
+        t: (key: string, fallback?: string) => fallback ?? key,
+        tPlural: (key: string) => key
+    })
 }));
 vi.mock('../../../../src/lib/cn', () => ({
     cn: (...c: (string | undefined | false | null)[]) => c.filter(Boolean).join(' ')

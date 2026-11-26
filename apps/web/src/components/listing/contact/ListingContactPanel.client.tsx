@@ -6,13 +6,10 @@ import {
     emptyContactDraft,
     useContactSubmission
 } from '@/components/accommodation/contact-panel-draft';
-import { WhatsAppContact } from '@/components/accommodation/WhatsAppContact.client';
 import { Dialog, DialogBody, DialogHeader } from '@/components/shared/ui/Dialog.client';
 import { FieldError } from '@/components/ui/FieldError';
 import { GradientButton } from '@/components/ui/GradientButtonReact';
 import { useListingConversationAction } from '@/hooks/use-listing-conversation-action';
-import { WebEvents } from '@/lib/analytics/events';
-import { trackEvent } from '@/lib/analytics/umami-client';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import {
@@ -25,6 +22,7 @@ import { onListingContactPanelOpen } from '@/lib/listing-contact/listing-contact
 import type { ListingContactPrice } from '@/lib/listing-contact/listing-contact-price';
 import { getListingContactPrice } from '@/lib/listing-contact/listing-contact-price';
 import styles from './ListingContactPanel.module.css';
+import { ListingInquiryLayout } from './ListingInquiryLayout';
 import { markListingContactPanelReady } from './listing-contact-readiness';
 
 /** The panel receives public listing data; contact entitlements resolve inside WhatsAppContact. */
@@ -80,7 +78,7 @@ function ListingContactSheet({
     const titleId = useId();
     const ownerFirstName = ownerName.trim().split(/\s+/)[0];
     const display = getListingContactPrice({ price, locale });
-    const whatsappRef = useRef<HTMLDivElement>(null);
+    const whatsappRef = useRef<HTMLElement>(null);
     const formRef = useRef<HTMLDivElement>(null);
     const controls = useRef<Partial<Record<(typeof fields)[number], HTMLInputElement | null>>>({});
     const [values, setValues] = useState(emptyFields);
@@ -193,22 +191,6 @@ function ListingContactSheet({
         };
     }
 
-    function trackShortcut({ channel }: { readonly channel: 'phone' | 'email' }) {
-        trackEvent(WebEvents.ListingContactClicked, {
-            listing_id: accommodation.id,
-            vertical: 'accommodation',
-            channel,
-            origin: 'panel',
-            locale
-        });
-    }
-
-    const tel = phone?.trim().replace(/[\s().-]/g, '');
-    const address = email?.trim();
-    const phoneHref = tel && /^\+?\d+$/.test(tel) ? `tel:${tel}` : undefined;
-    const emailHref =
-        address && /^[^\s@?#]+@[^\s@?#]+$/.test(address) ? `mailto:${address}` : undefined;
-
     const body = (
         <DialogBody className={styles.body}>
             {display && (
@@ -216,154 +198,140 @@ function ListingContactSheet({
                     <strong>{display.amount}</strong> {display.unit}
                 </p>
             )}
-            {(hasWhatsapp || phoneHref || emailHref) && (
-                <div className={styles.shortcuts}>
-                    {hasWhatsapp && (
-                        <section
-                            className={styles.whatsappRow}
-                            ref={whatsappRef}
-                            aria-label={t(
-                                'accommodations.detail.listingContact.panel.shortcuts.whatsapp'
-                            )}
-                            tabIndex={-1}
-                        >
-                            <WhatsAppContact
-                                accommodationId={accommodation.id}
-                                accommodationName={accommodationName}
-                                plansHref={whatsappPlansHref}
-                                gatePlanNames={gatePlanNames}
-                                locale={locale}
-                                origin="panel"
-                            />
-                        </section>
-                    )}
-                    {phoneHref && (
-                        <a
-                            href={phoneHref}
-                            onClick={() => trackShortcut({ channel: 'phone' })}
-                        >
-                            {t('accommodations.detail.listingContact.panel.shortcuts.phone')}
-                        </a>
-                    )}
-                    {emailHref && (
-                        <a
-                            href={emailHref}
-                            onClick={() => trackShortcut({ channel: 'email' })}
-                        >
-                            {t('accommodations.detail.listingContact.panel.shortcuts.email')}
-                        </a>
-                    )}
-                </div>
-            )}
-            <section
-                ref={formRef}
-                aria-label={t('accommodations.detail.listingContact.bar.inquire')}
-                tabIndex={-1}
-                onSubmitCapture={(event) => {
-                    // Native controls outside the form can hold partial entries without
-                    // firing an event or exposing them through their serialized value.
-                    const invalid = fields
-                        .map((field) => controls.current[field])
-                        .find((control) => control?.validity.badInput);
-                    if (!invalid) return;
-                    event.preventDefault();
-                    event.stopPropagation();
-                    syncFields();
-                    invalid.focus();
-                }}
+            <ListingInquiryLayout
+                listingId={accommodation.id}
+                origin="panel"
+                locale={locale}
+                phone={phone}
+                email={email}
+                whatsappRef={whatsappRef}
+                whatsapp={
+                    hasWhatsapp
+                        ? {
+                              accommodationId: accommodation.id,
+                              accommodationName,
+                              plansHref: whatsappPlansHref,
+                              gatePlanNames,
+                              locale,
+                              origin: 'panel'
+                          }
+                        : undefined
+                }
             >
-                {action.hasConversation ? (
-                    <>
-                        <p>{t('accommodations.detail.listingContact.card.existingConversation')}</p>
-                        <GradientButton
-                            href={action.href}
-                            label={action.label}
-                            variant="accent"
-                            flat
-                            size="md"
-                        />
-                    </>
-                ) : (
-                    <>
-                        <div className={styles.fields}>
-                            {fields.map((field) => {
-                                const id = `${fieldId}-${field}`;
-                                const guests = field === 'guests';
-                                const error = errors?.[field];
-                                return (
-                                    <div
-                                        className={styles.field}
-                                        key={field}
-                                    >
-                                        <label htmlFor={id}>
-                                            {t(
-                                                `accommodations.detail.listingContact.fields.${field}`
-                                            )}
-                                        </label>
-                                        <input
-                                            id={id}
-                                            ref={(control) => {
-                                                controls.current[field] = control;
-                                            }}
-                                            type={guests ? 'number' : 'date'}
-                                            min={guests ? 1 : undefined}
-                                            max={guests ? guestLimit : undefined}
-                                            step={guests ? 1 : undefined}
-                                            placeholder={t(
-                                                `accommodations.detail.listingContact.placeholders.${field}`
-                                            )}
-                                            defaultValue={values[field]}
-                                            onInput={syncFields}
-                                            onChange={guests ? undefined : syncFields}
-                                            aria-invalid={Boolean(error)}
-                                            aria-describedby={
-                                                error
-                                                    ? `${id}-error`
-                                                    : !guests && !values[field]
-                                                      ? `${id}-hint`
-                                                      : undefined
-                                            }
-                                        />
-                                        {!guests && !values[field] && (
-                                            <small id={`${id}-hint`}>
+                <section
+                    ref={formRef}
+                    aria-label={t('accommodations.detail.listingContact.bar.inquire')}
+                    tabIndex={-1}
+                    onSubmitCapture={(event) => {
+                        // Native controls outside the form can hold partial entries without
+                        // firing an event or exposing them through their serialized value.
+                        const invalid = fields
+                            .map((field) => controls.current[field])
+                            .find((control) => control?.validity.badInput);
+                        if (!invalid) return;
+                        event.preventDefault();
+                        event.stopPropagation();
+                        syncFields();
+                        invalid.focus();
+                    }}
+                >
+                    {action.hasConversation ? (
+                        <>
+                            <p>
+                                {t(
+                                    'accommodations.detail.listingContact.card.existingConversation'
+                                )}
+                            </p>
+                            <GradientButton
+                                href={action.href}
+                                label={action.label}
+                                variant="accent"
+                                flat
+                                size="md"
+                            />
+                        </>
+                    ) : (
+                        <>
+                            <div className={styles.fields}>
+                                {fields.map((field) => {
+                                    const id = `${fieldId}-${field}`;
+                                    const guests = field === 'guests';
+                                    const error = errors?.[field];
+                                    return (
+                                        <div
+                                            className={styles.field}
+                                            key={field}
+                                        >
+                                            <label htmlFor={id}>
                                                 {t(
+                                                    `accommodations.detail.listingContact.fields.${field}`
+                                                )}
+                                            </label>
+                                            <input
+                                                id={id}
+                                                ref={(control) => {
+                                                    controls.current[field] = control;
+                                                }}
+                                                type={guests ? 'number' : 'date'}
+                                                min={guests ? 1 : undefined}
+                                                max={guests ? guestLimit : undefined}
+                                                step={guests ? 1 : undefined}
+                                                placeholder={t(
                                                     `accommodations.detail.listingContact.placeholders.${field}`
                                                 )}
-                                            </small>
-                                        )}
-                                        <FieldError
-                                            id={`${id}-error`}
-                                            message={error}
-                                        />
-                                    </div>
-                                );
-                            })}
-                        </div>
-                        <ContactPanelDraftContext.Provider
-                            value={{
-                                draft: contactDraft,
-                                setDraft: (update) => {
-                                    draftRevision.current += 1;
-                                    setContactDraft(update);
-                                },
-                                submission,
-                                captureDraftReset
-                            }}
-                        >
-                            <ContactHost
-                                accommodation={accommodation}
-                                locale={locale}
-                                initialMessage={draft}
-                                initialMessageInvalid={Boolean(errors)}
-                                inquiry={inquiry}
-                                onMessageEdited={() => setMessageEdited(true)}
-                                sourcePage="accommodation_contact_panel"
-                                origin={request?.origin}
-                            />
-                        </ContactPanelDraftContext.Provider>
-                    </>
-                )}
-            </section>
+                                                defaultValue={values[field]}
+                                                onInput={syncFields}
+                                                onChange={guests ? undefined : syncFields}
+                                                aria-invalid={Boolean(error)}
+                                                aria-describedby={
+                                                    error
+                                                        ? `${id}-error`
+                                                        : !guests && !values[field]
+                                                          ? `${id}-hint`
+                                                          : undefined
+                                                }
+                                            />
+                                            {!guests && !values[field] && (
+                                                <small id={`${id}-hint`}>
+                                                    {t(
+                                                        `accommodations.detail.listingContact.placeholders.${field}`
+                                                    )}
+                                                </small>
+                                            )}
+                                            <FieldError
+                                                id={`${id}-error`}
+                                                message={error}
+                                            />
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                            <ContactPanelDraftContext.Provider
+                                value={{
+                                    draft: contactDraft,
+                                    setDraft: (update) => {
+                                        draftRevision.current += 1;
+                                        setContactDraft(update);
+                                    },
+                                    submission,
+                                    captureDraftReset
+                                }}
+                            >
+                                <ContactHost
+                                    accommodation={accommodation}
+                                    locale={locale}
+                                    initialMessage={draft}
+                                    initialMessageInvalid={Boolean(errors)}
+                                    inquiry={inquiry}
+                                    onMessageEdited={() => setMessageEdited(true)}
+                                    sourcePage="accommodation_contact_panel"
+                                    origin={request?.origin}
+                                />
+                            </ContactPanelDraftContext.Provider>
+                        </>
+                    )}
+                </section>
+            </ListingInquiryLayout>
             <p className={styles.trust}>{t('accommodations.detail.listingContact.panel.trust')}</p>
         </DialogBody>
     );

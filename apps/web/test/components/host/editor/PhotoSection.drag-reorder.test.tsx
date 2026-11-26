@@ -77,6 +77,24 @@ vi.mock('@/lib/logger', () => ({
 }));
 
 vi.mock('@/lib/api/endpoints-protected', () => ({
+    listingPhotoAllowanceApi: {
+        // HOS-2495: the cap is the listing's photo allowance.
+        getAllowance: vi.fn(() =>
+            Promise.resolve({
+                ok: true,
+                data: {
+                    limitKey: 'max_photos_per_accommodation',
+                    status: 'LIMITED',
+                    cap: 50,
+                    source: 'EFFECTIVE_SET',
+                    used: 0,
+                    hiddenCount: 0,
+                    coverAllowed: true,
+                    breakdown: null
+                }
+            })
+        )
+    },
     accommodationMediaApi: {
         listMedia: mockListMedia,
         addMedia: mockAddMedia,
@@ -91,17 +109,6 @@ vi.mock('@/lib/api/endpoints-protected', () => ({
 
 vi.mock('@/lib/media/upload-entity', () => ({ uploadEntityImage: vi.fn() }));
 vi.mock('@/store/toast-store', () => ({ addToast: mockAddToast }));
-
-vi.mock('@/hooks/useMyEntitlements', () => ({
-    useMyEntitlements: () => ({
-        has: () => false,
-        limit: () => 50,
-        draftLimit: () => 0,
-        plan: null,
-        isLoading: false,
-        error: null
-    })
-}));
 
 // ---------------------------------------------------------------------------
 // Fixtures
@@ -142,7 +149,8 @@ async function renderHydrated(rows: readonly ReturnType<typeof row>[]) {
     render(
         <PhotoSection
             locale="es"
-            accommodationId={ACC_ID}
+            vertical="accommodation"
+            listingId={ACC_ID}
         />
     );
     const galleryCount = rows.filter((r) => !r.isFeatured).length;

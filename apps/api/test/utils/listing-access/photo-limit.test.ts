@@ -1,12 +1,24 @@
+import { VerticalEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { findByAccommodation } = vi.hoisted(() => ({ findByAccommodation: vi.fn() }));
-
-vi.mock('@repo/db', () => ({
-    accommodationMediaModel: { findByAccommodation }
+const { findByAccommodation, findByVenue, findByExperience } = vi.hoisted(() => ({
+    findByAccommodation: vi.fn(),
+    findByVenue: vi.fn(),
+    findByExperience: vi.fn()
 }));
 
-import { accommodationGalleryPhotoLimit } from '../../../src/utils/listing-access/photo-limit';
+vi.mock('@repo/db', () => ({
+    accommodationMediaModel: { findByAccommodation },
+    venueMediaModel: { findByVenue },
+    experienceMediaModel: { findByExperience }
+}));
+
+import {
+    accommodationGalleryPhotoLimit,
+    countListingGalleryPhotos,
+    listingCoverPhotoLimit,
+    listingGalleryPhotoLimit
+} from '../../../src/utils/listing-access/photo-limit';
 
 describe('accommodationGalleryPhotoLimit (HOS-2031)', () => {
     beforeEach(() => vi.clearAllMocks());
@@ -42,5 +54,71 @@ describe('accommodationGalleryPhotoLimit (HOS-2031)', () => {
             state: 'visible',
             isFeatured: false
         });
+    });
+});
+
+describe('listing photo limits per vertical (HOS-2495)', () => {
+    beforeEach(() => vi.clearAllMocks());
+
+    it('asks for used + 1 on a venue gallery write, counting visible non-featured rows', async () => {
+        // Arrange
+        findByVenue.mockResolvedValue({ items: [], total: 14 });
+
+        // Act
+        const result = await listingGalleryPhotoLimit({ vertical: VerticalEnum.VENUE })({
+            listingId: 'venue-1'
+        });
+
+        // Assert
+        expect(result).toEqual({ key: 'max_photos_per_venue', requested: 15 });
+        expect(findByVenue.mock.calls).toEqual([
+            [{ venueId: 'venue-1', state: 'visible', isFeatured: false }]
+        ]);
+        expect(findByAccommodation).not.toHaveBeenCalled();
+    });
+
+    it('asks for used + 1 on an experience gallery write', async () => {
+        // Arrange
+        findByExperience.mockResolvedValue({ items: [], total: 29 });
+
+        // Act
+        const result = await listingGalleryPhotoLimit({ vertical: VerticalEnum.EXPERIENCE })({
+            listingId: 'exp-1'
+        });
+
+        // Assert
+        expect(result).toEqual({ key: 'max_photos_per_experience', requested: 30 });
+        expect(findByExperience.mock.calls).toEqual([
+            [{ experienceId: 'exp-1', state: 'visible', isFeatured: false }]
+        ]);
+    });
+
+    it.each([
+        [VerticalEnum.ACCOMMODATION, 'max_photos_per_accommodation'],
+        [VerticalEnum.VENUE, 'max_photos_per_venue'],
+        [VerticalEnum.EXPERIENCE, 'max_photos_per_experience']
+    ] as const)('asks for exactly 1 on a %s cover write without counting', async (vertical, key) => {
+        // Act
+        const result = await listingCoverPhotoLimit({ vertical })();
+
+        // Assert
+        expect(result).toEqual({ key, requested: 1 });
+        expect(findByAccommodation).not.toHaveBeenCalled();
+        expect(findByVenue).not.toHaveBeenCalled();
+        expect(findByExperience).not.toHaveBeenCalled();
+    });
+
+    it('counts the accommodation gallery for the allowance read', async () => {
+        // Arrange
+        findByAccommodation.mockResolvedValue({ items: [], total: 7 });
+
+        // Act
+        const result = await countListingGalleryPhotos({
+            vertical: VerticalEnum.ACCOMMODATION,
+            listingId: 'acc-1'
+        });
+
+        // Assert
+        expect(result).toEqual({ used: 7 });
     });
 });

@@ -14,7 +14,7 @@ const hrefs = (decision: Parameters<typeof resolvePrecheckPanelContent>[0]['deci
         action.kind === 'link' ? [action.href] : []
     );
 
-describe('publish precheck panel content during the billing transition', () => {
+describe('publish precheck panel content', () => {
     it('requires the caller to render the form directly for create_direct', () => {
         expect(() => resolvePrecheckPanelContent({ ...BASE, decision: 'create_direct' })).toThrow(
             /create_direct/
@@ -35,16 +35,54 @@ describe('publish precheck panel content during the billing transition', () => {
         'upgrade_only',
         'resume_delete_or_upgrade',
         'pick_draft_delete_or_upgrade'
-    ] as const)('%s offers no retired billing add-on link', (decision) => {
+    ] as const)('%s offers the plan change alone when the catalog has no cap add-on', (decision) => {
         const actions = resolvePrecheckPanelContent({ ...BASE, decision }).actions;
         expect(
-            actions.some((action) => action.kind === 'link' && action.href.includes('addons'))
+            actions.some((action) => action.kind === 'link' && action.href.includes('#addons'))
         ).toBe(false);
         expect(
             actions.some((action) => action.kind === 'link' && action.href === BASE.subscriptionUrl)
         ).toBe(true);
         expect(
             actions.some((action) => action.kind === 'link' && action.href === BASE.createUrl)
+        ).toBe(false);
+    });
+
+    it.each([
+        'upgrade_only',
+        'resume_delete_or_upgrade',
+        'pick_draft_delete_or_upgrade'
+    ] as const)('%s offers the cap add-on right after the plan change', (decision) => {
+        const actions = resolvePrecheckPanelContent({
+            ...BASE,
+            decision,
+            vertical: 'venue',
+            capAddon: { name: 'Ficha extra', priceLabel: '$ 5.000' }
+        }).actions;
+        const upgradeIndex = actions.findIndex(
+            (action) => action.kind === 'link' && action.href === BASE.subscriptionUrl
+        );
+        expect(upgradeIndex).toBeGreaterThanOrEqual(0);
+        expect(actions[upgradeIndex + 1]).toMatchObject({
+            kind: 'link',
+            variant: 'secondary',
+            href: `${BASE.subscriptionUrl}#addons-venue`,
+            labelKey: 'publish.capAddon.cta',
+            labelParams: { name: 'Ficha extra', price: '$ 5.000' }
+        });
+    });
+
+    it.each([
+        'resume_or_create',
+        'pick_draft_or_create'
+    ] as const)('%s never shows the add-on: the owner is not at the cap', (decision) => {
+        const actions = resolvePrecheckPanelContent({
+            ...BASE,
+            decision,
+            capAddon: { name: 'Ficha extra', priceLabel: '$ 5.000' }
+        }).actions;
+        expect(
+            actions.some((action) => action.kind === 'link' && action.href.includes('#addons'))
         ).toBe(false);
     });
 

@@ -32,7 +32,7 @@ const { t } = createTranslations('es');
 
 function openPanel() {
     act(() => openListingContactPanel({ origin: 'bar' }));
-    return screen.getByRole('dialog', { name: 'Consultá a Ana' });
+    return screen.getByRole('dialog');
 }
 
 function fillGuestIdentity({ dialog }: { readonly dialog: ReturnType<typeof within> }) {
@@ -57,6 +57,33 @@ function fillEditedInquiry() {
 }
 
 describe('ListingContactPanel', () => {
+    it('names the host and puts the public icon shortcuts before the form, then the plans link', () => {
+        render(
+            <ListingContactPanel
+                {...props}
+                hasWhatsapp
+                phone="+543442123456"
+                email="ana@example.test"
+            />
+        );
+        const sheet = openPanel();
+        const dialog = within(sheet);
+        const phone = dialog.getByRole('link', { name: 'Llamar' });
+        const email = dialog.getByRole('link', { name: 'Email' });
+        const field = dialog.getByLabelText('Llegada');
+        const plans = dialog.getByRole('link', { name: 'Ver planes' });
+
+        expect.soft(sheet).toHaveAccessibleName('Consultá al anfitrión: Ana');
+        expect.soft(phone.querySelector('svg')).not.toBeNull();
+        expect.soft(email.querySelector('svg')).not.toBeNull();
+        expect.soft(phone.className).toBe(email.className);
+        expect
+            .soft(phone.compareDocumentPosition(field) & Node.DOCUMENT_POSITION_FOLLOWING)
+            .toBeTruthy();
+        expect(
+            field.compareDocumentPosition(plans) & Node.DOCUMENT_POSITION_FOLLOWING
+        ).toBeTruthy();
+    });
     afterEach(() => {
         conversation.conversationId = null;
         vi.clearAllMocks();

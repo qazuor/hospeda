@@ -43,7 +43,9 @@ describe('WhatsAppContact', () => {
 
     describe('early return', () => {
         it('renders nothing when there is neither a number nor an upsell', () => {
-            expect(src).toContain('if (!viewer.showUpsell && !viewer.number) return null;');
+            expect(src).toMatch(
+                /if \(!viewer\.showUpsell && !viewer\.number\)\s*return renderLayout\?\.\(\{ channel: null, primary: false \}\) \?\? null;/
+            );
         });
     });
 
@@ -82,8 +84,9 @@ describe('WhatsAppContact', () => {
 
     describe('direct (wa.me) branch', () => {
         it('only builds the wa.me URL when the viewer has the direct entitlement', () => {
-            expect(src).toContain('if (viewer.number && viewer.direct)');
-            expect(src).toContain('buildWhatsAppLink');
+            expect(src).toMatch(
+                /const waUrl =\s*viewer\.number && viewer\.direct\s*\? buildWhatsAppLink\(\{ phone: viewer\.number, message \}\)\.url\s*:\s*null/
+            );
         });
 
         it('delegates phone sanitizing to the shared builder (HOS-289)', () => {
@@ -125,8 +128,9 @@ describe('WhatsAppContact', () => {
         });
 
         it('injects the accommodation name into the message template', () => {
-            expect(src).toContain('accommodationName');
-            expect(src).toContain('{{name}}');
+            expect(src).toMatch(
+                /const message = t\('accommodations\.detail\.whatsapp\.messageTemplate', undefined, \{\s*name: accommodationName\s*\}\)/
+            );
         });
     });
 

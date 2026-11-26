@@ -4,11 +4,18 @@
  * multiple approved photos, public phone/email/website) and similar listings in
  * Colón. Uses HOSPEDA_E2E_WEB_URL or the default E2E web port.
  * Actor: anonymous guest. No cleanup: only the conversation POST is stubbed.
+ *
+ * HOS-2495: the public gallery now shows only as many photos as the owner's
+ * plan covers, so an owner with no billing state gets the cover alone. The E2E
+ * seed gives every seeded listing owner a live trial (`seedListingOwnerTrials`
+ * in `seeds/e2e-seed.ts`), which is what lets T-033 below see more than one
+ * slide. `beforeAll` asserts that precondition, so a seed change fails here
+ * with its cause instead of as a one-slide gallery.
  */
 
 import type { Page } from '@playwright/test';
 import { expect, test } from '@playwright/test';
-import { CreateConversationAnonSchema } from '@repo/schemas';
+import { CreateConversationAnonSchema, TrialStatusEnum } from '@repo/schemas';
 import { seedCookieConsent } from '../../fixtures/browser-helpers.ts';
 import { execSQL } from '../../fixtures/db-helpers.ts';
 
@@ -21,7 +28,7 @@ const RELATED_CAROUSEL = '.related-carousel';
 
 async function openContactSheet({ page }: { readonly page: Page }) {
     const trigger = page.locator(CONTACT_BAR).getByRole('link', { name: 'Consultar', exact: true });
-    const sheet = page.getByRole('dialog', { name: /^Consultá a \S/ });
+    const sheet = page.getByRole('dialog', { name: /^Consultá al anfitrión: \S/ });
     // The link jumps to #contact until the client-side panel is ready.
     await expect(trigger).toHaveAttribute('aria-haspopup', 'dialog');
     await trigger.tap();
@@ -35,13 +42,24 @@ test.describe('GUEST-11: mobile listing detail @p0 @guest @discovery @messaging'
     let listingId: string;
 
     test.beforeAll(async () => {
-        const [row] = await execSQL<{ id: string }>(
-            `SELECT id FROM accommodations
+        const [row] = await execSQL<{ id: string; owner_id: string | null }>(
+            `SELECT id, owner_id FROM accommodations
              WHERE slug = $1 AND publication_status = 'PUBLISHED' AND deleted_at IS NULL`,
             [SLUG]
         );
         if (!row) throw new Error(`E2E seed must include the published listing ${SLUG}`);
         listingId = row.id;
+        // HOS-2495: without coverage the public gallery is trimmed to the cover.
+        const [trial] = await execSQL<{ status: string }>(
+            `SELECT status FROM trial
+             WHERE user_id = $1 AND vertical = 'accommodation' AND status = $2`,
+            [row.owner_id, TrialStatusEnum.TRIAL_ACTIVE]
+        );
+        if (!trial) {
+            throw new Error(
+                `The owner of ${SLUG} has no live accommodation trial: the public gallery shows the cover only (HOS-2495). The E2E seed (seedListingOwnerTrials) must give it one.`
+            );
+        }
     });
 
     test.beforeEach(async ({ page }) => {

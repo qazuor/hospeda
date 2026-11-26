@@ -151,8 +151,10 @@
 }
 
 /* "Sin límite" hint when one bound is at its extreme (filter not applied). */
+/* Full muted ink, not the a60 tint: the price group opens by default
+   (HOS-2650) and the a60 tint measured 2.79:1 in dark mode. */
 .unboundedLabel {
-    color: var(--core-muted-foreground-a60);
+    color: var(--core-muted-foreground);
     font-style: italic;
     font-weight: 500;
 }

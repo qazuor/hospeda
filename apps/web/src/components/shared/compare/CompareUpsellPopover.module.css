@@ -17,7 +17,7 @@
 .popover {
     position: fixed;
     width: 17.5rem;
-    max-width: calc(100vw - 16px);
+    max-width: calc(100vw - 32px);
     transition:
         opacity 0.18s ease,
         transform 0.18s ease;
@@ -95,8 +95,8 @@
     right: 0.5rem;
     z-index: 10;
     display: flex;
-    width: 1.5rem;
-    height: 1.5rem;
+    width: 2.75rem;
+    height: 2.75rem;
     align-items: center;
     justify-content: center;
     border-radius: var(--radius-pill);
@@ -123,7 +123,7 @@
     align-items: center;
     gap: 0.625rem;
     padding: 0.875rem 1rem;
-    padding-right: 2.5rem; /* room for close button */
+    padding-right: 3.75rem; /* room for close button */
     border-bottom: 1px solid var(--brand-primary-a20);
     background-color: var(--brand-primary-a05);
     border-top-left-radius: var(--radius-card);
@@ -155,12 +155,27 @@
 
 .actions {
     display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
     padding: 0.875rem 1rem;
     /* Matches the popover's own `.overlay-surface` background — this strip
        sits flush against the panel's bottom edge, not a separate card. */
     background-color: var(--surface-overlay);
     border-bottom-left-radius: var(--radius-card);
     border-bottom-right-radius: var(--radius-card);
+}
+
+.ctaButton,
+.dismissButton {
+    min-height: 2.75rem;
+}
+
+.dismissButton {
+    border: 1px solid var(--brand-primary-a35);
+    border-radius: var(--radius-button);
+    background: var(--surface-overlay);
+    color: var(--core-foreground);
+    cursor: pointer;
 }
 
 .ctaButton {

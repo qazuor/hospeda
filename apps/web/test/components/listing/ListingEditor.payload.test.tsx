@@ -24,7 +24,7 @@
  *    opposite one: an emptied member must travel as an explicit `null`,
  *    because an omitted key now means "keep the stored value";
  *  - `media` is never sent at all since HOS-372: photos are persisted per
- *    operation by `MediaSection` against the relational media endpoints.
+ *    operation by `PhotoSection` against the relational media endpoints.
  *
  * Assertions run against a JSON round-trip of the body (`wireBody`) rather than
  * the raw object, because `toHaveBeenCalledWith` uses `toEqual` semantics and
@@ -185,7 +185,7 @@ vi.mock('../../../src/lib/api/client', () => ({
     }
 }));
 
-// `MediaSection` hydrates itself from `listingMediaApi.listMedia` on mount
+// `PhotoSection` hydrates itself from `listingMediaApi.listMedia` on mount
 // (HOS-372), so the editor cannot render without it stubbed.
 vi.mock('../../../src/lib/api/endpoints-protected', () => ({
     listingMediaApi: {
@@ -878,7 +878,7 @@ describe('ListingEditor — PATCH payload contract (HOS-258)', () => {
             fireEvent.click(saveButton());
 
             const body = await wireBody();
-            // `MediaSection` persists every photo operation on its own against
+            // `PhotoSection` persists every photo operation on its own against
             // the relational endpoints. Re-adding `media` here would overwrite
             // those rows with a stale snapshot — the bug HOS-372 fixed.
             expect(body).not.toHaveProperty('media');

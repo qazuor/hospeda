@@ -73,6 +73,7 @@ import type {
 import { ServiceError } from '../../types';
 import { assertListingReadable, entityNotFoundError, normalizeContactInfo } from '../../utils';
 import { hasPermission } from '../../utils/permission';
+import { filterSoftDeletedRelations } from '../../utils/relations';
 import { VENUE_ENTITY_NAME } from '../entity-names';
 import { resolveSiteUrlFromTargetUrl } from '../hostTrade/host-trade-qr';
 import type { ListingCatalogModel, ListingJunctionModel } from '../listing/base-listing.service';
@@ -310,11 +311,14 @@ export class VenueService extends BaseListingService<
         _actor: Actor,
         ctx: ServiceContext
     ): Promise<Venue | null> {
-        return attachComposedVenueMedia({
+        // HOS-2663: `findOneWithRelations` loads `faqs` regardless of `deletedAt`
+        // (ADR-023), so a deleted FAQ kept coming back on every reload.
+        const composed = await attachComposedVenueMedia({
             entity,
             mediaModel: this._venueMediaModel,
             tx: ctx?.tx
         });
+        return filterSoftDeletedRelations(composed, ['faqs']);
     }
 
     protected override async _afterList(

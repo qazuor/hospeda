@@ -2,8 +2,9 @@
  * MediaManager — the visual layer of the owner photo editors (HOS-2489, spec
  * HOS-2415 §6.4).
  *
- * The accommodation `PhotoSection` and the listing `MediaSection` keep their
- * own logic hooks (endpoints, caps, upload pipeline) and share only this skin:
+ * The listing `PhotoSection` (accommodation, venue and experience since
+ * HOS-2495) keeps its own logic hooks (endpoints, caps, upload pipeline) and
+ * shares only this skin:
  *
  * - {@link MediaDropzone}: the dashed «drop or pick» target, as a wide slot
  *   (the cover) or as a grid tile (add to the gallery).
@@ -221,6 +222,11 @@ export interface PhotoTileProps {
     readonly className?: string;
     /** Optional help anchor rendered as `data-help`. */
     readonly helpId?: HelpAnchor;
+    /**
+     * Id of a note that describes the photo to screen readers, set as the
+     * image's `aria-describedby` (HOS-2495: the over-cap badge).
+     */
+    readonly describedBy?: string;
 }
 
 /**
@@ -242,7 +248,8 @@ export function PhotoTile({
     dragStyle,
     sortableId,
     className,
-    helpId
+    helpId,
+    describedBy
 }: PhotoTileProps) {
     return (
         <div
@@ -261,6 +268,7 @@ export function PhotoTile({
                 <img
                     src={src}
                     alt={alt}
+                    aria-describedby={describedBy}
                     className={styles.image}
                     loading="lazy"
                 />

@@ -42,20 +42,19 @@ describe('ListingLayout.astro (noindex support)', () => {
 });
 
 describe('ListingLayout.astro (BETA-22 results summary placement)', () => {
-    it('declares totalCount and filterSummary props', () => {
+    it('declares totalCount and resultKind props', () => {
         // Arrange: source already loaded at module scope.
         // Act / Assert
         expect(src).toContain('readonly totalCount?: number');
-        expect(src).toContain('readonly filterSummary?: string');
+        expect(src).toContain('readonly resultKind?: ListingKind');
     });
 
-    it('computes the summary label with filterSummary taking precedence over totalCount', () => {
+    it('delegates caption formatting to the shared builder', () => {
         // Arrange
-        const computationSnippet = 'filterSummary ??\n\t(totalCount !== undefined';
+        const computationSnippet =
+            'buildListingSummary({ locale, kind: resultKind, count: totalCount, facetLabel })';
 
-        // Act / Assert: `??` means filterSummary wins whenever it is provided,
-        // falling back to the generic "N resultados encontrados" built from
-        // totalCount only when filterSummary is absent.
+        // Act / Assert: verticals share caption and empty-state semantics.
         expect(src).toContain(computationSnippet);
     });
 

@@ -97,27 +97,36 @@ export const resolveUploadTimeoutMs = (fileSizeBytes: number): number => {
 /**
  * Upload a file to the protected media upload-entity endpoint via XHR.
  *
- * Uses XHR (not fetch) to expose upload progress events. Always sends
- * `role: 'gallery'` — the 'featured' role used a fixed Cloudinary path
- * (`/featured`) that collides once multiple media rows exist per accommodation.
+ * Uses XHR (not fetch) to expose upload progress events.
  *
- * @param params - File, accommodation ID, and optional progress callback
+ * HOS-2495: one helper for the three listing verticals. `role` picks the
+ * server's photo-limit check: a `gallery` upload asks the owner's cap for one
+ * more gallery photo, a `featured` upload asks for a cover (`requested: 1`), so
+ * an owner at the gallery cap can still replace their cover. The featured
+ * Cloudinary path is unique per upload (`featured/<id>`), so the old collision
+ * that made every caller send `gallery` is gone.
+ *
+ * @param params - File, listing vertical and ID, role, and optional progress callback
  * @returns Uploaded image metadata `{ url, publicId, width, height }`
  */
 export async function uploadEntityImage({
     file,
-    accommodationId,
+    entityType = 'accommodation',
+    entityId,
+    role = 'gallery',
     onProgress
 }: {
     readonly file: File;
-    readonly accommodationId: string;
+    readonly entityType?: 'accommodation' | 'venue' | 'experience';
+    readonly entityId: string;
+    readonly role?: 'featured' | 'gallery';
     readonly onProgress?: (percent: number) => void;
 }): Promise<{ url: string; publicId: string; width: number; height: number }> {
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('entityType', 'accommodation');
-    formData.append('entityId', accommodationId);
-    formData.append('role', 'gallery');
+    formData.append('entityType', entityType);
+    formData.append('entityId', entityId);
+    formData.append('role', role);
 
     return new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();

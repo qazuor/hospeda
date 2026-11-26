@@ -49,7 +49,10 @@ const getByDestinationHandler = async (c: Context) => {
     // Apply owner-effective paid-field grants before the public response is cached.
     const data = result.data ?? { accommodations: [] };
     const pageItems = Array.isArray(data.accommodations) ? data.accommodations : [];
-    const gatedItems = await projectPublicAccommodations({ listings: pageItems });
+    const gatedItems = await projectPublicAccommodations({
+        listings: pageItems,
+        onEffectiveSetFailure: () => c.header('Cache-Control', 'no-store')
+    });
     const strippedAccommodations = pageItems.map((accommodation, index) => ({
         ...gatedItems[index],
         // HOS-929: the public `isFeatured` is derived from `featuredByEntitlement`

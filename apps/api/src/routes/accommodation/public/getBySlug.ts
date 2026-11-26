@@ -185,7 +185,7 @@ export const publicGetAccommodationBySlugRoute = createPublicRoute({
         slug: z.string().min(1).max(255)
     },
     responseSchema: AccommodationPublicSchema.nullable(),
-    handler: async (_ctx: Context, params: Record<string, unknown>) => {
+    handler: async (ctx: Context, params: Record<string, unknown>) => {
         // HOS-353: resolve visibility against a GUEST actor, never the caller.
         // Same reasoning as the sibling `getById` route — `checkCanView` is
         // actor-aware by design, and this response is stored under a public cache
@@ -212,7 +212,10 @@ export const publicGetAccommodationBySlugRoute = createPublicRoute({
             ...result.data,
             isFeatured: resolvePublicIsFeatured(result.data)
         };
-        const [gated] = await projectPublicAccommodations({ listings: [accommodation] });
+        const [gated] = await projectPublicAccommodations({
+            listings: [accommodation],
+            onEffectiveSetFailure: () => ctx.header('Cache-Control', 'no-store')
+        });
         const filteredAccommodation = gated as typeof accommodation;
 
         // Fetch related data in parallel

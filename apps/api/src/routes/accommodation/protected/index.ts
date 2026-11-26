@@ -28,6 +28,7 @@ import { protectedGetOwnAccommodationByIdRoute } from './getById';
 import { getFaqsRoute } from './getFaqs';
 import { protectedGetMediaRoute } from './getMedia';
 import { protectedGetOccupancyRoute } from './getOccupancy';
+import { protectedGetAccommodationPhotoAllowanceRoute } from './getPhotoAllowance';
 import { protectedGetWhatsAppRoute } from './getWhatsApp';
 import { hostFavoritesBreakdownRoute } from './hostFavoritesBreakdown';
 import { hostMarketComparisonRoute } from './hostMarketComparison';
@@ -100,6 +101,7 @@ app.route('/', protectedGetAccommodationQrCodeRoute);
 
 // GET /:id/sections - Section and trait availability for the owner (HOS-1809)
 app.route('/', protectedGetAccommodationSectionStatesRoute);
+app.route('/', protectedGetAccommodationPhotoAllowanceRoute);
 
 // GET /:id - Get own accommodation by ID (ownership check in handler)
 app.route('/', protectedGetOwnAccommodationByIdRoute);

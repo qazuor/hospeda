@@ -56,7 +56,10 @@ describe('venue interaction attributes (HOS-2256)', () => {
 
     it('renders through the shared ListingContactBlock (GradientButton + IconButton, HOS-2533/HOS-2520/HOS-2579)', () => {
         const social = read('components/listing/contact/ListingSocialLinks.astro');
-        expect(page).toContain('Component: ListingContactBlock, props: { ...venueContactBlock }');
+        expect(page).toContain('Component: VenueContactSection');
+        const section = read('components/venue/VenueContactSection.astro');
+        expect(section).toContain('<ListingContactBlock');
+        expect(section).toContain('{...contactBlock}');
         expect(block).toContain('<GradientButton');
         expect(block).toContain('variant="outline-primary"');
         expect(block).toContain("'interaction-kind': interactionKind");
@@ -83,7 +86,7 @@ describe('venue interaction attributes (HOS-2256)', () => {
             /externalMapHref: mapUrl,[\s\S]*?trackingData: \{ 'interaction-kind': 'MAP_CLICK' \}/
         );
         expect(address).toMatch(/href=\{externalMapHref\}[\s\S]*?\{\.\.\.linkData\}/);
-        expect(address).toContain('[`data-${key}`, value]');
+        expect(address).toMatch(/\[`data-\$\{key\}`, value\]/);
     });
 
     it('mounts the island with the venue id, on idle', () => {

@@ -177,6 +177,20 @@
         "progress": "Progresso"
     },
     "favorite": {
+        "audit": {
+            "usage_one": "{{current}} de {{count}} item salvo",
+            "usage_other": "{{current}} de {{count}} itens salvos",
+            "savedUsage": "Salvo · {{usage}}",
+            "savedUnlimited": "Salvo · Favoritos ilimitados",
+            "guestBenefit_one": "{{count}} favorito grátis · sem limite com {{plan}}",
+            "guestBenefit_other": "{{count}} favoritos grátis · sem limite com {{plan}}",
+            "guestFree_one": "Salve até {{count}} favorito grátis",
+            "guestFree_other": "Salve até {{count}} favoritos grátis",
+            "limit_one": "Salve mais de {{count}} favorito com outro plano",
+            "limit_other": "Salve mais de {{count}} favoritos com outro plano",
+            "limitUnknown": "Confira os planos para salvar mais favoritos",
+            "manage": "Gerenciar meus favoritos"
+        },
         "add": "Adicionar aos favoritos",
         "loading": "Verificando favorito...",
         "auth_required": {
@@ -246,6 +260,33 @@
         "dismiss": "Fechar comunicado"
     },
     "listing": {
+        "accommodations_one": "{{count}} hospedagem",
+        "accommodations_other": "{{count}} hospedagens",
+        "venues_one": "{{count}} estabelecimento",
+        "venues_other": "{{count}} estabelecimentos",
+        "experiences_one": "{{count}} experiência",
+        "experiences_other": "{{count}} experiências",
+        "events_one": "{{count}} atividade",
+        "events_other": "{{count}} atividades",
+        "posts_one": "{{count}} artigo",
+        "posts_other": "{{count}} artigos",
+        "results_one": "{{count}} item encontrado",
+        "results_other": "{{count}} itens encontrados",
+        "facet": "Exibindo {{results}} na categoria {{facet}}",
+        "applySort": "Aplicar ordenação",
+        "unlocated_one": "{{count}} hospedagem sem localização no mapa",
+        "unlocated_other": "{{count}} hospedagens sem localização no mapa",
+        "viewList": "Ver na lista",
+        "allAccommodations": "Ver todas as hospedagens",
+        "noAccommodationQuery": "Não encontramos hospedagens para “{{query}}”.",
+        "nearbyAccommodations": "Ver hospedagens próximas",
+        "allEvents": "Ver a agenda completa",
+        "allVenues": "Ver todos os estabelecimentos",
+        "experienceGroups": {
+            "tours": "Passeios guiados",
+            "adventure": "Aventuras",
+            "rentals": "Aluguéis"
+        },
         "resultsFound_one": "{{count}} resultado encontrado",
         "resultsFound_other": "{{count}} resultados encontrados"
     },

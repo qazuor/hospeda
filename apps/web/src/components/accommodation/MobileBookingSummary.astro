@@ -1,9 +1,10 @@
 ---
 /** @file Public, server-rendered price summary for the single-column layout. */
+import ListingPriceCard from '@/components/listing/contact/ListingPriceCard.astro';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import type { ListingContactPrice } from '@/lib/listing-contact/listing-contact-price';
-import { getListingContactPrice } from '@/lib/listing-contact/listing-contact-price';
+import { resolvePriceCardAction } from '@/lib/listing-contact/price-card-action';
 import { MobileBookingSummaryActions } from './MobileBookingSummaryActions.client';
 
 interface Props {
@@ -18,20 +19,23 @@ interface Props {
 
 const { listingId, panelId, locale, price, minNights, maxNights, hasWhatsapp } = Astro.props;
 const { t, tPlural } = createTranslations(locale);
-const display = getListingContactPrice({ price, locale });
+const primary = resolvePriceCardAction({ canInquire: true });
 ---
 
 <section class="booking-summary" aria-label={t('accommodations.detail.listingContact.summary.title')}>
-    <div>
-        {display && <p class="booking-summary__price"><strong>{display.amount}</strong> {display.unit}</p>}
-        {(minNights != null || maxNights != null) && (
-            <ul class="booking-summary__nights">
-                {minNights != null && <li>{tPlural('accommodations.detail.pricing.minNightsFact', minNights)}</li>}
-                {maxNights != null && <li>{tPlural('accommodations.detail.pricing.maxNightsFact', maxNights)}</li>}
-            </ul>
+    <ListingPriceCard listingId={listingId} vertical="accommodation" locale={locale} price={price} action={primary} hostReply>
+        <Fragment slot="facts">
+            {(minNights != null || maxNights != null) && (
+                <ul class="booking-summary__nights">
+                    {minNights != null && <li>{tPlural('accommodations.detail.pricing.minNightsFact', minNights)}</li>}
+                    {maxNights != null && <li>{tPlural('accommodations.detail.pricing.maxNightsFact', maxNights)}</li>}
+                </ul>
+            )}
+        </Fragment>
+        {primary.kind === 'inquire' && (
+            <MobileBookingSummaryActions client:media="(max-width: 1024px)" listingId={listingId} panelId={panelId} locale={locale} hasWhatsapp={hasWhatsapp} primaryLabelKey={primary.labelKey} />
         )}
-    </div>
-    <MobileBookingSummaryActions client:media="(max-width: 1024px)" listingId={listingId} panelId={panelId} locale={locale} hasWhatsapp={hasWhatsapp} />
+    </ListingPriceCard>
     <slot />
 </section>
 
@@ -54,19 +58,10 @@ const display = getListingContactPrice({ price, locale });
         }
     }
 
-    .booking-summary p,
     .booking-summary__nights {
         margin: 0;
         color: var(--core-muted-foreground);
-    }
-
-    .booking-summary__nights {
         padding: 0;
         list-style: none;
-    }
-
-    .booking-summary__price strong {
-        color: var(--core-foreground);
-        font-size: var(--text-lg);
     }
 </style>

@@ -122,15 +122,23 @@ describe('H-120 guard — listing surfaces forward the availability range', () =
             });
 
             it('spreads the range INSIDE the accommodationsApi.list call', () => {
-                const call = extractListCall(source);
-                if (page.viaParser) {
-                    // The page spreads the parser's apiQuery, and THAT literal
-                    // must itself carry the validated availability pair.
-                    expect(call).toMatch(PAGE_SPREADS_API_QUERY);
-                    expect(extractParserApiQuery()).toMatch(SPREAD);
+                if (!page.viaParser) {
+                    // The map forwards its shared viewport payload intact to the paginated loader.
+                    expect(source).toMatch(
+                        /loadAccommodationMapResults\(\{ filters: mapExtraSearchParams,/
+                    );
+                    const loader = readFileSync(
+                        join(PAGES_ROOT, '../../../lib/accommodation-map-results.ts'),
+                        'utf8'
+                    );
+                    expect(extractListCall(loader)).toMatch(/\{\s*\.\.\.filters\b/);
                     return;
                 }
-                expect(call).toMatch(SPREAD);
+                const call = extractListCall(source);
+                // The page spreads the parser's apiQuery, and THAT literal
+                // must itself carry the validated availability pair.
+                expect(call).toMatch(PAGE_SPREADS_API_QUERY);
+                expect(extractParserApiQuery()).toMatch(SPREAD);
             });
         });
     }
