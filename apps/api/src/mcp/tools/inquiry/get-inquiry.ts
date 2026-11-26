@@ -124,6 +124,7 @@ export const getInquiryTool = defineTool({
     inputSchema: GetInquiryInputSchema,
     refusalAction: ({ error }) => inquiryRefusalLink({ error }),
     isWrite: false,
+    requiredPermissions: [PermissionEnum.CONVERSATION_VIEW_OWN],
     auditTarget: ({ input }) => ({ type: 'conversation', id: input.id }),
     handler: async ({ actor, input }): Promise<ToolHandlerResult<InquiryThread>> => {
         if (!actor.permissions.includes(PermissionEnum.CONVERSATION_VIEW_OWN)) {

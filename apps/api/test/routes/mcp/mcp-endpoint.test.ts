@@ -301,7 +301,7 @@ describe('/mcp endpoint', () => {
             });
         });
 
-        it('lists exactly the registry tools', async () => {
+        it('lists exactly the registry tools the actor may see', async () => {
             // Act
             const res = await postMcp({
                 body: { jsonrpc: '2.0', id: 2, method: 'tools/list', params: {} },
@@ -316,8 +316,13 @@ describe('/mcp endpoint', () => {
             // Assert
             expect(res.status).toBe(200);
             expect(message.id).toBe(2);
+            // The actor holds none of the permissions a tool may require
+            // (HOS-2184 T-042), so the permission-gated tools are hidden.
+            const hidden = ['get_my_plan', 'list_inquiries', 'get_inquiry', 'reply_inquiry'];
             expect(message.result?.tools?.map((tool) => tool.name)).toEqual(
-                MCP_TOOL_DEFINITIONS.map((definition) => definition.name)
+                MCP_TOOL_DEFINITIONS.map((definition) => definition.name).filter(
+                    (name) => !hidden.includes(name)
+                )
             );
         });
 
