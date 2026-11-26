@@ -91,6 +91,11 @@ Runbooks are operational documentation that provide:
    - Enabling a residential proxy
    - Config-seam audit (SPEC-277 R4)
 
+1. **[Umami Operations](./umami.md)**
+   - Applying dashboards and the recorder config (`pnpm umami:setup`)
+   - Daily backups to R2, restore drill and real restore
+   - Disk checks and upgrades
+
 ## Quick Navigation
 
 ### Emergency Scenarios
