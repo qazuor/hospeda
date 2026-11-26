@@ -59,8 +59,6 @@ describe('TEST:1720:4 SignUp shared schema', () => {
         render(<Harness />);
         submit('Abcdef1234 ñ');
         expect(signUpEmailMock).not.toHaveBeenCalled();
-        expect(screen.getByRole('alert')).toHaveTextContent(
-            'La contraseña debe tener mayúsculas, minúsculas, un número y un carácter especial (por ejemplo ! @ # $ - _).'
-        );
+        expect(screen.getByRole('alert')).toHaveTextContent('auth.signUp.errors.passwordWeak');
     });
 });

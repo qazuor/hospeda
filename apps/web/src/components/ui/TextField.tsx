@@ -41,6 +41,8 @@ interface TextFieldCommonProps {
     readonly prefix: string;
     /** The Zod field path this control edits, e.g. `'facebook'`. */
     readonly name: string;
+    /** Native form name when the consumer reads event.currentTarget.name. */
+    readonly controlName?: string;
     /**
      * Disambiguator when one Zod key renders as several controls (e.g. `phone`
      * → country + number). Read it from the editor's shared suffix constant —
@@ -145,6 +147,7 @@ export function TextField(props: TextFieldProps) {
     const {
         prefix,
         name,
+        controlName,
         suffix,
         label,
         error,
@@ -181,6 +184,7 @@ export function TextField(props: TextFieldProps) {
 
     const sharedControlProps = {
         id,
+        name: controlName,
         className,
         'aria-invalid': hasError,
         'aria-describedby': describedBy

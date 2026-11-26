@@ -31,6 +31,26 @@ const subscription = (
     });
 
 describe('dashboard next-step selection', () => {
+    it.each([
+        ['es', 'Tenés 1 consulta sin responder.', 'Tenés 2 borradores para completar y publicar.'],
+        ['en', 'You have 1 unanswered inquiry.', 'You have 2 drafts to complete and publish.'],
+        [
+            'pt',
+            'Você tem 1 consulta sem resposta.',
+            'Você tem 2 rascunhos para concluir e publicar.'
+        ]
+    ] as const)('localizes host next steps in %s', (locale, message, drafts) => {
+        expect(resolveDashboardNextStep({ kind: 'hostMessages', locale, unread: 1 })).toBe(message);
+        expect(
+            resolveDashboardNextStep({ kind: 'hostProperties', locale, total: 3, draft: 2 })
+        ).toBe(drafts);
+        expect(
+            resolveDashboardNextStep({ kind: 'hostProperties', locale, total: 0, draft: 0 })
+        ).not.toMatch(/MISSING|host\./);
+        expect(resolveDashboardNextStep({ kind: 'hostMessages', locale, unread: 0 })).not.toMatch(
+            /MISSING|host\./
+        );
+    });
     it('always supplies free-plan context', () => {
         expect(subscription()).toBe('Explore the benefits of your plan.');
     });

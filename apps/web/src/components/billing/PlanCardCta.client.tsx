@@ -1,5 +1,6 @@
 import type { PricingSituationVertical } from '@repo/schemas';
 import { useEffect, useMemo, useState } from 'react';
+import { LinkButton } from '@/components/account/ui/LinkButton';
 import { StatusPill } from '@/components/account/ui/StatusPill';
 import { billingSubscriptionApi } from '@/lib/api/endpoints-protected';
 import { totalCourtesyMonths } from '@/lib/billing/my-subscription-notices';
@@ -162,11 +163,12 @@ export function PlanCardCta({
         >
             {view.kind === 'checkout' &&
                 view.links.map(({ cycle, href, resumes }) => (
-                    <a
+                    <LinkButton
                         key={cycle}
                         href={href}
                         data-cycle={cycle}
-                        className={cycle === 'monthly' ? styles.primary : styles.secondary}
+                        variant="accent"
+                        fullWidth
                     >
                         {t(
                             resumes
@@ -175,7 +177,7 @@ export function PlanCardCta({
                                   ? 'publish.subscribe.checkoutMonthly'
                                   : 'publish.subscribe.checkoutAnnual'
                         )}
-                    </a>
+                    </LinkButton>
                 ))}
             {view.kind === 'republish' && (
                 <>

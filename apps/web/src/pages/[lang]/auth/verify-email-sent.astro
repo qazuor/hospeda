@@ -18,6 +18,7 @@ import { buildUrl } from '@/lib/urls';
 import AuthLayout from '@/layouts/AuthLayout.astro';
 import StatusPage from '@/components/shared/StatusPage.astro';
 import { EmailIcon } from '@repo/icons';
+import { VerificationDelivery } from '@/components/auth/VerificationDelivery.client';
 
 // Locale is injected by middleware — always a valid SupportedLocale.
 const locale = Astro.locals.locale as SupportedLocale;
@@ -33,21 +34,19 @@ const heading = t('auth-ui.pages.verifyEmailSent.heading');
 const body = t(
     'auth-ui.pages.verifyEmailSent.body'
 );
-const signInLabel = t('auth-ui.pages.verifyEmailSent.signInLink');
 
 const signInHref = buildUrl({ locale, path: 'auth/signin' });
 ---
 
-<AuthLayout locale={locale} title={title} description={description} bareSlot={true}>
+<AuthLayout locale={locale} title={title} description={description}>
     <StatusPage
         variant="info"
         Icon={EmailIcon}
         title={heading}
         description={body}
         hideBlob
+        compact
     >
-        <a slot="footer" href={signInHref}>
-            {signInLabel}
-        </a>
+        <VerificationDelivery slot="extras" client:load locale={locale} signInHref={signInHref} />
     </StatusPage>
 </AuthLayout>

@@ -13,10 +13,11 @@ import { baseValue, parseFile, readSrc } from '../helpers/css-contract';
 
 const PLANES = resolve(__dirname, '../../src/pages/[lang]/planes');
 
-/** Every `planes/<vertical>/index.astro` and `planes/<vertical>/precios/index.astro`. */
+/** The plans hub plus every `planes/<vertical>/index.astro` and `planes/<vertical>/precios/index.astro`. */
 function planPages(): string[] {
-    const files: string[] = [];
+    const files: string[] = [join(PLANES, 'index.astro')];
     for (const vertical of readdirSync(PLANES)) {
+        if (vertical.endsWith('.astro')) continue;
         files.push(join(PLANES, vertical, 'index.astro'));
         files.push(join(PLANES, vertical, 'precios', 'index.astro'));
     }
@@ -75,8 +76,8 @@ describe('MarketingLayout breadcrumbs slot', () => {
 describe('plans and pricing pages route breadcrumbs through the slot', () => {
     const pages = planPages();
 
-    it('covers all eight pages', () => {
-        expect(pages).toHaveLength(8);
+    it('covers all nine pages', () => {
+        expect(pages).toHaveLength(9);
     });
 
     it.each(

@@ -49,12 +49,13 @@ describe('acceso-denegado/index.astro', () => {
         it('uses the error.forbidden.* key group for title/heading/description', () => {
             expect(src).toContain("t('error.forbidden.title')");
             expect(src).toContain("t('error.forbidden.heading')");
-            expect(src).toContain("t('error.forbidden.description')");
+            expect(src).toContain("t('error.forbidden.defaultDescription')");
         });
 
-        it('uses the error.forbidden.* keys for all three link labels', () => {
-            expect(src).toContain("t('error.forbidden.goToAccount')");
-            expect(src).toContain("t('error.forbidden.goHome')");
+        it('uses a localized support label and delegates the session-dependent links', () => {
+            expect(src).toContain(
+                '<AccessDeniedActions slot="extras" client:load locale={locale} />'
+            );
             expect(src).toContain("t('error.forbidden.contact')");
         });
 
@@ -66,39 +67,13 @@ describe('acceso-denegado/index.astro', () => {
         });
     });
 
-    describe('three links, in order: account (primary), home, contact', () => {
-        it('renders exactly three link-producing calls: two GradientButtons + one footer anchor', () => {
-            const gradientButtonCount = (src.match(/<GradientButton/g) ?? []).length;
-            expect(gradientButtonCount).toBe(2);
-            expect(src).toMatch(/<a\s+slot="footer"/);
-        });
-
-        it('orders goToAccount before goHome before contact in the source', () => {
-            const accountIdx = src.indexOf("t('error.forbidden.goToAccount')");
-            const homeIdx = src.indexOf("t('error.forbidden.goHome')");
-            const contactIdx = src.indexOf("t('error.forbidden.contact')");
-
-            expect(accountIdx).toBeGreaterThan(-1);
-            expect(homeIdx).toBeGreaterThan(-1);
-            expect(contactIdx).toBeGreaterThan(-1);
-            expect(accountIdx).toBeLessThan(homeIdx);
-            expect(homeIdx).toBeLessThan(contactIdx);
-        });
-
-        it('makes the "go to account" button primary, pointing at mi-cuenta', () => {
-            const accountButtonBlock = src.slice(
-                src.indexOf('slot="actions"'),
-                src.indexOf('</GradientButton>')
+    describe('contact follows session-dependent recovery', () => {
+        it('keeps SSR session-blind and puts contact last', () => {
+            expect(src).not.toMatch(/Astro\.locals\.user|fetchAuthMe/);
+            expect(src.indexOf('<AccessDeniedActions')).toBeLessThan(
+                src.indexOf('<a slot="footer"')
             );
-            expect(accountButtonBlock).toContain('variant="primary"');
-            expect(accountButtonBlock).toContain('href={accountUrl}');
-            expect(src).toContain("path: 'mi-cuenta' }");
         });
-
-        it('points the home link at the site root', () => {
-            expect(src).toContain("path: '/' }");
-        });
-
         it('points the contact link at the contact page', () => {
             expect(src).toContain("path: 'contacto' }");
         });

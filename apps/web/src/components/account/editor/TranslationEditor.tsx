@@ -73,7 +73,7 @@ export function TranslationEditor({
                                 : {}),
                             panel: (
                                 <>
-                                    {tab.locale === 'es' && missing && (
+                                    {tab.locale === 'es' && missing && !missingNotice && (
                                         <p>
                                             {t(
                                                 'account.editorPresentation.missingHint',

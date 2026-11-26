@@ -23,7 +23,9 @@
         "description": "Sua conta não tem permissão para entrar no painel de administração. Se você acha que isso é um erro, escreva para nós e vamos verificar.",
         "goToAccount": "Ir para minha conta",
         "goHome": "Ir para o início",
-        "contact": "Contato"
+        "contact": "Fale conosco se achar que isso é um erro",
+        "guestDescription": "Entre com uma conta autorizada para acessar o painel de administração.",
+        "defaultDescription": "O painel de administração é reservado a contas autorizadas."
     },
     "form": {
         "validation-failed": "A validação do formulário falhou. Por favor, corrija os erros e tente novamente.",

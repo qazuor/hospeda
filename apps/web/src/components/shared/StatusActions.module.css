@@ -1,0 +1,37 @@
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--space-3);
+    margin-block-start: var(--space-3);
+}
+
+.actions > a,
+.actions > button {
+    min-block-size: 44px;
+}
+
+.recipient {
+    overflow-wrap: anywhere;
+}
+
+.description {
+    color: var(--core-muted-foreground);
+    margin: 0;
+}
+
+.recovery {
+    width: min(100%, 40rem);
+    margin: var(--space-8) auto;
+    padding: var(--space-6);
+    text-align: center;
+}
+
+.statusIcon {
+    color: var(--brand-primary);
+    margin-block-end: var(--space-3);
+}
+
+.recovery[data-tone="warning"] .statusIcon {
+    color: var(--status-danger-fg);
+}

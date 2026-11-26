@@ -39,7 +39,11 @@ describe('Drawer', () => {
         trigger.focus();
         await user.click(trigger);
         await screen.findByRole('dialog', { name: 'Mi cuenta' });
-        expect(screen.getByRole('button', { name: 'Cerrar panel' })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Cerrar panel' })).toHaveClass(
+            'quiet',
+            'sm',
+            'iconOnly'
+        );
         fireEvent.keyDown(document, { key: 'Escape' });
         await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
         expect(trigger).toHaveFocus();

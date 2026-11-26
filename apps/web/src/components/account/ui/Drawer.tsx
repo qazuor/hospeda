@@ -11,11 +11,10 @@
  * @module components/account/ui/Drawer
  */
 
-import { CloseIcon } from '@repo/icons';
 import { type ReactNode, useId } from 'react';
 import { createT, type SupportedLocale } from '@/lib/i18n';
 import { Dialog as SharedDialog } from '../../shared/ui/Dialog.client';
-import { Button } from './Button';
+import { CloseButton } from './CloseButton';
 import { cx } from './cx';
 import styles from './Drawer.module.css';
 import { type HelpAnchor, helpAttr } from './help-anchor';
@@ -98,18 +97,10 @@ export function Drawer({
                 >
                     {title}
                 </h2>
-                <Button
-                    variant="quiet"
-                    size="sm"
-                    iconOnly
+                <CloseButton
                     aria-label={t('account.ui.drawerClose')}
                     onClick={() => onOpenChange(false)}
-                >
-                    <CloseIcon
-                        size="sm"
-                        aria-hidden="true"
-                    />
-                </Button>
+                />
             </header>
             <div className={`${styles.body} dialog-panel-scroll`}>{children}</div>
             {footer ? <footer className={styles.footer}>{footer}</footer> : null}

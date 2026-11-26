@@ -1022,6 +1022,13 @@
         "error": "Error al cargar el panel",
         "retry": "Reintentar",
         "widgets": {
+            "draftsNext_one": "Tenés {{count}} borrador para completar y publicar.",
+            "draftsNext_other": "Tenés {{count}} borradores para completar y publicar.",
+            "propertiesEmpty": "Creá tu primera propiedad para empezar.",
+            "propertiesContext": "Revisá y mantené tus propiedades al día.",
+            "messagesNext_one": "Tenés {{count}} consulta sin responder.",
+            "messagesNext_other": "Tenés {{count}} consultas sin responder.",
+            "messagesContext": "No tenés consultas sin responder.",
             "properties": "Tus propiedades",
             "total": "Total",
             "published": "Publicadas",

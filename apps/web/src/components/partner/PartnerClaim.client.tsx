@@ -3,8 +3,11 @@
  * @description Claims an approved Partner from a one-time email link (HOS-1486).
  */
 
+import { AlertTriangleIcon, InfoIcon } from '@repo/icons';
 import type { FC } from 'react';
 import { useEffect, useRef, useState } from 'react';
+import actionStyles from '@/components/shared/StatusActions.module.css';
+import { GradientButton } from '@/components/ui/GradientButtonReact';
 import { useAccountPermissions } from '@/hooks/use-account-permissions';
 import { partnerClaimsPublicApi } from '@/lib/api/endpoints';
 import { partnersApi } from '@/lib/api/endpoints-protected';
@@ -32,6 +35,7 @@ type ClaimState =
     | 'claiming'
     | 'success'
     | 'not-found'
+    | 'no-link'
     | 'already-claimed'
     | 'account-already-owns'
     | 'email-mismatch'
@@ -73,6 +77,10 @@ export const PartnerClaim: FC<PartnerClaimProps> = ({ locale }) => {
             });
             if (pending?.kind === 'partner-claim')
                 nextLink = { partnerId: pending.partnerId, secret: pending.secret };
+        }
+        if (!nextLink && !fragment) {
+            setState('no-link');
+            return;
         }
         if (!nextLink || !UUID_PATTERN.test(nextLink.partnerId) || !nextLink.secret) {
             setState('not-found');
@@ -196,7 +204,6 @@ export const PartnerClaim: FC<PartnerClaimProps> = ({ locale }) => {
         'sign-up': t('partners.claim.signUpPrompt'),
         confirm: t('partners.claim.confirmPrompt'),
         success: t('partners.claim.success'),
-        'not-found': t('partners.claim.notFound'),
         'already-claimed': t('partners.claim.alreadyClaimed'),
         'account-already-owns': t('partners.claim.accountAlreadyOwns'),
         'email-mismatch': t('partners.claim.emailMismatch'),
@@ -207,6 +214,57 @@ export const PartnerClaim: FC<PartnerClaimProps> = ({ locale }) => {
         state === 'already-claimed' ||
         state === 'account-already-owns' ||
         state === 'email-mismatch';
+
+    if (state === 'no-link' || state === 'not-found') {
+        const invalid = state === 'not-found';
+        const Icon = invalid ? AlertTriangleIcon : InfoIcon;
+        return (
+            <section
+                className={actionStyles.recovery}
+                data-tone={invalid ? 'warning' : 'info'}
+                aria-labelledby="partner-claim-heading"
+            >
+                <Icon
+                    size={56}
+                    weight="duotone"
+                    color="currentColor"
+                    className={actionStyles.statusIcon}
+                    aria-hidden="true"
+                />
+                <div role={invalid ? 'alert' : undefined}>
+                    <h1
+                        id="partner-claim-heading"
+                        className={styles.heading}
+                    >
+                        {t(
+                            invalid
+                                ? 'partners.claim.invalidLinkTitle'
+                                : 'partners.claim.instructionsTitle'
+                        )}
+                    </h1>
+                    <p className={actionStyles.description}>
+                        {t(invalid ? 'partners.claim.notFound' : 'partners.claim.instructions')}
+                    </p>
+                </div>
+                <div className={actionStyles.actions}>
+                    <GradientButton
+                        as="a"
+                        href={buildUrl({ locale, path: 'contacto' })}
+                        label={t('partners.claim.contactCta')}
+                        variant="primary"
+                        shape="rounded"
+                    />
+                    <GradientButton
+                        as="a"
+                        href={buildUrl({ locale, path: '/' })}
+                        label={t('partners.claim.homeCta')}
+                        variant="outline-primary"
+                        shape="rounded"
+                    />
+                </div>
+            </section>
+        );
+    }
 
     return (
         <section

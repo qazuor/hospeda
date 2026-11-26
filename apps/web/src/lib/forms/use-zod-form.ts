@@ -18,6 +18,7 @@
  */
 
 import { useCallback, useState } from 'react';
+import { flushSync } from 'react-dom';
 import type { ZodTypeAny, z } from 'zod';
 import type { TranslationFn } from '@/lib/api-errors';
 import { translateApiError } from '@/lib/api-errors';
@@ -57,6 +58,8 @@ export interface UseZodFormOptions<TSchema extends ZodTypeAny> {
      * opting in costs one string instead of a table that could silently rot.
      */
     readonly fieldIdPrefix?: string;
+    /** Show the default error toast unless the form supplies its own feedback. */
+    readonly validationToast?: boolean;
     /**
      * The form's shared sub-control suffix map, for Zod keys rendered as more
      * than one control (`phone` → country combobox + number input). Only
@@ -195,6 +198,7 @@ export function useZodForm<TSchema extends ZodTypeAny>({
     schema,
     t,
     fieldIdPrefix,
+    validationToast = true,
     fieldIdSuffixes,
     aggregateFields
 }: UseZodFormOptions<TSchema>): UseZodFormResult<TSchema> {
@@ -212,14 +216,17 @@ export function useZodForm<TSchema extends ZodTypeAny>({
                     zodIssuesToFieldErrors(parseError.issues, t),
                     aggregateFields
                 );
-                setFieldErrors(mapped);
+                // Commit descriptions before focusing so assistive tech reads the new error.
+                if (fieldIdPrefix && !validationToast) flushSync(() => setFieldErrors(mapped));
+                else setFieldErrors(mapped);
                 // Consistent submit-time feedback across every form: a single
                 // error toast announcing the form has field errors to review,
                 // alongside the inline <FieldError> messages the caller renders.
-                addToast({
-                    type: 'error',
-                    message: t ? t('validation.formHasErrors') : 'Revisá los campos marcados'
-                });
+                if (validationToast)
+                    addToast({
+                        type: 'error',
+                        message: t ? t('validation.formHasErrors') : 'Revisá los campos marcados'
+                    });
                 // Opt-in (HOS-373): only forms that declared an id namespace get
                 // the focus move. Runs after the toast so the toast is never
                 // what steals focus.
@@ -233,7 +240,7 @@ export function useZodForm<TSchema extends ZodTypeAny>({
             }
             return result;
         },
-        [schema, t, fieldIdPrefix, fieldIdSuffixes, aggregateFields]
+        [schema, t, fieldIdPrefix, validationToast, fieldIdSuffixes, aggregateFields]
     );
 
     const handleApiError = useCallback(

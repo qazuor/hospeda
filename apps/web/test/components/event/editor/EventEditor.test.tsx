@@ -11,8 +11,10 @@
  * @module test/components/event/editor/EventEditor
  */
 
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { EditorAutoSaveChip } from '@/components/account/editor-shell/EditorAutoSaveChip.client';
+import { getEditorAutoSave } from '@/components/account/editor-shell/editor-auto-save-signal';
 import { EventEditor } from '../../../../src/components/event/editor/EventEditor.client';
 import type { EventEditDetail } from '../../../../src/lib/api/types';
 
@@ -147,9 +149,9 @@ describe('EventEditor — saving', () => {
             id: 'event-1',
             data: { name: 'Otra fiesta' }
         });
-        await waitFor(() =>
-            expect(document.querySelectorAll('[data-status="saved"]')).toHaveLength(1)
-        );
+        await waitFor(() => expect(getEditorAutoSave().status).toBe('saved'));
+        expect(screen.queryByRole('region', { name: /guardar/i })).toBeNull();
+        expect(screen.queryByRole('button', { name: /Guardar/ })).toBeNull();
     });
 
     it('sends the start date when only the end date was edited', async () => {
@@ -171,7 +173,7 @@ describe('EventEditor — saving', () => {
     it('refuses to save when the author cleared the start date', async () => {
         renderEditor();
 
-        fireEvent.change(screen.getByLabelText('Comienza *'), { target: { value: '' } });
+        fireEvent.change(screen.getByLabelText(/^Comienza/), { target: { value: '' } });
         fireEvent.click(screen.getByRole('button', { name: /Guardar/ }));
 
         // Without this guard the cleared start drops out of the diff and the
@@ -204,6 +206,42 @@ describe('EventEditor — saving', () => {
 
         expect(screen.queryByRole('button', { name: /Guardar/ })).not.toBeInTheDocument();
         expect(mockUpdate).not.toHaveBeenCalled();
+    });
+
+    it('keeps the header chip in sync on dirty, revert, discard and save', async () => {
+        mockUpdate.mockResolvedValueOnce({ ok: true, data: {} });
+        render(
+            <EditorAutoSaveChip
+                locale="es"
+                saveModel="bar"
+            />
+        );
+        renderEditor();
+        expect(screen.getByText('Todo guardado')).toBeInTheDocument();
+        fireEvent.change(screen.getByLabelText('Nombre *'), { target: { value: 'Otra fiesta' } });
+        expect(screen.getByText('Cambios sin guardar')).toBeInTheDocument();
+        fireEvent.change(screen.getByLabelText('Nombre *'), { target: { value: BASE_EVENT.name } });
+        expect(screen.getByText('Todo guardado')).toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: /Guardar/ })).toBeNull();
+        fireEvent.change(screen.getByLabelText('Nombre *'), { target: { value: 'Otra fiesta' } });
+        fireEvent.click(screen.getByRole('button', { name: 'Descartar' }));
+        expect(screen.getByText('Todo guardado')).toBeInTheDocument();
+        fireEvent.change(screen.getByLabelText('Nombre *'), { target: { value: 'Otra fiesta' } });
+        fireEvent.click(screen.getByRole('button', { name: /Guardar/ }));
+        await waitFor(() => expect(getEditorAutoSave().status).toBe('saved'));
+        expect(screen.queryByRole('button', { name: /Guardar/ })).toBeNull();
+    });
+
+    it('uses native kit category and date controls with associated labels', async () => {
+        await act(async () => {
+            renderEditor();
+        });
+        expect(screen.getByRole('combobox', { name: /Categoría/ }).tagName).toBe('SELECT');
+        const start = screen.getByLabelText(/^Comienza/);
+        expect(start).toHaveAttribute('type', 'datetime-local');
+        expect(start).toHaveAttribute('aria-required', 'true');
+        expect(start.className).toMatch(/control/);
+        expect(screen.getByRole('combobox', { name: /Categoría/ }).className).toMatch(/select/);
     });
 });
 
@@ -318,7 +356,7 @@ describe('EventEditor — month-precision dates (HOS-280)', () => {
         // an editable input here would let a confirmed placeholder day silently
         // promote the event to a precision nobody asserted.
         expect(screen.getByTestId('event-month-precision-notice')).toBeInTheDocument();
-        expect(screen.getByLabelText('Comienza *')).toBeDisabled();
+        expect(screen.getByLabelText(/^Comienza/)).toBeDisabled();
         expect(screen.getByLabelText('Termina')).toBeDisabled();
     });
 
@@ -333,7 +371,7 @@ describe('EventEditor — month-precision dates (HOS-280)', () => {
         renderEditor({ event: { datePrecision: 'EXACT' } });
 
         expect(screen.queryByTestId('event-month-precision-notice')).not.toBeInTheDocument();
-        expect(screen.getByLabelText('Comienza *')).not.toBeDisabled();
+        expect(screen.getByLabelText(/^Comienza/)).not.toBeDisabled();
     });
 });
 

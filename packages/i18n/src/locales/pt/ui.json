@@ -50,6 +50,7 @@
         "debugInfo": "Informações de depuração"
     },
     "navigation": {
+        "detail": "Detalhe",
         "navigation": "Navegação",
         "home": "Início",
         "formProgress": "Progresso do formulário",

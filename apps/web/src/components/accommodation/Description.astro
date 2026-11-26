@@ -12,9 +12,10 @@
  * a paid capability ("descripciones enriquecidas") that was never delivered.
  *
  * ENTITLEMENT: this component does NOT check entitlements, and must not.
- * `gateRichDescription` (`apps/api/src/middlewares/accommodation-entitlements.ts`, REMOVED by HOS-1416: write-time successor planned in V5.11)
- * neutralized markdown in `description` at WRITE time for any owner lacking
- * `CAN_USE_RICH_DESCRIPTION`. Markdown present in `description` therefore
+ * The API public projection (`apps/api/src/utils/public-accommodation-projection.ts`,
+ * HOS-2209) strips markdown from `description` and `descriptionI18n` at READ time
+ * for any owner lacking `CAN_USE_RICH_DESCRIPTION` (the old write-time
+ * `gateRichDescription` was removed by HOS-1416). Markdown present in `description` therefore
  * implies an entitled owner; rendering it leaks nothing.
  *
  * SECURITY (SPEC-187 FR-2 / PD-2 / PD-6 successor contract):

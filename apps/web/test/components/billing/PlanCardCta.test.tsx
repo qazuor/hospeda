@@ -359,8 +359,8 @@ describe('PlanCardCta', () => {
         expect(fetchMock).toHaveBeenCalledTimes(1);
     });
     it('TEST:1758:4 renders checkout links with stacked button styles', () => {
-        expect(componentSource).toContain(
-            "className={cycle === 'monthly' ? styles.primary : styles.secondary}"
+        expect(componentSource).toMatch(
+            /<LinkButton\s+key=\{cycle\}[\s\S]*?variant="accent"\s+fullWidth/
         );
         expect(cssSource).not.toContain('text-decoration: underline');
         expect(cssSource).toContain('min-height: 44px;');

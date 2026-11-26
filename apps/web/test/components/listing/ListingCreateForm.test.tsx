@@ -42,7 +42,7 @@ describe('ListingCreateForm', () => {
         expect(field('Nombre')).toHaveValue('');
         expect(field('Ciudad / Destino')).toHaveValue('');
         expect(screen.getByRole('option', { name: 'Elegí una categoría' })).toHaveValue('');
-        expect(screen.getByTestId('listing-create-submit')).toHaveClass('primary');
+        expect(screen.getByTestId('listing-create-submit')).toHaveClass('accent');
         change('Resumen', 'Un resumen');
         expect(container.querySelector('#cc-summary-counter')).toHaveTextContent(
             '10 de 300 caracteres'

@@ -38,7 +38,7 @@
  * @module lib/billing/pricing-page-content
  */
 
-import { NEUTRAL_PLANS_PATH } from '@/lib/billing/addon-purchase';
+import { PLANS_INDEX_PATH } from '@/lib/billing/addon-purchase';
 import type { PublicPlanData } from '@/lib/billing/fetch-plans';
 import { computeMinimumTrialDays } from '@/lib/billing/generic-trial-days';
 import type { PricingPriceMode } from '@/lib/billing/price-on-request-audiences';
@@ -251,7 +251,7 @@ export function buildPricingBreadcrumbs({
     readonly pageLabel: string;
 }): readonly { readonly label: string; readonly path?: string }[] {
     return [
-        { label: plansLabel, path: NEUTRAL_PLANS_PATH },
+        { label: plansLabel, path: PLANS_INDEX_PATH },
         { label: salesLabel, path: salesPath },
         { label: pageLabel }
     ];

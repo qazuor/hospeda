@@ -17,6 +17,7 @@ import { ContentMediaSection } from '@/components/account/editor/ContentMediaSec
 import styles from '@/components/account/editor/content-editor-layout.module.css';
 import type { PublicationSectionLabels } from '@/components/account/editor/PublicationSection.client';
 import { PublicationSection } from '@/components/account/editor/PublicationSection.client';
+import { useEditorSaveSignal } from '@/components/account/editor-shell/use-editor-save-signal';
 import {
     Alert,
     type SaveOutcome,
@@ -242,6 +243,7 @@ export function PostEditor({
         idPrefix: POST_FIELD_PREFIX,
         suffixes: POST_FIELD_ID_SUFFIXES
     });
+    useEditorSaveSignal(saveBar);
 
     /**
      * Entity-specific copy for the shared `PublicationSection`. Resolved here,
@@ -417,7 +419,7 @@ export function PostEditor({
              * the author can do makes saving work (HOS-374 OQ-3). The page's
              * back link stays as the exit.
              */}
-            {!isEditLocked && (
+            {!isEditLocked && isDirty && (
                 <StickySaveBar
                     locale={locale}
                     status={saveBar.status}

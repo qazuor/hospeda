@@ -1022,6 +1022,13 @@
         "error": "Erro ao carregar o painel",
         "retry": "Tentar novamente",
         "widgets": {
+            "draftsNext_one": "Você tem {{count}} rascunho para concluir e publicar.",
+            "draftsNext_other": "Você tem {{count}} rascunhos para concluir e publicar.",
+            "propertiesEmpty": "Crie sua primeira propriedade para começar.",
+            "propertiesContext": "Revise e mantenha suas propriedades atualizadas.",
+            "messagesNext_one": "Você tem {{count}} consulta sem resposta.",
+            "messagesNext_other": "Você tem {{count}} consultas sem resposta.",
+            "messagesContext": "Você não tem consultas sem resposta.",
             "properties": "Suas propriedades",
             "total": "Total",
             "published": "Publicadas",

@@ -187,6 +187,7 @@ export function ListingCreateForm({
                 )}
                 <Button
                     type="submit"
+                    variant="accent"
                     loading={isSubmitting}
                     data-testid="listing-create-submit"
                 >

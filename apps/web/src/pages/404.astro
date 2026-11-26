@@ -10,7 +10,7 @@ export const prerender = false;
 import ErrorLayout from '@/layouts/ErrorLayout.astro';
 import StatusPage from '@/components/shared/StatusPage.astro';
 import GradientButton from '@/components/shared/ui/GradientButton.astro';
-import { SearchIcon, ChatIcon } from '@repo/icons';
+import { ChatIcon } from '@repo/icons';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations, DEFAULT_LOCALE } from '@/lib/i18n';
 import { extractLocaleFromPath } from '@/lib/middleware-helpers';
@@ -34,13 +34,13 @@ const feedbackParams = new URLSearchParams({
 	type: 'bug-ui-ux',
 	source: 'error-404',
 	url: Astro.url.href,
-	title: 'Página no encontrada (404)',
-	description: `URL: ${Astro.url.pathname}\nEsta página no existe o el enlace está roto.`,
+	title: t('error.404.title'),
+	description: t('error.404.message'),
 });
 const feedbackWithParams = `${feedbackUrl}?${feedbackParams.toString()}`;
 ---
 
-<ErrorLayout locale={locale} title={t('error.404.title')} description={t('error.404.description')} noindex={true}>
+<ErrorLayout locale={locale} title={t('error.404.title')} description={t('error.404.description')} noindex={true} showSearch>
 	<StatusPage
 		variant="not-found"
 		title={t('error.404.heading')}
@@ -71,12 +71,11 @@ const feedbackWithParams = `${feedbackUrl}?${feedbackParams.toString()}`;
 
 		<GradientButton
 			slot="actions"
-			href={accommodationsUrl}
-			label={t('error.404.searchAccommodations')}
+			href={homeUrl}
+			label={t('error.404.goHome')}
 			variant="primary"
 			shape="rounded"
 		>
-			<SearchIcon slot="leading" size={18} />
 		</GradientButton>
 		<GradientButton
 			slot="actions"
@@ -88,8 +87,8 @@ const feedbackWithParams = `${feedbackUrl}?${feedbackParams.toString()}`;
 			<ChatIcon slot="leading" size={18} />
 		</GradientButton>
 
-		<a slot="footer" href={homeUrl}>
-			{t('error.404.goHome')}
+		<a slot="footer" href={accommodationsUrl}>
+			{t('error.404.searchAccommodations')}
 		</a>
 	</StatusPage>
 </ErrorLayout>

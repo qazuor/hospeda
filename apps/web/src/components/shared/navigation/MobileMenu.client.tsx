@@ -1,10 +1,9 @@
 /** Site-only mobile menu. Account navigation is owned by the header account sheet. */
-import { CloseIcon } from '@repo/icons';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { CloseButton } from '@/components/account/ui/CloseButton';
 import { BrandWordmark } from '@/components/shared/brand/BrandWordmark';
 import { LanguageSwitcher } from '@/components/shared/preferences/LanguageSwitcher.client';
 import { ThemeControl } from '@/components/shared/preferences/ThemeControl.client';
-import { IconButton } from '@/components/ui/IconButtonReact';
 import { useAccountPermissions } from '@/hooks/use-account-permissions';
 import { useNavigationDialog } from '@/hooks/use-navigation-dialog';
 import { openAccountSheet } from '@/lib/account-sheet-events';
@@ -110,20 +109,12 @@ export function MobileMenu({
                 >
                     <BrandWordmark logoSrc={logoSrc} />
                 </a>
-                <IconButton
+                <CloseButton
                     ref={closeButtonRef}
-                    ariaLabel={t('nav.closeMenu')}
-                    variant="ghost"
-                    size="md"
+                    aria-label={t('nav.closeMenu')}
                     onClick={close}
                     tabIndex={isOpen ? 0 : -1}
-                >
-                    <CloseIcon
-                        size={24}
-                        weight="regular"
-                        aria-hidden="true"
-                    />
-                </IconButton>
+                />
             </div>
             <nav
                 aria-label={t('nav.mainNavigation')}
