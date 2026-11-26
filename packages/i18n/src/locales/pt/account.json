@@ -232,7 +232,8 @@
         "help": "Ajuda",
         "venueDashboard": "Painel de locais",
         "experienceDashboard": "Painel de experiências",
-        "addons": "Complementos"
+        "addons": "Complementos",
+        "receivedReviews": "Avaliações recebidas"
     },
     "doors": {
         "sectionLabel": "Descubra mais",
@@ -1305,6 +1306,11 @@
         "recommendations": {
             "title": "Sugestões para você",
             "description": "Acomodações escolhidas especialmente para você, com base nos seus favoritos, buscas e atividade recente no Hospeda"
+        },
+        "receivedReviews": {
+            "title": "Avaliações recebidas",
+            "description": "Veja e responda às avaliações que suas acomodações receberam na Hospeda",
+            "headingDesc": "Responda aos hóspedes que avaliaram suas acomodações."
         }
     },
     "newsletter": {
@@ -2521,6 +2527,54 @@
             "enterCoordinates": "Inserir coordenadas",
             "latitude": "Latitude",
             "longitude": "Longitude"
+        }
+    },
+    "receivedReviews": {
+        "sectionTitle": "Avaliações das suas acomodações",
+        "listLabel": "Avaliações recebidas",
+        "filterLabel": "Filtrar avaliações",
+        "filterAll": "Todas as avaliações",
+        "filterUnanswered": "Sem resposta",
+        "total_one": "{{count}} avaliação",
+        "total_other": "{{count}} avaliações",
+        "emptyTitle": "Você ainda não recebeu avaliações",
+        "empty": "Quando um hóspede avaliar sua acomodação, você a verá aqui para poder responder.",
+        "emptyUnansweredTitle": "Nenhuma avaliação sem resposta",
+        "emptyUnanswered": "Você já respondeu todas as avaliações que recebeu.",
+        "loadError": {
+            "title": "Não foi possível carregar suas avaliações",
+            "body": "Tente novamente em alguns segundos."
+        },
+        "ratingAria": "Nota: {{value}} de {{max}}",
+        "anonymous": "Hóspede",
+        "viewListing": "Ver acomodação",
+        "respond": "Responder avaliação",
+        "edit": "Editar resposta",
+        "delete": "Excluir resposta",
+        "publish": "Publicar resposta",
+        "save": "Salvar alterações",
+        "cancel": "Cancelar",
+        "replyLabel": "Sua resposta",
+        "replyPlaceholder": "Escreva sua resposta…",
+        "charCount": "{{count}} / {{max}}",
+        "edited": "modificada",
+        "pendingNotice": "Sua resposta está em revisão e ainda não aparece na página pública.",
+        "hiddenNotice": "Um administrador ocultou esta resposta. Você pode excluí-la e escrever uma nova.",
+        "deleteConfirm": "Excluir sua resposta? Depois você poderá responder novamente.",
+        "saving": "Salvando…",
+        "deleting": "Excluindo…",
+        "upsell": {
+            "title": "Responder avaliações não está no seu plano",
+            "body": "Melhore seu plano para responder às avaliações dos seus hóspedes.",
+            "cta": "Ver planos"
+        },
+        "errors": {
+            "generic": "Não foi possível salvar sua resposta. Tente novamente.",
+            "required": "Escreva uma resposta.",
+            "tooLong": "A resposta não pode ultrapassar {{max}} caracteres.",
+            "alreadyReplied": "Esta avaliação já tem uma resposta.",
+            "notFound": "Não encontramos esta avaliação.",
+            "noEntitlement": "Seu plano atual não inclui responder avaliações."
         }
     }
 }

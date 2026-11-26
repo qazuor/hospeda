@@ -41,6 +41,10 @@ const PAGE_CASES: readonly {
     { destination: { kind: 'page', page: 'accountHome' }, route: 'mi-cuenta' },
     { destination: { kind: 'page', page: 'accountPublicProfile' }, route: 'mi-cuenta/publica' },
     { destination: { kind: 'page', page: 'hostDashboard' }, route: 'mi-cuenta/host-dashboard' },
+    {
+        destination: { kind: 'page', page: 'receivedReviews' },
+        route: 'mi-cuenta/resenas-recibidas'
+    },
     { destination: { kind: 'page', page: 'promotions' }, route: 'mi-cuenta/promociones' },
     { destination: { kind: 'page', page: 'promotionNew' }, route: 'mi-cuenta/promociones/nueva' },
     {

@@ -993,7 +993,9 @@
                 "error": "No se pudieron cargar las reseñas",
                 "retry": "Reintentar",
                 "loading": "Cargando reseñas…"
-            }
+            },
+            "hostReply": "Respuesta del anfitrión",
+            "hostReplyEdited": "editada"
         },
         "host": {
             "title": "Tu anfitrión",

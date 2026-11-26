@@ -1,0 +1,47 @@
+---
+/**
+ * @file mi-cuenta/resenas-recibidas/index.astro
+ * @description The host's received reviews (HOS-2199): the reviews of their
+ * accommodations with the filter «Sin responder» and the controls to answer.
+ *
+ * Gate: a signed-out visitor goes to login with this URL as the return path; a
+ * person without the host area is sent away by `guardPublisherArea`. The page
+ * reads no per-user data itself: the island fetches the list in the browser, so
+ * nothing here depends on the session beyond the gate.
+ *
+ * @route /{lang}/mi-cuenta/resenas-recibidas/
+ * @rendering SSR (on-demand, auth-protected)
+ */
+
+import AccountLayout from '@/layouts/AccountLayout.astro';
+import { PageHeader } from '@/components/account/ui';
+import PageHelpLink from '@/components/account/help/PageHelpLink.astro';
+import { ReceivedReviewsPanel } from '@/components/account/ReceivedReviewsPanel.client';
+import { guardPublisherArea } from '@/lib/account/publisher-access';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { buildLoginRedirect } from '@/lib/middleware-helpers';
+
+export const prerender = false;
+
+const locale = Astro.locals.locale as SupportedLocale;
+const user = Astro.locals.user;
+
+if (!user) {
+	return Astro.redirect(buildLoginRedirect({ locale, currentUrl: Astro.url.pathname + Astro.url.search }));
+}
+
+const denied = guardPublisherArea({ astro: Astro, area: 'host' });
+if (denied) return denied;
+
+const { t } = createTranslations(locale);
+const title = t('account.pages.receivedReviews.title', 'Reseñas recibidas');
+---
+
+<AccountLayout locale={locale} title={title} activeSection="resenas-recibidas">
+	<PageHeader title={title} locale={locale} description={t('account.pages.receivedReviews.headingDesc')}>
+		<PageHelpLink slot="help" locale={locale} />
+	</PageHeader>
+
+	<ReceivedReviewsPanel client:load locale={locale} />
+</AccountLayout>
