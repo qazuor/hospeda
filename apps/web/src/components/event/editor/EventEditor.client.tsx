@@ -18,6 +18,7 @@ import { ContentMediaSection } from '@/components/account/editor/ContentMediaSec
 import styles from '@/components/account/editor/content-editor-layout.module.css';
 import type { PublicationSectionLabels } from '@/components/account/editor/PublicationSection.client';
 import { PublicationSection } from '@/components/account/editor/PublicationSection.client';
+import { useEditorSaveSignal } from '@/components/account/editor-shell/use-editor-save-signal';
 import {
     Alert,
     type SaveOutcome,
@@ -231,6 +232,7 @@ export function EventEditor({
         idPrefix: EVENT_FIELD_PREFIX,
         suffixes: EVENT_FIELD_ID_SUFFIXES
     });
+    useEditorSaveSignal(saveBar);
 
     const publicationLabels = useMemo<PublicationSectionLabels>(
         () => ({
@@ -400,7 +402,7 @@ export function EventEditor({
              * the author can do makes saving work (OQ-3). The page's back link
              * stays as the exit.
              */}
-            {!isEditLocked && (
+            {!isEditLocked && (isDirty || startDateCleared) && (
                 <StickySaveBar
                     locale={locale}
                     status={saveBar.status}
