@@ -6,7 +6,7 @@ import {
     entreRiosCover,
     meta as migrationMeta,
     up
-} from '../../src/data-migrations/0194-hos-2648-entre-rios-cover.js';
+} from '../../src/data-migrations/0198-hos-2648-entre-rios-cover.js';
 import { baselineStamp } from '../../src/data-migrations/baselineStamp.js';
 import { recordApplied } from '../../src/data-migrations/ledger.js';
 import { resolvePendingMigrations } from '../../src/data-migrations/runner.js';

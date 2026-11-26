@@ -1,6 +1,6 @@
 /**
  * @fileoverview
- * Data migration: 0194-hos-2648-entre-rios-cover
+ * Data migration: 0198-hos-2648-entre-rios-cover
  *
  * Replace the seeded scuba photo with the palm landscape cover from Ubajay and
  * correct the province’s Spanish copy without overwriting editorial changes.
@@ -13,7 +13,7 @@ import type { SeedMigrationCtx, SeedMigrationModule, SeedMigrationResult } from 
 
 /** Discovery metadata for the fixture-backed Entre Ríos update. */
 export const meta = {
-    name: '0194-hos-2648-entre-rios-cover',
+    name: '0198-hos-2648-entre-rios-cover',
     group: 'required',
     destructive: false,
     requiresColumns: ['media', 'name', 'summary', 'description', 'location', 'seo'].map(
