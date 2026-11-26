@@ -47,16 +47,18 @@
 /* ── Popover ────────────────────────────────────────────────────────────── */
 
 .popover {
-    position: absolute;
-    bottom: calc(100% + var(--space-2, 8px));
-    right: 0;
+    position: fixed;
+    inset: auto;
+    margin: 0;
+    padding: 0;
+    color: var(--core-foreground);
     min-width: 220px;
     background: var(--core-card);
     border: 1px solid var(--border, oklch(0.87 0.01 264));
     border-radius: var(--radius-card, 24px);
     box-shadow: var(--shadow-card, 0 4px 20px oklch(0 0 0 / 0.12));
     z-index: 100;
-    overflow: hidden;
+    overflow-y: auto;
     animation: popoverIn 0.15s ease-out;
 }
 
@@ -183,8 +185,6 @@
 
 @media (max-width: 480px) {
     .popover {
-        right: auto;
-        left: 0;
         min-width: 200px;
     }
 }
@@ -199,13 +199,6 @@
     border-radius: var(--radius-pill);
     background: var(--core-card);
     box-shadow: var(--shadow-card);
-}
-
-.iconOverlay .popover {
-    bottom: auto;
-    top: calc(100% + var(--space-2, 8px));
-    right: 0;
-    left: auto;
 }
 
 /* Round 44px outline icon-only trigger for headers and action bars (HOS-2579 §6.3). */

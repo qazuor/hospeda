@@ -39,6 +39,9 @@ import DetailLayout from '@/layouts/DetailLayout.astro';
 import { ArrowLeftIcon } from '@repo/icons';
 import { EntitlementKeyEnum } from '@repo/schemas';
 import { getGatePlanNames } from '@/lib/billing/gate-plan-names';
+import { readComparePlan } from '@/lib/billing/compare-plan';
+import { accommodationsApi } from '@/lib/api/endpoints';
+import { toAccommodationCardProps } from '@/lib/api/transforms';
 
 export const prerender = false;
 
@@ -62,8 +65,14 @@ const accommodationsLabel = breadcrumbLabel({ t, key: 'accommodations' });
 const listingUrl = buildUrl({ locale, path: 'alojamientos' });
 // HOS-2554: the compare upsell names the catalog plans that carry comparison. The catalog is
 // public (not per-user), so reading it here keeps the page session-blind.
-const compareGatePlanNames = await getGatePlanNames({
-	entitlement: EntitlementKeyEnum.CAN_COMPARE_ACCOMMODATIONS
+const [compareGatePlanNames, comparePlan, listingResult] = await Promise.all([
+    getGatePlanNames({ entitlement: EntitlementKeyEnum.CAN_COMPARE_ACCOMMODATIONS }),
+    readComparePlan(),
+    accommodationsApi.list({ page: 1, pageSize: 3 })
+]);
+const suggestions = (listingResult.ok ? listingResult.data.items : []).map((item) => {
+    const { id, slug, name } = toAccommodationCardProps({ item: item as unknown as Record<string, unknown>, locale });
+    return { id, slug, name };
 });
 ---
 
@@ -101,7 +110,7 @@ const compareGatePlanNames = await getGatePlanNames({
 	</div>
 
 	<section class="compare-page__section">
-		<ComparisonMatrix client:only="react" locale={locale} gatePlanNames={compareGatePlanNames} />
+		<ComparisonMatrix client:only="react" locale={locale} gatePlanNames={compareGatePlanNames} {...comparePlan} suggestions={suggestions} />
 	</section>
 </DetailLayout>
 

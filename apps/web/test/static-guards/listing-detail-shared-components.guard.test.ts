@@ -6,8 +6,8 @@
  *
  * ## What it checks
  *
- * - Each page imports `listing/header/ListingHeader.astro`,
- *   `listing/contact/ListingContactBlock.astro` and
+ * - Each page uses `listing/header/ListingHeader.astro`,
+ *   `listing/contact/ListingContactBlock.astro` (via a venue-only slot adapter for Venue) and
  *   `listing/location/LocationSection.astro`, and calls the matching builder.
  * - The replaced files do not exist: `DetailHeader`, `VenueDetailHeader`,
  *   `ExperienceHero`, the three contact wrappers, `ListingContactChannels`,
@@ -43,7 +43,6 @@ const PAGES = [
 
 const SHARED_IMPORTS = [
     "import ListingHeader from '@/components/listing/header/ListingHeader.astro'",
-    "import ListingContactBlock from '@/components/listing/contact/ListingContactBlock.astro'",
     "import LocationSection from '@/components/listing/location/LocationSection.astro'"
 ] as const;
 
@@ -102,6 +101,18 @@ describe('the three listing detail pages use the shared components (HOS-2579 AC-
     }) => {
         const src = read(page);
         for (const statement of SHARED_IMPORTS) expect(src).toContain(statement);
+        const contactImport =
+            "import ListingContactBlock from '@/components/listing/contact/ListingContactBlock.astro'";
+        if (vertical === 'Venue') {
+            expect(src).toContain(
+                "import VenueContactSection from '@/components/venue/VenueContactSection.astro'"
+            );
+            const section = read('components/venue/VenueContactSection.astro');
+            expect(section).toContain(contactImport);
+            expect(section).toContain('<ListingContactBlock');
+        } else {
+            expect(src).toContain(contactImport);
+        }
         expect(src).toContain(`build${vertical}Header({`);
         expect(src).toContain(`build${vertical}ContactBlock({`);
         expect(src).toContain(`build${vertical}Location({`);

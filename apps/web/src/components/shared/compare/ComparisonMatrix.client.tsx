@@ -48,6 +48,7 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 import { useCompareStore } from '@/store/compare-store';
+import { ComparisonEmpty, type ComparisonSuggestion } from './ComparisonEmpty';
 import styles from './ComparisonMatrix.module.css';
 import { computeBestValue } from './computeBestValue';
 
@@ -73,6 +74,9 @@ export interface ComparisonMatrixProps {
      * handed down (the catalog reader is server-only). Empty when it could not be read.
      */
     readonly gatePlanNames?: readonly string[];
+    readonly planName?: string | null;
+    readonly planCapacity?: number;
+    readonly suggestions?: readonly ComparisonSuggestion[];
 }
 
 /** A single comparable attribute row rendered by the matrix. */
@@ -147,13 +151,16 @@ function classifyError(error: {
  */
 export const ComparisonMatrix: FC<ComparisonMatrixProps> = ({
     locale = 'es',
-    gatePlanNames = []
+    gatePlanNames = [],
+    planName,
+    planCapacity,
+    suggestions = []
 }) => {
     const { t, tPlural } = createTranslations(locale);
     const { ids } = useCompareStore();
     // Needed only to interpolate the per-plan cap into the limit-reached
     // message below — the matrix itself still renders from `useCompareStore`.
-    const { maxItems } = useCompareGuard();
+    const { maxItems, canCompare, isLoading } = useCompareGuard();
 
     const [status, setStatus] = useState<MatrixStatus>(
         ids.length >= MIN_TO_COMPARE ? { kind: 'loading' } : { kind: 'empty' }
@@ -206,32 +213,19 @@ export const ComparisonMatrix: FC<ComparisonMatrixProps> = ({
         };
     }, [ids, locale, retry]);
 
-    const listingHref = `/${locale}/alojamientos/`;
     // Compare is a tourist feature → tourist plans page, not owner plans (BETA-200).
     const pricingHref = `/${locale}/${PRICING_PAGE_PATH_BY_AUDIENCE.tourist}/`;
 
     if (status.kind === 'empty') {
         return (
-            <div className={styles.panel}>
-                <h2 className={styles.panelTitle}>
-                    {t(
-                        'accommodations.comparison.empty.title',
-                        'No hay alojamientos para comparar'
-                    )}
-                </h2>
-                <p className={styles.panelMessage}>
-                    {t(
-                        'accommodations.comparison.empty.message',
-                        'Agregá alojamientos desde el listado para verlos lado a lado.'
-                    )}
-                </p>
-                <a
-                    href={listingHref}
-                    className={styles.panelCta}
-                >
-                    {t('accommodations.comparison.empty.cta', 'Explorar alojamientos')}
-                </a>
-            </div>
+            <ComparisonEmpty
+                locale={locale}
+                planName={planName}
+                planCapacity={planCapacity}
+                canCompare={canCompare}
+                isLoading={isLoading}
+                suggestions={suggestions.filter(({ id }) => !ids.includes(id))}
+            />
         );
     }
 

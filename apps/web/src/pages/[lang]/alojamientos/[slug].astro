@@ -55,6 +55,7 @@ import ListingPriceAlert from '@/components/accommodation/ListingPriceAlert.astr
 import { getApiUrl } from '@/lib/env';
 import { EntitlementKeyEnum } from '@repo/schemas';
 import { getGatePlanNames } from '@/lib/billing/gate-plan-names';
+import { readComparePlan } from '@/lib/billing/compare-plan';
 import { resolveListingBarPhoneHref } from '@/lib/listing-contact/listing-action-bar';
 import AccommodationCard from '@/components/shared/cards/AccommodationCard.astro';
 import RelatedPostCard from '@/components/shared/cards/RelatedPostCard.astro';
@@ -384,9 +385,7 @@ const panelId = 'listing-contact-panel';
 const barPhoneHref = resolveListingBarPhoneHref({
     phones: [accommodation.contactInfo?.phone, accommodation.contactInfo?.landlinePhone]
 }).href;
-const barCompareGatePlanNames = await getGatePlanNames({
-    entitlement: EntitlementKeyEnum.CAN_COMPARE_ACCOMMODATIONS
-});
+const barComparePlan = await readComparePlan();
 const contactPrice = {
     amount: accommodation.price?.price ?? null,
     currency: accommodation.price?.currency ?? null,
@@ -697,7 +696,7 @@ const { sections: faqSections, inLanguage: faqInLanguage } = buildFaqJsonLdSecti
                 maxNights={accommodation.policies?.maxNights}
                 hasWhatsapp={accommodation.hasWhatsapp}
             >
-                <ListingPriceAlert accommodationId={accommodation.id} apiUrl={getApiUrl()} locale={locale} slug={slug} placement="summary" />
+                <ListingPriceAlert accommodationId={accommodation.id} apiUrl={getApiUrl()} locale={locale} placement="summary" />
             </MobileBookingSummary>
             <!-- Promotions also sit right under the price summary in the
                  single-column layout (owner smoke, HOS-2520): a discount is a
@@ -865,6 +864,8 @@ const { sections: faqSections, inLanguage: faqInLanguage } = buildFaqJsonLdSecti
         client:idle
         entityType="accommodation"
         entityId={accommodation.id}
+        listingPrice={contactPrice}
+        canConsult
         locale={locale}
         apiUrl={getApiUrl()}
     />
@@ -891,7 +892,7 @@ const { sections: faqSections, inLanguage: faqInLanguage } = buildFaqJsonLdSecti
         shareUrl={`${siteOrigin}${Astro.url.pathname}`}
         compare={{
             thumbnailUrl: accommodation.featuredImage || undefined,
-            gatePlanNames: barCompareGatePlanNames
+            ...barComparePlan
         }}
         panelId={panelId}
     />
@@ -914,8 +915,8 @@ const { sections: faqSections, inLanguage: faqInLanguage } = buildFaqJsonLdSecti
     <!-- Sidebar -->
     <Fragment slot="sidebar">
         <div class="acc-sidebar">
-            <PricingSidebar accommodationId={accommodation.id} price={accommodation.price} extraInfo={accommodation.extraInfo} policies={accommodation.policies} lang={locale} />
-            <ListingPriceAlert accommodationId={accommodation.id} apiUrl={getApiUrl()} locale={locale} slug={slug} placement="sidebar" />
+            <PricingSidebar accommodationId={accommodation.id} panelId={panelId} hasWhatsapp={accommodation.hasWhatsapp} price={accommodation.price} contactPrice={contactPrice} extraInfo={accommodation.extraInfo} policies={accommodation.policies} lang={locale} />
+            <ListingPriceAlert accommodationId={accommodation.id} apiUrl={getApiUrl()} locale={locale} placement="sidebar" />
             <ContactCard>
                 <ContactHostShell contactInfo={accommodation.contactInfo} locale={locale}>
                     <ListingContactCard
@@ -926,6 +927,7 @@ const { sections: faqSections, inLanguage: faqInLanguage } = buildFaqJsonLdSecti
                         whatsappPlansHref={whatsappPlansHref}
                         gatePlanNames={whatsappGatePlanNames}
                         phone={accommodation.contactInfo?.phone}
+                        email={accommodation.contactInfo?.email}
                         capacity={accommodation.extraInfo?.capacity}
                         initialMessage={prefilledMessage}
                         locale={locale}

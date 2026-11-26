@@ -151,6 +151,7 @@ describe('CompareCardSelect — compare mode gating', () => {
         render(<CompareCardSelect {...buildProps()} />);
 
         expect(screen.getByRole('checkbox')).toBeInTheDocument();
+        expect(screen.getByText('Comparar')).toBeVisible();
     });
 });
 

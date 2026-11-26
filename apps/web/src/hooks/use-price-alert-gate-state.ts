@@ -25,6 +25,8 @@ export interface PriceAlertGateSnapshot {
     readonly hasAlert: boolean;
     /** Id of that alert (needed to `DELETE` it), `null` when there is none. */
     readonly alertId: string | null;
+    readonly targetPercentDrop: number | null;
+    readonly createdAt: Date | string | null;
     /**
      * Whether the lookup is still in flight. `true` from mount until it
      * settles; `false` immediately when `skip` is set, since there is nothing
@@ -40,6 +42,8 @@ export interface PriceAlertGateSnapshot {
 const NO_ALERT: PriceAlertGateSnapshot = {
     hasAlert: false,
     alertId: null,
+    targetPercentDrop: null,
+    createdAt: null,
     isResolving: false,
     canCreateAlerts: false,
     maxReached: false,
@@ -77,6 +81,8 @@ export function usePriceAlertGateState({
         void (async () => {
             let hasAlert = false;
             let alertId: string | null = null;
+            let targetPercentDrop: number | null = null;
+            let createdAt: Date | string | null = null;
             let canCreateAlerts = false;
             let maxReached = false;
             let readFailed = false;
@@ -94,6 +100,8 @@ export function usePriceAlertGateState({
                     if (match) {
                         hasAlert = true;
                         alertId = match.id;
+                        targetPercentDrop = match.targetPercentDrop ?? null;
+                        createdAt = match.createdAt ?? null;
                     }
                     const gate = resolvePriceAlertGate({
                         effectiveSet,
@@ -110,6 +118,8 @@ export function usePriceAlertGateState({
             setSnapshot({
                 hasAlert,
                 alertId,
+                targetPercentDrop,
+                createdAt,
                 isResolving: false,
                 canCreateAlerts,
                 maxReached,

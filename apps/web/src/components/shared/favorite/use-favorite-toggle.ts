@@ -1,10 +1,12 @@
+import { isUnlimitedLimit } from '@repo/schemas';
 import { type RefObject, useState } from 'react';
 import { WebEvents } from '@/lib/analytics/events';
 import { trackEvent } from '@/lib/analytics/umami-client';
 import { userBookmarksApi } from '@/lib/api/endpoints-protected';
 import { buildLimitReachedPayloadFromDetails } from '@/lib/billing-limit-error';
-import type { createT, SupportedLocale } from '@/lib/i18n';
+import type { PluralTranslationFn, SupportedLocale, TranslationFn } from '@/lib/i18n';
 import type { ContactOrigin } from '@/lib/listing-contact/listing-contact-events';
+import { buildUrl } from '@/lib/urls';
 import { addToast } from '@/store/toast-store';
 import type { FavoriteChangePayload, FavoriteEntityType } from './FavoriteButton.client';
 
@@ -12,13 +14,14 @@ interface FavoriteToggleOptions {
     readonly entityId: string;
     readonly entityType: FavoriteEntityType;
     readonly locale: SupportedLocale;
-    readonly t: ReturnType<typeof createT>;
+    readonly t: TranslationFn;
+    readonly tPlural: PluralTranslationFn;
     readonly origin?: ContactOrigin;
     readonly isFavorited: boolean;
     readonly bookmarkId: string | null;
     readonly assignedCollectionRef: RefObject<string | null>;
     readonly publish: (next: FavoriteChangePayload) => void;
-    readonly refreshUsage: () => void;
+    readonly afterToggle: (input: { readonly saved: boolean }) => Promise<string | undefined>;
     readonly maybeOpenCollectionPicker: (bookmarkId: string | null) => Promise<void>;
     readonly promptSignIn: () => void;
 }
@@ -29,12 +32,13 @@ export function useFavoriteToggle({
     entityType,
     locale,
     t,
+    tPlural,
     origin,
     isFavorited,
     bookmarkId,
     assignedCollectionRef,
     publish,
-    refreshUsage,
+    afterToggle,
     maybeOpenCollectionPicker,
     promptSignIn
 }: FavoriteToggleOptions) {
@@ -80,15 +84,41 @@ export function useFavoriteToggle({
                 } else if (status === 403 && errorCode === 'LIMIT_REACHED') {
                     // User hit their plan's limit — rollback and show localized toast with upgrade CTA.
                     publish({ isFavorited: prevFavorited, bookmarkId: prevBookmarkId });
-                    const limitPayload = buildLimitReachedPayloadFromDetails({
-                        details: result.error.details,
-                        locale
-                    });
-                    addToast({
-                        type: 'error',
-                        message: limitPayload.message,
-                        action: limitPayload.action
-                    });
+                    const details = result.error.details;
+                    if (
+                        details &&
+                        typeof details === 'object' &&
+                        'limitKey' in details &&
+                        details.limitKey === 'max_favorites'
+                    ) {
+                        const max = 'maxAllowed' in details ? details.maxAllowed : undefined;
+                        const knownMax =
+                            typeof max === 'number' &&
+                            Number.isSafeInteger(max) &&
+                            max > 0 &&
+                            !isUnlimitedLimit({ value: max });
+                        addToast({
+                            type: 'info',
+                            layout: 'compact',
+                            message: knownMax
+                                ? tPlural('ui.favorite.audit.limit', max)
+                                : t('ui.favorite.audit.limitUnknown'),
+                            action: {
+                                label: t('billing.common.viewPlans'),
+                                href: buildUrl({ locale, path: 'planes/turistas/precios' })
+                            },
+                            secondaryAction: {
+                                label: t('ui.favorite.audit.manage'),
+                                href: buildUrl({ locale, path: 'mi-cuenta/favoritos' })
+                            }
+                        });
+                    } else {
+                        const { message, action } = buildLimitReachedPayloadFromDetails({
+                            details,
+                            locale
+                        });
+                        addToast({ type: 'error', message, action });
+                    }
                 } else {
                     // Any other API error — rollback and show generic toast.
                     publish({ isFavorited: prevFavorited, bookmarkId: prevBookmarkId });
@@ -106,10 +136,11 @@ export function useFavoriteToggle({
 
             // Success: confirm the optimistic state and publish the server's bookmarkId.
             const confirmedBookmarkId = result.data.bookmark?.id ?? null;
-            publish({ isFavorited: nextFavorited, bookmarkId: confirmedBookmarkId });
-            refreshUsage();
+            const saved = result.data.toggled;
+            publish({ isFavorited: saved, bookmarkId: confirmedBookmarkId });
+            const usageMessage = afterToggle({ saved });
 
-            if (nextFavorited) {
+            if (saved) {
                 // Add: surface a toast with a "Ver favoritos" link. Auto-routes
                 // to the collection detail page when the new bookmark landed in
                 // a specific collection (populated lazily by the picker
@@ -120,7 +151,9 @@ export function useFavoriteToggle({
                     : `/${locale}/mi-cuenta/favoritos/`;
                 addToast({
                     type: 'success',
-                    message: t('account.favorites.toast.saved', 'Guardado en favoritos'),
+                    message:
+                        (await usageMessage) ??
+                        t('account.favorites.toast.saved', 'Guardado en favoritos'),
                     action: {
                         label: t('account.favorites.toast.view'),
                         href: favoritesHref

@@ -11,14 +11,16 @@
         },
         "mode": {
             "toggleLabel": "Comparar hospedagens",
-            "activeLabel": "Comparando",
+            "activeLabel": "Sair da comparação",
             "on": "Modo de comparação ativado",
             "off": "Modo de comparação desativado",
             "bannerHint": "Escolha as hospedagens que você quer comparar"
         },
         "gate": {
             "authMessage": "Faça login para comparar hospedagens.",
-            "upsellMessage": "Seu plano não inclui a comparação de hospedagens.",
+            "upsellMessage": "Compare hospedagens lado a lado.",
+            "benefit_one": "Compare até {{count}} hospedagem lado a lado com {{plan}}.",
+            "benefit_other": "Compare até {{count}} hospedagens lado a lado com {{plan}}.",
             "upsellCta": "Ver planos"
         },
         "toast": {
@@ -64,6 +66,7 @@
             "count_other": "Comparando {{count}} hospedagens"
         },
         "empty": {
+            "suggestions": "Hospedagens sugeridas para comparar",
             "title": "Nenhuma hospedagem para comparar",
             "message": "Adicione hospedagens a partir da lista para vê-las lado a lado.",
             "cta": "Explorar hospedagens"
@@ -449,6 +452,11 @@
         },
         "listingContact": {
             "bar": {
+                "dockMenu": "Cardápio",
+                "dockChat": "Chat",
+                "dockSave": "Salvar",
+                "dockShare": "Compartilhar",
+                "dockCompare": "Comparar",
                 "actions": {
                     "inquire": "Enviar consulta",
                     "viewMenu": "Ver cardápio",
@@ -466,7 +474,7 @@
                 "priceOnRequest": "Consultar preço"
             },
             "panel": {
-                "title": "Fale com {{name}}",
+                "title": "Fale com o anfitrião: {{name}}",
                 "shortcuts": { "whatsapp": "WhatsApp", "phone": "Ligar", "email": "E-mail" },
                 "trust": "Sua consulta vai direto para o anfitrião. Sem comissões."
             },
@@ -501,7 +509,15 @@
                 "withGuests": "Olá, está disponível {{guests}}?",
                 "withDatesAndGuests": "Olá, está disponível {{dates}} {{guests}}?"
             },
-            "summary": { "title": "Preço e contato" },
+            "summary": {
+                "title": "Preço e contato",
+                "fromPrice": "A partir de {{amount}}",
+                "priceOnRequest": "Preço sob consulta",
+                "requestPrice": "Solicitar preço",
+                "writeEmail": "Enviar um e-mail",
+                "requestByEmail": "Consulte o preço por e-mail.",
+                "hostReply": "O anfitrião responderá com o preço."
+            },
             "units": {
                 "perNight": "/noite",
                 "perDay": "/dia",
@@ -532,6 +548,8 @@
             "cta": "Consultar pelo WhatsApp",
             "messageTemplate": "Olá, tenho interesse em mais informações sobre {{name}}",
             "numberLabel": "WhatsApp do anfitrião",
+            "compactGate": "Ver o WhatsApp do anfitrião",
+            "previewLabel": "Mensagem a enviar",
             "upsellText_one": "Assine o plano {{plans}} para ver o WhatsApp do anfitrião.",
             "upsellText_other": "Assine um dos planos {{plans}} para ver o WhatsApp do anfitrião.",
             "upsellTextNoPlans": "Seu plano atual não inclui ver o WhatsApp do anfitrião.",
@@ -723,7 +741,14 @@
         "priceAlert": {
             "create": "Avise-me quando o preço baixar",
             "creating": "Criando...",
-            "createSuccess": "Alerta criado",
+            "createSuccess": "Alerta criado. Você receberá um e-mail se a queda atingir o limite definido.",
+            "gateTitle": "Alertas de preços",
+            "gateBenefit": "Receba um aviso se o preço baixar com o plano {{plan}}.",
+            "confirmCreate": "Criar alerta",
+            "targetPercent": "Queda de preço (%)",
+            "defaultThreshold": "Alerta ativo com o limite padrão.",
+            "activeThreshold": "Alerta ativo para uma queda de {{threshold}}% no preço.",
+            "activeDate": "Criado em {{date}}.",
             "createError": "Não foi possível criar o alerta",
             "cancel": "Cancelar alerta",
             "cancelling": "Cancelando...",
@@ -1125,9 +1150,16 @@
         "guestExample3": "Como funciona o check-in?",
         "guestExamplesLead": "Por exemplo:",
         "guestFree": "É grátis com a sua conta.",
+        "guestMonthlyQuota_one": "Crie sua conta grátis e faça até {{count}} pergunta por mês.",
+        "guestMonthlyQuota_other": "Crie sua conta grátis e faça até {{count}} perguntas por mês.",
+        "monthlyAllowance_one": "Seu plano inclui {{count}} pergunta por mês.",
+        "monthlyAllowance_other": "Seu plano inclui {{count}} perguntas por mês.",
+        "noticeLabel": "Sobre a IA e a sua privacidade",
+        "greeting": "Olá! O que você gostaria de saber?",
         "guestSignUp": "Criar conta grátis",
         "guestSignIn": "Entrar",
         "fabLabel": "Perguntar à IA sobre esta acomodação",
+        "dockLabel": "IA",
         "panelLabel": "Chat com IA — Perguntas sobre a acomodação",
         "headerDisclaimer": "As respostas são geradas por IA e podem conter erros. Sempre verifique as informações com a acomodação.",
         "readNotice": "O anfitrião pode ler as perguntas feitas neste chat. Não compartilhe dados pessoais.",

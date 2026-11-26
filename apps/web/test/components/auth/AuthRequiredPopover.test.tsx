@@ -18,6 +18,7 @@
  * - Both links degrade to no `returnUrl` param cleanly when none is passed.
  */
 
+import { readFileSync } from 'node:fs';
 import { render, screen } from '@testing-library/react';
 import { useRef } from 'react';
 import { describe, expect, it, vi } from 'vitest';
@@ -54,6 +55,14 @@ function renderPopover(props: Partial<Parameters<typeof AuthRequiredPopover>[0]>
 }
 
 describe('AuthRequiredPopover — returnUrl on both auth links (HOS-1185)', () => {
+    it('keeps both auth labels on one line with 44px controls', () => {
+        const css = readFileSync('src/components/auth/AuthRequiredPopover.module.css', 'utf8');
+
+        expect(css).toMatch(/\.closeButton\s*\{[^}]*width: 44px;[^}]*height: 44px;/);
+        expect(css).toMatch(
+            /\.signInButton,\s*\.registerButton\s*\{[^}]*min-height: 44px;[^}]*white-space: nowrap;/
+        );
+    });
     it('carries returnUrl on the sign-in link', () => {
         renderPopover({ returnUrl: '/es/alojamientos/entity-1/?foo=bar' });
 

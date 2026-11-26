@@ -58,6 +58,30 @@ describe('VenueWhatsAppButton', () => {
         expect(getWhatsApp).not.toHaveBeenCalled();
     });
 
+    it.each([
+        'PUBLIC',
+        'LOGGED_IN_ONLY'
+    ] as const)('uses the phone button treatment for the inline %s channel', (mode) => {
+        render(
+            <VenueWhatsAppButton
+                {...base}
+                inlineChannel
+                whatsapp={mode === 'PUBLIC' ? { mode, number: NUMBER } : { mode }}
+            />
+        );
+
+        const link = screen.getByRole('link');
+        expect(link).toHaveClass(
+            'btn-gradient--sm',
+            'btn-gradient--outline-primary',
+            'listing-contact__channel'
+        );
+        expect(link.querySelector('svg')).toHaveAttribute('width', '16');
+        if (mode === 'PUBLIC')
+            expect(link).toHaveAttribute('data-interaction-kind', 'WHATSAPP_CLICK');
+        else expect(link).not.toHaveAttribute('data-interaction-kind');
+    });
+
     it('AC-18 server markup of LOGGED_IN_ONLY has no number and sends anonymous visitors to sign in', () => {
         const html = renderToStaticMarkup(
             <VenueWhatsAppButton
@@ -101,6 +125,37 @@ describe('VenueWhatsAppButton', () => {
         const link = await screen.findByRole('link', { name: /Escribir por WhatsApp/ });
         expect(getWhatsApp).toHaveBeenCalledWith({ id: 'v-1' });
         expect(link).toHaveAttribute('href', expect.stringContaining('https://wa.me/549343'));
+        expect(link).toHaveAttribute('data-interaction-kind', 'WHATSAPP_CLICK');
+    });
+
+    it('keeps inline channel geometry while looking up a signed-in visitor’s number', async () => {
+        userState.user = { id: 'u-1' };
+        getWhatsApp.mockResolvedValue({ ok: true, data: { number: NUMBER } });
+        render(
+            <VenueWhatsAppButton
+                {...base}
+                inlineChannel
+                whatsapp={{ mode: 'LOGGED_IN_ONLY' }}
+            />
+        );
+
+        const loading = screen.getByRole('status');
+        expect(loading).toHaveClass(
+            'btn-gradient--sm',
+            'btn-gradient--outline-primary',
+            'listing-contact__channel'
+        );
+        expect(loading).toHaveAttribute('aria-disabled', 'true');
+        expect(loading.querySelector('svg')).toHaveAttribute('width', '16');
+        expect(screen.queryByRole('link')).not.toBeInTheDocument();
+
+        const link = await screen.findByRole('link', { name: /Escribir por WhatsApp/ });
+        expect(link).toHaveClass(
+            'btn-gradient--sm',
+            'btn-gradient--outline-primary',
+            'listing-contact__channel'
+        );
+        expect(link.querySelector('svg')).toHaveAttribute('width', '16');
         expect(link).toHaveAttribute('data-interaction-kind', 'WHATSAPP_CLICK');
     });
 

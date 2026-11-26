@@ -56,3 +56,40 @@ export function getListingContactPrice({
     }).format(price.amount);
     return { amount, unit: price.unitLabelKey ? t(price.unitLabelKey) : undefined };
 }
+
+/** Resolves a detail card title without treating missing, zero or invalid amounts as prices. */
+export function getListingPriceCardDisplay({
+    price,
+    locale,
+    rangeLabel,
+    hostReply = false,
+    byEmail = false
+}: {
+    readonly price?: ListingContactPrice;
+    readonly locale: SupportedLocale;
+    readonly rangeLabel?: string | null;
+    readonly hostReply?: boolean;
+    readonly byEmail?: boolean;
+}): { readonly title: string; readonly unit?: string; readonly note?: string } {
+    const { t } = createTranslations(locale);
+    if (rangeLabel) return { title: rangeLabel };
+    if (price?.amount != null && Number.isFinite(price.amount) && price.amount > 0) {
+        const display = getListingContactPrice({ price, locale });
+        if (display && !display.onRequest) {
+            return {
+                title: t('accommodations.detail.listingContact.summary.fromPrice', undefined, {
+                    amount: display.amount
+                }),
+                unit: display.unit
+            };
+        }
+    }
+    return {
+        title: t('accommodations.detail.listingContact.summary.priceOnRequest'),
+        note: byEmail
+            ? t('accommodations.detail.listingContact.summary.requestByEmail')
+            : hostReply
+              ? t('accommodations.detail.listingContact.summary.hostReply')
+              : undefined
+    };
+}

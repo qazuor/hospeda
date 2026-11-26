@@ -2,29 +2,35 @@
 /**
  * @file PricingSidebar.astro
  * @description Pricing sidebar with price, optional fee/discount breakdown,
- * stay-policy hints (capacity, min/max nights), and a "Consultar" fallback
+ * stay-policy hints (capacity, min/max nights), and a contact fallback
  * when there is no price.
  */
 import type { AccommodationDetailData } from '@/data/types';
+import ListingPriceCard from '@/components/listing/contact/ListingPriceCard.astro';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { DEFAULT_ACCOMMODATION_CURRENCY } from '@/lib/listing-contact/listing-contact-price';
-import { ConversationCta } from './ConversationCta.client';
+import type { ListingContactPrice } from '@/lib/listing-contact/listing-contact-price';
+import { resolvePriceCardAction } from '@/lib/listing-contact/price-card-action';
+import { ListingContactActions } from '@/components/listing/contact/ListingContactActions';
 import { UsersIcon, MoonIcon, CalendarIcon, ChevronDownIcon } from '@repo/icons';
 
 interface Props {
   readonly accommodationId: string;
+  readonly panelId: string;
+  readonly hasWhatsapp: boolean;
   readonly price: AccommodationDetailData['price'];
+  readonly contactPrice: ListingContactPrice;
   readonly extraInfo?: AccommodationDetailData['extraInfo'];
   /** House rules (HOS-2060): the stay length facts read `policies`. */
   readonly policies?: AccommodationDetailData['policies'];
   readonly lang: string;
 }
 
-const { accommodationId, price, extraInfo, policies, lang } = Astro.props;
+const { accommodationId, panelId, hasWhatsapp, price, contactPrice, extraInfo, policies, lang } = Astro.props;
 const { t, tPlural } = createTranslations(lang as SupportedLocale);
 
-const hasPrice = price?.price != null && price.price > 0;
+const primary = resolvePriceCardAction({ canInquire: true });
 const currency = price?.currency ?? DEFAULT_ACCOMMODATION_CURRENCY;
 
 function formatPrice(amount: number): string {
@@ -115,17 +121,13 @@ const hasDiscounts = discountEntries.length > 0;
 ---
 
 <div class="pricing-sidebar">
-  {hasPrice && price?.price != null ? (
-    <div class="pricing-sidebar__price-block">
-      <span class="pricing-sidebar__amount">{formatPrice(price.price)}</span>
-      <span class="pricing-sidebar__period">{t('accommodations.detail.pricing.perNightLabel')}</span>
-    </div>
-  ) : (
-    <p class="pricing-sidebar__context">{t('accommodations.detail.pricing.consultContext')}</p>
-  )}
-  <div class="pricing-sidebar__consult">
-    <ConversationCta client:idle accommodationId={accommodationId} locale={lang as SupportedLocale} />
-  </div>
+  <ListingPriceCard listingId={accommodationId} vertical="accommodation" locale={lang as SupportedLocale} price={contactPrice} action={primary} hostReply stacked>
+    {primary.kind === 'inquire' && (
+      <div class="pricing-sidebar__consult">
+        <ListingContactActions client:idle listingId={accommodationId} panelId={panelId} hasWhatsapp={hasWhatsapp} vertical="accommodation" locale={lang as SupportedLocale} primaryLabelKey={primary.labelKey} origin="summary" />
+      </div>
+    )}
+  </ListingPriceCard>
 
   {(capacity != null || stayMin != null || stayMax != null) && (
     <ul class="pricing-sidebar__facts">
@@ -229,19 +231,6 @@ const hasDiscounts = discountEntries.length > 0;
     transform: translateY(-2px);
     box-shadow: var(--shadow-card-hover, var(--shadow-card));
   }
-  .pricing-sidebar__price-block {
-    display: flex;
-    align-items: baseline;
-    gap: var(--space-2, 8px);
-  }
-  /* Only render the separator + spacing when there is content below the price
-   * (facts list and/or fee breakdown). `:has()` avoids needing a class flag. */
-  .pricing-sidebar__price-block:has(+ .pricing-sidebar__facts),
-  .pricing-sidebar__price-block:has(+ .pricing-sidebar__breakdown) {
-    margin-bottom: var(--space-4, 16px);
-    padding-bottom: var(--space-4, 16px);
-    border-bottom: 1px solid var(--border);
-  }
   .pricing-sidebar__facts:has(+ .pricing-sidebar__breakdown) {
     margin-bottom: var(--space-4, 16px);
     padding-bottom: var(--space-4, 16px);
@@ -270,27 +259,9 @@ const hasDiscounts = discountEntries.length > 0;
     align-items: center;
     color: var(--brand-primary);
   }
-  .pricing-sidebar__amount {
-    font-family: var(--font-heading);
-    font-size: 2.25rem;
-    font-weight: 700;
-    color: var(--brand-accent-strong);
-    letter-spacing: -0.02em;
-    line-height: 1.05;
-  }
-  .pricing-sidebar__period {
-    font-family: var(--font-sans);
-    font-size: 0.9rem;
-    color: var(--core-muted-foreground);
-  }
   .pricing-sidebar__consult {
     text-align: center;
-    padding: var(--space-4, 16px) 0;
-  }
-  .pricing-sidebar__context {
-    color: var(--core-muted-foreground);
-    font: var(--app-ui);
-    margin: 0;
+    padding-bottom: var(--space-4);
   }
   .pricing-sidebar__breakdown-toggle {
     display: flex;

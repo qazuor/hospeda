@@ -2,6 +2,16 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
+it('offers the WhatsApp shortcut directly at the desktop price', () => {
+    const sidebar = readFileSync(
+        resolve(__dirname, '../../../src/components/accommodation/PricingSidebar.astro'),
+        'utf8'
+    );
+    expect(sidebar).toMatch(
+        /<ListingPriceCard[\s\S]*?<ListingContactActions[\s\S]*?hasWhatsapp=\{hasWhatsapp\}[\s\S]*?<\/ListingPriceCard>/
+    );
+});
+
 const source = (path: string) => readFileSync(resolve(__dirname, '../../../src', path), 'utf8');
 
 describe('MobileBookingSummary', () => {
@@ -11,7 +21,9 @@ describe('MobileBookingSummary', () => {
             /<MobileBookingSummary\b[\s\S]*?>\s*<ListingPriceAlert\b[^>]*placement="summary"[^>]*\/>\s*<\/MobileBookingSummary>/
         );
         const summary = source('components/accommodation/MobileBookingSummary.astro');
-        expect(summary).toMatch(/<MobileBookingSummaryActions\b[^>]*\/>\s*<slot \/>/);
+        expect(summary).toMatch(
+            /<MobileBookingSummaryActions\b[^>]*\/>\s*\)}\s*<\/ListingPriceCard>\s*<slot \/>/
+        );
         const alert = source('components/accommodation/ListingPriceAlert.astro');
         expect(alert).toContain(
             "placement === 'summary' ? '(max-width: 1024px)' : '(min-width: 1025px)'"
@@ -21,14 +33,30 @@ describe('MobileBookingSummary', () => {
 
     it('keeps the price CTA in a session-blind Astro card with client-side conversation lookup', () => {
         const sidebar = source('components/accommodation/PricingSidebar.astro');
-        expect(sidebar).toContain('consultContext');
-        expect(sidebar).toContain('<ConversationCta client:idle accommodationId={accommodationId}');
+        expect(sidebar).toContain('<ListingPriceCard');
+        expect(sidebar).toContain('<ListingContactActions client:idle listingId={accommodationId}');
         expect(sidebar).not.toMatch(/Astro\.locals|\/protected\//);
+    });
+
+    it('CARD-025 H-2: uses the price-request CTA on both accommodation surfaces', () => {
+        const sidebar = source('components/accommodation/PricingSidebar.astro');
+        const summary = source('components/accommodation/MobileBookingSummary.astro');
+
+        expect(sidebar).toContain('primaryLabelKey={primary.labelKey}');
+        expect(summary).toContain('primaryLabelKey={primary.labelKey}');
+        expect(summary).toContain('<ListingPriceCard');
+    });
+
+    it('CARD-026 H-2: shows a reply expectation beside the missing price on both surfaces', () => {
+        for (const component of ['PricingSidebar', 'MobileBookingSummary']) {
+            const card = source(`components/accommodation/${component}.astro`);
+            expect(card).toContain('hostReply');
+        }
     });
     it('server renders the price and stay lengths before hydrating the actions', () => {
         const summary = source('components/accommodation/MobileBookingSummary.astro');
 
-        expect(summary).toContain('getListingContactPrice({ price, locale })');
+        expect(summary).toContain('price={price}');
         expect(summary).toContain('minNightsFact');
         expect(summary).toContain('maxNightsFact');
         expect(summary).toContain(

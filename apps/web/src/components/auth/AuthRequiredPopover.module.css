@@ -104,8 +104,8 @@
     right: 0.5rem;
     z-index: 10;
     display: flex;
-    width: 1.5rem;
-    height: 1.5rem;
+    width: 44px;
+    height: 44px;
     align-items: center;
     justify-content: center;
     border-radius: var(--radius-pill);
@@ -158,14 +158,21 @@
     font-size: 0.8125rem;
     font-family: var(--font-sans);
     font-weight: 500;
-    color: var(--brand-primary);
+    color: var(--core-foreground);
     line-height: 1.4;
+}
+
+.benefit {
+    margin: var(--space-1) 0 0;
+    color: var(--core-foreground);
+    font-size: 0.8125rem;
 }
 
 /* ---- Action buttons ---- */
 
 .actions {
     display: flex;
+    flex-wrap: wrap;
     gap: 0.5rem;
     padding: 0.875rem 1rem;
     /* Matches the popover's own `.overlay-surface` background — this strip
@@ -173,6 +180,12 @@
     background-color: var(--surface-overlay);
     border-bottom-left-radius: var(--radius-card);
     border-bottom-right-radius: var(--radius-card);
+}
+
+.signInButton,
+.registerButton {
+    min-height: 44px;
+    white-space: nowrap;
 }
 
 .signInButton {

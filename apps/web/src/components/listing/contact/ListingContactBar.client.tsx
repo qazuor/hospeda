@@ -55,7 +55,8 @@ const propsSchema = z
         compare: z
             .object({
                 thumbnailUrl: z.string().optional(),
-                gatePlanNames: z.array(z.string()).readonly()
+                planName: z.string().nullable().optional(),
+                planCapacity: z.number().int().positive().optional()
             })
             .readonly()
             .nullable()
