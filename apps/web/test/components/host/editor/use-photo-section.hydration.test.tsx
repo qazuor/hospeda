@@ -108,6 +108,15 @@ describe('usePhotoSection allowance (HOS-2495)', () => {
         expect(result.current.isCoverUploadOpen).toBe(false);
     });
 
+    it('closes only the cover upload when a LIMITED allowance says no cover is allowed (AC-19)', async () => {
+        mockGetAllowance.mockImplementation(() => allowanceOk({ cap: 15, coverAllowed: false }));
+        const { result } = renderHook(() => usePhotoSection(params));
+
+        await waitFor(() => expect(result.current.capView).toEqual({ kind: 'limited', cap: 15 }));
+        expect(result.current.isGalleryUploadOpen).toBe(true);
+        expect(result.current.isCoverUploadOpen).toBe(false);
+    });
+
     it('closes the cover upload when the allowance says no cover is allowed (AC-19)', async () => {
         mockGetAllowance.mockImplementation(() => allowanceOk({ cap: 'none' }));
         const { result } = renderHook(() => usePhotoSection(params));
