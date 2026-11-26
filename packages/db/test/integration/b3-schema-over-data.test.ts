@@ -148,6 +148,13 @@ describe('TEST:B3:32 — B3 migration over existing rows', () => {
              WHERE plan_id = (SELECT id FROM plan WHERE slug = 'b3-over-data')`
         );
         expect(methods.rows).toEqual([{ payment_methods: ['CARD'] }]);
+        // HOS-2616: same for the column added by 0256. The migration only adds it, so every
+        // preexisting account keeps it NULL: it never touches live data.
+        const remembered = await db.query<{ last_successful_payer_email: string | null }>(
+            'SELECT last_successful_payer_email FROM users'
+        );
+        expect(remembered.rows.length).toBeGreaterThan(0);
+        expect(remembered.rows.every((row) => row.last_successful_payer_email === null)).toBe(true);
     });
 
     it('creates both invariant 8 partial indexes', async () => {
