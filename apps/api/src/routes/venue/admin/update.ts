@@ -88,6 +88,7 @@ export const adminUpdateVenueRoute = createAdminRoute({
         const { venue } = await applyStaffEntryNotePairs({
             venueId: id as string,
             body: data.entryNoteI18n,
+            // TYPE-WORKAROUND: the Venue type has no index signature, and the helper only refreshes the two translation columns on it.
             updated: result.data as unknown as Record<string, unknown>
         });
         return venue;
