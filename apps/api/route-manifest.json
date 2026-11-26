@@ -2879,6 +2879,10 @@
         },
         {
             "method": "GET",
+            "path": "/api/v1/protected/ai-connections/access"
+        },
+        {
+            "method": "GET",
             "path": "/api/v1/protected/ai-connections/activity"
         },
         {
