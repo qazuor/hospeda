@@ -126,23 +126,26 @@ export function i18nColumn(table: TranslatableTable, columnName: string): PgColu
  * declare.
  */
 export function getEntityTable(entityType: TranslatableEntityType): TranslatableTable {
-    // TYPE-WORKAROUND: a Drizzle table's structural shape does not overlap the
-    // narrow `TranslatableTable` view (columns live under an internal symbol), so
-    // each projection requires an explicit cast from `unknown`.
+    // TYPE-WORKAROUND: a Drizzle table's structural shape does not overlap the narrow `TranslatableTable` view (columns live under an internal symbol), so the projection needs one cast from `unknown`.
+    return selectEntityTable(entityType) as unknown as TranslatableTable;
+}
+
+/** Picks the requested table binding without touching the others. */
+function selectEntityTable(entityType: TranslatableEntityType): unknown {
     switch (entityType) {
         case 'accommodation':
-            return accommodations as unknown as TranslatableTable;
+            return accommodations;
         case 'destination':
-            return destinations as unknown as TranslatableTable;
+            return destinations;
         case 'event':
-            return events as unknown as TranslatableTable;
+            return events;
         case 'post':
-            return posts as unknown as TranslatableTable;
+            return posts;
         case 'pointOfInterest':
-            return pointsOfInterest as unknown as TranslatableTable;
+            return pointsOfInterest;
         case 'venue':
-            return venues as unknown as TranslatableTable;
+            return venues;
         case 'experience':
-            return experiences as unknown as TranslatableTable;
+            return experiences;
     }
 }
