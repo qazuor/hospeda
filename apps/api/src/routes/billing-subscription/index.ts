@@ -33,6 +33,7 @@ import { protectedPricingSituationRoute } from './pricing-situation';
 import { protectedReadSubscriptionRoute } from './read';
 import { protectedReadManualInstallmentsRoute } from './read-manual-installments';
 import { protectedReadOwnSubscriptionsRoute } from './read-mine';
+import { protectedReadRememberedPayerEmailRoute } from './read-remembered-payer-email';
 import { readSignupNotice } from './read-signup-notice';
 import { readSignupWindow } from './read-signup-window';
 import { touristVipInheritance } from './tourist-vip-inheritance';
@@ -219,6 +220,7 @@ export const protectedBillingSubscriptionRoutes = router;
 
 const readRouter = createRouter();
 readRouter.route('/', protectedPricingSituationRoute);
+readRouter.route('/', protectedReadRememberedPayerEmailRoute);
 readRouter.route('/', protectedReadOwnSubscriptionsRoute);
 readRouter.route('/', protectedReadManualInstallmentsRoute);
 readRouter.route('/', protectedReadSubscriptionRoute);
