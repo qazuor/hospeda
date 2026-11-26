@@ -137,6 +137,14 @@ describe('TEST:B3:32 — B3 migration over existing rows', () => {
             "SELECT role FROM plan WHERE slug = 'b3-over-data'"
         );
         expect(roles.rows).toEqual([{ role: null }]);
+        // HOS-2196: the fingerprint compares the original row shape, so the column added by 0253 is
+        // checked here instead of being dropped: an existing non-Partner version keeps the
+        // card-only default, and nothing but Partner versions is rewritten.
+        const methods = await db.query<{ payment_methods: string[] }>(
+            `SELECT payment_methods FROM plan_version
+             WHERE plan_id = (SELECT id FROM plan WHERE slug = 'b3-over-data')`
+        );
+        expect(methods.rows).toEqual([{ payment_methods: ['CARD'] }]);
     });
 
     it('creates both invariant 8 partial indexes', async () => {
