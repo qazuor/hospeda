@@ -37,6 +37,8 @@ import { VenueSchema } from './venue.schema.js';
  * These are **write-only inputs** and do not appear in read responses.
  */
 export const VenueAdminCreateInputSchema = VenueSchema.omit({
+    // Written only by writeTranslationPairs (HOS-2658).
+    translationMeta: true,
     id: true,
     createdAt: true,
     updatedAt: true,
@@ -436,6 +438,8 @@ export const VenueUpdateInputSchema = z
         // restores correct "absent key = no change" PATCH semantics. See `stripShapeDefaults`.
         stripShapeDefaults(
             VenueSchema.omit({
+                // Written only by writeTranslationPairs (HOS-2658).
+                translationMeta: true,
                 id: true,
                 createdAt: true,
                 updatedAt: true,

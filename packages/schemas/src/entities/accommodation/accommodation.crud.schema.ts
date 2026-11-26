@@ -49,6 +49,8 @@ import {
  * transaction to roll back with a `VALIDATION_ERROR`.
  */
 export const AccommodationCreateInputSchema = AccommodationSchema.omit({
+    // Written only by writeTranslationPairs (HOS-2658).
+    translationMeta: true,
     id: true,
     createdAt: true,
     updatedAt: true,
@@ -150,6 +152,8 @@ export const AccommodationUpdateInputSchema = z
         // semantics. See `stripShapeDefaults`.
         stripShapeDefaults(
             AccommodationSchema.omit({
+                // Written only by writeTranslationPairs (HOS-2658).
+                translationMeta: true,
                 id: true,
                 createdAt: true,
                 updatedAt: true,

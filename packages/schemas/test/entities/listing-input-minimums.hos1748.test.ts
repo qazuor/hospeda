@@ -90,6 +90,30 @@ const inputCases: readonly InputCase[] = [
 const issuePaths = (result: ReturnType<InputCase['schema']['safeParse']>): string[] =>
     (result.error?.issues ?? []).map((issue) => issue.path.map(String).join('.'));
 
+describe('Listing translation metadata is server-managed (HOS-2658)', () => {
+    it.each([
+        ['Accommodation create', AccommodationCreateInputSchema, accommodationBase],
+        ['Accommodation update', AccommodationUpdateInputSchema, { name: 'Casa del Sol' }],
+        ['Venue create', VenueAdminCreateInputSchema, venueBase],
+        ['Venue update', VenueUpdateInputSchema, { name: 'Parrilla del Puerto' }],
+        ['Experience create', ExperienceAdminCreateInputSchema, experienceBase],
+        ['Experience update', ExperienceUpdateInputSchema, { name: 'Tour' }]
+    ] as const)('%s strips client-supplied translation metadata', (_name, schema, base) => {
+        const expected = schema.parse(base);
+        const body = {
+            ...base,
+            translationMeta: {
+                name: { en: { autoTranslated: false, translatedAt: '2026-11-26T09:00:00.000Z' } }
+            }
+        };
+
+        const parsed = schema.parse(body);
+
+        expect(parsed).not.toHaveProperty('translationMeta');
+        expect(parsed).toEqual(expected);
+    });
+});
+
 describe('TEST:1748:2 supplied content and publish minimums remain strict', () => {
     const minimum = {
         name: 'Tour',

@@ -153,6 +153,8 @@ export function requirePriceUnitWhenPriced(
  * These are **write-only inputs** and do not appear in read responses.
  */
 export const ExperienceAdminCreateInputSchema = ExperienceSchema.omit({
+    // Written only by writeTranslationPairs (HOS-2658).
+    translationMeta: true,
     id: true,
     createdAt: true,
     updatedAt: true,
@@ -550,6 +552,8 @@ export const ExperienceUpdateInputSchema = z
         // PATCH semantics. See `stripShapeDefaults`.
         stripShapeDefaults(
             ExperienceSchema.omit({
+                // Written only by writeTranslationPairs (HOS-2658).
+                translationMeta: true,
                 id: true,
                 createdAt: true,
                 updatedAt: true,
