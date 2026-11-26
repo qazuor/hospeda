@@ -1,11 +1,13 @@
 /**
  * HOS-2184 phase B T-040 (spec §6.4, AC-14) — the `ai_assistant_access` plan
  * gate inside `handleMcpToolCall`: a refused call never runs the handler, is
- * audited as a denial, and points to the plans page; an undecidable one is a
- * transient error; `aiAccessExempt` tools never ask.
+ * audited as a denial with its target, and points to the plans page; an
+ * undecidable one is a transient error; a malformed call answers
+ * `VALIDATION_ERROR` before the gate is asked; `aiAccessExempt` tools never ask.
  *
  * The decision (`resolveAiAssistantAccess`) is mocked here; its own suite is
- * `test/mcp/access/ai-assistant-access.test.ts`.
+ * `test/mcp/access/ai-assistant-access.test.ts`, and
+ * `bind-tool.ai-gate.real-access.test.ts` runs this binder over the real one.
  *
  * @module test/lib/mcp/bind-tool.ai-gate
  */
@@ -74,6 +76,7 @@ const gatedTool = defineTool({
     inputSchema: z.object({ id: z.string() }).strict(),
     isWrite: false,
     emailUnverifiedOperation: 'READ_OWN',
+    auditTarget: ({ input }) => ({ type: 'accommodation', id: input.id }),
     handler
 });
 
@@ -155,8 +158,27 @@ describe('handleMcpToolCall — ai_assistant_access gate', () => {
             tool: 'probe_gated',
             isWrite: false,
             outcome: 'denied',
+            target: { type: 'accommodation', id: 'x' },
             errorCode: AI_ASSISTANT_NOT_IN_PLAN_REASON
         });
+    });
+
+    it('answers a malformed call with VALIDATION_ERROR before asking the gate', async () => {
+        // Arrange: a refused owner, so a gate run first would answer the refusal.
+        mockResolve.mockResolvedValue({ kind: 'REFUSED', hasAccess: false, vertical: 'venue' });
+
+        // Act
+        const result = await handleMcpToolCall({ definition: gatedTool, input: { id: 42 }, ctx });
+
+        // Assert
+        expect(handler).not.toHaveBeenCalled();
+        expect(mockResolve).not.toHaveBeenCalled();
+        expect(result.isError).toBe(true);
+        expect(JSON.stringify(result.content)).not.toContain(AI_ASSISTANT_NOT_IN_PLAN_MESSAGE);
+        expect(mockRecord).toHaveBeenCalledWith(
+            expect.objectContaining({ errorCode: ServiceErrorCode.VALIDATION_ERROR })
+        );
+        expect(mockRecord.mock.calls[0]?.[0]).not.toHaveProperty('target');
     });
 
     it('answers an undecidable call with the transient message, no link, audited as an error', async () => {

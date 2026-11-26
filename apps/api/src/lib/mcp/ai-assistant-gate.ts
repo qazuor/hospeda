@@ -3,8 +3,9 @@
  * @description The `ai_assistant_access` plan gate of every MCP tool call
  * (HOS-2184 phase B, T-040, spec §6.4, AC-14).
  *
- * `handleMcpToolCall` runs it after the rate limit and before input parsing.
- * It answers `undefined` when the call may go on, or the failure to return
+ * `handleMcpToolCall` runs it after input parsing, on a well-formed call only,
+ * so a malformed call answers `VALIDATION_ERROR` first (the order of
+ * `docs/error-contract.md`: input shape before business rules). It answers `undefined` when the call may go on, or the failure to return
  * instead; the handler then never runs. The decision itself is
  * `resolveAiAssistantAccess` (`mcp/access/ai-assistant-access.ts`); this file
  * only turns a "no" into the tool failure the user reads:
@@ -16,6 +17,12 @@
  *
  * Tools flagged `aiAccessExempt` (`get_help`, `get_my_plan`) skip it, so a
  * refused owner can still read why and see their plan.
+ *
+ * MCP channel only, on purpose. It lives in the MCP binder, not in
+ * `executeTool`, because each assistant channel is gated by its own
+ * entitlement key: the WhatsApp channel (HOS-2185) will be gated by its own
+ * key at its own entry point, and must not inherit this one. Do not move it
+ * into `executeTool`.
  */
 
 import type { PortalLocale } from '@repo/portal-routes';

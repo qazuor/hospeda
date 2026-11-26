@@ -11,15 +11,16 @@
  * 2. rate limits the call per client and user (`tool-rate-limit.ts`); a call
  *    over the limit is answered with a `RATE_LIMIT_EXCEEDED` tool error, is
  *    not run and is not audited (a flood must not flood the audit log);
- * 3. runs the `ai_assistant_access` plan gate (`ai-assistant-gate.ts`, T-040):
- *    a refused or undecidable call is answered with its failure, audited, and
- *    never parsed nor run; `aiAccessExempt` tools skip it;
- * 4. validates the raw arguments with `parseToolInput`, so a malformed call
+ * 3. validates the raw arguments with `parseToolInput`, so a malformed call
  *    is answered with the same Spanish `VALIDATION_ERROR` message (naming the
  *    fields) every other channel gets. The SDK does NOT validate first: the
  *    server answers `tools/call` itself instead of through
  *    `McpServer.registerTool`, whose built-in English validation error
  *    bypassed both this message and the audit;
+ * 4. on a well-formed call, runs the `ai_assistant_access` plan gate
+ *    (`ai-assistant-gate.ts`, T-040, MCP channel only): a refused or
+ *    undecidable call is answered with its failure, audited, and never run;
+ *    `aiAccessExempt` tools skip it;
  * 5. runs the tool with `executeTool` (person-state check, handler, Spanish
  *    error mapping);
  * 6. audits every call that reached step 3, read or write, with
@@ -335,24 +336,27 @@ export async function handleMcpToolCall<TSchema extends z.ZodObject, TData>({
         // language. Falls back to `es`, never throws.
         const locale = await resolveRecipientLocale({ userId: actor.id });
 
-        // The plan gate (T-040): a refused call never reaches the handler and
-        // is audited like any other refusal, with no validated input.
-        const gateFailure = await checkAiAssistantGate({ definition, userId: actor.id, locale });
-        if (gateFailure) {
-            const refused: ToolRunOutcome<TData> = { ok: false, failure: gateFailure };
-            recordToolCall({ definition, actor, mcpAuth, parsed: { ok: false }, outcome: refused });
-            return renderOutcome(refused);
-        }
-
         const parsed = parseToolInput({ definition, input: rawInput, locale });
-        const outcome: ToolRunOutcome<TData> = parsed.ok
-            ? await executeTool({
-                  definition,
-                  actor,
-                  input: parsed.input,
-                  context: { channel: 'mcp', clientId: mcpAuth.clientId, locale }
-              })
-            : parsed;
+        // The plan gate (T-040) runs on a well-formed call only, so a malformed
+        // one answers VALIDATION_ERROR first (error contract: input shape before
+        // business rules). A refused call never reaches the handler and is
+        // audited like any other refusal, with its validated target.
+        const gateFailure = parsed.ok
+            ? await checkAiAssistantGate({ definition, userId: actor.id, locale })
+            : undefined;
+        let outcome: ToolRunOutcome<TData>;
+        if (!parsed.ok) {
+            outcome = parsed;
+        } else if (gateFailure) {
+            outcome = { ok: false, failure: gateFailure };
+        } else {
+            outcome = await executeTool({
+                definition,
+                actor,
+                input: parsed.input,
+                context: { channel: 'mcp', clientId: mcpAuth.clientId, locale }
+            });
+        }
 
         recordToolCall({ definition, actor, mcpAuth, parsed, outcome });
 
