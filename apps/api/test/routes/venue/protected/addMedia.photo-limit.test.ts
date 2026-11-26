@@ -9,8 +9,9 @@
  *
  * @module test/routes/venue/protected/addMedia.photo-limit
  */
-import { experienceMediaModel, venueMediaModel } from '@repo/db';
+import { accommodationMediaModel, experienceMediaModel, venueMediaModel } from '@repo/db';
 import { PublicationStatusEnum, VerticalEnum } from '@repo/schemas';
+import { AccommodationService } from '@repo/service-core';
 import { rehydrateEffectiveSet } from '@repo/verticals';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -19,13 +20,16 @@ const {
     mockAddVenueFeaturedMedia,
     mockAddExperienceMedia,
     mockAddExperienceFeaturedMedia,
-    photoCap
+    photoCap,
+    listingFacts
 } = vi.hoisted(() => ({
     mockAddVenueMedia: vi.fn(),
     mockAddVenueFeaturedMedia: vi.fn(),
     mockAddExperienceMedia: vi.fn(),
     mockAddExperienceFeaturedMedia: vi.fn(),
-    photoCap: { value: 15 }
+    photoCap: { value: 15 },
+    /** What `loadFacts` reports: the owner's listing, another owner's, or none. */
+    listingFacts: { mode: 'own' as 'own' | 'foreign' | 'missing' }
 }));
 
 vi.mock('@repo/service-core', async (importOriginal) => {
@@ -41,13 +45,18 @@ vi.mock('@repo/service-core', async (importOriginal) => {
 
 const OWNER_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const LISTING_ID = '00000000-0000-4000-8000-000000000001';
+const FOREIGN_OWNER_ID = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
 
 vi.mock('../../../../src/utils/listing-access/ports', () => ({
     getListingAccessPorts: () => ({
-        loadFacts: async () => ({
-            facts: { ownerId: OWNER_ID, publicationStatus: PublicationStatusEnum.PUBLISHED },
-            ownerId: OWNER_ID
-        }),
+        loadFacts: async () => {
+            if (listingFacts.mode === 'missing') return { facts: null, ownerId: null };
+            const ownerId = listingFacts.mode === 'foreign' ? FOREIGN_OWNER_ID : OWNER_ID;
+            return {
+                facts: { ownerId, publicationStatus: PublicationStatusEnum.PUBLISHED },
+                ownerId
+            };
+        },
         billing: { coverage: async () => ({ covered: true, sources: [{ type: 'BASE' }] }) },
         effectiveSet: async ({ userId, vertical }: { userId: string; vertical: VerticalEnum }) =>
             rehydrateEffectiveSet({
@@ -72,7 +81,11 @@ const AUTH_HEADERS = {
     'user-agent': 'vitest',
     'x-mock-actor-id': OWNER_ID,
     'x-mock-actor-role': 'HOST',
-    'x-mock-actor-permissions': JSON.stringify(['venue.editOwn', 'experience.editOwn'])
+    'x-mock-actor-permissions': JSON.stringify([
+        'venue.editOwn',
+        'experience.editOwn',
+        'accommodation.update.own'
+    ])
 };
 
 const BODY = {
@@ -106,6 +119,7 @@ describe.each(CASES)('$vertical protected media writes run step 7 (HOS-2495)', (
     beforeEach(() => {
         vi.clearAllMocks();
         photoCap.value = 15;
+        listingFacts.mode = 'own';
         app = initApp();
         c.gallery.mockResolvedValue({ data: { id: 'media-1' }, error: undefined });
         c.cover.mockResolvedValue({
@@ -177,5 +191,82 @@ describe.each(CASES)('$vertical protected media writes run step 7 (HOS-2495)', (
         expect(body.error.code).toBe('LIMIT_REACHED');
         expect(body.error.details).toEqual({ limitKey: c.key, currentCount: 0, maxAllowed: 0 });
         expect(c.cover).not.toHaveBeenCalled();
+    });
+});
+
+/**
+ * Error-contract order (`apps/api/docs/error-contract.md`): existence and
+ * ownership answer 404 before any business rule, so a gallery write against a
+ * missing or foreign listing must answer 404 even with a zero cap and a full
+ * gallery, never 403 LIMIT_REACHED (which would confirm the id exists).
+ */
+const ORDERING_CASES = [
+    {
+        vertical: VerticalEnum.VENUE,
+        base: `/api/v1/protected/venues/${LISTING_ID}/media`,
+        service: () => mockAddVenueMedia,
+        count: () => vi.mocked(venueMediaModel.findByVenue)
+    },
+    {
+        vertical: VerticalEnum.EXPERIENCE,
+        base: `/api/v1/protected/experiences/${LISTING_ID}/media`,
+        service: () => mockAddExperienceMedia,
+        count: () => vi.mocked(experienceMediaModel.findByExperience)
+    },
+    {
+        vertical: VerticalEnum.ACCOMMODATION,
+        base: `/api/v1/protected/accommodations/${LISTING_ID}/media`,
+        service: () => vi.spyOn(AccommodationService.prototype, 'addMedia'),
+        count: () => vi.mocked(accommodationMediaModel.findByAccommodation)
+    }
+] as const;
+
+describe.each(ORDERING_CASES)('$vertical gallery write: 404 before step 7 (HOS-2495)', (c) => {
+    let app: AppOpenAPI;
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        photoCap.value = 0;
+        app = initApp();
+        c.count().mockResolvedValue({ items: [], total: 15 } as never);
+    });
+
+    it.each([
+        'missing',
+        'foreign'
+    ] as const)('answers 404 NOT_FOUND for a %s listing even with a zero cap', async (mode) => {
+        // Arrange
+        listingFacts.mode = mode;
+        const service = c.service();
+
+        // Act
+        const res = await app.request(c.base, {
+            method: 'POST',
+            headers: AUTH_HEADERS,
+            body: JSON.stringify(BODY)
+        });
+        const body = await res.json();
+
+        // Assert
+        expect(res.status).toBe(404);
+        expect(body.error.code).toBe('NOT_FOUND');
+        expect(service).not.toHaveBeenCalled();
+    });
+
+    it('answers 403 LIMIT_REACHED for the own listing with the same zero cap', async () => {
+        // Arrange
+        listingFacts.mode = 'own';
+
+        // Act
+        const res = await app.request(c.base, {
+            method: 'POST',
+            headers: AUTH_HEADERS,
+            body: JSON.stringify(BODY)
+        });
+        const body = await res.json();
+
+        // Assert
+        expect(res.status).toBe(403);
+        expect(body.error.code).toBe('LIMIT_REACHED');
     });
 });
