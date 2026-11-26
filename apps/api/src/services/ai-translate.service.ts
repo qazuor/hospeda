@@ -15,7 +15,7 @@
  */
 
 import { getDb } from '@repo/db';
-import type { AiFeature, I18nText } from '@repo/schemas';
+import type { AiFeature, I18nText, TranslationMeta } from '@repo/schemas';
 import { computeTranslationSourceHash } from '@repo/service-core';
 import { and, eq, gt, isNull } from 'drizzle-orm';
 import type { PgColumn } from 'drizzle-orm/pg-core';
@@ -81,8 +81,11 @@ export interface TranslateEntityInput {
     targetLocales?: ContentLocale[];
     /**
      * When `true`, skip any (field, locale) pair that already has a non-empty
-     * value — translate only the missing locales. Requires a DB read, so it is
-     * `false` by default (the batch / auto paths manage idempotency themselves).
+     * value, or that is MANUAL in `translationMeta` even when empty (HOS-2658
+     * AC-9/AC-31: an owner's or staff's manual value is never re-translated, so
+     * it is skipped BEFORE any provider call) — translate only the missing
+     * locales. Requires a DB read, so it is `false` by default (the batch / auto
+     * paths manage idempotency themselves).
      */
     onlyMissing?: boolean;
     /**
@@ -611,7 +614,11 @@ export async function translateEntity(input: TranslateEntityInput): Promise<Tran
             }
             // Skip locales already filled when translating only the gaps.
             // Trim guards against whitespace-only values counting as "filled".
-            if (existing?.[fieldType]?.[locale]?.trim()) {
+            if (existing?.values[fieldType]?.[locale]?.trim()) {
+                continue;
+            }
+            // ...and MANUAL pairs, empty ones included (AC-31).
+            if (existing?.manualPairs.has(`${fieldType}:${locale}`)) {
                 continue;
             }
             // Skip pairs the caller excluded (MANUAL pairs) before any provider call.
@@ -668,22 +675,27 @@ export async function translateEntity(input: TranslateEntityInput): Promise<Tran
 }
 
 /**
- * Reads the current i18n values for every translatable field of an entity.
+ * Reads the current i18n values and the MANUAL pairs of an entity.
  *
  * Used by {@link translateEntity} when `onlyMissing` is set, to decide which
- * (field, locale) pairs already have content and can be skipped.
+ * (field, locale) pairs already have content, or are MANUAL, and can be skipped.
  *
- * @returns A map of fieldType → { locale → value } for non-empty i18n columns.
+ * @returns Object with `values` (fieldType → { locale → value } for non-empty
+ *   i18n columns) and `manualPairs` (`"field:locale"` keys whose
+ *   `translationMeta` says `autoTranslated: false`).
  */
 async function loadExistingTranslations(
     entityType: TranslatableEntityType,
     entityId: string
-): Promise<Record<string, Partial<Record<ContentLocale, string>>>> {
+): Promise<{
+    values: Record<string, Partial<Record<ContentLocale, string>>>;
+    manualPairs: ReadonlySet<string>;
+}> {
     const table = getEntityTable(entityType);
     const i18nColumnMap = I18N_COLUMN_MAP[entityType];
     const db = getDb();
 
-    const selection: Record<string, PgColumn> = {};
+    const selection: Record<string, PgColumn> = { translationMeta: table.translationMeta };
     for (const column of Object.values(i18nColumnMap)) {
         selection[column] = i18nColumn(table, column);
     }
@@ -691,14 +703,21 @@ async function loadExistingTranslations(
     const [row] = await db.select(selection).from(table).where(eq(table.id, entityId)).limit(1);
     const existingRow = (row ?? {}) as Record<string, unknown>;
 
-    const result: Record<string, Partial<Record<ContentLocale, string>>> = {};
+    const values: Record<string, Partial<Record<ContentLocale, string>>> = {};
     for (const [fieldType, column] of Object.entries(i18nColumnMap)) {
         const value = existingRow[column] as I18nText | null;
         if (value) {
-            result[fieldType] = { es: value.es, en: value.en, pt: value.pt };
+            values[fieldType] = { es: value.es, en: value.en, pt: value.pt };
         }
     }
-    return result;
+    const meta = (existingRow.translationMeta ?? null) as TranslationMeta | null;
+    const manualPairs = new Set<string>();
+    for (const [fieldType, locales] of Object.entries(meta ?? {})) {
+        for (const [locale, pair] of Object.entries(locales ?? {})) {
+            if (pair?.autoTranslated === false) manualPairs.add(`${fieldType}:${locale}`);
+        }
+    }
+    return { values, manualPairs };
 }
 
 /**

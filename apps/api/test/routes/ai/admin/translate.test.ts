@@ -450,6 +450,40 @@ describe('admin AI translate route — venue and experience (HOS-2658)', () => {
         });
         expect(quotaSpies.enforceAiQuota).not.toHaveBeenCalled();
         expect(quotaSpies.evaluateAiQuota).not.toHaveBeenCalled();
+        // The empty MANUAL name.en is skipped BEFORE the provider: no paid call for it.
+        expect(
+            generateTextCalls.map((call) => ({
+                locale: call.locale,
+                name: call.prompt.includes('La Parrilla del Puerto')
+            }))
+        ).toEqual([
+            { locale: 'pt', name: true },
+            { locale: 'en', name: false },
+            { locale: 'pt', name: false }
+        ]);
+    });
+
+    it('translate on an experience never sends an empty MANUAL pair to the provider (AC-31)', async () => {
+        // Arrange
+        dbState.row = {
+            id: EXPERIENCE_ID,
+            name: 'Paseo en kayak',
+            nameI18n: { es: 'Paseo en kayak', en: '', pt: '' },
+            translationMeta: { name: { en: MANUAL_META, pt: MANUAL_META } }
+        };
+
+        // Act
+        const res = await POST({
+            entityType: 'experience',
+            entityId: EXPERIENCE_ID,
+            sourceLocale: 'es'
+        });
+
+        // Assert
+        expect(res.status).toBe(200);
+        expect(generateTextCalls).toEqual([]);
+        expect(dbState.updateSetCalls).toEqual([]);
+        expect(quotaSpies.enforceAiQuota).not.toHaveBeenCalled();
     });
 
     it('rejects venue on the batch route (batch enum unchanged) with 400', async () => {
