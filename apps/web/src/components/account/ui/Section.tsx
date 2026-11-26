@@ -30,6 +30,8 @@ export type SectionVariant = 'default' | 'danger';
 export interface SectionProps {
     /** Section title, rendered as the heading. */
     readonly title: ReactNode;
+    /** Accessible name when a surrounding page already supplies the heading. */
+    readonly ariaLabel?: string;
     /** Optional supporting line under the title. */
     readonly description?: ReactNode;
     /** Optional header actions, aligned right. */
@@ -66,6 +68,7 @@ function shouldThrowOnNesting(): boolean {
  */
 export function Section({
     title,
+    ariaLabel,
     description,
     actions,
     footer,
@@ -92,7 +95,8 @@ export function Section({
         <SectionDepthContext.Provider value={true}>
             <section
                 id={id}
-                aria-labelledby={titleId}
+                aria-labelledby={title ? titleId : undefined}
+                aria-label={title ? undefined : ariaLabel}
                 data-kit-section=""
                 {...helpAttr({ helpId })}
                 className={cx(
@@ -102,18 +106,24 @@ export function Section({
                     className
                 )}
             >
-                <header className={styles.header}>
-                    <div className={styles.heading}>
-                        <Heading
-                            id={titleId}
-                            className={styles.title}
-                        >
-                            {title}
-                        </Heading>
-                        {description ? <p className={styles.description}>{description}</p> : null}
-                    </div>
-                    {actions ? <div className={styles.actions}>{actions}</div> : null}
-                </header>
+                {title || description || actions ? (
+                    <header className={styles.header}>
+                        <div className={styles.heading}>
+                            {title ? (
+                                <Heading
+                                    id={titleId}
+                                    className={styles.title}
+                                >
+                                    {title}
+                                </Heading>
+                            ) : null}
+                            {description ? (
+                                <p className={styles.description}>{description}</p>
+                            ) : null}
+                        </div>
+                        {actions ? <div className={styles.actions}>{actions}</div> : null}
+                    </header>
+                ) : null}
                 <div className={styles.body}>{children}</div>
                 {footer ? <footer className={styles.footer}>{footer}</footer> : null}
             </section>

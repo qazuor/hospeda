@@ -71,6 +71,9 @@ const EXPECTED: Readonly<Record<string, { operation: string } | { exempt: string
     'accommodation/reviews/admin/hardDelete.ts': {
         exempt: 'Reseña del turista: WRITE_ABOUT_LISTING, el paso 4 ya lo resuelve el servicio (V5.2, AC:V5:25); su gate de plan (write_reviews) es AC:V5:28 (V5.13). No es escritura del dueño sobre su ficha.'
     },
+    'accommodation/reviews/admin/moderateReply.ts': {
+        exempt: 'Moderación de la respuesta del anfitrión (HOS-2199): capacidad del actor con ACCOMMODATION_REVIEW_MODERATE, igual que moderate.ts; sin pasos 5 a 7 sobre el sujeto.'
+    },
     'accommodation/reviews/admin/moderate.ts': {
         exempt: 'Reseña del turista: WRITE_ABOUT_LISTING, el paso 4 ya lo resuelve el servicio (V5.2, AC:V5:25); su gate de plan (write_reviews) es AC:V5:28 (V5.13). No es escritura del dueño sobre su ficha.'
     },
@@ -79,6 +82,9 @@ const EXPECTED: Readonly<Record<string, { operation: string } | { exempt: string
     },
     'accommodation/reviews/admin/update.ts': {
         exempt: 'Reseña del turista: WRITE_ABOUT_LISTING, el paso 4 ya lo resuelve el servicio (V5.2, AC:V5:25); su gate de plan (write_reviews) es AC:V5:28 (V5.13). No es escritura del dueño sobre su ficha.'
+    },
+    'accommodation/reviews/protected/reply.ts': {
+        exempt: 'Respuesta del anfitrión a una reseña (HOS-2199): READ_OWN_COMMERCIAL (OPERATION_PASSES_STEP5 = false) con respond_reviews en el paso 6; sin cobertura, igual que los PDF y certificados de la ficha. Borrar usa READ_OWN, sin clave.'
     },
     'accommodation/reviews/protected/create.ts': {
         exempt: 'Reseña del turista: WRITE_ABOUT_LISTING, el paso 4 ya lo resuelve el servicio (V5.2, AC:V5:25); su gate de plan (write_reviews) es AC:V5:28 (V5.13). No es escritura del dueño sobre su ficha.'
@@ -236,9 +242,9 @@ describe('AC:V5:9 TEST:V5:10 coverage step on every vertical write route', () =>
         .filter((file) => hasWriteMethod.test(readFileSync(join(ROUTES_DIR, file), 'utf8')))
         .sort();
 
-    it('discovers exactly the frozen 142 route files', () => {
+    it('discovers exactly the frozen 144 route files', () => {
         expect(actual).toEqual(Object.keys(EXPECTED).sort());
-        expect(Object.keys(EXPECTED)).toHaveLength(142);
+        expect(Object.keys(EXPECTED)).toHaveLength(144);
     });
 
     it('keeps the listingAccess matcher instrumented', () => {

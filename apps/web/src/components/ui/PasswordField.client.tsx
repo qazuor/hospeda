@@ -23,7 +23,9 @@
 import { EyeIcon, EyeOffIcon } from '@repo/icons';
 import { AsciiSpecialCharacterRegex, StrongPasswordRegex } from '@repo/schemas';
 import { useState } from 'react';
+import { FieldError, fieldErrorId } from './FieldError';
 import styles from './PasswordField.module.css';
+import { RequiredMarker } from './RequiredMarker';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -151,7 +153,7 @@ export function PasswordField({
 
     // Build aria-describedby to chain: error OR strength/hint.
     const strengthId = `${id}-strength`;
-    const errorId = `${id}-error`;
+    const errorId = fieldErrorId(id);
     const hintId = `${id}-hint`;
 
     const describedBy = error
@@ -182,14 +184,7 @@ export function PasswordField({
                 className={styles.label}
             >
                 {label}
-                {required && (
-                    <span
-                        className={styles.required}
-                        aria-hidden="true"
-                    >
-                        {' *'}
-                    </span>
-                )}
+                {required && <RequiredMarker />}
             </label>
 
             {/* Input + eye toggle */}
@@ -276,15 +271,10 @@ export function PasswordField({
             )}
 
             {/* Error */}
-            {error && (
-                <p
-                    id={errorId}
-                    className={styles.errorMsg}
-                    role="alert"
-                >
-                    {error}
-                </p>
-            )}
+            <FieldError
+                id={errorId}
+                message={error}
+            />
 
             {/* Hint (shown only when no error) */}
             {!error && hint && (

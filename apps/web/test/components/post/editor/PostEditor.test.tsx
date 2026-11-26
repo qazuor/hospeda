@@ -13,6 +13,8 @@
 
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { EditorAutoSaveChip } from '@/components/account/editor-shell/EditorAutoSaveChip.client';
+import { getEditorAutoSave } from '@/components/account/editor-shell/editor-auto-save-signal';
 import { PostEditor } from '../../../../src/components/post/editor/PostEditor.client';
 import type { PostEditDetail } from '../../../../src/lib/api/types';
 
@@ -148,9 +150,8 @@ describe('PostEditor — saving', () => {
             id: 'post-1',
             data: { title: 'Un título nuevo' }
         });
-        await waitFor(() =>
-            expect(document.querySelectorAll('[data-status="saved"]')).toHaveLength(1)
-        );
+        await waitFor(() => expect(getEditorAutoSave().status).toBe('saved'));
+        expect(screen.queryByRole('button', { name: /Guardar/ })).toBeNull();
     });
 
     it('never sends a publication-state field, whatever was edited', async () => {
@@ -174,6 +175,31 @@ describe('PostEditor — saving', () => {
 
         expect(screen.queryByRole('button', { name: /Guardar/ })).not.toBeInTheDocument();
         expect(mockUpdate).not.toHaveBeenCalled();
+    });
+
+    it('keeps the header chip in sync on dirty, discard and save', async () => {
+        mockUpdate.mockResolvedValueOnce({ ok: true, data: {} });
+        render(
+            <EditorAutoSaveChip
+                locale="es"
+                saveModel="bar"
+            />
+        );
+        renderEditor();
+        expect(screen.getByText('Todo guardado')).toBeInTheDocument();
+        fireEvent.change(screen.getByLabelText('Título *'), {
+            target: { value: 'Un título nuevo' }
+        });
+        expect(screen.getByText('Cambios sin guardar')).toBeInTheDocument();
+        fireEvent.click(screen.getByRole('button', { name: 'Descartar' }));
+        expect(screen.getByText('Todo guardado')).toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: /Guardar/ })).toBeNull();
+        fireEvent.change(screen.getByLabelText('Título *'), {
+            target: { value: 'Un título nuevo' }
+        });
+        fireEvent.click(screen.getByRole('button', { name: /Guardar/ }));
+        await waitFor(() => expect(getEditorAutoSave().status).toBe('saved'));
+        expect(screen.queryByRole('button', { name: /Guardar/ })).toBeNull();
     });
 
     it('blocks the save and flags the field when the title exceeds the domain limit', () => {

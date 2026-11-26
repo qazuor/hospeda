@@ -86,6 +86,40 @@ describe('HostDashboard (HOS-2474)', () => {
         const { container } = renderDashboard();
         await screen.findByText('5');
         expect(within(card(container, 'hostUnreadMessages')).getByText('2')).toBeInTheDocument();
+        expect(
+            within(card(container, 'hostProperties')).getByText(
+                'Tenés 2 borradores para completar y publicar.'
+            )
+        ).toBeInTheDocument();
+        expect(
+            within(card(container, 'hostUnreadMessages')).getByText(
+                'Tenés 2 consultas sin responder.'
+            )
+        ).toBeInTheDocument();
+        for (const id of ['hostProperties', 'hostUnreadMessages']) {
+            // Label, value and exactly one next-step paragraph; no second visible hint.
+            expect(card(container, id).querySelectorAll('p')).toHaveLength(3);
+        }
+    });
+
+    it('shows context for no drafts and no unread inquiries', async () => {
+        mockHostDashboardGet.mockResolvedValue({
+            ok: true,
+            data: {
+                ...READY,
+                properties: { total: 1, published: 1, draft: 0 },
+                unreadConversations: 0
+            }
+        });
+        const { container } = renderDashboard();
+        expect(
+            await screen.findByText('Revisá y mantené tus propiedades al día.')
+        ).toBeInTheDocument();
+        expect(
+            within(card(container, 'hostUnreadMessages')).getByText(
+                'No tenés consultas sin responder.'
+            )
+        ).toBeInTheDocument();
     });
 
     it('the hint adds up to the total and takes singular and plural (HOS-2612)', async () => {
@@ -98,7 +132,10 @@ describe('HostDashboard (HOS-2474)', () => {
         const { container } = renderDashboard();
         await screen.findByText('5');
         // Assert
-        const hint = card(container, 'hostProperties').textContent ?? '';
+        const hint =
+            card(container, 'hostProperties')
+                .querySelector('[title*="publicada"]')
+                ?.getAttribute('title') ?? '';
         expect(hint).toContain('1 publicada · 4 en otro estado');
         expect(hint).not.toContain('publicadas');
         expect(hint).not.toContain('0 borradores');
@@ -111,9 +148,11 @@ describe('HostDashboard (HOS-2474)', () => {
         });
         const { container } = renderDashboard();
         await screen.findByText('4');
-        expect(card(container, 'hostProperties').textContent).toContain(
-            '2 publicadas · 1 borrador · 1 en otro estado'
-        );
+        expect(
+            card(container, 'hostProperties')
+                .querySelector('[title*="publicadas"]')
+                ?.getAttribute('title')
+        ).toContain('2 publicadas · 1 borrador · 1 en otro estado');
     });
 
     it('a failed read shows «—» and retry on each card, never 0', async () => {
@@ -180,6 +219,7 @@ describe('HostDashboard (HOS-2474)', () => {
         renderDashboard();
         const link = await screen.findByRole('link', { name: /cargar/i });
         expect(link.getAttribute('href')).toBe('/es/mi-cuenta/propiedades/');
+        expect(screen.getByText('Creá tu primera propiedad para empezar.')).toBeInTheDocument();
     });
 
     it('points the unread card at the owner inbox, never the guest inbox (HOS-2418)', async () => {

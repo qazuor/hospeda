@@ -29,6 +29,7 @@ import {
     StatGrid,
     type StatValue
 } from '@/components/account/ui';
+import { resolveDashboardNextStep } from '@/lib/account/dashboard-next-step';
 import {
     type HostDashboardOutcome,
     resolveHostDashboardOutcome
@@ -139,10 +140,22 @@ export function HostDashboard({
             ? null
             : {
                   value: properties.total,
-                  hint: propertiesHint(properties)
+                  nextStep: resolveDashboardNextStep({
+                      kind: 'hostProperties',
+                      locale,
+                      ...properties
+                  }),
+                  detail: propertiesHint(properties)
               }
     );
-    const unreadState = cardState(({ unread }) => (unread === null ? null : { value: unread }));
+    const unreadState = cardState(({ unread }) =>
+        unread === null
+            ? null
+            : {
+                  value: unread,
+                  nextStep: resolveDashboardNextStep({ kind: 'hostMessages', locale, unread })
+              }
+    );
     const isEmpty = state.kind === 'ready' && state.properties?.total === 0;
 
     return (

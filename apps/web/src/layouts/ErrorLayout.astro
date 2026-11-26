@@ -2,7 +2,7 @@
 /**
  * @file ErrorLayout.astro
  * @description Crash-resistant layout for 404 and 500 error pages.
- * Standalone HTML shell with minimal header (logo only) and no heavy JS.
+ * Standalone HTML shell with lightweight navigation and no heavy JS.
  * Does NOT extend BaseLayout to avoid complex component trees that could fail.
  */
 
@@ -18,6 +18,7 @@ import ThemeFoucScript from '@/components/shared/ThemeFoucScript.astro';
 import { ToastViewport } from '@/components/ui/ToastViewport.client';
 import { ClientRouter } from 'astro:transitions';
 import CriticalStyles from '@/components/shared/CriticalStyles.astro';
+import { buildUrl } from '@/lib/urls';
 
 interface Props {
 	readonly locale: SupportedLocale;
@@ -25,6 +26,7 @@ interface Props {
 	readonly description?: string;
 	/** Adds noindex robots meta tag. Defaults to true for all error pages. */
 	readonly noindex?: boolean;
+	readonly showSearch?: boolean;
 }
 
 const {
@@ -32,12 +34,18 @@ const {
 	title = 'Error',
 	description = 'Ha ocurrido un error',
 	noindex = true,
+	showSearch = false,
 } = Astro.props;
 
 const { t } = createTranslations(locale);
 const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin).href;
 
 const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
+const navItems = [
+    { label: t('nav.accommodations'), href: buildUrl({ locale, path: 'alojamientos' }) },
+    { label: t('nav.destinations'), href: buildUrl({ locale, path: 'destinos' }) },
+    { label: t('nav.events'), href: buildUrl({ locale, path: 'eventos' }) },
+];
 ---
 
 <!doctype html>
@@ -99,8 +107,11 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 			body { min-height: 100vh; display: flex; flex-direction: column; background-color: var(--core-background); }
 
 			/* ErrorLayout: header */
-			.error-header { position: sticky; top: 0; z-index: 100; background-color: var(--core-background); padding: 1rem 0; }
-			.error-header__container { max-width: var(--container-max, 1350px); margin: 0 auto; padding: 0 1.5rem; display: flex; align-items: center; justify-content: center; }
+			.error-header { background-color: var(--core-background); padding: var(--space-4) 0; border-bottom: 1px solid var(--border); }
+			.error-header__container, .error-header nav, .error-header form { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; justify-content: center; }
+			.error-header__container { max-width: var(--container-max); margin: 0 auto; padding-inline: var(--space-4); }
+			.error-header nav a { display: inline-flex; align-items: center; min-height: 44px; color: var(--core-foreground); }
+			.error-header form input { min-height: 44px; max-width: 100%; border: 1px solid var(--border); border-radius: var(--radius-button); padding-inline: var(--space-3); }
 
 			/* ErrorLayout: content area. Fills the space between header and
 			   footer; StatusPage owns its own vertical padding so we align to
@@ -114,10 +125,16 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 		</style>
 	</head>
 	<body>
-		<!-- Simplified header: logo only -->
 		<header class="error-header">
 			<div class="error-header__container">
 				<Logo locale={locale} size="md" />
+				<nav>
+					{navItems.map(({ href, label }) => <a href={href}>{label}</a>)}
+				</nav>
+				{showSearch && <form action={navItems[0]?.href} method="get" role="search">
+					<input type="search" name="q" aria-label={t('error.404.searchAccommodations')} placeholder={t('error.404.searchAccommodations')} />
+					<button type="submit" class="btn-gradient btn-gradient--outline-primary btn-gradient--md">{t('common.search')}</button>
+				</form>}
 			</div>
 		</header>
 
@@ -138,4 +155,3 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 		<ToastViewport client:idle locale={locale} />
 	</body>
 </html>
-

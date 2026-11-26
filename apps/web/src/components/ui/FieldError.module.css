@@ -1,6 +1,15 @@
 .error {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-1);
     font-family: var(--font-sans);
     font-size: var(--text-body-sm);
-    color: var(--destructive, oklch(0.6 0.22 25));
+    color: var(--status-danger-fg);
     margin: 0;
+}
+
+.error svg {
+    flex: none;
+    align-self: flex-start;
+    margin-block-start: 0.125em;
 }

@@ -47,6 +47,29 @@ describe('DataList', () => {
 });
 
 describe('ListRow', () => {
+    it('wraps narrow descriptions fully and restricts clamping to wide containers', () => {
+        const css = readFileSync(resolve(uiDir, 'ListRow.module.css'), 'utf8');
+        const base = css.split('@container (width >= 40rem)')[0];
+        const description = base.match(/\.description\s*\{([^}]+)\}/)?.[1];
+        expect(description).toContain('display: block');
+        expect(description).toContain('overflow-wrap: anywhere');
+        expect(description).not.toMatch(/line-clamp|overflow:\s*hidden/);
+        expect(css.split('@container (width >= 40rem)')[1]).toMatch(
+            /\.description:not\(\.descriptionWrap\)\s*\{[^}]*-webkit-line-clamp: 2/
+        );
+    });
+
+    it('limits row hover and focus backgrounds to fine hover-capable pointers', () => {
+        const css = readFileSync(resolve(uiDir, 'ListRow.module.css'), 'utf8');
+        const pointerRules = css.match(
+            /@media \(hover: hover\) and \(pointer: fine\)\s*\{([\s\S]*?)\n\}/
+        )?.[1];
+        expect(pointerRules).toContain('.row:has(.link):hover');
+        expect(pointerRules).toContain('.row:focus-within');
+        expect(css.replace(pointerRules ?? '', '')).not.toMatch(/\.row[^{}]*:(hover|focus-within)/);
+        expect(css).toContain('.link:focus-visible::after');
+    });
+
     it('keeps the full description in the DOM and opts out of clamping explicitly', () => {
         const description = 'A long review remains available to assistive technology.';
         const { rerender } = render(

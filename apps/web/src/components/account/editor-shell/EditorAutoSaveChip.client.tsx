@@ -1,11 +1,10 @@
 /**
  * @file EditorAutoSaveChip.client.tsx
- * @description Shared editor status chip. Bar sections start clean during SSR;
- * auto sections remain idle until an action reports its state.
+ * @description Shared editor status chip. All sections start clean during SSR.
  *
  * It renders the kit `AutoSaveChip` for whatever the section's islands report
  * through `editor-auto-save-signal` (`runEditorAutoSave` /
- * `reportEditorAutoSave`), and nothing while idle. The wrapper is always in the
+ * `reportEditorAutoSave`), with a clean chip while idle. The wrapper is always in the
  * markup with `data-editor-save-signal`, so a render test can tell which
  * signal a page carries.
  */
@@ -33,7 +32,7 @@ export interface EditorAutoSaveChipProps {
  * The shell's autosave chip.
  *
  * @param props - See {@link EditorAutoSaveChipProps}.
- * @returns The signal wrapper, with the chip once a save was reported.
+ * @returns The signal wrapper with the current save-status chip.
  */
 export function EditorAutoSaveChip({ locale, saveModel = 'auto' }: EditorAutoSaveChipProps) {
     const state = useSyncExternalStore(
@@ -41,18 +40,16 @@ export function EditorAutoSaveChip({ locale, saveModel = 'auto' }: EditorAutoSav
         getEditorAutoSave,
         getEditorAutoSaveServerSnapshot
     );
-    const status = state.status === 'idle' && saveModel === 'bar' ? 'clean' : state.status;
+    const status = state.status === 'idle' ? 'clean' : state.status;
 
     return (
         <span data-editor-save-signal={saveModel}>
-            {status === 'idle' ? null : (
-                <AutoSaveChip
-                    status={status}
-                    savedAt={state.status === 'idle' ? undefined : state.savedAt}
-                    onRetry={state.status === 'idle' ? undefined : state.retry}
-                    locale={locale}
-                />
-            )}
+            <AutoSaveChip
+                status={status}
+                savedAt={state.status === 'idle' ? undefined : state.savedAt}
+                onRetry={state.status === 'idle' ? undefined : state.retry}
+                locale={locale}
+            />
         </span>
     );
 }

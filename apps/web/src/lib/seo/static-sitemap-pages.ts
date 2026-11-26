@@ -63,6 +63,8 @@ export const STATIC_SITEMAP_PAGES: readonly StaticSitemapPage[] = [
     // the URL moved. They are classified below in the exclusion map instead,
     // which is what keeps the guard from flagging them as unclassified pages.
     { path: '/suscriptores/planes/', changefreq: 'weekly', priority: 0.8 },
+    // Public four-audience hub; the legacy index remains available for purchase fallbacks.
+    { path: '/planes/', changefreq: 'weekly', priority: 0.8 },
     { path: '/publicar/', changefreq: 'monthly', priority: 0.8 },
     // HOS-1156: one publish page per vertical. All three are public, indexable
     // and carry their own copy, so all three belong here — they are the pages a

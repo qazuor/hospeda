@@ -2,8 +2,8 @@
     "404": {
         "title": "Página no encontrada",
         "heading": "Página no encontrada",
-        "description": "Lo sentimos, la página que buscas no existe o fue movida.",
-        "message": "Lo sentimos, la página que buscas no existe o fue movida.",
+        "description": "Lo sentimos, la página que buscás no existe o fue movida.",
+        "message": "Lo sentimos, la página que buscás no existe o fue movida.",
         "goHome": "Volver al inicio",
         "searchAccommodations": "Buscar alojamientos",
         "reportBrokenLink": "Reportar enlace roto"
@@ -23,7 +23,9 @@
         "description": "Tu cuenta no tiene permisos para entrar al panel de administración. Si creés que es un error, escribinos y lo revisamos.",
         "goToAccount": "Ir a mi cuenta",
         "goHome": "Ir al inicio",
-        "contact": "Contacto"
+        "contact": "Escribinos si creés que es un error",
+        "guestDescription": "Iniciá sesión con una cuenta autorizada para entrar al panel de administración.",
+        "defaultDescription": "El panel de administración está reservado para cuentas autorizadas."
     },
     "form": {
         "validation-failed": "La validación del formulario falló. Por favor, corrige los errores e intenta nuevamente.",

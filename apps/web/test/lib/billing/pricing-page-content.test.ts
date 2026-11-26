@@ -67,6 +67,8 @@ describe('pricing breadcrumb hierarchy', () => {
         });
         const input = { items, locale: 'en' as const, homeLabel: 'Home' };
         expect(Array.isArray(items)).toBe(true);
+        expect(items[0]).toEqual({ label: 'Plans', path: 'planes' });
+        expect(buildBreadcrumbTrail(input).entries[1]?.href).toBe('/en/planes/');
         expect(buildBreadcrumbTrail(input).entries.map((entry) => entry.label)).toEqual([
             'Home',
             'Plans',
@@ -86,6 +88,7 @@ describe('pricing breadcrumb hierarchy', () => {
         expect(structured.itemListElement.at(-1)?.item).toBe(
             `https://example.test/en/planes/${audience}/precios/`
         );
+        expect(structured.itemListElement[1]?.item).toBe('https://example.test/en/planes/');
     });
 });
 

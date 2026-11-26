@@ -10,15 +10,18 @@
  * Hydration: client:visible (below-the-fold interactive form).
  */
 
-import { CheckCircleIcon } from '@repo/icons';
+import { CheckCircleIcon, ChevronDownIcon } from '@repo/icons';
 import type { ContactSubmitInput } from '@repo/schemas';
 import { ContactSubmitSchema } from '@repo/schemas';
 import { type ChangeEvent, type FormEvent, useEffect, useState } from 'react';
 import { visibleApiMessage } from '@/lib/api-errors';
-import { zodIssuesToFieldErrors } from '@/lib/forms/field-errors';
+import { useZodForm } from '@/lib/forms/use-zod-form';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import styles from './ContactForm.module.css';
+import { FieldError } from './ui/FieldError';
+import { RequiredMarker } from './ui/RequiredMarker';
+import { TextField } from './ui/TextField';
 
 // API base URL — must be absolute because the web app (host A) and the API
 // (host B) live on different origins both in dev (4321 vs 3001) and prod
@@ -35,7 +38,6 @@ interface ContactFormProps {
 }
 
 type FormFields = Omit<ContactSubmitInput, 'website'> & { readonly website: string };
-type FieldErrors = Partial<Record<keyof FormFields, string>>;
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -105,8 +107,18 @@ export function ContactForm({ locale }: ContactFormProps) {
     const { t } = createTranslations(locale);
 
     const [fields, setFields] = useState<FormFields>(INITIAL_FIELDS);
-    const [errors, setErrors] = useState<FieldErrors>({});
-    const [formError, setFormError] = useState<string | null>(null);
+    const {
+        fieldErrors: errors,
+        clearError,
+        formError,
+        setFormError,
+        validate
+    } = useZodForm({
+        schema: ContactSubmitSchema,
+        t,
+        fieldIdPrefix: 'cf',
+        validationToast: false
+    });
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
 
@@ -138,9 +150,7 @@ export function ContactForm({ locale }: ContactFormProps) {
         const { name, value } = e.currentTarget;
         setFields((prev) => ({ ...prev, [name]: value }));
         // Clear field error on change
-        if (errors[name as keyof FieldErrors]) {
-            setErrors((prev) => ({ ...prev, [name]: undefined }));
-        }
+        clearError(name);
         setFormError(null);
     }
 
@@ -150,18 +160,12 @@ export function ContactForm({ locale }: ContactFormProps) {
 
         // Validate with Zod. accommodationId is no longer surfaced by the form,
         // so it is always omitted from the submission payload.
-        const parsed = ContactSubmitSchema.safeParse({
+        const parsed = validate({
             ...fields,
             accommodationId: undefined
         });
 
-        if (!parsed.success) {
-            // Resolve each Zod `zodError.*` key through `t` (via the shared
-            // mapper) so `errors.*` hold human Spanish, not raw i18n keys
-            // (HOS-190 BETA-190 — the firstName field used to render the key).
-            setErrors(zodIssuesToFieldErrors(parsed.error.issues, t));
-            return;
-        }
+        if (!parsed.success) return;
 
         setIsSubmitting(true);
 
@@ -235,6 +239,19 @@ export function ContactForm({ locale }: ContactFormProps) {
         );
     }
 
+    const commonField = {
+        prefix: 'cf',
+        labelClassName: styles.label,
+        required: true,
+        onChange: handleChange
+    };
+    const requiredLabel = (label: string) => (
+        <>
+            {label}
+            <RequiredMarker />
+        </>
+    );
+
     return (
         <form
             className={styles.form}
@@ -259,139 +276,69 @@ export function ContactForm({ locale }: ContactFormProps) {
                 />
             </div>
 
-            {/* Name row */}
+            <FieldError
+                id="cf-summary"
+                message={Object.keys(errors).length > 0 ? t('validation.formHasErrors') : undefined}
+            />
             <div className={styles.row}>
                 <div className={styles.field}>
-                    <label
-                        className={styles.label}
-                        htmlFor="cf-firstName"
-                    >
-                        {t('contact.form.firstName', 'Nombre')}
-                        <span
-                            className={styles.required}
-                            aria-hidden="true"
-                        >
-                            *
-                        </span>
-                    </label>
-                    <input
-                        id="cf-firstName"
-                        type="text"
+                    <TextField
+                        {...commonField}
                         name="firstName"
+                        controlName="firstName"
+                        label={requiredLabel(t('contact.form.firstName'))}
+                        className={styles.input}
                         value={fields.firstName}
-                        onChange={handleChange}
-                        className={`${styles.input}${errors.firstName ? ` ${styles.inputError}` : ''}`}
+                        error={errors.firstName}
                         autoComplete="given-name"
-                        aria-describedby={errors.firstName ? 'cf-firstName-error' : undefined}
-                        aria-invalid={!!errors.firstName}
-                        required
                     />
-                    {errors.firstName && (
-                        <p
-                            id="cf-firstName-error"
-                            className={styles.errorMsg}
-                            role="alert"
-                        >
-                            {errors.firstName}
-                        </p>
-                    )}
                 </div>
 
                 <div className={styles.field}>
-                    <label
-                        className={styles.label}
-                        htmlFor="cf-lastName"
-                    >
-                        {t('contact.form.lastName', 'Apellido')}
-                        <span
-                            className={styles.required}
-                            aria-hidden="true"
-                        >
-                            *
-                        </span>
-                    </label>
-                    <input
-                        id="cf-lastName"
-                        type="text"
+                    <TextField
+                        {...commonField}
                         name="lastName"
+                        controlName="lastName"
+                        label={requiredLabel(t('contact.form.lastName'))}
+                        className={styles.input}
                         value={fields.lastName}
-                        onChange={handleChange}
-                        className={`${styles.input}${errors.lastName ? ` ${styles.inputError}` : ''}`}
+                        error={
+                            errors.lastName &&
+                            (fields.lastName.trim().length < 2
+                                ? t('contact.form.lastNameError')
+                                : errors.lastName)
+                        }
                         autoComplete="family-name"
-                        aria-describedby={errors.lastName ? 'cf-lastName-error' : undefined}
-                        aria-invalid={!!errors.lastName}
-                        required
                     />
-                    {errors.lastName && (
-                        <p
-                            id="cf-lastName-error"
-                            className={styles.errorMsg}
-                            role="alert"
-                        >
-                            {t('contact.form.lastNameError', 'El apellido es requerido')}
-                        </p>
-                    )}
                 </div>
             </div>
 
             {/* Email */}
             <div className={styles.field}>
-                <label
-                    className={styles.label}
-                    htmlFor="cf-email"
-                >
-                    {t('contact.form.email', 'Email')}
-                    <span
-                        className={styles.required}
-                        aria-hidden="true"
-                    >
-                        *
-                    </span>
-                </label>
-                <input
-                    id="cf-email"
-                    type="email"
+                <TextField
+                    {...commonField}
                     name="email"
+                    controlName="email"
+                    type="email"
+                    label={requiredLabel(t('contact.form.email'))}
+                    className={styles.input}
                     value={fields.email}
-                    onChange={handleChange}
-                    className={`${styles.input}${errors.email ? ` ${styles.inputError}` : ''}`}
+                    error={errors.email}
                     autoComplete="email"
-                    aria-describedby={errors.email ? 'cf-email-error' : undefined}
-                    aria-invalid={!!errors.email}
-                    required
                 />
-                {errors.email && (
-                    <p
-                        id="cf-email-error"
-                        className={styles.errorMsg}
-                        role="alert"
-                    >
-                        {t('contact.form.emailError', 'Ingresá un email válido')}
-                    </p>
-                )}
             </div>
 
             {/* Type select */}
-            <div className={styles.field}>
-                <label
-                    className={styles.label}
-                    htmlFor="cf-type"
-                >
-                    {t('contact.form.type', 'Tipo de consulta')}
-                    <span
-                        className={styles.required}
-                        aria-hidden="true"
-                    >
-                        *
-                    </span>
-                </label>
-                <select
-                    id="cf-type"
+            <div className={`${styles.field} ${styles.selectField}`}>
+                <TextField
+                    {...commonField}
+                    as="select"
                     name="type"
-                    value={fields.type}
-                    onChange={handleChange}
+                    controlName="type"
+                    label={requiredLabel(t('contact.form.type'))}
                     className={styles.select}
-                    required
+                    value={fields.type}
+                    error={errors.type}
                 >
                     {CONTACT_TYPE_OPTIONS.map((opt) => (
                         <option
@@ -401,49 +348,27 @@ export function ContactForm({ locale }: ContactFormProps) {
                             {t(opt.i18nKey, opt.fallback)}
                         </option>
                     ))}
-                </select>
+                </TextField>
+                <ChevronDownIcon
+                    className={styles.selectIcon}
+                    size={18}
+                    aria-hidden="true"
+                />
             </div>
 
             {/* Message */}
             <div className={styles.field}>
-                <label
-                    className={styles.label}
-                    htmlFor="cf-message"
-                >
-                    {t('contact.form.message', 'Mensaje')}
-                    <span
-                        className={styles.required}
-                        aria-hidden="true"
-                    >
-                        *
-                    </span>
-                </label>
-                <textarea
-                    id="cf-message"
+                <TextField
+                    {...commonField}
+                    as="textarea"
                     name="message"
+                    controlName="message"
+                    label={requiredLabel(t('contact.form.message'))}
+                    className={styles.textarea}
                     value={fields.message}
-                    onChange={handleChange}
-                    className={`${styles.textarea}${errors.message ? ` ${styles.inputError}` : ''}`}
-                    placeholder={t(
-                        'contact.form.messagePlaceholder',
-                        'Escribí tu consulta o sugerencia aquí...'
-                    )}
-                    aria-describedby={errors.message ? 'cf-message-error' : undefined}
-                    aria-invalid={!!errors.message}
-                    required
+                    error={errors.message}
+                    placeholder={t('contact.form.messagePlaceholder')}
                 />
-                {errors.message && (
-                    <p
-                        id="cf-message-error"
-                        className={styles.errorMsg}
-                        role="alert"
-                    >
-                        {t(
-                            'contact.form.messageError',
-                            'El mensaje debe tener al menos 10 caracteres'
-                        )}
-                    </p>
-                )}
             </div>
 
             {/* Form-level error */}

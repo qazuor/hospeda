@@ -30,7 +30,7 @@
     justify-content: center;
     gap: 0.5rem;
     padding: 0.625rem 1.25rem;
-    border: 1px solid var(--border);
+    border: 1px solid var(--core-muted-foreground);
     border-radius: var(--radius-button);
     background-color: var(--core-card);
     color: var(--core-foreground);
@@ -43,6 +43,11 @@
 
 .oauthButton:hover:not(:disabled) {
     background-color: var(--muted, var(--core-card-l97));
+}
+
+.oauthButton:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
 }
 
 .oauthButton:disabled {
