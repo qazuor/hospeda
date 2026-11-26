@@ -63,6 +63,7 @@ describe('HOS-2616 the signup checkout uses the remembered payer email', () => {
 
         const input = screen.getByTestId('signup-checkout-payer-email');
         expect(input).toHaveValue('mp@example.test');
+        expect(input).toHaveFocus();
         expect(screen.queryByTestId('remembered-payer-email-note')).toBeNull();
     });
 

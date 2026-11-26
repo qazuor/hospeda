@@ -93,6 +93,15 @@ export function SignupCheckout({
     const { rememberedEmail } = useRememberedPayerEmail();
     const [usingRememberedEmail, setUsingRememberedEmail] = useState(false);
     const payerEmailEdited = useRef(false);
+    const payerEmailInputRef = useRef<HTMLInputElement>(null);
+    const focusPayerEmail = useRef(false);
+    useEffect(() => {
+        // The note's button disappears when the field opens: keep keyboard focus on the field.
+        if (!usingRememberedEmail && focusPayerEmail.current) {
+            focusPayerEmail.current = false;
+            payerEmailInputRef.current?.focus();
+        }
+    }, [usingRememberedEmail]);
     useEffect(() => {
         if (!rememberedEmail || payerEmailEdited.current) return;
         setPayerEmail(rememberedEmail);
@@ -251,6 +260,7 @@ export function SignupCheckout({
                                 email={payerEmail}
                                 onChange={() => {
                                     payerEmailEdited.current = true;
+                                    focusPayerEmail.current = true;
                                     setUsingRememberedEmail(false);
                                 }}
                             />
@@ -271,6 +281,7 @@ export function SignupCheckout({
                             </p>
                             <input
                                 id={payerEmailInputId}
+                                ref={payerEmailInputRef}
                                 className={styles.payerEmailInput}
                                 type="email"
                                 inputMode="email"

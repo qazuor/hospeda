@@ -24,6 +24,7 @@ export function RememberedPayerEmailNote({
     return (
         <div
             className={styles.note}
+            aria-live="polite"
             data-testid="remembered-payer-email-note"
         >
             <p className={styles.text}>
