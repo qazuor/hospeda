@@ -145,6 +145,7 @@ export function LanguageSwitcher({
                     }}
                     className={cn(styles.option, loc === locale && styles.optionActive)}
                     aria-current={loc === locale ? 'true' : undefined}
+                    title={LOCALE_NAMES[loc]}
                     data-astro-prefetch
                     data-astro-reload
                 >

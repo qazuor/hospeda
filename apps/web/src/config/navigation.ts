@@ -246,6 +246,15 @@ export const ACCOUNT_NAV_GROUPS: readonly NavGroup[] = [
                 tourTarget: 'properties'
             },
             {
+                // HOS-2199: the reviews of the host's accommodations, where they are answered.
+                id: 'receivedReviews',
+                ...PUBLISHER_ACCESS.host,
+                i18nKey: 'account.nav.receivedReviews',
+                href: 'mi-cuenta/resenas-recibidas',
+                icon: StarIcon,
+                surfaces: FULL_SURFACES
+            },
+            {
                 id: 'ownerMessages',
                 ...PUBLISHER_ACCESS.inbox,
                 i18nKey: 'conversations.inbox.ownerInboxTitle',

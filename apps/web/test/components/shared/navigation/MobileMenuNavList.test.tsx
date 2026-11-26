@@ -1,10 +1,10 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { MobileMenuNavList } from '../../../../src/components/shared/navigation/MobileMenuNavList.client';
 
 describe('MobileMenuNavList', () => {
-    it('renders nested collection links and follows menu tab state', () => {
-        render(
+    it('starts grouped destinations collapsed and reveals the parent and child on activation', () => {
+        const { container } = render(
             <MobileMenuNavList
                 navItems={[
                     {
@@ -13,12 +13,19 @@ describe('MobileMenuNavList', () => {
                         children: [{ label: 'Food', href: '/food/' }]
                     }
                 ]}
-                isOpen={false}
+                isOpen={true}
                 onLinkClick={vi.fn()}
             />
         );
+        const group = container.querySelector('details');
+        expect(group).not.toHaveAttribute('open');
+        fireEvent.click(container.querySelector('summary') as HTMLElement);
+        expect(group).toHaveAttribute('open');
         expect(screen.getByRole('link', { name: 'Food' })).toHaveAttribute('href', '/food/');
-        expect(screen.getByRole('link', { name: 'Food' })).toHaveAttribute('tabindex', '-1');
+        expect(screen.getByRole('link', { name: 'Comer y salir' })).toHaveAttribute(
+            'href',
+            '/venue/'
+        );
     });
 
     it('does not render a nested list for ordinary links', () => {

@@ -34,7 +34,7 @@
     },
     "enums": {
         "accommodationType": {
-            "apartment": "Apartamento",
+            "apartment": "Departamento",
             "cabin": "Cabaña",
             "camping": "Camping",
             "country_house": "Casa de Campo",

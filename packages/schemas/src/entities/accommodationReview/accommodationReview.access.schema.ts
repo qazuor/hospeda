@@ -9,6 +9,7 @@ import {
     UserProtectedSchema,
     UserPublicSchema
 } from '../user/user.access.schema.js';
+import { AccommodationReviewReplyPublicSchema } from './accommodationReview.reply.schema.js';
 import { AccommodationReviewSchema } from './accommodationReview.schema.js';
 
 /**
@@ -48,7 +49,12 @@ export const AccommodationReviewPublicSchema = AccommodationReviewSchema.pick({
      * but that is route-level hygiene, not a guarantee. Any future route serving this
      * schema would have reproduced the leak; the card tier makes it impossible.
      */
-    accommodation: AccommodationPublicCardSchema.optional()
+    accommodation: AccommodationPublicCardSchema.optional(),
+    /**
+     * The host's live, publicly visible reply (HOS-2199). Absent when the review
+     * has none, or when the reply is pending or hidden by moderation.
+     */
+    reply: AccommodationReviewReplyPublicSchema.nullish()
 });
 
 export type AccommodationReviewPublic = z.infer<typeof AccommodationReviewPublicSchema>;

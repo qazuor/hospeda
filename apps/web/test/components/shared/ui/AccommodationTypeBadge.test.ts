@@ -7,6 +7,8 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { getAccommodationTypeLabel } from '../../../../src/lib/colors';
+import { createTranslations } from '../../../../src/lib/i18n';
 
 const src = readFileSync(
     resolve(__dirname, '../../../../src/components/shared/ui/AccommodationTypeBadge.astro'),
@@ -14,6 +16,18 @@ const src = readFileSync(
 );
 
 describe('AccommodationTypeBadge.astro', () => {
+    it.each([
+        ['es', 'Departamento'],
+        ['en', 'Apartment'],
+        ['pt', 'Apartamento']
+    ] as const)('resolves the %s apartment label as %s', (locale, expected) => {
+        const { t } = createTranslations(locale);
+
+        const label = getAccommodationTypeLabel({ type: 'apartment', t });
+
+        expect(label).toBe(expected);
+    });
+
     describe('imports + helpers', () => {
         it('imports getAccommodationTypeIcon (per-type icon)', () => {
             expect(src).toContain('getAccommodationTypeIcon');
@@ -93,7 +107,7 @@ describe('AccommodationTypeBadge.astro', () => {
 
         it('renders the base + size classes', () => {
             expect(src).toContain('acc-type-badge');
-            expect(src).toContain('acc-type-badge--size-${size}');
+            expect(src).toMatch(/acc-type-badge--size-\$\{size\}/);
         });
 
         it('uses smaller icon (14px) for the xs density and 16px for sm', () => {

@@ -85,6 +85,30 @@
     margin: 0;
 }
 
+.hostReply {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1, 4px);
+    padding-inline-start: var(--space-3, 12px);
+    border-inline-start: 3px solid var(--border, oklch(0.9 0 0));
+}
+
+.hostReplyLabel {
+    font-family: var(--font-sans);
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--core-muted-foreground);
+}
+
+.hostReplyText {
+    font-family: var(--font-sans);
+    font-size: 0.88rem;
+    line-height: 1.5;
+    color: var(--core-foreground);
+    margin: 0;
+    white-space: pre-line;
+}
+
 .breakdown {
     list-style: none;
     margin: var(--space-3, 12px) 0 0;

@@ -217,6 +217,7 @@
             "reviews_other": "avaliações"
         },
         "nearby": {
+            "exploreCities": "Explorar cidades",
             "title": "Outros destinos na região",
             "subtitle": "Próximos na região — explore o que há por perto"
         },

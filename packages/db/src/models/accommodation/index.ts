@@ -5,6 +5,7 @@ export * from './accommodationIaData.model.ts';
 export * from './accommodationMedia.model.ts';
 export * from './accommodationOccupancy.model.ts';
 export * from './accommodationReview.model.ts';
+export * from './accommodationReviewReply.model.ts';
 export * from './amenity.model.ts';
 export * from './feature.model.ts';
 export * from './rAccommodationAmenity.model.ts';
