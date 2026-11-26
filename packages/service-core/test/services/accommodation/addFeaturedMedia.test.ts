@@ -83,7 +83,7 @@ vi.mock('../../../src/revalidation/revalidation-init.js', () => ({
 
 // ---------------------------------------------------------------------------
 
-import { getGalleryCap, ModerationStatusEnum, PermissionEnum, RoleEnum } from '@repo/schemas';
+import { ModerationStatusEnum, PermissionEnum, RoleEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
 import type { ServiceConfig } from '../../../src/types';
@@ -99,8 +99,8 @@ const OWNER_ID = '00000000-0000-4000-8000-0000000000ff';
 
 const NOW = new Date('2026-01-15T12:00:00.000Z');
 
-/** The per-entity cap. 50 for accommodations — the invariant that never lifts. */
-const ENTITY_CAP = getGalleryCap('accommodation');
+/** A full gallery at the old literal cap (HOS-2495 removed the literal; the cover stays exempt). */
+const ENTITY_CAP = 50;
 
 const VALID_PAYLOAD = {
     url: 'https://res.cloudinary.com/demo/image/upload/new-cover.jpg',
@@ -194,26 +194,6 @@ beforeEach(() => {
     mockMediaModel.softDelete.mockImplementation(async () => {
         writeLog.push('softDelete');
         return 1;
-    });
-});
-
-// ---------------------------------------------------------------------------
-// The bug's precondition — documents WHY a dedicated path is needed.
-// ---------------------------------------------------------------------------
-
-describe('HOS-803 precondition — the old two-step cannot start when the gallery is full', () => {
-    it('addMedia refuses at the entity cap, so no row exists to promote', async () => {
-        const service = buildService();
-        arrangeGallery({ galleryCount: ENTITY_CAP, previousFeatured: true });
-
-        const result = await service.addMedia(ownerActor, {
-            accommodationId: ACCOMMODATION_ID,
-            media: VALID_PAYLOAD
-        });
-
-        // This is the wall the cover upload hits at step 1 of 2.
-        expect(result.error?.code).toBe('QUOTA_EXCEEDED');
-        expect(mockMediaModel.create).not.toHaveBeenCalled();
     });
 });
 
@@ -423,7 +403,11 @@ describe('HOS-803 — the gallery quota cannot be evaded through the featured pa
         expect(mockMediaModel.softDelete).toHaveBeenCalledTimes(25);
     });
 
-    it('leaves the deleted cover out of the gallery count the cap reads', async () => {
+    it('soft-deletes the replaced cover so no gallery count sees it', async () => {
+        // HOS-2495: the gallery count lives in step 7 now
+        // (`countListingGalleryPhotos`, apps/api), whose model query excludes
+        // soft-deleted rows (`listingMediaShownConditions`). What this service
+        // owns is that the replaced cover is soft-deleted, not demoted.
         const service = buildService();
         arrangeGallery({ galleryCount: ENTITY_CAP, previousFeatured: true });
 
@@ -435,23 +419,6 @@ describe('HOS-803 — the gallery quota cannot be evaded through the featured pa
         const deletedId = (mockMediaModel.softDelete.mock.calls[0]?.[0] as Record<string, unknown>)
             .id;
         expect(deletedId).toBe(PREVIOUS_FEATURED_ID);
-
-        // Now ask the cap the same question `addMedia` asks. The filter it
-        // builds must exclude soft-deleted rows, or the replaced cover would
-        // keep occupying a slot it no longer holds — a cap reported as reached
-        // that is not. `addMedia` is the real code path, not a re-derivation.
-        mockMediaModel.count.mockClear();
-        mockMediaModel.count.mockResolvedValue(ENTITY_CAP - 1);
-
-        await service.addMedia(ownerActor, {
-            accommodationId: ACCOMMODATION_ID,
-            media: VALID_PAYLOAD
-        });
-
-        const where = mockMediaModel.count.mock.calls[0]?.[0] as Record<string, unknown>;
-        expect(where.deletedAt).toBeNull();
-        expect(where.state).toBe('visible');
-        expect(where.isFeatured).toBe(false);
     });
 
     it('accepts a plan allowance that is exactly full', async () => {
@@ -514,7 +481,7 @@ describe('HOS-803 — promoting an existing gallery photo is unchanged', () => {
         // The service operation is quota-neutral: one gallery row exits and
         // the previous cover enters, so a gallery already at its cap remains
         // at the cap after promotion.
-        mockMediaModel.count.mockResolvedValue(getGalleryCap('accommodation'));
+        mockMediaModel.count.mockResolvedValue(ENTITY_CAP);
 
         mockMediaModel.findFeatured.mockResolvedValue(
             makeMediaRow({ id: PREVIOUS_FEATURED_ID, isFeatured: true, sortOrder: 0 })
