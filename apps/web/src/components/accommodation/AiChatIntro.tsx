@@ -15,7 +15,7 @@ export function AiChatIntro({
     readonly allowance?: number;
     readonly onSuggestion?: (question: string) => void;
 }) {
-    const { t } = createTranslations(locale);
+    const { t, tPlural } = createTranslations(locale);
     return (
         <>
             <details className={styles.disclaimer}>
@@ -25,9 +25,7 @@ export function AiChatIntro({
                 </p>
             </details>
             {allowance !== undefined && (
-                <p>
-                    {t('accommodations.aiChat.monthlyAllowance', undefined, { quota: allowance })}
-                </p>
+                <p>{tPlural('accommodations.aiChat.monthlyAllowance', allowance)}</p>
             )}
             {onSuggestion && (
                 <>

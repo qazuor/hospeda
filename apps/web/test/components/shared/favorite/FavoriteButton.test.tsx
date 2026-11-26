@@ -43,16 +43,21 @@ import { resetFavoritesStore } from '../../../../src/store/favorites-store';
 // ---------------------------------------------------------------------------
 
 vi.mock('../../../../src/lib/i18n', async (importOriginal) => {
-    const { createT } = await importOriginal<typeof import('@/lib/i18n')>();
+    const original = await importOriginal<typeof import('@/lib/i18n')>();
     return {
-        createT:
-            (locale: Parameters<typeof createT>[0]) =>
-            (key: string, fallback?: string, params?: Parameters<ReturnType<typeof createT>>[2]) =>
-                key.startsWith('common.card.') ||
-                key.startsWith('ui.favorite.audit.') ||
-                key === 'billing.common.viewPlans'
-                    ? createT(locale)(key, fallback, params)
-                    : (fallback ?? key)
+        ...original,
+        createTranslations: (locale: Parameters<typeof original.createTranslations>[0]) => {
+            const { t, tPlural } = original.createTranslations(locale);
+            return {
+                t: (key: string, fallback?: string, params?: Parameters<typeof t>[2]) =>
+                    key.startsWith('common.card.') ||
+                    key.startsWith('ui.favorite.audit.') ||
+                    key === 'billing.common.viewPlans'
+                        ? t(key, fallback, params)
+                        : (fallback ?? key),
+                tPlural
+            };
+        }
     };
 });
 
@@ -1059,15 +1064,22 @@ describe('FavoriteButton — success toasts on toggle', () => {
 // ---------------------------------------------------------------------------
 
 describe('FavoriteButton — pill variant + count badge', () => {
-    it('keeps the catalog usage on the card heart without a visible quota badge', async () => {
-        mockLimit.mockReturnValue(7);
-        mockList.mockResolvedValue({ ok: true, data: { total: 3 } });
+    it.each([
+        { max: 7, total: 3, usage: '3 de 7 favoritos' },
+        { max: 1, total: 0, usage: '0 de 1 favorito' }
+    ])('keeps the catalog usage on the card heart with cap $max and no quota badge', async ({
+        max,
+        total,
+        usage
+    }) => {
+        mockLimit.mockReturnValue(max);
+        mockList.mockResolvedValue({ ok: true, data: { total } });
 
         const { button } = await renderButton(arrangeUser({ showUsage: 'tooltip' }));
 
-        await waitFor(() => expect(button).toHaveAttribute('title', '3 de 7 favoritos'));
-        expect(button).toHaveAttribute('aria-description', '3 de 7 favoritos');
-        expect(screen.queryByText('3/7')).not.toBeInTheDocument();
+        await waitFor(() => expect(button).toHaveAttribute('title', usage));
+        expect(button).toHaveAttribute('aria-description', usage);
+        expect(screen.queryByText(`${total}/${max}`)).not.toBeInTheDocument();
     });
 
     it('explains the guest benefit using the tourist catalog floor and paid plan', async () => {

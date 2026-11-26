@@ -96,7 +96,7 @@ describe('comer-y-salir/[slug].astro', () => {
         it('renders the shared ListingContactBlock for menu + social (HOS-2579)', () => {
             expect(src).toContain('buildVenueContactBlock({');
             expect(src).toMatch(
-                /Component: ListingContactBlock,\s*props: \{\s*\.\.\.venueContactBlock,\s*venueWhatsAppContact: venueWhatsApp/
+                /Component: VenueContactSection,\s*props: \{\s*contactBlock: venueContactBlock,\s*whatsappContact/
             );
         });
 
@@ -212,8 +212,9 @@ describe('HOS-2579 — venue slots and section tabs (AC-2b, AC-6)', () => {
         expect(src).toContain('amenities: hasOffersSection');
         expect(src).toContain('hours: hasOpeningHours');
         expect(src).toContain('location: venueLocation !== null');
-        expect(src).toContain('const hasContactSection = venueContactBlock !== null;');
-        expect(src).toMatch(/buildVenueContactBlock\(\{[^}]*hasWhatsapp: Boolean\(venueWhatsApp\)/);
+        expect(src).toContain(
+            'const hasContactSection = venueContactBlock !== null || Boolean(whatsappContact);'
+        );
         // No events tab: the agenda lives in «Lo que ofrece» (D-3).
         expect(src).not.toMatch(/venueEvents: (true|has)/);
     });

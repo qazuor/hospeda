@@ -16,6 +16,7 @@ import { buildAuthSnapshot } from '../../helpers/auth-session';
 vi.mock('../../../src/lib/i18n', () => ({
     createTranslations: (_locale: string) => ({
         t: (_key: string, fallback?: string, params?: Record<string, unknown>) => {
+            if (_key === 'conversations.form.charCount') return `${params?.current}/${params?.max}`;
             if (params && fallback) {
                 return Object.entries(params).reduce(
                     (acc, [k, v]) => acc.replace(new RegExp(`\\{${k}\\}`, 'g'), String(v)),
@@ -216,7 +217,7 @@ describe('ContactHost', () => {
     // -------------------------------------------------------------------------
 
     describe('character counter', () => {
-        it('shows character counter on message field', () => {
+        it('describes the message length only from 90% of the limit', () => {
             render(
                 <ContactHost
                     accommodation={ACTIVE_ACCOMMODATION}
@@ -224,8 +225,13 @@ describe('ContactHost', () => {
                 />
             );
             // The char count span has aria-live="polite"
-            const counter = document.querySelector('[aria-live="polite"]');
-            expect(counter).toBeInTheDocument();
+            const message = screen.getByRole('textbox', { name: /message/i });
+            fireEvent.change(message, { target: { value: 'a'.repeat(4499) } });
+            expect(message).not.toHaveAccessibleDescription();
+            expect(screen.queryByText(/4499\/5000/)).not.toBeInTheDocument();
+
+            fireEvent.change(message, { target: { value: 'a'.repeat(4500) } });
+            expect(message).toHaveAccessibleDescription(/4500\/5000/);
         });
 
         it('disables submit button when message exceeds 5000 characters', () => {

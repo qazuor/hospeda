@@ -63,7 +63,7 @@ export function AiChatGuestUpsell({
     primaryRef,
     monthlyQuota
 }: AiChatGuestUpsellProps) {
-    const { t } = createTranslations(locale);
+    const { t, tPlural } = createTranslations(locale);
     const copy = (suffix: string): string => resolveAiChatCopy({ t, entityType, suffix });
     const { signUpHref, signInHref } = buildAiChatAuthHrefs({ locale, returnUrl });
 
@@ -81,9 +81,7 @@ export function AiChatGuestUpsell({
             <p className={styles.free}>
                 {monthlyQuota === undefined
                     ? copy('guestFree')
-                    : t('accommodations.aiChat.guestMonthlyQuota', undefined, {
-                          quota: monthlyQuota
-                      })}
+                    : tPlural('accommodations.aiChat.guestMonthlyQuota', monthlyQuota)}
             </p>
             <a
                 ref={primaryRef}

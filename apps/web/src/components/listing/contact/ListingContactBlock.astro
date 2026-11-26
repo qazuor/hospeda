@@ -11,15 +11,13 @@
  * This component only PRESENTS. Its props come from the per-vertical builders
  * in `@/lib/listing-contact/listing-contact-block`, which decide which channels
  * and networks a vertical shows, run every URL through
- * `resolveSafeExternalUrl` and never produce a WhatsApp channel. Every `href`
+ * `resolveSafeExternalUrl`. Every `href`
  * received here is already safe (or a `tel:` / `mailto:` URI). Tracking
  * attributes are the builder's `trackingData` plus a per-link
  * `contact-channel`.
  */
 import { EmailIcon, ExternalLinkIcon, GlobeIcon, PhoneIcon } from '@repo/icons';
 import GradientButton from '@/components/shared/ui/GradientButton.astro';
-import VenueWhatsAppContact from '@/components/venue/VenueWhatsAppContact.astro';
-import type { ComponentProps } from 'astro/types';
 import ListingSocialLinks from './ListingSocialLinks.astro';
 import type {
     ListingContactChannel,
@@ -45,8 +43,6 @@ interface Props {
     readonly blockProps?: Readonly<Record<string, string>>;
     /** The venue's «Ver menú» outbound link (not counted by the owner panel). */
     readonly menuLink?: ListingContactMenuLink;
-    /** Dedicated venue channel; never derived from social links. */
-    readonly venueWhatsAppContact?: ComponentProps<typeof VenueWhatsAppContact>;
 }
 
 const {
@@ -58,8 +54,7 @@ const {
     shell = 'card',
     id,
     blockProps = {},
-    menuLink,
-    venueWhatsAppContact
+    menuLink
 } = Astro.props;
 
 const CHANNEL_ICONS = { phone: PhoneIcon, email: EmailIcon, website: GlobeIcon } as const;
@@ -74,7 +69,7 @@ const CHANNEL_ICONS = { phone: PhoneIcon, email: EmailIcon, website: GlobeIcon }
     <!-- An <h2>: the block opens slot 10 on the three pages (HOS-2579 §6.8). -->
     {heading && <h2 class="listing-contact__title">{heading}</h2>}
 
-    {(channels.length > 0 || venueWhatsAppContact) && (
+    {(channels.length > 0 || Astro.slots.has('extra-channel')) && (
         <div class="listing-contact__channels">
             {channels.map(({ kind, href, label, srHint, interactionKind }) => {
                 const ChannelIcon = CHANNEL_ICONS[kind];
@@ -99,7 +94,7 @@ const CHANNEL_ICONS = { phone: PhoneIcon, email: EmailIcon, website: GlobeIcon }
                     </GradientButton>
                 );
             })}
-            {venueWhatsAppContact && <VenueWhatsAppContact {...venueWhatsAppContact} />}
+            <slot name="extra-channel" />
         </div>
     )}
 

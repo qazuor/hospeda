@@ -2,15 +2,15 @@ import { isUnlimitedLimit } from '@repo/schemas';
 import { useEffect, useState } from 'react';
 import { fetchPublicPlans } from '@/lib/billing/fetch-plans';
 import { touristBadgeCatalog } from '@/lib/billing/plan-badge';
-import type { TranslationFn } from '@/lib/i18n';
+import type { PluralTranslationFn } from '@/lib/i18n';
 
 /** Resolve real guest benefit copy on demand from the public tourist catalog. */
 export function useFavoriteGuestBenefit({
     open,
-    t
+    tPlural
 }: {
     readonly open: boolean;
-    readonly t: TranslationFn;
+    readonly tPlural: PluralTranslationFn;
 }) {
     const [benefit, setBenefit] = useState<{ readonly max: number; readonly plan?: string }>();
     useEffect(() => {
@@ -39,9 +39,9 @@ export function useFavoriteGuestBenefit({
         };
     }, [open]);
     if (!open || !benefit) return undefined;
-    return t(
+    return tPlural(
         benefit.plan ? 'ui.favorite.audit.guestBenefit' : 'ui.favorite.audit.guestFree',
-        undefined,
-        benefit
+        benefit.max,
+        { plan: benefit.plan }
     );
 }

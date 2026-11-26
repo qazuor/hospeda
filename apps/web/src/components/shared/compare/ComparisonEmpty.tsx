@@ -1,5 +1,5 @@
 import type { AccommodationCardData } from '@/data/types';
-import { createT, type SupportedLocale } from '@/lib/i18n';
+import { createTranslations, type SupportedLocale } from '@/lib/i18n';
 import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 import { buildUrl } from '@/lib/urls';
 import styles from './ComparisonMatrix.module.css';
@@ -24,7 +24,7 @@ export function ComparisonEmpty({
     readonly isLoading: boolean;
     readonly suggestions: readonly ComparisonSuggestion[];
 }) {
-    const t = createT(locale);
+    const { t, tPlural } = createTranslations(locale);
     const ctaPath = canCompare ? 'alojamientos' : PRICING_PAGE_PATH_BY_AUDIENCE.tourist;
     return (
         <div
@@ -35,7 +35,7 @@ export function ComparisonEmpty({
                 {t('accommodations.comparison.empty.title', 'No hay alojamientos para comparar')}
             </h2>
             <p className={styles.panelMessage}>
-                {comparisonBenefit({ t, planName, planCapacity })}
+                {comparisonBenefit({ t, tPlural, planName, planCapacity })}
             </p>
             {canCompare && (
                 <p className={styles.panelMessage}>

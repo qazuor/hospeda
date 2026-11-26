@@ -154,6 +154,7 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'billing.addon',
     'billing.addonPurchase',
     'billing.checkout',
+    'billing.common',
     'billing.limit',
     // HOS-1759 — the checkout island resolves the selected plan's localized
     // name through `billing/plan-name.ts`.

@@ -55,7 +55,7 @@ vi.mock('../../../src/lib/i18n', () => {
             params
         );
     const tPlural = (key: string, count: number, params?: Record<string, unknown>): string =>
-        interpolate(key, { ...params, count });
+        t(key, undefined, { ...params, count });
     return {
         createT: (_locale: string) => t,
         createTranslations: (_locale: string) => ({ t, tPlural })

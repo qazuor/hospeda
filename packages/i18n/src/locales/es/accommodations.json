@@ -19,7 +19,8 @@
         "gate": {
             "authMessage": "Iniciá sesión para comparar alojamientos.",
             "upsellMessage": "Compará alojamientos lado a lado.",
-            "benefit": "Compará hasta {{count}} alojamientos lado a lado con {{plan}}.",
+            "benefit_one": "Compará hasta {{count}} alojamiento lado a lado con {{plan}}.",
+            "benefit_other": "Compará hasta {{count}} alojamientos lado a lado con {{plan}}.",
             "upsellCta": "Ver planes"
         },
         "toast": {
@@ -1149,8 +1150,10 @@
         "guestExample3": "¿Cómo es el check-in?",
         "guestExamplesLead": "Por ejemplo:",
         "guestFree": "Es gratis con tu cuenta.",
-        "guestMonthlyQuota": "Creá tu cuenta gratis y consultá hasta {{quota}} veces por mes.",
-        "monthlyAllowance": "{{quota}} consultas por mes con tu plan.",
+        "guestMonthlyQuota_one": "Creá tu cuenta gratis y consultá hasta {{count}} vez por mes.",
+        "guestMonthlyQuota_other": "Creá tu cuenta gratis y consultá hasta {{count}} veces por mes.",
+        "monthlyAllowance_one": "{{count}} consulta por mes con tu plan.",
+        "monthlyAllowance_other": "{{count}} consultas por mes con tu plan.",
         "noticeLabel": "Sobre la IA y tu privacidad",
         "greeting": "¡Hola! ¿Qué te gustaría saber?",
         "guestSignUp": "Crear cuenta gratis",

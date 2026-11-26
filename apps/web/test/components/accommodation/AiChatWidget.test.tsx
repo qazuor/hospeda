@@ -62,7 +62,11 @@ vi.mock('@/lib/i18n', () => ({
             return (map[key] ?? fallback ?? key).replace(/\{\{(\w+)\}\}/g, (_, name) =>
                 String(params?.[name] ?? '')
             );
-        }
+        },
+        tPlural: (key: string, count: number) =>
+            key === 'accommodations.aiChat.guestMonthlyQuota'
+                ? `Consultá hasta ${count} veces por mes.`
+                : `${count} monthly questions`
     })
 }));
 

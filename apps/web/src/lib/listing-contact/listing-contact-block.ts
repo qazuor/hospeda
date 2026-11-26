@@ -254,12 +254,10 @@ export function buildVenueContactBlock(input: {
     readonly contactInfo?: VenueContactInfo | null;
     readonly socialNetworks: VenueSocialNetworks | null;
     readonly menuUrl?: string | null;
-    readonly hasWhatsapp?: boolean;
     readonly locale: SupportedLocale;
 }): ListingContactBlockModel | null {
     const { contactInfo, socialNetworks, menuUrl } = input;
-    if (!input.hasWhatsapp && !hasVenuePublicContact({ contactInfo, socialNetworks, menuUrl }))
-        return null;
+    if (!hasVenuePublicContact({ contactInfo, socialNetworks, menuUrl })) return null;
     const { t } = createTranslations(input.locale);
     const trackingData = trackingDataFor({ listingId: input.listingId, vertical: 'venue' });
 
@@ -312,9 +310,7 @@ export function buildVenueContactBlock(input: {
     const menuHref = resolveSafeExternalUrl(menuUrl);
 
     return {
-        ...(channels.length > 0 || input.hasWhatsapp
-            ? { heading: t('venue.detail.contactTitle', 'Contacto') }
-            : {}),
+        ...(channels.length > 0 ? { heading: t('venue.detail.contactTitle', 'Contacto') } : {}),
         socialHeading: t('venue.detail.social', 'Redes sociales'),
         channels,
         socialLinks: publicSocialLinks({

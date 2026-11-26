@@ -26,7 +26,7 @@ import type { BookmarkCollectionItem } from '@/lib/api/endpoints-protected';
 import { userBookmarksApi } from '@/lib/api/endpoints-protected';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
-import { createT } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 import type { ContactOrigin } from '@/lib/listing-contact/listing-contact-events';
 import { clearPendingAction, savePendingAction } from '@/lib/pending-action';
 import { setFavoriteStatus, useFavoriteStatus } from '@/store/favorites-store';
@@ -181,7 +181,7 @@ export const FavoriteButton: FC<FavoriteButtonProps> = ({
     origin,
     labels
 }) => {
-    const t = createT(locale);
+    const { t, tPlural } = createTranslations(locale);
 
     /**
      * Favorite state, resolved on the client and shared with every other heart
@@ -203,13 +203,14 @@ export const FavoriteButton: FC<FavoriteButtonProps> = ({
     } = useFavoriteUsage({
         account: user?.id,
         showUsage,
-        t
+        t,
+        tPlural
     });
     const isSessionResolved = permissions !== null;
 
     /** Whether the auth-required popover is currently visible. */
     const [isPopoverOpen, setIsPopoverOpen] = useState<boolean>(false);
-    const benefit = useFavoriteGuestBenefit({ open: isPopoverOpen, t });
+    const benefit = useFavoriteGuestBenefit({ open: isPopoverOpen, tPlural });
 
     /**
      * The bookmark id + collections list to render in the inline collection
@@ -321,6 +322,7 @@ export const FavoriteButton: FC<FavoriteButtonProps> = ({
         entityType,
         locale,
         t,
+        tPlural,
         origin,
         isFavorited,
         bookmarkId,

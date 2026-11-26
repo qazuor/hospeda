@@ -48,11 +48,18 @@ describe('venue contact block — no whatsapp read path (HOS-1076)', () => {
             'utf8'
         );
 
+        const section = readFileSync(
+            join(__dirname, '../../../src/components/venue/VenueContactSection.astro'),
+            'utf8'
+        );
         expect(block).toMatch(
-            /class="listing-contact__channels"[\s\S]*?<VenueWhatsAppContact[\s\S]*?<ListingSocialLinks/
+            /class="listing-contact__channels"[\s\S]*?<slot name="extra-channel"[\s\S]*?<ListingSocialLinks/
+        );
+        expect(section).toMatch(
+            /<ListingContactBlock[\s\S]*?<VenueWhatsAppContact\s+slot="extra-channel"/
         );
         expect(page).not.toContain('Component: VenueWhatsAppContact');
-        expect(page).toContain('venueWhatsAppContact:');
+        expect(page).toContain('Component: VenueContactSection');
     });
     it('the allowed social keys and their list in listing-contact-block.ts have no whatsapp entry', () => {
         const source = readFileSync(CONTACT_BLOCK_PATH, 'utf-8');

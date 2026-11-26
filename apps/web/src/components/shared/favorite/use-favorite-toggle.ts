@@ -4,7 +4,7 @@ import { WebEvents } from '@/lib/analytics/events';
 import { trackEvent } from '@/lib/analytics/umami-client';
 import { userBookmarksApi } from '@/lib/api/endpoints-protected';
 import { buildLimitReachedPayloadFromDetails } from '@/lib/billing-limit-error';
-import type { createT, SupportedLocale } from '@/lib/i18n';
+import type { PluralTranslationFn, SupportedLocale, TranslationFn } from '@/lib/i18n';
 import type { ContactOrigin } from '@/lib/listing-contact/listing-contact-events';
 import { buildUrl } from '@/lib/urls';
 import { addToast } from '@/store/toast-store';
@@ -14,7 +14,8 @@ interface FavoriteToggleOptions {
     readonly entityId: string;
     readonly entityType: FavoriteEntityType;
     readonly locale: SupportedLocale;
-    readonly t: ReturnType<typeof createT>;
+    readonly t: TranslationFn;
+    readonly tPlural: PluralTranslationFn;
     readonly origin?: ContactOrigin;
     readonly isFavorited: boolean;
     readonly bookmarkId: string | null;
@@ -31,6 +32,7 @@ export function useFavoriteToggle({
     entityType,
     locale,
     t,
+    tPlural,
     origin,
     isFavorited,
     bookmarkId,
@@ -99,7 +101,7 @@ export function useFavoriteToggle({
                             type: 'info',
                             layout: 'compact',
                             message: knownMax
-                                ? t('ui.favorite.audit.limit', undefined, { max })
+                                ? tPlural('ui.favorite.audit.limit', max)
                                 : t('ui.favorite.audit.limitUnknown'),
                             action: {
                                 label: t('billing.common.viewPlans'),

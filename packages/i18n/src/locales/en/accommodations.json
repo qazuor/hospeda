@@ -19,7 +19,8 @@
         "gate": {
             "authMessage": "Sign in to compare accommodations.",
             "upsellMessage": "Compare accommodations side by side.",
-            "benefit": "Compare up to {{count}} accommodations side by side with {{plan}}.",
+            "benefit_one": "Compare up to {{count}} accommodation side by side with {{plan}}.",
+            "benefit_other": "Compare up to {{count}} accommodations side by side with {{plan}}.",
             "upsellCta": "View plans"
         },
         "toast": {
@@ -1149,8 +1150,10 @@
         "guestExample3": "How does check-in work?",
         "guestExamplesLead": "For example:",
         "guestFree": "It is free with your account.",
-        "guestMonthlyQuota": "Create a free account and ask up to {{quota}} questions per month.",
-        "monthlyAllowance": "Your plan includes {{quota}} questions per month.",
+        "guestMonthlyQuota_one": "Create a free account and ask up to {{count}} question per month.",
+        "guestMonthlyQuota_other": "Create a free account and ask up to {{count}} questions per month.",
+        "monthlyAllowance_one": "Your plan includes {{count}} question per month.",
+        "monthlyAllowance_other": "Your plan includes {{count}} questions per month.",
         "noticeLabel": "About AI and your privacy",
         "greeting": "Hi! What would you like to know?",
         "guestSignUp": "Create a free account",

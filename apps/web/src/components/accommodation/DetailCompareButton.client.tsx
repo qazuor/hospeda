@@ -225,7 +225,7 @@ export const DetailCompareButton: FC<DetailCompareButtonProps> = ({
             {upsellOpen && gated && !isLoading && (
                 <CompareUpsellPopover
                     anchorRef={buttonRef}
-                    message={comparisonBenefit({ t, planName, planCapacity })}
+                    message={comparisonBenefit({ t, tPlural, planName, planCapacity })}
                     ctaLabel={t('accommodations.comparison.gate.upsellCta', 'Ver planes')}
                     ctaHref={pricingHref}
                     onClose={() => setUpsellOpen(false)}

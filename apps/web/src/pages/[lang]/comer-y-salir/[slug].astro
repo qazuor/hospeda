@@ -36,7 +36,7 @@ import VenuePromotions from '@/components/venue/VenuePromotions.astro';
 import VenueNightInfo from '@/components/venue/VenueNightInfo.astro';
 import ListingHouseRules from '@/components/listing/ListingHouseRules.astro';
 import OpeningHoursSection from '@/components/venue/OpeningHoursSection.astro';
-import ListingContactBlock from '@/components/listing/contact/ListingContactBlock.astro';
+import VenueContactSection from '@/components/venue/VenueContactSection.astro';
 import LocationSection from '@/components/listing/location/LocationSection.astro';
 import { buildVenueJsonLdPlace } from '@/lib/venue/venue-address';
 import { hasVenuePublicContact } from '@/lib/venue-contact';
@@ -346,16 +346,19 @@ const hasOpeningHours =
 const venueLocation = buildVenueLocation({ venue, locale });
 
 /**
- * HOS-2579 §6.4: the shared contact block, including WhatsApp-only venues.
+ * HOS-2579 §6.4: public venue contact channels. The gated channel is separate.
  */
 const venueContactBlock = buildVenueContactBlock({
     listingId: venue.id,
     contactInfo: venue.contactInfo,
     socialNetworks: venue.socialNetworks,
     menuUrl: venue.menuUrl,
-    hasWhatsapp: Boolean(venueWhatsApp),
     locale
 });
+const whatsappContact = venueWhatsApp
+    ? { venue: { id: venue.id, name: venue.name, whatsapp: venueWhatsApp }, signInHref: reviewSignInHref, locale }
+    : undefined;
+const hasContactSection = venueContactBlock !== null || Boolean(whatsappContact);
 
 const venueDetailSectionBlocks: Readonly<
     Record<VenueDetailBodySectionId, readonly VenueDetailBlock[]>
@@ -396,15 +399,10 @@ const venueDetailSectionBlocks: Readonly<
         // public page places the house rules by slot (11, `policies`) since HOS-2579.
     ],
     contact: [
-        ...(venueContactBlock
+        ...(hasContactSection
             ? [{
-                  Component: ListingContactBlock,
-                  props: {
-                      ...venueContactBlock,
-                      venueWhatsAppContact: venueWhatsApp
-                          ? { venue: { id: venue.id, name: venue.name, whatsapp: venueWhatsApp }, signInHref: reviewSignInHref, locale }
-                          : undefined
-                  }
+                  Component: VenueContactSection,
+                  props: { contactBlock: venueContactBlock, whatsappContact, locale }
               }]
             : [])
     ],
@@ -456,7 +454,6 @@ const hasDescriptionSection = hasListingDescription({
     richDescription: venue.richDescription
 });
 const hasOffersSection = hasVenueOffersContent({ venue, showEventsCta });
-const hasContactSection = venueContactBlock !== null;
 const hasSummarySection = Boolean(venue.priceRange || barPhoneHref || venue.contactInfo?.workEmail) || contactMode.kind !== 'none';
 const hasPoliciesSection = hasHouseRules({ policies: houseRulePolicies, locale });
 const sectionTabs = buildListingSectionTabs({

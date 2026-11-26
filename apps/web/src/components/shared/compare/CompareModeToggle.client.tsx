@@ -3,7 +3,7 @@ import { type FC, useEffect, useRef, useState } from 'react';
 import { PlanBadge } from '@/components/shared/ui/PlanBadge';
 import { useCompareGuard } from '@/hooks/useCompareGuard';
 import { cn } from '@/lib/cn';
-import { createT, type SupportedLocale } from '@/lib/i18n';
+import { createTranslations, type SupportedLocale } from '@/lib/i18n';
 import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 import {
     loadCompareModeFromStorage,
@@ -29,7 +29,7 @@ export const CompareModeToggle: FC<CompareModeToggleProps> = ({
     planName = null,
     planCapacity
 }) => {
-    const t = createT(locale);
+    const { t, tPlural } = createTranslations(locale);
     const mode = useCompareMode();
     const { canCompare, isLoading } = useCompareGuard();
     const [isUpsellPopoverOpen, setIsUpsellPopoverOpen] = useState(false);
@@ -47,7 +47,7 @@ export const CompareModeToggle: FC<CompareModeToggleProps> = ({
         'accommodations.comparison.mode.bannerHint',
         'Elegí los alojamientos que querés comparar'
     );
-    const benefit = comparisonBenefit({ t, planName, planCapacity });
+    const benefit = comparisonBenefit({ t, tPlural, planName, planCapacity });
 
     const handleClick = (): void => {
         if (active || (!isLoading && canCompare)) {

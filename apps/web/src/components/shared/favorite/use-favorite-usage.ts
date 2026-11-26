@@ -2,7 +2,7 @@ import { isUnlimitedLimit } from '@repo/schemas';
 import { useEffect, useSyncExternalStore } from 'react';
 import { useMyEntitlements } from '@/hooks/useMyEntitlements';
 import { userBookmarksApi } from '@/lib/api/endpoints-protected';
-import type { TranslationFn } from '@/lib/i18n';
+import type { PluralTranslationFn, TranslationFn } from '@/lib/i18n';
 
 let totalSnapshot: { readonly account: string; readonly total?: number } | undefined;
 let pendingTotal: Promise<number | undefined> | undefined;
@@ -55,11 +55,13 @@ function readTotal({
 export function useFavoriteUsage({
     account,
     showUsage,
-    t
+    t,
+    tPlural
 }: {
     readonly account: string | undefined;
     readonly showUsage: boolean | 'tooltip';
     readonly t: TranslationFn;
+    readonly tPlural: PluralTranslationFn;
 }) {
     const { limit, isLoading, error } = useMyEntitlements({ vertical: 'tourist', skip: !account });
     const max = limit('max_favorites');
@@ -81,9 +83,10 @@ export function useFavoriteUsage({
             label = t('common.card.favoritesUnlimited');
             counter = '∞';
         } else if (finite && total !== undefined) {
-            const key =
-                showUsage === 'tooltip' ? 'ui.favorite.audit.usage' : 'common.card.favoriteUsage';
-            label = t(key, undefined, { count: total, max });
+            label =
+                showUsage === 'tooltip'
+                    ? tPlural('ui.favorite.audit.usage', max, { current: total })
+                    : t('common.card.favoriteUsage', undefined, { count: total, max });
             counter = `${total}/${max}`;
         }
     }
@@ -98,7 +101,7 @@ export function useFavoriteUsage({
             if (!saved) return undefined;
             if (unlimited) return t('ui.favorite.audit.savedUnlimited');
             if (refreshed !== undefined) {
-                const usage = t('ui.favorite.audit.usage', undefined, { count: refreshed, max });
+                const usage = tPlural('ui.favorite.audit.usage', max, { current: refreshed });
                 return t('ui.favorite.audit.savedUsage', undefined, { usage });
             }
             return undefined;

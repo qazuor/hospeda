@@ -41,11 +41,11 @@ const FIXED_POSITION_FILES: Readonly<Record<string, FixedPositionCategory>> = Ob
     'pages/[lang]/comer-y-salir/[slug].astro': 'comment',
     'components/post/ReadingProgressBar.module.css': 'top',
     'components/maps/MapCardsSidebar.module.css': 'overlay',
-    'components/accommodation/AiChatWidget.tsx': 'comment',
     'components/ai-search/AiSearchEntry.module.css': 'dock',
     'components/accommodation/AiChatFab.module.css': 'dock',
     'components/gallery/GalleryLightbox.module.css': 'overlay',
     'components/auth/AuthRequiredPopover.client.tsx': 'comment',
+    // The panel is fixed; its D02 price strip is in the panel's own layout.
     'components/accommodation/AiChatWidget.module.css': 'overlay',
     'components/legal/CookieConsentBanner.module.css': 'bottom-bar',
     'components/ui/ToastViewport.module.css': 'bottom-bar',

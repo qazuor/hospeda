@@ -178,12 +178,16 @@
     },
     "favorite": {
         "audit": {
-            "usage": "{{count}} de {{max}} favoritos",
+            "usage_one": "{{current}} de {{count}} favorito",
+            "usage_other": "{{current}} de {{count}} favoritos",
             "savedUsage": "Guardado · {{usage}}",
             "savedUnlimited": "Guardado · Favoritos ilimitados",
-            "guestBenefit": "{{max}} favoritos gratis · ilimitados con {{plan}}",
-            "guestFree": "Guardá hasta {{max}} favoritos gratis",
-            "limit": "Guardá más de {{max}} favoritos con otro plan",
+            "guestBenefit_one": "{{count}} favorito gratis · ilimitados con {{plan}}",
+            "guestBenefit_other": "{{count}} favoritos gratis · ilimitados con {{plan}}",
+            "guestFree_one": "Guardá hasta {{count}} favorito gratis",
+            "guestFree_other": "Guardá hasta {{count}} favoritos gratis",
+            "limit_one": "Guardá más de {{count}} favorito con otro plan",
+            "limit_other": "Guardá más de {{count}} favoritos con otro plan",
             "limitUnknown": "Explorá planes para guardar más favoritos",
             "manage": "Administrar mis favoritos"
         },
