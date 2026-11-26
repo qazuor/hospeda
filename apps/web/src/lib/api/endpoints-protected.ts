@@ -6050,6 +6050,15 @@ export const billingSubscriptionApi = {
             cookieHeader
         });
     },
+    /**
+     * Read the payer email remembered from the account's last approved charge (HOS-2616).
+     * It only prefills a checkout; it is a declared value, never a confirmed identity.
+     */
+    readRememberedPayerEmail(): Promise<
+        ApiResult<{ readonly rememberedPayerEmail: string | null }>
+    > {
+        return apiClient.getProtected({ path: `${PROTECTED}/billing-subscription/payer-email` });
+    },
     /** Read one owned subscription (status and anchored billing option); a foreign id answers 404. */
     read({
         subscriptionId,

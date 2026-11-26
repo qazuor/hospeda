@@ -15,10 +15,12 @@ import {
     type SignupTouristVipNotice,
     type SignupTrialNotice
 } from '@/lib/billing/signup-checkout';
+import { useRememberedPayerEmail } from '@/lib/billing/use-remembered-payer-email';
 import { createTranslations, type SupportedLocale } from '@/lib/i18n';
 import { resolveSafeExternalUrl } from '@/lib/safe-external-url';
 import { PaidSignupsPausedNotice } from './PaidSignupsPausedNotice';
 import { PendingAttemptPanel } from './PendingAttemptPanel';
+import { RememberedPayerEmailNote } from './RememberedPayerEmailNote';
 import styles from './SignupCheckout.module.css';
 import { SignupCheckoutSummary } from './SignupCheckoutSummary';
 
@@ -86,6 +88,16 @@ export function SignupCheckout({
     const [cancelling, setCancelling] = useState(false);
     const [payerEmail, setPayerEmail] = useState(accountEmail);
     const [payerEmailError, setPayerEmailError] = useState(false);
+    // HOS-2616: the email declared on the last approved charge prefills the checkout until the
+    // payer types another one or asks to change it. It is declared, never confirmed.
+    const { rememberedEmail } = useRememberedPayerEmail();
+    const [usingRememberedEmail, setUsingRememberedEmail] = useState(false);
+    const payerEmailEdited = useRef(false);
+    useEffect(() => {
+        if (!rememberedEmail || payerEmailEdited.current) return;
+        setPayerEmail(rememberedEmail);
+        setUsingRememberedEmail(true);
+    }, [rememberedEmail]);
     const payerEmailInputId = useId();
     const payerEmailHelpId = useId();
     const payerEmailErrorId = useId();
@@ -232,50 +244,65 @@ export function SignupCheckout({
                             vertical={vertical}
                         />
                     )}
-                    <div className={styles.payerEmailField}>
-                        <label
-                            className={styles.payerEmailLabel}
-                            htmlFor={payerEmailInputId}
-                        >
-                            {t('billing.checkout.signup.payerEmail.label')}
-                        </label>
-                        <p
-                            className={styles.payerEmailHint}
-                            id={payerEmailHelpId}
-                        >
-                            {t('billing.checkout.signup.payerEmail.hint')}
-                        </p>
-                        <input
-                            id={payerEmailInputId}
-                            className={styles.payerEmailInput}
-                            type="email"
-                            inputMode="email"
-                            autoComplete="email"
-                            data-testid="signup-checkout-payer-email"
-                            value={payerEmail}
-                            aria-invalid={payerEmailError}
-                            aria-describedby={`${payerEmailHelpId}${payerEmailError ? ` ${payerEmailErrorId}` : ''}`}
-                            onChange={(event) => {
-                                setPayerEmail(event.currentTarget.value);
-                                setPayerEmailError(false);
-                            }}
-                            onBlur={(event) => {
-                                setPayerEmailError(
-                                    !resolveDeclaredPayerEmail({ value: event.currentTarget.value })
-                                        .ok
-                                );
-                            }}
-                        />
-                        {payerEmailError && (
-                            <p
-                                className={styles.payerEmailError}
-                                id={payerEmailErrorId}
-                                role="alert"
+                    {usingRememberedEmail ? (
+                        <div className={styles.payerEmailField}>
+                            <RememberedPayerEmailNote
+                                locale={locale}
+                                email={payerEmail}
+                                onChange={() => {
+                                    payerEmailEdited.current = true;
+                                    setUsingRememberedEmail(false);
+                                }}
+                            />
+                        </div>
+                    ) : (
+                        <div className={styles.payerEmailField}>
+                            <label
+                                className={styles.payerEmailLabel}
+                                htmlFor={payerEmailInputId}
                             >
-                                {t('billing.checkout.signup.payerEmail.invalid')}
+                                {t('billing.checkout.signup.payerEmail.label')}
+                            </label>
+                            <p
+                                className={styles.payerEmailHint}
+                                id={payerEmailHelpId}
+                            >
+                                {t('billing.checkout.signup.payerEmail.hint')}
                             </p>
-                        )}
-                    </div>
+                            <input
+                                id={payerEmailInputId}
+                                className={styles.payerEmailInput}
+                                type="email"
+                                inputMode="email"
+                                autoComplete="email"
+                                data-testid="signup-checkout-payer-email"
+                                value={payerEmail}
+                                aria-invalid={payerEmailError}
+                                aria-describedby={`${payerEmailHelpId}${payerEmailError ? ` ${payerEmailErrorId}` : ''}`}
+                                onChange={(event) => {
+                                    payerEmailEdited.current = true;
+                                    setPayerEmail(event.currentTarget.value);
+                                    setPayerEmailError(false);
+                                }}
+                                onBlur={(event) => {
+                                    setPayerEmailError(
+                                        !resolveDeclaredPayerEmail({
+                                            value: event.currentTarget.value
+                                        }).ok
+                                    );
+                                }}
+                            />
+                            {payerEmailError && (
+                                <p
+                                    className={styles.payerEmailError}
+                                    id={payerEmailErrorId}
+                                    role="alert"
+                                >
+                                    {t('billing.checkout.signup.payerEmail.invalid')}
+                                </p>
+                            )}
+                        </div>
+                    )}
                     {trialNotice && (
                         <div
                             className={styles.trialNotice}

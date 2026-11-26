@@ -43,6 +43,20 @@ export interface PlanChangeChoices {
 }
 
 /**
+ * The email remembered from the account's last approved charge (HOS-2616); `''` when none.
+ * Declared, never confirmed. Used only when the subscription itself declared none.
+ */
+async function loadRememberedPayerEmail(): Promise<string> {
+    try {
+        const remembered = await billingSubscriptionApi.readRememberedPayerEmail();
+        return remembered.ok ? (remembered.data.rememberedPayerEmail ?? '') : '';
+    } catch {
+        // A convenience read: the form simply stays empty.
+        return '';
+    }
+}
+
+/**
  * Read the email the payer declared on one owned subscription, to prefill the plan-change
  * form (HOS-2218). It is a declaration, never a confirmed identity; `''` when none is known.
  */
@@ -52,7 +66,8 @@ export async function loadDeclaredPayerEmail({
     readonly subscriptionId: string;
 }): Promise<string> {
     const current = await billingSubscriptionApi.read({ subscriptionId });
-    return current.ok ? (current.data.declaredPayerEmail ?? '') : '';
+    const declared = current.ok ? (current.data.declaredPayerEmail ?? '') : '';
+    return declared || (await loadRememberedPayerEmail());
 }
 
 /** Validate a declared payer email before sending it; `null` when it is not an email. */
@@ -101,7 +116,10 @@ export async function loadPlanChangeChoices({
                 })
             }));
     });
-    return { choices, declaredPayerEmail: current.data.declaredPayerEmail ?? '' };
+    return {
+        choices,
+        declaredPayerEmail: current.data.declaredPayerEmail || (await loadRememberedPayerEmail())
+    };
 }
 
 /** Localized response after a protected plan-change request. */
