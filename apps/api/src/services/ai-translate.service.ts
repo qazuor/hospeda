@@ -15,121 +15,27 @@
  */
 
 import { getDb } from '@repo/db';
-import { accommodations, destinations, events, pointsOfInterest, posts } from '@repo/db/schemas';
 import type { AiFeature, I18nText, TranslationMeta } from '@repo/schemas';
 import { I18nTextSchema, TranslationMetaSchema } from '@repo/schemas';
 import { and, eq, gt, isNull } from 'drizzle-orm';
-import type { PgColumn, PgTable } from 'drizzle-orm/pg-core';
+import type { PgColumn } from 'drizzle-orm/pg-core';
 import { apiLogger } from '../utils/logger.js';
 import { createConfiguredAiService } from './ai-service.factory.js';
+import { readSourceText } from './translation/read-source-text.js';
+import {
+    type ContentLocale,
+    ENTITY_FIELDS,
+    getEntityTable,
+    I18N_COLUMN_MAP,
+    i18nColumn,
+    type TranslatableEntityType
+} from './translation/translatable-entities.js';
+
+export type { ContentLocale, TranslatableEntityType };
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
-
-/** Entity types that can be translated. */
-export type TranslatableEntityType =
-    | 'accommodation'
-    | 'destination'
-    | 'event'
-    | 'post'
-    | 'pointOfInterest';
-
-/** Fields to translate per entity type. */
-const ENTITY_FIELDS: Readonly<Record<TranslatableEntityType, readonly string[]>> = {
-    accommodation: ['name', 'summary', 'description', 'richDescription'],
-    destination: ['name', 'summary', 'description'],
-    event: ['name', 'summary', 'description'],
-    post: ['title', 'summary', 'content'],
-    // HOS-143 G-6: POI (HOS-138 v2 model) only ever had `nameI18n` /
-    // `descriptionI18n` — there is no plain `name` column (see the
-    // `loadTranslatableFields` fallback below for how the Spanish source
-    // value is still resolved for `name`).
-    pointOfInterest: ['name', 'description']
-} as const;
-
-/**
- * Structural view of a translatable entity table.
- *
- * The four content tables share the `id`, `deletedAt` and `translationMeta`
- * columns (typed here so they stay strongly typed) plus the per-field `*I18n`
- * columns that are accessed dynamically by name via {@link i18nColumn}. This
- * keeps the dynamic-column ergonomics without resorting to `any`.
- */
-type TranslatableTable = PgTable & {
-    id: PgColumn;
-    deletedAt: PgColumn;
-    translationMeta: PgColumn;
-};
-
-/**
- * Resolves a dynamic per-field i18n column (e.g. `nameI18n`) by name. The
- * column is guaranteed to exist because the names come from {@link I18N_COLUMN_MAP}.
- */
-function i18nColumn(table: TranslatableTable, columnName: string): PgColumn {
-    // TYPE-WORKAROUND: Drizzle exposes table columns under an internal symbol, so
-    // dynamic by-name access needs a structural cast. The name always comes from
-    // I18N_COLUMN_MAP, so the column is guaranteed to exist.
-    return (table as unknown as Record<string, PgColumn>)[columnName] as PgColumn;
-}
-
-/**
- * Resolves the Drizzle table for a translatable entity type.
- *
- * Resolution is lazy (inside a function, never a module-level constant) so that
- * importing this module does NOT touch the `@repo/db/schemas` table bindings at
- * load time. The AI translate routes are registered in the global API route
- * tree, so a top-level table reference would crash every route test that
- * partially mocks `@repo/db/schemas`.
- */
-function getEntityTable(entityType: TranslatableEntityType): TranslatableTable {
-    // Built lazily inside the function (never a top-level const) so importing this
-    // module does not access the bindings — the table objects are `unknown` here
-    // and narrowed by the single documented cast below.
-    const tables: Record<TranslatableEntityType, unknown> = {
-        accommodation: accommodations,
-        destination: destinations,
-        event: events,
-        post: posts,
-        pointOfInterest: pointsOfInterest
-    };
-    // TYPE-WORKAROUND: a Drizzle table's structural shape does not overlap the
-    // narrow `TranslatableTable` view (columns live under an internal symbol), so
-    // the projection requires an explicit cast from `unknown`.
-    return tables[entityType] as TranslatableTable;
-}
-
-/** Map entity type to its i18n column suffixes. */
-const I18N_COLUMN_MAP: Record<TranslatableEntityType, Record<string, string>> = {
-    accommodation: {
-        name: 'nameI18n',
-        summary: 'summaryI18n',
-        description: 'descriptionI18n',
-        richDescription: 'richDescriptionI18n'
-    },
-    destination: {
-        name: 'nameI18n',
-        summary: 'summaryI18n',
-        description: 'descriptionI18n'
-    },
-    event: {
-        name: 'nameI18n',
-        summary: 'summaryI18n',
-        description: 'descriptionI18n'
-    },
-    post: {
-        title: 'titleI18n',
-        summary: 'summaryI18n',
-        content: 'contentI18n'
-    },
-    pointOfInterest: {
-        name: 'nameI18n',
-        description: 'descriptionI18n'
-    }
-};
-
-/** Content locales that participate in translation. */
-export type ContentLocale = 'es' | 'en' | 'pt';
 
 /** All content locales, used to derive target locales from a source locale. */
 const CONTENT_LOCALES: readonly ContentLocale[] = ['es', 'en', 'pt'] as const;
@@ -862,18 +768,10 @@ export async function loadTranslatableFields(
         // locales read the value from the per-field i18n column.
         let value: unknown;
         if (sourceLocale === 'es') {
-            value = data[field];
-            // HOS-143 G-6: `pointOfInterest.name` has no plain column (HOS-138 —
-            // `nameI18n` is the sole name source), so `data[field]` is always
-            // `undefined` for it. Fall back to the field's i18n column `es` key
-            // in that case. This branch is unreachable for the other four
-            // entity types, whose plain columns always exist (value is `null`
-            // or a string there, never `undefined`).
-            if (value === undefined) {
-                const i18nCol = i18nColumnMap[field];
-                const i18nValue = i18nCol ? (data[i18nCol] as I18nText | null) : null;
-                value = i18nValue?.es;
-            }
+            // HOS-143 G-6 / HOS-2658: fields with no plain column
+            // (`pointOfInterest.name`, `venue.entryNote`) fall back to the
+            // i18n column's `es` key inside `readSourceText`.
+            value = readSourceText({ entityType, row: data, field }).text;
         } else {
             const i18nCol = i18nColumnMap[field];
             const i18nValue = i18nCol ? (data[i18nCol] as I18nText | null) : null;
@@ -1094,8 +992,8 @@ export async function batchTranslate(input: BatchTranslateInput): Promise<BatchT
                 // Extract field values
                 const fieldValues: Record<string, string> = {};
                 for (const field of fields) {
-                    const value = row[field];
-                    if (typeof value === 'string' && value.trim().length > 0) {
+                    const value = readSourceText({ entityType, row, field }).text;
+                    if (value.trim().length > 0) {
                         fieldValues[field] = value;
                     }
                 }

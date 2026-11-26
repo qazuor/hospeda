@@ -18,7 +18,9 @@ vi.mock('@repo/db/schemas', () => ({
     destinations: { id: { name: 'id' } },
     events: { id: { name: 'id' } },
     posts: { id: { name: 'id' } },
-    pointsOfInterest: { id: { name: 'id' } }
+    pointsOfInterest: { id: { name: 'id' } },
+    venues: { id: { name: 'id' } },
+    experiences: { id: { name: 'id' } }
 }));
 
 vi.mock('../ai-service.factory.js', () => ({
@@ -398,6 +400,69 @@ describe('loadTranslatableFields — pointOfInterest name fallback (HOS-143 G-6)
         const fields = await loadTranslatableFields('pointOfInterest', 'test-uuid', 'es');
 
         expect(fields).toEqual({ description: 'Solo esto' });
+    });
+});
+
+describe('loadTranslatableFields — venue and experience (HOS-2658)', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    function mockRow(row: Record<string, unknown>): void {
+        (getDb as Mock).mockReturnValue({
+            select: vi.fn().mockReturnValue({
+                from: vi.fn().mockReturnValue({
+                    where: vi.fn().mockReturnValue({
+                        limit: vi.fn().mockResolvedValue([row])
+                    })
+                })
+            })
+        });
+    }
+
+    it('reads venue entryNote from entryNoteI18n.es and the plain columns for the rest', async () => {
+        // Arrange
+        mockRow({
+            name: 'Bar del Puerto',
+            summary: 'Tragos junto al río',
+            description: 'Barra y música en vivo',
+            richDescription: null,
+            nameI18n: { es: 'Nombre viejo', en: 'Old', pt: '' },
+            entryNoteI18n: { es: 'Gratis hasta la 1', en: 'Free until 1', pt: '' }
+        });
+
+        // Act
+        const fields = await loadTranslatableFields('venue', 'venue-uuid', 'es');
+
+        // Assert
+        expect(fields).toEqual({
+            name: 'Bar del Puerto',
+            summary: 'Tragos junto al río',
+            description: 'Barra y música en vivo',
+            entryNote: 'Gratis hasta la 1'
+        });
+    });
+
+    it('reads the four experience fields and never an entryNote', async () => {
+        // Arrange
+        mockRow({
+            name: 'Kayak al atardecer',
+            summary: 'Remada guiada',
+            description: 'Dos horas por el río',
+            richDescription: '## Qué incluye',
+            entryNoteI18n: { es: 'No aplica', en: '', pt: '' }
+        });
+
+        // Act
+        const fields = await loadTranslatableFields('experience', 'exp-uuid', 'es');
+
+        // Assert
+        expect(fields).toEqual({
+            name: 'Kayak al atardecer',
+            summary: 'Remada guiada',
+            description: 'Dos horas por el río',
+            richDescription: '## Qué incluye'
+        });
     });
 });
 
