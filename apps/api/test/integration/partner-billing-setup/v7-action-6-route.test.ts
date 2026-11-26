@@ -415,7 +415,8 @@ describe('TEST:V7:17 AC:V7:17 — action 6 configures a Partner plan and manual 
                 planSlug: partnerOptions.planSlug,
                 cycle: 'monthly',
                 amountMinor: 25000,
-                currency: 'ARS'
+                currency: 'ARS',
+                paymentMethods: ['CARD', 'MANUAL']
             },
             {
                 billingOptionId: partnerOptions.quarterlyOptionId,
@@ -424,7 +425,8 @@ describe('TEST:V7:17 AC:V7:17 — action 6 configures a Partner plan and manual 
                 planSlug: partnerOptions.planSlug,
                 cycle: 'quarterly',
                 amountMinor: 70000,
-                currency: 'ARS'
+                currency: 'ARS',
+                paymentMethods: ['CARD', 'MANUAL']
             }
         ]);
         expect(await rowCounts(owner.id, partner.id)).toEqual(before);
