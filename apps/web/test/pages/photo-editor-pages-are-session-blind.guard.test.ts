@@ -22,6 +22,11 @@
  * promise is only "no SSR cap read", so the session checks stay scoped to the
  * two pages themselves.
  *
+ * The scan also follows `.astro` imports (layouts and components, frontmatter
+ * and template), since they render on the server too. D-18 still allows their
+ * session use: only the cap-read patterns apply. React islands are client code
+ * and are not followed.
+ *
  * Traversal stops at the `lib/api/endpoints*` and `lib/api/transforms` barrels: they DEFINE every API
  * client, so scanning them would flag the definition. What matters is a
  * helper importing or calling the allowance client, and that is caught in the
@@ -80,12 +85,16 @@ function resolveLocalImport(from: string, spec: string): string | null {
     else if (spec.startsWith('.')) base = resolve(dirname(from), spec);
     else return null;
     for (const candidate of [base, `${base}.ts`, `${base}.tsx`, join(base, 'index.ts')]) {
-        if (/\.(ts|tsx)$/.test(candidate) && existsSync(candidate)) return candidate;
+        if (/\.(ts|tsx|astro)$/.test(candidate) && existsSync(candidate)) return candidate;
     }
     return null;
 }
 
-/** Every `src/lib` module reachable from `entries` by local imports. */
+/**
+ * Every `src/lib` module and every `.astro` layout/component (frontmatter and
+ * template, which render on the server) reachable from `entries` by local
+ * imports. React islands (`.tsx` outside `src/lib`) are client code and not followed.
+ */
 function collectLibClosure(entries: readonly string[]): ReadonlyMap<string, string> {
     const seen = new Map<string, string>();
     const queue = [...entries];
@@ -96,7 +105,9 @@ function collectLibClosure(entries: readonly string[]): ReadonlyMap<string, stri
             const target = resolveLocalImport(file, match[1] as string);
             if (!target || seen.has(target)) continue;
             const rel = target.slice(SRC_ROOT.length + 1);
-            if (!rel.startsWith('lib/') || /^lib\/api\/(endpoints|transforms)/.test(rel)) continue;
+            const isAstro = rel.endsWith('.astro');
+            if (!isAstro && !rel.startsWith('lib/')) continue;
+            if (/^lib\/api\/(endpoints|transforms)/.test(rel)) continue;
             seen.set(target, source);
             queue.push(target);
         }
@@ -141,6 +152,9 @@ describe('photo editor pages stay session-blind (HOS-2495, AC-24)', () => {
         const names = [...closure.keys()].map((f) => f.slice(SRC_ROOT.length + 1));
         expect(names).toContain('lib/editor/resolve-editor-page.ts');
         expect(names).toContain('lib/editor/resolve-listing-editor-page.ts');
+        expect(names).toContain('layouts/EditorSectionLayout.astro');
+        expect(names).toContain('layouts/ListingEditorSectionLayout.astro');
+        expect(names.some((n) => n.endsWith('PhotoSection.client.tsx'))).toBe(false);
     });
 
     it('no SSR helper reachable from the photo pages reads the photo cap', () => {
