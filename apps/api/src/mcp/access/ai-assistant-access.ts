@@ -9,13 +9,21 @@
  * set cannot be read: `readEffectiveKeys` would turn an outage into "your plan
  * does not include it", an upsell the owner cannot act on.
  *
+ * A vertical only counts when the account holds plan state in it. An account
+ * that never touched a vertical is PRE_TRIAL there, and PRE_TRIAL grants the key
+ * (pre-trial owners get the assistant, owner decision 2026-11-25). Counting
+ * that grant would let every floor-only owner in through a vertical they never
+ * used: a venue owner whose trial ended would pass on accommodation's
+ * pre-trial (found in the staging smoke, 2026-11-26). So both reads run for the
+ * three verticals, and a grant counts only where the account holds plan state.
+ *
  * Outcomes, in order:
- * 1. any vertical grants the key → `GRANTED`;
- * 2. none grants and some read failed → `UNAVAILABLE` (never a refusal);
- * 3. none grants and the account holds no plan state in any of the three
- *    verticals → `NOT_GATED`: host-trade providers, partners, editors and staff
- *    are not owners, so the plan gate does not apply to them (each tool still
- *    authorizes them on its own);
+ * 1. a vertical where the account holds plan state grants the key → `GRANTED`;
+ * 2. otherwise, some read failed → `UNAVAILABLE` (never a refusal);
+ * 3. the account holds no plan state in any of the three verticals →
+ *    `NOT_GATED`: an owner who has not started yet (pre-trial everywhere),
+ *    host-trade providers, partners, editors and staff. Each tool still
+ *    authorizes them on its own;
  * 4. otherwise → `REFUSED`, naming the first vertical the owner holds a plan in,
  *    for the plans link.
  *
@@ -29,9 +37,8 @@
  * exists. An owner whose trial ended and who bought nothing has `[BASE]` only:
  * plan state, floor-only, refused.
  *
- * Coverage is read only on the refusal path, so the common call (a plan grants
- * the key) costs the three effective-set reads alone, served by the
- * effective-set cache.
+ * Each call costs three effective-set reads (cached) and three coverage reads,
+ * all in parallel.
  */
 
 import type { CoverageSource } from '@repo/billing-verticals-contract';
@@ -162,22 +169,18 @@ export async function resolveAiAssistantAccess({
 }: {
     readonly userId: string;
 }): Promise<AiAssistantAccess> {
-    const grants = await Promise.all(
-        AI_ASSISTANT_VERTICALS.map((vertical) => readGrant({ userId, vertical }))
+    const [grants, holds] = await Promise.all([
+        Promise.all(AI_ASSISTANT_VERTICALS.map((vertical) => readGrant({ userId, vertical }))),
+        Promise.all(AI_ASSISTANT_VERTICALS.map((vertical) => readHoldsPlan({ userId, vertical })))
+    ]);
+    const grantedIndex = AI_ASSISTANT_VERTICALS.findIndex(
+        (_vertical, index) => grants[index] === true && holds[index] === true
     );
-    const grantedIndex = grants.indexOf(true);
     const granted = AI_ASSISTANT_VERTICALS[grantedIndex];
     if (granted !== undefined) {
         return { kind: 'GRANTED', hasAccess: true, vertical: granted };
     }
-    if (grants.includes(undefined)) {
-        return { kind: 'UNAVAILABLE', hasAccess: false };
-    }
-
-    const holds = await Promise.all(
-        AI_ASSISTANT_VERTICALS.map((vertical) => readHoldsPlan({ userId, vertical }))
-    );
-    if (holds.includes(undefined)) {
+    if (grants.includes(undefined) || holds.includes(undefined)) {
         return { kind: 'UNAVAILABLE', hasAccess: false };
     }
     const owned = AI_ASSISTANT_VERTICALS[holds.indexOf(true)];
