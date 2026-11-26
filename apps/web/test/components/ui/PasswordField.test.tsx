@@ -28,6 +28,7 @@ vi.mock('@repo/schemas', () => ({
 // The icon components are simple SVG wrappers. We stub them so jsdom doesn't
 // need to resolve the actual icon SVG paths.
 vi.mock('@repo/icons', () => ({
+    AlertCircleIcon: () => <svg data-testid="alert-icon" />,
     EyeIcon: ({ 'aria-hidden': _hidden, ...rest }: Record<string, unknown>) => (
         <svg
             data-testid="eye-icon"
