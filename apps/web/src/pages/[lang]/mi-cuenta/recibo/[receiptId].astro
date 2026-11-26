@@ -34,7 +34,8 @@ if (!user) {
 }
 
 const { receiptId } = Astro.params;
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+// Same shape the API's `z.string().uuid()` accepts, so a malformed id is a 404 here and not a 400 there.
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 if (!receiptId || !UUID.test(receiptId)) {
 	return Astro.rewrite(buildAccountNotFoundTarget({ locale }));
 }

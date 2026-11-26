@@ -918,7 +918,6 @@
         },
         "receipts": {
             "title": "Your receipts",
-            "empty": "You have no receipts yet.",
             "loadError": "We could not load your receipts.",
             "number": "Receipt no. {{number}}",
             "view": "View receipt",

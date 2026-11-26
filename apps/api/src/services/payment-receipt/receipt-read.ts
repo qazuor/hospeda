@@ -19,6 +19,9 @@
  * Amounts are integers in the currency's minor unit. A manual payment stores no
  * amount, so its receipt has none to show (`amountMinor: null`).
  *
+ * An add-on payment held by a page-charge mark is money pending a person's decision,
+ * never the purchase's payment (GUARD:HELD-ROWS), so it is excluded from the add-on path.
+ *
  * @module services/payment-receipt/receipt-read
  */
 
@@ -36,6 +39,7 @@ import {
     receipts,
     subscriptions
 } from '@repo/db';
+import { notHeldByPageChargeMark } from '@repo/service-core';
 
 /** What a receipt is for, as the document words it. */
 export type ReceiptConcept =
@@ -108,7 +112,13 @@ async function readRows(input: {
             .innerJoin(addonInstances, eq(addonInstances.id, payments.addonInstanceId))
             .leftJoin(addonProducts, eq(addonProducts.id, addonInstances.productId))
             .leftJoin(addons, eq(addons.id, addonProducts.addonId))
-            .where(and(eq(addonInstances.ownerId, input.userId), byId))
+            .where(
+                and(
+                    eq(addonInstances.ownerId, input.userId),
+                    notHeldByPageChargeMark(payments.id),
+                    byId
+                )
+            )
     ]);
 
     return [

@@ -918,7 +918,6 @@
         },
         "receipts": {
             "title": "Tus recibos",
-            "empty": "Todavía no tenés recibos.",
             "loadError": "No pudimos cargar tus recibos.",
             "number": "Comprobante n.º {{number}}",
             "view": "Ver recibo",

@@ -1,7 +1,7 @@
 /**
  * Who owns a receipt (HOS-2566), against the real tables: a receipt carries no
- * owner column, so ownership is resolved through the payment or manual payment
- * it was issued for. A stranger's read is the same `null` as a missing id.
+ * owner column, so ownership is resolved through the payment, manual payment
+ * or add-on instance it was issued for. A stranger's read is the same `null` as a missing id.
  */
 
 import { getDb, inArray, receipts } from '@repo/db';
@@ -21,6 +21,7 @@ import {
     routeClock,
     routeFake,
     seedManualPayment,
+    seedOneTimeOrphan,
     seedPrincipal,
     seedRevocable,
     seedUser
@@ -95,6 +96,20 @@ describe('receipt ownership (HOS-2566)', () => {
         expect(await readOwnReceipt({ receiptId, userId: stranger })).toBeNull();
     });
 
+    it('reads the receipt of an add-on payment through the instance owner, never another account', async () => {
+        const ownerId = await seedUser('addon-owner');
+        const principalId = await seedPrincipal({ ownerId });
+        const { paymentId } = await seedOneTimeOrphan({ ownerId, principalId });
+        const receiptId = await issue({ paymentId });
+        const stranger = await seedUser('stranger');
+
+        const own = await readOwnReceipt({ receiptId, userId: ownerId });
+
+        expect(own?.concept.kind).toBe('ADDON');
+        expect(own?.amountMinor).toBe(5000);
+        expect(await readOwnReceipt({ receiptId, userId: stranger })).toBeNull();
+    });
+
     it("lists only the caller's receipts", async () => {
         const first = await seedRevocable();
         const second = await seedRevocable();
@@ -125,6 +140,8 @@ describe('receipt ownership (HOS-2566)', () => {
 
         expect(own.status).toBe(200);
         expect(own.headers.get('Content-Type')).toBe('application/pdf');
+        const bytes = new Uint8Array(await own.arrayBuffer());
+        expect(new TextDecoder().decode(bytes.slice(0, 5))).toBe('%PDF-');
         expect((await as(stranger)).status).toBe(404);
     });
 });
