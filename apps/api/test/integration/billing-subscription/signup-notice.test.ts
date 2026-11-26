@@ -212,6 +212,7 @@ describe('TEST:B13a:21a AC:B13a:5 and AC:1735:8 the checkout reads the trial of 
             },
             pendingAttempt: null,
             vertical: 'accommodation',
+            paymentMethods: ['CARD'],
             touristVip: { status: 'NOT_AFFECTED' },
             trial: { status: 'RUNNING', endsAt: endsAt.toISOString(), daysLeft: 11 }
         });
@@ -235,6 +236,7 @@ describe('TEST:B13a:21a AC:B13a:5 and AC:1735:8 the checkout reads the trial of 
             },
             pendingAttempt: null,
             vertical: 'accommodation',
+            paymentMethods: ['CARD'],
             touristVip: { status: 'NOT_AFFECTED' },
             trial: { status: 'RUNNING', endsAt: endsAt.toISOString(), daysLeft: 11 }
         });
@@ -249,6 +251,7 @@ describe('TEST:B13a:21a AC:B13a:5 and AC:1735:8 the checkout reads the trial of 
             },
             pendingAttempt: null,
             vertical: 'venue',
+            paymentMethods: ['CARD'],
             touristVip: { status: 'NOT_AFFECTED' },
             trial: { status: 'NOT_RUNNING' }
         });

@@ -226,6 +226,33 @@ describe('TEST:V1:5 — GUARD:G18', () => {
         );
     });
 
+    it('HOS-2196 skips an UPDATE that assigns only columns the load does not compare, and stays red on a compared one', () => {
+        const green = run({
+            migrationsDir: migrationsDir({
+                files: {
+                    ...GREEN,
+                    '0131_patch.sql':
+                        'UPDATE "catalog_key" SET "payment_methods" = ARRAY[\'CARD\', \'MANUAL\']::text[] WHERE "scope" = \'global\';\n'
+                }
+            }),
+            loads: [buildCatalogKeyLoad()]
+        });
+        const red = run({
+            migrationsDir: migrationsDir({
+                files: {
+                    ...GREEN,
+                    '0131_patch.sql':
+                        'UPDATE "catalog_key" SET "payment_methods" = \'x\', "key_class" = \'BASE\' WHERE "scope" = \'global\';\n'
+                }
+            }),
+            loads: [buildCatalogKeyLoad()]
+        });
+
+        expect(green.exitCode).toBe(0);
+        expect(red.exitCode).toBe(1);
+        expect(red.output).toContain('cannot fold');
+    });
+
     it('is red when two migrations insert the same key', () => {
         const dup = buildCatalogKeyLoad({
             definitions: [

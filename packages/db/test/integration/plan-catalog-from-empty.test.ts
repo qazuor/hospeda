@@ -31,7 +31,10 @@ beforeAll(async () => {
         entries: { idx: number; tag: string }[];
     };
     for (const entry of journal.entries
-        .filter((item) => item.idx < 144)
+        // Extras 041 reads `plan_version.payment_methods`, which migration 0255 (HOS-2196) adds.
+        .filter(
+            (item) => item.idx < 144 || item.tag === '0255_hos2196_plan_version_payment_methods'
+        )
         .sort((a, b) => a.idx - b.idx)) {
         const sql = readFileSync(join(migrationDir, `${entry.tag}.sql`), 'utf8');
         for (const chunk of sql.split('--> statement-breakpoint')) {
@@ -249,6 +252,7 @@ describe('TEST:1819:1 AC:1:3 — TEST:V2:1 — the catalog tables after db:migra
             'trial_days',
             'allows_pause',
             'inherits_tourist_vip',
+            'payment_methods',
             'vertical'
         ]) {
             expect(byName[column]?.is_nullable, column).toBe('NO');
@@ -382,6 +386,32 @@ describe('TEST:V2:2 — cosmetics mutate; what has an effect is only published a
 
             expect(error?.code).toBe('P0001');
             expect(error?.message).toContain('plan_version is immutable');
+        });
+    });
+
+    it('HOS-2196 payment_methods may grow in place but never shrink', async () => {
+        await inRolledBackTx(async ({ client, attempt }) => {
+            const planId = await insertPlan(client, { vertical: 'partner', slug: 'p' });
+            const versionId = await insertVersion(client, {
+                planId,
+                vertical: 'partner',
+                rank: 10,
+                sellable: true,
+                current: true
+            });
+
+            const grow = await attempt(
+                `UPDATE plan_version SET payment_methods = ARRAY['CARD','MANUAL']::text[] WHERE id = $1`,
+                [versionId]
+            );
+            const shrink = await attempt(
+                `UPDATE plan_version SET payment_methods = ARRAY['MANUAL']::text[] WHERE id = $1`,
+                [versionId]
+            );
+
+            expect(grow).toBeNull();
+            expect(shrink?.code).toBe('P0001');
+            expect(shrink?.message).toContain('plan_version is immutable');
         });
     });
 

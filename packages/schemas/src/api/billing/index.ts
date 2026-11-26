@@ -35,6 +35,7 @@ export * from './permanent-grant.schema.js';
 export * from './permanent-grant-preview.schema.js';
 export * from './plan-change.schema.js';
 export * from './plan-migration-admin.schema.js';
+export * from './plan-payment-methods.schema.js';
 export * from './pricing-situation.schema.js';
 export * from './promo-code.schema.js';
 export * from './promo-code-admin.schema.js';

@@ -14,7 +14,8 @@ import type { BillingDeadlineValues } from '@repo/schemas';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import {
     authorizePendingSubscription,
-    startSubscription
+    startSubscription,
+    startTeamCardSubscription
 } from '../../../src/services/billing/subscription/start-subscription.service';
 import { closeServiceTestPool, getServiceTestDb } from './helpers';
 import { nextPlanVersionRank } from './support/plan-version-rank.js';
@@ -42,7 +43,7 @@ beforeAll(async () => {
 });
 afterAll(closeServiceTestPool);
 
-async function partnerChoice() {
+async function partnerChoice(paymentMethods: ('CARD' | 'MANUAL')[] = ['CARD', 'MANUAL']) {
     const db = getServiceTestDb();
     const [user] = await db
         .insert(users)
@@ -72,7 +73,8 @@ async function partnerChoice() {
             sellable: true,
             current: true,
             trialDays: 0,
-            allowsPause: false
+            allowsPause: false,
+            paymentMethods
         })
         .returning();
     if (!version) throw new Error('Could not seed partner plan version');
@@ -113,7 +115,7 @@ describe('TEST:1739:1/4 S1 and provider funnel reject manual-only Partner plans'
         if ('error' in result) {
             expect(result.error).toMatchObject({
                 code: 'VALIDATION_ERROR',
-                reason: 'PARTNER_MANUAL_ONLY'
+                reason: 'PLAN_NOT_SELF_SERVICE'
             });
         }
         const rows = await getServiceTestDb()
@@ -132,8 +134,8 @@ describe('TEST:1739:1/4 S1 and provider funnel reject manual-only Partner plans'
         expect(readAuthorization).not.toHaveBeenCalled();
     });
 
-    it('TEST:1739:4 rejects a pending Partner row before provider authorization', async () => {
-        const { user, option, planVersionId } = await partnerChoice();
+    it('TEST:1739:4 rejects a pending row whose plan does not accept card before provider authorization', async () => {
+        const { user, option, planVersionId } = await partnerChoice(['MANUAL']);
         const pending = await subscriptionModel.createPendingAuthorization({
             userId: user.id,
             vertical: 'partner',
@@ -159,9 +161,116 @@ describe('TEST:1739:1/4 S1 and provider funnel reject manual-only Partner plans'
         if ('error' in result) {
             expect(result.error).toMatchObject({
                 code: 'VALIDATION_ERROR',
-                reason: 'PARTNER_MANUAL_ONLY'
+                reason: 'PAYMENT_METHOD_NOT_ACCEPTED'
             });
         }
         expect(authorize).not.toHaveBeenCalled();
+    });
+});
+
+const portsFor = (provider: FakePaymentProvider) => ({
+    provider,
+    clock,
+    planPolicy: async () => ({ graceDays: 10, allowsPause: false, current: true, sellable: true }),
+    beforeCancelNotice: { beforeCancel: async () => 'SENT' as const },
+    touristVipInheritance: noTouristVip
+});
+
+describe('HOS-2196 the team opens a card subscription for a plan that accepts it', () => {
+    it('creates a pending card subscription and returns its authorization link without a first-charge date', async () => {
+        // Arrange
+        const { user, option } = await partnerChoice(['CARD', 'MANUAL']);
+        const fake = new FakePaymentProvider({ clock, idNamespace: crypto.randomUUID() });
+        const authorize = vi.spyOn(fake, 'authorize');
+        // Act
+        const result = await startTeamCardSubscription(
+            { userId: user.id, billingOptionId: option.id, returnUrl: 'https://example.test' },
+            portsFor(fake)
+        );
+        // Assert
+        expect(result.checkoutUrl).toMatch(/^https:\/\//);
+        const [row] = await getServiceTestDb()
+            .select()
+            .from(subscriptions)
+            .where(eq(subscriptions.userId, user.id));
+        expect(row).toMatchObject({
+            id: result.subscriptionId,
+            vertical: 'partner',
+            status: 'PENDING_AUTHORIZATION',
+            paymentMethod: 'CARD'
+        });
+        expect(authorize).toHaveBeenCalledTimes(1);
+        expect(authorize.mock.calls[0]?.[0].firstChargeAt).toBeUndefined();
+    });
+
+    it('reuses the pending subscription and its link on a repeat', async () => {
+        // Arrange
+        const { user, option } = await partnerChoice(['CARD', 'MANUAL']);
+        const fake = new FakePaymentProvider({ clock, idNamespace: crypto.randomUUID() });
+        const input = {
+            userId: user.id,
+            billingOptionId: option.id,
+            returnUrl: 'https://example.test'
+        };
+        const first = await startTeamCardSubscription(input, portsFor(fake));
+        const authorize = vi.spyOn(fake, 'authorize');
+        // Act
+        const second = await startTeamCardSubscription(input, portsFor(fake));
+        // Assert
+        expect(second).toEqual(first);
+        expect(authorize).not.toHaveBeenCalled();
+    });
+
+    it('refuses a plan that does not accept card, before any row or provider call', async () => {
+        // Arrange
+        const { user, option } = await partnerChoice(['MANUAL']);
+        const fake = new FakePaymentProvider({ clock, idNamespace: crypto.randomUUID() });
+        const authorize = vi.spyOn(fake, 'authorize');
+        // Act
+        const outcome = await startTeamCardSubscription(
+            { userId: user.id, billingOptionId: option.id, returnUrl: 'https://example.test' },
+            portsFor(fake)
+        ).then(
+            () => null,
+            (error: unknown) => error
+        );
+        // Assert
+        expect(outcome).toMatchObject({ reason: 'PAYMENT_METHOD_NOT_ACCEPTED' });
+        const rows = await getServiceTestDb()
+            .select()
+            .from(subscriptions)
+            .where(eq(subscriptions.userId, user.id));
+        expect(rows).toHaveLength(0);
+        expect(authorize).not.toHaveBeenCalled();
+    });
+
+    it('keeps the public checkout closed to a plan that also accepts manual payment, and opens a card-only one', async () => {
+        // Arrange
+        const both = await partnerChoice(['CARD', 'MANUAL']);
+        const cardOnly = await partnerChoice(['CARD']);
+        const fake = new FakePaymentProvider({ clock, idNamespace: crypto.randomUUID() });
+        // Act
+        const refused = await startSubscription(
+            {
+                userId: both.user.id,
+                billingOptionId: both.option.id,
+                returnUrl: 'https://example.test'
+            },
+            portsFor(fake)
+        ).then(
+            () => null,
+            (error: unknown) => error
+        );
+        const sold = await startSubscription(
+            {
+                userId: cardOnly.user.id,
+                billingOptionId: cardOnly.option.id,
+                returnUrl: 'https://example.test'
+            },
+            portsFor(fake)
+        );
+        // Assert
+        expect(refused).toMatchObject({ reason: 'PLAN_NOT_SELF_SERVICE' });
+        expect(sold.checkoutUrl).toMatch(/^https:\/\//);
     });
 });

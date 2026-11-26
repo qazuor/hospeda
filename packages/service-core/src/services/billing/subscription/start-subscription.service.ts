@@ -18,12 +18,7 @@ import {
     PaymentProviderError,
     sanitizeApprovalUrl
 } from '@repo/payments';
-import {
-    BILLING_CYCLE_MONTHS,
-    type BillingCycle,
-    isManualPaymentOnlyVertical,
-    ServiceErrorCode
-} from '@repo/schemas';
+import { BILLING_CYCLE_MONTHS, type BillingCycle, ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '../../../types';
 import { extractPostgresErrorCause } from '../../../utils';
 import { getCurrentBillingDeadlines } from '../deadlines/billing-deadlines.service';
@@ -39,6 +34,11 @@ import {
     type PaidSignupsFreezePort,
     platformPaidSignupsFreeze
 } from './paid-signups-freeze';
+import {
+    assertPlanAcceptsPaymentMethod,
+    assertSelfServiceCardCheckout,
+    readPlanVersionPaymentMethods
+} from './plan-payment-methods';
 import { replacePendingAttempt } from './replace-pending-attempt.service';
 import {
     appliedAuthorizationResult,
@@ -117,35 +117,31 @@ export async function assertPlanForSale(input: {
     }
 }
 
-/** Rejects verticals that cannot be purchased through the card checkout. */
-export function assertCardCheckoutVertical(input: { readonly vertical: string }): void {
-    if (isManualPaymentOnlyVertical({ vertical: input.vertical })) {
-        throw new ServiceError(
-            ServiceErrorCode.VALIDATION_ERROR,
-            'Partner plans are not sold through the card checkout',
-            undefined,
-            'PARTNER_MANUAL_ONLY'
-        );
-    }
-}
-
-/** Reads the selected billing option and its plan identity for an S1 purchase. */
-export async function readBillingChoice(input: { readonly billingOptionId: string }): Promise<{
+/** The selected billing option and its plan identity for an S1 purchase. */
+export type BillingChoice = {
     readonly id: string;
     readonly planVersionId: string;
     readonly vertical: string;
     readonly planName: string;
     readonly planSlug: string;
+    /** Payment methods the plan version accepts (HOS-2196). */
+    readonly paymentMethods: readonly string[];
     /** Label MercadoPago shows to the payer (HOS-1993); never the internal plan name. */
     readonly providerReason: string;
-}> {
+};
+
+/** Reads the selected billing option and its plan identity for an S1 purchase. */
+export async function readBillingChoice(input: {
+    readonly billingOptionId: string;
+}): Promise<BillingChoice> {
     const [choice] = await getDb()
         .select({
             id: billingOptions.id,
             planVersionId: billingOptions.planVersionId,
             vertical: planVersions.vertical,
             planName: plans.name,
-            planSlug: plans.slug
+            planSlug: plans.slug,
+            paymentMethods: planVersions.paymentMethods
         })
         .from(billingOptions)
         .innerJoin(planVersions, eq(planVersions.id, billingOptions.planVersionId))
@@ -193,13 +189,18 @@ export async function authorizePendingSubscription(input: {
     readonly firstChargeAt?: string;
 }): Promise<StartSubscriptionResult> {
     const { pending } = input;
-    assertCardCheckoutVertical({ vertical: pending.subscription.vertical ?? '' });
     const { planVersionId, billingOptionId } = pending.subscription;
     if (!planVersionId || !billingOptionId)
         throw new ServiceError(
             ServiceErrorCode.INTERNAL_ERROR,
             'Pending authorization has no plan anchor'
         );
+    // HOS-2196: the plan declares whether a card is accepted; who may START one is the entry
+    // point's call, so the creations sweep can still resolve a card attempt the team opened.
+    assertPlanAcceptsPaymentMethod({
+        paymentMethods: await readPlanVersionPaymentMethods({ planVersionId }),
+        method: 'CARD'
+    });
     const option = await readAnchoredBillingOption({
         subscription: { planVersionId, billingOptionId }
     });
@@ -314,13 +315,38 @@ export async function authorizePendingSubscription(input: {
     };
 }
 
-/** S1: a new card subscription, with the durable lock committed before the provider call. */
+/**
+ * S1: a new card subscription through the public checkout, durable lock committed before the
+ * provider call. A plan that also accepts manual payment is the team's: `PLAN_NOT_SELF_SERVICE`.
+ */
 export async function startSubscription(
     input: StartSubscriptionInput,
     ports: StartSubscriptionPorts
 ): Promise<StartSubscriptionResult> {
     const choice = await readBillingChoice({ billingOptionId: input.billingOptionId });
-    assertCardCheckoutVertical({ vertical: choice.vertical });
+    assertSelfServiceCardCheckout({ paymentMethods: choice.paymentMethods });
+    return startCardSubscription({ input, choice }, ports);
+}
+
+/**
+ * S1 for a card subscription the TEAM opens for an account (Partner, action 6, HOS-2196): same
+ * lock, commitment rules and provider call as the public checkout, minus the self-service
+ * restriction. The plan must accept `CARD`. No first-charge date is sent (EX-38); the link is the
+ * preapproval authorization, tied to the pending subscription while its window is open.
+ */
+export async function startTeamCardSubscription(
+    input: StartSubscriptionInput,
+    ports: StartSubscriptionPorts
+): Promise<StartSubscriptionResult> {
+    const choice = await readBillingChoice({ billingOptionId: input.billingOptionId });
+    assertPlanAcceptsPaymentMethod({ paymentMethods: choice.paymentMethods, method: 'CARD' });
+    return startCardSubscription({ input, choice }, ports);
+}
+
+async function startCardSubscription(
+    { input, choice }: { readonly input: StartSubscriptionInput; readonly choice: BillingChoice },
+    ports: StartSubscriptionPorts
+): Promise<StartSubscriptionResult> {
     await assertPlanForSale({ planVersionId: choice.planVersionId, planPolicy: ports.planPolicy });
     await assertTouristVipPurchaseAllowed({
         vertical: choice.vertical,

@@ -32,7 +32,8 @@
  *   safe-integer, boolean and `NULL` literals. Any OTHER statement that writes one of the
  *   tables (`UPDATE`, `DELETE`, `TRUNCATE`, `INSERT ... SELECT`,
  *   `INSERT ... ON CONFLICT`) cannot be folded into the row set, so the guard
- *   FAILS on it instead of guessing; teach it the new shape first.
+ *   FAILS on it instead of guessing; teach it the new shape first. The one exception
+ *   is an `UPDATE ... SET` that assigns only columns the load does not compare.
  * - It does not read the database. That the migration actually applies, and
  *   that the FK rejects an unknown key, is TEST:V1:6
  *   (`packages/db/test/integration/catalog-key-fk-from-empty.test.ts`).
@@ -205,6 +206,32 @@ function escapeRegExp({ text }: { readonly text: string }): string {
 }
 
 /**
+ * Whether the statement is an `UPDATE <table> SET ...` that assigns only columns the load does NOT
+ * compare. Such a write cannot change the compared row set (HOS-2196: `plan_version.payment_methods`
+ * is not part of the production catalog load), so the fold may skip it instead of failing closed.
+ * Any assignment to a compared column, or a shape it cannot read, returns false.
+ */
+function updatesOnlyUncomparedColumns({
+    statement,
+    table,
+    load
+}: {
+    readonly statement: string;
+    readonly table: string;
+    readonly load: CatalogLoad;
+}): boolean {
+    const match = new RegExp(
+        `^UPDATE\\s+(?:ONLY\\s+)?(?:"?public"?\\.)?"?${escapeRegExp({ text: table })}"?\\s+SET\\s+([\\s\\S]+?)(?:\\s+WHERE\\b[\\s\\S]*)?$`,
+        'i'
+    ).exec(statement);
+    if (!match) return false;
+    const flat = (match[1] as string).replace(/\[[^\]]*\]|\([^)]*\)|'[^']*'/g, '');
+    const assigned = [...flat.matchAll(/(?:^|,)\s*"?(\w+)"?\s*=/g)].map((m) => m[1] as string);
+    if (assigned.length === 0) return false;
+    return assigned.every((column) => !load.columns.includes(column));
+}
+
+/**
  * Folds every statement of the migration history that writes `load.table` into
  * one row set keyed by primary key.
  *
@@ -236,6 +263,7 @@ export function collectInsertedRows({
     for (const file of files) {
         for (const statement of splitStatements({ sql: file.sql })) {
             if (!touches.test(statement)) continue;
+            if (updatesOnlyUncomparedColumns({ statement, table: load.table, load })) continue;
             const match = plainInsert.exec(statement);
             const parsed = match ? parseValues({ text: match[2] as string }) : undefined;
             if (!match || !parsed || parsed.error || /\bON\s+CONFLICT\b/i.test(statement)) {

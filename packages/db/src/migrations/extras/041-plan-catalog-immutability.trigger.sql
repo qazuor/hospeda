@@ -50,6 +50,11 @@
 -- (and the catalog load, which flips `current` on the old version, could do it
 -- by accident).
 --
+-- `plan_version.payment_methods` (HOS-2196) is the one effect column that may GROW in place: a method
+-- can be added to a published version (a new way to pay never changes what a subscription anchored
+-- to it receives, same reasoning as the additive grant above), but never removed; removing one is
+-- publishing a new version.
+--
 -- Rejections raise SQLSTATE P0001 with a message naming the table.
 --
 -- TRUNCATE is not a row operation and is NOT blocked: the integration suites
@@ -134,6 +139,7 @@ BEGIN
      OR NEW.trial_days IS DISTINCT FROM OLD.trial_days
      OR NEW.allows_pause IS DISTINCT FROM OLD.allows_pause
      OR NEW.inherits_tourist_vip IS DISTINCT FROM OLD.inherits_tourist_vip
+     OR NOT (NEW.payment_methods @> OLD.payment_methods)
      OR NEW.created_at IS DISTINCT FROM OLD.created_at THEN
     RAISE EXCEPTION 'plan_version is immutable except current: publish a new version instead'
       USING ERRCODE = 'P0001';

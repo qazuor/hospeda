@@ -18,8 +18,8 @@ import { exitPlanMigration } from '../plan-migration/plan-migration-exit.js';
 import { admitSuccessionPredecessor } from './admit-succession-predecessor.js';
 import { floorToWholeSecond } from './first-charge-precision.js';
 import { readCycleDeadlines } from './plan-change-cycle-deadlines.js';
+import { assertSelfServiceCardCheckout } from './plan-payment-methods.js';
 import {
-    assertCardCheckoutVertical,
     assertPlanForSale,
     assertTouristVipPurchaseAllowed,
     authorizePendingSubscription,
@@ -127,7 +127,7 @@ export async function startSuccession(
     ports: StartSuccessionPorts
 ): Promise<StartSuccessionResult> {
     const choice = await readBillingChoice({ billingOptionId: input.billingOptionId });
-    assertCardCheckoutVertical({ vertical: choice.vertical });
+    assertSelfServiceCardCheckout({ paymentMethods: choice.paymentMethods });
     await assertPlanForSale({ planVersionId: choice.planVersionId, planPolicy: ports.planPolicy });
     await assertTouristVipPurchaseAllowed({
         vertical: choice.vertical,

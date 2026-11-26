@@ -18,7 +18,6 @@ const preview = {
         partner: { id: '27f9b37c-8d07-4f93-8340-6819e8740517', name: 'Socio de prueba' },
         ownerUserId: '20b9b37c-8d07-4f93-8340-6819e8740517',
         owner: { name: 'Ana García', email: 'ana@example.com' },
-        method: 'MANUAL' as const,
         options: [
             {
                 billingOptionId: '31b9b37c-8d07-4f93-8340-6819e8740517',
@@ -27,10 +26,11 @@ const preview = {
                 planSlug: 'partner-silver',
                 cycle: 'monthly' as const,
                 amountMinor: 120000,
-                currency: 'ARS'
+                currency: 'ARS',
+                paymentMethods: ['MANUAL'] as ('CARD' | 'MANUAL')[]
             }
         ],
-        effect: 'Creates a subscription pending authorization and opens its first installment.' as const
+        effect: 'x' as const
     },
     isLoading: false,
     isError: false
@@ -125,9 +125,42 @@ describe('PartnerBillingSetupCard', () => {
         await userEvent.click(screen.getByRole('button', { name: 'Confirmar' }));
         expect(mocks.mutateAsync).toHaveBeenCalledWith({
             billingOptionId: preview.data.options[0]!.billingOptionId,
+            paymentMethod: 'MANUAL',
             reason: 'Alta acordada',
             confirm: true
         });
+    });
+
+    it('HOS-2196 lets the team choose card when the plan accepts both and shows the one-use link', async () => {
+        preview.data.options[0]!.paymentMethods = ['CARD', 'MANUAL'];
+        mocks.mutateAsync.mockResolvedValueOnce({
+            created: true,
+            checkoutUrl: 'https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_id=abc'
+        });
+        render(<PartnerBillingSetupCard partnerId={preview.data.partner.id} />);
+        await userEvent.click(screen.getByRole('button', { name: 'Configurar plan y pago' }));
+        fireEvent.click(screen.getAllByRole('radio')[0]!);
+        const review = screen.getByRole('button', { name: 'Revisar' });
+        await userEvent.type(screen.getByLabelText('Motivo'), 'Alta con tarjeta');
+        expect(review).toBeDisabled();
+        fireEvent.click(screen.getByRole('radio', { name: /Tarjeta/ }));
+        expect(review).toBeEnabled();
+        await userEvent.click(review);
+        expect(screen.getByTestId('partner-billing-setup-confirmation')).toHaveTextContent(
+            'Tarjeta'
+        );
+        await userEvent.click(screen.getByRole('button', { name: 'Confirmar' }));
+        expect(mocks.mutateAsync).toHaveBeenCalledWith({
+            billingOptionId: preview.data.options[0]!.billingOptionId,
+            paymentMethod: 'CARD',
+            reason: 'Alta con tarjeta',
+            confirm: true
+        });
+        expect(await screen.findByTestId('partner-billing-setup-link')).toHaveTextContent(
+            'un solo uso'
+        );
+        expect(screen.getByDisplayValue(/preapproval_id=abc/)).toBeInTheDocument();
+        preview.data.options[0]!.paymentMethods = ['MANUAL'];
     });
 
     it('renders no action buttons without the dedicated permission', () => {
