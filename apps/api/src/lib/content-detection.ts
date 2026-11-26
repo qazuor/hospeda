@@ -121,15 +121,40 @@ export function containsRichDescription(value: string): boolean {
  * ```
  */
 export function stripRichDescriptionSyntax(value: string): string {
+    // One pass can expose syntax that was hidden by the thing it removed
+    // (`<<b>b>` -> `<b>`), so repeat until the text stops changing. The pass
+    // count is bounded: every pass strictly shortens the text or stops.
+    let current = value;
+    for (let pass = 0; pass < MAX_STRIP_PASSES; pass += 1) {
+        const next = stripRichDescriptionPass(current);
+        if (next === current) break;
+        current = next;
+    }
+    // Final guard, independent of the regexes above: HTML can only start with
+    // `<` followed by a letter, `/`, `!` or `?`. Dropping that `<` makes a tag,
+    // comment or autolink impossible whatever shape the input had. A bare
+    // comparison such as `2 < 4` is untouched.
+    return current.replace(/<(?=[a-zA-Z/!?])/g, '');
+}
+
+/** Upper bound of fixpoint passes in {@link stripRichDescriptionSyntax}. */
+const MAX_STRIP_PASSES = 20;
+
+/** One neutralization pass; see {@link stripRichDescriptionSyntax}. */
+function stripRichDescriptionPass(value: string): string {
     return value
         .replace(/<\/?[a-zA-Z][^>]*>/g, '') // HTML tags -> keep inner text (HOS-2209)
+        .replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1') // Images -> alt text
+        .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1') // Markdown links -> link text
+        .replace(/\[([^\]]+)\]\[[^\]]*\]/g, '$1') // Reference links -> link text
+        .replace(/^\s*\[[^\]]+\]:\s+\S.*$/gm, '') // Reference definitions
         .replace(/\*\*([^*]+)\*\*/g, '$1') // Bold (**text**) -> text
         .replace(/__([^_]+)__/g, '$1') // Bold (__text__) -> text (HOS-2209)
         .replace(/~~([^~]+)~~/g, '$1') // Strikethrough (~~text~~) -> text (HOS-2209)
         .replace(/(^|[^*])\*([^*\s][^*]*)\*/g, '$1$2') // Italic (*text*) -> text
-        .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // Markdown links -> link text
         .replace(/^#{1,6}\s+/gm, '') // ATX heading markers
         .replace(/^```.*$/gm, '') // Code fence lines (HOS-2209)
+        .replace(/^\s*([-*_=])(?:\s*\1){2,}\s*$/gm, '') // Rules and setext underlines
         .replace(/^[-*+]\s+/gm, '') // Unordered list bullet markers
         .replace(/^\d+[.)]\s+/gm, '') // Ordered list markers (HOS-2209)
         .replace(/^>\s?/gm, '') // Blockquote markers (HOS-2209)

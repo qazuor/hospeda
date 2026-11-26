@@ -233,6 +233,49 @@ describe('stripRichDescriptionSyntax', () => {
         expect(result).toBe(value);
     });
 
+    describe('adversarial inputs (HOS-2209)', () => {
+        const hasHtml = (v: string) => /<[a-zA-Z/!?]/.test(v);
+
+        it.each([
+            ['nested tag', '<<b>b>bold</b>'],
+            ['script tag', 'hola <script>alert(1)</script> chau'],
+            ['markdown inside a tag', '<b>**x**</b>'],
+            ['tag hiding bold markers', '*<b>*x*</b>*'],
+            ['doubly nested', '<<<i>i>i>x'],
+            ['comment', 'a <!-- c --> b'],
+            ['autolink', '<https://evil.test>'],
+            ['unterminated tag', 'x <img src=x onerror=alert(1)']
+        ])('leaves no HTML opener for %s', (_name, input) => {
+            // Act
+            const result = stripRichDescriptionSyntax(input);
+
+            // Assert
+            expect(hasHtml(result)).toBe(false);
+        });
+
+        it('unwraps a tag split by another tag', () => {
+            expect(stripRichDescriptionSyntax('<<b>b>bold</b>')).toBe('bold');
+        });
+
+        it('keeps the alt text of an image and drops its URL', () => {
+            expect(stripRichDescriptionSyntax('![vista](https://x.test/a.png)')).toBe('vista');
+        });
+
+        it('keeps the text of links, nested or reference style', () => {
+            expect(stripRichDescriptionSyntax('[**a**](https://x.test)')).toBe('a');
+            expect(stripRichDescriptionSyntax('[a][1]\n\n[1]: https://x.test')).toBe('a\n');
+        });
+
+        it('removes horizontal rules and setext underlines', () => {
+            expect(stripRichDescriptionSyntax('Titulo\n=====\n---\n***')).toBe('Titulo\n\n\n');
+        });
+
+        it('is stable: stripping the result changes nothing', () => {
+            const once = stripRichDescriptionSyntax('<<b>b> **<i>*x*</i>** [a](u)');
+            expect(stripRichDescriptionSyntax(once)).toBe(once);
+        });
+    });
+
     it('leaves plain prose untouched', () => {
         const plain = 'Hermoso departamento con vista al río, a pasos de la playa.';
         expect(stripRichDescriptionSyntax(plain)).toBe(plain);
