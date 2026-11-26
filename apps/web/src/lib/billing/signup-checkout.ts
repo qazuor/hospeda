@@ -1,7 +1,7 @@
 /** Pure URL, rejection, vertical, and date helpers for the signup checkout. */
 import {
     type BillingCycle,
-    isManualPaymentOnlyVertical,
+    isSelfServiceCardCheckout,
     PROVIDER_TRANSIENT_REJECTION_REASONS,
     SignupNoticeResponseSchema,
     type StartSubscriptionRejectionReason,
@@ -175,14 +175,17 @@ export function resolveSignupTouristVipNotice({
     return { kind: 'CANCELLED_ON_RETURN' };
 }
 
-/** Whether a readable signup notice identifies a vertical that uses manual payment. */
+/** Whether a readable signup notice identifies a plan the public checkout does not sell (the team's). */
 export function resolveSignupManualPaymentOnly({ result }: { readonly result: unknown }): boolean {
     if (!result || typeof result !== 'object' || !('ok' in result) || result.ok !== true) {
         return false;
     }
     if (!('data' in result)) return false;
     const parsed = SignupNoticeResponseSchema.safeParse(result.data);
-    return parsed.success && isManualPaymentOnlyVertical({ vertical: parsed.data.vertical });
+    return (
+        parsed.success &&
+        !isSelfServiceCardCheckout({ paymentMethods: parsed.data.paymentMethods ?? ['CARD'] })
+    );
 }
 
 /** Query parameter that identifies the billing option selected for signup. */
@@ -259,8 +262,8 @@ const REJECTION_BY_REASON: Record<
         retryable: true,
         showPlansLink: false
     },
-    PARTNER_MANUAL_ONLY: {
-        messageKey: 'billing.checkout.signup.rejection.partnerManualOnly',
+    PLAN_NOT_SELF_SERVICE: {
+        messageKey: 'billing.checkout.signup.rejection.planNotSelfService',
         retryable: false,
         showPlansLink: false
     },

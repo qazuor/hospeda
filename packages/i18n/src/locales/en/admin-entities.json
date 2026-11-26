@@ -1148,8 +1148,19 @@
             "partnerWithoutOwner": "This Partner does not have an owner yet.",
             "commitmentTaken": "The owner already has an incompatible subscription.",
             "planNotForSale": "This plan is no longer available for sale.",
-            "generic": "The plan and payment could not be configured."
-        }
+            "generic": "The plan and payment could not be configured.",
+            "paymentMethodNotAccepted": "The plan does not accept that payment method.",
+            "providerRejected": "Mercado Pago rejected the authorization. Check the plan and try again.",
+            "providerUnavailable": "Mercado Pago is unavailable right now. Try again in a minute."
+        },
+        "methodChoice": "Payment method",
+        "card": "Card (Mercado Pago subscription)",
+        "confirmationTitleCard": "You are about to create a card subscription awaiting authorization. The Mercado Pago link is generated for the owner to authorize it.",
+        "linkTitle": "Mercado Pago authorization link",
+        "linkHelp": "Share it with the Partner owner. It is single use, tied to this subscription, and stops working when the signup window closes.",
+        "copy": "Copy link",
+        "copied": "Link copied",
+        "close": "Close"
     },
     "partnerPresenceModeration": {
         "title": "Public presence",

@@ -21,6 +21,12 @@ export function partnerBillingSetupErrorKey(error: unknown): TranslationKey {
     if (error.status === 409 && body?.error?.reason === 'PARTNER_WITHOUT_OWNER')
         return 'admin-entities.partnerBillingSetup.errors.partnerWithoutOwner';
     if (error.status === 409) return 'admin-entities.partnerBillingSetup.errors.commitmentTaken';
+    if (error.status === 503)
+        return 'admin-entities.partnerBillingSetup.errors.providerUnavailable';
+    if (error.status === 422 && body?.error?.reason === 'PAYMENT_METHOD_NOT_ACCEPTED')
+        return 'admin-entities.partnerBillingSetup.errors.paymentMethodNotAccepted';
+    if (error.status === 422 && body?.error?.reason === 'PROVIDER_REJECTED')
+        return 'admin-entities.partnerBillingSetup.errors.providerRejected';
     if (error.status === 422) return 'admin-entities.partnerBillingSetup.errors.planNotForSale';
     return 'admin-entities.partnerBillingSetup.errors.generic';
 }

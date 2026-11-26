@@ -69,6 +69,8 @@ test.describe('TEST:V7:18 AC:V7:17 admin confirms before the Partner billing set
         await expect(page.locator('input[name="partner-billing-option"]:checked')).toHaveValue(
             optionId
         );
+        // HOS-2196: Partner plans accept card and manual, so the team picks the method.
+        await page.getByLabel(/Manual/).click();
         await page.getByLabel('Motivo').fill('Configuración acordada para TEST:V7:18');
         await page.getByRole('button', { name: 'Revisar' }).click();
         const confirmation = page.getByTestId('partner-billing-setup-confirmation');

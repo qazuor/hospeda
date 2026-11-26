@@ -67,7 +67,7 @@ describe('SignupCheckout — B3 UI (B3.md:1045-1053)', () => {
         expect(screen.getByTestId('signup-checkout')).toHaveAttribute('data-state', 'rejected');
         expect(screen.getByTestId('signup-checkout-rejection')).toHaveAttribute(
             'data-reason',
-            'PARTNER_MANUAL_ONLY'
+            'PLAN_NOT_SELF_SERVICE'
         );
         expect(screen.getByTestId('signup-checkout-rejection')).toHaveTextContent(
             'La suscripción de aliados no se contrata desde acá. Nuestro equipo te va a contactar para coordinar el pago y activarla.'

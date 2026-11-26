@@ -284,7 +284,7 @@
                 "providerRejected": "O Mercado Pago não aceitou os dados do pagamento. Confira se o e-mail é o da sua conta do Mercado Pago e tente de novo.",
                 "providerBusy": "O Mercado Pago está com muita demanda neste momento. Aguarde um minuto e tente de novo.",
                 "providerUnavailable": "O provedor de pagamentos não respondeu. Tente novamente em alguns minutos.",
-                "partnerManualOnly": "A assinatura de parceiros não é contratada por aqui. Nossa equipe entrará em contato para combinar o pagamento e a ativação."
+                "planNotSelfService": "A assinatura de parceiros não é contratada por aqui. Nossa equipe entrará em contato para combinar o pagamento e a ativação."
             },
             "trialNotice": {
                 "running_one": "Você está no período de teste: resta {{days}} dia, até {{date}}.",
