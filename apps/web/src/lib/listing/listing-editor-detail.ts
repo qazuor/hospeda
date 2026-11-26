@@ -17,7 +17,7 @@
  */
 
 import type { Image, ListingCompletenessListing } from '@repo/schemas';
-import type { ListingFaq } from '@/components/listing/ListingFaqManager.client';
+import type { ListingFaq } from '@/components/account/editor/faq-model';
 import type { ListingDetail } from '@/lib/listing/owner-listings';
 
 /** One stored video as the venue editor's video widget reads it. */
@@ -38,7 +38,7 @@ function asRecord(detail: ListingDetail): Record<string, unknown> {
  * Reads the FAQs stored for a listing.
  *
  * The protected detail includes them when available; anything else collapses to
- * an empty list. Preserved from the pre-split page so `ListingFaqManager`
+ * an empty list. Preserved from the pre-split page so `FaqSection`
  * paints real data on first paint instead of flashing empty and filling in.
  *
  * @param params - The loaded listing detail.

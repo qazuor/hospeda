@@ -8,7 +8,7 @@
  * section moved to its own route. `FaqSection` owns its own persistence.
  */
 
-import { FaqSection } from '@/components/host/editor/FaqSection.client';
+import { FaqSection } from '@/components/account/editor/FaqSection.client';
 import EditorSectionLayout from '@/layouts/EditorSectionLayout.astro';
 import { resolveEditorPage } from '@/lib/editor/resolve-editor-page';
 import { createTranslations } from '@/lib/i18n';
@@ -42,7 +42,12 @@ const { t } = createTranslations(locale);
 >
 	<FaqSection
 		locale={locale}
-		accommodationId={accommodationId}
+		listingId={accommodationId}
+		vertical="accommodation"
+		namespace="host.properties.editor.faq"
+		showCategory={false}
+		errorSurface="toast"
+		validationMode="schema"
 		initialFaqs={data.faqs}
 		client:load
 	/>

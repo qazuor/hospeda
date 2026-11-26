@@ -29,7 +29,7 @@
 
 import { contentWordsOf, tokenizeHelpText } from '@repo/help';
 import { buildPortalUrl, type PortalLocale } from '@repo/portal-routes';
-import { HostTradeCatalogSlugSchema, ServiceErrorCode } from '@repo/schemas';
+import { HostTradeCatalogSlugSchema, PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import { z } from 'zod';
 import { env } from '../../../utils/env';
 
@@ -265,6 +265,10 @@ export const searchProvidersTool = defineTool({
     description: `Searches the provider directory of the connected Hospeda host: the service providers (plumbers, electricians, cleaning...) that offer Hospeda hosts a benefit, in the destinations where the host has accommodations. Only hosts have access. Filters: query (words in the name or benefit), category (a category slug) and destinationId; paginated (pageSize up to ${MCP_LIST_MAX_PAGE_SIZE}), with "total" and "hasMore". Per provider: slug, name, categories, benefit (its fine print), contact, schedule, is24h, destination, confirmedUsesCount, distinctHostsCount, reviewsCount, averageRating, the directory link (directoryUrl) and the link where the host declares a usage of the benefit (declareUsageUrl). Texts may be excerpts: "textTruncated" says when one was cut; the full text is on directoryUrl. If "omittedItems" is present, that many providers of this page did not fit: ask again with a smaller pageSize. You cannot declare a usage from here: when the user wants to, give them declareUsageUrl. ${UNTRUSTED_DATA_NOTICE}`,
     inputSchema: SearchProvidersInputSchema,
     isWrite: false,
+    // Enforced by the service, not the handler: `HostTradeService.listForHost`
+    // refuses without it (`checkCanViewHostTrade`). Declared so `tools/list`
+    // does not offer a tool every call of which would be refused.
+    requiredPermissions: [PermissionEnum.HOST_TRADE_VIEW],
     reasonMessages: SEARCH_PROVIDERS_REASON_MESSAGES,
     refusalAction: ({ error }) =>
         error.code === ServiceErrorCode.FORBIDDEN

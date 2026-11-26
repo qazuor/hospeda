@@ -277,7 +277,8 @@ async function readGrantedTitle(input: {
  * who may read it, and only ever reads the given owner's rows.
  *
  * @param input.userId - The owner.
- * @param input.vertical - Only this vertical; all of them when omitted.
+ * @param input.vertical - Only this vertical; wins over `verticals`.
+ * @param input.verticals - Only these verticals; all of them when omitted.
  * @param input.locale - Locale of labels and links (`es` when omitted).
  * @param input.now - The caller's clock instant.
  * @returns One item per vertical with a live subscription, a permanent grant,
@@ -287,6 +288,7 @@ async function readGrantedTitle(input: {
 export async function readMyPlan(input: {
     readonly userId: string;
     readonly vertical?: MyPlanVertical;
+    readonly verticals?: readonly MyPlanVertical[];
     readonly locale?: PortalLocale;
     readonly now: Date;
 }): Promise<MyPlanResult> {
@@ -294,7 +296,7 @@ export async function readMyPlan(input: {
     const locale = input.locale ?? 'es';
     const verticals: readonly MyPlanVertical[] = input.vertical
         ? [input.vertical]
-        : MY_PLAN_VERTICALS;
+        : (input.verticals ?? MY_PLAN_VERTICALS);
 
     const [planState, holdings] = await Promise.all([
         readOwnPlanState({ userId, now }),

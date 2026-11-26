@@ -110,6 +110,10 @@
                 "phone": "Teléfono:",
                 "phoneValue": "+1 (234) 567-890"
             }
+        },
+        "aiAssistants": {
+            "title": "Conectar un asistente de IA",
+            "body": "Podés conectar un asistente de IA (por ejemplo ChatGPT, Claude o Gemini) a tu cuenta mediante el servidor MCP de Hospeda. La conexión es voluntaria: iniciás sesión con tu cuenta de Hospeda (OAuth) y aprobás el acceso. El asistente solo puede acceder a los datos de tu propia cuenta y realizar las acciones que tus permisos permiten: tus publicaciones, las consultas de huéspedes y tus respuestas, las estadísticas de tus publicaciones y el estado de tu plan. Las respuestas a huéspedes se envían únicamente con tu confirmación explícita del texto literal. El proveedor del asistente (OpenAI, Anthropic o Google) procesa lo que el asistente lee conforme a su propia política de privacidad y a tu cuenta con ese proveedor: Hospeda no usa inteligencia artificial propia para esto y solo entrega datos a esos proveedores como resultado de una consulta o acción que hace tu asistente. Hospeda conserva un registro de auditoría de cada acción de escritura realizada a través del asistente (cuenta, cliente, herramienta y momento). El texto de las consultas de huéspedes lo escriben terceros y se entrega al asistente como datos. Podés ver y desconectar tus asistentes conectados en cualquier momento desde Mi cuenta → Asistentes de IA (/mi-cuenta/asistentes-ia/); al desconectarlo, el asistente pierde el acceso."
         }
     },
     "page": {

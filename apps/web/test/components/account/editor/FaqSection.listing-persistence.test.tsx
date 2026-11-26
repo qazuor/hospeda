@@ -41,7 +41,7 @@ vi.mock('@/store/toast-store', () => ({ addToast: vi.fn() }));
 // the manager's `await` would throw inside its own handler, and this suite would
 // go green having asserted nothing — the exact failure shape this file exists
 // to rule out.
-vi.mock('../../../src/lib/api/client', () => ({
+vi.mock('@/lib/api/client', () => ({
     apiClient: {
         get: vi.fn(),
         post: vi.fn(),
@@ -52,11 +52,11 @@ vi.mock('../../../src/lib/api/client', () => ({
     }
 }));
 
-vi.mock('../../../src/lib/env', () => ({ getApiUrl: () => 'http://api.test' }));
-vi.mock('../../../src/lib/logger', () => ({ webLogger: { warn: vi.fn() } }));
+vi.mock('@/lib/env', () => ({ getApiUrl: () => 'http://api.test' }));
+vi.mock('@/lib/logger', () => ({ webLogger: { warn: vi.fn() } }));
 
-import { ListingFaqManager } from '../../../src/components/listing/ListingFaqManager.client';
-import { apiClient } from '../../../src/lib/api/client';
+import { FaqSection } from '@/components/account/editor/FaqSection.client';
+import { apiClient } from '@/lib/api/client';
 
 const mockPostProtected = vi.mocked(apiClient.postProtected);
 const mockPut = vi.mocked(apiClient.put);
@@ -66,7 +66,11 @@ const LISTING_ID = '22222222-2222-4222-8222-222222222222';
 /** Mounts the manager exactly as `editar/preguntas.astro` does. */
 function renderEditor() {
     return render(
-        <ListingFaqManager
+        <FaqSection
+            namespace="listing.owner.editor.faqManager"
+            showCategory={true}
+            errorSurface="inline"
+            validationMode="required"
             vertical="experience"
             listingId={LISTING_ID}
             locale="es"

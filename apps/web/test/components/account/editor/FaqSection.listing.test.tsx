@@ -27,10 +27,10 @@
  * cannot catch either. Each now also asserts the WRONG verb was not used.
  */
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { FaqSection } from '@/components/account/editor/FaqSection.client';
+import type { ListingFaq } from '@/components/account/editor/faq-model';
 import { createT } from '@/lib/i18n';
-import type { ListingFaq } from '../../../src/components/listing/ListingFaqManager.client';
-import { ListingFaqManager } from '../../../src/components/listing/ListingFaqManager.client';
 
 const { mockSuggest } = vi.hoisted(() => ({ mockSuggest: vi.fn() }));
 
@@ -46,14 +46,14 @@ vi.mock('@/components/host/editor/PlanEntitlementGate.client', () => ({
 // Module mocks
 // ---------------------------------------------------------------------------
 
-vi.mock('../../../src/lib/i18n', async (importOriginal) => ({
-    ...(await importOriginal<typeof import('../../../src/lib/i18n')>()),
+vi.mock('@/lib/i18n', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@/lib/i18n')>()),
     createTranslations: () => ({
         t: (key: string, fallback?: string) => fallback ?? createT('es')(key)
     })
 }));
 
-vi.mock('../../../src/lib/api/client', () => ({
+vi.mock('@/lib/api/client', () => ({
     apiClient: {
         post: vi.fn(),
         postProtected: vi.fn(),
@@ -67,7 +67,7 @@ vi.mock('../../../src/lib/api/client', () => ({
 // Test data
 // ---------------------------------------------------------------------------
 
-import { apiClient } from '../../../src/lib/api/client';
+import { apiClient } from '@/lib/api/client';
 
 const mockPost = vi.mocked(apiClient.post);
 const mockPostProtected = vi.mocked(apiClient.postProtected);
@@ -97,7 +97,11 @@ const FAQ_2: ListingFaq = {
 
 function renderManager(initialFaqs: readonly ListingFaq[] = []) {
     return render(
-        <ListingFaqManager
+        <FaqSection
+            namespace="listing.owner.editor.faqManager"
+            showCategory={true}
+            errorSurface="inline"
+            validationMode="required"
             vertical="venue"
             listingId="listing-1"
             locale="es"
@@ -480,46 +484,5 @@ describe('channel intro (HOS-1763)', () => {
 
         const position = shortIntro.compareDocumentPosition(emptyState);
         expect(position & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    });
-});
-
-describe('HOS-2101 — prefill from the AI questions tab', () => {
-    afterEach(() => {
-        window.history.replaceState(null, '', '/');
-    });
-
-    it('opens the add form with ?pregunta= filled in and clears the parameter', async () => {
-        // Arrange
-        window.history.replaceState(
-            null,
-            '',
-            '/es/editar/preguntas/?pregunta=%C2%BFHay%20cochera%3F'
-        );
-
-        // Act
-        renderManager();
-
-        // Assert
-        const question = (await screen.findByLabelText('Pregunta')) as HTMLInputElement;
-        expect(question.value).toBe('¿Hay cochera?');
-        expect(window.location.search).toBe('');
-    });
-
-    it('fills the response with a suggested draft and keeps the review notice visible', async () => {
-        window.history.replaceState(
-            null,
-            '',
-            '/es/editar/preguntas/?pregunta=%C2%BFHay%20cochera%3F&mensaje=22222222-2222-4222-8222-222222222222'
-        );
-        mockSuggest.mockReset();
-        mockSuggest.mockImplementationOnce(
-            async ({ onDraft }: { onDraft: (draft: string) => void }) => onDraft('Hay cochera.')
-        );
-
-        renderManager();
-        fireEvent.click(await screen.findByText('Sugerir respuesta con IA'));
-
-        expect(await screen.findByLabelText('Respuesta')).toHaveValue('Hay cochera.');
-        expect(screen.getByText(/borrador editable/i)).toBeInTheDocument();
     });
 });

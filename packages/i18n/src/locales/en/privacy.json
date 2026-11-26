@@ -110,6 +110,10 @@
                 "phone": "Phone:",
                 "phoneValue": "+1 (234) 567-890"
             }
+        },
+        "aiAssistants": {
+            "title": "Connecting an AI assistant",
+            "body": "You can connect an AI assistant (for example ChatGPT, Claude or Gemini) to your account through Hospeda's MCP server. The connection is voluntary: you sign in with your Hospeda account (OAuth) and approve the access. The assistant can only access the data of your own account and perform the actions your permissions allow: your listings, guest inquiries and your replies, your listing statistics and your plan status. Replies to guests are sent only with your explicit confirmation of the literal text. The assistant's provider (OpenAI, Anthropic or Google) processes what the assistant reads under its own privacy policy and your account with that provider: Hospeda does not use its own artificial intelligence for this and only hands data to those providers as the result of a query or action your assistant makes. Hospeda keeps an audit record of every write made through the assistant (account, client, tool and time). The text of guest inquiries is written by third parties and is passed to the assistant as data. You can see and disconnect your connected assistants at any time from My account → AI assistants (/mi-cuenta/asistentes-ia/); once disconnected, the assistant loses access."
         }
     },
     "page": {
