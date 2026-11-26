@@ -156,6 +156,83 @@ describe('stripRichDescriptionSyntax', () => {
         expect(stripRichDescriptionSyntax('Código: `1234`')).toBe('Código: 1234');
     });
 
+    it('removes __bold__ markers, keeping the text', () => {
+        // Arrange
+        const value = 'Departamento __remodelado__';
+
+        // Act
+        const result = stripRichDescriptionSyntax(value);
+
+        // Assert
+        expect(result).toBe('Departamento remodelado');
+    });
+
+    it('removes ~~strikethrough~~ markers, keeping the text', () => {
+        // Arrange
+        const value = 'Precio ~~viejo~~ vigente';
+
+        // Act
+        const result = stripRichDescriptionSyntax(value);
+
+        // Assert
+        expect(result).toBe('Precio viejo vigente');
+    });
+
+    it('removes ordered-list markers, keeping each item as plain text', () => {
+        // Arrange
+        const value = '1. WiFi\n2) Pileta';
+
+        // Act
+        const result = stripRichDescriptionSyntax(value);
+
+        // Assert
+        expect(result).toBe('WiFi\nPileta');
+    });
+
+    it('removes blockquote markers, keeping the quoted text', () => {
+        // Arrange
+        const value = '> Cita importante\n> segunda línea';
+
+        // Act
+        const result = stripRichDescriptionSyntax(value);
+
+        // Assert
+        expect(result).toBe('Cita importante\nsegunda línea');
+    });
+
+    it('removes code fence lines, keeping the fenced content', () => {
+        // Arrange
+        const value = '```ts\nconst x = 1;\n```';
+
+        // Act
+        const result = stripRichDescriptionSyntax(value);
+
+        // Assert
+        expect(result).toBe('\nconst x = 1;\n');
+    });
+
+    it('removes HTML tags, keeping the inner text', () => {
+        // Arrange
+        const value = 'Bold y <b>html</b> y <a href="https://x.test">link</a>';
+
+        // Act
+        const result = stripRichDescriptionSyntax(value);
+
+        // Assert
+        expect(result).toBe('Bold y html y link');
+    });
+
+    it('keeps a bare less-than/greater-than comparison that is not an HTML tag', () => {
+        // Arrange
+        const value = 'Capacidad 2 < 4 personas y 6 > 5';
+
+        // Act
+        const result = stripRichDescriptionSyntax(value);
+
+        // Assert
+        expect(result).toBe(value);
+    });
+
     it('leaves plain prose untouched', () => {
         const plain = 'Hermoso departamento con vista al río, a pasos de la playa.';
         expect(stripRichDescriptionSyntax(plain)).toBe(plain);

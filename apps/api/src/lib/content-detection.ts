@@ -9,8 +9,8 @@
  * `gateVideoEmbed`) and the downgrade excess preview helper
  * (`computeDowngradeExcess`) import the detection functions from here so that
  * a change to the pattern set propagates to both consumers automatically; the
- * strip helpers are consumed only by the middleware gates (the downgrade
- * preview is read-only and never mutates content).
+ * strip helpers are consumed by the public accommodation projection
+ * (`public-accommodation-projection.ts`, HOS-2209).
  *
  * **Why lib/ and not a service?**
  * These are pure, stateless string-inspection functions with no I/O dependency.
@@ -122,11 +122,17 @@ export function containsRichDescription(value: string): boolean {
  */
 export function stripRichDescriptionSyntax(value: string): string {
     return value
+        .replace(/<\/?[a-zA-Z][^>]*>/g, '') // HTML tags -> keep inner text (HOS-2209)
         .replace(/\*\*([^*]+)\*\*/g, '$1') // Bold (**text**) -> text
+        .replace(/__([^_]+)__/g, '$1') // Bold (__text__) -> text (HOS-2209)
+        .replace(/~~([^~]+)~~/g, '$1') // Strikethrough (~~text~~) -> text (HOS-2209)
         .replace(/(^|[^*])\*([^*\s][^*]*)\*/g, '$1$2') // Italic (*text*) -> text
         .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // Markdown links -> link text
         .replace(/^#{1,6}\s+/gm, '') // ATX heading markers
+        .replace(/^```.*$/gm, '') // Code fence lines (HOS-2209)
         .replace(/^[-*+]\s+/gm, '') // Unordered list bullet markers
+        .replace(/^\d+[.)]\s+/gm, '') // Ordered list markers (HOS-2209)
+        .replace(/^>\s?/gm, '') // Blockquote markers (HOS-2209)
         .replace(/`([^`\n]+)`/g, '$1'); // Inline code -> code text
 }
 
