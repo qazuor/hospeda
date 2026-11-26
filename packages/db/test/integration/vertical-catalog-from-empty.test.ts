@@ -130,8 +130,40 @@ describe('TEST:V1:3 — catalog_key table after db:migrate from empty', () => {
     });
 });
 
+describe('listing photo packs after db:migrate from empty', () => {
+    it('joins each pack to exactly one recurring product and one matching limit', async () => {
+        const { rows } = await getTestPool().query(`
+            SELECT a.slug, v.validity, v.validity_days, v.scope_type, l.key, l.value,
+                   p.price, p.currency, p.charge_kind, p.cycle, p.compatible_verticals
+            FROM addon a
+            JOIN addon_version v ON v.addon_id = a.id
+            JOIN addon_product p ON p.addon_id = a.id AND p.version_id = v.id
+            JOIN addon_version_limit l ON l.addon_version_id = v.id
+            WHERE a.slug IN ('extra-photos-experience-20', 'extra-photos-venue-20')
+            ORDER BY a.slug
+        `);
+
+        expect(rows).toEqual(
+            ['experience', 'venue'].map((vertical) => ({
+                slug: `extra-photos-${vertical}-20`,
+                validity: 'WHILE_SUBSCRIPTION_ALIVE',
+                validity_days: null,
+                scope_type: 'VERTICAL_SUBSCRIPTION',
+                key: `max_photos_per_${vertical}`,
+                value: 20,
+                price: 500_000,
+                currency: 'ARS',
+                charge_kind: 'PERIODICO',
+                cycle: 'monthly',
+                compatible_verticals: [vertical]
+            }))
+        );
+    });
+});
+
+// withCleanSlate discards the commercial catalog, so inspect reference offers first.
 describe('reference rows survive the integration clean slate', () => {
-    it('keeps the 5 verticals and the 85 keys after withCleanSlate', async () => {
+    it('keeps the 5 verticals and the 87 keys after withCleanSlate', async () => {
         await withCleanSlate(async () => {
             const verticals = await getTestPool().query('SELECT 1 FROM vertical');
             const keys = await getTestPool().query('SELECT 1 FROM catalog_key');
@@ -139,8 +171,9 @@ describe('reference rows survive the integration clean slate', () => {
             expect(verticals.rowCount).toBe(Object.values(VerticalEnum).length);
             expect(keys.rowCount).toBe(CATALOG_KEY_DEFINITIONS.length);
             // 82 + vip_only_promotions + max_free_visible_promotions (HOS-2589 D-4, M-4)
-            // + ai_assistant_access (HOS-2184 G-6).
-            expect(keys.rowCount).toBe(85);
+            // + ai_assistant_access (HOS-2184 G-6)
+            // + max_photos_per_venue + max_photos_per_experience (HOS-2495).
+            expect(keys.rowCount).toBe(87);
         });
     });
 });

@@ -168,7 +168,7 @@ const visibilityBoost = (input: {
     }
 });
 
-/** The production add-ons that have a faithful equivalent in the new model (10 of 11). */
+/** Production add-ons: ten migrated offers and two listing photo packs. */
 export const PRODUCTION_ADDON_CATALOG: readonly AddonCatalogDefinition[] = [
     limitPack({
         slug: 'extra-accommodations-5',
@@ -187,6 +187,25 @@ export const PRODUCTION_ADDON_CATALOG: readonly AddonCatalogDefinition[] = [
         value: 20,
         monthlyPesos: 5_000,
         vertical: 'accommodation'
+    }),
+    limitPack({
+        slug: 'extra-photos-venue-20',
+        name: 'Extra Venue Photos Pack (+20 photos)',
+        description: 'Adds 20 additional gallery photos to each venue listing. Renews monthly.',
+        key: 'max_photos_per_venue',
+        value: 20,
+        monthlyPesos: 5_000,
+        vertical: 'venue'
+    }),
+    limitPack({
+        slug: 'extra-photos-experience-20',
+        name: 'Extra Experience Photos Pack (+20 photos)',
+        description:
+            'Adds 20 additional gallery photos to each experience listing. Renews monthly.',
+        key: 'max_photos_per_experience',
+        value: 20,
+        monthlyPesos: 5_000,
+        vertical: 'experience'
     }),
     limitPack({
         slug: 'extra-venues-1',

@@ -1772,6 +1772,13 @@
       "when": 1795657033361,
       "tag": "0252_hos2184_ai_assistant_access_catalog",
       "breakpoints": true
+    },
+    {
+      "idx": 254,
+      "version": "7",
+      "when": 1795687597413,
+      "tag": "0254_hos2495_listing_photo_keys_and_packs",
+      "breakpoints": true
     }
   ]
 }
