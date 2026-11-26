@@ -482,6 +482,73 @@ describe('on-save translation (HOS-2658)', () => {
         expect(provider.calls.map((callArgs) => callArgs.locale)).toEqual(['pt']);
     });
 
+    it('a Spanish entryNote save never puts back an en committed while it waited on the row (AC-7/AC-25, DL-9)', async () => {
+        // Arrange: the PATCH reads its snapshot (en = 'Mine') and then blocks on the
+        // row lock a concurrent manual correction holds, exactly like the pair writer.
+        const { ownerId, id } = await seedListing('venue');
+        await getDb().execute(
+            sql`UPDATE venues SET business_lines = ARRAY['food','nightlife'] WHERE id = ${id}::uuid`
+        );
+        await setColumns('venue', id, {
+            entry_note_i18n: { es: 'Entrada libre', en: 'Mine', pt: 'Auto antigo' }
+        });
+        const corrected = MANUAL('Entrada libre');
+        let release: () => void = () => undefined;
+        const gate = new Promise<void>((resolve) => {
+            release = resolve;
+        });
+        let locked: () => void = () => undefined;
+        const lockHeld = new Promise<void>((resolve) => {
+            locked = resolve;
+        });
+        const manualCorrection = getDb().transaction(async (tx) => {
+            await tx.execute(sql`SELECT id FROM venues WHERE id = ${id}::uuid FOR UPDATE`);
+            await tx.execute(
+                sql`UPDATE venues SET entry_note_i18n = ${JSON.stringify({ es: 'Entrada libre', en: 'Corrected by hand', pt: 'Auto antigo' })}::jsonb,
+                    translation_meta = ${JSON.stringify({ entryNote: { en: corrected } })}::jsonb
+                    WHERE id = ${id}::uuid`
+            );
+            locked();
+            await gate;
+        });
+        await lockHeld;
+
+        // Act: start the PATCH, wait until its UPDATE is queued on the lock, then commit.
+        const patch = app.request(`${BASE.venue}/${id}`, {
+            method: 'PATCH',
+            headers: ownerHeaders(ownerId),
+            body: JSON.stringify({
+                entryNoteI18n: { es: 'Gratis hasta la 1', en: 'stale', pt: 'stale' }
+            })
+        });
+        let waiting = 0;
+        for (let attempt = 0; attempt < 200 && waiting === 0; attempt += 1) {
+            const probe = await getDb().execute(
+                sql`SELECT count(*)::int AS n FROM pg_stat_activity
+                    WHERE datname = current_database() AND wait_event_type = 'Lock'
+                    AND query ILIKE 'update "venues"%'`
+            );
+            waiting = (probe.rows[0] as { n: number }).n;
+            if (waiting === 0) await new Promise((resolve) => setTimeout(resolve, 25));
+        }
+        release();
+        await manualCorrection;
+        const res = await patch;
+        await Promise.all(pending.splice(0));
+
+        // Assert
+        expect(waiting).toBe(1);
+        expect(res.status).toBe(200);
+        const row = await readRow('venue', id, ['entry_note_i18n']);
+        expect(row.entry_note_i18n).toEqual({
+            es: 'Gratis hasta la 1',
+            en: 'Corrected by hand',
+            pt: 'AI (pt)'
+        });
+        expect(row.translation_meta?.entryNote?.en).toEqual(corrected);
+        expect(provider.calls.map((callArgs) => callArgs.locale)).toEqual(['pt']);
+    });
+
     it('a backfilled AUTOMATIC experience pair is regenerated on the next changed save (AC-27)', async () => {
         // Arrange: the shape 0194 leaves behind (no provider/model).
         const { ownerId, id } = await seedListing('experience');

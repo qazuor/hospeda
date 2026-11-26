@@ -1,8 +1,9 @@
 /**
  * Venue `entryNote` as a translation source (HOS-2658, AC-25).
  *
- * The update persists `es` from the body and keeps the STORED `en` / `pt`;
- * the on-save run then sees `entryNote` as a changed source.
+ * The update writes only `es` from the body through the model's atomic
+ * expression, which keeps the `en` / `pt` of the row the UPDATE locks; the
+ * on-save run then sees `entryNote` as a changed source.
  *
  * @module test/services/venue/venue-entry-note-source
  */
@@ -26,7 +27,7 @@ vi.mock('@repo/db', async (importOriginal) => {
 });
 
 import type { QrCodeService } from '../../../src/services/qr-code/qr-code.service';
-import { resolveVenueEntryNoteSourcePatch } from '../../../src/services/venue/venue.entry-note-source';
+import { resolveVenueEntryNoteSource } from '../../../src/services/venue/venue.entry-note-source';
 import { VenueService } from '../../../src/services/venue/venue.service';
 import {
     _resetTranslationService,
@@ -58,20 +59,46 @@ const makeVenue = (overrides: Record<string, unknown> = {}) => ({
 
 type AnyService = any;
 
+/** Marker the fake model's builder returns in place of the SQL expression. */
+type SourceMarker = { readonly __entryNoteSource: string };
+
+const isSourceMarker = (value: unknown): value is SourceMarker =>
+    typeof value === 'object' && value !== null && '__entryNoteSource' in value;
+
 function buildService(input: { existing: Record<string, unknown> }): {
     service: AnyService;
     update: Mock;
+    buildEntryNoteSourceUpdate: Mock;
 } {
-    const update = vi.fn(async (_where: unknown, patch: Record<string, unknown>) => ({
-        ...input.existing,
-        ...patch
+    const buildEntryNoteSourceUpdate = vi.fn(({ es }: { es: string }) => ({
+        entryNoteI18n: { __entryNoteSource: es }
     }));
+    // Resolves the marker the way the SQL expression does: en/pt from the row
+    // as it is at UPDATE time (`input.existing`), never from the hook snapshot.
+    const update = vi.fn(async (_where: unknown, patch: Record<string, unknown>) => {
+        const stored = (input.existing.entryNoteI18n ?? null) as Record<string, string> | null;
+        const note = patch.entryNoteI18n;
+        return {
+            ...input.existing,
+            ...patch,
+            ...(isSourceMarker(note)
+                ? {
+                      entryNoteI18n: {
+                          es: note.__entryNoteSource,
+                          en: stored?.en ?? '',
+                          pt: stored?.pt ?? ''
+                      }
+                  }
+                : {})
+        };
+    });
     const model = {
         entityName: 'venue',
         findById: vi.fn().mockResolvedValue(input.existing),
         findOne: vi.fn().mockResolvedValue(null),
         update,
-        updateById: update
+        updateById: update,
+        buildEntryNoteSourceUpdate
     };
     const qr = {
         findLiveCodeForEntity: vi.fn().mockResolvedValue({ data: null, error: undefined }),
@@ -80,7 +107,7 @@ function buildService(input: { existing: Record<string, unknown> }): {
     const service: AnyService = new VenueService({ logger: createLoggerMock() }, undefined, qr);
     service.model = model;
     service._destinationModel = { findById: vi.fn().mockResolvedValue({ slug: 'destino-test' }) };
-    return { service, update };
+    return { service, update, buildEntryNoteSourceUpdate };
 }
 
 const admin: Actor = {
@@ -89,43 +116,26 @@ const admin: Actor = {
     permissions: [PermissionEnum.VENUE_EDIT_ALL]
 };
 
-describe('resolveVenueEntryNoteSourcePatch', () => {
-    it('takes es from the body and en/pt from the stored row', () => {
+describe('resolveVenueEntryNoteSource', () => {
+    it('takes only es from the body and ignores its en/pt', () => {
         // Arrange / Act
-        const { patch } = resolveVenueEntryNoteSourcePatch({
-            body: { es: 'Gratis hasta la 1', en: 'stale', pt: 'stale' },
-            stored: STORED_NOTE
+        const result = resolveVenueEntryNoteSource({
+            body: { es: 'Gratis hasta la 1', en: 'stale', pt: 'stale' }
         });
 
         // Assert
-        expect(patch).toEqual({
-            entryNoteI18n: {
-                es: 'Gratis hasta la 1',
-                en: 'Free until midnight (manual)',
-                pt: 'Grátis'
-            }
-        });
+        expect(result).toEqual({ es: 'Gratis hasta la 1' });
     });
 
-    it('falls back to empty en/pt when nothing is stored', () => {
-        // Arrange / Act
-        const { patch } = resolveVenueEntryNoteSourcePatch({
-            body: { es: 'Gratis', en: 'x', pt: 'y' },
-            stored: null
-        });
-
-        // Assert
-        expect(patch).toEqual({ entryNoteI18n: { es: 'Gratis', en: '', pt: '' } });
+    it('writes an empty source when es is not a string', () => {
+        // Arrange / Act / Assert
+        expect(resolveVenueEntryNoteSource({ body: { en: 'x' } })).toEqual({ es: '' });
     });
 
     it('leaves null and absent bodies untouched', () => {
         // Arrange / Act / Assert
-        expect(resolveVenueEntryNoteSourcePatch({ body: null, stored: STORED_NOTE }).patch).toEqual(
-            {}
-        );
-        expect(
-            resolveVenueEntryNoteSourcePatch({ body: undefined, stored: STORED_NOTE }).patch
-        ).toEqual({});
+        expect(resolveVenueEntryNoteSource({ body: null })).toEqual({});
+        expect(resolveVenueEntryNoteSource({ body: undefined })).toEqual({});
     });
 });
 
@@ -144,7 +154,9 @@ describe('VenueService — entryNote source on update (HOS-2658, AC-25)', () => 
 
     it('persists es from the body, keeps the stored en/pt and translates entryNote', async () => {
         // Arrange
-        const { service, update } = buildService({ existing: makeVenue() });
+        const { service, update, buildEntryNoteSourceUpdate } = buildService({
+            existing: makeVenue()
+        });
 
         // Act
         const result = await service.update(admin, VENUE_ID, {
@@ -153,12 +165,9 @@ describe('VenueService — entryNote source on update (HOS-2658, AC-25)', () => 
 
         // Assert
         expect(result.error).toBeUndefined();
+        expect(buildEntryNoteSourceUpdate.mock.calls).toEqual([[{ es: 'Gratis hasta la 1' }]]);
         const written = update.mock.calls[0]?.[1] as Record<string, unknown>;
-        expect(written.entryNoteI18n).toEqual({
-            es: 'Gratis hasta la 1',
-            en: 'Free until midnight (manual)',
-            pt: 'Grátis'
-        });
+        expect(written.entryNoteI18n).toEqual({ __entryNoteSource: 'Gratis hasta la 1' });
         expect(translateMock).toHaveBeenCalledWith({
             entityType: 'venue',
             entityId: VENUE_ID,
@@ -169,12 +178,15 @@ describe('VenueService — entryNote source on update (HOS-2658, AC-25)', () => 
 
     it('keeps a null entryNoteI18n null', async () => {
         // Arrange
-        const { service, update } = buildService({ existing: makeVenue() });
+        const { service, update, buildEntryNoteSourceUpdate } = buildService({
+            existing: makeVenue()
+        });
 
         // Act
         await service.update(admin, VENUE_ID, { entryNoteI18n: null });
 
         // Assert
+        expect(buildEntryNoteSourceUpdate).not.toHaveBeenCalled();
         const written = update.mock.calls[0]?.[1] as Record<string, unknown>;
         expect(written.entryNoteI18n).toBeNull();
     });

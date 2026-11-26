@@ -85,10 +85,7 @@ import {
 import { DEFAULT_LISTING_TRANSLATION_SOURCE_FIELDS } from '../listing/listing-translation-on-save';
 import { QrCodeService } from '../qr-code/qr-code.service';
 import { assertVenueCreateSectionsPresent } from './venue.create-sections';
-import {
-    resolveVenueEntryNoteSourcePatch,
-    type VenueEntryNoteI18n
-} from './venue.entry-note-source';
+import { resolveVenueEntryNoteSource } from './venue.entry-note-source';
 import { attachComposedVenueMedia, attachComposedVenueMediaList } from './venue.media-read';
 import { resolveVenueNightInfoPatch, type VenueNightInfoCurrent } from './venue.night-info';
 import {
@@ -773,13 +770,16 @@ export class VenueService extends BaseListingService<
             stored: (current as { whatsappVisibility?: VenueWhatsappVisibilityEnum | null } | null)
                 ?.whatsappVisibility
         });
-        // HOS-2658 (AC-25): `entryNoteI18n.es` is the source; the stored en/pt
-        // pairs belong to the translation writer and are kept.
-        const { patch: entryNote } = resolveVenueEntryNoteSourcePatch({
-            body: (data as { entryNoteI18n?: unknown }).entryNoteI18n,
-            stored: (current as { entryNoteI18n?: Partial<VenueEntryNoteI18n> | null } | null)
-                ?.entryNoteI18n
+        // HOS-2658 (AC-25, DL-9): `entryNoteI18n.es` is the source; the en/pt
+        // pairs belong to the translation writer and are read by the UPDATE
+        // from the locked row, never from the `current` snapshot above.
+        const { es: entryNoteSource } = resolveVenueEntryNoteSource({
+            body: (data as { entryNoteI18n?: unknown }).entryNoteI18n
         });
+        const entryNote =
+            entryNoteSource === undefined
+                ? {}
+                : this.model.buildEntryNoteSourceUpdate({ es: entryNoteSource });
         return {
             ...base,
             ...nightInfo,
