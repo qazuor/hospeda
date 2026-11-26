@@ -108,3 +108,17 @@ export const AiConnectionResetReviewResultSchema = z.object({
 
 /** TypeScript type inferred from {@link AiConnectionResetReviewResultSchema}. */
 export type AiConnectionResetReviewResult = z.infer<typeof AiConnectionResetReviewResultSchema>;
+
+/**
+ * Response of `GET /api/v1/protected/ai-connections/access` (HOS-2184 T-041):
+ * whether the session user may use the AI assistant, decided exactly as the
+ * MCP tools decide it (the `ai_assistant_access` entitlement of any owner
+ * vertical; accounts with no plan in any of them are not gated).
+ */
+export const AiAssistantAccessResponseSchema = z.object({
+    /** `true` when the AI assistant tools answer this user. */
+    hasAccess: z.boolean()
+});
+
+/** TypeScript type inferred from {@link AiAssistantAccessResponseSchema}. */
+export type AiAssistantAccessResponse = z.infer<typeof AiAssistantAccessResponseSchema>;
