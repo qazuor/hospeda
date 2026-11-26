@@ -1,5 +1,5 @@
 {
-  "contentHash": "a9b13db8942c67e16bbcb4377f4852fc3d5321acc0d07b731f9825f9383a88ee",
+  "contentHash": "cfeafb84021e6110ae155f3cd1646309da90ba1fcbdd63c190066fb058880282",
   "locales": {
     "es": [
       {
@@ -326,7 +326,7 @@
           "benefit-usage",
           "provider-directory"
         ],
-        "reviewedAt": "2026-11-25",
+        "reviewedAt": "2026-11-26",
         "sections": {
           "canDo": "Registrar usos, descargar tu código QR y confirmar los usos pendientes desde {{link:providerPanel|Mi ficha de proveedor}}.",
           "expect": "- Lo que registrás queda pendiente hasta que el anfitrión lo confirme (mirá {{article:benefit-usage|cómo lo ve el anfitrión}}).\n- Los usos confirmados suman a tus números.",
