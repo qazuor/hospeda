@@ -1,0 +1,49 @@
+---
+/**
+ * @file mi-cuenta/recibo/[receiptId].astro
+ * @description The page behind every «Ver recibo» button (HOS-2566): the
+ * «Recibimos tu pago» email and the receipts list on Mi Suscripción lead here.
+ *
+ * The page is a shell. It reads nothing about the receipt: the `ReceiptViewer`
+ * island fetches the PDF from the authenticated API route with the owner's
+ * session, so the receipt is never rendered into HTML that something could
+ * cache, and a receipt that is somebody else's answers «not found» exactly like
+ * one that does not exist.
+ *
+ * @route /{lang}/mi-cuenta/recibo/{receiptId}/
+ * @rendering SSR (on-demand, auth-protected)
+ */
+
+import AccountLayout from '@/layouts/AccountLayout.astro';
+import { PageHeader } from '@/components/account/ui';
+import { ReceiptViewer } from '@/components/account/receipts/ReceiptViewer.client';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+import { buildLoginRedirect } from '@/lib/middleware-helpers';
+import { buildAccountNotFoundTarget } from '@/lib/account-not-found';
+
+export const prerender = false;
+
+const locale = Astro.locals.locale as SupportedLocale;
+const { t } = createTranslations(locale);
+
+const user = Astro.locals.user;
+if (!user) {
+	return Astro.redirect(buildLoginRedirect({ locale, currentUrl: Astro.url.pathname + Astro.url.search }));
+}
+
+const { receiptId } = Astro.params;
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+if (!receiptId || !UUID.test(receiptId)) {
+	return Astro.rewrite(buildAccountNotFoundTarget({ locale }));
+}
+
+const title = t('account.subscription.receipts.page.title');
+const backHref = buildUrl({ locale, path: 'mi-cuenta/suscripcion' });
+---
+
+<AccountLayout locale={locale} title={title} activeSection="suscripcion">
+	<PageHeader locale={locale} title={title} />
+	<ReceiptViewer client:load locale={locale} receiptId={receiptId} backHref={backHref} />
+</AccountLayout>

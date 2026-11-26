@@ -915,6 +915,27 @@
             "ariaLabel": "Secciones de la suscripción",
             "plan": "Plan",
             "addons": "Complementos"
+        },
+        "receipts": {
+            "title": "Tus recibos",
+            "empty": "Todavía no tenés recibos.",
+            "loadError": "No pudimos cargar tus recibos.",
+            "number": "Comprobante n.º {{number}}",
+            "view": "Ver recibo",
+            "viewLabel": "Ver el recibo n.º {{number}}",
+            "kindPlan": "Suscripción",
+            "kindAddon": "Complemento",
+            "page": {
+                "title": "Recibo",
+                "loading": "Preparando tu recibo…",
+                "open": "Abrir recibo",
+                "download": "Descargar recibo",
+                "notFound": "No encontramos ese recibo.",
+                "notFoundHint": "Revisá que hayas iniciado sesión con la cuenta que hizo el pago.",
+                "error": "No pudimos abrir el recibo. Probá de nuevo en un momento.",
+                "retry": "Reintentar",
+                "back": "Volver a Mi suscripción"
+            }
         }
     },
     "favorites": {

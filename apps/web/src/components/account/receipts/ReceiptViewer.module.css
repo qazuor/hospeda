@@ -1,0 +1,52 @@
+/* ReceiptViewer.module.css (HOS-2566). Tokens only. */
+
+.root {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    align-items: flex-start;
+}
+
+.line {
+    margin: 0;
+    color: var(--core-foreground);
+}
+
+.hint {
+    margin: var(--space-2) 0 0;
+    color: var(--core-muted-foreground);
+}
+
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+}
+
+.primary,
+.secondary {
+    display: inline-flex;
+    align-items: center;
+    min-block-size: 2.75rem;
+    padding-inline: var(--space-4);
+    border: 1px solid var(--core-border);
+    border-radius: var(--radius-surface);
+    font: inherit;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.primary {
+    background: var(--core-primary);
+    border-color: var(--core-primary);
+    color: var(--core-primary-foreground);
+}
+
+.secondary {
+    background: transparent;
+    color: var(--core-foreground);
+}
+
+.back {
+    color: var(--core-muted-foreground);
+}

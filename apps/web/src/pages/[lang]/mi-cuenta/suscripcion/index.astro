@@ -34,12 +34,13 @@ import PageHelpLink from '@/components/account/help/PageHelpLink.astro';
 import SubscriptionTabs from '@/components/account/SubscriptionTabs.astro';
 import TrialSummary from '@/components/account/TrialSummary.astro';
 import MySubscriptions from '@/components/account/MySubscriptions.astro';
+import ReceiptsList from '@/components/account/ReceiptsList.astro';
 import { ExpiredDeclinedSignupNotice } from '@/components/account/ExpiredDeclinedSignupNotice';
 import { PromoCodeRedeem } from '@/components/account/PromoCodeRedeem.client';
 import StripMercadoPagoReturnParams from '@/components/billing/StripMercadoPagoReturnParams.astro';
 import { SubscriptionReturn } from '@/components/billing/SubscriptionReturn.client';
 import { AddonPurchaseGate } from '@/components/billing/addon-purchase/AddonPurchaseGate.client';
-import { TrialStatusEnum } from '@repo/schemas';
+import { TrialStatusEnum, type OwnReceipt } from '@repo/schemas';
 import { billingSubscriptionApi, publishApi, type PublishVerticalSlug } from '@/lib/api/endpoints-protected';
 import { parseOwnSubscriptions } from '@/lib/billing/self-cancel';
 import { parseReturnSubscriptionId, selectDeclinedNoticesToShow } from '@/lib/billing/subscription-return';
@@ -85,6 +86,15 @@ try {
 	ownSubscriptions = parseOwnSubscriptions({ result: await billingSubscriptionApi.listMine({ cookieHeader }) });
 } catch {
 	 ownSubscriptions = null;
+}
+
+// HOS-2566: the owner's payment receipts; a failed read is shown as such, never as «none».
+let ownReceipts: readonly OwnReceipt[] | null = null;
+try {
+	const receiptsRead = await billingSubscriptionApi.listReceipts({ cookieHeader });
+	ownReceipts = receiptsRead.ok ? receiptsRead.data.receipts : null;
+} catch {
+	ownReceipts = null;
 }
 
 const billingPresence = await hasBillingPresence({ userId: user.id, cookieHeader });
@@ -156,6 +166,7 @@ if (returnSubscriptionId) {
 	))}
 	<div data-subscription-sections class="sub-page__sections">
 	<MySubscriptions locale={locale} result={ownSubscriptions} plansPath={resolveEmptySubscriptionPlansPath({ roles: user.roles })} />
+	<ReceiptsList locale={locale} receipts={ownReceipts} />
     {addonVerticals.map((vertical) => (
         <Section id={`addons-${vertical}`} helpId="section:complementos.recurrentes" title={t('billing.addonPurchase.verticalTitle', undefined, { vertical: t(resolveMySubscriptionVerticalLabelKey({ vertical })) })}>
             <AddonPurchaseGate client:visible locale={locale} returnOrderRequestId={null} accountEmail={user.email} onlyVertical={vertical} plansPath={plansPathForVertical({ vertical })} />
