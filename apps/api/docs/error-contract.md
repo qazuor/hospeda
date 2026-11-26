@@ -101,6 +101,8 @@ The listing resolver then evaluates its own steps 3, 4, 4b, 5, 6 and 7 in order.
 | `NO_PLANS_AVAILABLE` | 403 | `FORBIDDEN` | Message: `no_plans_available` (la vertical no tiene ninguna versión de plan vigente y vendible; no es `subscription_required`: no hay nada que contratar) |
 | `LIMIT_REACHED` | 403 | `LIMIT_REACHED` | `{ limitKey, currentCount, maxAllowed }` |
 
+**Listing photos (HOS-2495).** Accommodation, venue and experience photos are capped by step 7 alone, against the owner's effective `max_photos_per_{vertical}` (plan + add-ons + courtesy + permanent grant, or the pre-trial draft allowance). A gallery `addMedia` and a gallery upload through `POST /api/v1/protected/media/upload-entity` ask for `visible non-featured + 1`; a featured upload asks for `requested: 1`, so an owner at the gallery cap can still change the cover. The refusal is 403 `LIMIT_REACHED` with `{ limitKey, currentCount, maxAllowed }`. Listing verticals no longer answer 422 `GALLERY_LIMIT_EXCEEDED` (only destination, event and post keep a literal cap) nor 429 `QUOTA_EXCEEDED` for photos. `GET .../{id}/photo-allowance` never answers 403: an owner without coverage reads `status: 'NONE'`. Clients render every one of these through `translateApiError`; the raw `message` ("Limit reached", "Entitlement required") is never shown.
+
 An administrative action with actor and subject on the same account receives
 403 `FORBIDDEN` at listing step 3. For action 15, the subject is the owner read
 from the listing row; coverage, entitlements and limits (steps 5 through 7)

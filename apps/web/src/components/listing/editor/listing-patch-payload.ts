@@ -130,7 +130,7 @@ function sameSet(a: ReadonlySet<string>, b: ReadonlySet<string>): boolean {
  *    sends an explicit `null`. They ship only on the experience branch, because
  *    they exist only on `ExperienceOwnerUpdateInputSchema`.
  *  - `media` is absent by design (HOS-372): photos are persisted per operation
- *    by `MediaSection` against the relational media endpoints, so re-sending a
+ *    by `PhotoSection` against the relational media endpoints, so re-sending a
  *    buffered `media` block here would overwrite the rows the owner just saved.
  */
 export function buildPatchPayload({

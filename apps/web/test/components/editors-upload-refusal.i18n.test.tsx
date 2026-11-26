@@ -11,7 +11,6 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ContentMediaSection } from '@/components/account/editor/ContentMediaSection.client';
-import { MediaSection } from '@/components/listing/editor/MediaSection.client';
 import { ToastViewport } from '@/components/ui/ToastViewport.client';
 import { clearToasts } from '@/store/toast-store';
 
@@ -127,23 +126,9 @@ describe('HOS-1218 — editor upload refusals are localized', () => {
         expect(screen.queryByText(ENGLISH)).not.toBeInTheDocument();
     });
 
-    it('listing editor: renders the Spanish limit sentence, not the English message', async () => {
-        render(
-            <>
-                <MediaSection
-                    locale="es"
-                    vertical="venue"
-                    listingId="00000000-0000-4000-8000-0000000000bb"
-                />
-                <ToastViewport />
-            </>
-        );
-
-        await pickGalleryFile();
-
-        expect(
-            await screen.findAllByText(EXPECTED_ES, {}, { timeout: ASYNC_RENDER_TIMEOUT_MS })
-        ).not.toHaveLength(0);
-        expect(screen.queryByText(ENGLISH)).not.toBeInTheDocument();
-    });
+    // HOS-2495: the listing editor is the shared `PhotoSection` now, and a
+    // listing upload is refused by step 7 with 403 `LIMIT_REACHED`, not 422
+    // `GALLERY_LIMIT_EXCEEDED`. That refusal is covered, per vertical, by
+    // `host/editor/PhotoSection.verticals.test.tsx` and
+    // `host/editor/PhotoSection.limit.test.tsx`.
 });

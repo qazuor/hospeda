@@ -4,6 +4,11 @@
  * @description Photo AND video section of the accommodation editor
  * (HOS-318 T-012, videos added by G7 smoke H-121).
  *
+ * `PhotoSection` is the one photo editor of the three listing verticals
+ * (HOS-2495); the venue/experience `fotos` page renders the same component. Its
+ * cap comes from the client island's `photo-allowance` read, never from this
+ * page, which stays session-blind.
+ *
  * `PhotoSection` already persists every change against its own endpoints, so no
  * form logic moved here for photos — this page only loads the media and mounts
  * it. `VideoSection` is a second, independent widget on the same page: videos
@@ -63,7 +68,8 @@ const publishContext = {
 >
 	<PhotoSection
 		locale={locale}
-		accommodationId={accommodationId}
+		vertical="accommodation"
+		listingId={accommodationId}
 		initialFeaturedImage={data.featuredImage}
 		initialGallery={data.gallery}
 		publishContext={publishContext}

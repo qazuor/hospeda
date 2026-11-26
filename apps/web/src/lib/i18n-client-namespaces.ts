@@ -81,6 +81,9 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'account.editorPresentation',
     'account.favorites',
     'account.help',
+    // HOS-2495 — the shared photo editor island (`host/editor/PhotoSection`)
+    // renders its cap breakdown and over-cap marks from these.
+    'account.listingPhotos',
     // HOS-2413 — the account kit (`components/account/ui/`) renders these in islands.
     'account.menu',
     'account.myContent',

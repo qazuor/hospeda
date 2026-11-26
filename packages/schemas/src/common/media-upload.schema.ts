@@ -5,74 +5,64 @@ import { z } from 'zod';
 // ---------------------------------------------------------------------------
 
 /**
- * Per-entity gallery image caps.
+ * Per-entity gallery image caps of the CONTENT entities.
  *
- * This is the **single source of truth** for how many gallery images are
- * allowed per content entity. Both the API route (server-side enforcement)
- * and the admin frontend (client-side UI gating) import from here so they
- * can never drift apart.
+ * This is the **single source of truth** for how many gallery images a
+ * destination, event or post may hold. Both the API routes (server-side
+ * enforcement) and the admin/web editors (client-side UI gating) import from
+ * here so they can never drift apart.
  *
- * Keys MUST match the `GalleryEntityTypeSchema` literals exactly
- * (`accommodation`, `destination`, `event`, `post`).
- *
- * TODO(billing): billing-tier addon entitlements will override these defaults
- * once the addon system is wired in.
+ * Listing verticals (accommodation, venue, experience) are deliberately NOT
+ * here (HOS-2495): their gallery cap is the owner's effective photo limit
+ * (`LISTING_PHOTO_LIMIT_KEY_BY_VERTICAL`: plan + add-ons + grants), enforced by
+ * step 7 of listing access. A literal for them would cut a paid cap.
  *
  * @example
  * ```ts
  * import { ENTITY_GALLERY_CAPS, getGalleryCap } from '@repo/schemas';
  *
- * // Direct lookup
- * const cap = ENTITY_GALLERY_CAPS.accommodation; // 50
- *
- * // Dynamic lookup (string entity type from request)
- * const cap = getGalleryCap(entityType); // safe fallback for unknown types
+ * const cap = ENTITY_GALLERY_CAPS.destination; // 20
+ * const sameCap = getGalleryCap('destination'); // 20
  * ```
  */
 export const ENTITY_GALLERY_CAPS = {
-    accommodation: 50,
     destination: 20,
     event: 10,
-    post: 15,
-    venue: 30,
-    experience: 30
+    post: 15
 } as const;
 
 /**
- * Union of entity type strings that have an explicit gallery cap defined in
- * `ENTITY_GALLERY_CAPS`.
+ * Union of the content entity types that have a literal gallery cap in
+ * `ENTITY_GALLERY_CAPS`. A listing vertical is not a member, so passing one to
+ * {@link getGalleryCap} is a type error.
  */
 export type EntityGalleryCapKey = keyof typeof ENTITY_GALLERY_CAPS;
 
 /**
- * Fallback gallery cap used for entity types not listed in
- * `ENTITY_GALLERY_CAPS`. Acts as a conservative safety net so an unexpected
- * entity type never gets an unlimited gallery.
- *
- * Set to the same value as the accommodation cap (the largest known cap) to
- * avoid silently blocking legitimate uploads on unrecognized entity types.
+ * Fallback gallery cap for a value that escaped the type (for example an
+ * untyped request string cast to {@link EntityGalleryCapKey}). Acts as a
+ * conservative safety net so an unexpected entity type never gets an
+ * unlimited gallery.
  */
 export const MAX_GALLERY_CAP_FALLBACK = 50;
 
 /**
- * Returns the maximum number of gallery images allowed for the given entity
- * type.
+ * Returns the maximum number of gallery images allowed for a content entity.
  *
- * Falls back to `MAX_GALLERY_CAP_FALLBACK` for entity types not present in
- * `ENTITY_GALLERY_CAPS` so callers never have to special-case unknown types.
+ * Falls back to `MAX_GALLERY_CAP_FALLBACK` for a value that is not a key of
+ * `ENTITY_GALLERY_CAPS` at runtime.
  *
- * @param entityType - The entity type string (e.g. `'accommodation'`).
+ * @param entityType - The content entity type (`'destination'`, `'event'` or `'post'`).
  * @returns The gallery cap for that entity type.
  *
  * @example
  * ```ts
- * getGalleryCap('accommodation') // 50
- * getGalleryCap('event')         // 10
- * getGalleryCap('unknown')       // 50 (MAX_GALLERY_CAP_FALLBACK)
+ * getGalleryCap('event') // 10
+ * getGalleryCap('post')  // 15
  * ```
  */
-export function getGalleryCap(entityType: string): number {
-    return ENTITY_GALLERY_CAPS[entityType as EntityGalleryCapKey] ?? MAX_GALLERY_CAP_FALLBACK;
+export function getGalleryCap(entityType: EntityGalleryCapKey): number {
+    return ENTITY_GALLERY_CAPS[entityType] ?? MAX_GALLERY_CAP_FALLBACK;
 }
 
 /**

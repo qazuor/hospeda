@@ -1,21 +1,26 @@
 /**
  * @file PhotoSection.client.tsx
- * @description Self-contained photo section for the accommodation editor.
+ * @description The ONE photo editor of the three listing verticals
+ * (accommodation, venue, experience — HOS-2495). Both `fotos.astro` pages
+ * render it with `{ vertical, listingId }`; every call goes through that
+ * vertical's `ListingPhotoApi` (`createListingPhotoApi`).
+ *
+ * HOS-2495: the cap is the listing's photo allowance
+ * (`GET …/{id}/photo-allowance`), the same number step 7 enforces on the
+ * server: plan + add-ons + grants, with the pre-trial DRAFT fallback. The
+ * description renders its five states (`PhotoSectionDescription`), and the
+ * tiles beyond the cap are marked "No se muestra: superás tu tope" — the public
+ * gallery hides them, reversibly, and they stay fully editable here.
  *
  * SPEC-204: Migrated from JSONB-controlled (parent-owned state) to per-operation
  * persistence against the relational `accommodation_media` endpoints. Every
  * add/remove/set-featured call hits the API immediately — no buffering in the
  * parent PATCH payload.
  *
- * HOS-1024: the gallery cap shown/enforced here is the host's EFFECTIVE plan
- * cap (`useMyEntitlements({ vertical: 'accommodation' }).limit(MAX_PHOTOS_LIMIT_KEY)`, plan + addons —
- * see `addon-limit-recalculation.service.ts`), not the flat entity ceiling
- * every host used to see regardless of plan. `ENTITY_GALLERY_CAPS.accommodation`
- * still exists and is still enforced server-side
- * (`routes/media/protected/upload-entity.ts`'s `GALLERY_LIMIT_EXCEEDED`
- * check) as a hard technical ceiling ABOVE the plan cap — this component just
- * no longer shows or gates on that number. See `photo-section-helpers.ts`'s
- * `resolveEffectiveGalleryCap` for the loading-window contract.
+ * HOS-1024: the gallery cap shown/enforced here is the owner's EFFECTIVE cap,
+ * never a flat entity ceiling. Since HOS-2495 there is no literal listing
+ * ceiling left at all (`ENTITY_GALLERY_CAPS` covers content entities only); see
+ * `photo-cap-view.ts` for the loading / none / unlimited / failed contract.
  *
  * HOS-122 added four owner-declared gaps on top of that persistence layer,
  * all UI-only (the backend already existed):
@@ -52,7 +57,7 @@
 
 import { DeleteIcon } from '@repo/icons';
 import { DEFAULT_ENTITY_MAX_FILE_SIZE_MB, getMediaUrl } from '@repo/media';
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { PhotoEditor } from '@/components/account/editor/PhotoEditor';
 import {
     Alert,
@@ -62,7 +67,7 @@ import {
     TextLink,
     useConfirm
 } from '@/components/account/ui';
-import { useMyEntitlements } from '@/hooks/useMyEntitlements';
+import { createListingPhotoApi, type ListingPhotoVertical } from '@/lib/api/listing-photo-api';
 import type { AccommodationMediaItem, MediaImage } from '@/lib/api/types';
 import { photoRemovalConfirmRequest } from '@/lib/forms/confirm-photo-removal';
 import { sectionHelpId } from '@/lib/help/section-help-id';
@@ -74,7 +79,7 @@ import styles from './PhotoSection.module.css';
 import { PhotoSectionDescription } from './PhotoSectionDescription.client';
 import { PhotoUploadStatus } from './PhotoUploadStatus';
 import { PublishReadyDialog } from './PublishReadyDialog.client';
-import { MAX_PHOTOS_LIMIT_KEY, resolveEffectiveGalleryCap } from './photo-section-helpers';
+import type { PhotoSectionInitialImage } from './photo-section-model';
 import { SortablePhotoGallery } from './SortablePhotoGallery.client';
 import { usePhotoAltWarningGuard } from './use-photo-alt-warning-guard';
 import { usePhotoSection } from './use-photo-section';
@@ -85,30 +90,23 @@ export { uploadEntityImage } from '@/lib/media/upload-entity';
 // Re-export types for consumers that import from this module
 export type { AccommodationMediaItem, MediaImage };
 
-/**
- * @deprecated Legacy shape kept for backwards compat; no longer emitted by the
- * parent. Photo changes are persisted per-operation — the parent PATCH no longer
- * includes media.
- */
-export interface PhotoSectionData {
-    readonly featuredImage: MediaImage | null;
-    readonly gallery: readonly MediaImage[];
-}
-
-/** Props for the self-contained PhotoSection (SPEC-204). */
+/** Props for the self-contained PhotoSection (SPEC-204, HOS-2495). */
 export interface PhotoSectionProps {
     readonly locale: SupportedLocale;
-    readonly accommodationId: string;
+    /** Which listing vertical the photos belong to (HOS-2495). */
+    readonly vertical: ListingPhotoVertical;
+    /** UUID of the listing being edited. */
+    readonly listingId: string;
     /**
      * Optional first-paint featured image (from SSR).
      * Shown until `listMedia` resolves. Lacks a DB id — cannot trigger API ops.
      */
-    readonly initialFeaturedImage?: MediaImage | null;
+    readonly initialFeaturedImage?: PhotoSectionInitialImage | null;
     /**
      * Optional first-paint gallery (from SSR).
      * Shown until `listMedia` resolves. Lack DB ids — cannot trigger API ops.
      */
-    readonly initialGallery?: readonly MediaImage[];
+    readonly initialGallery?: readonly PhotoSectionInitialImage[];
     /**
      * The half of publish readiness this section does NOT own, so the post-save
      * publish prompt can fire when the main photo was the last thing missing
@@ -146,31 +144,14 @@ export interface PhotoSectionProps {
  */
 export function PhotoSection({
     locale,
-    accommodationId,
+    vertical,
+    listingId,
     initialFeaturedImage = null,
     initialGallery = [],
     publishContext
 }: PhotoSectionProps) {
     const { t, tPlural } = createTranslations(locale);
-
-    // HOS-1024: the effective cap is the host's PLAN limit (+ addons), not
-    // the flat entity ceiling. See `resolveEffectiveGalleryCap`'s JSDoc for
-    // the pending-window contract this drives below.
-    // HOS-1721: a pre-trial owner's plan grants no photo cap; on a DRAFT the
-    // cap is what the trial will grant at first publish, as the API enforces.
-    const {
-        limit: getEntitlementLimit,
-        draftLimit: getDraftLimit,
-        isLoading: isEntitlementsLoading,
-        error: entitlementsError
-    } = useMyEntitlements({
-        vertical: 'accommodation'
-    });
-    const { cap: galleryCap, isResolved: isGalleryCapResolved } = resolveEffectiveGalleryCap({
-        planLimit: getEntitlementLimit(MAX_PHOTOS_LIMIT_KEY),
-        isEntitlementsLoading,
-        draftLimit: publishContext?.isDraft ? getDraftLimit(MAX_PHOTOS_LIMIT_KEY) : 0
-    });
+    const api = useMemo(() => createListingPhotoApi({ vertical }), [vertical]);
 
     // HOS-2429 + HOS-2489: deletes are immediate, so the kit dialog asks first.
     const { confirm: askConfirm, confirmDialog } = useConfirm({ locale });
@@ -190,6 +171,11 @@ export function PhotoSection({
         isDragOverFeatured,
         isDragOverGallery,
         isGalleryFull,
+        allowance,
+        capView,
+        overCapIds,
+        isGalleryUploadOpen,
+        isCoverUploadOpen,
         capUpsell,
         opsReady,
         mediaLoadSucceeded,
@@ -213,8 +199,8 @@ export function PhotoSection({
         handleUpdateMediaText
     } = usePhotoSection({
         locale,
-        accommodationId,
-        galleryCap,
+        api,
+        listingId,
         initialFeaturedImage,
         initialGallery,
         confirmRemoval
@@ -224,7 +210,7 @@ export function PhotoSection({
     // incomplete. The host can continue, or stay and focus the first photo.
     usePhotoAltWarningGuard({
         locale,
-        accommodationId,
+        accommodationId: listingId,
         featuredItem,
         galleryItems,
         mediaReady: mediaLoadSucceeded
@@ -271,9 +257,12 @@ export function PhotoSection({
         });
     }, [featuredItem, opsReady, publishContext, publishPrompt]);
 
-    const remainingGallerySlots = isGalleryCapResolved
-        ? Math.max(galleryCap - galleryItems.length, 0)
-        : 0;
+    const galleryCap = capView.kind === 'limited' ? capView.cap : null;
+    const remainingGallerySlots =
+        capView.kind === 'unlimited'
+            ? Number.POSITIVE_INFINITY
+            : Math.max((galleryCap ?? 0) - galleryItems.length, 0);
+    const hiddenCount = overCapIds.size;
 
     return (
         <PhotoEditor
@@ -283,14 +272,13 @@ export function PhotoSection({
                 'JPG, PNG o WebP — máx. {{maxSize}}MB',
                 { maxSize: DEFAULT_ENTITY_MAX_FILE_SIZE_MB }
             )}
-            helpId={sectionHelpId({ vertical: 'accommodation', slug: 'fotos' })}
+            helpId={sectionHelpId({ vertical, slug: 'fotos' })}
             description={
                 <PhotoSectionDescription
                     locale={locale}
-                    isLoading={isEntitlementsLoading}
-                    isResolved={isGalleryCapResolved}
-                    readFailed={entitlementsError !== null}
-                    cap={galleryCap}
+                    vertical={vertical}
+                    capView={capView}
+                    breakdown={allowance?.breakdown ?? null}
                 />
             }
             featured={
@@ -365,7 +353,7 @@ export function PhotoSection({
                                 { maxSize: DEFAULT_ENTITY_MAX_FILE_SIZE_MB }
                             )}
                             isDragOver={isDragOverFeatured}
-                            disabled={anyOpInFlight}
+                            disabled={anyOpInFlight || !isCoverUploadOpen}
                             onPick={() => featuredInputRef.current?.click()}
                             onDrop={handleFeaturedDrop}
                             onDragOver={handleFeaturedDragOver}
@@ -379,6 +367,7 @@ export function PhotoSection({
                         type="file"
                         accept="image/jpeg,image/png,image/webp,image/heic"
                         className={styles.fileInput}
+                        disabled={!isCoverUploadOpen}
                         onChange={handleFeaturedSelect}
                     />
                 </div>
@@ -405,36 +394,52 @@ export function PhotoSection({
             }
             galleryInputId="gallery-image-input"
             galleryLabel={
-                <span aria-busy={!isGalleryCapResolved}>
-                    {isGalleryCapResolved
-                        ? t(
+                <span aria-busy={capView.kind === 'loading'}>
+                    {galleryCap === null
+                        ? t('host.properties.editor.photo.galleryLoading', 'Galería de fotos')
+                        : t(
                               'host.properties.editor.photo.gallery',
                               'Galería de fotos (máx. {{cap}})',
                               { cap: galleryCap }
-                          )
-                        : t('host.properties.editor.photo.galleryLoading', 'Galería de fotos')}
+                          )}
                 </span>
             }
             galleryNotice={
-                isGalleryFull && (
-                    // HOS-1024: sober, single-line upsell — the same copy/CTA
-                    // the failed-upload toast already uses.
-                    <Alert
-                        tone="warning"
-                        locale={locale}
-                        action={
-                            capUpsell ? (
-                                <TextLink href={capUpsell.action.href}>
-                                    {capUpsell.action.label}
-                                </TextLink>
-                            ) : undefined
-                        }
-                    >
-                        {tPlural('host.properties.editor.photo.galleryCapReached', galleryCap, {
-                            cap: galleryCap
-                        })}
-                    </Alert>
-                )
+                <>
+                    {hiddenCount > 0 && (
+                        // HOS-2495: name the cause and the two ways out (a pack,
+                        // or reordering which photos fall inside the cap).
+                        <Alert
+                            tone="warning"
+                            locale={locale}
+                        >
+                            <span data-testid="photo-over-cap-summary">
+                                {tPlural('account.listingPhotos.overCapSummary', hiddenCount, {
+                                    count: hiddenCount
+                                })}
+                            </span>
+                        </Alert>
+                    )}
+                    {isGalleryFull && galleryCap !== null && (
+                        // HOS-1024: sober, single-line upsell — the same copy/CTA
+                        // the failed-upload toast already uses.
+                        <Alert
+                            tone="warning"
+                            locale={locale}
+                            action={
+                                capUpsell ? (
+                                    <TextLink href={capUpsell.action.href}>
+                                        {capUpsell.action.label}
+                                    </TextLink>
+                                ) : undefined
+                            }
+                        >
+                            {tPlural('host.properties.editor.photo.galleryCapReached', galleryCap, {
+                                cap: galleryCap
+                            })}
+                        </Alert>
+                    )}
+                </>
             }
             gallery={
                 <SortablePhotoGallery
@@ -447,6 +452,7 @@ export function PhotoSection({
                     onMoveDown={handleMoveDown}
                     onReorder={handleReorderGallery}
                     onUpdateMetadata={handleUpdateMediaText}
+                    overCapIds={overCapIds}
                 />
             }
             galleryPicker={
@@ -458,7 +464,7 @@ export function PhotoSection({
                               'Agregar fotos a la galería'
                           ),
                           isDragOver: isDragOverGallery,
-                          disabled: anyOpInFlight || !isGalleryCapResolved,
+                          disabled: anyOpInFlight || !isGalleryUploadOpen,
                           onPick: () => galleryInputRef.current?.click(),
                           onDrop: handleGalleryDrop,
                           onDragOver: handleGalleryDragOver,
@@ -473,7 +479,7 @@ export function PhotoSection({
                     accept="image/jpeg,image/png,image/webp,image/heic"
                     multiple={remainingGallerySlots > 1}
                     className={styles.fileInput}
-                    disabled={!isGalleryCapResolved || isGalleryFull}
+                    disabled={!isGalleryUploadOpen || isGalleryFull}
                     onChange={handleGallerySelect}
                 />
             }
@@ -483,7 +489,7 @@ export function PhotoSection({
                 isOpen={publishPrompt.isOpen}
                 onClose={publishPrompt.close}
                 locale={locale}
-                accommodationId={accommodationId}
+                accommodationId={listingId}
                 startsTrial={publishPrompt.startsTrial}
                 trialDays={publishContext?.trialDays ?? 0}
             />

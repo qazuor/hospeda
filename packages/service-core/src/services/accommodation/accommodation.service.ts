@@ -95,7 +95,6 @@ import {
     type CountResponse,
     DestinationTypeEnum,
     type EntityFilters,
-    getGalleryCap,
     httpToDomainAccommodationCreateDraft,
     type IdOrSlugParams,
     IdOrSlugParamsSchema,
@@ -3650,42 +3649,11 @@ export class AccommodationService extends BaseCrudService<
                     const nextSortOrder =
                         typeof topOrder === 'number' && topOrder >= 0 ? topOrder + 1 : 0;
 
-                    // HOS-389 §2: the per-entity gallery cap WAS already enforced
-                    // server-side — but only at the UPLOAD routes
-                    // (`media/protected/upload-entity.ts`, `media/admin/upload.ts`),
-                    // which is the step that costs a Cloudinary asset. Registering
-                    // the row was never capped, so anything reaching `addMedia`
-                    // directly with an already-uploaded URL walked straight past it.
-                    //
-                    // Same `getGalleryCap` constant those routes read, and the same
-                    // filter `resolveVisibleGalleryCount` applies for accommodations:
-                    // `state: 'visible'` (an archived photo does not occupy a slot)
-                    // AND `isFeatured: false` (HOS-791 — the featured image is not a
-                    // gallery item, so charging it a slot closed the gallery one
-                    // photo early).
-                    //
-                    // This is a SECOND query rather than a reuse of `existing.total`.
-                    // `existing` is deliberately left unfiltered because it also
-                    // computes the next `sortOrder`, and skipping the featured row
-                    // there would hand out a `sortOrder` already in use whenever the
-                    // featured row holds the current maximum.
-                    const galleryCount = await mediaModel.count(
-                        {
-                            accommodationId: validated.accommodationId,
-                            state: 'visible',
-                            isFeatured: false,
-                            deletedAt: null
-                        },
-                        { tx }
-                    );
-                    const galleryCap = getGalleryCap('accommodation');
-                    if (galleryCount >= galleryCap) {
-                        throw new ServiceError(
-                            ServiceErrorCode.QUOTA_EXCEEDED,
-                            `Gallery limit of ${galleryCap} photos reached for this accommodation`,
-                            { currentCount: galleryCount, maxAllowed: galleryCap }
-                        );
-                    }
+                    // HOS-2495: no literal gallery cap here. The accommodation
+                    // gallery is capped by step 7 of the listing-access chain on
+                    // every route that reaches this method, against the owner's
+                    // EFFECTIVE `max_photos_per_accommodation` (plan + packs +
+                    // grants); a literal 50 here cut a paid 70 at 50.
 
                     const rowToCreate = {
                         ...validated.media,

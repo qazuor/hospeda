@@ -303,7 +303,7 @@ describe('POST /api/v1/admin/media/import-stock — stock image import (SPEC-274
     });
 
     describe('gallery cap enforcement', () => {
-        it('returns 422 when accommodation gallery is at cap', async () => {
+        it('imports an accommodation gallery photo past the old literal of 50 (HOS-2495)', async () => {
             const actor = createMockAdminActor({
                 permissions: [
                     PermissionEnum.ACCESS_PANEL_ADMIN,
@@ -314,6 +314,18 @@ describe('POST /api/v1/admin/media/import-stock — stock image import (SPEC-274
             });
             mockGetById.mockResolvedValue(buildEntityStub(50));
             mockFindByAccommodation.mockResolvedValue({ items: [], total: 50 });
+            mockImport.mockResolvedValue({
+                url: 'https://res.cloudinary.com/hospeda/image/upload/sample.jpg',
+                publicId: 'hospeda/accommodations/abc/gallery/xyz',
+                width: 1200,
+                height: 800,
+                attribution: {
+                    photographer: 'Alice',
+                    sourceUrl: 'https://unsplash.com/@alice',
+                    license: 'Unsplash License',
+                    provider: 'unsplash'
+                }
+            });
 
             const res = await app.request('/api/v1/admin/media/import-stock', {
                 method: 'POST',
@@ -324,10 +336,8 @@ describe('POST /api/v1/admin/media/import-stock — stock image import (SPEC-274
                 body: JSON.stringify(buildImportBody({ role: 'gallery' }))
             });
 
-            expect(res.status).toBe(422);
-            const body = await res.json();
-            expect(body.error.code).toBe('GALLERY_LIMIT_EXCEEDED');
-            expect(body.error.details.limit).toBe(50);
+            expect(res.status).toBe(200);
+            expect(mockImport).toHaveBeenCalledTimes(1);
         });
 
         it('allows import when gallery has one slot remaining', async () => {

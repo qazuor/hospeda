@@ -52,7 +52,7 @@ export const publicGetUserAccommodationsRoute = createPublicListRoute({
         id: z.string().uuid()
     },
     responseSchema: AccommodationPublicSchema,
-    handler: async (_ctx: Context, params: Record<string, unknown>, _body, query) => {
+    handler: async (ctx: Context, params: Record<string, unknown>, _body, query) => {
         const ownerId = params.id as string;
         const { page, pageSize } = extractPaginationParams(query ?? {});
 
@@ -96,7 +96,10 @@ export const publicGetUserAccommodationsRoute = createPublicListRoute({
 
         // Apply the owner-effective paid-field grants to the returned page.
         const rawItems = result.data?.items ?? [];
-        const items = await projectPublicAccommodations({ listings: rawItems });
+        const items = await projectPublicAccommodations({
+            listings: rawItems,
+            onEffectiveSetFailure: () => ctx.header('Cache-Control', 'no-store')
+        });
 
         return {
             items,

@@ -13,6 +13,8 @@ describe('add-on category', () => {
         [['max_venues'], 'listings'],
         [['max_experiences'], 'listings'],
         [['max_photos_per_accommodation'], 'media'],
+        [['max_photos_per_venue'], 'media'],
+        [['max_photos_per_experience'], 'media'],
         [['ai_chat'], 'other'],
         [[], 'other'],
         [['unknown', 'constructor', '__proto__'], 'other'],

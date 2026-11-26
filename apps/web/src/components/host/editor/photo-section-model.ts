@@ -5,18 +5,26 @@
  * 500-line ceiling when the photo editor moved to the kit skin (HOS-2489).
  */
 
-import type { AccommodationMediaItem, ApiError, MediaImage } from '@/lib/api/types';
+import type { ListingPhotoAllowance } from '@repo/schemas';
+import type { ListingPhotoApi } from '@/lib/api/listing-photo-api';
+import type { AccommodationMediaItem, ApiError } from '@/lib/api/types';
 import { translateApiError } from '@/lib/api-errors';
 import {
     buildLimitReachedPayloadFromDetails,
     type LimitReachedToastPayload
 } from '@/lib/billing-limit-error';
 import type { SupportedLocale } from '@/lib/i18n';
-import {
-    MAX_PHOTOS_LIMIT_KEY,
-    type PhotoMetadataUpdateBody,
-    type Translate
-} from './photo-section-helpers';
+import type { GalleryCapView } from './photo-cap-view';
+import type { PhotoMetadataUpdateBody, Translate } from './photo-section-helpers';
+
+/**
+ * First-paint image from SSR (no DB id). Both the accommodation `MediaImage`
+ * and the listing `Image` satisfy it (HOS-2495).
+ */
+export interface PhotoSectionInitialImage {
+    readonly url: string;
+    readonly publicId?: string | null;
+}
 
 /**
  * Map a legacy `MediaImage` (no DB id, SSR-only) to a partial display object.
@@ -28,11 +36,14 @@ import {
  * @param isFeatured - Whether it is the cover.
  * @returns The display item.
  */
-export function legacyToDisplay(img: MediaImage, isFeatured: boolean): AccommodationMediaItem {
+export function legacyToDisplay(
+    img: PhotoSectionInitialImage,
+    isFeatured: boolean
+): AccommodationMediaItem {
     return {
         id: '',
         url: img.url,
-        publicId: img.publicId,
+        publicId: img.publicId ?? '',
         // Spelled out rather than omitted: the four text keys are REQUIRED on
         // `AccommodationMediaItem` precisely so a mapper cannot forget one (see
         // `PhotoMetadataEditableItem`). `MediaImage` — the SSR-only legacy
@@ -129,11 +140,14 @@ export function describeAddMediaError({
  */
 export function buildCapUpsell({
     isGalleryFull,
+    limitKey,
     count,
     cap,
     locale
 }: {
     readonly isGalleryFull: boolean;
+    /** The vertical's photo limit key, as the allowance names it (HOS-2495). */
+    readonly limitKey: string;
     readonly count: number;
     readonly cap: number;
     readonly locale: SupportedLocale;
@@ -141,7 +155,7 @@ export function buildCapUpsell({
     if (!isGalleryFull) return null;
     return buildLimitReachedPayloadFromDetails({
         details: {
-            limitKey: MAX_PHOTOS_LIMIT_KEY,
+            limitKey,
             currentCount: count,
             maxAllowed: cap,
             usagePercent: 100,
@@ -154,10 +168,11 @@ export function buildCapUpsell({
 /** Params of `usePhotoSection`. */
 export interface UsePhotoSectionParams {
     readonly locale: SupportedLocale;
-    readonly accommodationId: string;
-    readonly galleryCap: number;
-    readonly initialFeaturedImage?: MediaImage | null;
-    readonly initialGallery?: readonly MediaImage[];
+    /** The vertical's photo API (`createListingPhotoApi`, HOS-2495); it carries the vertical. */
+    readonly api: ListingPhotoApi;
+    readonly listingId: string;
+    readonly initialFeaturedImage?: PhotoSectionInitialImage | null;
+    readonly initialGallery?: readonly PhotoSectionInitialImage[];
     /**
      * Asks before a photo is deleted (HOS-2429). The section renders the kit
      * `useConfirm` dialog and passes its `confirm` here.
@@ -187,6 +202,16 @@ export interface UsePhotoSectionResult {
     readonly isDragOverFeatured: boolean;
     readonly isDragOverGallery: boolean;
     readonly isGalleryFull: boolean;
+    /** The listing's photo allowance, `null` until the first read answers (HOS-2495). */
+    readonly allowance: ListingPhotoAllowance | null;
+    /** What the cap line says: loading / limited / unlimited / none / failed. */
+    readonly capView: GalleryCapView;
+    /** Ids (or URLs, for a placeholder) of the gallery tiles the public does not show. */
+    readonly overCapIds: ReadonlySet<string>;
+    /** Whether a gallery upload may start (the cap is known and grants photos). */
+    readonly isGalleryUploadOpen: boolean;
+    /** Whether a cover may be added or replaced (`coverAllowed` of the allowance). */
+    readonly isCoverUploadOpen: boolean;
     /** Sober "at the plan cap" upsell payload (HOS-1024); `null` unless full. */
     readonly capUpsell: LimitReachedToastPayload | null;
     /** Controls are usable once the hydration attempt finished (success or failure). */
