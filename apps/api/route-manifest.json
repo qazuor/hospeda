@@ -3030,6 +3030,14 @@
             "path": "/api/v1/protected/billing-subscription/pricing-situation/:vertical"
         },
         {
+            "method": "GET",
+            "path": "/api/v1/protected/billing-subscription/receipts"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/protected/billing-subscription/receipts/:receiptId/pdf"
+        },
+        {
             "method": "POST",
             "path": "/api/v1/protected/billing/addons/free-choices"
         },

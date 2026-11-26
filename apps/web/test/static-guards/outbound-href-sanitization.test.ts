@@ -100,6 +100,8 @@ const SAFE_OUTBOUND_HREFS: Readonly<Record<string, string>> = Object.freeze({
         '`PhotoCreditParts.url`, produced by `formatPhotoCredit`, which calls the sanitizer itself',
     'components/shared/ImageAttribution.astro#{credit.url}':
         'same `formatPhotoCredit` output as the lightbox above',
+    'components/account/receipts/ReceiptViewer.client.tsx#{state.objectUrl}':
+        'HOS-2566: a `blob:` URL the island itself creates with `URL.createObjectURL` from the receipt PDF it fetched with the owner session; no stored or user-supplied URL ever reaches it',
     'components/MapPlaceholder.astro#{mapsUrl}':
         'composed here as `https://maps.google.com/?q=` + an encoded address — the scheme is our literal',
     'components/listing/location/LocationSection.astro#{externalMapHref}':

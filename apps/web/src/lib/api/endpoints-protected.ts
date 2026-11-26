@@ -60,6 +60,7 @@ import {
     type ExperienceListingSectionStatesSchema,
     MAX_BULK_CHECK_ENTITY_IDS,
     type OwnManualInstallmentsResponse,
+    type OwnReceiptsResponseSchema,
     type OwnSubscriptionsResponseSchema,
     type PartnerClaimCheckResponseSchema,
     type PartnerClaimResponseSchema,
@@ -6038,6 +6039,17 @@ export const billingSubscriptionApi = {
         readonly cookieHeader?: string;
     }): Promise<ApiResult<z.infer<typeof OwnSubscriptionsResponseSchema>>> {
         return apiClient.getProtected({ path: `${PROTECTED}/billing-subscription/`, cookieHeader });
+    },
+    /** Read the authenticated user's own payment receipts, newest first (HOS-2566). */
+    listReceipts({
+        cookieHeader
+    }: {
+        readonly cookieHeader?: string;
+    }): Promise<ApiResult<z.infer<typeof OwnReceiptsResponseSchema>>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/billing-subscription/receipts`,
+            cookieHeader
+        });
     },
     /** Read the authenticated user's currently open manual installments. */
     listManualInstallments({

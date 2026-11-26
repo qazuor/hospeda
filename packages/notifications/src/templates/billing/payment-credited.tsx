@@ -1,5 +1,5 @@
 import { Text } from '@react-email/components';
-import { EmailLayout } from '@repo/email';
+import { Button, EmailLayout } from '@repo/email';
 import { Heading } from '../components/heading.js';
 
 /** Subject of P1's credited-payment receipt notice (HOS-1675). */
@@ -10,13 +10,16 @@ export function PaymentCredited({
     amount,
     receiptNumber,
     creditedDate,
-    planName
+    planName,
+    receiptUrl
 }: {
     readonly amount: string;
     /** User-facing plan the payment belongs to (HOS-1993); absent for add-ons and legacy rows. */
     readonly planName?: string | null;
     readonly receiptNumber: number;
     readonly creditedDate: string;
+    /** Authenticated page that opens the receipt (HOS-2566); the button is omitted without it. */
+    readonly receiptUrl?: string | null;
 }) {
     return (
         <EmailLayout previewText={PAYMENT_CREDITED_SUBJECT}>
@@ -32,6 +35,7 @@ export function PaymentCredited({
                 Es un comprobante no fiscal: no es una factura. Guardá este correo como constancia
                 de tu pago.
             </Text>
+            {receiptUrl ? <Button href={receiptUrl}>Ver recibo</Button> : null}
         </EmailLayout>
     );
 }

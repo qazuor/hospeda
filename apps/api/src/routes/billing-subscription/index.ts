@@ -36,6 +36,7 @@ import { protectedReadOwnSubscriptionsRoute } from './read-mine';
 import { protectedReadRememberedPayerEmailRoute } from './read-remembered-payer-email';
 import { readSignupNotice } from './read-signup-notice';
 import { readSignupWindow } from './read-signup-window';
+import { protectedGetOwnReceiptPdfRoute, protectedListOwnReceiptsRoute } from './receipts';
 import { touristVipInheritance } from './tourist-vip-inheritance';
 
 const S1_REJECTIONS_WITH_UNPROCESSABLE_ENTITY_STATUS = new Set<StartSubscriptionRejectionReason>([
@@ -222,6 +223,8 @@ const readRouter = createRouter();
 readRouter.route('/', protectedPricingSituationRoute);
 readRouter.route('/', protectedReadRememberedPayerEmailRoute);
 readRouter.route('/', protectedReadOwnSubscriptionsRoute);
+readRouter.route('/', protectedListOwnReceiptsRoute);
+readRouter.route('/', protectedGetOwnReceiptPdfRoute);
 readRouter.route('/', protectedReadManualInstallmentsRoute);
 readRouter.route('/', protectedReadSubscriptionRoute);
 readRouter.route('/', protectedCancellationPreviewRoute);
