@@ -234,9 +234,22 @@ and a feature flag.
   instead of duplicating it.
 - Feature flag off → `404` on `/mcp` and on the OAuth metadata endpoints.
 - Phase B: on each tool call, after the actor is built, check
-  `ai_assistant_access` in the effective set; missing → MCP tool error with a
+  `ai_assistant_access` in the effective set of the accommodation, venue and
+  experience verticals; granted by any → allow. Missing → MCP tool error with a
   clear Spanish message pointing to the plans page (not a 500, not a silent
   empty result). Per-tool authorization (§6.5) still applies on top.
+- Who the gate applies to (owner decision, 2026-11-25): only accounts holding a
+  plan in at least one of those three verticals. Accounts with none of them —
+  host-trade providers, partners, editors, super admin — are not gated; what
+  they can do is decided by per-tool authorization alone. In practice the only
+  refused account is an owner whose plans are all `floor`. `get_help` and
+  `get_my_plan` stay available to that owner so the assistant can explain why.
+- Tool list per account (owner decision, 2026-11-25): each tool declares the
+  permissions it needs (any-of; none = any authenticated account, e.g. the
+  host-trade tools that authorize by row ownership). `tools/list` publishes
+  only the tools the actor's permissions allow, decided by `PermissionEnum`,
+  never by role. The in-handler check stays; a test pins that the declared
+  permissions match the handler's check.
 - Rate limit: new Redis sliding window keyed on the **access token's client +
   user** (`rl:mcp:<clientId>:<userId>`), stacked with the existing per-user
   limiter. Limits come from config, not code literals.
