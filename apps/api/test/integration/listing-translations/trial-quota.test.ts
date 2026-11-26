@@ -20,6 +20,7 @@ import { createOwner, createTrial } from '../listing-publication/publication-rou
 initApp();
 
 const owners: string[] = [];
+const createdOptionIds: string[] = [];
 
 async function seedUsage(userId: string, count: number): Promise<void> {
     await getDb().execute(
@@ -54,12 +55,23 @@ async function subscribeToVenuePro(userId: string): Promise<void> {
         )
         .limit(1);
     if (!version) throw new Error('venue-pro is not in the catalog');
+    // The migrated catalog carries plan versions but no prices (prices are not
+    // seeded by migrations), so the fixture owns its monthly option: created when
+    // absent, reused when present, removed afterwards only if it created it.
+    const inserted = await db
+        .insert(billingOptions)
+        .values({ planVersionId: version.id, cycle: 'monthly', amount: 100000, currency: 'ARS' })
+        .onConflictDoNothing({ target: [billingOptions.planVersionId, billingOptions.cycle] })
+        .returning({ id: billingOptions.id });
+    createdOptionIds.push(...inserted.map((row) => row.id));
     const [option] = await db
         .select({ id: billingOptions.id })
         .from(billingOptions)
-        .where(eq(billingOptions.planVersionId, version.id))
+        .where(
+            and(eq(billingOptions.planVersionId, version.id), eq(billingOptions.cycle, 'monthly'))
+        )
         .limit(1);
-    if (!option) throw new Error('venue-pro has no billing option');
+    if (!option) throw new Error('venue-pro monthly billing option could not be resolved');
     await db.insert(subscriptions).values({
         userId,
         vertical: VerticalEnum.VENUE,
@@ -85,6 +97,9 @@ afterAll(async () => {
         await getDb().execute(sql`DELETE FROM subscription WHERE user_id = ${userId}::uuid`);
         // `trial` rows are append-only (trigger reject_trial_delete); the database is
         // disposable, so they stay.
+    }
+    for (const optionId of createdOptionIds) {
+        await getDb().execute(sql`DELETE FROM billing_option WHERE id = ${optionId}::uuid`);
     }
     await testDb.teardown();
 });
