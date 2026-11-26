@@ -30,6 +30,14 @@ describe('ACCOUNT_NAV_GROUPS (config shape)', () => {
         expect(turista?.requiredPermission).toBeUndefined();
     });
 
+    it('puts the received-reviews page in the host area behind host access (HOS-2199)', () => {
+        const anfitrion = ACCOUNT_NAV_GROUPS.find((group) => group.id === 'anfitrion');
+        const item = anfitrion?.items.find((entry) => entry.id === 'receivedReviews');
+        expect(item?.href).toBe('mi-cuenta/resenas-recibidas');
+        expect(item?.i18nKey).toBe('account.nav.receivedReviews');
+        expect(item?.requiredPermissions).toEqual(PUBLISHER_ACCESS.host.requiredPermissions);
+    });
+
     it('gates anfitrion behind ACCOMMODATION_CREATE and each listing area behind its own vertical permission (HOS-2559)', () => {
         const anfitrion = ACCOUNT_NAV_GROUPS.find((group) => group.id === 'anfitrion');
         const venues = ACCOUNT_NAV_GROUPS.find((group) => group.id === 'comercio-venue');

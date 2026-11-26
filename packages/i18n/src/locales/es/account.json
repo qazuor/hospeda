@@ -199,7 +199,8 @@
         "help": "Ayuda",
         "venueDashboard": "Tablero de locales",
         "experienceDashboard": "Tablero de experiencias",
-        "addons": "Complementos"
+        "addons": "Complementos",
+        "receivedReviews": "Reseñas recibidas"
     },
     "doors": {
         "sectionLabel": "Descubrí más",
@@ -1268,6 +1269,11 @@
         "recommendations": {
             "title": "Sugerencias para vos",
             "description": "Alojamientos elegidos especialmente para vos, según tus favoritos, búsquedas y visitas recientes en Hospeda"
+        },
+        "receivedReviews": {
+            "title": "Reseñas recibidas",
+            "description": "Mirá y respondé las reseñas que recibieron tus alojamientos en Hospeda",
+            "headingDesc": "Respondé a los huéspedes que reseñaron tus alojamientos."
         }
     },
     "newsletter": {
@@ -1612,7 +1618,9 @@
             "create": {
                 "pageTitle": "Nueva publicación",
                 "sectionTitle": "Datos de la nota",
-                "placeholder": { "category": "Elegí una categoría" },
+                "placeholder": {
+                    "category": "Elegí una categoría"
+                },
                 "subtitle": "Completá lo básico ahora — vas a poder sumar fotos y más detalles después en el editor.",
                 "field": {
                     "title": "Título",
@@ -2482,6 +2490,54 @@
             "enterCoordinates": "Ingresar coordenadas",
             "latitude": "Latitud",
             "longitude": "Longitud"
+        }
+    },
+    "receivedReviews": {
+        "sectionTitle": "Reseñas de tus alojamientos",
+        "listLabel": "Reseñas recibidas",
+        "filterLabel": "Filtrar reseñas",
+        "filterAll": "Todas",
+        "filterUnanswered": "Sin responder",
+        "total_one": "{{count}} reseña",
+        "total_other": "{{count}} reseñas",
+        "emptyTitle": "Todavía no recibiste reseñas",
+        "empty": "Cuando un huésped reseñe tu alojamiento, la vas a ver acá para poder responderle.",
+        "emptyUnansweredTitle": "No tenés reseñas sin responder",
+        "emptyUnanswered": "Ya respondiste todas las reseñas que recibiste.",
+        "loadError": {
+            "title": "No pudimos cargar tus reseñas",
+            "body": "Probá de nuevo en unos segundos."
+        },
+        "ratingAria": "Calificación: {{value}} de {{max}}",
+        "anonymous": "Huésped",
+        "viewListing": "Ver alojamiento",
+        "respond": "Responder",
+        "edit": "Editar respuesta",
+        "delete": "Eliminar respuesta",
+        "publish": "Publicar respuesta",
+        "save": "Guardar cambios",
+        "cancel": "Cancelar",
+        "replyLabel": "Tu respuesta",
+        "replyPlaceholder": "Escribí tu respuesta…",
+        "charCount": "{{count}} de {{max}}",
+        "edited": "editada",
+        "pendingNotice": "Tu respuesta está en revisión y todavía no se muestra en la ficha pública.",
+        "hiddenNotice": "Un administrador ocultó esta respuesta. Podés eliminarla y escribir una nueva.",
+        "deleteConfirm": "¿Eliminar tu respuesta? Después vas a poder responder de nuevo.",
+        "saving": "Guardando…",
+        "deleting": "Eliminando…",
+        "upsell": {
+            "title": "Responder reseñas no está en tu plan",
+            "body": "Mejorá tu plan para responder las reseñas de tus huéspedes.",
+            "cta": "Ver planes"
+        },
+        "errors": {
+            "generic": "No pudimos guardar tu respuesta. Probá de nuevo.",
+            "required": "Escribí una respuesta.",
+            "tooLong": "La respuesta no puede superar los {{max}} caracteres.",
+            "alreadyReplied": "Esta reseña ya tiene una respuesta.",
+            "notFound": "No encontramos esta reseña.",
+            "noEntitlement": "Tu plan actual no incluye responder reseñas."
         }
     }
 }

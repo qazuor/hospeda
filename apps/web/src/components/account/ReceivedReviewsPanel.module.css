@@ -1,0 +1,90 @@
+/* ReceivedReviewsPanel.module.css — the host's received reviews (HOS-2199). */
+
+.card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    min-inline-size: 0;
+    background-color: var(--core-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-surface);
+    color: var(--core-foreground);
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.headerText {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-inline-size: 0;
+}
+
+.reviewer {
+    font: var(--app-card-title);
+    overflow-wrap: anywhere;
+}
+
+.meta {
+    font: var(--app-meta);
+    color: var(--core-muted-foreground);
+}
+
+.listingLink {
+    color: inherit;
+    text-decoration: underline;
+}
+
+.listingLink:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+}
+
+.title {
+    font-weight: var(--app-card-title-weight);
+    overflow-wrap: anywhere;
+}
+
+.content {
+    margin: 0;
+    overflow-wrap: anywhere;
+    white-space: pre-line;
+}
+
+.reply {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-3);
+    background-color: var(--muted);
+    border-inline-start: 3px solid var(--border);
+    border-radius: var(--radius-surface);
+}
+
+.replyLabel {
+    margin: 0;
+    font: var(--app-meta);
+    font-weight: var(--app-card-title-weight);
+    color: var(--core-muted-foreground);
+}
+
+.edited {
+    font-weight: normal;
+}
+
+.replyText {
+    margin: 0;
+    overflow-wrap: anywhere;
+    white-space: pre-line;
+}
+
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}

@@ -655,7 +655,9 @@
                 "error": "Não foi possível carregar as avaliações",
                 "retry": "Tentar novamente",
                 "loading": "Carregando avaliações…"
-            }
+            },
+            "hostReply": "Resposta do anfitrião",
+            "hostReplyEdited": "modificada"
         },
         "host": {
             "title": "Seu anfitrião",
