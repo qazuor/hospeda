@@ -61,7 +61,6 @@ import type {
     VenueMediaSetFeaturedInput
 } from '@repo/schemas';
 import {
-    getGalleryCap,
     ModerationStatusEnum,
     PermissionEnum,
     PublicationStatusEnum,
@@ -799,44 +798,20 @@ describe('removeVenueMedia — Cloudinary asset deletion', () => {
 // HOS-389 §2 + §4 — the venue and experience half
 // ---------------------------------------------------------------------------
 
-describe('addVenueMedia — gallery cap (HOS-389 §2)', () => {
-    const CAP = getGalleryCap('venue');
+describe('addVenueMedia — no literal gallery cap (HOS-2495)', () => {
+    // The gallery is capped by step 7 (the owner's effective
+    // `max_photos_per_venue`) on every route that reaches this function; the
+    // literal 30 of `ENTITY_GALLERY_CAPS` cut a paid cap of 50 or 70.
+    const OLD_LITERAL_CAP = 30;
 
     const input: VenueMediaAddInput = {
         venueId: VENUE_ID,
         media: { url: 'https://cdn.example.com/new.jpg' }
     };
 
-    it('refuses to register a row once the gallery is at cap, and writes nothing', async () => {
+    it('registers a row past the old literal cap without counting the gallery', async () => {
         const model = makeVenueModel({ id: VENUE_ID, ownerId: OWNER_ID });
-        // The cap is measured by a dedicated gallery-only count (HOS-791);
-        // `findAll` still answers the sortOrder probe and sees every visible row.
-        mockMediaModel.count.mockResolvedValue(CAP);
-
-        const result = await addVenueMedia(
-            model as unknown as Parameters<typeof addVenueMedia>[0],
-            ownerActor,
-            input
-        );
-
-        expect(result.error?.code).toBe(ServiceErrorCode.QUOTA_EXCEEDED);
-        // A rejection that still inserts is worse than no cap at all: the
-        // caller is told it failed while the row lands anyway.
-        expect(mockMediaModel.create).not.toHaveBeenCalled();
-    });
-
-    it('measures the cap on the GALLERY ONLY, not counting the featured image (HOS-791)', async () => {
-        // The listing holds a featured image plus CAP-1 gallery photos. The
-        // featured image is not a gallery item, so there is still room for one
-        // more and the write must go through.
-        //
-        // The stub answers a DIFFERENT number per filter, so this reads which
-        // query the service issued: drop `isFeatured: false` and the count comes
-        // back as CAP, the write is refused, and `create` is never called.
-        const model = makeVenueModel({ id: VENUE_ID, ownerId: OWNER_ID });
-        mockMediaModel.count.mockImplementation(async (where: { isFeatured?: boolean }) =>
-            where.isFeatured === false ? CAP - 1 : CAP
-        );
+        mockMediaModel.count.mockResolvedValue(OLD_LITERAL_CAP + 19);
         mockMediaModel.create.mockResolvedValue(makeMediaRow());
 
         const result = await addVenueMedia(
@@ -847,35 +822,7 @@ describe('addVenueMedia — gallery cap (HOS-389 §2)', () => {
 
         expect(result.error).toBeUndefined();
         expect(mockMediaModel.create).toHaveBeenCalledTimes(1);
-        expect(mockMediaModel.count).toHaveBeenCalledWith(
-            expect.objectContaining({ state: 'visible', isFeatured: false }),
-            expect.anything()
-        );
-    });
-
-    it('accepts the last photo that still fits', async () => {
-        // Boundary: at CAP-1 there is room for exactly one more. An off-by-one
-        // here caps owners one photo below their real allowance.
-        const model = makeVenueModel({ id: VENUE_ID, ownerId: OWNER_ID });
-        mockMediaModel.count.mockResolvedValue(CAP - 1);
-        mockMediaModel.create.mockResolvedValue(makeMediaRow());
-
-        const result = await addVenueMedia(
-            model as unknown as Parameters<typeof addVenueMedia>[0],
-            ownerActor,
-            input
-        );
-
-        expect(result.error).toBeUndefined();
-        expect(mockMediaModel.create).toHaveBeenCalledTimes(1);
-    });
-
-    it('reads the cap from the shared constant, not a local literal', () => {
-        // The whole point of the fix is that this path and the upload routes
-        // consult ONE value; a test asserting 30 would keep passing while the
-        // service drifted onto its own number.
-        expect(CAP).toBe(getGalleryCap('venue'));
-        expect(CAP).toBeGreaterThan(0);
+        expect(mockMediaModel.count).not.toHaveBeenCalled();
     });
 });
 

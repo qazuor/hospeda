@@ -70,6 +70,7 @@ import type {
 import { ServiceError } from '../../types';
 import { assertListingReadable, entityNotFoundError, normalizeContactInfo } from '../../utils';
 import { hasPermission } from '../../utils/permission';
+import { filterSoftDeletedRelations } from '../../utils/relations';
 import { EXPERIENCE_ENTITY_NAME } from '../entity-names';
 import type { ListingCatalogModel, ListingJunctionModel } from '../listing/base-listing.service';
 import { BaseListingService } from '../listing/base-listing.service';
@@ -262,11 +263,14 @@ export class ExperienceService extends BaseListingService<
         _actor: Actor,
         ctx: ServiceContext
     ): Promise<Experience | null> {
-        return attachComposedExperienceMedia({
+        // HOS-2663: `findOneWithRelations` loads `faqs` regardless of `deletedAt`
+        // (ADR-023), so a deleted FAQ kept coming back on every reload.
+        const composed = await attachComposedExperienceMedia({
             entity,
             mediaModel: this._experienceMediaModel,
             tx: ctx?.tx
         });
+        return filterSoftDeletedRelations(composed, ['faqs']);
     }
 
     protected override async _afterList(

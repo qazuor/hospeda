@@ -1,4 +1,10 @@
-import { LISTING_SECTIONS, REVIEW_RULES, VerticalEnum } from '@repo/schemas';
+import {
+    LISTING_PHOTO_LIMIT_KEY_BY_VERTICAL,
+    LISTING_SECTIONS,
+    partitionGalleryByCap,
+    REVIEW_RULES,
+    VerticalEnum
+} from '@repo/schemas';
 import {
     type RehydratedEffectiveSet,
     rehydrateEffectiveSet,
@@ -160,6 +166,41 @@ export function projectPublicListing<T extends Record<string, unknown>>(args: {
     return projected as T;
 }
 
+/**
+ * Trims the public gallery of one projected listing to its owner's effective
+ * photo cap (HOS-2495, D-13/D-14). `media.gallery` is the composed public
+ * gallery (approved, visible, non-featured, `sort_order`): its first N items are
+ * shown and the rest hidden, without touching any row. `featuredImage` is never
+ * touched. A key absent from the set reads as 0 (cover only), which is also what
+ * a failed lookup yields through {@link deniedSet} (AC-22).
+ *
+ * @param args.vertical - The listing vertical.
+ * @param args.listing - The projected public listing.
+ * @param args.effective - The owner's effective set, already read for the page.
+ * @returns The listing with `media.gallery` trimmed, or unchanged when it has none.
+ */
+export function trimPublicGallery<T extends Record<string, unknown>>(args: {
+    readonly vertical: PublicVertical;
+    readonly listing: T;
+    readonly ownerId: string;
+    readonly effective: RehydratedEffectiveSet;
+}): T {
+    const media = args.listing.media;
+    if (media === null || typeof media !== 'object' || Array.isArray(media)) return args.listing;
+    const gallery = (media as Record<string, unknown>).gallery;
+    if (!Array.isArray(gallery)) return args.listing;
+    const cap =
+        args.effective.limits.get({
+            key: LISTING_PHOTO_LIMIT_KEY_BY_VERTICAL[args.vertical],
+            userId: args.ownerId,
+            vertical: VERTICALS[args.vertical]
+        }) ?? 0;
+    return {
+        ...args.listing,
+        media: { ...media, gallery: partitionGalleryByCap({ items: gallery, cap }).shown }
+    };
+}
+
 /** The effective set of an owner that holds nothing: every section keyed by an entitlement is `locked`. */
 export function deniedSet(userId: string, vertical: PublicVertical): RehydratedEffectiveSet {
     return rehydrateEffectiveSet({
@@ -231,17 +272,23 @@ export async function projectPublicListings<T extends ListingRecord>(args: {
             );
             incrementDomainCounter('listing_empty_business_lines_total', 'failure');
         }
+        const effective =
+            effectiveByOwner.get(listing.ownerId) ?? deniedSet(listing.ownerId, args.vertical);
         const resolved = resolveListingSections({
             vertical: args.vertical,
             businessLines,
-            effective:
-                effectiveByOwner.get(listing.ownerId) ?? deniedSet(listing.ownerId, args.vertical),
+            effective,
             userId: listing.ownerId
         });
-        const projected = projectPublicListing({
+        const projected = trimPublicGallery({
             vertical: args.vertical,
-            listing,
-            states: resolved.sections
+            listing: projectPublicListing({
+                vertical: args.vertical,
+                listing,
+                states: resolved.sections
+            }),
+            ownerId: listing.ownerId,
+            effective
         });
         if (args.vertical === 'experience') {
             const meetingPoint = resolved.sections.get('meetingPoint');

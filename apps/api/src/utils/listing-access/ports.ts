@@ -12,6 +12,7 @@ import {
 import { VerticalEnum } from '@repo/schemas';
 import type { CoverageNoticeRegistry } from '@repo/service-core';
 import {
+    type EffectiveLimitBreakdown,
     type EffectiveSetPort,
     effectiveSetSnapshotCodec,
     type ListingAccessFacts,
@@ -19,6 +20,7 @@ import {
     type PreTrialDraftLimitsPort,
     readEffectiveSet,
     readListingAccessFacts,
+    resolveEffectiveLimitBreakdown,
     resolvePreTrialDraftLimits
 } from '@repo/verticals';
 import { createApiEffectiveSetCache } from '../effective-set-cache';
@@ -44,6 +46,17 @@ export interface ListingAccessPorts {
      * grant at first publish (HOS-1721). Empty for anyone who is not pre-trial.
      */
     readonly preTrialDraftLimits: PreTrialDraftLimitsPort;
+    /**
+     * A FRESH (uncached) breakdown of the listing photo keys, over the same
+     * coverage and fold as the effective set (HOS-2495). Read only by the photo
+     * allowance; step 7 never reads it.
+     */
+    readonly limitBreakdown: (
+        args: Pick<
+            Parameters<typeof resolveEffectiveLimitBreakdown>[0],
+            'userId' | 'vertical' | 'keys'
+        >
+    ) => Promise<ReadonlyMap<string, EffectiveLimitBreakdown>>;
     readonly loadFacts: (args: {
         readonly vertical: ListingVertical;
         readonly listingId: string;
@@ -92,6 +105,15 @@ export function getListingAccessPorts(): ListingAccessPorts {
             userId,
             vertical
         });
+    const limitBreakdown: ListingAccessPorts['limitBreakdown'] = ({ userId, vertical, keys }) =>
+        resolveEffectiveLimitBreakdown({
+            reader: planCatalogModel,
+            billing,
+            trials: reader,
+            userId,
+            vertical,
+            keys
+        });
     const loadFacts: ListingAccessPorts['loadFacts'] = async ({ vertical, listingId }) => {
         const db = getDb();
         let entity: unknown;
@@ -132,6 +154,6 @@ export function getListingAccessPorts(): ListingAccessPorts {
                 : null;
         return { facts: facts ? { ...facts, type } : null, ownerId: facts?.ownerId ?? null };
     };
-    ports = { billing, effectiveSet, preTrialDraftLimits, loadFacts };
+    ports = { billing, effectiveSet, preTrialDraftLimits, limitBreakdown, loadFacts };
     return ports;
 }

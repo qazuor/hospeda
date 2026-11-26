@@ -16,7 +16,7 @@
  *   ├─────────────────────────────────────────────────┤
  *   │  GALERÍA grid (non-featured visible rows)       │
  *   │  · Each item: thumbnail + remove button          │
- *   │  · Add button (disabled at gallery cap)          │
+ *   │  · Add button (cap enforced by the server)       │
  *   └─────────────────────────────────────────────────┘
  *
  * Upload flow (portada):
@@ -36,7 +36,7 @@
  */
 
 import { AddIcon, LoaderIcon } from '@repo/icons';
-import { ENTITY_GALLERY_CAPS, ModerationStatusEnum } from '@repo/schemas';
+import { ModerationStatusEnum } from '@repo/schemas';
 import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { ListingGalleryGridItem } from '@/features/listing/components/ListingGalleryGridItem';
@@ -136,7 +136,7 @@ export function ListingGalleryManager({
     entityName,
     isEntityLoading = false
 }: ListingGalleryManagerProps) {
-    const { t, tPlural } = useTranslations();
+    const { t } = useTranslations();
 
     // ── Data ──────────────────────────────────────────────────────────────────
     const {
@@ -163,15 +163,14 @@ export function ListingGalleryManager({
     const featuredRow: ListingMedia | undefined = allMedia.find((m) => m.isFeatured);
     const galleryRows: ListingMedia[] = allMedia.filter((m) => !m.isFeatured);
 
-    const galleryCap = ENTITY_GALLERY_CAPS[vertical];
-
     const anyMutationPending =
         addMutation.isPending ||
         removeMutation.isPending ||
         setFeaturedMutation.isPending ||
         uploadEntityImage.isPending;
 
-    const atCap = galleryRows.length >= galleryCap;
+    // HOS-2495: no client-side cap. The server enforces the owner's effective
+    // photo cap (plan + add-ons + grants) and answers LIMIT_REACHED past it.
 
     // ── Error state (per-operation) ───────────────────────────────────────────
     const [addError, setAddError] = React.useState<string | null>(null);
@@ -389,36 +388,31 @@ export function ListingGalleryManager({
                     <section aria-label={t('admin-pages.gallery.grid.title')}>
                         <div className="mb-3 flex items-center justify-between">
                             <h2 className="font-semibold text-base">
-                                {t('admin-pages.gallery.grid.title')}
+                                {t('admin-pages.gallery.grid.title')}{' '}
+                                <span
+                                    data-testid="gallery-photo-count"
+                                    className="font-normal text-muted-foreground"
+                                >
+                                    ({galleryRows.length})
+                                </span>
                             </h2>
 
-                            {!atCap && (
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={galleryInput.open}
-                                    disabled={anyMutationPending}
-                                    className="gap-1.5"
-                                >
-                                    {anyMutationPending && uploadEntityImage.isPending ? (
-                                        <LoaderIcon className="h-4 w-4 animate-spin" />
-                                    ) : (
-                                        <AddIcon className="h-4 w-4" />
-                                    )}
-                                    {t('admin-pages.gallery.grid.actions.add')}
-                                </Button>
-                            )}
-                        </div>
-
-                        {atCap && (
-                            <p
-                                role="alert"
-                                className="mb-3 text-amber-700 text-sm"
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={galleryInput.open}
+                                disabled={anyMutationPending}
+                                className="gap-1.5"
                             >
-                                {tPlural('admin-pages.gallery.grid.cap', galleryCap)}
-                            </p>
-                        )}
+                                {anyMutationPending && uploadEntityImage.isPending ? (
+                                    <LoaderIcon className="h-4 w-4 animate-spin" />
+                                ) : (
+                                    <AddIcon className="h-4 w-4" />
+                                )}
+                                {t('admin-pages.gallery.grid.actions.add')}
+                            </Button>
+                        </div>
 
                         {galleryRows.length === 0 ? (
                             <div className="rounded-lg border border-dashed p-8 text-center">

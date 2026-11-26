@@ -28,7 +28,6 @@
 import { type DrizzleClient, VenueMediaModel, type VenueModel, withTransaction } from '@repo/db';
 import type { ImageProvider } from '@repo/media/server';
 import {
-    getGalleryCap,
     ModerationStatusEnum,
     ServiceErrorCode,
     type VenueFeaturedMediaAddInput,
@@ -156,37 +155,10 @@ export async function addVenueMedia(
             const topOrder = existing.items[0]?.sortOrder ?? -1;
             const nextSortOrder = typeof topOrder === 'number' && topOrder >= 0 ? topOrder + 1 : 0;
 
-            // HOS-389 §2: the per-entity cap was enforced only at the UPLOAD routes
-            // — the step that costs a Cloudinary asset. Registering the row was
-            // never capped, so anything reaching this function directly with an
-            // already-uploaded URL walked past the limit. Same `getGalleryCap`
-            // constant those routes read, and the same filter
-            // `resolveVisibleGalleryCount` applies: `state: 'visible'` AND
-            // `isFeatured: false` (HOS-791 — the featured image is not a gallery
-            // item and must not consume a gallery slot).
-            //
-            // This is a SECOND query rather than a reuse of `existing.total`:
-            // `existing` stays unfiltered because it also computes the next
-            // `sortOrder`, and skipping the featured row there would hand out a
-            // `sortOrder` already in use whenever that row holds the maximum.
-            const galleryCount = await mediaModel.count(
-                {
-                    venueId: validated.venueId,
-                    state: 'visible',
-                    isFeatured: false,
-                    deletedAt: null
-                },
-                { tx }
-            );
-            const galleryCap = getGalleryCap('venue');
-            if (galleryCount >= galleryCap) {
-                return {
-                    error: {
-                        code: ServiceErrorCode.QUOTA_EXCEEDED,
-                        message: `Gallery limit of ${galleryCap} photos reached for this listing`
-                    }
-                };
-            }
+            // HOS-2495: no literal gallery cap here. The venue gallery is capped
+            // by step 7 of the listing-access chain on every route that reaches
+            // this function, against the owner's EFFECTIVE `max_photos_per_venue`
+            // (plan + packs + grants).
 
             const rowToCreate = {
                 ...validated.media,

@@ -3,9 +3,11 @@
  * @file fotos.astro
  * @description Photo section of the venue/experience editor (HOS-1080).
  *
- * `MediaSection` persists every photo operation immediately against the
- * relational `venue_media` / `experience_media` endpoints (HOS-372) and
- * hydrates its own state from them, so there is no form and no save button on
+ * `PhotoSection` — the ONE photo editor of the three listing verticals
+ * (HOS-2495), shared with the accommodation editor — persists every photo
+ * operation immediately against the relational `venue_media` /
+ * `experience_media` endpoints (HOS-372) and hydrates its own state from them,
+ * including its cap (`photo-allowance`, read by the island, never here), so there is no form and no save button on
  * this page — the same shape the accommodation editor's `fotos` route has. The
  * two values passed in only paint the first frame while it hydrates.
  *
@@ -22,7 +24,7 @@
  */
 
 import { ListingVideoWidget } from '@/components/listing/editor/ListingVideoWidget.client';
-import { MediaSection } from '@/components/listing/editor/MediaSection.client';
+import { PhotoSection } from '@/components/host/editor/PhotoSection.client';
 import ListingEditorSectionLayout from '@/layouts/ListingEditorSectionLayout.astro';
 import { readListingMedia } from '@/lib/listing/listing-editor-detail';
 import { resolveListingEditorPage } from '@/lib/editor/resolve-listing-editor-page';
@@ -63,7 +65,7 @@ const videosUpsellPlan =
 	currentSectionSlug="fotos"
 	title={t('listing.owner.editor.sectionNav.media', 'Fotos')}
 >
-	<MediaSection
+	<PhotoSection
 		client:load
 		locale={locale}
 		vertical={vertical}

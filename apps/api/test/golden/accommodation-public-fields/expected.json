@@ -309,11 +309,7 @@
             "featuredImage": {
                 "url": "https://example.com/f.jpg"
             },
-            "gallery": [
-                {
-                    "url": "https://example.com/g.jpg"
-                }
-            ],
+            "gallery": [],
             "videos": []
         },
         "contactInfo": {
@@ -366,11 +362,7 @@
             "featuredImage": {
                 "url": "https://example.com/f.jpg"
             },
-            "gallery": [
-                {
-                    "url": "https://example.com/g.jpg"
-                }
-            ],
+            "gallery": [],
             "videos": []
         },
         "contactInfo": {

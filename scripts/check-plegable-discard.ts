@@ -64,6 +64,9 @@ export const RULE_MESSAGES: Readonly<Record<GR2Half, string>> = {
         'filter that ignores `hasLiveNonTrialTitle`).'
 };
 
+/** The module that owns the fold; the selector call must live here. */
+const FOLD_FILE = 'fold.ts';
+
 const TEST_FILE = /\.(?:test|spec)\.[cm]?tsx?$/;
 
 /** One production file of the resolution directory, with its text. */
@@ -319,7 +322,7 @@ function selectorGatesComplements(files: readonly ResolutionFile[]): boolean {
 
 /**
  * The two halves over the resolution's files. The fold half is a presence check
- * on the comment-stripped concatenation; the selector half is the structural
+ * on the comment-stripped `fold.ts`; the selector half is the structural
  * check above.
  *
  * @param args.files - The resolution's production files.
@@ -331,8 +334,14 @@ export function findMissingHalves({
     readonly files: readonly ResolutionFile[];
 }): readonly GR2Half[] {
     const missing: GR2Half[] = [];
-    const code = files.map((file) => stripComments({ source: file.source })).join('\n');
-    if (!called('selectPlegableSources').test(code)) missing.push('fold-through-selector');
+    // The fold half is anchored on `fold.ts` itself: another module of the
+    // directory (e.g. the limit breakdown) may also call the selector, and its
+    // call must not vouch for a fold that stopped going through it.
+    const foldCode = files
+        .filter((file) => file.name === FOLD_FILE)
+        .map((file) => stripComments({ source: file.source }))
+        .join('\n');
+    if (!called('selectPlegableSources').test(foldCode)) missing.push('fold-through-selector');
     if (!selectorGatesComplements(files)) missing.push('selector-gates-complement');
     return missing;
 }

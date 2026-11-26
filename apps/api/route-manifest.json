@@ -2814,6 +2814,10 @@
             "path": "/api/v1/protected/accommodations/:id/occupancy/event"
         },
         {
+            "method": "GET",
+            "path": "/api/v1/protected/accommodations/:id/photo-allowance"
+        },
+        {
             "method": "POST",
             "path": "/api/v1/protected/accommodations/:id/publish"
         },
@@ -3312,6 +3316,10 @@
         {
             "method": "PATCH",
             "path": "/api/v1/protected/experiences/:id/media/reorder"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/protected/experiences/:id/photo-allowance"
         },
         {
             "method": "POST",
@@ -3956,6 +3964,10 @@
         {
             "method": "GET",
             "path": "/api/v1/protected/venues/:id/menu-qr/scans"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/protected/venues/:id/photo-allowance"
         },
         {
             "method": "GET",

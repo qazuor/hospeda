@@ -448,6 +448,22 @@ create/provision path still exists in parallel — it is no longer the only way 
 Full reference:
 [docs/listing-owner-self-service.md](docs/listing-owner-self-service.md).
 
+**One photo editor for the three listing verticals (HOS-2495).** Accommodation
+(`propiedades/[id]/editar/fotos.astro`) and venue/experience
+(`comercio/[vertical]/[id]/editar/fotos.astro`) both render
+`components/host/editor/PhotoSection.client.tsx` with `{ vertical, listingId }`.
+The vertical picks the endpoints through `lib/api/listing-photo-api.ts`. The cap
+is NOT computed on the client: `use-photo-allowance.ts` reads
+`GET /api/v1/protected/{vertical}s/{id}/photo-allowance`, and
+`photo-cap-view.ts` turns it into five states (loading, limited with its
+breakdown, unlimited, no plan with a pricing link, failed read). A failed read
+never says "no plan". Approved gallery photos beyond the cap stay editable and
+carry «No se muestra: superás tu tope», computed with the same
+`partitionGalleryByCap` the public projector uses. Every API error goes through
+`translateApiError`. The venue/experience-only `MediaSection` was deleted;
+`test/static-guards/no-legacy-listing-media-section.test.ts` keeps it from
+coming back.
+
 ### Auth UI
 
 Auth components come from `@repo/auth-ui`. Do NOT build custom auth forms.

@@ -98,9 +98,8 @@ vi.mock('@/hooks/use-media-upload', () => ({
     })
 }));
 
-// @repo/schemas mock — provide ENTITY_GALLERY_CAPS + ModerationStatusEnum
+// @repo/schemas mock — provide ModerationStatusEnum (HOS-2495: no listing cap)
 vi.mock('@repo/schemas', () => ({
-    ENTITY_GALLERY_CAPS: { accommodation: 50 },
     ModerationStatusEnum: { APPROVED: 'APPROVED', PENDING: 'PENDING', REJECTED: 'REJECTED' }
 }));
 
@@ -627,5 +626,51 @@ describe('make cover (HOS-389 §1)', () => {
         // Asserts the id, not merely that something was called: a handler
         // closing over the wrong variable still satisfies a call-count check.
         expect(mockSetFeaturedMutateAsync).toHaveBeenCalledWith({ mediaId: 'g-2' });
+    });
+});
+
+// ---------------------------------------------------------------------------
+// HOS-2495 AC-23 — no literal cap for accommodations
+// ---------------------------------------------------------------------------
+
+describe('GalleryManager — no client-side cap (HOS-2495)', () => {
+    it('shows the bare count, keeps the add button usable and shows no cap alert at 51 photos', async () => {
+        // Arrange: one past the old literal cap of 50.
+        mockListData.data = Array.from({ length: 51 }, (_, index) =>
+            makeGalleryRow(`g${index}`, index + 1)
+        );
+        mockUploadEntityImageMutateAsync.mockResolvedValue({
+            url: 'https://cdn.example.com/new.jpg',
+            publicId: 'hospeda/dev/new'
+        });
+        mockAddMutateAsync.mockResolvedValue({
+            id: 'new-row',
+            url: 'https://cdn.example.com/new.jpg',
+            isFeatured: false
+        });
+
+        // Act
+        renderGalleryManager();
+        const addButton = screen.getByRole('button', {
+            name: 'admin-pages.gallery.grid.actions.add'
+        });
+        const galleryInput = document.querySelectorAll('input[type="file"]')[1] as HTMLInputElement;
+        const openPicker = vi.spyOn(galleryInput, 'click');
+        fireEvent.click(addButton);
+        fireEvent.change(galleryInput, {
+            target: { files: [new File(['data'], 'photo.jpg', { type: 'image/jpeg' })] }
+        });
+
+        // Assert: count is the bare number (no "/N"), the button works, the
+        // file reaches the upload at 51 and no cap alert is shown.
+        expect(screen.getByTestId('gallery-photo-count').textContent).toBe('(51)');
+        expect(screen.queryByText(/\/\s*\d+/)).toBeNull();
+        expect(addButton).toBeEnabled();
+        expect(openPicker).toHaveBeenCalledTimes(1);
+        await waitFor(() => {
+            expect(mockUploadEntityImageMutateAsync).toHaveBeenCalledTimes(1);
+        });
+        expect(screen.queryByText(/admin-pages\.gallery\.grid\.cap/)).toBeNull();
+        expect(screen.queryByRole('alert')).toBeNull();
     });
 });

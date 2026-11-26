@@ -1,11 +1,28 @@
 // TEST:V1:1 and TEST:V1:3 — the full migration chain on an empty disposable database.
+
+import { execFileSync } from 'node:child_process';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import {
     CATALOG_KEY_DEFINITIONS,
     VERTICAL_ACTIVATION_EVENT_BY_VERTICAL,
     VerticalEnum
 } from '@repo/schemas';
-import { afterAll, describe, expect, it } from 'vitest';
+import { Pool } from 'pg';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { closeTestPool, getTestPool, withCleanSlate } from './helpers.ts';
+import { protectScratchPool, waitForNoConnections } from './support/scratch-database.ts';
+
+const pkgDir = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
+
+/** Returns the test server URL pointed at `database`. */
+function urlFor({ database }: { readonly database: string }): string {
+    const base = process.env.HOSPEDA_TEST_DATABASE_URL;
+    if (!base) throw new Error('HOSPEDA_TEST_DATABASE_URL is not set');
+    const url = new URL(base);
+    url.pathname = `/${database}`;
+    return url.toString();
+}
 
 afterAll(async () => {
     await closeTestPool();
@@ -130,8 +147,79 @@ describe('TEST:V1:3 — catalog_key table after db:migrate from empty', () => {
     });
 });
 
+// The shared integration database is migrated once by the global setup, but every
+// earlier file that calls withCleanSlate TRUNCATEs the migration-written addon catalog
+// (MIGRATION_CATALOG_TABLES). Whether these rows survive depends on file order, so
+// this describe runs `db:migrate` on its own scratch database instead.
+describe('listing photo packs after db:migrate from empty', () => {
+    const scratchDb = `hospeda_scratch_photo_packs_${process.pid}`;
+    let admin: Pool;
+    let scratch: Pool;
+
+    beforeAll(async () => {
+        admin = new Pool({ connectionString: urlFor({ database: 'postgres' }) });
+        await admin.query(`DROP DATABASE IF EXISTS "${scratchDb}" WITH (FORCE)`);
+        await admin.query(`CREATE DATABASE "${scratchDb}"`);
+        execFileSync(
+            process.execPath,
+            [
+                resolve(pkgDir, 'node_modules/tsx/dist/cli.mjs'),
+                'node_modules/drizzle-kit/bin.cjs',
+                'migrate',
+                '--config',
+                'drizzle.config.ts'
+            ],
+            {
+                cwd: pkgDir,
+                env: { ...process.env, HOSPEDA_DATABASE_URL: urlFor({ database: scratchDb }) },
+                stdio: 'pipe',
+                timeout: 180_000
+            }
+        );
+        scratch = new Pool({ connectionString: urlFor({ database: scratchDb }) });
+        protectScratchPool({ pool: scratch });
+    }, 200_000);
+
+    afterAll(async () => {
+        await scratch?.end();
+        await waitForNoConnections({ admin, database: scratchDb });
+        await admin.query(`DROP DATABASE IF EXISTS "${scratchDb}" WITH (FORCE)`);
+        await admin.end();
+    });
+
+    it('joins each pack to exactly one recurring product and one matching limit', async () => {
+        const { rows } = await scratch.query(`
+            SELECT a.slug, v.validity, v.validity_days, v.scope_type, l.key, l.value,
+                   p.price, p.currency, p.charge_kind, p.cycle, p.compatible_verticals
+            FROM addon a
+            JOIN addon_version v ON v.addon_id = a.id
+            JOIN addon_product p ON p.addon_id = a.id AND p.version_id = v.id
+            JOIN addon_version_limit l ON l.addon_version_id = v.id
+            WHERE a.slug IN ('extra-photos-experience-20', 'extra-photos-venue-20')
+            ORDER BY a.slug
+        `);
+
+        expect(rows).toEqual(
+            ['experience', 'venue'].map((vertical) => ({
+                slug: `extra-photos-${vertical}-20`,
+                validity: 'WHILE_SUBSCRIPTION_ALIVE',
+                validity_days: null,
+                scope_type: 'VERTICAL_SUBSCRIPTION',
+                key: `max_photos_per_${vertical}`,
+                value: 20,
+                price: 500_000,
+                currency: 'ARS',
+                charge_kind: 'PERIODICO',
+                cycle: 'monthly',
+                compatible_verticals: [vertical]
+            }))
+        );
+    });
+});
+
+// withCleanSlate discards the commercial catalog, so inspect reference offers first.
 describe('reference rows survive the integration clean slate', () => {
-    it('keeps the 5 verticals and the 85 keys after withCleanSlate', async () => {
+    it('keeps the 5 verticals and the 87 keys after withCleanSlate', async () => {
         await withCleanSlate(async () => {
             const verticals = await getTestPool().query('SELECT 1 FROM vertical');
             const keys = await getTestPool().query('SELECT 1 FROM catalog_key');
@@ -139,8 +227,9 @@ describe('reference rows survive the integration clean slate', () => {
             expect(verticals.rowCount).toBe(Object.values(VerticalEnum).length);
             expect(keys.rowCount).toBe(CATALOG_KEY_DEFINITIONS.length);
             // 82 + vip_only_promotions + max_free_visible_promotions (HOS-2589 D-4, M-4)
-            // + ai_assistant_access (HOS-2184 G-6).
-            expect(keys.rowCount).toBe(85);
+            // + ai_assistant_access (HOS-2184 G-6)
+            // + max_photos_per_venue + max_photos_per_experience (HOS-2495).
+            expect(keys.rowCount).toBe(87);
         });
     });
 });

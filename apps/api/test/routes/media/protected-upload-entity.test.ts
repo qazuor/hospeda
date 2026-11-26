@@ -16,12 +16,7 @@
 
 process.env.HOSPEDA_TESTING_RATE_LIMIT = 'true';
 
-import {
-    ENTITY_GALLERY_CAPS,
-    PermissionEnum,
-    PublicationStatusEnum,
-    type VerticalEnum
-} from '@repo/schemas';
+import { PermissionEnum, PublicationStatusEnum, type VerticalEnum } from '@repo/schemas';
 import { AccommodationService } from '@repo/service-core';
 import { rehydrateEffectiveSet } from '@repo/verticals';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -131,8 +126,12 @@ const REAL_PNG_FILE = new File(
     { type: 'image/png' }
 );
 
-/** Mirrors the route: the gallery cap plus the featured image. */
-const PROTECTED_UPLOAD_RATE_LIMIT_MAX = Math.max(...Object.values(ENTITY_GALLERY_CAPS)) + 1;
+/**
+ * Mirrors the route's explicit `PROTECTED_ENTITY_UPLOAD_RATE_LIMIT_MAX` (51): the
+ * old largest literal cap (50) plus the featured image. HOS-2495 (D-17) froze it
+ * when listings left `ENTITY_GALLERY_CAPS`, so it is no longer derived from the map.
+ */
+const PROTECTED_UPLOAD_RATE_LIMIT_MAX = 51;
 
 const buildOwnedEntityStub = () =>
     vi.fn().mockResolvedValue({

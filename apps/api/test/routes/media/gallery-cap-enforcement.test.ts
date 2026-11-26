@@ -13,7 +13,9 @@
  *     forwards to the provider and returns 200.
  *
  * Entity types tested:
- *   - accommodation (cap = 50)
+ *   - accommodation: NO literal cap since HOS-2495, only the owner's effective
+ *     photo limit (a paid 70 is not cut at the old 50)
+ *   - venue, experience: no cap at all on this staff path (HOS-2495, D-7)
  *   - destination   (cap = 20)
  *   - event         (cap = 10)
  *   - post          (cap = 15)
@@ -36,6 +38,7 @@ const {
     mockFindByAccommodation,
     mockContentMediaCount,
     mockEffectiveSet,
+    mockListingMediaFind,
     planMax
 } = vi.hoisted(() => ({
     mockUpload: vi.fn(),
@@ -46,6 +49,7 @@ const {
     // HOS-1164: post/event gallery count comes from their relational rows.
     mockContentMediaCount: vi.fn(),
     mockEffectiveSet: vi.fn(),
+    mockListingMediaFind: vi.fn(),
     planMax: { value: 100 }
 }));
 
@@ -63,6 +67,8 @@ vi.mock('@repo/db', async (importOriginal) => {
         accommodationMediaModel: {
             findByAccommodation: mockFindByAccommodation
         },
+        venueMediaModel: { findByVenue: mockListingMediaFind },
+        experienceMediaModel: { findByExperience: mockListingMediaFind },
         postMediaModel: { count: mockContentMediaCount },
         eventMediaModel: { count: mockContentMediaCount }
     };
@@ -76,7 +82,9 @@ import {
     AccommodationService,
     DestinationService,
     EventService,
-    PostService
+    ExperienceService,
+    PostService,
+    VenueService
 } from '@repo/service-core';
 
 import { initApp } from '../../../src/app';
@@ -208,6 +216,8 @@ describe('Gallery cap enforcement — per-entity SSOT (SPEC-078-GAPS)', () => {
         // stubs fire so both gallery-cap checks get consistent counts.
         mockFindByAccommodation.mockReset();
         mockFindByAccommodation.mockResolvedValue({ items: [], total: 0 });
+        mockListingMediaFind.mockReset();
+        mockListingMediaFind.mockResolvedValue({ items: [], total: 0 });
         mockContentMediaCount.mockReset();
         mockContentMediaCount.mockResolvedValue(0);
         planMax.value = 100;
@@ -247,44 +257,16 @@ describe('Gallery cap enforcement — per-entity SSOT (SPEC-078-GAPS)', () => {
         expect(allowed.status).toBe(200);
     });
 
-    // ── accommodation (cap = 50) ───────────────────────────────────────────
+    // ── accommodation: no literal cap (HOS-2495) ──────────────────────────
 
-    describe('accommodation (cap = 50)', () => {
-        it('rejects upload #51: gallery full at 50 items → 422 GALLERY_LIMIT_EXCEEDED with limit=50', async () => {
-            // Arrange: gallery is AT the cap (50 items).
-            // SPEC-204: accommodation gallery count comes from the relational
-            // table; stub both the entity lookup and the media count.
-            const cap = ENTITY_GALLERY_CAPS.accommodation;
+    describe('accommodation (owner effective cap only, HOS-2495)', () => {
+        it('accepts upload #51 past the old literal of 50 when the owner cap is 70', async () => {
+            // Arrange: 50 visible gallery photos, Premium (50) + one pack (+20).
+            planMax.value = 70;
             vi.spyOn(AccommodationService.prototype, 'getById').mockImplementationOnce(
-                buildEntityStubFn(cap)
+                buildEntityStubFn(50)
             );
-            // findByAccommodation is called twice: once for the plan-cap check
-            // (3d-i) and once for the absolute gallery-cap check (3d).
-            mockFindByAccommodation.mockResolvedValue({ items: [], total: cap });
-
-            // Act
-            const res = await upload(app, 'accommodation', PermissionEnum.ACCOMMODATION_UPDATE_ANY);
-
-            // Assert
-            expect(res.status).toBe(422);
-            const body = (await res.json()) as {
-                success: boolean;
-                error: { code: string; details: { limit: number; currentCount: number } };
-            };
-            expect(body.error.code).toBe('GALLERY_LIMIT_EXCEEDED');
-            expect(body.error.details.limit).toBe(cap);
-            expect(body.error.details.currentCount).toBe(cap);
-            expect(mockUpload).not.toHaveBeenCalled();
-        });
-
-        it('allows upload #50: one slot remaining (49 items) → 200', async () => {
-            // Arrange: one slot below cap.
-            const belowCap = ENTITY_GALLERY_CAPS.accommodation - 1;
-            vi.spyOn(AccommodationService.prototype, 'getById').mockImplementationOnce(
-                buildEntityStubFn(belowCap)
-            );
-            // Both plan-cap and gallery-cap checks receive the same count.
-            mockFindByAccommodation.mockResolvedValue({ items: [], total: belowCap });
+            mockFindByAccommodation.mockResolvedValue({ items: [], total: 50 });
 
             // Act
             const res = await upload(app, 'accommodation', PermissionEnum.ACCOMMODATION_UPDATE_ANY);
@@ -293,6 +275,50 @@ describe('Gallery cap enforcement — per-entity SSOT (SPEC-078-GAPS)', () => {
             expect(res.status).toBe(200);
             expect(mockUpload).toHaveBeenCalledTimes(1);
         });
+
+        it('refuses at the owner cap of 70 with LIMIT_REACHED, never GALLERY_LIMIT_EXCEEDED', async () => {
+            // Arrange
+            planMax.value = 70;
+            vi.spyOn(AccommodationService.prototype, 'getById').mockImplementationOnce(
+                buildEntityStubFn(70)
+            );
+            mockFindByAccommodation.mockResolvedValue({ items: [], total: 70 });
+
+            // Act
+            const res = await upload(app, 'accommodation', PermissionEnum.ACCOMMODATION_UPDATE_ANY);
+            const body = (await res.json()) as {
+                error: { code: string; details: Record<string, unknown> };
+            };
+
+            // Assert
+            expect(res.status).toBe(403);
+            expect(body.error.code).toBe('LIMIT_REACHED');
+            expect(body.error.details).toEqual({
+                limitKey: 'max_photos_per_accommodation',
+                currentCount: 70,
+                maxAllowed: 70
+            });
+            expect(mockUpload).not.toHaveBeenCalled();
+        });
+    });
+
+    // ── venue / experience: no literal cap on the staff path (HOS-2495) ──
+
+    it.each([
+        ['venue', VenueService, PermissionEnum.VENUE_EDIT_ALL],
+        ['experience', ExperienceService, PermissionEnum.EXPERIENCE_EDIT_ALL]
+    ] as const)('accepts a %s gallery upload past the old literal of 30', async (entityType, service, permission) => {
+        // Arrange
+        vi.spyOn(service.prototype, 'getById').mockImplementationOnce(buildEntityStubFn(30));
+        mockListingMediaFind.mockResolvedValue({ items: [], total: 30 });
+
+        // Act
+        const res = await upload(app, entityType, permission);
+
+        // Assert
+        expect(res.status).toBe(200);
+        expect(mockUpload).toHaveBeenCalledTimes(1);
+        expect(mockEffectiveSet).not.toHaveBeenCalled();
     });
 
     // ── destination (cap = 20) ────────────────────────────────────────────

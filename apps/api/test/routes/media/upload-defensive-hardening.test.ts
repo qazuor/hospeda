@@ -298,8 +298,8 @@ describe('Media upload — defensive hardening (SPEC-078-GAPS T-033)', () => {
 
     // ── GAP-078-071 — Gallery hard cap ──────────────────────────────────────
 
-    describe('GAP-078-071: gallery hard cap rejects 51st item with 422 GALLERY_LIMIT_EXCEEDED', () => {
-        it('rejects gallery upload when entity already has 50 gallery items', async () => {
+    describe('GAP-078-071 / HOS-2495: an accommodation gallery has no literal hard cap', () => {
+        it('accepts the 51st gallery upload when the owner cap (100) allows it', async () => {
             // Arrange: spy returns an entity already at the cap.
             const fullGalleryEntity = {
                 id: ADMIN_ENTITY_ID,
@@ -319,8 +319,8 @@ describe('Media upload — defensive hardening (SPEC-078-GAPS T-033)', () => {
             // SPEC-204 T-014: the gallery cap (and the owner plan-limit check) now
             // count visible rows from the relational accommodation_media table via
             // `findByAccommodation`, not from the JSONB `media.gallery`. Stub it to
-            // report the entity is already at the 50-item cap so the handler returns
-            // the typed 422 instead of hitting a real DB (which would 500).
+            // report 50 rows: the old literal refused here with 422; since HOS-2495
+            // only the owner's effective cap (100 in this file's port mock) decides.
             const mediaCountSpy = vi
                 .spyOn(accommodationMediaModel, 'findByAccommodation')
                 .mockResolvedValue({ items: [], total: 50 });
@@ -340,13 +340,10 @@ describe('Media upload — defensive hardening (SPEC-078-GAPS T-033)', () => {
             };
 
             // Assert
-            expect(res.status).toBe(422);
-            expect(body.success).toBe(false);
-            expect(body.error?.code).toBe('GALLERY_LIMIT_EXCEEDED');
-            expect(body.error?.details?.limit).toBe(50);
-            expect(body.error?.details?.currentCount).toBe(50);
-            // Provider must never be called for a doomed insert.
-            expect(mockUpload).not.toHaveBeenCalled();
+            expect(res.status).toBe(200);
+            expect(body.success).toBe(true);
+            expect(body.error).toBeUndefined();
+            expect(mockUpload).toHaveBeenCalledTimes(1);
             mediaCountSpy.mockRestore();
         });
 
