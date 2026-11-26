@@ -2,7 +2,7 @@ import type { Clock } from '@repo/billing-verticals-contract';
 import { eq, getDb, manualPayments, payments, refunds } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import type { PaymentProvider } from '@repo/payments';
-import { ServiceErrorCode } from '@repo/schemas';
+import { type RetryRefundProviderCallsRejection, ServiceErrorCode } from '@repo/schemas';
 import { type Actor, ServiceError } from '../../../types';
 import { type ExecuteRefundResult, executeRefundFromProviderRead } from './execute-refund.service';
 import { authorizeRefundAction, readRefundSubject } from './refund-action-authorization';
@@ -17,29 +17,19 @@ import {
 
 const logger = createLogger('retry-refund-provider-calls');
 
+export type { RetryRefundProviderCallsRejection } from '@repo/schemas';
+
+/**
+ * Every `reason` a rejection of `retryRefundProviderCalls` carries, for an exhaustive HTTP mapping.
+ * The tuple and its type live in `@repo/schemas` (single source of truth) and are re-exported here
+ * so existing consumers keep importing them from `@repo/service-core`.
+ */
+export { RETRY_REFUND_PROVIDER_CALLS_REJECTIONS } from '@repo/schemas';
 /**
  * Re-exported from its single home, `refund-call-tally.ts` (HOS-2538): the retry's POST limit and
  * the panel settlement's eligibility are the same instant.
  */
 export { REFUND_CALL_RETRY_LIMIT_MS } from './refund-call-tally';
-
-/** Every `reason` a rejection of `retryRefundProviderCalls` carries, for an exhaustive HTTP mapping. */
-export const RETRY_REFUND_PROVIDER_CALLS_REJECTIONS = [
-    'REFUND_NOT_FOUND',
-    'REFUND_SOURCE_NOT_FOUND',
-    'ADMINISTRATIVE_ACTION_FORBIDDEN',
-    'REFUND_NOT_CONFIRMED',
-    'REFUND_SOURCE_NOT_PROVIDER_REFUNDABLE',
-    'REFUND_HAS_NO_UNANSWERED_CALL',
-    'REFUND_PAST_PROVIDER_WINDOW',
-    'REFUND_CALL_TOO_OLD_TO_RETRY',
-    'REFUND_STATE_CHANGED',
-    'REFUND_RETRY_IN_PROGRESS'
-] as const;
-
-/** A rejection reason of `retryRefundProviderCalls`. */
-export type RetryRefundProviderCallsRejection =
-    (typeof RETRY_REFUND_PROVIDER_CALLS_REJECTIONS)[number];
 
 /** Input of the retry (HOS-2516). */
 export type RetryRefundProviderCallsInput = {

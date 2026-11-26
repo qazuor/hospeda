@@ -1,4 +1,4 @@
-import { ServiceErrorCode } from '@repo/schemas';
+import { type PlanMigrationRejection, ServiceErrorCode } from '@repo/schemas';
 import { isAdministrativeActionPermitted } from '@repo/verticals';
 import type { Actor } from '../../../types/index.js';
 import { ServiceError } from '../../../types/index.js';
@@ -6,25 +6,13 @@ import { isSystemActor } from '../../../utils/system-actor.js';
 
 /** Administrative action 17 owns plan retirement migrations. */
 export const PLAN_MIGRATION_ACTION = 'ACC_17' as const;
-/** Closed set of action 17 rejection reasons. */
-export const PLAN_MIGRATION_REJECTIONS = [
-    'ADMINISTRATIVE_ACTION_FORBIDDEN',
-    'PLAN_VERSION_NOT_FOUND',
-    'PLAN_MIGRATION_SOURCE_NOT_RETIRED',
-    'PLAN_MIGRATION_TARGET_NOT_SELLABLE',
-    'PLAN_MIGRATION_VERTICAL_MISMATCH',
-    'PLAN_MIGRATION_SAME_VERSION',
-    'PLAN_MIGRATION_EMPTY_COHORT',
-    'PLAN_MIGRATION_COHORT_CHANGED',
-    'INVALID_PLAN_MIGRATION_INPUT',
-    'PLAN_MIGRATION_INCREASE_OTHER_PLAN',
-    'PLAN_MIGRATION_INCREASE_SOURCE_CURRENT',
-    'PLAN_MIGRATION_INCREASE_CYCLE_MISSING',
-    'PLAN_MIGRATION_NOT_FOUND',
-    'PLAN_MIGRATION_ALREADY_CANCELLED'
-] as const;
-/** One typed action 17 rejection. */
-export type PlanMigrationRejection = (typeof PLAN_MIGRATION_REJECTIONS)[number];
+export type { PlanMigrationRejection } from '@repo/schemas';
+/**
+ * Closed set of action 17 rejection reasons. The tuple and its type live in
+ * `@repo/schemas` (single source of truth) and are re-exported here so existing
+ * consumers keep importing them from `@repo/service-core`.
+ */
+export { PLAN_MIGRATION_REJECTIONS } from '@repo/schemas';
 /** Stable service error mapping for action 17. */
 export const REJECTION_CODES: Readonly<Record<PlanMigrationRejection, ServiceErrorCode>> = {
     ADMINISTRATIVE_ACTION_FORBIDDEN: ServiceErrorCode.FORBIDDEN,
