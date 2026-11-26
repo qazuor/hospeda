@@ -585,7 +585,8 @@ each vertical names its `VerticalEnum` member literally (one-vertical guard, G2)
   somebody else (never 403); on the AI route, 403 `ENTITLEMENT_REQUIRED`
   (`details.entitlementKey = 'ai_translate'`), 403 `LIMIT_REACHED`
   (`details = { limitKey, currentCount, maxAllowed }`, plus one `quota_exceeded` `ai_usage`
-  row), 400 `VALIDATION_ERROR` with top-level `error.reason = 'NO_SOURCE_TEXT'` when the
+  row), 400 `VALIDATION_ERROR` with `details.reason = 'NO_SOURCE_TEXT'` (also the top-level
+  `error.reason`; public with debug errors off, see `error-contract.md`) when the
   Spanish is empty, and 502 `PROVIDER_ERROR` when every provider call failed.
 - **Metering**: the AI route and the on-save run bill the listing OWNER on the listing's
   vertical (`ai_usage.user_id = ownerId`, feature `translate`).

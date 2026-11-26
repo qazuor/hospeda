@@ -336,6 +336,7 @@ so an unrelated `VALIDATION_ERROR` that happened to mimic that payload keeps its
 | `ALREADY_EXISTS` with `reason: 'LOCATION_EXCEPTION_REVOKE_CONFLICT'` | `{ reason: 'LOCATION_EXCEPTION_REVOKE_CONFLICT', existingListingId }` | The admin form links to the owner's other published listing that would share the address once the exception is removed. Admin-only route; the id is the same owner's. |
 | `VALIDATION_ERROR` with `reason: 'BUSINESS_LINES_INVALID'` | `{ field: 'businessLines', reason }` | `apps/web/src/lib/forms/field-errors.ts` maps `details.reason` to the business-line selector's message; without it production falls back to the generic banner instead of naming the rejected rule. |
 | `VALIDATION_ERROR` with `reason: 'SECTION_ABSENT'` | `{ reason: 'SECTION_ABSENT', section }` | The admin create form needs the absent section identifier to explain which section the selected business lines do not offer. |
+| `VALIDATION_ERROR` with `reason: 'NO_SOURCE_TEXT'` | `{ reason: 'NO_SOURCE_TEXT' }` | "Traducir con IA" on a field whose Spanish source is empty (HOS-2658 AC-20). The translations section tells the owner to write the Spanish first instead of showing a generic error. Gated on the code AND the exact top-level reason; carries no listing data. |
 
 This list is deliberately short — a conservative choice over opening `details`
 on every 4xx, made explicitly by the issue owner (see HOS-700's decision

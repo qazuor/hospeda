@@ -14,9 +14,19 @@ import { getDb, sql } from '@repo/db';
 import { PublicationStatusEnum, VerticalEnum } from '@repo/schemas';
 import { computeTranslationSourceHash } from '@repo/service-core';
 import { rehydrateEffectiveSet } from '@repo/verticals';
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+    afterAll,
+    afterEach,
+    beforeAll,
+    beforeEach,
+    describe,
+    expect,
+    it,
+    onTestFinished,
+    vi
+} from 'vitest';
 import { initApp } from '../../../src/app';
-import { validateApiEnv } from '../../../src/utils/env';
+import { env, validateApiEnv } from '../../../src/utils/env';
 import { testDb } from '../../e2e/setup/test-database';
 import {
     actorHeaders,
@@ -468,8 +478,14 @@ describe.each(['venue', 'accommodation'] as const)('%s translation routes', (ver
         );
     });
 
-    it('POST ai on an empty Spanish source answers 400 NO_SOURCE_TEXT (AC-20)', async () => {
-        // Arrange
+    it('POST ai on an empty Spanish source answers 400 with details.reason NO_SOURCE_TEXT, debug off (AC-20)', async () => {
+        // Arrange: production shape — debug errors off, so `details` is public only
+        // through the narrow NO_SOURCE_TEXT exception of handleRouteError.
+        const debugBefore = env.HOSPEDA_API_DEBUG_ERRORS;
+        env.HOSPEDA_API_DEBUG_ERRORS = false;
+        onTestFinished(() => {
+            env.HOSPEDA_API_DEBUG_ERRORS = debugBefore;
+        });
         const { ownerId, id } = await seedListing(vertical);
         await getDb().execute(
             sql`UPDATE ${sql.raw(TABLE[vertical])} SET rich_description = '' WHERE id = ${id}::uuid`
@@ -485,8 +501,7 @@ describe.each(['venue', 'accommodation'] as const)('%s translation routes', (ver
         expect(res.status).toBe(400);
         const body = await json(res);
         expect(body.error?.code).toBe('VALIDATION_ERROR');
-        // The reason travels as the top-level `error.reason`: handleRouteError strips
-        // `details` of a VALIDATION_ERROR (only allow-listed codes keep it public).
+        expect(body.error?.details).toEqual({ reason: 'NO_SOURCE_TEXT' });
         expect(body.error?.reason).toBe('NO_SOURCE_TEXT');
         expect(provider.calls).toEqual([]);
     });

@@ -20,6 +20,7 @@ import {
 } from '@repo/schemas';
 import { computeTranslationSourceHash, ServiceError } from '@repo/service-core';
 import { eq } from 'drizzle-orm';
+import { NO_SOURCE_TEXT_REASON } from './listing-translation-errors.js';
 import {
     getListingTranslationState,
     LISTING_TRANSLATION_QUOTA_VERTICAL
@@ -114,8 +115,8 @@ export async function translateListingFieldWithAi({
         throw new ServiceError(
             ServiceErrorCode.VALIDATION_ERROR,
             'The field has no Spanish source text to translate',
-            { reason: 'NO_SOURCE_TEXT' },
-            'NO_SOURCE_TEXT'
+            { reason: NO_SOURCE_TEXT_REASON },
+            NO_SOURCE_TEXT_REASON
         );
     }
 
