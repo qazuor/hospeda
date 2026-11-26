@@ -129,6 +129,10 @@ const VOCAB_BLOCKLIST = new Set([
     // adjacent to a placeholder by chance, not a noun taking a plural form.
     'tenés',
     'allows',
+    // HOS-2650: "stays" is a plural noun in the listing counts ("{{count}} stays")
+    // and a verb in billing copy ("{{name}} stays active", "Request {{id}} stays
+    // open"). Harvesting the noun would flag the verb.
+    'stays',
     // "The {plan} plan includes {cap} of your {active} listings" puts a verb
     // ending in "es" immediately before a placeholder, so the vocabulary
     // harvest reads "includes" as a noun — and from then on every string

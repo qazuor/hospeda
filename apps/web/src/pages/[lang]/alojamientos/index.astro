@@ -47,18 +47,13 @@ import { buildClearFacetChip } from '@/lib/filters/build-clear-facet-chip';
 import { XCircleIcon } from '@repo/icons';
 import { getAccommodationTypeIcon } from '@/lib/accommodation-type-icons';
 import { getAccommodationTypeLabel } from '@/lib/colors';
-import { buildAccommodationListingSummary, DEFAULT_TYPE_GRAMMAR } from '@/lib/accommodation-listing-summary';
-import { parseAccommodationListingFilters, resolveSummarySubjectTotal } from '@/lib/accommodation-listing-filters/parse-listing-filters';
-import type { CatalogEntry, SummaryLocale } from '@/lib/accommodation-listing-summary';
+import { parseAccommodationListingFilters } from '@/lib/accommodation-listing-filters/parse-listing-filters';
 import { hasActiveAccommodationEmptyStateFilters } from '@/lib/listing-empty-state-filters';
 import { getApiUrl } from '@/lib/env';
 import { AiSearchEntry } from '@/components/ai-search/AiSearchEntry.client';
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
-const { t: tEs } = createTranslations('es');
-const { t: tEn } = createTranslations('en');
-const { t: tPt } = createTranslations('pt');
 
 // Read pagination and filter params from URL
 const url = Astro.url;
@@ -75,7 +70,7 @@ const {
 	minBedrooms, minBathrooms, minRating, amenitiesParam, featuresParam, includeNoPrice,
 	includeNoReviews, hasWifi, hasPool, hasParking, allowsPets, isFeatured, latitude, longitude,
 	radius, hasLatLongRadius, hasGeoRadius, poiIdRaw, poiSlugRaw, checkIn, checkOut,
-	availabilityParams, summaryFilters, hasPoiRadius, paginationParams
+	availabilityParams, hasPoiRadius, paginationParams
 } = parsedFilters;
 
 /**
@@ -205,39 +200,6 @@ const baseCards = items.map((item) => toAccommodationCardProps({ item: item as u
 // the whole grid, via `store/favorites-store` (WB0-2/WB0-3), not once per card.
 const cards = baseCards;
 
-// --- Natural language filter summary ---
-// Build catalogs from the fetched data for the summary builder.
-// Destinations, amenities, and features use id→name from the API.
-// The summary module maps these keys to human-readable labels per locale.
-const summaryLocale = (locale === 'en' || locale === 'pt' ? locale : 'es') as SummaryLocale;
-
-const destinationCatalog: readonly CatalogEntry[] = destinations.map((d) => ({
-	key: d.id,
-	label: { es: d.name, en: d.name, pt: d.name }
-}));
-// SPEC-266: `name` was dropped from the amenities/features catalog. `slug` is
-// now the canonical identifier and is also the i18n key segment.
-// slug is nullish per schema; coerce to '' to satisfy the t() signature.
-const amenityCatalog: readonly CatalogEntry[] = amenities.map((a) => ({
-	key: a.id,
-	label: {
-		es: tEs(`accommodations.amenityNames.${a.slug ?? ''}`, a.slug ?? undefined),
-		en: tEn(`accommodations.amenityNames.${a.slug ?? ''}`, a.slug ?? undefined),
-		pt: tPt(`accommodations.amenityNames.${a.slug ?? ''}`, a.slug ?? undefined)
-	}
-}));
-const featureCatalog: readonly CatalogEntry[] = features.map((f) => ({
-	key: f.id,
-	label: {
-		es: tEs(`accommodations.featureNames.${f.slug ?? ''}`, f.slug ?? undefined),
-		en: tEn(`accommodations.featureNames.${f.slug ?? ''}`, f.slug ?? undefined),
-		pt: tPt(`accommodations.featureNames.${f.slug ?? ''}`, f.slug ?? undefined)
-	}
-}));
-
-// When types are active the API already filters by type, so `total` is the
-// type-specific count (equivalent to `subjectTotal`). Pass it explicitly so the
-// builder can render "hoteles" instead of the generic "hospedajes".
 const typesArray = types?.split(',').filter(Boolean) ?? [];
 const hasActiveFilters = hasActiveAccommodationEmptyStateFilters({
 	q,
@@ -262,26 +224,6 @@ const hasActiveFilters = hasActiveAccommodationEmptyStateFilters({
 	hasAvailabilityFilter: availabilityParams !== undefined,
 	adults,
 	childrenCount,
-});
-const filterSummary = buildAccommodationListingSummary({
-	locale: summaryLocale,
-	filters: summaryFilters,
-	counts: {
-		shown: cards.length,
-		globalTotal: total,
-		// When types are filtered, `total` is already the type-specific count
-		// from the API, so it doubles as `subjectTotal`.
-		// Uses the summary's own types (`types ?? legacyType`) so a legacy
-		// `?type=HOTEL` link also gets the type-specific subject.
-		subjectTotal: resolveSummarySubjectTotal({ summaryFilters, total }),
-	},
-	sort: sortBy ? { key: sortBy, direction: sortOrder ?? 'asc' } : undefined,
-	catalogs: {
-		types: DEFAULT_TYPE_GRAMMAR,
-		destinations: destinationCatalog,
-		amenities: amenityCatalog,
-		services: featureCatalog,
-	},
 });
 
 // Filter configuration for sidebar.
@@ -696,10 +638,6 @@ const emptyStateSuggestions = [
 		url: buildUrl({ locale, path: 'alojamientos/mapa' }),
 	},
 	{
-		label: t('accommodations.emptySuggestion.popular', 'Ver más reservados'),
-		url: `${baseUrl}?sortBy=mostSaved`,
-	},
-	{
 		label: t('accommodations.emptySuggestion.allDestinations', 'Explorar destinos'),
 		url: buildUrl({ locale, path: 'destinos' }),
 	},
@@ -718,7 +656,8 @@ const emptyStateSuggestions = [
 	filterPosition="left"
 	ogTagline={t('accommodations.tagline', 'Encontrá tu lugar ideal')}
 	totalCount={total}
-	filterSummary={filterSummary}
+	resultKind="accommodations"
+	sortOptions={sortOptions}
 >
 	<ItemListJsonLd
 		slot="head-extra"
@@ -749,7 +688,6 @@ const emptyStateSuggestions = [
 		client:load
 		locale={locale}
 		filters={filterGroups}
-		sortOptions={sortOptions}
 		initialParams={initialParams}
 	/>
 
@@ -801,7 +739,9 @@ const emptyStateSuggestions = [
 			locale={locale}
 			variant="no-results"
 			actionUrl={baseUrl}
+			actionLabel={t('ui.listing.allAccommodations')}
 			activeFilters={activeFilterChips}
+			message={q?.trim() ? t('ui.listing.noAccommodationQuery', undefined, { query: q.trim() }) : undefined}
 			suggestions={emptyStateSuggestions}
 		/>
 	)}

@@ -22,6 +22,9 @@ import { DeleteButton } from '@/components/host/DeleteButton.client';
 import type { HostOnboardingPrecheckDecision, HostOnboardingPrecheckDraft } from '@/lib/api/endpoints-protected';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import type { CapAddonOffer } from '@/lib/billing/addon-cap-offer';
+import { getAddonName } from '@/lib/billing/addon-purchase';
+import { formatPrice } from '@/lib/format-utils';
 // HOS-1416: `PublishVertical` moved out of the demolished `@repo/billing`
 // config; the local mapper now owns it.
 import { resolvePrecheckPanelContent, type PublishVertical } from '@/lib/host/publish-precheck-panel-content';
@@ -47,6 +50,8 @@ interface Props {
     /** This vertical's "my listings" page — where the user picks among several DRAFTs. */
     readonly accountPropertiesUrl: string;
     readonly subscriptionUrl: string;
+    /** The catalog add-on that widens this vertical's cap, when there is one (HOS-2632). */
+    readonly capAddon?: CapAddonOffer | null;
 }
 
 const {
@@ -59,7 +64,8 @@ const {
     editUrl,
     createUrl,
     accountPropertiesUrl,
-    subscriptionUrl
+    subscriptionUrl,
+    capAddon = null
 } = Astro.props;
 
 const { t, tPlural } = createTranslations(locale);
@@ -71,7 +77,17 @@ const content = resolvePrecheckPanelContent({
     editUrl,
     createUrl,
     accountPropertiesUrl,
-    subscriptionUrl
+    subscriptionUrl,
+    capAddon: capAddon
+        ? {
+              name: getAddonName({ offer: { ...capAddon, description: null }, t }),
+              priceLabel: formatPrice({
+                  amount: capAddon.price / 100,
+                  currency: capAddon.currency,
+                  locale
+              })
+          }
+        : undefined
 });
 
 const title = t(content.titleKey, content.titleFallback);
@@ -145,7 +161,7 @@ const deleteErrorText = t(
                         href={action.href}
                         data-testid={`precheck-action-${action.labelKey}`}
                     >
-                        {t(action.labelKey, action.labelFallback)}
+                        {t(action.labelKey, action.labelFallback, action.labelParams)}
                         <ArrowRightIcon size={16} weight="bold" aria-hidden="true" />
                     </LinkButton>
                 ) : (
@@ -154,7 +170,7 @@ const deleteErrorText = t(
                         class="precheck-panel__secondary-link"
                         data-testid={`precheck-action-${action.labelKey}`}
                     >
-                        {t(action.labelKey, action.labelFallback)}
+                        {t(action.labelKey, action.labelFallback, action.labelParams)}
                     </a>
                 )
             ) : draftIdForDelete ? (

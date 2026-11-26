@@ -4,8 +4,7 @@
  * @description Sidebar-style stats card for a destination detail page.
  *
  * Displays aggregated counts (accommodations, events, attractions, reviews)
- * and the average rating. Rows with a zero count are omitted. Renders nothing
- * if every stat is zero.
+ * and the average rating. Zero accommodation counts are omitted.
  */
 import { BedroomsIcon, CalendarIcon, LocationIcon, StarIcon, ChatIcon } from '@repo/icons';
 import { createTranslations } from '@/lib/i18n';
@@ -35,14 +34,13 @@ interface StatRow {
 
 const rows: StatRow[] = [];
 
-// Always include accommodations / events / attractions rows even when 0,
-// so the sidebar is never silently empty. Reviews and rating only appear
-// when there is something meaningful to show (rating=0 means no scores yet).
-rows.push({
-	value: String(stats.accommodationsCount),
-	label: tPlural('destinations.detail.stats.accommodations', stats.accommodationsCount),
-	icon: 'bed'
-});
+if (stats.accommodationsCount > 0) {
+	rows.push({
+		value: String(stats.accommodationsCount),
+		label: tPlural('destinations.detail.stats.accommodations', stats.accommodationsCount),
+		icon: 'bed'
+	});
+}
 rows.push({
 	value: String(stats.eventsCount),
 	label: tPlural('destinations.detail.stats.events', stats.eventsCount),

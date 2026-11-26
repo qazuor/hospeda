@@ -260,6 +260,33 @@
         "dismiss": "Dismiss announcement"
     },
     "listing": {
+        "accommodations_one": "{{count}} stay",
+        "accommodations_other": "{{count}} stays",
+        "venues_one": "{{count}} venue",
+        "venues_other": "{{count}} venues",
+        "experiences_one": "{{count}} experience",
+        "experiences_other": "{{count}} experiences",
+        "events_one": "{{count}} event",
+        "events_other": "{{count}} events",
+        "posts_one": "{{count}} article",
+        "posts_other": "{{count}} articles",
+        "results_one": "{{count}} result",
+        "results_other": "{{count}} results",
+        "facet": "Showing {{results}} in {{facet}}",
+        "applySort": "Apply sort",
+        "unlocated_one": "{{count}} stay without a map location",
+        "unlocated_other": "{{count}} stays without a map location",
+        "viewList": "View in list",
+        "allAccommodations": "See all stays",
+        "noAccommodationQuery": "We couldn’t find any stays for “{{query}}”.",
+        "nearbyAccommodations": "See nearby stays",
+        "allEvents": "See all events",
+        "allVenues": "See all venues",
+        "experienceGroups": {
+            "tours": "Guided tours",
+            "adventure": "Adventure",
+            "rentals": "Rentals"
+        },
         "resultsFound_one": "{{count}} result found",
         "resultsFound_other": "{{count}} results found"
     },

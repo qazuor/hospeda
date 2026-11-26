@@ -23,11 +23,6 @@ import Pagination from '@/components/shared/feedback/Pagination.astro';
 import { FilterSidebar } from '@/components/shared/filters/FilterSidebar.client';
 import FilterChips from '@/components/shared/ui/FilterChips.astro';
 import {
-    buildVenueListingSummary,
-    DEFAULT_VENUE_TYPES,
-    DEFAULT_PRICE_RANGES
-} from '@/lib/listing-summary';
-import {
     venueApi,
     destinationsApi,
     amenitiesApi,
@@ -43,6 +38,7 @@ import { buildPaginationLinks, isPageOutOfRange } from '@/lib/listing/listing-pa
 import {
     buildVenueFilterGroups,
     buildVenueTypeChips,
+    loadVenueTypeCounts,
     narrowVenueFilterCatalog
 } from '@/lib/venue/venue-listing-filters';
 
@@ -271,28 +267,6 @@ initialParams.sortBy = sortKey;
  * `listing-summary` module. The builder ships es/en/pt
  * phrase dictionaries, so the page locale is passed through unchanged.
  */
-const destinationCatalog = destinations.map((d) => ({
-    key: d.id,
-    label: { es: d.name, en: d.name, pt: d.name } as const
-}));
-const filterSummary = buildVenueListingSummary({
-    locale,
-    filters: {
-        text: q,
-        type,
-        destinationId,
-        priceRange,
-        isFeatured,
-        minRating
-    },
-    counts: { shown: cards.length, total },
-    sort: { sortKey },
-    catalogs: {
-        destinations: destinationCatalog,
-        types: DEFAULT_VENUE_TYPES,
-        priceRanges: DEFAULT_PRICE_RANGES
-    }
-});
 
 const baseUrl = buildUrl({ locale, path: 'comer-y-salir' });
 const { canonicalPath, prevPath, nextPath } = buildPaginationLinks({
@@ -313,7 +287,8 @@ const typeChips = buildVenueTypeChips({
     types: narrowedCatalog.types,
     baseUrl,
     searchParams: url.searchParams,
-    activeType: type
+    activeType: type,
+    counts: await loadVenueTypeCounts({ types: narrowedCatalog.types })
 });
 
 const itemListEntries = cards.map((card) => ({
@@ -337,7 +312,8 @@ const itemListEntries = cards.map((card) => ({
     filterPosition="left"
     ogTagline={t('venue.listing.subtitle', 'Descubrí los mejores sabores')}
     totalCount={total}
-    filterSummary={filterSummary}
+    resultKind="venues"
+    sortOptions={sortOptions}
 >
     <ItemListJsonLd
         slot="head-extra"
@@ -365,7 +341,6 @@ const itemListEntries = cards.map((card) => ({
         client:load
         locale={locale}
         filters={filterGroups}
-        sortOptions={sortOptions}
         initialParams={initialParams}
     />
 

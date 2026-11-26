@@ -61,6 +61,13 @@ describe('destinos/index.astro — attraction quick-filter chip', () => {
             );
         });
 
+        it('lets the overflow count inherit the solid toggle ink (HOS-2650 dark-mode contrast)', () => {
+            const rule =
+                src.match(/\n\s*\.dest-attractions-filter__more-count\s*\{([^}]*)\}/)?.[1] ?? '';
+            expect(rule).toContain('color: inherit');
+            expect(rule).toContain('background-color: transparent');
+        });
+
         it('keeps the optional leading icon slot (destinos is the one surface that keeps its icon)', () => {
             expect(src).toContain('dest-attractions-filter__badge-icon');
             expect(src).toContain('getAttractionIcon');
