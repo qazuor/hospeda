@@ -2,7 +2,7 @@
  * @file destination-report-link.test.ts
  * @description Source-reading tests for the destination-detail report link
  * (SPEC-191 FR-7, BETA-69) — both placements:
- *   1. A third row in DestinationSidebarCtas.astro (icon+label+hint+arrow)
+ *   1. A dedicated row in DestinationSidebarCtas.astro (icon+label+hint+arrow)
  *   2. An inline text link after the description section on the detail page
  * Both must deep-link to /colaborar/reportar with ?destino=<slug>.
  */
@@ -28,12 +28,17 @@ describe('DestinationSidebarCtas.astro — report row (FR-7)', () => {
     });
 
     it('renders the report row with the established icon+label+hint+arrow pattern', () => {
-        expect(sidebarSrc).toContain('AlertTriangleIcon');
-        expect(sidebarSrc).toMatch(/t\(\s*'contributions\.reportLink\.label'/);
-        expect(sidebarSrc).toMatch(/t\(\s*'contributions\.reportLink\.hint'/);
-        // Three CTA rows now: accommodations, events, report.
-        const rowCount = (sidebarSrc.match(/dest-cta-card__row"/g) ?? []).length;
-        expect(rowCount).toBe(3);
+        // Province pages can add a cities row and omit empty listing rows.
+        const reportRow = sidebarSrc.match(
+            /<a href=\{reportHref\} class="dest-cta-card__row">([\s\S]*?)<\/a>/
+        )?.[1];
+
+        expect(reportRow).toContain('<AlertTriangleIcon');
+        expect(reportRow).toMatch(/t\(\s*'contributions\.reportLink\.label'/);
+        expect(reportRow).toMatch(/t\(\s*'contributions\.reportLink\.hint'/);
+        expect(reportRow).toMatch(
+            /<span class="dest-cta-card__arrow" aria-hidden="true">→<\/span>/
+        );
     });
 });
 

@@ -21,10 +21,12 @@
 
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { trans } from '@repo/i18n';
 import { describe, expect, it } from 'vitest';
 import {
     CLIENT_I18N_KEY_PREFIXES,
-    EXTERNAL_I18N_KEY_PREFIXES
+    EXTERNAL_I18N_KEY_PREFIXES,
+    pickClientNamespaces
 } from '../../src/lib/i18n-client-namespaces';
 import {
     ALL_NAMESPACES,
@@ -63,6 +65,13 @@ describe('HOS-369 W3-2 — client i18n key prefixes', () => {
                 `CLIENT_I18N_KEY_PREFIXES, so their keys would render as raw key ` +
                 `text in production:\n${missing.join('\n')}`
         ).toEqual([]);
+    });
+
+    it.each(['es', 'en', 'pt'] as const)('ships localized user menu actions in %s', (locale) => {
+        const client = pickClientNamespaces(trans[locale]);
+
+        expect(client['nav.userMenu.preferences']).toEqual(expect.stringMatching(/\S/));
+        expect(client['nav.userMenu.signOut']).toEqual(expect.stringMatching(/\S/));
     });
 
     it('ships no prefix the browser cannot reach', () => {
