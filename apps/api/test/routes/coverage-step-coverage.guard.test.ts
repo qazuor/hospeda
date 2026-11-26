@@ -83,9 +83,7 @@ const EXPECTED: Readonly<Record<string, { operation: string } | { exempt: string
     'accommodation/reviews/admin/update.ts': {
         exempt: 'Reseña del turista: WRITE_ABOUT_LISTING, el paso 4 ya lo resuelve el servicio (V5.2, AC:V5:25); su gate de plan (write_reviews) es AC:V5:28 (V5.13). No es escritura del dueño sobre su ficha.'
     },
-    'accommodation/reviews/protected/reply.ts': {
-        exempt: 'Respuesta del anfitrión a una reseña (HOS-2199): READ_OWN_COMMERCIAL (OPERATION_PASSES_STEP5 = false) con respond_reviews en el paso 6; sin cobertura, igual que los PDF y certificados de la ficha. Borrar usa READ_OWN, sin clave.'
-    },
+    'accommodation/reviews/protected/reply.ts': { operation: 'EDIT' },
     'accommodation/reviews/protected/create.ts': {
         exempt: 'Reseña del turista: WRITE_ABOUT_LISTING, el paso 4 ya lo resuelve el servicio (V5.2, AC:V5:25); su gate de plan (write_reviews) es AC:V5:28 (V5.13). No es escritura del dueño sobre su ficha.'
     },

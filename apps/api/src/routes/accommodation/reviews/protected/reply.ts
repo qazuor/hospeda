@@ -5,8 +5,9 @@
  * PATCH  /api/v1/protected/accommodations/:accommodationId/reviews/:reviewId/reply
  * DELETE /api/v1/protected/accommodations/:accommodationId/reviews/:reviewId/reply
  *
- * Authorization runs through `resolveListingAccess` (`READ_OWN_COMMERCIAL` with the
- * `respond_reviews` entitlement at step 6). The service then re-derives ownership
+ * Authorization runs through `resolveListingAccess` with `EDIT` (so a lapsed
+ * coverage stops it at step 5) plus the `respond_reviews` capability at step 6.
+ * Deleting needs no plan (`READ_OWN`). The service then re-derives ownership
  * of the review's accommodation and answers 404 for anything that is not the
  * caller's, and for a review that does not belong to the accommodation in the URL.
  */
@@ -44,13 +45,6 @@ const requestParams = {
     reviewId: AccommodationReviewIdSchema
 };
 
-const listingAccess = {
-    vertical: VerticalEnum.ACCOMMODATION,
-    operation: 'READ_OWN_COMMERCIAL',
-    idParam: 'accommodationId',
-    step6Key: RESPOND_REVIEWS_KEY
-} as const;
-
 /** POST: write the reply. */
 export const protectedCreateReviewReplyRoute = createProtectedRoute({
     method: 'post',
@@ -60,7 +54,12 @@ export const protectedCreateReviewReplyRoute = createProtectedRoute({
         'Publishes the host reply at once; the automatic content filter may hold it as PENDING. One live reply per review. Requires the respond_reviews entitlement.',
     tags: ['Accommodation Reviews'],
     protectedTag: false,
-    listingAccess,
+    listingAccess: {
+        vertical: VerticalEnum.ACCOMMODATION,
+        operation: 'EDIT',
+        idParam: 'accommodationId',
+        capabilities: [RESPOND_REVIEWS_KEY]
+    },
     requestParams,
     requestBody: AccommodationReviewReplyBodySchema,
     responseSchema: AccommodationReviewReplyOwnerSchema,
@@ -85,7 +84,12 @@ export const protectedEditReviewReplyRoute = createProtectedRoute({
         'Rewrites the live reply, marks it as edited and passes it through the content filter again. Requires the respond_reviews entitlement.',
     tags: ['Accommodation Reviews'],
     protectedTag: false,
-    listingAccess,
+    listingAccess: {
+        vertical: VerticalEnum.ACCOMMODATION,
+        operation: 'EDIT',
+        idParam: 'accommodationId',
+        capabilities: [RESPOND_REVIEWS_KEY]
+    },
     requestParams,
     requestBody: AccommodationReviewReplyBodySchema,
     responseSchema: AccommodationReviewReplyOwnerSchema,

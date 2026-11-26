@@ -19,20 +19,21 @@ const replySource = readFileSync(
 );
 
 describe('reply routes: authorization declaration', () => {
-    it('declares the respond_reviews entitlement at step 6 through a single shared listingAccess', () => {
+    it('declares EDIT (which passes coverage step 5) plus the respond_reviews capability at step 6', () => {
         expect(replySource).toContain("const RESPOND_REVIEWS_KEY = 'respond_reviews'");
-        expect(replySource).toContain('step6Key: RESPOND_REVIEWS_KEY');
-        expect(replySource).toContain("operation: 'READ_OWN_COMMERCIAL'");
-        expect(replySource).toContain("idParam: 'accommodationId'");
+        const writes = replySource.split('createProtectedRoute(').slice(1, 3);
+        for (const block of writes) {
+            expect(block).toContain("operation: 'EDIT'");
+            expect(block).toContain('capabilities: [RESPOND_REVIEWS_KEY]');
+            expect(block).not.toContain('READ_OWN_COMMERCIAL');
+        }
     });
 
-    it('wires listingAccess on all three write routes; only delete skips the entitlement', () => {
+    it('delete is the only route without a plan: READ_OWN, no capability', () => {
         const routes = replySource.split('createProtectedRoute(').slice(1);
         expect(routes).toHaveLength(3);
-        expect(routes[0]).toContain('listingAccess,');
-        expect(routes[1]).toContain('listingAccess,');
         expect(routes[2]).toContain("operation: 'READ_OWN',");
-        expect(routes[2]).not.toContain('step6Key');
+        expect(routes[2]).not.toContain('capabilities');
         expect(routes[2]).not.toContain('respond_reviews');
     });
 
