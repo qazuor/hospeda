@@ -44,6 +44,11 @@ export interface ListingHookState extends Record<string, unknown> {
      */
     deletedEntity?: { ownerId?: string; slug?: string };
     /**
+     * Spanish translation sources before the update (HOS-2658). Set by
+     * `_beforeUpdate`; `_afterUpdate` translates only the fields that changed.
+     */
+    previousTranslatableFields?: Readonly<Record<string, string | undefined>>;
+    /**
      * Entity data captured before restore for post-restore side effects.
      */
     restoredEntity?: { ownerId?: string; slug?: string };
