@@ -152,6 +152,76 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4799
+    {
+        id: '2026-11-26-venue-experience-minimal-create-step',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['VENUE_OWNER', 'EXPERIENCE_OWNER'],
+        title: {
+            es: 'Creá tu comercio o experiencia con solo cuatro datos',
+            en: 'Create your venue or experience with just four details',
+            pt: 'Crie seu comércio ou experiência com apenas quatro dados'
+        },
+        body: {
+            es: 'El alta de un comercio o una experiencia ahora pide solo nombre, categoría, resumen y destino. Se crea un borrador y se abre el editor, que te avisa qué falta para publicar, por ejemplo la descripción.',
+            en: 'Creating a venue or an experience now asks only for a name, category, summary and destination. A draft is created and the editor opens, telling you what is still missing to publish, such as the description.',
+            pt: 'O cadastro de um comércio ou de uma experiência agora pede apenas nome, categoria, resumo e destino. Um rascunho é criado e o editor abre, avisando o que falta para publicar, como a descrição.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4789
+    {
+        id: '2026-11-25-breadcrumb-navigation',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'Ahora ves en qué parte del sitio estás, con un camino para volver',
+            en: 'You now see where you are on the site, with a path back',
+            pt: 'Agora você vê em que parte do site está, com um caminho para voltar'
+        },
+        body: {
+            es: 'Las fichas, los destinos, Mi cuenta, los planes y los formularios de Sumate muestran un camino corto como «Mi cuenta › Mis consultas». En el celular queda un único link para volver al nivel anterior.',
+            en: 'Listings, destinations, My account, plans and the Join forms show a short trail such as "My account › My inquiries". On mobile there is a single link back to the previous level.',
+            pt: 'As fichas, os destinos, Minha conta, os planos e os formulários de Participe mostram um caminho curto como «Minha conta › Minhas consultas». No celular há um único link para voltar ao nível anterior.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4791
+    {
+        id: '2026-11-25-mi-cuenta-phone-field-vip-lock',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['USER'],
+        title: {
+            es: 'Teléfono más claro al editar tu perfil y un aviso VIP más ordenado',
+            en: 'Clearer phone field when editing your profile and a tidier VIP notice',
+            pt: 'Telefone mais claro ao editar seu perfil e um aviso VIP mais organizado'
+        },
+        body: {
+            es: 'Al editar tu perfil, el teléfono es un solo campo con el país y el número juntos, y el «🇦🇷 +54» se ve entero. En Historial y Alertas, lo exclusivo para VIP muestra un único candado con el aviso de Turista VIP.',
+            en: 'When editing your profile, the phone is a single field with the country and number together, and "🇦🇷 +54" shows in full. In History and Alerts, VIP-only content shows a single lock with the Tourist VIP notice.',
+            pt: 'Ao editar seu perfil, o telefone é um único campo com o país e o número juntos, e o «🇦🇷 +54» aparece inteiro. Em Histórico e Alertas, o que é exclusivo para VIP mostra um único cadeado com o aviso de Turista VIP.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4782, #4791
+    {
+        id: '2026-11-25-public-buttons-vip-price-alert',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'Botones más simples y una alerta de precio que explica el plan VIP',
+            en: 'Simpler buttons and a price alert that explains the VIP plan',
+            pt: 'Botões mais simples e um alerta de preço que explica o plano VIP'
+        },
+        body: {
+            es: 'Los botones de ingreso, registro, «Consultar» y Sumate ahora son de un solo color naranja. «Avisame si baja el precio» abre una ventana que explica Hospeda VIP, y en la ficha el botón dice «Ver conversación» si ya consultaste.',
+            en: 'The login, sign-up, "Inquire" and Join buttons are now a single flat orange. "Notify me if the price drops" opens a window explaining Hospeda VIP, and on a listing the button reads "View conversation" if you already inquired.',
+            pt: 'Os botões de entrar, cadastro, «Consultar» e Participe agora são de um único laranja. «Avise-me se o preço baixar» abre uma janela que explica o Hospeda VIP, e na ficha o botão diz «Ver conversa» se você já consultou.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4792
     {
         id: '2026-11-25-listing-whatsapp-official-logo',
