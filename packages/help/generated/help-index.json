@@ -1,5 +1,5 @@
 {
-  "contentHash": "47a54778ba9baf53bfc298a4a7a3dd08da41365a0f2a26aa4f7e1dd78f06a1e5",
+  "contentHash": "de7d000f0f7d8bb2ab5a5b6e9e581b6471fb665005c624bfb724d6113074104a",
   "locales": {
     "es": [
       {
@@ -79,6 +79,7 @@
           "venue"
         ],
         "covers": [
+          "entitlement:ai_assistant_access",
           "file:apps/web/src/components/account/AiAssistantsPanel.client.tsx"
         ],
         "destinations": [
@@ -113,10 +114,10 @@
           "amenities",
           "help-center"
         ],
-        "reviewedAt": "2026-11-23",
+        "reviewedAt": "2026-11-26",
         "sections": {
           "canDo": "Conectar un asistente de IA a tu cuenta y desconectarlo cuando quieras, desde {{link:aiAssistants|Asistentes de IA}}.\n\nCon un asistente conectado podés, por ejemplo, {{article:reviews|leer tus reseñas}} o {{article:inquiries|responder consultas}}.",
-          "expect": "- Antes de aprobar el acceso, la pantalla te muestra qué puede hacer el asistente.\n- Al desconectarlo pierde el acceso de inmediato, y podés volver a conectarlo.",
+          "expect": "- Antes de aprobar el acceso, la pantalla te muestra qué puede hacer el asistente.\n- Al desconectarlo pierde el acceso de inmediato, y podés volver a conectarlo.\n- El asistente viene incluido en tu plan, sin costo extra y sin límite de uso. Si ya no tenés un plan activo, el asistente te avisa y te muestra los planes.",
           "howTo": {
             "after": "",
             "steps": [
