@@ -5,13 +5,11 @@
  *
  * Layout: event photo on the left, a category-colored date block overlapping
  * the image edge showing month abbreviation + date range + time, content area
- * with category badge/title/description/location in the center, and a circular
- * arrow CTA on the far right. Matches the Figma homepage design.
+ * with category badge, title, description, and location in a single card link.
  */
 
 import {
     LocationIcon,
-    ArrowRightIcon,
     StarIcon,
     BuildingIcon,
     BallroomIcon,
@@ -29,6 +27,7 @@ import {
     EventIcon,
 } from "@repo/icons";
 import { Image } from 'astro:assets';
+import { formatEventLocation } from './utils/formatEventLocation';
 import { FavoriteButton } from "@/components/shared/favorite/FavoriteButton.client";
 import { isCloudinaryDeliveryUrl } from '@/lib/media';
 import { buildUrl } from "@/lib/urls";
@@ -71,6 +70,7 @@ const dateResult = formatEventDate({
     locale,
     mode: "rangeWithTime",
     precision: data.date.precision,
+    isAllDay: data.date.isAllDay,
 });
 const dateLabel = dateResult.mode !== "short" ? dateResult.dateLine : "";
 const timeLabel = dateResult.mode !== "short" ? dateResult.timeLine : null;
@@ -83,12 +83,10 @@ const showImage = Boolean(data.featuredImage.url) && !data.featuredImage.url.inc
 const shouldProxyFeaturedImage = isCloudinaryDeliveryUrl(data.featuredImage.url);
 
 /** Location label: "Venue Name, City" or just "City" (SPEC-095: prefer flat cityName). */
-const cityLabel = data.cityName ?? data.location?.city ?? '';
-const locationLabel = data.location
-    ? data.location.name
-        ? `${data.location.name}, ${cityLabel}`
-        : cityLabel
-    : cityLabel || null;
+const locationLabel = formatEventLocation({
+    name: data.location?.name,
+    city: data.cityName?.trim() || data.location?.city
+});
 
 /** Inline style for the date block background (category color as solid fill).
  *  SPEC-308: use the saturated `fill` as bg and the contrast-safe `onFill` as
@@ -96,8 +94,6 @@ const locationLabel = data.location
  *  ones get black — AA in both themes. */
 const dateBlockStyle = `background-color: ${categoryColors.fill}; color: ${categoryColors.onFill};`;
 
-/** Inline style for the image placeholder gradient. */
-const placeholderStyle = `background: linear-gradient(135deg, ${categoryColors.bg} 0%, var(--core-card-lm03) 100%);`;
 ---
 
 <article class="event-card-h">
@@ -123,9 +119,9 @@ const placeholderStyle = `background: linear-gradient(135deg, ${categoryColors.b
     </div>
     <a href={detailUrl} class="event-card-h__link">
         <!-- Left: event photo layered over placeholder -->
-        <div class="event-card-h__photo-wrap" aria-hidden="true">
+        <div class:list={['event-card-h__photo-wrap', { 'event-card-h__photo-wrap--fallback': !showImage }]} aria-hidden="true">
             <!-- Placeholder always renders as a background layer -->
-            <div class="event-card-h__photo-placeholder" style={`${placeholderStyle} color: ${categoryColors.text};`}>
+            <div class="event-card-h__photo-placeholder" style={dateBlockStyle}>
                 {categoryIconName === "BallroomIcon" && <BallroomIcon size={64} weight="duotone" aria-hidden="true" />}
                 {categoryIconName === "SportsCenterIcon" && <SportsCenterIcon size={64} weight="duotone" aria-hidden="true" />}
                 {categoryIconName === "CulturalCenterIcon" && <CulturalCenterIcon size={64} weight="duotone" aria-hidden="true" />}
@@ -211,7 +207,7 @@ const placeholderStyle = `background: linear-gradient(135deg, ${categoryColors.b
                     {locationLabel && (
                         <span class="event-card-h__location">
                             <LocationIcon size={13} weight="fill" aria-hidden="true" />
-                            {locationLabel}
+                            <span class="event-card-h__location-label">{locationLabel}</span>
                         </span>
                     )}
                     {data.organizer?.name && (
@@ -224,385 +220,9 @@ const placeholderStyle = `background: linear-gradient(135deg, ${categoryColors.b
             )}
         </div>
 
-        <!-- Right: circular arrow CTA -->
-        <div class="event-card-h__cta" aria-hidden="true">
-            <ArrowRightIcon size={20} weight="bold" />
-        </div>
     </a>
 </article>
 
 <style>
-    .event-card-h {
-        position: relative;
-        background-color: var(--core-card);
-        border-radius: var(--radius-card);
-        border: 1px solid var(--brand-primary-a15);
-        box-shadow: var(--shadow-card);
-        overflow: hidden;
-        transition:
-            box-shadow var(--duration-normal) ease,
-            transform var(--duration-normal) ease;
-        height: 100%;
-        /* Container query context: lets the card pick its own layout
-           based on the width allotted by its grid cell, independent of
-           the viewport. The horizontal layout assumes >=500px of width
-           (photo 150 + date 120 leaves only ~150 for text below that). */
-        container-type: inline-size;
-        container-name: event-card-h;
-    }
-
-    /* FavoriteButton: top-right over the photo area, outside <a> link */
-    .event-card-h__fav-wrapper {
-        position: absolute;
-        top: 8px;
-        right: 8px;
-        z-index: 2;
-    }
-
-    /* Featured badge: top-left overlay, only rendered when isFeatured=true.
-       Sits above the photo + date-block. In vertical mode (container query)
-       the date-block becomes a pill at top-left of the photo — see the
-       container query rule below for the conflict-avoidance offset. Look
-       (color/font/padding/icon gap) comes from the shared `.featured-badge`
-       rule in components.css; this block only owns position + elevation. */
-    .event-card-h__featured {
-        position: absolute;
-        top: 8px;
-        left: 8px;
-        box-shadow: 0 2px 6px oklch(0 0 0 / 0.18);
-        z-index: 3;
-    }
-
-    .event-card-h:hover {
-        box-shadow: var(--shadow-card-hover);
-        transform: translateY(-2px);
-    }
-
-    .event-card-h__link {
-        display: flex;
-        align-items: stretch;
-        text-decoration: none;
-        color: inherit;
-        min-height: 160px;
-        height: 100%;
-    }
-
-    /* Photo */
-    .event-card-h__photo-wrap {
-        position: relative;
-        flex-shrink: 0;
-        width: 150px;
-        overflow: hidden;
-    }
-
-    /* Placeholder always fills the wrap as a background layer */
-    .event-card-h__photo-placeholder {
-        position: absolute;
-        inset: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 0;
-    }
-
-    .event-card-h__photo-placeholder > :global(svg) {
-        opacity: 0.15;
-        transform: rotate(-12deg) scale(1.6);
-    }
-
-    /* Real image sits on top; when it fails to load (or is missing) the
-       category-aware placeholder layer underneath shows through. */
-    .event-card-h__photo {
-        position: relative;
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        display: block;
-        z-index: 1;
-        transition: transform var(--duration-normal) ease;
-        border: none;
-        background-color: transparent;
-    }
-
-    .event-card-h:hover .event-card-h__photo {
-        transform: scale(1.05);
-    }
-
-    /* Date block — overlaps the photo on its right edge.
-     background-color is set via inline style (category color). */
-    .event-card-h__date-block {
-        position: relative;
-        flex-shrink: 0;
-        display: flex;
-        align-items: center;
-        border-radius: 0 12px 12px 0;
-        padding: 0.75rem 1rem 0.75rem 0;
-        min-width: 120px;
-        overflow: hidden;
-        gap: 0.375rem;
-    }
-
-    /* Large rotated month abbreviation flush to the left edge of the date block */
-    .event-card-h__month-rotated {
-        writing-mode: vertical-rl;
-        text-orientation: mixed;
-        transform: rotate(180deg);
-        font-family: var(--font-heading);
-        font-weight: 800;
-        font-size: 1.875rem;
-        line-height: 1;
-        letter-spacing: 0.05em;
-        /* Inherit the date-block's onFill ink at reduced strength via opacity
-           (no relative-color math — SPEC-176 old-browser support). */
-        color: inherit;
-        opacity: 0.3;
-        user-select: none;
-        flex-shrink: 0;
-        margin-left: -0.125rem;
-    }
-
-    .event-card-h__date-inner {
-        display: flex;
-        flex-direction: column;
-        gap: 0.25rem;
-    }
-
-    .event-card-h__date-range {
-        font-family: var(--font-heading);
-        font-size: var(--text-body-sm);
-        font-weight: 600;
-        /* Inherit the date-block's contrast-safe onFill (white on dark fills,
-           black on light) instead of hardcoding dark ink — SPEC-308. */
-        color: inherit;
-        line-height: 1.25;
-        white-space: pre-line;
-    }
-
-    .event-card-h__time {
-        font-family: var(--font-sans);
-        font-size: var(--text-caption);
-        color: inherit;
-        /* Slightly dimmed for hierarchy but kept ≥0.95 so it still clears AA
-           against the green date-block fill (SPEC-308). */
-        opacity: 0.95;
-        line-height: 1;
-    }
-
-    /* Content area */
-    .event-card-h__content {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        /* Right padding leaves clearance for the absolute-positioned CTA
-           that sits bottom-right of the card. */
-        padding: 1rem 3rem 1rem 1.25rem;
-        gap: 0.375rem;
-        min-width: 0;
-    }
-
-    /* Category badge — pill shaped, colors from inline style */
-    .event-card-h__category {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.25rem;
-        font-family: var(--font-sans);
-        font-size: var(--text-caption);
-        font-weight: 600;
-        border-radius: var(--radius-pill);
-        padding: 0.15rem 0.55rem;
-        width: fit-content;
-        line-height: 1.4;
-        letter-spacing: 0.01em;
-        text-transform: none;
-    }
-
-    .event-card-h__title {
-        font-family: var(--font-heading);
-        font-weight: 700;
-        font-size: var(--text-h4);
-        color: var(--core-foreground);
-        line-height: 1.2;
-        margin: 0;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-    }
-
-    .event-card-h__summary {
-        font-family: var(--font-sans);
-        font-size: var(--text-body-sm);
-        color: var(--core-muted-foreground);
-        line-height: 1.4;
-        margin: 0;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-    }
-
-    /* Meta row: wraps location + organizer pills, allows them to wrap
-       to the next line on narrow widths instead of overflowing. */
-    .event-card-h__meta {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 0.375rem;
-    }
-
-    .event-card-h__location {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.25rem;
-        font-family: var(--font-sans);
-        font-size: var(--text-caption);
-        color: var(--brand-primary-link);
-        background-color: var(--brand-primary-a10);
-        border-radius: var(--radius-pill);
-        padding: 0.2rem 0.6rem;
-        width: fit-content;
-        font-weight: 500;
-    }
-
-    /* Organizer pill: same shape as location but neutral colors so the
-       two pills read as parallel meta information. */
-    .event-card-h__organizer {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.25rem;
-        font-family: var(--font-sans);
-        font-size: var(--text-caption);
-        color: var(--core-muted-foreground);
-        background-color: var(--core-foreground-a05);
-        border-radius: var(--radius-pill);
-        padding: 0.2rem 0.6rem;
-        width: fit-content;
-        font-weight: 500;
-        max-width: 100%;
-        min-width: 0;
-    }
-
-    .event-card-h__organizer > span {
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-
-    /* Circular arrow CTA — absolute bottom-right, aligned with FavoriteButton
-       at top-right (both at right: 8px). */
-    .event-card-h__cta {
-        position: absolute;
-        bottom: 8px;
-        right: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 38px;
-        height: 38px;
-        border-radius: 50%;
-        background-color: var(--brand-primary);
-        color: var(--primary-foreground);
-        z-index: 1;
-        transition:
-            background-color var(--duration-fast) ease,
-            transform var(--duration-fast) ease;
-    }
-
-    .event-card-h:hover .event-card-h__cta {
-        background-color: var(--brand-primary-lm05);
-        transform: rotate(-45deg);
-    }
-
-    /* Responsive: stack vertically on very small screens */
-    @media (max-width: 480px) {
-        .event-card-h__photo-wrap {
-            width: 100px;
-        }
-
-        .event-card-h__date-block {
-            min-width: 95px;
-            padding: 0.5rem 0.75rem 0.5rem 0.375rem;
-        }
-
-        .event-card-h__month-rotated {
-            font-size: 1.375rem;
-        }
-
-        .event-card-h__content {
-            padding: 0.75rem 2.75rem 0.75rem 0.875rem;
-        }
-    }
-
-    /* ----------------------------------------------------------------
-       Container query: when the card itself is rendered narrower than
-       500px (e.g. the 3-up row at the bottom of NextEventsSection on
-       desktop where each cell is ~414px), the horizontal photo+date+
-       content split leaves the text column too thin (titles cropped to
-       3 letters). Switch to a vertical layout: photo on top with the
-       date as a pill overlay, content full-width below.
-       ---------------------------------------------------------------- */
-    @container event-card-h (max-width: 500px) {
-        .event-card-h__link {
-            flex-direction: column;
-            align-items: stretch;
-            min-height: 0;
-        }
-
-        .event-card-h__photo-wrap {
-            width: 100%;
-            aspect-ratio: 16 / 9;
-            flex-shrink: 0;
-        }
-
-        .event-card-h__date-block {
-            position: absolute;
-            top: 0.625rem;
-            left: 0.625rem;
-            min-width: 0;
-            padding: 0.375rem 0.625rem;
-            border-radius: var(--radius-pill, 9999px);
-            gap: 0.5rem;
-            box-shadow: 0 2px 8px oklch(0 0 0 / 0.25);
-            backdrop-filter: blur(4px);
-            -webkit-backdrop-filter: blur(4px);
-            z-index: 2;
-        }
-
-        /* In vertical mode the date-block sits at top-left of the photo.
-           Stack the featured badge just below it (still inside the photo
-           area). Using `bottom` here would anchor to the card, not the
-           photo, and collide with the location pill in the content area. */
-        .event-card-h__featured {
-            top: 3rem;
-            bottom: auto;
-            left: 0.625rem;
-        }
-
-        .event-card-h__month-rotated {
-            /* Vertical month tag does not fit the pill format; show the
-               same info inline as part of the date range below. */
-            display: none;
-        }
-
-        .event-card-h__date-inner {
-            flex-direction: row;
-            align-items: center;
-            gap: 0.375rem;
-        }
-
-        .event-card-h__date-range {
-            font-size: var(--text-caption);
-            white-space: nowrap;
-        }
-
-        .event-card-h__time {
-            font-size: var(--text-caption);
-        }
-
-        .event-card-h__content {
-            padding: 0.875rem 1rem 1rem;
-            gap: 0.4rem;
-        }
-    }
+    @import "./EventCardHorizontal.css";
 </style>

@@ -358,6 +358,8 @@ export type EventDatePrecision = 'EXACT' | 'MONTH';
  * Event date range nested inside {@link EventCardData}.
  */
 export interface EventDateRange {
+    /** Whether the source specifies a date without a start time. */
+    readonly isAllDay?: boolean;
     /** ISO 8601 start date-time string. */
     readonly start: string;
     /** Optional ISO 8601 end date-time string. */

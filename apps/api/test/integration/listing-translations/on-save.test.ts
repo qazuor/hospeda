@@ -18,7 +18,7 @@ import {
 } from '@repo/service-core';
 import { rehydrateEffectiveSet } from '@repo/verticals';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import * as backfill from '../../../../../packages/seed/src/data-migrations/0194-hos-2658-venue-experience-translation-meta';
+import * as backfill from '../../../../../packages/seed/src/data-migrations/0197-hos-2658-venue-experience-translation-meta';
 import type { SeedMigrationCtx } from '../../../../../packages/seed/src/data-migrations/types';
 import { initApp } from '../../../src/app';
 import { createTranslationServiceAdapter } from '../../../src/services/translation-service.adapter';
@@ -551,8 +551,8 @@ describe('on-save translation (HOS-2658)', () => {
         expect(provider.calls.map((callArgs) => callArgs.locale)).toEqual(['pt']);
     });
 
-    it('a venue pair migrated by the real 0194 backfill is regenerated on the next changed save (AC-27)', async () => {
-        // Arrange: a pre-migration venue (translations, no meta) run through 0194 itself.
+    it('a venue pair migrated by the real 0197 backfill is regenerated on the next changed save (AC-27)', async () => {
+        // Arrange: a pre-migration venue (translations, no meta) run through 0197 itself.
         const { ownerId, id } = await seedListing('venue');
         await setColumns('venue', id, {
             name: 'Bar del Puerto',

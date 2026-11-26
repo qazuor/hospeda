@@ -22,7 +22,7 @@ import type { SeedMigrationCtx, SeedMigrationModule, SeedMigrationResult } from 
 
 /** Ledger identity of this migration; `contentOnly` so fresh databases run it for real. */
 export const meta = {
-    name: '0194-hos-2658-venue-experience-translation-meta',
+    name: '0197-hos-2658-venue-experience-translation-meta',
     group: 'required',
     destructive: false,
     contentOnly: true,

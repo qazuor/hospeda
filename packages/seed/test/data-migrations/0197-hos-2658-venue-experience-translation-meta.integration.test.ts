@@ -1,6 +1,6 @@
 /**
  * @fileoverview
- * Integration tests for `0194-hos-2658-venue-experience-translation-meta` (HOS-2658 AC-26).
+ * Integration tests for `0197-hos-2658-venue-experience-translation-meta` (HOS-2658 AC-26).
  *
  * Runs against the REAL integration database with the rollback-isolation idiom:
  * non-empty pairs over a non-empty Spanish become AUTOMATIC with the runtime hash,
@@ -34,7 +34,7 @@ import { computeTranslationSourceHash } from '@repo/service-core';
 import { config as loadEnv } from 'dotenv';
 import { Pool } from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import * as migration from '../../src/data-migrations/0194-hos-2658-venue-experience-translation-meta.js';
+import * as migration from '../../src/data-migrations/0197-hos-2658-venue-experience-translation-meta.js';
 import type { SeedMigrationCtx } from '../../src/data-migrations/types.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -180,7 +180,7 @@ async function accommodationFingerprint(tx: DrizzleClient): Promise<unknown> {
     return result.rows[0];
 }
 
-describe('HOS-2658: 0194-hos-2658-venue-experience-translation-meta (integration)', () => {
+describe('HOS-2658: 0197-hos-2658-venue-experience-translation-meta (integration)', () => {
     beforeAll(() => {
         if (!process.env.HOSPEDA_DATABASE_URL) {
             throw new Error('HOSPEDA_DATABASE_URL is not set in this worktree');
@@ -197,7 +197,7 @@ describe('HOS-2658: 0194-hos-2658-venue-experience-translation-meta (integration
 
     it('declares contentOnly and both requiresColumns', () => {
         expect(migration.meta).toEqual({
-            name: '0194-hos-2658-venue-experience-translation-meta',
+            name: '0197-hos-2658-venue-experience-translation-meta',
             group: 'required',
             destructive: false,
             contentOnly: true,

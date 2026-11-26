@@ -46,7 +46,12 @@ vi.mock('../../../src/lib/i18n', () => {
         );
     };
     const t = (key: string, fallback?: string, params?: Record<string, unknown>): string =>
-        interpolate(fallback ?? key, params);
+        interpolate(
+            key === 'common.card.compareUsage'
+                ? 'Comparás {{count}} de {{max}}'
+                : (fallback ?? key),
+            params
+        );
     const tPlural = (key: string, count: number, params?: Record<string, unknown>): string =>
         interpolate(key, { ...params, count });
     return {
@@ -155,6 +160,19 @@ beforeEach(() => {
 afterEach(() => {
     clearCompare();
     vi.restoreAllMocks();
+});
+
+it('shows the effective compare cap and updates visible usage after toggling', () => {
+    asPlan(8);
+    render(<DetailCompareButton {...buildProps()} />);
+    const button = screen.getByRole('button');
+    expect(button).toHaveAttribute('aria-description', 'Comparás 0 de 8');
+    expect(screen.getByText('0/8')).toBeVisible();
+
+    fireEvent.click(button);
+
+    expect(screen.getByText('1/8')).toBeVisible();
+    expect(button).toHaveAttribute('aria-description', 'Comparás 1 de 8');
 });
 
 // ---------------------------------------------------------------------------

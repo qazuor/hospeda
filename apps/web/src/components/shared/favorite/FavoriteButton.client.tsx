@@ -22,20 +22,20 @@ import { FavoriteIcon } from '@repo/icons';
 import { type FC, type MouseEvent, type RefObject, useId, useRef, useState } from 'react';
 import { AuthRequiredPopover } from '@/components/auth/AuthRequiredPopover.client';
 import { useAccountPermissions } from '@/hooks/use-account-permissions';
-import { WebEvents } from '@/lib/analytics/events';
-import { trackEvent } from '@/lib/analytics/umami-client';
 import type { BookmarkCollectionItem } from '@/lib/api/endpoints-protected';
 import { userBookmarksApi } from '@/lib/api/endpoints-protected';
-import { buildLimitReachedPayloadFromDetails } from '@/lib/billing-limit-error';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createT } from '@/lib/i18n';
 import type { ContactOrigin } from '@/lib/listing-contact/listing-contact-events';
 import { clearPendingAction, savePendingAction } from '@/lib/pending-action';
 import { setFavoriteStatus, useFavoriteStatus } from '@/store/favorites-store';
-import { addToast } from '@/store/toast-store';
+import { UsageCounter } from '../ui/UsageCounter';
+import usageStyles from '../ui/UsageCounter.module.css';
 import { CollectionPickerPopover } from './CollectionPickerPopover';
 import styles from './FavoriteButton.module.css';
+import { useFavoriteToggle } from './use-favorite-toggle';
+import { useFavoriteUsage } from './use-favorite-usage';
 import { usePendingFavorite } from './usePendingFavorite';
 import { getUserCollections } from './user-collections-cache';
 
@@ -112,6 +112,8 @@ export interface FavoriteButtonProps {
      * retain the pill behaviour without setting this prop.
      */
     readonly showCount?: boolean;
+    /** Display the signed-in viewer’s effective favorite quota, on detail pages. */
+    readonly showUsage?: boolean;
     /** Focus target when a responsive layout hides the guest prompt's trigger. */
     readonly guestPromptFallbackRef?: RefObject<HTMLElement | null>;
     /** Surface this heart lives on, forwarded as `origin` on the favorite events (HOS-2579). */
@@ -173,6 +175,7 @@ export const FavoriteButton: FC<FavoriteButtonProps> = ({
     onChange,
     count,
     showCount = false,
+    showUsage = false,
     guestPromptFallbackRef,
     origin,
     labels
@@ -192,10 +195,15 @@ export const FavoriteButton: FC<FavoriteButtonProps> = ({
      * the hook's "still resolving" signal; `user` is `null` for a guest.
      */
     const { user, permissions } = useAccountPermissions();
+    const {
+        label: usage,
+        counter,
+        refresh: refreshUsage
+    } = useFavoriteUsage({
+        account: showUsage ? user?.id : undefined,
+        t
+    });
     const isSessionResolved = permissions !== null;
-
-    /** Whether a toggle request is currently in-flight. */
-    const [isPending, setIsPending] = useState<boolean>(false);
 
     /** Whether the auth-required popover is currently visible. */
     const [isPopoverOpen, setIsPopoverOpen] = useState<boolean>(false);
@@ -218,13 +226,7 @@ export const FavoriteButton: FC<FavoriteButtonProps> = ({
      */
     const assignedCollectionRef = useRef<string | null>(null);
 
-    // SPEC-228 T-018: No visual spinner added while the state resolves.
-    // Reasoning: the delay is potentially perceptible (~50–300ms), but the button
-    // is already `disabled`, carries `aria-busy={true}`, and its `aria-label` reads
-    // "Verificando favorito…". Adding a Spinner would overlay the heart icon in a
-    // tiny (<22px) space, degrading the compact card UX. The existing disabled +
-    // aria-busy + aria-label contract satisfies WCAG AA (AT announces the busy
-    // state) without a visual disruption. Skipped.
+    // Keep the compact heart unobstructed while aria-busy and its label announce resolution.
 
     /**
      * Publish a state change to the shared store and notify the parent.
@@ -284,132 +286,6 @@ export const FavoriteButton: FC<FavoriteButtonProps> = ({
             : `${window.location.pathname}${window.location.search}${window.location.hash}`;
 
     /**
-     * Handle click for authenticated users.
-     * Applies optimistic update, calls the API, and rolls back on error.
-     */
-    const handleAuthenticatedClick = async (baseFavorited?: boolean): Promise<void> => {
-        // Guard against double-click while pending.
-        if (isPending) return;
-
-        // Capture current values for potential rollback.
-        const prevFavorited = baseFavorited ?? isFavorited;
-        const prevBookmarkId = baseFavorited === undefined ? bookmarkId : null;
-
-        // Optimistic update.
-        const nextFavorited = !prevFavorited;
-        // When toggling on, the bookmarkId will come from the API response.
-        // When toggling off, the bookmarkId becomes null.
-        const optimisticBookmarkId = nextFavorited ? prevBookmarkId : null;
-
-        setIsPending(true);
-        publish({ isFavorited: nextFavorited, bookmarkId: optimisticBookmarkId });
-
-        try {
-            const result = await userBookmarksApi.toggle({
-                entityId,
-                entityType
-            });
-
-            if (!result.ok) {
-                const status = result.error.status;
-                const errorCode = result.error.code;
-
-                if (status === 401) {
-                    // No session after all — either a guest whose click was
-                    // attempted before the session resolved, or a session that
-                    // expired after the page rendered. Rollback and prompt auth.
-                    publish({ isFavorited: prevFavorited, bookmarkId: prevBookmarkId });
-                    promptSignIn();
-                } else if (status === 403 && errorCode === 'LIMIT_REACHED') {
-                    // User hit their plan's limit — rollback and show localized toast with upgrade CTA.
-                    publish({ isFavorited: prevFavorited, bookmarkId: prevBookmarkId });
-                    const limitPayload = buildLimitReachedPayloadFromDetails({
-                        details: result.error.details,
-                        locale
-                    });
-                    addToast({
-                        type: 'error',
-                        message: limitPayload.message,
-                        action: limitPayload.action
-                    });
-                } else {
-                    // Any other API error — rollback and show generic toast.
-                    publish({ isFavorited: prevFavorited, bookmarkId: prevBookmarkId });
-                    addToast({
-                        type: 'error',
-                        message: t(
-                            'ui.favorite.error_generic',
-                            'No se pudo actualizar el favorito. Intentá de nuevo.'
-                        )
-                    });
-                }
-
-                return;
-            }
-
-            // Success: confirm the optimistic state and publish the server's bookmarkId.
-            const confirmedBookmarkId = result.data.bookmark?.id ?? null;
-            publish({ isFavorited: nextFavorited, bookmarkId: confirmedBookmarkId });
-
-            if (nextFavorited) {
-                // Add: surface a toast with a "Ver favoritos" link. Auto-routes
-                // to the collection detail page when the new bookmark landed in
-                // a specific collection (populated lazily by the picker
-                // pop-over below — see `assignedCollectionRef`).
-                const assignedCollectionId = assignedCollectionRef.current;
-                const favoritesHref = assignedCollectionId
-                    ? `/${locale}/mi-cuenta/favoritos/colecciones/${assignedCollectionId}/`
-                    : `/${locale}/mi-cuenta/favoritos/`;
-                addToast({
-                    type: 'success',
-                    message: t('account.favorites.toast.saved', 'Guardado en favoritos'),
-                    action: {
-                        label: t('account.favorites.toast.view'),
-                        href: favoritesHref
-                    }
-                });
-                trackEvent(WebEvents.FavoriteToggledAdd, {
-                    entity_type: entityType,
-                    entity_id: entityId,
-                    assigned_collection: Boolean(assignedCollectionId),
-                    ...(origin ? { origin } : {})
-                });
-
-                // Open the inline collection picker on the next render if the
-                // user has any collections AND the bookmark is not yet assigned.
-                if (!assignedCollectionId) {
-                    void maybeOpenCollectionPicker(confirmedBookmarkId);
-                }
-            } else {
-                addToast({
-                    type: 'success',
-                    message: t('account.favorites.toast.removed', 'Eliminado de favoritos')
-                });
-                trackEvent(WebEvents.FavoriteToggledRemove, {
-                    entity_type: entityType,
-                    entity_id: entityId,
-                    assigned_collection: false,
-                    ...(origin ? { origin } : {})
-                });
-            }
-            // Reset the per-click assignment ref so the next save starts fresh.
-            assignedCollectionRef.current = null;
-        } catch {
-            // Network failure or unexpected throw — rollback and show generic toast.
-            publish({ isFavorited: prevFavorited, bookmarkId: prevBookmarkId });
-            addToast({
-                type: 'error',
-                message: t(
-                    'ui.favorite.error_generic',
-                    'No se pudo actualizar el favorito. Intentá de nuevo.'
-                )
-            });
-        } finally {
-            setIsPending(false);
-        }
-    };
-
-    /**
      * Open the collection picker pop-over IF the user has any collections.
      * Called after a successful add; bails out silently if the user has no
      * collections to choose from (the toast is enough in that case).
@@ -436,6 +312,21 @@ export const FavoriteButton: FC<FavoriteButtonProps> = ({
         });
         setIsPopoverOpen(true);
     };
+
+    const { isPending, handleAuthenticatedClick } = useFavoriteToggle({
+        entityId,
+        entityType,
+        locale,
+        t,
+        origin,
+        isFavorited,
+        bookmarkId,
+        assignedCollectionRef,
+        publish,
+        refreshUsage,
+        maybeOpenCollectionPicker,
+        promptSignIn
+    });
 
     /**
      * Apply the favorite saved before sign-in. Idempotent: the account may
@@ -507,7 +398,7 @@ export const FavoriteButton: FC<FavoriteButtonProps> = ({
     const hasGuestPrompt = user === null || isPopoverOpen;
 
     return (
-        <div className={styles.wrapper}>
+        <div className={cn(styles.wrapper, counter && usageStyles.group)}>
             <button
                 ref={buttonRef}
                 type="button"
@@ -518,6 +409,8 @@ export const FavoriteButton: FC<FavoriteButtonProps> = ({
                 aria-expanded={hasGuestPrompt ? isPopoverOpen : undefined}
                 aria-controls={isPopoverOpen ? guestPromptId : undefined}
                 data-variant={variant}
+                title={usage}
+                aria-description={usage}
                 data-entity-type={entityType}
                 data-pending={isPending ? 'true' : undefined}
                 data-hydrating={isResolving ? 'true' : undefined}
@@ -554,6 +447,7 @@ export const FavoriteButton: FC<FavoriteButtonProps> = ({
                     </span>
                 )}
             </button>
+            {counter && <UsageCounter value={counter} />}
 
             {isPopoverOpen && (
                 <AuthRequiredPopover

@@ -1,5 +1,9 @@
 import type { TranslationKey } from '@repo/i18n';
-import type { PlanMigrationLaunchResponse, PlanMigrationPreview } from '@repo/schemas';
+import type {
+    PlanMigrationLaunchResponse,
+    PlanMigrationPreview,
+    PlanMigrationRejection
+} from '@repo/schemas';
 import { PlanMigrationPreviewRequestSchema } from '@repo/schemas';
 import { useForm } from '@tanstack/react-form';
 import { useState } from 'react';
@@ -18,20 +22,39 @@ import { PlanMigrationList } from './PlanMigrationList';
 import { PlanMigrationPreviewTable } from './PlanMigrationPreviewTable';
 import { RetiredPlanVersions } from './RetiredPlanVersions';
 
-const errorCodes = new Set([
-    'ADMINISTRATIVE_ACTION_FORBIDDEN',
-    'INVALID_PLAN_MIGRATION_INPUT',
-    'PLAN_VERSION_NOT_FOUND',
-    'PLAN_MIGRATION_SOURCE_NOT_RETIRED',
-    'PLAN_MIGRATION_TARGET_NOT_SELLABLE',
-    'PLAN_MIGRATION_VERTICAL_MISMATCH',
-    'PLAN_MIGRATION_SAME_VERSION',
-    'PLAN_MIGRATION_COHORT_CHANGED',
-    'PLAN_MIGRATION_EMPTY_COHORT',
-    'PLAN_MIGRATION_INCREASE_OTHER_PLAN',
-    'PLAN_MIGRATION_INCREASE_SOURCE_CURRENT',
-    'PLAN_MIGRATION_INCREASE_CYCLE_MISSING'
-]);
+/**
+ * Copy of every action 17 rejection. Exhaustive over the shared tuple, so a backend code added
+ * to `PLAN_MIGRATION_REJECTIONS` without its text breaks the typecheck.
+ */
+export const PLAN_MIGRATION_ERROR_KEYS: Readonly<Record<PlanMigrationRejection, TranslationKey>> = {
+    ADMINISTRATIVE_ACTION_FORBIDDEN:
+        'admin-pages.planMigration.errors.ADMINISTRATIVE_ACTION_FORBIDDEN',
+    INVALID_PLAN_MIGRATION_INPUT: 'admin-pages.planMigration.errors.INVALID_PLAN_MIGRATION_INPUT',
+    PLAN_VERSION_NOT_FOUND: 'admin-pages.planMigration.errors.PLAN_VERSION_NOT_FOUND',
+    PLAN_MIGRATION_SOURCE_NOT_RETIRED:
+        'admin-pages.planMigration.errors.PLAN_MIGRATION_SOURCE_NOT_RETIRED',
+    PLAN_MIGRATION_TARGET_NOT_SELLABLE:
+        'admin-pages.planMigration.errors.PLAN_MIGRATION_TARGET_NOT_SELLABLE',
+    PLAN_MIGRATION_VERTICAL_MISMATCH:
+        'admin-pages.planMigration.errors.PLAN_MIGRATION_VERTICAL_MISMATCH',
+    PLAN_MIGRATION_SAME_VERSION: 'admin-pages.planMigration.errors.PLAN_MIGRATION_SAME_VERSION',
+    PLAN_MIGRATION_COHORT_CHANGED: 'admin-pages.planMigration.errors.PLAN_MIGRATION_COHORT_CHANGED',
+    PLAN_MIGRATION_EMPTY_COHORT: 'admin-pages.planMigration.errors.PLAN_MIGRATION_EMPTY_COHORT',
+    PLAN_MIGRATION_INCREASE_OTHER_PLAN:
+        'admin-pages.planMigration.errors.PLAN_MIGRATION_INCREASE_OTHER_PLAN',
+    PLAN_MIGRATION_INCREASE_SOURCE_CURRENT:
+        'admin-pages.planMigration.errors.PLAN_MIGRATION_INCREASE_SOURCE_CURRENT',
+    PLAN_MIGRATION_INCREASE_CYCLE_MISSING:
+        'admin-pages.planMigration.errors.PLAN_MIGRATION_INCREASE_CYCLE_MISSING',
+    PLAN_MIGRATION_NOT_FOUND: 'admin-pages.planMigration.errors.PLAN_MIGRATION_NOT_FOUND',
+    PLAN_MIGRATION_ALREADY_CANCELLED:
+        'admin-pages.planMigration.errors.PLAN_MIGRATION_ALREADY_CANCELLED'
+};
+
+/** Whether `code` is one of the action 17 rejection codes. */
+function isPlanMigrationRejection(code: string): code is PlanMigrationRejection {
+    return Object.hasOwn(PLAN_MIGRATION_ERROR_KEYS, code);
+}
 
 /** Selects versions, previews every customer, and confirms action 17. */
 export function PlanMigrationScreen() {
@@ -49,7 +72,9 @@ export function PlanMigrationScreen() {
     const [selectedMigrationId, setSelectedMigrationId] = useState<string | null>(null);
     const errorText = (reason: unknown) => {
         const code = isApiError(reason) ? reason.code : '';
-        return errorCodes.has(code) ? tr(`errors.${code}`) : tr('errors.generic');
+        return isPlanMigrationRejection(code)
+            ? t(PLAN_MIGRATION_ERROR_KEYS[code])
+            : tr('errors.generic');
     };
     const form = useForm({
         defaultValues: {

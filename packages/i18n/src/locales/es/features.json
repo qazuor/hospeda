@@ -70,7 +70,7 @@
         "who": "Para el que viaja",
         "eyebrow": "tu escapada, más fácil",
         "title": "Explorá gratis. Guardá lo que te gusta. Cuando querés más, hay más.",
-        "description": "Todo el catálogo es público y navegable sin cuenta. Con una cuenta gratis ya guardás favoritos, dejás reseñas y le escribís a los anfitriones. Y si viajás seguido, los planes Plus y VIP te suman comparador, alertas de precio, colecciones y ofertas exclusivas.",
+        "description": "Todo el catálogo es público y navegable sin cuenta. Con una cuenta gratis ya guardás favoritos, dejás reseñas y le escribís a los anfitriones.",
         "list": {
             "search": {
                 "title": "Buscá sin vueltas",
@@ -112,9 +112,7 @@
         "table": {
             "header": "Con tu cuenta",
             "plans": {
-                "free": "Gratis",
-                "plus": "Plus",
-                "vip": "VIP"
+                "free": "Gratis"
             },
             "rows": {
                 "favorites": {
@@ -195,10 +193,6 @@
             "calendarSync": {
                 "title": "Google Calendar sincronizado",
                 "description": "Conectá tu Google Calendar con acceso de solo lectura para marcar fechas ocupadas y evitar reservas superpuestas."
-            },
-            "vipTraveler": {
-                "title": "Además, sos VIP viajando",
-                "description": "Todo anfitrión tiene gratis el pack completo de viajero VIP: favoritos infinitos, comparador, alertas y más."
             },
             "guestChat": {
                 "title": "Chat con IA para tus huéspedes",

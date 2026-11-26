@@ -12,7 +12,7 @@
  *   Space opens the upsell dialog and never navigates (AC-9).
  */
 
-import { CrownIcon, LockIcon } from '@repo/icons';
+import { LockIcon } from '@repo/icons';
 import type {
     PromotionLockedItem,
     PromotionVisibilityItem,
@@ -20,6 +20,7 @@ import type {
 } from '@repo/schemas';
 import { formatCalendarDate } from '@repo/utils';
 import { useState } from 'react';
+import { PlanBadge } from '@/components/shared/ui/PlanBadge';
 import { PromotionWindowStatus } from '@/components/venue/PromotionWindowStatus.client';
 import { formatPrice } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -76,10 +77,12 @@ function placeHref(input: {
 }
 
 function VisibleCard({
+    vipPlanName,
     locale,
     item,
     showPlace
 }: {
+    readonly vipPlanName: string | null;
     readonly locale: SupportedLocale;
     readonly item: PromotionVisibleItem;
     readonly showPlace: boolean;
@@ -107,15 +110,7 @@ function VisibleCard({
                         locale
                     })}
                 </p>
-                {item.audience === 'vip' ? (
-                    <span className={styles.vipBadge}>
-                        <CrownIcon
-                            size="xs"
-                            aria-hidden="true"
-                        />
-                        {t('common.promotions.vipBadge')}
-                    </span>
-                ) : null}
+                {item.audience === 'vip' ? <PlanBadge name={vipPlanName} /> : null}
             </div>
             <h3 className={styles.title}>{item.title}</h3>
             {item.discountType !== 'special_offer' && item.description ? (
@@ -155,18 +150,20 @@ function VisibleCard({
 }
 
 function LockedCard({
+    vipPlanName,
     locale,
     item,
     onOpen
 }: {
+    readonly vipPlanName: string | null;
     readonly locale: SupportedLocale;
     readonly item: PromotionLockedItem;
     readonly onOpen: () => void;
 }) {
     const { t } = createTranslations(locale);
     const name =
-        item.audience === 'vip'
-            ? t('common.promotions.lockedVipName')
+        item.audience === 'vip' && vipPlanName
+            ? t('common.promotions.lockedPlanName', undefined, { plan: vipPlanName })
             : t('common.promotions.lockedHiddenName');
     return (
         <button
@@ -187,15 +184,7 @@ function LockedCard({
                         locale
                     })}
                 </span>
-                {item.audience === 'vip' ? (
-                    <span className={styles.vipBadge}>
-                        <CrownIcon
-                            size="xs"
-                            aria-hidden="true"
-                        />
-                        {t('common.promotions.vipBadge')}
-                    </span>
-                ) : null}
+                {item.audience === 'vip' ? <PlanBadge name={vipPlanName} /> : null}
             </span>
             <span className={styles.typeLabel}>
                 {t(`common.promotions.discountTypes.${item.discountType}`)}
@@ -238,12 +227,14 @@ export function PromotionCards({
                     <li key={item.kind === 'visible' ? item.id : item.key}>
                         {item.kind === 'visible' ? (
                             <VisibleCard
+                                vipPlanName={vipPlanName}
                                 locale={locale}
                                 item={item}
                                 showPlace={showPlace}
                             />
                         ) : (
                             <LockedCard
+                                vipPlanName={vipPlanName}
                                 locale={locale}
                                 item={item}
                                 onOpen={() => setDialogOpen(true)}

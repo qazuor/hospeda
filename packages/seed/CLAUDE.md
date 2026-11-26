@@ -71,7 +71,7 @@ flag on any migration you write whose content no fixture reproduces; it is decla
 migration precisely so no external list of names has to be kept in sync. Full explanation in
 the [author guide](../../docs/guides/seed-data-migrations.md#the-contentonly-flag-migrations-with-no-fixture-baseline).
 
-**HOS-2658 examples of `contentOnly`.** `0194-hos-2658-venue-experience-translation-meta`
+**HOS-2658 examples of `contentOnly`.** `0197-hos-2658-venue-experience-translation-meta`
 backfills `translation_meta` of venues and experiences (every non-empty `en`/`pt` pair over a
 non-empty Spanish becomes AUTOMATIC with `computeTranslationSourceHash` from
 `@repo/service-core`; an existing entry is never changed; `requiresColumns` names both

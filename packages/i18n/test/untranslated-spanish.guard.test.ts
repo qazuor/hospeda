@@ -58,6 +58,11 @@ const LEGITIMATE_IDENTICAL: Readonly<Record<string, readonly TargetLocale[]>> = 
     // and the add-on purchase steps).
     Plan: ['en'],
     Complementos: ['pt'],
+    // HOS-2649 card labels: identical spelling in Brazilian Portuguese.
+    'Favoritos: {{count}} de {{max}}': ['pt'],
+    'Favoritos ilimitados': ['pt'],
+    'Ver local': ['pt'],
+    'Promo {{plan}}': ['pt'],
     // Same wording in Brazilian Portuguese (HOS-2627 add-ons section, checkout summary, tourist hero).
     'Complementos de {{vertical}}': ['pt'],
     'Total por período': ['pt'],
