@@ -1,6 +1,6 @@
 ---
 /** Public, session-blind FAQ with progressive search and shared disclosures. */
-import { CACHE_TAG_PRICING, CACHE_TAG_SITE_CONFIG } from '@repo/cache-tags';
+import { CACHE_TAG_PRICING } from '@repo/cache-tags';
 import { ArrowRightIcon, EmailIcon, WhatsappIcon } from '@repo/icons';
 import FAQPageJsonLd from '@/components/seo/FAQPageJsonLd.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
@@ -17,6 +17,7 @@ import { breadcrumbLabel } from '@/lib/navigation/breadcrumb-labels';
 import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 import { buildUrl } from '@/lib/urls';
 import './faq-bands.css';
+import './faq-whatsapp-button.css';
 
 const locale = Astro.locals.locale;
 const { t } = createTranslations(locale);
@@ -25,7 +26,7 @@ applyCacheHeaders({
     headers: Astro.response.headers,
     cacheable: true,
     cacheClass: 'pricing',
-    tags: [CACHE_TAG_SITE_CONFIG, CACHE_TAG_PRICING]
+    tags: [CACHE_TAG_PRICING]
 });
 
 const audiencePlans = await Promise.all((['tourist', 'host'] as const).map(async (audience) => {
@@ -36,6 +37,9 @@ const audiencePlans = await Promise.all((['tourist', 'host'] as const).map(async
         names: plans.map((plan) => getPlanName({ plan, t }))
     };
 }));
+
+// Brand WhatsApp number, single source of truth (HOS-364).
+const whatsappHref = getBrandPhoneWhatsAppUrl();
 
 const groups = buildFaqDirectory({ locale });
 const faqSections = groups.flatMap(({ items }) => items.map(({ question, answer }) => ({
@@ -136,7 +140,7 @@ const stillHeading = splitHeading({ title: t('faq.stillNeedHelp.title') });
                     <EmailIcon size="md" weight="duotone" aria-hidden="true" />
                     <span>{t('faq.stillNeedHelp.ctaContact')}</span>
                 </a>
-                <a href={getBrandPhoneWhatsAppUrl()} class="faq-still__btn faq-still__btn--secondary" target="_blank" rel="noopener noreferrer">
+                <a href={whatsappHref} class="faq-still__btn faq-still__btn--secondary" target="_blank" rel="noopener noreferrer">
                     <WhatsappIcon size="md" weight="duotone" aria-hidden="true" />
                     <span>{t('faq.stillNeedHelp.ctaWhatsApp')}</span>
                 </a>

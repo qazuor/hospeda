@@ -79,7 +79,7 @@ describe('HOS-2655 public FAQ', () => {
             /class="faq-still__actions">\s*<a\b[^>]*href=\{contactHref\}[^>]*class="faq-still__btn faq-still__btn--primary"[^>]*>\s*<EmailIcon\b/
         );
         expect(page).toMatch(
-            /<a\b[^>]*href=\{getBrandPhoneWhatsAppUrl\(\)\}[^>]*class="faq-still__btn faq-still__btn--secondary"[^>]*>\s*<WhatsappIcon\b/
+            /<a\b[^>]*href=\{whatsappHref\}[^>]*class="faq-still__btn faq-still__btn--secondary"[^>]*>\s*<WhatsappIcon\b/
         );
     });
 
@@ -97,7 +97,8 @@ describe('HOS-2655 public FAQ', () => {
         expect(css).toMatch(
             /\.faq-still__btn--primary\s*\{\s*background-color: var\(--brand-primary-link\);\s*color: var\(--primary-foreground\)/
         );
-        expect(css).toMatch(
+        expect(page).toContain("import './faq-whatsapp-button.css';");
+        expect(source(`${pagePath}/faq-whatsapp-button.css`)).toMatch(
             /\.faq-still__btn--secondary\s*\{\s*background-color: var\(--core-card\);\s*color: var\(--channel-whatsapp-text\)/
         );
         expect(page).toMatch(

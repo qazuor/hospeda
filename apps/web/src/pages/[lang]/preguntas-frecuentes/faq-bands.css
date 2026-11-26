@@ -129,12 +129,6 @@
     color: var(--primary-foreground);
 }
 
-.faq-still__btn--secondary {
-    background-color: var(--core-card);
-    color: var(--channel-whatsapp-text);
-    border: 1px solid var(--channel-whatsapp-text);
-}
-
 @media (min-width: 600px) {
     .faq-still__actions {
         flex-direction: row;
