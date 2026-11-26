@@ -638,3 +638,32 @@ describe('ListingGalleryManager — make cover', () => {
         expect(mockSetFeaturedMutateAsync).toHaveBeenCalledWith({ mediaId: 'g-2' });
     });
 });
+
+// ---------------------------------------------------------------------------
+// HOS-2495 AC-23 — no literal cap for a listing vertical
+// ---------------------------------------------------------------------------
+
+describe('ListingGalleryManager — no client-side cap (HOS-2495)', () => {
+    it.each([
+        ['venue', 31],
+        ['experience', 31]
+    ] as const)('keeps the add button and shows no cap alert with %s at %i photos', (vertical, count) => {
+        // Arrange: one past the old literal cap of 30.
+        mockListData.data = Array.from({ length: count }, (_, index) =>
+            makeGalleryRow(`g${index}`, index + 1)
+        );
+
+        // Act
+        render(
+            <ListingGalleryManager
+                vertical={vertical}
+                entityId="ent-1"
+            />
+        );
+
+        // Assert
+        expect(screen.getAllByText('admin-pages.gallery.grid.actions.add')).toHaveLength(1);
+        expect(screen.queryByText(/admin-pages\.gallery\.grid\.cap/)).toBeNull();
+        expect(screen.queryByRole('alert')).toBeNull();
+    });
+});

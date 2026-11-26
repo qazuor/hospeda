@@ -629,3 +629,24 @@ describe('make cover (HOS-389 §1)', () => {
         expect(mockSetFeaturedMutateAsync).toHaveBeenCalledWith({ mediaId: 'g-2' });
     });
 });
+
+// ---------------------------------------------------------------------------
+// HOS-2495 AC-23 — no literal cap for accommodations
+// ---------------------------------------------------------------------------
+
+describe('GalleryManager — no client-side cap (HOS-2495)', () => {
+    it('keeps the add button and shows no cap alert at 51 photos', () => {
+        // Arrange: one past the old literal cap of 50.
+        mockListData.data = Array.from({ length: 51 }, (_, index) =>
+            makeGalleryRow(`g${index}`, index + 1)
+        );
+
+        // Act
+        renderGalleryManager();
+
+        // Assert
+        expect(screen.getAllByText('admin-pages.gallery.grid.actions.add')).toHaveLength(1);
+        expect(screen.queryByText(/admin-pages\.gallery\.grid\.cap/)).toBeNull();
+        expect(screen.queryByRole('alert')).toBeNull();
+    });
+});
