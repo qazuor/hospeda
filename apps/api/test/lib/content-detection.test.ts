@@ -244,7 +244,11 @@ describe('stripRichDescriptionSyntax', () => {
             ['doubly nested', '<<<i>i>i>x'],
             ['comment', 'a <!-- c --> b'],
             ['autolink', '<https://evil.test>'],
-            ['unterminated tag', 'x <img src=x onerror=alert(1)']
+            ['unterminated tag', 'x <img src=x onerror=alert(1)'],
+            ['doubled opener before a tag', '<<img src=x onerror=alert(1)>'],
+            ['doubled opener before a comment', '<<!--'],
+            ['long run of openers', `${'<'.repeat(40)}!-- ${'<'.repeat(40)}script>`],
+            ['deeply nested tags', `${'<<b>'.repeat(200)}x${'b>'.repeat(200)}`]
         ])('leaves no HTML opener for %s', (_name, input) => {
             // Act
             const result = stripRichDescriptionSyntax(input);
@@ -268,6 +272,18 @@ describe('stripRichDescriptionSyntax', () => {
 
         it('removes horizontal rules and setext underlines', () => {
             expect(stripRichDescriptionSyntax('Titulo\n=====\n---\n***')).toBe('Titulo\n\n\n');
+        });
+
+        it('keeps stripping past any fixed pass count (no half-cleaned output)', () => {
+            // Arrange: nested links, each pass can only unwrap the innermost one.
+            let input = 'a';
+            for (let depth = 0; depth < 60; depth += 1) input = `[${input}](https://x.test)`;
+
+            // Act
+            const result = stripRichDescriptionSyntax(input);
+
+            // Assert
+            expect(result).toBe('a');
         });
 
         it('is stable: stripping the result changes nothing', () => {

@@ -122,23 +122,23 @@ export function containsRichDescription(value: string): boolean {
  */
 export function stripRichDescriptionSyntax(value: string): string {
     // One pass can expose syntax that was hidden by the thing it removed
-    // (`<<b>b>` -> `<b>`), so repeat until the text stops changing. The pass
-    // count is bounded: every pass strictly shortens the text or stops.
+    // (`<<b>b>` -> `<b>`), so repeat until the text stops changing. Every
+    // replacement in a pass deletes characters, so a pass that changes the text
+    // strictly shortens it and the loop always terminates: there is no pass
+    // limit that could return half-cleaned text.
     let current = value;
-    for (let pass = 0; pass < MAX_STRIP_PASSES; pass += 1) {
+    for (;;) {
         const next = stripRichDescriptionPass(current);
-        if (next === current) break;
+        if (next === current || next.length >= current.length) break;
         current = next;
     }
     // Final guard, independent of the regexes above: HTML can only start with
-    // `<` followed by a letter, `/`, `!` or `?`. Dropping that `<` makes a tag,
-    // comment or autolink impossible whatever shape the input had. A bare
+    // `<` followed by a letter, `/`, `!` or `?`. A whole run of `<` before such a
+    // character is dropped (`<<!--` must not leave a `<` behind), so a tag,
+    // comment or autolink is impossible whatever shape the input had. A bare
     // comparison such as `2 < 4` is untouched.
-    return current.replace(/<(?=[a-zA-Z/!?])/g, '');
+    return current.replace(/<+(?=[a-zA-Z/!?])/g, '');
 }
-
-/** Upper bound of fixpoint passes in {@link stripRichDescriptionSyntax}. */
-const MAX_STRIP_PASSES = 20;
 
 /** One neutralization pass; see {@link stripRichDescriptionSyntax}. */
 function stripRichDescriptionPass(value: string): string {
