@@ -140,6 +140,47 @@ answer no longer matches what it answered.
 
 ---
 
+## Accommodation Reviews: the host reply (HOS-2199)
+
+A host answers a review of their accommodation from `/mi-cuenta/resenas-recibidas/`.
+The reply lives in its own table, `accommodation_review_replies`, and reuses the
+same three states and the `moderateText` gate, with a THIRD posture next to the
+two above:
+
+| | Host-trade reply | Accommodation host reply |
+|---|---|---|
+| Default state | `PENDING` | `APPROVED` |
+| Published before a human reads it | No, ever | Yes, unless the filter flags it |
+| Flagged by the filter | `PENDING` | `PENDING` (also when the engine is degraded) |
+| Edit | Back to `PENDING` | Re-filtered, marked `editedAt`; an admin `REJECTED` stays `REJECTED` |
+
+The reply is the right of response of someone who wrote nothing about a third
+party's address, and the plan sells it (`respond_reviews`), so it is not held for
+a human. The admin control is after the fact: `REJECTED` hides it.
+
+Rules worth knowing before touching it:
+
+- **One LIVE reply per review.** The unique index is partial
+  (`WHERE deleted_at IS NULL`), so a soft-deleted reply frees the slot and the
+  host can answer again. Deleted rows stay as history.
+- **Authorization is two layers.** The routes run `resolveListingAccess`
+  (`READ_OWN_COMMERCIAL`, step 6 key `respond_reviews`); the service then derives
+  ownership from the accommodation row and answers 404 for everything else.
+  Only a publicly visible review (`APPROVED`, `ACTIVE`, not deleted) is answerable.
+- **The public page shows only `APPROVED` live replies**, through
+  `getPublicRepliesByReviewIds`. `PENDING`, `REJECTED` and deleted replies are
+  visible to their author only. The detail page stays session-blind: the reply
+  comes inside the public reviews list.
+
+| Aspect | Location |
+|--------|----------|
+| Service | `packages/service-core/src/services/accommodationReview/accommodationReviewReply.service.ts` |
+| Host routes | `POST\|PATCH\|DELETE /api/v1/protected/accommodations/:accommodationId/reviews/:reviewId/reply` |
+| Host list | `GET /api/v1/protected/users/me/received-reviews` (`?unanswered=true`) |
+| Admin | `POST /api/v1/admin/accommodations/reviews/replies/:id/moderate` (`ACCOMMODATION_REVIEW_MODERATE`) |
+
+---
+
 ## Content-Moderation Gate
 
 At creation time both review services:

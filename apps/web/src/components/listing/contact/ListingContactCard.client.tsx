@@ -8,12 +8,9 @@
 import type { ComponentProps } from 'react';
 import { useId, useState } from 'react';
 import { ContactHost } from '@/components/accommodation/ContactHost.client';
-import { WhatsAppContact } from '@/components/accommodation/WhatsAppContact.client';
 import { FieldError } from '@/components/ui/FieldError';
 import { GradientButton } from '@/components/ui/GradientButtonReact';
 import { useListingConversationAction } from '@/hooks/use-listing-conversation-action';
-import { WebEvents } from '@/lib/analytics/events';
-import { trackEvent } from '@/lib/analytics/umami-client';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import {
@@ -22,6 +19,7 @@ import {
     validateInquiryFields
 } from '@/lib/listing-contact/build-inquiry-message';
 import styles from './ListingContactCard.module.css';
+import { ListingInquiryLayout } from './ListingInquiryLayout';
 
 /** Public listing data for the sidebar card; WhatsApp entitlement resolves inside WhatsAppContact. */
 export interface ListingContactCardProps {
@@ -32,6 +30,7 @@ export interface ListingContactCardProps {
     /** Plan names shown in the WhatsApp upsell, read from the catalog by the page. */
     readonly gatePlanNames?: readonly string[];
     readonly phone?: string | null;
+    readonly email?: string | null;
     readonly capacity?: number | null;
     /** Message prefilled from the search context; replaced once the visitor fills a field. */
     readonly initialMessage?: string;
@@ -52,6 +51,7 @@ export function ListingContactCard({
     whatsappPlansHref,
     gatePlanNames = [],
     phone,
+    email,
     capacity,
     initialMessage,
     locale
@@ -112,11 +112,26 @@ export function ListingContactCard({
 
     // HOS-2534: the booking fields travel as columns only while they validate.
     const inquiry = errors ? undefined : toInquiryFields(values);
-    const tel = phone?.trim().replace(/[\s().-]/g, '');
-    const phoneHref = tel && /^\+?\d+$/.test(tel) ? `tel:${tel}` : undefined;
-
     return (
-        <div className={styles.card}>
+        <ListingInquiryLayout
+            listingId={accommodation.id}
+            origin="sidebar"
+            locale={locale}
+            phone={phone}
+            email={email}
+            whatsapp={
+                hasWhatsapp
+                    ? {
+                          accommodationId: accommodation.id,
+                          accommodationName,
+                          plansHref: whatsappPlansHref,
+                          gatePlanNames,
+                          locale,
+                          origin: 'sidebar'
+                      }
+                    : undefined
+            }
+        >
             {action.hasConversation ? (
                 <>
                     <p>{t('accommodations.detail.listingContact.card.existingConversation')}</p>
@@ -195,43 +210,6 @@ export function ListingContactCard({
                     />
                 </>
             )}
-            {(hasWhatsapp || phoneHref) && (
-                <section
-                    className={styles.direct}
-                    aria-label={t('accommodations.detail.listingContact.card.direct')}
-                >
-                    <p className={styles.directTitle}>
-                        {t('accommodations.detail.listingContact.card.direct')}
-                    </p>
-                    {hasWhatsapp && (
-                        <WhatsAppContact
-                            accommodationId={accommodation.id}
-                            accommodationName={accommodationName}
-                            plansHref={whatsappPlansHref}
-                            gatePlanNames={gatePlanNames}
-                            locale={locale}
-                            origin="sidebar"
-                        />
-                    )}
-                    {phoneHref && (
-                        <GradientButton
-                            href={phoneHref}
-                            variant="outline-primary"
-                            size="md"
-                            label={t('accommodations.detail.listingContact.panel.shortcuts.phone')}
-                            onClick={() =>
-                                trackEvent(WebEvents.ListingContactClicked, {
-                                    listing_id: accommodation.id,
-                                    vertical: 'accommodation',
-                                    channel: 'phone',
-                                    origin: 'sidebar',
-                                    locale
-                                })
-                            }
-                        />
-                    )}
-                </section>
-            )}
-        </div>
+        </ListingInquiryLayout>
     );
 }

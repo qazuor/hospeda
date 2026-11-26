@@ -87,7 +87,7 @@ vi.mock('../../../src/lib/api/client', () => ({
     }
 }));
 
-// `MediaSection` hydrates itself from `listingMediaApi.listMedia` on mount
+// `PhotoSection` hydrates itself from `listingMediaApi.listMedia` on mount
 // (HOS-372), so the editor cannot render without it stubbed.
 vi.mock('../../../src/lib/api/endpoints-protected', () => ({
     listingMediaApi: {

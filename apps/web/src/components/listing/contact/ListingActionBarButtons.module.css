@@ -13,6 +13,25 @@
     flex: none;
 }
 
+.row > a {
+    position: relative;
+    margin-block-end: var(--space-4);
+}
+
+.label {
+    color: var(--core-foreground);
+    font-size: 0.625rem;
+    line-height: 1.1;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.row > a > .label {
+    position: absolute;
+    inset-block-start: 100%;
+    margin-block-start: var(--space-1);
+}
+
 .primary,
 .action {
     display: inline-flex;
@@ -65,10 +84,13 @@
 /* Wrapper of a reused island; the island root keeps its own behaviour. */
 .island {
     display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-1);
     flex: none;
 }
 
-/* The quotas sit below the icons without spending any of the 360px width budget. */
+/* The reused islands each get one 44px-wide column. */
 .island[data-action="favorite"],
 .island[data-action="compare"] {
     inline-size: 44px;
@@ -130,7 +152,7 @@
 /* One glyph box for the whole row: the islands draw 18px (compare) and 20px
  * (share) glyphs of their own, the bar's own glyphs are 22px. */
 .row .island .favorite svg,
-.row .island .compare svg,
+.row .island .compare > svg,
 .share :global(button[aria-expanded] svg) {
     width: 22px;
     height: 22px;

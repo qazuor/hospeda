@@ -3618,6 +3618,12 @@
             "min": "A avaliação mínima é {{min}}"
         }
     },
+    "accommodationReviewReply": {
+        "content": {
+            "max": "A resposta não pode ultrapassar {{max}} caracteres",
+            "min": "A resposta não pode estar vazia"
+        }
+    },
     "hostTradeReviewReply": {
         "content": {
             "max": "A resposta não pode ultrapassar {{max}} caracteres",

@@ -159,7 +159,27 @@ describe('ListingEditor — per-section cards (HOS-371)', () => {
             );
         }
 
-        expect(SECTION_FILES.length).toBeGreaterThanOrEqual(7);
+        // HOS-2495 deleted `MediaSection` (7 -> 6): venue and experience photos
+        // are the shared `PhotoSection`, which lives outside `editor/` and is
+        // guarded by the next test.
+        expect(SECTION_FILES.length).toBeGreaterThanOrEqual(6);
+        expect(SECTION_FILES).not.toContain('MediaSection.client.tsx');
+    });
+
+    it('makes the shared photo section of every vertical own its card (HOS-2495)', () => {
+        // The comercio fotos route mounts `host/editor/PhotoSection`, outside the
+        // `editor/` sweep above; its card is the kit `<Section>` of `PhotoEditor`.
+        const photoSection = stripComments(
+            read(resolve(LISTING_DIR, '../host/editor/PhotoSection.client.tsx'))
+        );
+        const photoEditor = stripComments(
+            read(resolve(LISTING_DIR, '../account/editor/PhotoEditor.tsx'))
+        );
+        const comercioFotosRoute = read(resolve(ROUTES_DIR, 'fotos.astro'));
+
+        expect(comercioFotosRoute).toContain('<PhotoSection');
+        expect(photoSection).toContain('<PhotoEditor');
+        expect(photoEditor).toMatch(/<Section\b/);
     });
 
     it('keeps the orchestrator free of raw sections that would bypass the sweep', () => {

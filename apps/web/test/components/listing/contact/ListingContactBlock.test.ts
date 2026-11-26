@@ -92,7 +92,14 @@ describe('ListingSocialLinks.astro', () => {
 describe('the three pages use the shared block only (HOS-2579 §6.4, AC-14)', () => {
     it.each(PAGES)('%s renders ListingContactBlock behind its builder result', (page) => {
         const src = read(page);
-        expect(src).toContain(
+        const contactSource = page.includes('/comer-y-salir/')
+            ? read('components/venue/VenueContactSection.astro')
+            : src;
+        if (contactSource !== src) {
+            expect(src).toContain('Component: VenueContactSection');
+            expect(contactSource).toContain('<ListingContactBlock');
+        }
+        expect(contactSource).toContain(
             "import ListingContactBlock from '@/components/listing/contact/ListingContactBlock.astro'"
         );
         expect(src).toMatch(/build(Accommodation|Venue|Experience)ContactBlock\(\{/);

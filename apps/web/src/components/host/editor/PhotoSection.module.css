@@ -247,3 +247,27 @@
         transition: none;
     }
 }
+
+/* HOS-2495: the breakdown of where the photo cap comes from, after the cap. */
+.capBreakdown {
+    color: var(--core-muted-foreground);
+}
+
+/* HOS-2495: a photo beyond the owner's cap. Dimmed, never `display: none`:
+ * it stays editable and comes back by itself when the cap returns. The badge
+ * carries the meaning in text, so the dimming is never the only signal. */
+.overCapTile img {
+    opacity: 0.55;
+}
+
+.overCapBadge {
+    display: inline-block;
+    margin-block-end: var(--space-1);
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+    background: var(--surface-warm);
+    color: var(--core-foreground);
+    font: var(--app-ui);
+    font-size: var(--app-ui-size);
+    line-height: 1.3;
+}

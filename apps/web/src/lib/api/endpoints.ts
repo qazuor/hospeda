@@ -793,7 +793,7 @@ export const destinationsApi = {
      * Get all descendant destinations of a given destination.
      *
      * @param params - Destination ID, optional max depth, and optional type filter
-     * @returns Flat list of all descendant destinations
+     * @returns Object containing the flat list of descendant destinations
      *
      * @example
      * ```ts
@@ -808,7 +808,7 @@ export const destinationsApi = {
         readonly id: string;
         readonly maxDepth?: number;
         readonly destinationType?: string;
-    }): Promise<ApiResult<readonly DestinationPublic[]>> {
+    }): Promise<ApiResult<{ readonly descendants: readonly DestinationPublic[] }>> {
         return apiClient.get({
             path: `${BASE}/destinations/${id}/descendants`,
             params: { maxDepth, destinationType }
@@ -1654,8 +1654,10 @@ export const venueApi = {
         readonly features?: string;
         readonly includeAmenities?: boolean;
         readonly includeFeatures?: boolean;
+        readonly cacheTtlMs?: number;
     }): Promise<ApiResult<PaginatedResponse<VenuePublic>>> {
-        return apiClient.getList({ path: `${BASE}/venues`, params });
+        const { cacheTtlMs, ...query } = params ?? {};
+        return apiClient.getList({ path: `${BASE}/venues`, params: query, cacheTtlMs });
     },
 
     /**

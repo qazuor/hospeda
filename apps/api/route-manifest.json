@@ -222,6 +222,10 @@
             "path": "/api/v1/admin/accommodations/reviews/:id/restore"
         },
         {
+            "method": "POST",
+            "path": "/api/v1/admin/accommodations/reviews/replies/:id/moderate"
+        },
+        {
             "method": "GET",
             "path": "/api/v1/admin/addon-catalog"
         },
@@ -2658,6 +2662,18 @@
             "path": "/api/v1/protected/accommodations/:accommodationId/reviews"
         },
         {
+            "method": "DELETE",
+            "path": "/api/v1/protected/accommodations/:accommodationId/reviews/:reviewId/reply"
+        },
+        {
+            "method": "PATCH",
+            "path": "/api/v1/protected/accommodations/:accommodationId/reviews/:reviewId/reply"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/protected/accommodations/:accommodationId/reviews/:reviewId/reply"
+        },
+        {
             "method": "GET",
             "path": "/api/v1/protected/accommodations/:id"
         },
@@ -2796,6 +2812,10 @@
         {
             "method": "PATCH",
             "path": "/api/v1/protected/accommodations/:id/occupancy/event"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/protected/accommodations/:id/photo-allowance"
         },
         {
             "method": "POST",
@@ -3288,6 +3308,10 @@
         {
             "method": "PATCH",
             "path": "/api/v1/protected/experiences/:id/media/reorder"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/protected/experiences/:id/photo-allowance"
         },
         {
             "method": "POST",
@@ -3799,6 +3823,10 @@
         },
         {
             "method": "GET",
+            "path": "/api/v1/protected/users/me/received-reviews"
+        },
+        {
+            "method": "GET",
             "path": "/api/v1/protected/users/me/reviews"
         },
         {
@@ -3928,6 +3956,10 @@
         {
             "method": "GET",
             "path": "/api/v1/protected/venues/:id/menu-qr/scans"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/protected/venues/:id/photo-allowance"
         },
         {
             "method": "GET",

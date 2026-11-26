@@ -28,6 +28,7 @@ import type {
     HostTradeReviewCreateBody,
     HostTradeReviewUpdateBody,
     ListingNoticesResponse,
+    ListingPhotoAllowance,
     ListingPurgePreviewResponse,
     ListingSupportEditsResponse,
     ListingTrafficStatsEntityType,
@@ -5649,6 +5650,47 @@ export const listingMediaApi = {
         return apiClient.patch({
             path: `${PROTECTED}/${listingMediaPathSegment(vertical)}/${id}/media/${mediaId}`,
             body
+        });
+    }
+};
+
+// ---------------------------------------------------------------------------
+// Listing photo allowance (HOS-2495)
+// ---------------------------------------------------------------------------
+
+/** A listing vertical whose photos the shared photo editor manages. */
+export type ListingPhotoVertical = 'accommodation' | 'venue' | 'experience';
+
+/** URL path segment of each listing vertical. */
+const LISTING_PHOTO_PATH_SEGMENT = {
+    accommodation: 'accommodations',
+    venue: 'venues',
+    experience: 'experiences'
+} as const satisfies Record<ListingPhotoVertical, string>;
+
+/**
+ * The owner's photo allowance for one listing (HOS-2495): the cap step 7
+ * enforces, how many gallery photos count against it, how many approved ones
+ * the public does not show, and the breakdown of where the cap comes from.
+ *
+ * Never browser-cached: it must reflect `used` right after an upload or delete.
+ */
+export const listingPhotoAllowanceApi = {
+    /**
+     * Read the allowance of a listing the caller owns.
+     *
+     * @param params - Vertical and listing ID
+     * @returns The `ListingPhotoAllowance` payload
+     */
+    getAllowance({
+        vertical,
+        id
+    }: {
+        readonly vertical: ListingPhotoVertical;
+        readonly id: string;
+    }): Promise<ApiResult<ListingPhotoAllowance>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/${LISTING_PHOTO_PATH_SEGMENT[vertical]}/${id}/photo-allowance`
         });
     }
 };

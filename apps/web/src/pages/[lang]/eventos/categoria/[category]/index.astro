@@ -24,6 +24,7 @@
  */
 
 import ListingLayout from '@/layouts/ListingLayout.astro';
+import ActiveFacet from '@/components/shared/layout/ActiveFacet.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
 import EventCardHorizontal from '@/components/shared/cards/EventCardHorizontal.astro';
@@ -211,6 +212,7 @@ const sortOptions = [
 ] as const;
 
 const baseUrl = buildUrl({ locale, path: `eventos/categoria/${canonicalCatSlug}` });
+const allEventsHref = buildUrl({ locale, path: 'eventos' });
 
 // Self-canonical for paginated pages (mirrors eventos/index.astro). Pages 2+
 // are served at `/{locale}/eventos/categoria/{category}/page/{n}/` via an
@@ -281,6 +283,8 @@ const collectionPageUrl = `${siteOrigin}${canonicalPath}`;
 	showFilters={true}
 	filterPosition="left"
 	totalCount={total}
+	resultKind="events"
+	sortOptions={sortOptions}
 >
 	<CollectionPageJsonLd
 		slot="head-extra"
@@ -319,10 +323,10 @@ const collectionPageUrl = `${siteOrigin}${canonicalPath}`;
 		client:load
 		locale={locale}
 		filters={filterGroups}
-		sortOptions={sortOptions}
 		defaultSort={DEFAULT_SORT_KEY}
 		initialParams={sidebarInitialParams}
 	/>
+	<ActiveFacet slot="results-actions" locale={locale} label={categoryName} clearHref={allEventsHref} clearLabel={t('ui.listing.allEvents')} />
 
 	<!--
 	  BETA-115: the standalone temporal quick-filter chip row was removed —

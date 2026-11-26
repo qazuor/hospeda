@@ -33,6 +33,7 @@ import { protectedCreateExperienceListingRoute } from './create';
 import { protectedCreateExperienceReviewRoute } from './createReview';
 import { protectedGetExperienceByIdRoute } from './getById';
 import { protectedGetExperienceMediaRoute } from './getMedia';
+import { protectedGetExperiencePhotoAllowanceRoute } from './getPhotoAllowance';
 import { protectedListMyExperienceRoute } from './listMine';
 import { protectedExperienceMineStatsRoute } from './mineStats';
 import { protectedPatchExperienceRoute } from './patch';
@@ -83,6 +84,7 @@ app.route('/', protectedExperienceViewStatsDailySeriesRoute);
 // order, so this ordering is belt-and-braces, not load-bearing.
 app.route('/', protectedGetExperienceBrochureRoute);
 app.route('/', protectedGetExperienceSectionStatesRoute);
+app.route('/', protectedGetExperiencePhotoAllowanceRoute);
 
 // GET /{id}/qr-sheet — Printable QR sheet for the door (HOS-982). A third,
 // distinct code for the same experience: `purpose: LISTING`, alongside the

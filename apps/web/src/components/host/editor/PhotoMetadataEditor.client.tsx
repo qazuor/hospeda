@@ -16,10 +16,10 @@
  * event, venue and experience photos had the columns and no way to write
  * them — so this panel is now mounted by four surfaces:
  *
- *  - `host/editor/PhotoSection.client.tsx` (the accommodation portada slot),
- *  - `host/editor/PhotoGalleryItem.client.tsx` (each accommodation thumbnail),
- *  - `account/editor/ContentMediaSection.client.tsx` (post + event),
- *  - `listing/editor/MediaSection.client.tsx` (venue + experience).
+ *  - `host/editor/PhotoSection.client.tsx` (the cover slot of accommodation,
+ *    venue and experience — one editor since HOS-2495),
+ *  - `host/editor/PhotoGalleryItem.client.tsx` (each gallery thumbnail),
+ *  - `account/editor/ContentMediaSection.client.tsx` (post + event).
  *
  * It stayed in this directory rather than moving to a neutral one: the styles
  * it uses live in `PhotoSection.module.css`, and moving the component without

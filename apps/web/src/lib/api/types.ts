@@ -406,6 +406,12 @@ export interface AccommodationMediaItem {
     readonly width?: number;
     readonly height?: number;
     readonly isFeatured: boolean;
+    /**
+     * Moderation state of the row (`APPROVED`, `PENDING`, `REJECTED`). Absent on
+     * an SSR placeholder. Only an approved photo takes a public gallery slot, so
+     * the over-cap marking reads it (HOS-2495).
+     */
+    readonly moderationState?: string;
 }
 
 /**

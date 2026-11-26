@@ -388,6 +388,18 @@
                 "secondaryCta": "Ver minhas experiências"
             }
         },
+        "max_photos_per_venue": {
+            "title": "Você atingiu o limite de fotos do seu estabelecimento",
+            "message_one": "Você enviou {{currentCount}} de {{maxAllowed}} foto permitida. Adicione um pacote para enviar mais.",
+            "message_other": "Você enviou {{currentCount}} de {{maxAllowed}} fotos permitidas. Adicione um pacote para enviar mais.",
+            "cta": "Ver pacotes de fotos"
+        },
+        "max_photos_per_experience": {
+            "title": "Você atingiu o limite de fotos da sua experiência",
+            "message_one": "Você enviou {{currentCount}} de {{maxAllowed}} foto permitida. Adicione um pacote para enviar mais.",
+            "message_other": "Você enviou {{currentCount}} de {{maxAllowed}} fotos permitidas. Adicione um pacote para enviar mais.",
+            "cta": "Ver pacotes de fotos"
+        },
         "max_photos_per_accommodation": {
             "title": "Você atingiu o limite de fotos",
             "message_one": "Você já enviou {{currentCount}} de {{maxAllowed}} foto permitida no seu plano. Faça um upgrade para enviar mais.",
@@ -794,6 +806,8 @@
             "max_venues": "Fichas de Comer e sair publicadas",
             "max_experiences": "Experiências publicadas",
             "max_photos_per_accommodation": "Fotos por hospedagem",
+            "max_photos_per_venue": "Fotos por estabelecimento",
+            "max_photos_per_experience": "Fotos por experiência",
             "max_active_promotions": "Promoções ativas",
             "max_favorites": "Favoritos",
             "max_properties": "Propriedades do complexo",
@@ -820,6 +834,8 @@
     "limitHelp": {
         "max_accommodations": "Quantas hospedagens você pode ter publicadas ao mesmo tempo. Ao chegar ao limite, precisa despublicar uma ou mudar para um plano maior para somar outra.",
         "max_photos_per_accommodation": "Quantas fotos você pode enviar para cada hospedagem. Ao chegar ao limite, precisa apagar uma para enviar outra.",
+        "max_photos_per_venue": "Quantas fotos você pode enviar para a galeria de cada estabelecimento. A foto de capa não conta.",
+        "max_photos_per_experience": "Quantas fotos você pode enviar para a galeria de cada experiência. A foto de capa não conta.",
         "max_active_promotions": "Quantas promoções você pode ter ativas ao mesmo tempo. Ao chegar ao limite, precisa encerrar uma para lançar outra.",
         "max_favorites": "Quantas hospedagens você pode salvar como favoritas. Ao chegar ao limite, precisa tirar uma para salvar outra.",
         "max_properties": "Quantas propriedades você pode administrar dentro de um complexo. Ao chegar ao limite, precisa de um plano maior para somar outra.",
@@ -847,6 +863,14 @@
         "extra-accommodations-5": {
             "name": "Pacote de acomodações extras (+5)",
             "description": "Adiciona 5 acomodações a mais ao seu plano. Renova todo mês."
+        },
+        "extra-photos-venue-20": {
+            "name": "Pacote de fotos para estabelecimentos (+20)",
+            "description": "Adiciona 20 fotos à galeria de cada estabelecimento. Renovação mensal."
+        },
+        "extra-photos-experience-20": {
+            "name": "Pacote de fotos para experiências (+20)",
+            "description": "Adiciona 20 fotos à galeria de cada experiência. Renovação mensal."
         },
         "extra-photos-20": {
             "name": "Pacote de fotos extras (+20 fotos)",

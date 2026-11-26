@@ -11,14 +11,16 @@
         },
         "mode": {
             "toggleLabel": "Comparar alojamientos",
-            "activeLabel": "Comparando",
+            "activeLabel": "Salir de comparar",
             "on": "Modo comparación activado",
             "off": "Modo comparación desactivado",
             "bannerHint": "Elegí los alojamientos que querés comparar"
         },
         "gate": {
             "authMessage": "Iniciá sesión para comparar alojamientos.",
-            "upsellMessage": "Tu plan no incluye la comparación de alojamientos.",
+            "upsellMessage": "Compará alojamientos lado a lado.",
+            "benefit_one": "Compará hasta {{count}} alojamiento lado a lado con {{plan}}.",
+            "benefit_other": "Compará hasta {{count}} alojamientos lado a lado con {{plan}}.",
             "upsellCta": "Ver planes"
         },
         "toast": {
@@ -64,6 +66,7 @@
             "count_other": "Comparás {{count}} alojamientos"
         },
         "empty": {
+            "suggestions": "Alojamientos sugeridos para comparar",
             "title": "No hay alojamientos para comparar",
             "message": "Agregá alojamientos desde el listado para verlos lado a lado.",
             "cta": "Explorar alojamientos"
@@ -450,7 +453,7 @@
         "all": "Todos",
         "hotels": "Hoteles",
         "cabins": "Cabañas",
-        "apartments": "Apartamentos",
+        "apartments": "Departamentos",
         "hostels": "Hostales"
     },
     "sort": {
@@ -536,7 +539,7 @@
         "reviews": "Reseñas"
     },
     "types": {
-        "apartment": "Apartamento",
+        "apartment": "Departamento",
         "house": "Casa",
         "country_house": "Casa quinta",
         "cabin": "Cabaña",
@@ -655,9 +658,9 @@
                 "pageTitle": "Alojamientos - Cabañas"
             },
             "apartment": {
-                "name": "Apartamentos",
-                "description": "Apartamentos equipados para estadías cortas y largas. La comodidad de sentirte como en casa durante tu viaje.",
-                "pageTitle": "Alojamientos - Apartamentos"
+                "name": "Departamentos",
+                "description": "Departamentos equipados para estadías cortas y largas. La comodidad de sentirte como en casa durante tu viaje.",
+                "pageTitle": "Alojamientos - Departamentos"
             },
             "camping": {
                 "name": "Campings",
@@ -685,9 +688,9 @@
         "tagline": "Tipo de alojamiento",
         "types": {
             "APARTMENT": {
-                "name": "Apartamentos",
-                "description": "Apartamentos equipados en Concepción del Uruguay y el Litoral entrerriano, ideales para estadías cortas y largas con la comodidad de sentirte como en casa.",
-                "pageTitle": "Apartamentos en Alquiler"
+                "name": "Departamentos",
+                "description": "Departamentos equipados en Concepción del Uruguay y el Litoral entrerriano, ideales para estadías cortas y largas con la comodidad de sentirte como en casa.",
+                "pageTitle": "Departamentos en Alquiler"
             },
             "HOUSE": {
                 "name": "Casas",
@@ -787,6 +790,11 @@
         },
         "listingContact": {
             "bar": {
+                "dockMenu": "Carta",
+                "dockChat": "Chat",
+                "dockSave": "Guardar",
+                "dockShare": "Compartir",
+                "dockCompare": "Comparar",
                 "actions": {
                     "inquire": "Consultar",
                     "viewMenu": "Ver carta",
@@ -804,7 +812,7 @@
                 "priceOnRequest": "Consultar precio"
             },
             "panel": {
-                "title": "Consultá a {{name}}",
+                "title": "Consultá al anfitrión: {{name}}",
                 "shortcuts": { "whatsapp": "WhatsApp", "phone": "Llamar", "email": "Email" },
                 "trust": "Tu consulta va directo al anfitrión. Sin comisiones."
             },
@@ -839,7 +847,15 @@
                 "withGuests": "Hola, ¿está disponible {{guests}}?",
                 "withDatesAndGuests": "Hola, ¿está disponible {{dates}} {{guests}}?"
             },
-            "summary": { "title": "Precio y contacto" },
+            "summary": {
+                "title": "Precio y contacto",
+                "fromPrice": "Desde {{amount}}",
+                "priceOnRequest": "Precio a consultar",
+                "requestPrice": "Pedir precio",
+                "writeEmail": "Escribir un email",
+                "requestByEmail": "Consultá el precio por email.",
+                "hostReply": "El anfitrión te responderá con el precio."
+            },
             "units": {
                 "perNight": "/noche",
                 "perDay": "/día",
@@ -870,6 +886,8 @@
             "cta": "Consultar por WhatsApp",
             "messageTemplate": "Hola, me interesa obtener más información sobre {{name}}",
             "numberLabel": "WhatsApp del anfitrión",
+            "compactGate": "Ver el WhatsApp del anfitrión",
+            "previewLabel": "Mensaje a enviar",
             "upsellText_one": "Suscribite al plan {{plans}} para ver el WhatsApp del anfitrión.",
             "upsellText_other": "Suscribite a uno de los planes {{plans}} para ver el WhatsApp del anfitrión.",
             "upsellTextNoPlans": "Tu plan actual no incluye ver el WhatsApp del anfitrión.",
@@ -993,7 +1011,9 @@
                 "error": "No se pudieron cargar las reseñas",
                 "retry": "Reintentar",
                 "loading": "Cargando reseñas…"
-            }
+            },
+            "hostReply": "Respuesta del anfitrión",
+            "hostReplyEdited": "editada"
         },
         "host": {
             "title": "Tu anfitrión",
@@ -1059,7 +1079,14 @@
         "priceAlert": {
             "create": "Avisame si baja el precio",
             "creating": "Creando...",
-            "createSuccess": "Alerta creada",
+            "createSuccess": "Alerta creada. Te avisaremos por email si se alcanza el umbral.",
+            "gateTitle": "Alertas de precio",
+            "gateBenefit": "Recibí un aviso si baja el precio con el plan {{plan}}.",
+            "confirmCreate": "Crear alerta",
+            "targetPercent": "Baja de precio (%)",
+            "defaultThreshold": "Alerta activa con el umbral predeterminado.",
+            "activeThreshold": "Alerta activa para una baja del {{threshold}} %.",
+            "activeDate": "Creada el {{date}}.",
             "createError": "No se pudo crear la alerta",
             "cancel": "Cancelar alerta",
             "cancelling": "Cancelando...",
@@ -1123,9 +1150,16 @@
         "guestExample3": "¿Cómo es el check-in?",
         "guestExamplesLead": "Por ejemplo:",
         "guestFree": "Es gratis con tu cuenta.",
+        "guestMonthlyQuota_one": "Creá tu cuenta gratis y consultá hasta {{count}} vez por mes.",
+        "guestMonthlyQuota_other": "Creá tu cuenta gratis y consultá hasta {{count}} veces por mes.",
+        "monthlyAllowance_one": "{{count}} consulta por mes con tu plan.",
+        "monthlyAllowance_other": "{{count}} consultas por mes con tu plan.",
+        "noticeLabel": "Sobre la IA y tu privacidad",
+        "greeting": "¡Hola! ¿Qué te gustaría saber?",
         "guestSignUp": "Crear cuenta gratis",
         "guestSignIn": "Ingresar",
         "fabLabel": "Preguntarle a la IA sobre este alojamiento",
+        "dockLabel": "IA",
         "panelLabel": "Chat con IA — Preguntas sobre el alojamiento",
         "headerDisclaimer": "Las respuestas son generadas por IA y pueden contener errores. Verificá siempre la información con el alojamiento.",
         "readNotice": "El anfitrión puede leer las preguntas que hagas en este chat. No compartas datos personales.",

@@ -1,4 +1,5 @@
 ---
+import SmartSticky from '@/components/shared/layout/SmartSticky.astro';
 /**
  * @file AccountShell.astro
  * @description The new account page frame (HOS-2413 T-020, OD-1/OD-2). An Astro
@@ -97,7 +98,8 @@ try {
 			<AccountBar client:media="(max-width: 63.99rem)" view={view} locale={locale} pageTitle={title} />
 		</div>
 
-		<aside class={styles.sidebar}>
+		<SmartSticky />
+		<aside class={styles.sidebar} data-smart-sticky>
 			<AccountZoneSwitch links={navModel.shell.zoneLinks} locale={locale} />
 			<AccountSidebar view={sidebarView} locale={locale} icons={ACCOUNT_NAV_ICONS}>
 				<BenefitUsagesCountPill slot="benefitUsagesCount" locale={locale} client:idle />

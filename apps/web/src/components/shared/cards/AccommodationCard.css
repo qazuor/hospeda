@@ -447,7 +447,7 @@
  */
 @media (max-width: 767px) {
     .acc-card__image-area {
-        height: 200px;
+        height: 160px;
     }
 
     .acc-card__content {
@@ -456,7 +456,7 @@
     }
 
     .acc-card__description {
-        -webkit-line-clamp: 3;
+        -webkit-line-clamp: 2;
     }
 
     .acc-card__reviews-count {

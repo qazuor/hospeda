@@ -35,6 +35,7 @@ import { protectedGetVenueDailySpecialsRoute } from './getDailySpecials';
 import { protectedGetVenueEventsRoute } from './getEvents';
 import { protectedGetVenueMediaRoute } from './getMedia';
 import { protectedGetVenueMenuRoute } from './getMenu';
+import { protectedGetVenuePhotoAllowanceRoute } from './getPhotoAllowance';
 import { protectedGetVenueWhatsappRoute } from './getWhatsapp';
 import { protectedListMyVenueRoute } from './listMine';
 import { protectedListVenuePromotionsRoute } from './listPromotions';
@@ -121,6 +122,7 @@ app.route('/', protectedGetVenueQrCodeRoute);
 // tier sees its own menu, and only writing the structured half is paid.
 app.route('/', protectedGetVenueMenuRoute);
 app.route('/', protectedGetVenueSectionStatesRoute);
+app.route('/', protectedGetVenuePhotoAllowanceRoute);
 
 // PUT /{id}/menu — replace the structured carta. Gated on
 // MANAGE_VENUE_MENU (venue-pro and above).

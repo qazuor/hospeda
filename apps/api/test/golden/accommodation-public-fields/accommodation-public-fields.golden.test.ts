@@ -69,11 +69,17 @@ describe('accommodation public payload golden', () => {
                     vertical,
                     hasLiveNonTrialTitle: false,
                     inheritsTouristVip: false,
-                    entries: keysOf(Number.isNaN(mask) ? 0 : mask).map((key) => ({
-                        key,
-                        value: 1,
-                        strategy: 'MAX' as const
-                    }))
+                    // HOS-2495: every resolved owner holds a photo cap, so this matrix
+                    // keeps pinning the three gated keys; only an owner whose set
+                    // cannot be read (or a row without owner) loses its gallery.
+                    entries: [
+                        ...keysOf(Number.isNaN(mask) ? 0 : mask).map((key) => ({
+                            key,
+                            value: 1,
+                            strategy: 'MAX' as const
+                        })),
+                        { key: 'max_photos_per_accommodation', value: 70, strategy: 'SUM' as const }
+                    ]
                 })
             );
         });

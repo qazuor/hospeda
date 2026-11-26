@@ -1,9 +1,7 @@
 /**
  * @file listing-summaries.test.ts
- * @description Source-level tests of the slot-2 summaries of the venue and
- * experience pages (HOS-2579 §6.1.1): `VenueSummary` (price range + «Ver
- * carta»/«Consultar») and `ExperienceSummary` (price + duration +
- * «Consultar»), which took the price out of the old vertical headers.
+ * @description Source-level wiring tests for the venue and experience price
+ * cards in the shared detail summary slot (HOS-2579 §6.1.1).
  *
  * Vitest cannot render `.astro` here, so these read the SOURCE. The contact
  * decision they consume (`resolveVenueContactMode`) is unit tested in
@@ -48,7 +46,7 @@ describe('ListingSummaryActions', () => {
 
 describe('VenueSummary', () => {
     it('shows the price-range label (moved out of the header)', () => {
-        expect(VENUE_SUMMARY).toContain('venue.card.priceRange.${priceRange}');
+        expect(VENUE_SUMMARY).toMatch(/venue\.card\.priceRange\.\$\{priceRange\}/);
         expect(HEADER_FILES).not.toContain('priceRange');
     });
 
@@ -59,25 +57,30 @@ describe('VenueSummary', () => {
         expect(actions).toContain('fallbackHref={fallbackHref}');
     });
 
-    it('makes «Ver carta» the action when the venue has a menu (D-1), «Consultar» otherwise', () => {
-        expect(VENUE_SUMMARY).toContain("'accommodations.detail.listingContact.bar.viewMenu'");
-        expect(VENUE_SUMMARY).toContain("'accommodations.detail.listingContact.bar.contact'");
+    it('CARD-055 H-2: passes the safe menu and public phone/email into the primary channel resolver', () => {
+        expect(VENUE_SUMMARY).toContain('resolvePriceCardAction({');
         expect(VENUE_SUMMARY).toContain(
-            "primaryLink={contactMode.kind === 'menu' ? { href: contactMode.href, channel: 'menu' } : undefined}"
+            "menuHref: contactMode.kind === 'menu' ? contactMode.href : undefined"
         );
+        expect(VENUE_SUMMARY).toContain('phoneHref,');
+        expect(VENUE_SUMMARY).toContain('email,');
+        expect(VENUE_SUMMARY).toContain('action={primary}');
     });
 
     it('renders no action without a channel, and nothing at all without price or action', () => {
-        expect(VENUE_SUMMARY).toContain("const hasAction = contactMode.kind !== 'none';");
-        expect(VENUE_SUMMARY).toMatch(/\{\(priceRangeLabel \|\| hasAction\) && \(/);
-        expect(VENUE_SUMMARY).toMatch(/\{hasAction && \(\s*<ListingSummaryActions/);
+        expect(VENUE_SUMMARY).toMatch(/\{\(priceRangeLabel \|\| primary\.kind !== 'none'\) && \(/);
+        expect(VENUE_SUMMARY).toMatch(
+            /\{primary\.kind === 'inquire' && \(\s*<ListingSummaryActions/
+        );
     });
 
     it('is mounted by the venue page with the page contact decision', () => {
         const mount = VENUE_PAGE.match(/<VenueSummary[\s\S]*?\/>/)?.[0] ?? '';
         expect(mount).toContain('priceRange={venue.priceRange}');
         expect(mount).toContain('contactMode={contactMode}');
-        expect(mount).toContain('fallbackHref={`#${VENUE_CONTACT_ANCHOR_ID}`}');
+        expect(mount).toContain('phoneHref={barPhoneHref}');
+        expect(mount).toContain('email={venue.contactInfo?.workEmail}');
+        expect(mount).toMatch(/fallbackHref=\{`#\$\{VENUE_CONTACT_ANCHOR_ID\}`\}/);
         // Right after the gallery and videos, before the catalog body.
         expect(VENUE_PAGE.indexOf('<VenueSummary')).toBeLessThan(
             VENUE_PAGE.indexOf('descriptionBlocks.map')
@@ -87,15 +90,17 @@ describe('VenueSummary', () => {
 
 describe('ExperienceSummary', () => {
     it('renders the price tag and the optional duration (moved out of the header)', () => {
-        expect(EXPERIENCE_SUMMARY).toMatch(/<ExperiencePriceTag[\s\S]*?priceFrom=\{priceFrom\}/);
+        expect(EXPERIENCE_SUMMARY).toMatch(/<ListingPriceCard[\s\S]*?price=\{price\}/);
         expect(EXPERIENCE_SUMMARY).toContain('formatDurationMinutes({');
         expect(EXPERIENCE_SUMMARY).toMatch(/\{durationLabel && \(/);
         expect(HEADER_FILES).not.toContain('ExperiencePriceTag');
         expect(HEADER_FILES).not.toContain('durationMinutes');
     });
 
-    it('offers «Consultar» only when a public channel exists (HOS-363)', () => {
-        expect(EXPERIENCE_SUMMARY).toMatch(/\{hasContactChannel && \(\s*<ListingSummaryActions/);
+    it('offers the inquiry panel only when it is the selected action (HOS-363)', () => {
+        expect(EXPERIENCE_SUMMARY).toMatch(
+            /\{primary\.kind === 'inquire' && \(\s*<ListingSummaryActions/
+        );
         const actions = EXPERIENCE_SUMMARY.match(/<ListingSummaryActions[\s\S]*?\/>/)?.[0] ?? '';
         expect(actions).toContain('vertical="experience"');
         expect(actions).toContain('hasWhatsapp={false}');
@@ -105,11 +110,18 @@ describe('ExperienceSummary', () => {
         expect(EXPERIENCE_SUMMARY).not.toContain('Entitlement');
     });
 
-    it('is mounted by the experience page with the price and the channel flag', () => {
+    it('CARD-058 H-1: is mounted with the converted price and the dialable phone', () => {
         const mount = EXPERIENCE_PAGE.match(/<ExperienceSummary[\s\S]*?\/>/)?.[0] ?? '';
-        expect(mount).toContain('priceFrom={experience.priceFrom}');
+        expect(mount).toContain('price={contactPrice}');
         expect(mount).toContain('durationMinutes={experience.durationMinutes}');
-        expect(mount).toContain('hasContactChannel={contactChannels.length > 0}');
-        expect(mount).toContain('fallbackHref={`#${EXPERIENCE_CONTACT_ANCHOR_ID}`}');
+        expect(mount).toContain('phoneHref={barPhoneHref}');
+        expect(mount).toMatch(/fallbackHref=\{`#\$\{EXPERIENCE_CONTACT_ANCHOR_ID\}`\}/);
+    });
+
+    it('CARD-061 H-1: passes the published email to the price card through the shared resolver', () => {
+        const mount = EXPERIENCE_PAGE.match(/<ExperienceSummary[\s\S]*?\/>/)?.[0] ?? '';
+        expect(mount).toContain('email={experience.contactInfo?.workEmail}');
+        expect(EXPERIENCE_SUMMARY).toContain('resolvePriceCardAction({');
+        expect(EXPERIENCE_SUMMARY).toContain('action={primary}');
     });
 });

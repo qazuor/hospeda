@@ -1,4 +1,37 @@
 {
+    "listingPhotos": {
+        "description": {
+            "accommodation_one": "Upload up to {{cap}} photo of your accommodation.",
+            "accommodation_other": "Upload up to {{cap}} photos of your accommodation.",
+            "venue_one": "Upload up to {{cap}} photo of your venue.",
+            "venue_other": "Upload up to {{cap}} photos of your venue.",
+            "experience_one": "Upload up to {{cap}} photo of your experience.",
+            "experience_other": "Upload up to {{cap}} photos of your experience."
+        },
+        "noPlan": {
+            "accommodation": "To upload accommodation photos, you need a plan that includes them.",
+            "venue": "To upload venue photos, you need a plan that includes them.",
+            "experience": "To upload experience photos, you need a plan that includes them."
+        },
+        "plansCta": "View plans",
+        "unlimited": "No photo limit",
+        "breakdown": {
+            "plan": "{{value}} from your plan",
+            "trial": "{{value}} from your trial",
+            "addons": "{{value}} from photo packs",
+            "courtesy": "{{value}} from your courtesy access",
+            "permanentGrant": "{{value}} from your permanent grant",
+            "base": "{{value}} from your base allowance",
+            "preTrialDraft": "{{value}} for your draft before the trial",
+            "total": "{{parts}} = {{cap}}",
+            "unlimitedValue": "unlimited"
+        },
+        "overCapBadge": "Not shown: over your limit",
+        "overCapSummary_one": "{{count}} photo is hidden because you're over your limit. Add a photo pack or reorder your photos to choose which ones are shown.",
+        "overCapSummary_other": "{{count}} photos are hidden because you're over your limit. Add a photo pack or reorder your photos to choose which ones are shown.",
+        "loading": "Loading your photo limit…",
+        "readFailed": "We couldn't load your photo limit. Try reloading the page."
+    },
     "editorHub": {
         "publicationStatus": "Publication status",
         "publicationUnavailable": "Publication status unavailable",
@@ -242,7 +275,8 @@
         "help": "Help",
         "venueDashboard": "Venues dashboard",
         "experienceDashboard": "Experiences dashboard",
-        "addons": "Add-ons"
+        "addons": "Add-ons",
+        "receivedReviews": "Received reviews"
     },
     "doors": {
         "sectionLabel": "Discover more",
@@ -1315,6 +1349,11 @@
         "recommendations": {
             "title": "Suggestions for you",
             "description": "Accommodations picked especially for you, based on your favorites, searches, and recent activity on Hospeda"
+        },
+        "receivedReviews": {
+            "title": "Received reviews",
+            "description": "See and answer the reviews your accommodations received on Hospeda",
+            "headingDesc": "Answer the guests who reviewed your accommodations."
         }
     },
     "newsletter": {
@@ -2531,6 +2570,54 @@
             "enterCoordinates": "Enter coordinates",
             "latitude": "Latitude",
             "longitude": "Longitude"
+        }
+    },
+    "receivedReviews": {
+        "sectionTitle": "Reviews of your accommodations",
+        "listLabel": "Received reviews",
+        "filterLabel": "Filter reviews",
+        "filterAll": "All",
+        "filterUnanswered": "Unanswered",
+        "total_one": "{{count}} review",
+        "total_other": "{{count}} reviews",
+        "emptyTitle": "You have not received any reviews yet",
+        "empty": "When a guest reviews your accommodation, you will see it here so you can answer.",
+        "emptyUnansweredTitle": "No unanswered reviews",
+        "emptyUnanswered": "You have already answered every review you received.",
+        "loadError": {
+            "title": "We could not load your reviews",
+            "body": "Try again in a few seconds."
+        },
+        "ratingAria": "Rating: {{value}} out of {{max}}",
+        "anonymous": "Guest",
+        "viewListing": "View accommodation",
+        "respond": "Reply",
+        "edit": "Edit reply",
+        "delete": "Delete reply",
+        "publish": "Post reply",
+        "save": "Save changes",
+        "cancel": "Cancel",
+        "replyLabel": "Your reply",
+        "replyPlaceholder": "Write your reply…",
+        "charCount": "{{count}} of {{max}}",
+        "edited": "edited",
+        "pendingNotice": "Your reply is under review and is not shown on the public listing yet.",
+        "hiddenNotice": "An administrator hid this reply. You can delete it and write a new one.",
+        "deleteConfirm": "Delete your reply? You will be able to reply again afterwards.",
+        "saving": "Saving…",
+        "deleting": "Deleting…",
+        "upsell": {
+            "title": "Replying to reviews is not in your plan",
+            "body": "Upgrade your plan to reply to your guests' reviews.",
+            "cta": "See plans"
+        },
+        "errors": {
+            "generic": "We could not save your reply. Please try again.",
+            "required": "Write a reply.",
+            "tooLong": "The reply cannot exceed {{max}} characters.",
+            "alreadyReplied": "This review already has a reply.",
+            "notFound": "We could not find this review.",
+            "noEntitlement": "Your current plan does not include replying to reviews."
         }
     }
 }

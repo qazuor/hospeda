@@ -1,0 +1,57 @@
+---
+/** Attraction chips for the destination grid-card variant. */
+import { createT } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+
+interface Props {
+	readonly attractions?: readonly { readonly name: string }[];
+	readonly locale: SupportedLocale;
+}
+
+const { attractions = [], locale } = Astro.props;
+const t = createT(locale);
+// The card transform already sorts the attractions by display weight.
+const MAX_ATTRACTIONS_ON_CARD = 2;
+const visible = attractions.slice(0, MAX_ATTRACTIONS_ON_CARD);
+const remaining = attractions.length - visible.length;
+---
+
+{visible.length > 0 && (
+	<ul class="dest-card__attractions" aria-label={t('destinations.detail.attractions.title', 'Qué hacer acá')}>
+		{visible.map(({ name }) => <li class="dest-card__attraction">{name}</li>)}
+		{remaining > 0 && <li class="dest-card__attraction dest-card__attraction--more">+{remaining}</li>}
+	</ul>
+)}
+
+<style>
+	.dest-card__attractions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-1);
+		list-style: none;
+		margin: 0;
+		padding: 0;
+	}
+
+	.dest-card__attraction {
+		border: 1px solid var(--brand-primary-a25);
+		border-radius: var(--radius-pill);
+		background-color: var(--core-background);
+		color: var(--core-foreground);
+		font-family: var(--font-sans);
+		font-weight: 500;
+		font-size: 0.75rem;
+		line-height: 1;
+		padding: var(--space-1) var(--space-2);
+		white-space: nowrap;
+		max-width: 100%;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	.dest-card__attraction--more {
+		background-color: var(--core-card);
+		color: var(--core-muted-foreground);
+		border-color: var(--border);
+	}
+</style>

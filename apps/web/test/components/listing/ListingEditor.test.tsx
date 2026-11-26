@@ -125,7 +125,7 @@ const mockPatch = vi.mocked(apiClient.patch);
  * They are asserted, not just stubbed: this island must not reach the media API
  * at all now, and a real module would make that failure a network call in jsdom
  * rather than a failed expectation. Their coverage lives in
- * `editor/MediaSection.test.tsx`.
+ * `host/editor/PhotoSection.verticals.test.tsx`.
  */
 const mockListMedia = vi.mocked(listingMediaApi.listMedia);
 const mockDeleteMedia = vi.mocked(protectedMediaApi.deleteMedia);
@@ -297,7 +297,7 @@ describe('ListingEditor', () => {
     });
 
     it('never touches the media endpoints from a form section (HOS-1080)', async () => {
-        // Photos are their own route now, mounting `MediaSection` directly. A
+        // Photos are their own route now, mounting `PhotoSection` directly. A
         // form section that still hydrated media would be paying for two extra
         // requests per page and could overwrite rows the owner just saved —
         // the HOS-372 failure, reintroduced by the split rather than fixed by it.
@@ -691,15 +691,15 @@ describe('ListingEditor', () => {
      * The three HOS-372 media tests that lived here (featured upload, the
      * `media`-never-in-the-PATCH guard, and gallery removal) were retired by
      * HOS-1080, not weakened. Photos moved to their own route, which mounts
-     * `MediaSection` directly with no form and no Save — so this island cannot
+     * `PhotoSection` directly with no form and no Save — so this island cannot
      * reach media at all any more, and every behaviour they covered is asserted
      * where it now lives:
      *
      *  - upload / remove / featured, and the absence of a client-side Cloudinary
-     *    delete: `editor/MediaSection.test.tsx`;
+     *    delete: `host/editor/PhotoSection.verticals.test.tsx`;
      *  - `media` never travelling in the PATCH body, and `listMedia` never being
      *    called from a form section: `ListingEditor.payload.test.tsx`;
-     *  - `MediaSection` being imported by the `fotos` route and by no other:
+     *  - `PhotoSection` being imported by the `fotos` route and by no other:
      *    `test/pages/listing-editor-routes.test.ts`.
      */
 

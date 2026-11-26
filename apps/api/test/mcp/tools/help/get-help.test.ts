@@ -215,7 +215,9 @@ describe('get_help', () => {
                 `${site()}/es/mi-cuenta/propiedades/${ACC_ID}/editar/fotos/`,
                 `${site()}/es/mi-cuenta/comercio/venue/${VEN_ID}/editar/fotos/`,
                 `${site()}/es/mi-cuenta/comercio/experience/${EXP_ID}/editar/fotos/`,
-                `${site()}/es/planes/anfitriones/`
+                `${site()}/es/planes/anfitriones/`,
+                `${site()}/es/planes/comer-y-salir/`,
+                `${site()}/es/planes/experiencias/`
             ]);
             expect(result.topics[0]?.steps.length).toBeGreaterThan(0);
             expect(result.fallbackLinks).toBeUndefined();
@@ -254,9 +256,11 @@ describe('get_help', () => {
             // Act
             const result = await answer({ question: 'cómo subo fotos', audience: 'venue' });
 
-            // Assert
+            // Assert: the venue editor link and the venue plans page only; the
+            // accommodation and experience editor and plans links are dropped.
             expect(result.topics[0]?.links.map((link) => link.url)).toEqual([
-                `${site()}/es/mi-cuenta/comercio/venue/${VEN_ID}/editar/fotos/`
+                `${site()}/es/mi-cuenta/comercio/venue/${VEN_ID}/editar/fotos/`,
+                `${site()}/es/planes/comer-y-salir/`
             ]);
         });
     });
@@ -278,7 +282,9 @@ describe('get_help', () => {
             // Assert: the other user owns only the "Hotel Ajeno" accommodation.
             expect(result.topics[0]?.links.map((link) => link.url)).toEqual([
                 `${site()}/es/mi-cuenta/propiedades/${FOREIGN_ACC_ID}/editar/fotos/`,
-                `${site()}/es/planes/anfitriones/`
+                `${site()}/es/planes/anfitriones/`,
+                `${site()}/es/planes/comer-y-salir/`,
+                `${site()}/es/planes/experiencias/`
             ]);
             expect(JSON.stringify(result)).not.toContain(ACC_ID);
         });
@@ -296,7 +302,9 @@ describe('get_help', () => {
                 `${site()}/es/publicar/`,
                 `${site()}/es/publicar/comer-y-salir/`,
                 `${site()}/es/publicar/experiencias/`,
-                `${site()}/es/planes/anfitriones/`
+                `${site()}/es/planes/anfitriones/`,
+                `${site()}/es/planes/comer-y-salir/`,
+                `${site()}/es/planes/experiencias/`
             ]);
         });
 
@@ -332,7 +340,9 @@ describe('get_help', () => {
             expect(result.topics[0]?.links.map((link) => link.url)).toEqual([
                 `${site()}/es/mi-cuenta/propiedades/`,
                 `${site()}/es/mi-cuenta/comercio/`,
-                `${site()}/es/planes/anfitriones/`
+                `${site()}/es/planes/anfitriones/`,
+                `${site()}/es/planes/comer-y-salir/`,
+                `${site()}/es/planes/experiencias/`
             ]);
         });
 

@@ -43,7 +43,6 @@ const ISLANDS: Readonly<Record<string, string>> = {
     ExternalReputationSection: 'src/components/host/ExternalReputationSection.client.tsx',
     ListingTranslationsSection:
         'src/components/account/editor/ListingTranslationsSection.client.tsx',
-    MediaSection: 'src/components/listing/editor/MediaSection.client.tsx',
     VenuePromotionsManager: 'src/components/venue/VenuePromotionsManager.client.tsx',
     VenueMenuManager: 'src/components/venue/VenueMenuManager.client.tsx',
     VenueDailySpecialsManager: 'src/components/venue/VenueDailySpecialsManager.client.tsx',

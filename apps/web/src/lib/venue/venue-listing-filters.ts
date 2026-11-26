@@ -17,6 +17,7 @@
 
 import type { AmenityPublic, FeaturePublic, VenuePublicFilterOptions } from '@repo/schemas';
 import type { FilterGroup } from '@/components/shared/filters/FilterSidebar.client';
+import { SSR_PUBLIC_CACHE_TTL_MS, venueApi } from '@/lib/api/endpoints';
 import {
     buildAmenityFilterCategories,
     buildFeatureFilterCategories
@@ -92,6 +93,33 @@ export interface BuildVenueTypeChipsParams {
     readonly searchParams: URLSearchParams;
     /** Active `?type=` value, if any. */
     readonly activeType?: string;
+    /** Published inventory per type; omitted when the count lookup fails. */
+    readonly counts?: Readonly<Record<string, number>>;
+}
+
+/** Read inventory totals for the offered types without counting only the current page. */
+export async function loadVenueTypeCounts({
+    types,
+    businessLine
+}: {
+    readonly types: readonly string[];
+    readonly businessLine?: NonNullable<Parameters<typeof venueApi.list>[0]>['businessLine'];
+}): Promise<Readonly<Record<string, number>>> {
+    const entries = await Promise.allSettled(
+        types.map(async (type) => {
+            const result = await venueApi.list({
+                type,
+                businessLine,
+                page: 1,
+                pageSize: 1,
+                cacheTtlMs: SSR_PUBLIC_CACHE_TTL_MS
+            });
+            return result.ok ? [[type, result.data.pagination.total] as const] : [];
+        })
+    );
+    return Object.fromEntries(
+        entries.flatMap((entry) => (entry.status === 'fulfilled' ? entry.value : []))
+    );
 }
 
 /**
@@ -273,7 +301,8 @@ export function buildVenueTypeChips({
     types,
     baseUrl,
     searchParams,
-    activeType
+    activeType,
+    counts
 }: BuildVenueTypeChipsParams): {
     readonly label: string;
     readonly href: string;
@@ -282,8 +311,9 @@ export function buildVenueTypeChips({
 }[] {
     return types.map((value) => {
         const isActive = activeType === value;
+        const label = t(`venue.types.${value}`, value);
         return {
-            label: t(`venue.types.${value}`, value),
+            label: counts?.[value] === undefined ? label : `${label} (${counts[value]})`,
             href: buildToggleParamHref({
                 baseUrl,
                 searchParams,

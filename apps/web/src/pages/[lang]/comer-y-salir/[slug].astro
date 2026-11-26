@@ -36,8 +36,7 @@ import VenuePromotions from '@/components/venue/VenuePromotions.astro';
 import VenueNightInfo from '@/components/venue/VenueNightInfo.astro';
 import ListingHouseRules from '@/components/listing/ListingHouseRules.astro';
 import OpeningHoursSection from '@/components/venue/OpeningHoursSection.astro';
-import ListingContactBlock from '@/components/listing/contact/ListingContactBlock.astro';
-import VenueWhatsAppContact from '@/components/venue/VenueWhatsAppContact.astro';
+import VenueContactSection from '@/components/venue/VenueContactSection.astro';
 import LocationSection from '@/components/listing/location/LocationSection.astro';
 import { buildVenueJsonLdPlace } from '@/lib/venue/venue-address';
 import { hasVenuePublicContact } from '@/lib/venue-contact';
@@ -343,14 +342,11 @@ interface VenueDetailBlock {
 
 const hasOpeningHours =
     venue.openingHours !== null && Object.keys(venue.openingHours).length > 0;
-const hasContactBlock = hasVenueContact;
 /** HOS-2579 §6.5: the street line, the exact pin and the counted map link; `null` without an address. */
 const venueLocation = buildVenueLocation({ venue, locale });
 
 /**
- * HOS-2579 §6.4: the shared contact block. Its builder renders on the same
- * `hasVenuePublicContact` predicate as `hasVenueContact`, so it is non-null
- * exactly when `hasContactBlock` is true.
+ * HOS-2579 §6.4: public venue contact channels. The gated channel is separate.
  */
 const venueContactBlock = buildVenueContactBlock({
     listingId: venue.id,
@@ -359,6 +355,10 @@ const venueContactBlock = buildVenueContactBlock({
     menuUrl: venue.menuUrl,
     locale
 });
+const whatsappContact = venueWhatsApp
+    ? { venue: { id: venue.id, name: venue.name, whatsapp: venueWhatsApp }, signInHref: reviewSignInHref, locale }
+    : undefined;
+const hasContactSection = venueContactBlock !== null || Boolean(whatsappContact);
 
 const venueDetailSectionBlocks: Readonly<
     Record<VenueDetailBodySectionId, readonly VenueDetailBlock[]>
@@ -399,16 +399,12 @@ const venueDetailSectionBlocks: Readonly<
         // public page places the house rules by slot (11, `policies`) since HOS-2579.
     ],
     contact: [
-        ...(venueContactBlock
-            ? [{ Component: ListingContactBlock, props: { ...venueContactBlock } }]
-            : []),
-        // HOS-2256: the WhatsApp button. The component decides by itself whether
-        // there is anything to show (the owner's choice rides the public payload;
-        // the page reads no session), like the other self-hiding blocks.
-        {
-            Component: VenueWhatsAppContact,
-            props: { venue, signInHref: reviewSignInHref, locale }
-        }
+        ...(hasContactSection
+            ? [{
+                  Component: VenueContactSection,
+                  props: { contactBlock: venueContactBlock, whatsappContact, locale }
+              }]
+            : [])
     ],
     menu: [
         {
@@ -458,8 +454,7 @@ const hasDescriptionSection = hasListingDescription({
     richDescription: venue.richDescription
 });
 const hasOffersSection = hasVenueOffersContent({ venue, showEventsCta });
-const hasContactSection = venueContactBlock !== null || Boolean(venueWhatsApp);
-const hasSummarySection = Boolean(venue.priceRange) || contactMode.kind !== 'none';
+const hasSummarySection = Boolean(venue.priceRange || barPhoneHref || venue.contactInfo?.workEmail) || contactMode.kind !== 'none';
 const hasPoliciesSection = hasHouseRules({ policies: houseRulePolicies, locale });
 const sectionTabs = buildListingSectionTabs({
     present: {
@@ -622,6 +617,8 @@ const headerProps = buildVenueHeader({
                 locale={locale}
                 priceRange={venue.priceRange}
                 contactMode={contactMode}
+                phoneHref={barPhoneHref}
+                email={venue.contactInfo?.workEmail}
                 panelId={contactPanelId}
                 fallbackHref={`#${VENUE_CONTACT_ANCHOR_ID}`}
             />
@@ -744,6 +741,8 @@ const headerProps = buildVenueHeader({
         client:idle
         entityType="venue"
         entityId={venue.id}
+        listingPrice={null}
+        canConsult={hasChannelsPanel}
         locale={locale}
         apiUrl={getApiUrl()}
     />

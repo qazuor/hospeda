@@ -12,6 +12,7 @@ export * from './health/health.schema.js';
 export * from './health.schema.js'; // Health check schemas (health, database, liveness, readiness)
 export * from './http/base-http.schema.js';
 export * from './info.schema.js'; // API information schemas (metadata, version info)
+export * from './listing/listing-photo-allowance.schema.js';
 export * from './params.schema.js'; // Path parameters (IDs, slugs, entity-specific parameters)
 export {
     createOperationResultSchema,

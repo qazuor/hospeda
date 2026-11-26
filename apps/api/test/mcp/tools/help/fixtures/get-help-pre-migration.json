@@ -8,9 +8,9 @@
         "Entrá a la sección «Fotos».",
         "Cargá la imagen principal: arrastrá una imagen o hacé clic para elegirla. Es obligatoria para poder publicar.",
         "Sumá más fotos a la galería. Cada archivo puede ser JPG, PNG, WebP o HEIC y pesar hasta 10 MB.",
-        "El editor te avisa cuántas fotos entran en la galería. En alojamientos ese tope depende de tu plan.",
+        "El editor te avisa cuántas fotos entran en la galería y de dónde sale ese número: tu plan, tu prueba y los packs de fotos que tengas.",
         "No hace falta guardar: cada foto que agregás, quitás o cambiás se guarda al instante.",
-        "En alojamientos también podés reordenar la galería y elegir cuál es la portada."
+        "Reordená la galería y elegí cuál es la portada. El orden decide qué fotos se ven si tenés más que tu tope."
       ],
       "links": [
         {
@@ -35,9 +35,9 @@
         "Entrá a la sección «Fotos».",
         "Cargá la imagen principal: arrastrá una imagen o hacé clic para elegirla. Es obligatoria para poder publicar.",
         "Sumá más fotos a la galería. Cada archivo puede ser JPG, PNG, WebP o HEIC y pesar hasta 10 MB.",
-        "El editor te avisa cuántas fotos entran en la galería. En alojamientos ese tope depende de tu plan.",
+        "El editor te avisa cuántas fotos entran en la galería y de dónde sale ese número: tu plan, tu prueba y los packs de fotos que tengas.",
         "No hace falta guardar: cada foto que agregás, quitás o cambiás se guarda al instante.",
-        "En alojamientos también podés reordenar la galería y elegir cuál es la portada."
+        "Reordená la galería y elegí cuál es la portada. El orden decide qué fotos se ven si tenés más que tu tope."
       ],
       "links": [
         {
@@ -54,9 +54,9 @@
         "Entrá a la sección «Fotos».",
         "Cargá la imagen principal: arrastrá una imagen o hacé clic para elegirla. Es obligatoria para poder publicar.",
         "Sumá más fotos a la galería. Cada archivo puede ser JPG, PNG, WebP o HEIC y pesar hasta 10 MB.",
-        "El editor te avisa cuántas fotos entran en la galería. En alojamientos ese tope depende de tu plan.",
+        "El editor te avisa cuántas fotos entran en la galería y de dónde sale ese número: tu plan, tu prueba y los packs de fotos que tengas.",
         "No hace falta guardar: cada foto que agregás, quitás o cambiás se guarda al instante.",
-        "En alojamientos también podés reordenar la galería y elegir cuál es la portada."
+        "Reordená la galería y elegí cuál es la portada. El orden decide qué fotos se ven si tenés más que tu tope."
       ],
       "links": [
         {
@@ -73,9 +73,9 @@
         "Entrá a la sección «Fotos».",
         "Cargá la imagen principal: arrastrá una imagen o hacé clic para elegirla. Es obligatoria para poder publicar.",
         "Sumá más fotos a la galería. Cada archivo puede ser JPG, PNG, WebP o HEIC y pesar hasta 10 MB.",
-        "El editor te avisa cuántas fotos entran en la galería. En alojamientos ese tope depende de tu plan.",
+        "El editor te avisa cuántas fotos entran en la galería y de dónde sale ese número: tu plan, tu prueba y los packs de fotos que tengas.",
         "No hace falta guardar: cada foto que agregás, quitás o cambiás se guarda al instante.",
-        "En alojamientos también podés reordenar la galería y elegir cuál es la portada."
+        "Reordená la galería y elegí cuál es la portada. El orden decide qué fotos se ven si tenés más que tu tope."
       ],
       "links": [
         {
@@ -92,9 +92,9 @@
         "Entrá a la sección «Fotos».",
         "Cargá la imagen principal: arrastrá una imagen o hacé clic para elegirla. Es obligatoria para poder publicar.",
         "Sumá más fotos a la galería. Cada archivo puede ser JPG, PNG, WebP o HEIC y pesar hasta 10 MB.",
-        "El editor te avisa cuántas fotos entran en la galería. En alojamientos ese tope depende de tu plan.",
+        "El editor te avisa cuántas fotos entran en la galería y de dónde sale ese número: tu plan, tu prueba y los packs de fotos que tengas.",
         "No hace falta guardar: cada foto que agregás, quitás o cambiás se guarda al instante.",
-        "En alojamientos también podés reordenar la galería y elegir cuál es la portada."
+        "Reordená la galería y elegí cuál es la portada. El orden decide qué fotos se ven si tenés más que tu tope."
       ],
       "links": []
     }
@@ -788,10 +788,11 @@
       "id": "reviews",
       "title": "Ver las reseñas de mis publicaciones",
       "steps": [
-        "El portal no tiene una pantalla con las reseñas que recibieron tus publicaciones: «Mis reseñas» muestra las que escribiste vos como usuario.",
-        "Pedile a este asistente que te muestre las reseñas de tus publicaciones. Puede filtrar por publicación, rubro, puntaje, fecha y estado.",
-        "Cada reseña indica su estado: publicada, pendiente de aprobación o rechazada. Solo las aprobadas se ven en el sitio.",
-        "Hospeda no permite que el propietario responda las reseñas de sus publicaciones, ni desde el portal ni desde el asistente."
+        "Entrá a «Reseñas recibidas» en el área anfitrión.",
+        "Elegí «Sin responder» para ver solo las reseñas a las que todavía no contestaste.",
+        "Tocá «Responder», escribí tu respuesta y publicala. Se muestra al instante en la ficha de tu alojamiento, debajo de la reseña.",
+        "Para cambiarla, tocá «Editar respuesta»: queda marcada como «editada». Para sacarla, tocá «Eliminar respuesta»; después podés responder de nuevo.",
+        "Cada reseña indica su estado: publicada, pendiente de aprobación o rechazada. Solo las aprobadas se ven en el sitio, y solo esas se pueden responder."
       ],
       "links": []
     },
@@ -799,10 +800,11 @@
       "id": "reviews",
       "title": "Ver las reseñas de mis publicaciones",
       "steps": [
-        "El portal no tiene una pantalla con las reseñas que recibieron tus publicaciones: «Mis reseñas» muestra las que escribiste vos como usuario.",
-        "Pedile a este asistente que te muestre las reseñas de tus publicaciones. Puede filtrar por publicación, rubro, puntaje, fecha y estado.",
-        "Cada reseña indica su estado: publicada, pendiente de aprobación o rechazada. Solo las aprobadas se ven en el sitio.",
-        "Hospeda no permite que el propietario responda las reseñas de sus publicaciones, ni desde el portal ni desde el asistente."
+        "Entrá a «Reseñas recibidas» en el área anfitrión.",
+        "Elegí «Sin responder» para ver solo las reseñas a las que todavía no contestaste.",
+        "Tocá «Responder», escribí tu respuesta y publicala. Se muestra al instante en la ficha de tu alojamiento, debajo de la reseña.",
+        "Para cambiarla, tocá «Editar respuesta»: queda marcada como «editada». Para sacarla, tocá «Eliminar respuesta»; después podés responder de nuevo.",
+        "Cada reseña indica su estado: publicada, pendiente de aprobación o rechazada. Solo las aprobadas se ven en el sitio, y solo esas se pueden responder."
       ],
       "links": []
     },
@@ -810,10 +812,11 @@
       "id": "reviews",
       "title": "Ver las reseñas de mis publicaciones",
       "steps": [
-        "El portal no tiene una pantalla con las reseñas que recibieron tus publicaciones: «Mis reseñas» muestra las que escribiste vos como usuario.",
-        "Pedile a este asistente que te muestre las reseñas de tus publicaciones. Puede filtrar por publicación, rubro, puntaje, fecha y estado.",
-        "Cada reseña indica su estado: publicada, pendiente de aprobación o rechazada. Solo las aprobadas se ven en el sitio.",
-        "Hospeda no permite que el propietario responda las reseñas de sus publicaciones, ni desde el portal ni desde el asistente."
+        "Entrá a «Reseñas recibidas» en el área anfitrión.",
+        "Elegí «Sin responder» para ver solo las reseñas a las que todavía no contestaste.",
+        "Tocá «Responder», escribí tu respuesta y publicala. Se muestra al instante en la ficha de tu alojamiento, debajo de la reseña.",
+        "Para cambiarla, tocá «Editar respuesta»: queda marcada como «editada». Para sacarla, tocá «Eliminar respuesta»; después podés responder de nuevo.",
+        "Cada reseña indica su estado: publicada, pendiente de aprobación o rechazada. Solo las aprobadas se ven en el sitio, y solo esas se pueden responder."
       ],
       "links": []
     },
@@ -821,10 +824,11 @@
       "id": "reviews",
       "title": "Ver las reseñas de mis publicaciones",
       "steps": [
-        "El portal no tiene una pantalla con las reseñas que recibieron tus publicaciones: «Mis reseñas» muestra las que escribiste vos como usuario.",
-        "Pedile a este asistente que te muestre las reseñas de tus publicaciones. Puede filtrar por publicación, rubro, puntaje, fecha y estado.",
-        "Cada reseña indica su estado: publicada, pendiente de aprobación o rechazada. Solo las aprobadas se ven en el sitio.",
-        "Hospeda no permite que el propietario responda las reseñas de sus publicaciones, ni desde el portal ni desde el asistente."
+        "Entrá a «Reseñas recibidas» en el área anfitrión.",
+        "Elegí «Sin responder» para ver solo las reseñas a las que todavía no contestaste.",
+        "Tocá «Responder», escribí tu respuesta y publicala. Se muestra al instante en la ficha de tu alojamiento, debajo de la reseña.",
+        "Para cambiarla, tocá «Editar respuesta»: queda marcada como «editada». Para sacarla, tocá «Eliminar respuesta»; después podés responder de nuevo.",
+        "Cada reseña indica su estado: publicada, pendiente de aprobación o rechazada. Solo las aprobadas se ven en el sitio, y solo esas se pueden responder."
       ],
       "links": []
     },
@@ -832,10 +836,11 @@
       "id": "reviews",
       "title": "Ver las reseñas de mis publicaciones",
       "steps": [
-        "El portal no tiene una pantalla con las reseñas que recibieron tus publicaciones: «Mis reseñas» muestra las que escribiste vos como usuario.",
-        "Pedile a este asistente que te muestre las reseñas de tus publicaciones. Puede filtrar por publicación, rubro, puntaje, fecha y estado.",
-        "Cada reseña indica su estado: publicada, pendiente de aprobación o rechazada. Solo las aprobadas se ven en el sitio.",
-        "Hospeda no permite que el propietario responda las reseñas de sus publicaciones, ni desde el portal ni desde el asistente."
+        "Entrá a «Reseñas recibidas» en el área anfitrión.",
+        "Elegí «Sin responder» para ver solo las reseñas a las que todavía no contestaste.",
+        "Tocá «Responder», escribí tu respuesta y publicala. Se muestra al instante en la ficha de tu alojamiento, debajo de la reseña.",
+        "Para cambiarla, tocá «Editar respuesta»: queda marcada como «editada». Para sacarla, tocá «Eliminar respuesta»; después podés responder de nuevo.",
+        "Cada reseña indica su estado: publicada, pendiente de aprobación o rechazada. Solo las aprobadas se ven en el sitio, y solo esas se pueden responder."
       ],
       "links": []
     }

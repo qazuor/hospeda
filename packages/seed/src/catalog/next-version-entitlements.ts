@@ -150,6 +150,28 @@ export const PRODUCTION_PLAN_FREE_VISIBLE_PROMOTIONS_LIMIT = {
     limit: { key: 'max_free_visible_promotions', value: 3 }
 } as const;
 
+/** HOS-2495: gallery limits granted to every version of the six commercial listing plans. */
+export const PRODUCTION_PLAN_LISTING_PHOTO_LIMIT_GRANTS = [
+    { vertical: 'venue', slug: 'venue-basico', limit: { key: 'max_photos_per_venue', value: 15 } },
+    { vertical: 'venue', slug: 'venue-pro', limit: { key: 'max_photos_per_venue', value: 30 } },
+    { vertical: 'venue', slug: 'venue-premium', limit: { key: 'max_photos_per_venue', value: 50 } },
+    {
+        vertical: 'experience',
+        slug: 'experience-basico',
+        limit: { key: 'max_photos_per_experience', value: 15 }
+    },
+    {
+        vertical: 'experience',
+        slug: 'experience-pro',
+        limit: { key: 'max_photos_per_experience', value: 30 }
+    },
+    {
+        vertical: 'experience',
+        slug: 'experience-premium',
+        limit: { key: 'max_photos_per_experience', value: 50 }
+    }
+] as const;
+
 /**
  * HOS-2184 G-6 (owner decision, 2026-11-25): every plan of the accommodation, venue
  * and experience verticals grants the AI assistant connector (MCP) on day one: the

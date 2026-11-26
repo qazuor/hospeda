@@ -168,6 +168,8 @@
         }
     },
     "byAttraction": {
+        "filterTitle": "Filtrá por atracción",
+        "subtitle": "Explorá las localidades donde podés visitar esta atracción: {{attraction}}.",
         "tagline": "Atracción",
         "heading": "Destinos con {{attraction}}",
         "seoSuffix": "Descubrí los destinos del Litoral que lo ofrecen.",
@@ -215,6 +217,7 @@
             "reviews_other": "reseñas"
         },
         "nearby": {
+            "exploreCities": "Explorar ciudades",
             "title": "Otros destinos en la zona",
             "subtitle": "Cercanos en la región — explorá lo que hay alrededor"
         },

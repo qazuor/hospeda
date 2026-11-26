@@ -984,33 +984,13 @@ describe('DeleteMediaResponseSchema', () => {
 // ============================================================================
 
 describe('ENTITY_GALLERY_CAPS', () => {
-    it('should define accommodation cap as 50', () => {
-        expect(ENTITY_GALLERY_CAPS.accommodation).toBe(50);
+    it('holds exactly the three content entity caps (HOS-2495)', () => {
+        expect(ENTITY_GALLERY_CAPS).toEqual({ destination: 20, event: 10, post: 15 });
     });
 
-    it('should define destination cap as 20', () => {
-        expect(ENTITY_GALLERY_CAPS.destination).toBe(20);
-    });
-
-    it('should define event cap as 10', () => {
-        expect(ENTITY_GALLERY_CAPS.event).toBe(10);
-    });
-
-    it('should define post cap as 15', () => {
-        expect(ENTITY_GALLERY_CAPS.post).toBe(15);
-    });
-
-    it('should export all four gallery entity cap keys', () => {
-        // Verify that all expected keys are present and hold numeric values.
-        const keys = Object.keys(ENTITY_GALLERY_CAPS);
-        expect(keys).toContain('accommodation');
-        expect(keys).toContain('destination');
-        expect(keys).toContain('event');
-        expect(keys).toContain('post');
-        for (const key of keys) {
-            expect(typeof ENTITY_GALLERY_CAPS[key as keyof typeof ENTITY_GALLERY_CAPS]).toBe(
-                'number'
-            );
+    it('has no literal cap for a listing vertical', () => {
+        for (const vertical of ['accommodation', 'venue', 'experience']) {
+            expect(Object.hasOwn(ENTITY_GALLERY_CAPS, vertical)).toBe(false);
         }
     });
 });
@@ -1023,42 +1003,27 @@ describe('MAX_GALLERY_CAP_FALLBACK', () => {
 });
 
 describe('getGalleryCap', () => {
-    it('should return 50 for accommodation', () => {
-        expect(getGalleryCap('accommodation')).toBe(50);
+    it.each([
+        ['destination', 20],
+        ['event', 10],
+        ['post', 15]
+    ] as const)('returns %i for %s', (entity, cap) => {
+        expect(getGalleryCap(entity)).toBe(cap);
     });
 
-    it('should return 20 for destination', () => {
-        expect(getGalleryCap('destination')).toBe(20);
+    it('rejects a listing vertical at the type level', () => {
+        // @ts-expect-error a listing vertical has no literal gallery cap (HOS-2495)
+        expect(getGalleryCap('accommodation')).toBe(MAX_GALLERY_CAP_FALLBACK);
+        // @ts-expect-error a listing vertical has no literal gallery cap (HOS-2495)
+        expect(getGalleryCap('venue')).toBe(MAX_GALLERY_CAP_FALLBACK);
+        // @ts-expect-error a listing vertical has no literal gallery cap (HOS-2495)
+        expect(getGalleryCap('experience')).toBe(MAX_GALLERY_CAP_FALLBACK);
     });
 
-    it('should return 10 for event', () => {
-        expect(getGalleryCap('event')).toBe(10);
-    });
-
-    it('should return 15 for post', () => {
-        expect(getGalleryCap('post')).toBe(15);
-    });
-
-    it('should return MAX_GALLERY_CAP_FALLBACK for an unknown entity type', () => {
-        expect(getGalleryCap('unknown')).toBe(MAX_GALLERY_CAP_FALLBACK);
-    });
-
-    it('should return MAX_GALLERY_CAP_FALLBACK for an empty string', () => {
-        expect(getGalleryCap('')).toBe(MAX_GALLERY_CAP_FALLBACK);
-    });
-
-    it('should return MAX_GALLERY_CAP_FALLBACK for a case-mismatched entity type', () => {
-        // Entity types are lowercase; 'Accommodation' is not a known key.
-        expect(getGalleryCap('Accommodation')).toBe(MAX_GALLERY_CAP_FALLBACK);
-    });
-
-    it('should return a number for all four gallery entity types', () => {
-        const galleryEntities = ['accommodation', 'destination', 'event', 'post'] as const;
-        for (const entity of galleryEntities) {
-            const cap = getGalleryCap(entity);
-            expect(typeof cap).toBe('number');
-            expect(cap).toBeGreaterThan(0);
-        }
+    it('returns MAX_GALLERY_CAP_FALLBACK for a value that escaped the type', () => {
+        expect(getGalleryCap('unknown' as never)).toBe(MAX_GALLERY_CAP_FALLBACK);
+        expect(getGalleryCap('' as never)).toBe(MAX_GALLERY_CAP_FALLBACK);
+        expect(getGalleryCap('Post' as never)).toBe(MAX_GALLERY_CAP_FALLBACK);
     });
 });
 
@@ -1070,13 +1035,6 @@ describe('Venue and experience media entity types', () => {
     it('MediaEntityTypeSchema accepts venue and experience', () => {
         expect(MediaEntityTypeSchema.safeParse('venue').success).toBe(true);
         expect(MediaEntityTypeSchema.safeParse('experience').success).toBe(true);
-    });
-
-    it('defines gallery caps for both verticals', () => {
-        expect(ENTITY_GALLERY_CAPS.venue).toBe(30);
-        expect(ENTITY_GALLERY_CAPS.experience).toBe(30);
-        expect(getGalleryCap('venue')).toBe(30);
-        expect(getGalleryCap('experience')).toBe(30);
     });
 
     it('resolves storage folders for venue and experience', () => {

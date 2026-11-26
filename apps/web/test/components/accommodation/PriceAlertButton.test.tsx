@@ -21,7 +21,7 @@
  * create an alert is the API's answer to the create request.
  */
 
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -53,13 +53,8 @@ vi.mock('@/lib/auth-cache', () => ({
 
 const mockAlertsList = vi.fn();
 const mockGetEffectiveSet = vi.fn();
-const mockFetchPublicPlans = vi.fn();
-vi.mock('@/components/promotions/use-promotion-policy', () => ({
-    useVipPlanName: () => ({ vipPlanName: 'Explorer' })
-}));
-vi.mock('@/components/account/ui/read-tourist-vip-plan', () => ({
-    readTouristVipPlan: (params: unknown) => mockFetchPublicPlans(params)
-}));
+const mockToast = vi.fn();
+vi.mock('@/store/toast-store', () => ({ addToast: (toast: unknown) => mockToast(toast) }));
 
 vi.mock('@/lib/api/endpoints-protected', () => ({
     priceAlertsApi: { list: (params: unknown) => mockAlertsList(params) },
@@ -76,7 +71,7 @@ const PROPS = {
     accommodationId: 'acc-1',
     apiUrl: 'http://localhost:3001',
     locale: 'es' as const,
-    children: <div data-testid="signin-cta">Iniciá sesión para crear la alerta</div>
+    planName: 'Explorer'
 };
 
 describe('PriceAlertButton — anonymous variant', () => {
@@ -85,21 +80,25 @@ describe('PriceAlertButton — anonymous variant', () => {
         mockAlertsList.mockReset();
     });
 
-    it('renders the sign-in children while the session is unresolved', () => {
+    it('shows the pre-click paid-plan badge while the session is unresolved', () => {
         // This is the SSR / edge-cached output.
         mockReadCachedAuthMe.mockReturnValue(null);
         render(<PriceAlertButton {...PROPS} />);
 
-        expect(screen.getByTestId('signin-cta')).toBeInTheDocument();
-        expect(screen.queryByRole('button')).not.toBeInTheDocument();
+        expect(
+            screen.getByRole('button', { name: /avisame si baja el precio.*explorer/i })
+        ).toBeVisible();
     });
 
-    it('renders the sign-in children for a confirmed guest, and calls nothing', async () => {
+    it('opens the same plans popover as for free, without reading private alerts', async () => {
         mockReadCachedAuthMe.mockReturnValue(buildAuthSnapshot({ isAuthenticated: false }));
         render(<PriceAlertButton {...PROPS} />);
 
-        expect(screen.getByTestId('signin-cta')).toBeInTheDocument();
-        await waitFor(() => expect(mockAlertsList).not.toHaveBeenCalled());
+        await userEvent.click(
+            screen.getByRole('button', { name: /avisame si baja el precio.*explorer/i })
+        );
+        expect(screen.getByRole('link', { name: 'Ver planes' })).toBeVisible();
+        expect(mockAlertsList).not.toHaveBeenCalled();
     });
 });
 
@@ -109,8 +108,7 @@ describe('TEST:B13a:25 PriceAlertButton effective-set gate', () => {
         mockReadCachedAuthMe.mockReturnValue(buildAuthSnapshot({ isAuthenticated: true }));
         mockAlertsList.mockReset();
         mockGetEffectiveSet.mockReset();
-        mockFetchPublicPlans.mockReset();
-        mockFetchPublicPlans.mockResolvedValue(null);
+        mockToast.mockClear();
         mockGetEffectiveSet.mockResolvedValue({
             entitlements: { price_alerts: 1 },
             limits: { max_active_alerts: 10 },
@@ -147,12 +145,23 @@ describe('TEST:B13a:25 PriceAlertButton effective-set gate', () => {
     it('offers cancel when an alert exists for THIS accommodation', async () => {
         mockAlertsList.mockResolvedValue({
             ok: true,
-            data: { items: [{ id: 'alert-9', accommodationId: 'acc-1' }] }
+            data: {
+                items: [
+                    {
+                        id: 'alert-9',
+                        accommodationId: 'acc-1',
+                        targetPercentDrop: 17,
+                        createdAt: '2026-09-10T12:00:00Z'
+                    }
+                ]
+            }
         });
 
         render(<PriceAlertButton {...PROPS} />);
 
         expect(await screen.findByRole('button', { name: /cancelar alerta/i })).toBeEnabled();
+        expect(screen.getByText(/17/)).toBeVisible();
+        expect(screen.getByText(/10 sept/i)).toBeVisible();
     });
 
     it('locks when the alert lookup fails', async () => {
@@ -224,7 +233,7 @@ describe('TEST:B13a:25 PriceAlertButton effective-set gate', () => {
             })
         ).toBeInTheDocument();
     });
-    it('loads the VIP dialog only on click, stays on the page, and closes with Ahora no', async () => {
+    it('opens the paid-plan popover on click and restores focus on dismissal', async () => {
         mockGetEffectiveSet.mockResolvedValue({ entitlements: {}, limits: {}, failed: false });
         mockAlertsList.mockResolvedValue({ ok: true, data: { items: [] } });
         const user = userEvent.setup();
@@ -233,20 +242,48 @@ describe('TEST:B13a:25 PriceAlertButton effective-set gate', () => {
         const trigger = await screen.findByRole('button', {
             name: /avisame si baja el precio.*explorer/i
         });
-        expect(mockFetchPublicPlans).not.toHaveBeenCalled();
         expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
         await user.click(trigger);
-        await act(async () => {
-            await vi.dynamicImportSettled();
-        });
-        expect(
-            await screen.findByRole('dialog', { name: 'Viajá con Hospeda VIP' })
-        ).toBeInTheDocument();
+        expect(screen.getByRole('dialog')).toHaveTextContent('Explorer');
+        expect(screen.getByRole('link', { name: 'Ver planes' })).toBeVisible();
         expect(window.location.href).toBe(href);
-        expect(mockFetchPublicPlans).toHaveBeenCalledWith({ apiUrl: PROPS.apiUrl });
         await user.click(screen.getByRole('button', { name: 'Ahora no' }));
         await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
         expect(trigger).toHaveFocus();
+    });
+    it('posts the percentage only after confirmation and shows the saved alert and toast', async () => {
+        const user = userEvent.setup();
+        mockAlertsList.mockResolvedValue({ ok: true, data: { items: [] } });
+        const fetchMock = vi.fn().mockResolvedValue(
+            new Response(
+                JSON.stringify({
+                    success: true,
+                    data: { id: 'saved', targetPercentDrop: 17, createdAt: '2026-09-10T12:00:00Z' }
+                })
+            )
+        );
+        vi.stubGlobal('fetch', fetchMock);
+        render(<PriceAlertButton {...PROPS} />);
+        const trigger = await screen.findByRole('button', { name: /avisame si baja el precio/i });
+        await waitFor(() => expect(trigger).toBeEnabled());
+        await user.click(trigger);
+        expect(fetchMock).not.toHaveBeenCalled();
+        await user.type(screen.getByRole('spinbutton'), '17');
+        await user.click(screen.getByRole('button', { name: 'Crear alerta' }));
+        expect(fetchMock).toHaveBeenCalledWith(
+            expect.any(String),
+            expect.objectContaining({
+                body: JSON.stringify({ accommodationId: 'acc-1', targetPercentDrop: 17 })
+            })
+        );
+        expect(await screen.findByRole('button', { name: 'Cancelar alerta' })).toBeVisible();
+        expect(screen.getByText(/17/)).toBeVisible();
+        expect(mockToast).toHaveBeenCalledWith(
+            expect.objectContaining({
+                type: 'success',
+                message: expect.stringMatching(/por email/i)
+            })
+        );
     });
     it('translates an ENTITLEMENT_REQUIRED refusal and hides the API English message', async () => {
         const user = userEvent.setup();
@@ -269,6 +306,8 @@ describe('TEST:B13a:25 PriceAlertButton effective-set gate', () => {
         );
         render(<PriceAlertButton {...PROPS} />);
         await user.click(await screen.findByRole('button', { name: /avisame si baja el precio/i }));
+        await user.type(screen.getByRole('spinbutton'), '10');
+        await user.click(screen.getByRole('button', { name: 'Crear alerta' }));
         expect(await screen.findByRole('alert')).toHaveTextContent(
             'Tu plan no incluye esta función. Actualizalo para continuar.'
         );

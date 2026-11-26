@@ -61,6 +61,8 @@ interface SidebarI18n {
 }
 
 interface AccommodationsListingMapProps {
+    /** Total located inventory matching the listing filters, independent of viewport and card cap. */
+    readonly filteredLocatedCount?: number;
     readonly initialItems: ReadonlyArray<AccommodationCardData>;
     readonly initialCenter: [number, number];
     readonly initialZoom?: number;
@@ -155,6 +157,7 @@ export function AccommodationsListingMap({
     priceLabelById,
     showSidebar = false,
     sidebarI18n,
+    filteredLocatedCount,
     extraSearchParams,
     locale = 'es',
     gatePlanNames = []
@@ -405,7 +408,8 @@ export function AccommodationsListingMap({
                     isFetching={isFetching}
                     i18n={{
                         resultsHeading: sidebarI18n.resultsHeading,
-                        resultsCount: sidebarCountFn,
+                        resultsCount: (visibleCount) =>
+                            sidebarCountFn(filteredLocatedCount ?? visibleCount),
                         emptyState: sidebarI18n.emptyState,
                         openSheet: sidebarI18n.openSheet,
                         openSheetCount: openSheetCountFn,

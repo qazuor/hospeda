@@ -22,6 +22,7 @@ import type { Context } from 'hono';
 import { z } from 'zod';
 
 import { getActorFromContext } from '../../../utils/actor';
+import { listingGalleryPhotoLimit } from '../../../utils/listing-access/photo-limit';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
@@ -40,7 +41,12 @@ export const protectedAddVenueMediaRoute = createProtectedRoute({
     description:
         'Registers an already-uploaded URL as a new venue_media row. ' +
         'Requires VENUE_EDIT_OWN (listing owner) or VENUE_EDIT_ALL (staff).',
-    listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
+    listingAccess: {
+        vertical: VerticalEnum.VENUE,
+        operation: 'EDIT',
+        idParam: 'id',
+        limit: listingGalleryPhotoLimit({ vertical: VerticalEnum.VENUE })
+    },
     tags: ['Venue', 'Venue Media'],
     protectedTag: false,
     requestParams: {

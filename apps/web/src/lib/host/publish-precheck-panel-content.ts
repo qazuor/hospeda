@@ -16,11 +16,18 @@
  * consumer and is responsible for resolving `labelKey`/`titleKey`/etc.
  * through `t()` and rendering the actual markup.
  *
- * HOS-1352: transitional until V3 (HOS-1357), see PR: cap offers are
- * unavailable while the replacement effective-limit contract is being built.
+ * At-cap decisions (`upgrade_only`, `resume_delete_or_upgrade`,
+ * `pick_draft_delete_or_upgrade`) offer the plan change and, when the caller
+ * passes a `capAddon` read from the catalog (HOS-2632), the add-on that widens
+ * that cap. Without one the panel offers the plan change alone.
  */
 
 import type { HostOnboardingPrecheckDecision } from '@/lib/api/endpoints-protected';
+import {
+    CAP_ADDON_CTA_KEY,
+    capAddonHref,
+    PUBLISH_CAP_LIMIT_KEY
+} from '@/lib/billing/addon-cap-offer';
 import type { SupportedLocale } from '@/lib/i18n';
 
 /**
@@ -78,12 +85,8 @@ const PRECHECK_COPY: Readonly<
     }
 };
 
-/** Retained locale key segments from the former publish-limit map. */
-const LIMIT_KEY_BY_PUBLISH_VERTICAL: Readonly<Record<PublishVertical, string>> = {
-    accommodation: 'max_accommodations',
-    venue: 'max_venues',
-    experience: 'max_experiences'
-};
+/** Locale key segment of each vertical's cap: the catalog limit key itself. */
+const LIMIT_KEY_BY_PUBLISH_VERTICAL = PUBLISH_CAP_LIMIT_KEY;
 
 // ---------------------------------------------------------------------------
 // Types
@@ -99,6 +102,8 @@ export interface PrecheckPanelLinkAction {
     readonly href: string;
     readonly labelKey: string;
     readonly labelFallback: string;
+    /** Interpolation values for the label (the add-on action carries `name` and `price`). */
+    readonly labelParams?: Readonly<Record<string, string>>;
 }
 
 /**
@@ -166,6 +171,12 @@ export interface ResolvePrecheckPanelContentParams {
     readonly accountPropertiesUrl: string;
     /** Plan upgrade / subscription page. */
     readonly subscriptionUrl: string;
+    /**
+     * The catalog add-on that widens this vertical's cap, already localized and priced by the
+     * caller (HOS-2632). Absent when the catalog has none: only the plan change is offered.
+     * Ignored by decisions that are not at the cap.
+     */
+    readonly capAddon?: { readonly name: string; readonly priceLabel: string };
 }
 
 // ---------------------------------------------------------------------------
@@ -204,13 +215,36 @@ export function resolvePrecheckPanelContent(
         createUrl,
         accountPropertiesUrl,
         subscriptionUrl,
-        vertical = 'accommodation'
+        vertical = 'accommodation',
+        capAddon
     } = params;
 
     const { ns, noun, nounPlural } = PRECHECK_COPY[vertical];
     const limitKey = LIMIT_KEY_BY_PUBLISH_VERTICAL[vertical];
 
-    // HOS-1352: transitional until V3 (HOS-1357), see PR: no plan-cap add-on is offered before effective limits exist.
+    const addonAction: PrecheckPanelLinkAction | null = capAddon
+        ? {
+              kind: 'link',
+              variant: 'secondary',
+              href: capAddonHref({ subscriptionUrl, vertical }),
+              labelKey: CAP_ADDON_CTA_KEY,
+              labelFallback: 'Ampliar con {{name}} ({{price}})',
+              labelParams: { name: capAddon.name, price: capAddon.priceLabel }
+          }
+        : null;
+    const withAddon = (actions: readonly PrecheckPanelAction[]): readonly PrecheckPanelAction[] => {
+        if (!addonAction) return actions;
+        const upgradeIndex = actions.findIndex(
+            (action) => action.kind === 'link' && action.href === subscriptionUrl
+        );
+        return upgradeIndex < 0
+            ? actions
+            : [
+                  ...actions.slice(0, upgradeIndex + 1),
+                  addonAction,
+                  ...actions.slice(upgradeIndex + 1)
+              ];
+    };
 
     switch (decision) {
         case 'upgrade_only':
@@ -221,7 +255,7 @@ export function resolvePrecheckPanelContent(
                 bodyFallback: `Tenés {{currentCount}} de {{maxAllowed}} ${nounPlural} publicadas. Los borradores no cuentan para este límite. Para publicar otra, actualizá tu plan.`,
                 showQuota: true,
                 bodyPluralBasis: 'maxAllowed',
-                actions: [
+                actions: withAddon([
                     {
                         kind: 'link',
                         variant: 'primary',
@@ -236,7 +270,7 @@ export function resolvePrecheckPanelContent(
                         labelKey: `billing.limit.${limitKey}.atLimitPanel.secondaryCta`,
                         labelFallback: `Ver mis ${nounPlural}`
                     }
-                ]
+                ])
             };
 
         case 'resume_or_create':
@@ -272,7 +306,7 @@ export function resolvePrecheckPanelContent(
                 bodyFallback: `Tenés {{currentCount}} ${nounPlural} publicadas y tu plan permite {{maxAllowed}}. Los borradores no cuentan para este límite. Podés retomar o borrar tu borrador; para publicar otra, subí de plan.`,
                 showQuota: true,
                 bodyPluralBasis: 'currentCount',
-                actions: [
+                actions: withAddon([
                     {
                         kind: 'link',
                         variant: 'primary',
@@ -295,7 +329,7 @@ export function resolvePrecheckPanelContent(
                         labelKey: `${ns}.resumeDeleteOrUpgrade.upgradeCta`,
                         labelFallback: 'Subir de plan'
                     }
-                ]
+                ])
             };
 
         case 'pick_draft_or_create':
@@ -331,7 +365,7 @@ export function resolvePrecheckPanelContent(
                 bodyFallback: `Tenés {{currentCount}} ${nounPlural} publicadas y tu plan permite {{maxAllowed}}. Los borradores no cuentan para este límite. Podés seguir editándolos; para publicar otra, subí de plan.`,
                 showQuota: true,
                 bodyPluralBasis: 'currentCount',
-                actions: [
+                actions: withAddon([
                     {
                         kind: 'link',
                         variant: 'primary',
@@ -346,7 +380,7 @@ export function resolvePrecheckPanelContent(
                         labelKey: `${ns}.pickDraftDeleteOrUpgrade.upgradeCta`,
                         labelFallback: 'Subir de plan'
                     }
-                ]
+                ])
             };
 
         case 'create_direct':

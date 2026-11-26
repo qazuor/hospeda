@@ -39,7 +39,18 @@ describe('AccountSidebar desktop density', () => {
         expect(desktop).toMatch(/\.icon\s*{[^}]*block-size: 1\.25rem;/);
     });
 
-    it('reserves the scrollbar gutter so it never reflows the labels', () => {
-        expect(desktopBlock(shellCss)).toMatch(/\.sidebar\s*{[^}]*scrollbar-gutter: stable;/);
+    it('uses shared smart sticky without creating a second scroll container (D01)', () => {
+        // D01 replaces the old scrollbar-gutter contract: only the page scrolls.
+        const shell = read('layouts/AccountShell.astro');
+        const sidebarRules = [...shellCss.matchAll(/\.sidebar\s*\{([^}]*)}/g)].map(
+            ([, body]) => body
+        );
+
+        expect(shell).toContain('<SmartSticky />');
+        expect(shell).toMatch(/<aside class=\{styles\.sidebar\} data-smart-sticky>/);
+        expect(desktopBlock(shellCss)).toMatch(/\.sidebar\s*\{[^}]*--sticky-sidebar-base: 4rem;/);
+        expect(sidebarRules.join('\n')).not.toMatch(
+            /(?:max-(?:height|block-size)|overflow(?:-[xy]|-block)?|scrollbar-gutter|position)\s*:/
+        );
     });
 });

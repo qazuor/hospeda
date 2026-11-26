@@ -3618,6 +3618,12 @@
             "min": "The lowest rating is {{min}}"
         }
     },
+    "accommodationReviewReply": {
+        "content": {
+            "max": "The reply cannot exceed {{max}} characters",
+            "min": "The reply cannot be empty"
+        }
+    },
     "hostTradeReviewReply": {
         "content": {
             "max": "The reply cannot exceed {{max}} characters",

@@ -126,14 +126,21 @@ describe('buildHelpArticleView over the real index', () => {
     });
 
     it('asks for the limit island with the verticals its limit tokens name', () => {
-        // Arrange: photos holds {{limit:max_photos_per_accommodation:accommodation}}
+        // Arrange: photos holds one limit token per vertical (HOS-2495):
+        // max_photos_per_accommodation, max_photos_per_venue, max_photos_per_experience.
         const view = viewOf('photos');
         const html = view.sections.map((section) => section.html).join('\n');
 
         // Assert
-        expect(view.limitVerticals).toEqual(['accommodation']);
+        expect(view.limitVerticals).toEqual(['accommodation', 'experience', 'venue']);
         expect(html).toContain(
             '<span data-help-limit="max_photos_per_accommodation" data-vertical="accommodation">el tope de tu plan</span>'
+        );
+        expect(html).toContain(
+            '<span data-help-limit="max_photos_per_venue" data-vertical="venue">el tope de tu plan</span>'
+        );
+        expect(html).toContain(
+            '<span data-help-limit="max_photos_per_experience" data-vertical="experience">el tope de tu plan</span>'
         );
     });
 

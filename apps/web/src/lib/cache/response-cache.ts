@@ -289,7 +289,7 @@ export function applyCacheHeaders({
  * header argues against: it has to be remembered in 18 places, and the one that
  * forgets is silent. So the call lives inside the COMPONENTS that draw the
  * failure state (`components/shared/feedback/ErrorBanner.astro` and
- * `components/ErrorBanner.astro`'s `error` variant). An `.astro` component's
+ * `components/shared/feedback/ErrorBanner.astro`). An `.astro` component's
  * frontmatter runs when, and only when, the component is actually rendered, so
  * "this response shows an error" and "this response is marked degraded" become
  * the same event. A page cannot render the banner and forget the mark, because

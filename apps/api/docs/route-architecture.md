@@ -631,6 +631,7 @@ Reviews have their own admin sub-router mounted at
 | `PUT` | `/api/v1/protected/venues/{id}/faqs/{faqId}` | `VENUE_EDIT_OWN` | Update existing FAQ |
 | `DELETE` | `/api/v1/protected/venues/{id}/faqs/{faqId}` | Auth only | Removal always allowed |
 | `PUT` | `/api/v1/protected/venues/{id}/faqs/reorder` | `VENUE_EDIT_OWN` | Bulk displayOrder update |
+| `GET` | `/api/v1/protected/venues/{id}/photo-allowance` | none (`listingAccess` READ_OWN: ownership is the gate) | HOS-2495: the photo cap step 7 enforces (`ListingPhotoAllowanceSchema`): `LIMITED` / `UNLIMITED` / `NONE` with `used`, `hiddenCount`, `coverAllowed` and a `breakdown` that adds up to the cap or is `null`. An owner without coverage gets `status: 'NONE'`, never a 403; a foreign listing answers **404**. The shared web photo editor reads it. |
 | `POST` | `/api/v1/protected/venues/{venueId}/reviews` | Auth only | Review starts in PENDING state; one per user per listing enforced |
 
 ### Admin tier
@@ -699,6 +700,7 @@ Reviews have their own admin sub-router mounted at
 | `PUT` | `/api/v1/protected/experiences/{id}/faqs/{faqId}` | `EXPERIENCE_EDIT_OWN` | Update existing FAQ |
 | `DELETE` | `/api/v1/protected/experiences/{id}/faqs/{faqId}` | Auth only | Removal always allowed |
 | `PUT` | `/api/v1/protected/experiences/{id}/faqs/reorder` | `EXPERIENCE_EDIT_OWN` | Bulk displayOrder update |
+| `GET` | `/api/v1/protected/experiences/{id}/photo-allowance` | none (`listingAccess` READ_OWN: ownership is the gate) | HOS-2495: the photo cap step 7 enforces (`ListingPhotoAllowanceSchema`): `LIMITED` / `UNLIMITED` / `NONE` with `used`, `hiddenCount`, `coverAllowed` and a `breakdown` that adds up to the cap or is `null`. An owner without coverage gets `status: 'NONE'`, never a 403; a foreign listing answers **404**. The shared web photo editor reads it. |
 | `POST` | `/api/v1/protected/experiences/{experienceId}/reviews` | Auth only | Review starts in PENDING state; one per user per listing enforced |
 
 ### Admin tier

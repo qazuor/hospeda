@@ -26,7 +26,7 @@ describe('home contrast tokens (HOS-2572)', () => {
     it.each([
         ['sections/HeroSection.astro', '.social-proof__badge', 'brand-primary-text'],
         ['sections/SearchBar.module.css', '.button', 'brand-primary-text'],
-        ['newsletter/NewsletterForm.module.css', '.submitButton', 'brand-accent-text'],
+        ['newsletter/NewsletterForm.module.css', '.submitButton', 'brand-primary-text'],
         ['legal/CookieConsentBanner.module.css', '.btnPrimary', 'brand-accent-text']
     ])('%s %s fills with the AA-safe token --%s and --core-card text', (file, selector, token) => {
         // Act

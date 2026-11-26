@@ -3,8 +3,10 @@
  * @description HOS-2531 (AC-2.7): the desktop sidebar card feeds the inquiry through the
  * same message builder as the mobile sheet and shows the "contact directly" row.
  */
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { CreateConversationAnonSchema } from '@repo/schemas';
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
     ListingContactCard,
@@ -13,14 +15,15 @@ import {
 import { createTranslations } from '@/lib/i18n';
 import { buildInquiryMessage } from '@/lib/listing-contact/build-inquiry-message';
 
-const { getWhatsApp, trackEvent, conversation } = vi.hoisted(() => ({
+const { getWhatsApp, trackEvent, conversation, session } = vi.hoisted(() => ({
+    session: { user: null as { id: string } | null },
     conversation: { conversationId: null as string | null },
     getWhatsApp: vi.fn(),
     trackEvent: vi.fn()
 }));
 vi.mock('@/lib/analytics/umami-client', () => ({ trackEvent }));
 vi.mock('@/hooks/use-account-permissions', () => ({
-    useAccountPermissions: () => ({ user: null })
+    useAccountPermissions: () => session
 }));
 vi.mock('@/store/accommodation-conversation-store', () => ({
     useAccommodationConversation: () => conversation
@@ -52,10 +55,106 @@ function message(): HTMLTextAreaElement {
 }
 
 describe('ListingContactCard', () => {
+    it('uses a solid readable disabled state and 44px shortcut targets', () => {
+        const css = (path: string) =>
+            readFileSync(resolve(__dirname, '../../../src/components', path), 'utf8');
+        const disabled = css('accommodation/ContactHost.module.css').match(
+            /\.submitButton:disabled\s*\{[^}]+\}/
+        )?.[0];
+
+        expect.soft(disabled).toContain('color: var(--core-foreground)');
+        expect.soft(disabled).toContain('background-color: var(--muted)');
+        expect.soft(disabled).not.toContain('opacity');
+        expect
+            .soft(css('listing/contact/ListingInquiryLayout.module.css'))
+            .toMatch(/\.shortcut\s*\{[^}]*min-block-size: 44px/);
+        expect(css('accommodation/WhatsAppContact.module.css')).toMatch(
+            /\.gateLine,[^}]*color: var\(--core-foreground\)/
+        );
+    });
     afterEach(() => {
         conversation.conversationId = null;
+        session.user = null;
         vi.clearAllMocks();
         vi.unstubAllGlobals();
+    });
+
+    it.each([
+        'guest',
+        'free'
+    ])('puts the compact WhatsApp plans link after the %s form', async (viewer) => {
+        if (viewer === 'free') session.user = { id: 'free' };
+        getWhatsApp.mockResolvedValue({ ok: true, data: { number: null, entitled: false } });
+        render(
+            <ListingContactCard
+                {...baseProps}
+                hasWhatsapp
+                gatePlanNames={['Catalog plan']}
+            />
+        );
+
+        const gate = await screen.findByRole('region', { name: 'WhatsApp' });
+        expect(
+            message().compareDocumentPosition(gate) & Node.DOCUMENT_POSITION_FOLLOWING
+        ).toBeTruthy();
+        expect(within(gate).queryByRole('heading')).not.toBeInTheDocument();
+        expect(gate).toHaveTextContent('Ver el WhatsApp del anfitrión · Ver planes');
+        expect(within(gate).getByRole('link')).toHaveAccessibleDescription('Catalog plan');
+    });
+
+    it('puts direct WhatsApp before the form with the number and the exact encoded preview', async () => {
+        session.user = { id: 'entitled' };
+        const number = '+54 9 3442 123456';
+        getWhatsApp.mockResolvedValue({ ok: true, data: { number, direct: true, entitled: true } });
+        render(
+            <ListingContactCard
+                {...baseProps}
+                hasWhatsapp
+                phone="+543442123456"
+            />
+        );
+
+        const link = await screen.findByRole('link', { name: 'Consultar por WhatsApp' });
+        expect
+            .soft(link.compareDocumentPosition(message()) & Node.DOCUMENT_POSITION_FOLLOWING)
+            .toBeTruthy();
+        expect.soft(link).toHaveAccessibleDescription(expect.stringContaining(number));
+        const preview = new URL(link.getAttribute('href') ?? '').searchParams.get('text');
+        expect(preview).toContain(baseProps.accommodationName);
+        expect.soft(screen.queryByText(preview ?? '')).toBeVisible();
+        expect(
+            screen.getByRole('button', { name: 'Enviar mensaje' }).closest('[data-secondary]')
+        ).not.toBeNull();
+    });
+
+    it('selects the prefill but leaves visitor edits alone on refocus', () => {
+        render(<ListingContactCard {...baseProps} />);
+        const textarea = message();
+        textarea.setSelectionRange(0, 0);
+
+        fireEvent.focus(textarea);
+        expect(textarea.selectionEnd).toBe(textarea.value.length);
+        fireEvent.change(textarea, { target: { value: 'Personal message' } });
+        textarea.setSelectionRange(2, 2);
+        fireEvent.focus(textarea);
+        expect(textarea.selectionEnd).toBe(2);
+    });
+
+    it('lists only missing required fields and shows the counter from 90% onward', () => {
+        render(<ListingContactCard {...baseProps} />);
+        const button = screen.getByRole('button', { name: 'Enviar mensaje' });
+
+        expect(button).toBeDisabled();
+        expect.soft(button).toHaveAccessibleDescription(/Nombre.*Email|Nombre.*Correo/);
+        expect(button).not.toHaveAccessibleDescription(/Mensaje/);
+        fireEvent.change(screen.getByRole('textbox', { name: /^Nombre/ }), {
+            target: { value: 'Ana' }
+        });
+        expect(button).not.toHaveAccessibleDescription(/Nombre/);
+        fireEvent.change(message(), { target: { value: 'a'.repeat(4499) } });
+        expect(screen.queryByText(/\/5000 caracteres/)).not.toBeInTheDocument();
+        fireEvent.change(message(), { target: { value: 'a'.repeat(4500) } });
+        expect(message()).toHaveAccessibleDescription('4500/5000 caracteres');
     });
 
     it('renders the three booking fields next to the host form', () => {
@@ -245,7 +344,7 @@ describe('ListingContactCard', () => {
         it('is absent when the listing has no phone and no WhatsApp', () => {
             render(<ListingContactCard {...baseProps} />);
 
-            expect(screen.queryByText('O contactá directo')).toBeNull();
+            expect(screen.queryByRole('region', { name: 'WhatsApp' })).toBeNull();
         });
 
         it('offers a tel: link when the listing has a phone', () => {
@@ -256,7 +355,6 @@ describe('ListingContactCard', () => {
                 />
             );
 
-            expect(screen.getByText('O contactá directo')).toBeInTheDocument();
             expect(screen.getByRole('link', { name: 'Llamar' })).toHaveAttribute(
                 'href',
                 'tel:+543442123456'
@@ -276,7 +374,7 @@ describe('ListingContactCard', () => {
 
         it('mounts the entitlement-gated WhatsApp block only when the listing has WhatsApp', () => {
             const { rerender } = render(<ListingContactCard {...baseProps} />);
-            expect(screen.queryByText('O contactá directo')).toBeNull();
+            expect(screen.queryByRole('region', { name: 'WhatsApp' })).toBeNull();
 
             rerender(
                 <ListingContactCard
@@ -284,7 +382,7 @@ describe('ListingContactCard', () => {
                     hasWhatsapp
                 />
             );
-            expect(screen.getByText('O contactá directo')).toBeInTheDocument();
+            expect(screen.getByRole('region', { name: 'WhatsApp' })).toBeInTheDocument();
         });
     });
 });

@@ -39,7 +39,16 @@ vi.mock('../../src/utils/listing-access/ports', () => ({
                 vertical: VerticalEnum.VENUE,
                 hasLiveNonTrialTitle: false,
                 inheritsTouristVip: false,
-                entries: [{ key: 'edit_venue_info', value: 1, strategy: 'MAX' }]
+                // The ports report the actor as the owner, so the "invented id" is
+                // invented only at the service layer. Since HOS-2495 the venue
+                // gallery write runs step 7, so the set must grant a photo cap for
+                // the request to reach the service that answers 404. The real
+                // pipeline answers 404 at step 4 before any limit decides
+                // (addMedia.photo-limit.test.ts covers that ordering).
+                entries: [
+                    { key: 'edit_venue_info', value: 1, strategy: 'MAX' },
+                    { key: 'max_photos_per_venue', value: 15, strategy: 'SUM' }
+                ]
             })
     })
 }));
