@@ -73,6 +73,28 @@ describe('PhotoSectionDescription', () => {
         expect(screen.queryByText(/\d/)).toBeNull();
     });
 
+    it('keeps "Sin límite" and lists the contributions without the sentinel (AC-5, AC-16)', () => {
+        render(
+            <PhotoSectionDescription
+                locale="es"
+                vertical="venue"
+                capView={{ kind: 'unlimited', cap: null }}
+                breakdown={{
+                    contributions: [
+                        { kind: 'PLAN', value: 'unlimited', sources: 1 },
+                        { kind: 'ADDON', value: 20, sources: 2 }
+                    ]
+                }}
+            />
+        );
+        const breakdown = screen.getByTestId('photo-cap-breakdown');
+        expect(breakdown.textContent).toBe('sin límite de tu plan + 20 de packs de fotos');
+        expect(breakdown.closest('p')?.textContent).toBe(
+            'Sin límite de fotos sin límite de tu plan + 20 de packs de fotos'
+        );
+        expect(screen.queryByText(/2147483647|2\.147\.483\.647/)).toBeNull();
+    });
+
     it('marks the loading line busy', () => {
         render(
             <PhotoSectionDescription

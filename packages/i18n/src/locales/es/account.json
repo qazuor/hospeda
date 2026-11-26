@@ -23,7 +23,8 @@
             "permanentGrant": "{{value}} de tu beneficio permanente",
             "base": "{{value}} de tu cupo base",
             "preTrialDraft": "{{value}} para tu borrador antes de la prueba",
-            "total": "{{parts}} = {{cap}}"
+            "total": "{{parts}} = {{cap}}",
+            "unlimitedValue": "sin límite"
         },
         "overCapBadge": "No se muestra: superás tu tope",
         "overCapSummary_one": "{{count}} foto no se muestra porque superás tu tope. Sumá un pack de fotos o reordená para elegir cuáles se ven.",

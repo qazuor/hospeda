@@ -39,7 +39,7 @@ export interface PhotoSectionDescriptionProps {
     readonly vertical: ListingPhotoVertical;
     /** The resolved cap state (`resolveGalleryCapView`). */
     readonly capView: GalleryCapView;
-    /** The allowance breakdown; shown only when it is present and the cap is finite. */
+    /** The allowance breakdown; shown whenever the API returned one (limited or unlimited). */
     readonly breakdown: ListingPhotoAllowance['breakdown'];
 }
 
@@ -57,15 +57,25 @@ export function PhotoSectionDescription({
 }: PhotoSectionDescriptionProps) {
     const { t, tPlural } = createTranslations(locale);
 
-    const renderBreakdown = (cap: number) => {
-        const finite = breakdown?.contributions.filter(
-            (c): c is Contribution & { readonly value: number } => c.value !== 'unlimited'
-        );
-        if (!finite || finite.length === 0) return null;
-        const parts = finite
+    /**
+     * The contributions line. LIMITED sums the finite ones to the cap; UNLIMITED
+     * (a non-null breakdown still lists where the allowance comes from, AC-5)
+     * names each source without a total and prints an unlimited one as words,
+     * never as the sentinel number (AC-16).
+     */
+    const renderBreakdown = (cap: number | null) => {
+        const contributions =
+            cap === null
+                ? breakdown?.contributions
+                : breakdown?.contributions.filter((c) => c.value !== 'unlimited');
+        if (!contributions || contributions.length === 0) return null;
+        const parts = contributions
             .map((c) =>
                 t(`account.listingPhotos.breakdown.${BREAKDOWN_KEY_BY_KIND[c.kind]}`, undefined, {
-                    value: c.value
+                    value:
+                        c.value === 'unlimited'
+                            ? t('account.listingPhotos.breakdown.unlimitedValue')
+                            : c.value
                 })
             )
             .join(' + ');
@@ -74,7 +84,9 @@ export function PhotoSectionDescription({
                 className={styles.capBreakdown}
                 data-testid="photo-cap-breakdown"
             >
-                {t('account.listingPhotos.breakdown.total', undefined, { parts, cap })}
+                {cap === null
+                    ? parts
+                    : t('account.listingPhotos.breakdown.total', undefined, { parts, cap })}
             </span>
         );
     };
@@ -92,7 +104,10 @@ export function PhotoSectionDescription({
                     {renderBreakdown(capView.cap)}
                 </>
             ) : capView.kind === 'unlimited' ? (
-                t('account.listingPhotos.unlimited', 'Sin límite de fotos')
+                <>
+                    {t('account.listingPhotos.unlimited', 'Sin límite de fotos')}{' '}
+                    {renderBreakdown(null)}
+                </>
             ) : capView.kind === 'loading' ? (
                 t('account.listingPhotos.loading', 'Cargando tu límite de fotos…')
             ) : capView.kind === 'failed' ? (

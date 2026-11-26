@@ -23,7 +23,8 @@
             "permanentGrant": "{{value}} from your permanent grant",
             "base": "{{value}} from your base allowance",
             "preTrialDraft": "{{value}} for your draft before the trial",
-            "total": "{{parts}} = {{cap}}"
+            "total": "{{parts}} = {{cap}}",
+            "unlimitedValue": "unlimited"
         },
         "overCapBadge": "Not shown: over your limit",
         "overCapSummary_one": "{{count}} photo is hidden because you're over your limit. Add a photo pack or reorder your photos to choose which ones are shown.",

@@ -23,7 +23,8 @@
             "permanentGrant": "{{value}} do seu benefício permanente",
             "base": "{{value}} da sua cota básica",
             "preTrialDraft": "{{value}} para seu rascunho antes do período de teste",
-            "total": "{{parts}} = {{cap}}"
+            "total": "{{parts}} = {{cap}}",
+            "unlimitedValue": "sem limite"
         },
         "overCapBadge": "Não aparece: você passou do seu limite",
         "overCapSummary_one": "{{count}} foto não aparece porque você passou do limite. Adicione um pacote ou reordene as fotos para escolher quais aparecem.",
