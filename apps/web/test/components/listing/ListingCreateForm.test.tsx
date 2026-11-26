@@ -1,4 +1,4 @@
-/** Minimal draft creation: kit semantics, pricing, validation and redirects. */
+/** Minimal draft creation: four fields, kit semantics, validation and redirects. */
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ListingCreateForm } from '@/components/listing/ListingCreateForm.client';
@@ -15,7 +15,7 @@ function fill(vertical: 'venue' | 'experience' = 'venue') {
     change('Nombre', 'Una ficha de prueba');
     change('Categoría', vertical === 'venue' ? 'BAR' : 'EXCURSION');
     change('Resumen', 'Un resumen de nuestra propuesta');
-    change('Descripción', 'Una descripción suficientemente larga de nuestra propuesta.');
+    change('Ciudad / Destino', destinations[0].id);
 }
 
 beforeEach(() => {
@@ -73,8 +73,7 @@ describe('ListingCreateForm', () => {
                 name: 'Una ficha de prueba',
                 type,
                 summary: 'Un resumen de nuestra propuesta',
-                description: 'Una descripción suficientemente larga de nuestra propuesta.',
-                destinationId: undefined
+                destinationId: destinations[0].id
             }
         });
         expect(window.location.href).toBe('/es/mi-cuenta/comercio/venue/listing-1/editar/');
@@ -129,7 +128,7 @@ describe('ListingCreateForm', () => {
         );
     });
 
-    it('requires experience pricing and converts pesos to cents', async () => {
+    it('creates an experience with only the four initial fields', async () => {
         render(
             <ListingCreateForm
                 locale="es"
@@ -139,39 +138,35 @@ describe('ListingCreateForm', () => {
         );
         fill('experience');
         fireEvent.click(screen.getByTestId('listing-create-submit'));
-        expect(create).not.toHaveBeenCalled();
-        change('Precio desde', '15000');
-        change('Unidad de precio', 'per_person');
-        fireEvent.click(screen.getByTestId('listing-create-submit'));
         await waitFor(() => expect(create).toHaveBeenCalledOnce());
-        expect(create.mock.calls[0]?.[0].data).toMatchObject({
-            priceFrom: 1500000,
-            priceUnit: 'per_person',
-            isPriceOnRequest: false
+        expect(create.mock.calls[0]?.[0].data).toEqual({
+            name: 'Una ficha de prueba',
+            type: 'EXCURSION',
+            summary: 'Un resumen de nuestra propuesta',
+            destinationId: destinations[0].id
         });
+        expect(window.location.href).toBe('/es/mi-cuenta/comercio/experience/listing-1/editar/');
     });
 
-    it('submits null price and unit when the price is on request', async () => {
+    it.each([
+        'venue',
+        'experience'
+    ] as const)('leaves description and pricing to the %s editor and requires destination', (vertical) => {
         render(
             <ListingCreateForm
                 locale="es"
-                vertical="experience"
+                vertical={vertical}
                 destinations={destinations}
             />
         );
-        fill('experience');
-        fireEvent.click(field('Precio a consultar'));
-        expect(field('Precio desde')).toBeDisabled();
-        expect(field('Unidad de precio')).toBeDisabled();
+        expect(screen.queryByLabelText(/^Descripción/)).not.toBeInTheDocument();
+        expect(screen.queryByLabelText(/^Precio/)).not.toBeInTheDocument();
+        expect(screen.queryByLabelText(/^Unidad de precio/)).not.toBeInTheDocument();
+        fill(vertical);
+        change('Ciudad / Destino', '');
         fireEvent.click(screen.getByTestId('listing-create-submit'));
-        await waitFor(() => expect(create).toHaveBeenCalledOnce());
-        expect(create.mock.calls[0]?.[0].data).toMatchObject({
-            priceFrom: null,
-            priceUnit: null,
-            isPriceOnRequest: true
-        });
-        expect(create.mock.calls[0]?.[0].data).not.toHaveProperty('businessLines');
-        expect(window.location.href).toBe('/es/mi-cuenta/comercio/experience/listing-1/editar/');
+        expect(create).not.toHaveBeenCalled();
+        expect(field('Ciudad / Destino')).toHaveAttribute('aria-invalid', 'true');
     });
 
     it('shows API errors and retires the old banner before a retry', async () => {

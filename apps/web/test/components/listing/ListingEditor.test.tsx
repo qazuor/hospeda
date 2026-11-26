@@ -160,6 +160,14 @@ const baseData = {
     richDescription: 'old text'
 } as unknown as ListingDetail;
 
+const newDraftData = {
+    ...baseData,
+    description: '',
+    priceFrom: null,
+    priceUnit: null,
+    isPriceOnRequest: false
+} as ListingDetail;
+
 const destinationOptions = [
     { id: DESTINATION_1, name: 'Concepción del Uruguay' },
     { id: DESTINATION_2, name: 'Colón' }
@@ -213,6 +221,54 @@ describe('ListingEditor', () => {
         mockDeleteMedia.mockClear();
         mockListMedia.mockClear();
         mockListMedia.mockResolvedValue({ ok: true, data: { media: [] } });
+    });
+
+    it.each([
+        'venue',
+        'experience'
+    ] as const)('opens an empty-description %s draft and saves its first description', async (vertical) => {
+        mockPatch.mockResolvedValueOnce({ ok: true, data: {} });
+        render(
+            <ListingEditor
+                vertical={vertical}
+                sectionId="basicInfo"
+                listingId="abc"
+                locale="es"
+                initialData={newDraftData}
+                destinations={destinationOptions}
+            />
+        );
+        const description = screen.getByLabelText('Descripción');
+        expect(description).toHaveValue('');
+        const text = 'A complete description entered after the draft was created.';
+        fireEvent.change(description, { target: { value: text } });
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+        await waitFor(() => expect(mockPatch).toHaveBeenCalledOnce());
+        expect(mockPatch.mock.calls[0]?.[0]?.body).toEqual({ description: text });
+    });
+
+    it('opens an unpriced experience draft and saves its first price and unit', async () => {
+        mockPatch.mockResolvedValueOnce({ ok: true, data: {} });
+        render(
+            <ListingEditor
+                vertical="experience"
+                sectionId="price"
+                listingId="abc"
+                locale="es"
+                initialData={newDraftData}
+            />
+        );
+        expect(screen.getByLabelText(/Precio desde/)).toHaveValue(null);
+        fireEvent.change(screen.getByLabelText(/Precio desde/), { target: { value: '15000' } });
+        fireEvent.change(screen.getByLabelText('Unidad de precio'), {
+            target: { value: 'per_person' }
+        });
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+        await waitFor(() => expect(mockPatch).toHaveBeenCalledOnce());
+        expect(mockPatch.mock.calls[0]?.[0]?.body).toMatchObject({
+            priceFrom: 1500000,
+            priceUnit: 'per_person'
+        });
     });
 
     /*
