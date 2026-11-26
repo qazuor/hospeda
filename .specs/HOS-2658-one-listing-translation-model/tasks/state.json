@@ -1,0 +1,1753 @@
+{
+  "version": "1.0",
+  "specRef": "HOS-2658",
+  "title": "One translation model for accommodation, venue and experience listings",
+  "created": "2026-11-26T09:37:20.000Z",
+  "tasks": [
+    {
+      "id": "T-001",
+      "title": "Add optional sourceHash to TranslationMeta",
+      "description": "packages/schemas/src/common/i18n.schema.ts:123-153: add `sourceHash?: string` to the TranslationMeta interface and `sourceHash: z.string().regex(/^[0-9a-f]{64}$/).optional()` to TranslationMetaSchema, with JSDoc (spec §8.2). Additive change.\nTests (packages/schemas/src/common/__tests__/i18n.schema.test.ts, create or extend): meta without sourceHash parses; 64 lowercase hex parses; uppercase / 63 chars / non-hex rejected. Mutation: remove the regex -> a test must fail.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [],
+      "blocks": [
+        "T-002",
+        "T-008",
+        "T-027"
+      ],
+      "subtasks": [
+        {
+          "title": "Interface + Zod field",
+          "completed": false
+        },
+        {
+          "title": "Unit tests",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "schemas"
+      ],
+      "phase": "setup",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:37:20.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-002",
+      "title": "Create listing-translation schemas",
+      "description": "New packages/schemas/src/entities/listing-translation/listing-translation.schema.ts + index.ts, exported from the entities barrel, exactly as spec §8.2: LISTING_TRANSLATION_TARGET_LOCALES, ListingTranslationLocaleSchema, LISTING_TRANSLATION_FIELDS (entryNote only venue), types, LISTING_TRANSLATION_MAX_LENGTH, ListingTranslationPairStateSchema, ListingTranslationAiStatusSchema, buildListingTranslationManualWriteSchema({vertical}) (.strict(), superRefine max length, message zodError.listingTranslation.value.max), buildListingTranslationAiInputSchema({vertical}), ListingTranslationPairSchema, ListingTranslationsResponseSchema. Add zodError.listingTranslation.value.max to the zod error locale files (es/en/pt) where other zodError keys live.\nACs: AC-10, AC-21 (field list).\nTests (packages/schemas/src/entities/listing-translation/__tests__/listing-translation.schema.test.ts): entryNote accepted for venue only; locale es rejected; value over max per field rejected and at max accepted; empty value accepted; unknown key rejected (strict); AI input locales min1/max2; response schema parses the §9.1 example. Mutation: add entryNote to accommodation list -> red.",
+      "status": "pending",
+      "complexity": 3,
+      "blockedBy": [
+        "T-001"
+      ],
+      "blocks": [
+        "T-014",
+        "T-023",
+        "T-029",
+        "T-031"
+      ],
+      "subtasks": [
+        {
+          "title": "Schema file + barrel",
+          "completed": false
+        },
+        {
+          "title": "zodError key es/en/pt",
+          "completed": false
+        },
+        {
+          "title": "Unit tests",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "schemas"
+      ],
+      "phase": "setup",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:37:20.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-003",
+      "title": "Omit translationMeta from listing create/update inputs",
+      "description": "Add `translationMeta: true` to the omit lists of AccommodationCreateInputSchema (accommodation.crud.schema.ts:51), AccommodationUpdateInputSchema (:143), VenueAdminCreateInputSchema (venue.crud.schema.ts:39), VenueUpdateInputSchema (:430), ExperienceAdminCreateInputSchema (experience.crud.schema.ts:155), ExperienceUpdateInputSchema (:544), each with comment 'written only by writeTranslationPairs (HOS-2658)'. Spec §8.2, risk R-7.\nTests: extend the existing crud schema tests of the three entities: parsing a body with translationMeta yields output without the key (stripped). Mutation: remove one omit -> its test red.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [],
+      "blocks": [],
+      "subtasks": [
+        {
+          "title": "Six omits",
+          "completed": false
+        },
+        {
+          "title": "Unit tests per entity",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "schemas"
+      ],
+      "phase": "setup",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:37:20.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-004",
+      "title": "Add computeTranslationSourceHash helper",
+      "description": "New packages/service-core/src/translation/translation-source-hash.ts with normalizeTranslationSource({text}) -> {normalized} (NFC, CRLF/CR -> LF, trim both ends, internal whitespace kept) and computeTranslationSourceHash({text}) -> {hash} (sha256 lowercase hex via node:crypto). Export from packages/service-core/src/index.ts next to translation-init (spec §8.3, DL-2). Full JSDoc.\nTests (packages/service-core/test/translation/translation-source-hash.test.ts): known vector for 'Casa del Sol'; ' Casa del Sol\\r\\n' equals 'Casa del Sol'; composed vs decomposed 'n with tilde' (NFC vs NFD) equal; 'a  b' differs from 'a b'; output /^[0-9a-f]{64}$/. Mutations: drop trim, drop NFC -> red.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [],
+      "blocks": [
+        "T-008",
+        "T-027"
+      ],
+      "subtasks": [
+        {
+          "title": "Helper + export",
+          "completed": false
+        },
+        {
+          "title": "Unit tests",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "service-core"
+      ],
+      "phase": "setup",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:37:20.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-005",
+      "title": "Add translation_meta column to venues and experiences",
+      "description": "packages/db/src/schemas/venue/venue.dbschema.ts (after :81) and packages/db/src/schemas/experience/experiences.dbschema.ts (after :61): `translationMeta: jsonb('translation_meta').$type<TranslationMeta>().default({})` (same as accommodation.dbschema.ts:74). Run `pnpm db:generate`; commit the generated packages/db/src/migrations/0253_*.sql (two ADD COLUMN ... DEFAULT '{}'::jsonb) and meta snapshot. Never run db:fresh-dev in a worktree. Spec §8.1.\nTests (packages/db/test/integration/venue-experience-translation-meta-column.test.ts): after migrate both columns exist with default {} on insert; assert executed test count > 0.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [],
+      "blocks": [
+        "T-006",
+        "T-027"
+      ],
+      "subtasks": [
+        {
+          "title": "Drizzle columns",
+          "completed": false
+        },
+        {
+          "title": "Generated migration + snapshot",
+          "completed": false
+        },
+        {
+          "title": "Integration test",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "db",
+        "migration"
+      ],
+      "phase": "setup",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:37:20.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-006",
+      "title": "Add venue/experience to ai-translate maps and extract readSourceText",
+      "description": "apps/api/src/services/ai-translate.service.ts: add 'venue' | 'experience' to TranslatableEntityType (:31), ENTITY_FIELDS (venue adds entryNote), getEntityTable (venues, experiences), I18N_COLUMN_MAP (entryNote: 'entryNoteI18n'). Extract `readSourceText({ entityType, row, field })` (plain column; when undefined fall back to <i18nCol>.es, as :864-876) into apps/api/src/services/translation/read-source-text.ts and use it in loadTranslatableFields and batchTranslate (:1096-1101). Do not grow ai-translate.service.ts beyond the map edits. Spec §9.6.\nTests (apps/api/src/services/__tests__/ai-translate.service.test.ts + new translation/__tests__/read-source-text.test.ts): venue entryNote resolves from entryNoteI18n.es; plain name wins for venue; POI name fallback unchanged.",
+      "status": "pending",
+      "complexity": 3,
+      "blockedBy": [
+        "T-005"
+      ],
+      "blocks": [
+        "T-008",
+        "T-011",
+        "T-015",
+        "T-025"
+      ],
+      "subtasks": [
+        {
+          "title": "Type + maps",
+          "completed": false
+        },
+        {
+          "title": "readSourceText module",
+          "completed": false
+        },
+        {
+          "title": "Use in loadTranslatableFields/batchTranslate",
+          "completed": false
+        },
+        {
+          "title": "Tests",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "api",
+        "ai"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:37:20.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-007",
+      "title": "Export the venue entry note i18n schema",
+      "description": "packages/schemas/src/entities/venue/venue.schema.ts:53: rename the module-private VenueNightNoteSchema to exported VenueEntryNoteI18nSchema (keep behaviour, update its use at :114) so the translation writer can gate entryNoteI18n writes with the 200-char limit. Tests: existing venue schema tests stay green; add one asserting a 201-char en is rejected by VenueEntryNoteI18nSchema.",
+      "status": "pending",
+      "complexity": 1,
+      "blockedBy": [],
+      "blocks": [
+        "T-008"
+      ],
+      "subtasks": [
+        {
+          "title": "Rename + export",
+          "completed": false
+        },
+        {
+          "title": "Test",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "schemas"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:37:20.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-008",
+      "title": "Implement writeTranslationPairs single writer with row lock",
+      "description": "New apps/api/src/services/translation/translation-pair-writer.ts exporting TranslationPairWrite and writeTranslationPairs({entityType, entityId, writes, sourceMirror?}) -> {written, skippedManual, found}, exactly per spec §8.4: db.transaction + select(...).for('update'); ai write onto autoTranslated:false skipped unless overrideManual; ai meta {autoTranslated:true, translatedAt, provider, model, sourceHash}; manual meta {autoTranslated:false, translatedAt, sourceHash}; es from sourceMirror; Zod gate (I18nTextSchema, VenueEntryNoteI18nSchema for entryNoteI18n, TranslationMetaSchema) before update; throws on invalid.\nACs: AC-6, AC-7, AC-9, AC-16 (writer part).\nTests (apps/api/src/services/translation/__tests__/translation-pair-writer.test.ts, mocked db): skip manual on ai; override writes; manual '' value persisted; es mirror; other locales untouched; invalid meta throws; found:false. Mutation: delete the autoTranslated===false check -> red.",
+      "status": "pending",
+      "complexity": 3,
+      "blockedBy": [
+        "T-001",
+        "T-004",
+        "T-006",
+        "T-007"
+      ],
+      "blocks": [
+        "T-009",
+        "T-010",
+        "T-016"
+      ],
+      "subtasks": [
+        {
+          "title": "Writer implementation",
+          "completed": false
+        },
+        {
+          "title": "Unit tests",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "api",
+        "db"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:37:20.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-009",
+      "title": "Refactor persistTranslations onto the writer",
+      "description": "apps/api/src/services/ai-translate.service.ts:711-834: keep the exported signature, add optional last param overrideManualPairs?: ReadonlySet<string> ('field:locale'), build ai writes (sourceHash = computeTranslationSourceHash(fieldValues[field])) and delegate to writeTranslationPairs with sourceMirror = fieldValues. Remove the inline merge + duplicate Zod gate. Spec §8.4.\nTests: update apps/api/src/services/__tests__/ai-translate.service.test.ts persistTranslations cases: meta now carries sourceHash; manual pair still skipped; override set writes it; failed results not written.",
+      "status": "pending",
+      "complexity": 3,
+      "blockedBy": [
+        "T-008"
+      ],
+      "blocks": [
+        "T-012"
+      ],
+      "subtasks": [
+        {
+          "title": "Delegate to writer",
+          "completed": false
+        },
+        {
+          "title": "Update tests",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "api",
+        "ai"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:37:20.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-010",
+      "title": "Refactor applyManualOverride onto the writer with sourceHash",
+      "description": "apps/api/src/services/ai-translate.service.ts:965-1031: load the current Spanish via readSourceText, delegate one manual write (sourceHash of current source) to writeTranslationPairs; keep ManualOverrideResult ('INVALID_FIELD' | 'NOT_FOUND'). ACs: AC-30.\nTests: extend ai-translate.service.test.ts: override writes autoTranslated:false + sourceHash; INVALID_FIELD for unknown field; NOT_FOUND when writer returns found:false.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [
+        "T-008"
+      ],
+      "blocks": [
+        "T-025"
+      ],
+      "subtasks": [
+        {
+          "title": "Delegate",
+          "completed": false
+        },
+        {
+          "title": "Tests",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "api",
+        "admin"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:37:20.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-011",
+      "title": "Add skipPairs to translateEntity",
+      "description": "apps/api/src/services/ai-translate.service.ts:159 TranslateEntityInput gains `skipPairs?: ReadonlySet<string>` ('field:locale'); translateEntity (:602) checks it before translateFieldWithRetry (:637) so no provider call is made for a skipped pair. ACs: AC-7, AC-8.\nTests (ai-translate.service.test.ts): with skipPairs {'description:en'} the provider mock is called only for pt; empty set behaves as today. Mutation: ignore skipPairs -> red.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [
+        "T-006"
+      ],
+      "blocks": [
+        "T-012"
+      ],
+      "subtasks": [
+        {
+          "title": "Input + check",
+          "completed": false
+        },
+        {
+          "title": "Tests",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "api",
+        "ai"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:37:20.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-012",
+      "title": "Implement runMeteredTranslation and TRANSLATE_QUOTA_VERTICAL",
+      "description": "New apps/api/src/services/translation/metered-translation.ts per spec §9.4: load meta -> skipPairs (MANUAL unless overrideManual) -> nothing-to-do without calling the gate -> enforceAiQuota(billedUserId, vertical, 'translate', 'ai_translate', 'max_ai_translate_per_month') (throws ServiceError) -> translateEntity({skipPairs}) -> persist via writer (sourceMirror=fields, override for requested pairs) -> meterAiUsage success after persistence / error on persistence throw / none when nothing delivered (copy translate.ts:250-370 rules) with logContext {entityType, entityId, trigger} -> all-failed when >=1 attempt and 0 success. Also export TRANSLATE_QUOTA_VERTICAL map.\nACs: AC-1, AC-3, AC-5, AC-7, AC-8, AC-16, AC-18, AC-19.\nTests (apps/api/src/services/translation/__tests__/metered-translation.test.ts, mock gate/engine/meter): all-manual -> no gate call, no meter; LIMIT_REACHED propagates, no provider call; success -> one meter row with userId=billedUserId; persist throws -> meter status error; all fail -> all-failed, no success meter. Mutation: gate before skipPairs -> red.",
+      "status": "pending",
+      "complexity": 3,
+      "blockedBy": [
+        "T-009",
+        "T-011"
+      ],
+      "blocks": [
+        "T-016",
+        "T-018",
+        "T-024",
+        "T-037"
+      ],
+      "subtasks": [
+        {
+          "title": "Runner",
+          "completed": false
+        },
+        {
+          "title": "Quota vertical map",
+          "completed": false
+        },
+        {
+          "title": "Unit tests",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "api",
+        "ai",
+        "billing"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:37:20.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-013",
+      "title": "Extract ownerHasEntitlement helper",
+      "description": "New apps/api/src/utils/listing-access/owner-has-entitlement.ts: ownerHasEntitlement({ownerId, vertical, key}) -> {has: boolean} using getListingAccessPorts().effectiveSet (logic of apps/api/src/routes/accommodation/protected/getById.ts:113-126, fail closed + warn log). Replace that inline block in getById.ts with the helper.\nTests (apps/api/test/utils/listing-access/owner-has-entitlement.test.ts): value>0 true, absent false, throw -> false. Existing accommodation getById tests stay green.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [],
+      "blocks": [
+        "T-015"
+      ],
+      "subtasks": [
+        {
+          "title": "Helper",
+          "completed": false
+        },
+        {
+          "title": "Use in getById",
+          "completed": false
+        },
+        {
+          "title": "Tests",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "api",
+        "billing"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:37:20.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-014",
+      "title": "Implement derivePairState",
+      "description": "In new apps/api/src/services/translation/listing-translation-state.ts export derivePairState({source, value, meta, currentHash, aiStatus}) -> {state} with the first-match table of spec §8.5 (noSource, manual/stale, auto, noQuota/noEntitlement/pending).\nACs: AC-3, AC-4, AC-5, AC-9, AC-11, AC-12, AC-13, AC-14.\nTests (apps/api/src/services/translation/__tests__/listing-translation-state.test.ts): one case per row incl. manual without hash (AC-14 -> manual), manual empty value -> manual, auto without hash non-empty -> auto, auto with mismatching hash + quota -> noQuota. Mutations: swap rule 2/3; treat missing hash as stale -> red.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [
+        "T-002"
+      ],
+      "blocks": [
+        "T-015"
+      ],
+      "subtasks": [
+        {
+          "title": "Function",
+          "completed": false
+        },
+        {
+          "title": "Table tests",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "api"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:37:20.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-015",
+      "title": "Implement getListingTranslationState",
+      "description": "In listing-translation-state.ts export getListingTranslationState({vertical, listingId}) -> ListingTranslationsResponse per spec §8.5: read row (readSourceText, i18n columns, meta), NOT_FOUND ServiceError if absent; aiStatus from evaluateAiQuota(ownerId, vertical, translate keys) mapped available|quota|entitlement, exception -> available + warn; drop richDescription when ownerHasEntitlement(can_use_rich_description) is false; translatedAt from meta.\nACs: AC-3, AC-4, AC-21, AC-23 (read).\nTests (same test dir, mocked db/gate): fields order per LISTING_TRANSLATION_FIELDS; venue includes entryNote; richDescription dropped when not entitled; quota decision -> ai.status 'quota'.",
+      "status": "pending",
+      "complexity": 3,
+      "blockedBy": [
+        "T-014",
+        "T-013",
+        "T-006"
+      ],
+      "blocks": [
+        "T-016"
+      ],
+      "subtasks": [
+        {
+          "title": "Read + projection",
+          "completed": false
+        },
+        {
+          "title": "Tests",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "api"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:37:20.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-016",
+      "title": "Implement manual-write and AI-field service functions",
+      "description": "New apps/api/src/services/translation/listing-translation.service.ts: writeManualTranslation({vertical, listingId, field, locale, value}) (read source, one manual write with current sourceHash, return state) and translateListingFieldWithAi({vertical, listingId, field, locales}) (source empty -> ServiceError VALIDATION_ERROR details.reason NO_SOURCE_TEXT; runMeteredTranslation trigger 'button', billedUserId = row.ownerId, overrideManual true; all-failed -> ServiceError PROVIDER_ERROR; return state).\nACs: AC-6, AC-9, AC-12, AC-16, AC-17, AC-18, AC-19, AC-20.\nTests (apps/api/src/services/translation/__tests__/listing-translation.service.test.ts): manual write never calls the gate; AI on empty source -> NO_SOURCE_TEXT; all-failed -> PROVIDER_ERROR; success returns refreshed state.",
+      "status": "pending",
+      "complexity": 3,
+      "blockedBy": [
+        "T-008",
+        "T-012",
+        "T-015"
+      ],
+      "blocks": [
+        "T-023"
+      ],
+      "subtasks": [
+        {
+          "title": "writeManualTranslation",
+          "completed": false
+        },
+        {
+          "title": "translateListingFieldWithAi",
+          "completed": false
+        },
+        {
+          "title": "Tests",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "api",
+        "ai"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:37:20.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-017",
+      "title": "Extend TranslationInput with billing",
+      "description": "packages/service-core/src/translation/translation-init.ts:20-27: add `readonly billing?: { readonly vertical: 'accommodation' | 'venue' | 'experience'; readonly ownerId: string }` with JSDoc (present = metered+gated listing run; absent = legacy unmetered). Spec §8.6.\nTests: packages/service-core/test/translation/translation-init.test.ts type-level/usage case passing billing.",
+      "status": "pending",
+      "complexity": 1,
+      "blockedBy": [],
+      "blocks": [
+        "T-018",
+        "T-019",
+        "T-020"
+      ],
+      "subtasks": [
+        {
+          "title": "Interface field",
+          "completed": false
+        },
+        {
+          "title": "Test",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "service-core"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:37:20.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-018",
+      "title": "Route billed on-save runs through runMeteredTranslation in the adapter",
+      "description": "apps/api/src/services/translation-service.adapter.ts: VALID_ENTITY_TYPES + venue, experience; when input.billing present call runMeteredTranslation({trigger:'on-save', vertical: VerticalEnum from billing.vertical, billedUserId: billing.ownerId, fields}); ENTITLEMENT_REQUIRED/LIMIT_REACHED -> info log 'listing-translation: on-save skipped by gate'; other errors and all-failed -> warn 'listing-translation: on-save run failed' with {entityType, entityId, outcome}; never throw. Without billing keep the legacy path (now persisted through the writer via persistTranslations). Spec §9.5.\nACs: AC-1, AC-3, AC-4, AC-5.\nTests (apps/api/src/services/__tests__/translation-service.adapter.test.ts, new): billing -> runner called with ownerId; no billing -> legacy; gate error swallowed + logged; unknown entity type skipped.",
+      "status": "pending",
+      "complexity": 3,
+      "blockedBy": [
+        "T-012",
+        "T-017"
+      ],
+      "blocks": [
+        "T-036"
+      ],
+      "subtasks": [
+        {
+          "title": "Adapter branch",
+          "completed": false
+        },
+        {
+          "title": "Tests",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "api",
+        "ai"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:37:20.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-019",
+      "title": "Pass billing from AccommodationService hooks",
+      "description": "packages/service-core/src/services/accommodation/accommodation.service.ts _afterCreate (:1104-1120) and _afterUpdate (:1450-1471): add billing: { vertical: 'accommodation', ownerId: entity.ownerId } to translate(). Tests: update packages/service-core/test/services/accommodation/translation-ac5.test.ts to assert billing is passed on create and update.",
+      "status": "pending",
+      "complexity": 1,
+      "blockedBy": [
+        "T-017"
+      ],
+      "blocks": [
+        "T-036"
+      ],
+      "subtasks": [
+        {
+          "title": "Hooks",
+          "completed": false
+        },
+        {
+          "title": "Test update",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "service-core"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:37:20.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-020",
+      "title": "Fire on-save translation from BaseListingService",
+      "description": "packages/service-core/src/services/listing/base-listing.service.ts: add protected getter _translationSourceFields (default name/summary/description/richDescription) and _readTranslationSources(entity) (plain columns; entryNote from entryNoteI18n?.es); in _beforeUpdate after `current` is loaded (:870-873) set hookState.previousTranslatableFields; add the field to ListingHookState (listing.types.ts); in _afterCreate (:764) and _afterUpdate (:996) fire getTranslationService()?.translate({entityType: this._revalidationEntityType, entityId, fields, billing:{vertical: this._revalidationEntityType, ownerId}}) fire-and-forget (all non-empty on create, diffTranslatableFields on update). Spec §8.6.\nACs: AC-1, AC-2.\nTests (new packages/service-core/test/services/venue/translation-on-save.test.ts and .../experience/translation-on-save.test.ts, mirroring accommodation/translation-ac5.test.ts): create fires with all non-empty sources + billing; update fires only changed fields; unchanged save fires nothing; service unset -> no throw. Mutation: send all fields on update -> red.",
+      "status": "pending",
+      "complexity": 3,
+      "blockedBy": [
+        "T-017"
+      ],
+      "blocks": [
+        "T-021",
+        "T-036"
+      ],
+      "subtasks": [
+        {
+          "title": "Base hooks",
+          "completed": false
+        },
+        {
+          "title": "HookState field",
+          "completed": false
+        },
+        {
+          "title": "Venue + experience tests",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "service-core"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:37:20.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-021",
+      "title": "Venue entryNote as translation source and keep stored en/pt",
+      "description": "packages/service-core/src/services/venue/venue.service.ts: override _translationSourceFields to add 'entryNote'; in _beforeUpdate (:732) when data.entryNoteI18n is an object rewrite it to { es: body.es, en: stored?.en ?? '', pt: stored?.pt ?? '' } using the row loaded by the base hook; null stays null (DL-9).\nACs: AC-25.\nTests (packages/service-core/test/services/venue/venue-entry-note-source.test.ts): body en/pt ignored, stored kept; es changes trigger a translate call with entryNote. Mutation: use body en/pt -> red.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [
+        "T-020"
+      ],
+      "blocks": [
+        "T-036",
+        "T-039"
+      ],
+      "subtasks": [
+        {
+          "title": "Source field override",
+          "completed": false
+        },
+        {
+          "title": "entryNoteI18n rewrite",
+          "completed": false
+        },
+        {
+          "title": "Tests",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "service-core"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:37:20.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-022",
+      "title": "Remove *I18n keys from venue/experience owner PATCH schemas",
+      "description": "Remove nameI18n, summaryI18n, descriptionI18n, richDescriptionI18n from the .pick of VenueOwnerUpdateInputSchema (venue.crud.schema.ts:221-224) and ExperienceOwnerUpdateInputSchema (experience.crud.schema.ts ~:368); update their docblocks (:176-179). entryNoteI18n stays. Spec §8.2, AC-22.\nTests: extend the owner update schema tests: a body with nameI18n parses with the key stripped; entryNoteI18n still accepted. Check apps/api owner PATCH route tests that send *I18n and update them.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [],
+      "blocks": [
+        "T-034"
+      ],
+      "subtasks": [
+        {
+          "title": "Schema picks",
+          "completed": false
+        },
+        {
+          "title": "Docblocks",
+          "completed": false
+        },
+        {
+          "title": "Tests",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "schemas",
+        "api"
+      ],
+      "phase": "integration",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:37:20.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-023",
+      "title": "Create per-vertical translation routes and mount them",
+      "description": "New apps/api/src/routes/listing-translations/listing-translation-routes.ts + index.ts: listingTranslationRouteOptions({vertical, tag}) for GET /{id}/translations (READ_OWN), PUT /{id}/translations (EDIT, sectionTraits richDescription when body.field==='richDescription'), POST /{id}/translations/ai (EDIT + trait); export ownerAccommodationTranslationRoutes / ownerVenueTranslationRoutes / ownerExperienceTranslationRoutes with listingAccess naming VerticalEnum literally (G2, precedent owner-location-routes.ts). Request/response schemas from T-002. Mount in accommodation/protected/index.ts (near :75), venue/protected/index.ts (near :201), experience/protected/index.ts. Spec §9.1-9.3.\nACs: AC-6, AC-10, AC-16-AC-20, AC-23, AC-24.\nTests (apps/api/test/routes/listing-translations/listing-translation-routes.test.ts, mocked services): each route wired per vertical; non-UUID 400; foreign 404 via listingAccess; richDescription trait declared; response validates against ListingTranslationsResponseSchema.",
+      "status": "pending",
+      "complexity": 3,
+      "blockedBy": [
+        "T-016",
+        "T-002"
+      ],
+      "blocks": [
+        "T-035",
+        "T-040"
+      ],
+      "subtasks": [
+        {
+          "title": "Factory",
+          "completed": false
+        },
+        {
+          "title": "Three vertical exports",
+          "completed": false
+        },
+        {
+          "title": "Mounting",
+          "completed": false
+        },
+        {
+          "title": "Route tests",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "api",
+        "routes"
+      ],
+      "phase": "integration",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:37:20.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-024",
+      "title": "Fix legacy protected translate route quota vertical and error mapping",
+      "description": "apps/api/src/routes/ai/protected/translate.ts: use TRANSLATE_QUOTA_VERTICAL[entityType] instead of VerticalEnum.ACCOMMODATION (:181-187); in the catch (:344) rethrow ServiceError (after recording unbilled spend) so the error handler answers 403 ENTITLEMENT_REQUIRED / LIMIT_REACHED. Spec §9.4, AC-32, DL-12.\nTests: extend apps/api/test/integration/ai/translate.test.ts: out of quota -> 403 LIMIT_REACHED (was 500); no entitlement -> 403 ENTITLEMENT_REQUIRED; provider failure still 500 TRANSLATION_FAILED.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [
+        "T-012"
+      ],
+      "blocks": [],
+      "subtasks": [
+        {
+          "title": "Vertical map",
+          "completed": false
+        },
+        {
+          "title": "Rethrow ServiceError",
+          "completed": false
+        },
+        {
+          "title": "Tests",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "api",
+        "ai"
+      ],
+      "phase": "integration",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:37:20.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-025",
+      "title": "Accept venue/experience in admin translate and override routes",
+      "description": "apps/api/src/routes/ai/admin/translate.ts:42,53: add 'venue','experience' to the translate and override entityType enums (batch enum :36 unchanged). ACs: AC-30, AC-31.\nTests (apps/api/test/routes/ai/admin/translate.test.ts): override on venue writes manual + sourceHash; translate on venue persists auto with sourceHash and skips manual; no quota call; batch with venue -> 400.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [
+        "T-010",
+        "T-006"
+      ],
+      "blocks": [
+        "T-026"
+      ],
+      "subtasks": [
+        {
+          "title": "Enums",
+          "completed": false
+        },
+        {
+          "title": "Tests",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "api",
+        "admin"
+      ],
+      "phase": "integration",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:37:20.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-026",
+      "title": "Show TranslationSection on admin venue and experience edit pages",
+      "description": "apps/admin/src/features/content/components/TranslationSection.tsx: widen entityType (:26), add venue [name, summary, description, richDescription, entryNote] and experience [4 fields] to TRANSLATABLE_FIELDS (:35), read entryNote source from entity.entryNoteI18n?.es. Mount it in apps/admin/src/routes/_authed/venues/$id_.edit.tsx and experiences/$id_.edit.tsx like accommodations/$id_.edit.tsx:166. Add access-schema test assertions that VenueAdminSchema / ExperienceAdminSchema keep translationMeta. Tailwind only.\nACs: AC-30.\nTests: extend apps/admin/src/features/content/components/__tests__/TranslationSection.api.test.ts for venue/experience payloads and entryNote; schema tests in packages/schemas venue/experience access tests.",
+      "status": "pending",
+      "complexity": 3,
+      "blockedBy": [
+        "T-025"
+      ],
+      "blocks": [],
+      "subtasks": [
+        {
+          "title": "Component config",
+          "completed": false
+        },
+        {
+          "title": "Mount on two pages",
+          "completed": false
+        },
+        {
+          "title": "Tests",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "admin"
+      ],
+      "phase": "integration",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:37:20.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-027",
+      "title": "Data-migration 0194: backfill venue/experience translation meta",
+      "description": "`pnpm db:seed:make hos-2658-venue-experience-translation-meta` -> packages/seed/src/data-migrations/0194-hos-2658-venue-experience-translation-meta.ts per spec §8.7: meta {group:'required', destructive:false, contentOnly:true, requiresColumns venues/experiences translation_meta}; for every row and every non-empty en/pt pair without meta write {autoTranslated:true, translatedAt: runStartIso, sourceHash: computeTranslationSourceHash(source)}; skip empty sources; validate with TranslationMetaSchema; update only changed rows; return counts. Renumber if 0194 is taken.\nACs: AC-26, AC-27.\nTests (packages/seed/test/data-migrations/0194-hos-2658-venue-experience-translation-meta.test.ts, real DB): non-empty pairs only; hash equals helper; existing pair entry untouched; accommodation untouched; second run 0 rows; executed test count > 0.",
+      "status": "pending",
+      "complexity": 3,
+      "blockedBy": [
+        "T-005",
+        "T-004",
+        "T-001"
+      ],
+      "blocks": [
+        "T-043"
+      ],
+      "subtasks": [
+        {
+          "title": "Scaffold + up()",
+          "completed": false
+        },
+        {
+          "title": "Integration test",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "seed",
+        "data-migration"
+      ],
+      "phase": "integration",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:37:20.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-028",
+      "title": "Data-migration 0195: grant ai_translate to venue and experience plans",
+      "description": "packages/seed/src/catalog/next-version-entitlements.ts: add PRODUCTION_PLAN_AI_TRANSLATE_GRANTS (spec §8.8, values 200/1000/5000, trialQuota 200) and re-export it from scripts/production-catalog/catalog.ts:1883-1892. New packages/seed/src/data-migrations/0195-hos-2658-ai-translate-venue-experience-grant.ts (contentOnly, required) using the bounded additive-grant lane exactly like 0191:46-81: set_config hospeda.catalog_additive_grant 'HOS-2658', insert entitlement + limit into EVERY version of each listed plan with NOT EXISTS guards, clear setting, return counts. Do NOT edit PRODUCTION_PLAN_CATALOG (G18). Renumber if taken.\nACs: AC-28.\nTests (packages/seed/test/data-migrations/0195-hos-2658-ai-translate-venue-experience-grant.test.ts, real DB, pattern 0191-...test.ts:57-65): list equals the six slugs; every version gets both rows with correct values; version already holding the key untouched; no accommodation change; idempotent. Run pnpm check:catalog-sql (G18) and catalog-key-usage (G3) green.",
+      "status": "pending",
+      "complexity": 3,
+      "blockedBy": [],
+      "blocks": [
+        "T-037",
+        "T-040",
+        "T-043"
+      ],
+      "subtasks": [
+        {
+          "title": "Grants constant + re-export",
+          "completed": false
+        },
+        {
+          "title": "Data-migration",
+          "completed": false
+        },
+        {
+          "title": "Integration test",
+          "completed": false
+        },
+        {
+          "title": "G3/G18 run",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "seed",
+        "billing",
+        "catalog"
+      ],
+      "phase": "integration",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:37:20.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-029",
+      "title": "Add web API client for listing translations",
+      "description": "New apps/web/src/lib/api/endpoints-protected-translations.ts: listingTranslationsApi.get({vertical,id}) (apiClient.getProtected), .saveManual({vertical,id,field,locale,value}) (apiClient.put), .translateWithAi({vertical,id,field,locales}) (apiClient.postProtected); path map accommodation->accommodations, venue->venues, experience->experiences; import type from @repo/schemas. Spec §10.\nTests (apps/web/test/lib/api/endpoints-protected-translations.test.ts): correct method + path per vertical; body shapes.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [
+        "T-002"
+      ],
+      "blocks": [
+        "T-032"
+      ],
+      "subtasks": [
+        {
+          "title": "Client module",
+          "completed": false
+        },
+        {
+          "title": "Tests",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "web",
+        "api-client"
+      ],
+      "phase": "integration",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:37:20.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-030",
+      "title": "Add account.editorTranslations i18n keys",
+      "description": "packages/i18n/src/locales/{es,en,pt}/account.json: add the account.editorTranslations.* keys of spec §5 (es as given; en/pt real translations, no machine marks). Run the i18n parity tests of packages/i18n.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [],
+      "blocks": [
+        "T-031"
+      ],
+      "subtasks": [
+        {
+          "title": "es",
+          "completed": false
+        },
+        {
+          "title": "en",
+          "completed": false
+        },
+        {
+          "title": "pt",
+          "completed": false
+        },
+        {
+          "title": "Parity tests green",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "i18n",
+        "web"
+      ],
+      "phase": "integration",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:37:20.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-031",
+      "title": "Implement translations section helpers",
+      "description": "New apps/web/src/components/account/editor/listing-translations-section.helpers.ts: pillToneFor(state), pillLabelKeyFor(state, value), aiButtonStateFor({state, aiStatus}) -> {enabled, reasonKey?}, isSaveEnabled({state, dirty}) per spec §6.1 (stale save enabled when clean; noSource hidden). Only import type from @repo/schemas (R-10).\nTests (apps/web/test/components/account/editor/listing-translations-section.helpers.test.ts): full §6.1 table. Mutation: stale save disabled when clean -> red.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [
+        "T-002",
+        "T-030"
+      ],
+      "blocks": [
+        "T-032"
+      ],
+      "subtasks": [
+        {
+          "title": "Helpers",
+          "completed": false
+        },
+        {
+          "title": "Table tests",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "web"
+      ],
+      "phase": "integration",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:37:20.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-032",
+      "title": "Build ListingTranslationsSection island",
+      "description": "New apps/web/src/components/account/editor/ListingTranslationsSection.client.tsx (+ ListingTranslationsSection.module.css, optional ListingTranslationRow.client.tsx to stay <500 lines). Props per spec §10. Built on TranslationEditor/TranslationEditorRow/TranslationTextControl; fetch state on mount; ES tab read-only with sourceHint; EN/PT textareas with locale in label; pill, stale Alert linked by aria-describedby, Guardar, Traducir con IA with disabled reason text, busy state, 'Actualizar' link while any pending, loading skeleton, load error with retry; replace state with each PUT/POST response; 403 -> visibleApiMessage + reload. CSS Modules only, all copy via t().\nACs: AC-11, AC-12, AC-21, AC-23 (UI).\nTests (apps/web/test/components/account/editor/ListingTranslationsSection.test.tsx): tabs render; ES read-only; label 'Descripción (EN)'; entryNote row only for venue; save calls saveManual and re-renders state; AI button disabled with reason on noQuota; stale alert shown; load failure shows retry.",
+      "status": "pending",
+      "complexity": 3,
+      "blockedBy": [
+        "T-029",
+        "T-031"
+      ],
+      "blocks": [
+        "T-033",
+        "T-034"
+      ],
+      "subtasks": [
+        {
+          "title": "Component",
+          "completed": false
+        },
+        {
+          "title": "CSS module",
+          "completed": false
+        },
+        {
+          "title": "Component tests",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "web",
+        "react"
+      ],
+      "phase": "integration",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:37:20.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-033",
+      "title": "Use the new section on the accommodation translations page",
+      "description": "apps/web/src/pages/[lang]/mi-cuenta/propiedades/[id]/editar/traducciones.astro: render <ListingTranslationsSection vertical=\"accommodation\" listingId={accommodationId} locale={locale} sourceSectionLabels={...} client:load /> instead of TranslationPanel; keep resolveEditorPage + redirect. No new session read in frontmatter (session-blind guard).\nTests: run apps/web/test/pages/cacheable-pages-are-session-blind.guard.test.ts and any traducciones page test; update snapshot/props tests that referenced TranslationPanel.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [
+        "T-032"
+      ],
+      "blocks": [
+        "T-042"
+      ],
+      "subtasks": [
+        {
+          "title": "Page swap",
+          "completed": false
+        },
+        {
+          "title": "Guard + page tests",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "web",
+        "astro"
+      ],
+      "phase": "integration",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:37:20.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-034",
+      "title": "Use the new section in venue/experience editors and drop i18n from PATCH",
+      "description": "apps/web/src/components/listing/editor/section-renderers.tsx:415-427 renders ListingTranslationsSection (vertical=context.vertical, listingId=context.listingId). Remove i18nValues from listing-edit-data.ts:217 and listing-initial-data.ts, the onI18nChange path (use-listing-edit-state.ts:150, ListingSectionRenderContext.onI18nChange) and the four *I18n branches of listing-patch-payload.ts:186-199; keep entryNoteI18n (:350-353).\nACs: AC-21, AC-22.\nTests: update apps/web/test/components/listing/editor/listing-patch-payload.test.ts (no *I18n keys ever; entryNoteI18n still sent) and editor state tests referencing i18nValues. Mutation: re-add a branch -> red.",
+      "status": "pending",
+      "complexity": 3,
+      "blockedBy": [
+        "T-032",
+        "T-022"
+      ],
+      "blocks": [
+        "T-038",
+        "T-039",
+        "T-041"
+      ],
+      "subtasks": [
+        {
+          "title": "Renderer",
+          "completed": false
+        },
+        {
+          "title": "Edit data/state removal",
+          "completed": false
+        },
+        {
+          "title": "Patch payload",
+          "completed": false
+        },
+        {
+          "title": "Tests",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "web",
+        "react"
+      ],
+      "phase": "integration",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:37:20.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-035",
+      "title": "Integration suite for the translation routes",
+      "description": "apps/api/test/integration/listing-translations/listing-translations.routes.test.ts (real DB, stubbed AI provider): for venue AND accommodation cover AC-6, AC-9, AC-10, AC-12, AC-16, AC-17, AC-18, AC-19, AC-20, AC-23, AC-24; assert translation_meta JSON and ai_usage rows (user_id = ownerId, statuses). Mind the shared api integration DB name (one session at a time). Executed count > 0.",
+      "status": "pending",
+      "complexity": 3,
+      "blockedBy": [
+        "T-023"
+      ],
+      "blocks": [
+        "T-043"
+      ],
+      "subtasks": [
+        {
+          "title": "Fixtures",
+          "completed": false
+        },
+        {
+          "title": "Cases",
+          "completed": false
+        },
+        {
+          "title": "Run",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "api",
+        "integration-test"
+      ],
+      "phase": "testing",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:37:20.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-036",
+      "title": "Integration suite for on-save translation",
+      "description": "apps/api/test/integration/listing-translations/on-save.test.ts: through the real owner PATCH/create routes of the three verticals with the stubbed provider and a test TranslationService wrapper whose promise the test awaits: AC-1, AC-2, AC-3, AC-4, AC-5, AC-7, AC-8, AC-25, AC-27. Executed count > 0.",
+      "status": "pending",
+      "complexity": 3,
+      "blockedBy": [
+        "T-018",
+        "T-019",
+        "T-020",
+        "T-021"
+      ],
+      "blocks": [
+        "T-043"
+      ],
+      "subtasks": [
+        {
+          "title": "Await harness",
+          "completed": false
+        },
+        {
+          "title": "Cases",
+          "completed": false
+        },
+        {
+          "title": "Run",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "api",
+        "integration-test"
+      ],
+      "phase": "testing",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:37:20.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-037",
+      "title": "Integration test for venue trial translate quota",
+      "description": "apps/api/test/integration/listing-translations/trial-quota.test.ts: after 0195, a venue owner in trial is allowed by evaluateAiQuota(VENUE, translate) and blocked at count 200 (AC-29); a venue-pro subscriber limit is 1000.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [
+        "T-028",
+        "T-012"
+      ],
+      "blocks": [],
+      "subtasks": [
+        {
+          "title": "Fixture",
+          "completed": false
+        },
+        {
+          "title": "Assertions",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "api",
+        "billing",
+        "integration-test"
+      ],
+      "phase": "testing",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:37:20.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-038",
+      "title": "Update e2e listing-owner-03 for the new translations section",
+      "description": "apps/e2e/tests/listing-owner/listing-owner-03-owner-edits-type-i18n.spec.ts test 2 (:246): edit 'Nombre (EN)' in the new section, click Guardar, reload, assert value + 'Corregida por vos' pill; assert the editor save-bar PATCH body carries no nameI18n (AC-22). Update the file header comment.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [
+        "T-034"
+      ],
+      "blocks": [],
+      "subtasks": [
+        {
+          "title": "Rewrite test 2",
+          "completed": false
+        },
+        {
+          "title": "Header",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "e2e"
+      ],
+      "phase": "testing",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:37:20.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-039",
+      "title": "New e2e for manual translation and stale warning",
+      "description": "New apps/e2e/tests/listing-owner/listing-owner-translations-manual-stale.spec.ts (@p1): venue owner saves 'Descripción (EN)'; changes the Spanish description in basic info and saves; back in translations sees the stale alert text (AC-11); saves the pair again, alert gone (AC-12). Never clicks Traducir con IA (no AI stub in E2E; spec §11.3).",
+      "status": "pending",
+      "complexity": 3,
+      "blockedBy": [
+        "T-034",
+        "T-021"
+      ],
+      "blocks": [],
+      "subtasks": [
+        {
+          "title": "Spec file",
+          "completed": false
+        },
+        {
+          "title": "Run locally against worktree servers",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "e2e"
+      ],
+      "phase": "testing",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:37:20.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-040",
+      "title": "Document the translation routes and grants",
+      "description": "apps/api/docs/route-architecture.md: add the three /{id}/translations routes per vertical (auth, errors). apps/web/CLAUDE.md: short note that listing translations are edited only in ListingTranslationsSection and never in the PATCH. packages/seed/CLAUDE.md: mention 0194/0195 (contentOnly, additive-grant lane). English only.",
+      "status": "pending",
+      "complexity": 1,
+      "blockedBy": [
+        "T-023",
+        "T-028"
+      ],
+      "blocks": [],
+      "subtasks": [
+        {
+          "title": "route-architecture.md",
+          "completed": false
+        },
+        {
+          "title": "apps/web/CLAUDE.md",
+          "completed": false
+        },
+        {
+          "title": "packages/seed/CLAUDE.md",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "docs"
+      ],
+      "phase": "docs",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:37:20.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-041",
+      "title": "Delete ListingTranslationPanel and its dead keys",
+      "description": "Delete apps/web/src/components/listing/ListingTranslationPanel.client.tsx and apps/web/test/components/listing/ListingTranslationPanel.test.tsx once rg shows no import; move any still-used type (ListingI18nValues) or delete it; remove listing.owner.editor.translationPanel.* keys from es/en/pt if rg finds no other user.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [
+        "T-034"
+      ],
+      "blocks": [
+        "T-043"
+      ],
+      "subtasks": [
+        {
+          "title": "Delete component + test",
+          "completed": false
+        },
+        {
+          "title": "Remove dead keys",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "web",
+        "cleanup"
+      ],
+      "phase": "cleanup",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:37:20.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-042",
+      "title": "Delete the accommodation read-only translation panel",
+      "description": "Delete apps/web/src/components/host/editor/TranslationPanel.client.tsx, TranslationFieldRow.client.tsx, translation-status.ts and their tests (apps/web/test/components/host/editor/TranslationPanel.test.tsx, translation-status.test.ts) once unused; remove host.properties.editor.translation.* keys only used by them; keep transformAccommodationTranslations/AccommodationTranslationData if the page redirect still uses them.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [
+        "T-033"
+      ],
+      "blocks": [
+        "T-043"
+      ],
+      "subtasks": [
+        {
+          "title": "Delete files",
+          "completed": false
+        },
+        {
+          "title": "Remove dead keys",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "web",
+        "cleanup"
+      ],
+      "phase": "cleanup",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:37:20.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-043",
+      "title": "Run repo guards and typecheck before the PR",
+      "description": "Run pnpm check:guards (G2 one-vertical, G3 catalog-key-usage, G18 catalog-sql, seed dual-write, no-legacy-billing), the session-blind guard, biome with --max-diagnostics=400, and CI=true typecheck for every touched package; fix findings. Merge origin/staging into the branch first (migration/data-migration numbering collisions).",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [
+        "T-041",
+        "T-042",
+        "T-027",
+        "T-028",
+        "T-035",
+        "T-036"
+      ],
+      "blocks": [],
+      "subtasks": [
+        {
+          "title": "Merge staging",
+          "completed": false
+        },
+        {
+          "title": "Guards",
+          "completed": false
+        },
+        {
+          "title": "Lint + typecheck",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "ci",
+        "guards"
+      ],
+      "phase": "cleanup",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:37:20.000Z",
+        "started": null,
+        "completed": null
+      }
+    }
+  ],
+  "summary": {
+    "total": 43,
+    "pending": 43,
+    "inProgress": 0,
+    "completed": 0,
+    "blocked": 0,
+    "averageComplexity": 2.3
+  }
+}

@@ -1,0 +1,1660 @@
+{
+  "version": "1.0",
+  "specRef": "HOS-2495",
+  "title": "One listing photo editor with the effective photo cap",
+  "created": "2026-11-26T09:00:00.000Z",
+  "tasks": [
+    {
+      "id": "T-001",
+      "title": "schemas: add max_photos_per_venue / max_photos_per_experience limit keys",
+      "description": "Add two ROWS to packages/schemas/src/catalog/limit-keys.ts: ['max_photos_per_venue','vertical','SUM','ARCHIVE','COMMERCIAL'] and ['max_photos_per_experience',...]. Add LimitKeyEnum.MAX_PHOTOS_PER_VENUE / MAX_PHOTOS_PER_EXPERIENCE in key-enums.ts. Update any frozen key count in @repo/schemas tests.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [],
+      "blocks": [
+        "T-002",
+        "T-004",
+        "T-005",
+        "T-006",
+        "T-008",
+        "T-010",
+        "T-013"
+      ],
+      "subtasks": [
+        {
+          "title": "Add ROWS",
+          "completed": false
+        },
+        {
+          "title": "Add enum values",
+          "completed": false
+        },
+        {
+          "title": "Fix frozen counts in schemas tests",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "schemas",
+        "catalog"
+      ],
+      "phase": "setup",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-002",
+      "title": "schemas: LISTING_PHOTO_LIMIT_KEY_BY_VERTICAL and partitionGalleryByCap",
+      "description": "New packages/schemas/src/catalog/listing-photo-limit.ts exporting LISTING_PHOTO_LIMIT_KEY_BY_VERTICAL (accommodation/venue/experience) and pure partitionGalleryByCap({items, cap}) -> {shown, hidden}; cap null = unlimited (nothing hidden), uses isUnlimitedLimit. Export from the catalog barrel. Tests in packages/schemas/test/catalog/listing-photo-limit.test.ts (cap 0, cap < len, cap = len, unlimited sentinel, order preserved). Mutation: slice(0, cap+1).",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [
+        "T-001"
+      ],
+      "blocks": [
+        "T-003",
+        "T-014",
+        "T-021",
+        "T-022"
+      ],
+      "subtasks": [
+        {
+          "title": "Constant + function",
+          "completed": false
+        },
+        {
+          "title": "Barrel export",
+          "completed": false
+        },
+        {
+          "title": "Unit tests incl. unlimited",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "schemas"
+      ],
+      "phase": "setup",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-003",
+      "title": "schemas: ListingPhotoAllowanceSchema",
+      "description": "New packages/schemas/src/api/listing/listing-photo-allowance.schema.ts with the response shape of spec section API Design (limitKey, status, cap, source, used, hiddenCount, coverAllowed, breakdown|null with contributions kind/value/sources). Export type. Tests: valid LIMITED/UNLIMITED/NONE payloads, rejects cap number with UNLIMITED.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [
+        "T-002"
+      ],
+      "blocks": [
+        "T-019"
+      ],
+      "subtasks": [
+        {
+          "title": "Schema + type",
+          "completed": false
+        },
+        {
+          "title": "Tests",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "schemas",
+        "api"
+      ],
+      "phase": "setup",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-004",
+      "title": "scripts: two 20-photo packs in the commercial catalog",
+      "description": "In scripts/production-catalog/commercial-catalog.ts PRODUCTION_ADDON_CATALOG add limitPack entries extra-photos-venue-20 and extra-photos-experience-20 (key max_photos_per_venue / _experience, value 20, monthlyPesos 5_000, vertical venue / experience), same lifecycle as extra-photos-20. Update scripts/__tests__/production-catalog-commercial.test.ts (slug list and limit rows). No price constants outside scripts (G7).",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [
+        "T-001"
+      ],
+      "blocks": [
+        "T-005",
+        "T-008"
+      ],
+      "subtasks": [
+        {
+          "title": "Add two limitPack entries",
+          "completed": false
+        },
+        {
+          "title": "Update commercial test",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "scripts",
+        "billing",
+        "catalog"
+      ],
+      "phase": "setup",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-005",
+      "title": "db: migration 0253 with catalog keys and the two add-ons",
+      "description": "Create a custom drizzle migration (journal + snapshot, like 0251) named hos2495_listing_photo_keys_and_packs at the next free number. Paste ONLY the new rows from pnpm gen:catalog-sql --load=catalog_key, addon, addon_version, addon_version_limit, addon_product, in that order, one statement each with --> statement-breakpoint (extras 041 ordering). Header comment GUARD:G18. Run check-catalog-sql (G18) and check-catalog-key-usage (G3).",
+      "status": "pending",
+      "complexity": 3,
+      "blockedBy": [
+        "T-001",
+        "T-004"
+      ],
+      "blocks": [
+        "T-007",
+        "T-030"
+      ],
+      "subtasks": [
+        {
+          "title": "Create custom migration file",
+          "completed": false
+        },
+        {
+          "title": "Paste generated rows in FK order",
+          "completed": false
+        },
+        {
+          "title": "G18 + G3 green",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "db",
+        "migration",
+        "catalog"
+      ],
+      "phase": "setup",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-006",
+      "title": "seed: PRODUCTION_PLAN_LISTING_PHOTO_LIMIT_GRANTS constant",
+      "description": "Add the constant to packages/seed/src/catalog/next-version-entitlements.ts (venue-basico 15, venue-pro 30, venue-premium 50, experience-basico 15, experience-pro 30, experience-premium 50) and re-export it from the export block of scripts/production-catalog/catalog.ts.",
+      "status": "pending",
+      "complexity": 1,
+      "blockedBy": [
+        "T-001"
+      ],
+      "blocks": [
+        "T-007"
+      ],
+      "subtasks": [
+        {
+          "title": "Constant",
+          "completed": false
+        },
+        {
+          "title": "Re-export",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "seed",
+        "catalog"
+      ],
+      "phase": "setup",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-007",
+      "title": "seed: data-migration 0194 granting photo limits on every plan version",
+      "description": "packages/seed/src/data-migrations/0194-hos-2495-listing-photo-limits-grant.ts modelled on 0191: meta {group:'required', destructive:false, contentOnly:true}; set hospeda.catalog_additive_grant='HOS-2495', insert plan_version_limit for every version of the six plans when missing, reset setting, return counts. Test packages/seed/test/data-migrations/0194-...test.ts: idempotent, every version, role plans untouched. Mutation: only the current version.",
+      "status": "pending",
+      "complexity": 3,
+      "blockedBy": [
+        "T-005",
+        "T-006"
+      ],
+      "blocks": [
+        "T-030",
+        "T-032"
+      ],
+      "subtasks": [
+        {
+          "title": "Data-migration",
+          "completed": false
+        },
+        {
+          "title": "Test incl. idempotency",
+          "completed": false
+        },
+        {
+          "title": "Mutation check",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "seed",
+        "db"
+      ],
+      "phase": "setup",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-008",
+      "title": "i18n: billing strings for the new keys and packs",
+      "description": "In packages/i18n/src/locales/{es,en,pt}/billing.json add limit.<key>.{title,message_one,message_other,cta}, comparison.limitLabel.<key>, limitHelp.<key> for both keys and addon.<slug>.{name,description} for both packs. Run the i18n key parity tests.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [
+        "T-001",
+        "T-004"
+      ],
+      "blocks": [
+        "T-010"
+      ],
+      "subtasks": [
+        {
+          "title": "es",
+          "completed": false
+        },
+        {
+          "title": "en",
+          "completed": false
+        },
+        {
+          "title": "pt",
+          "completed": false
+        },
+        {
+          "title": "Parity tests",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "i18n",
+        "billing"
+      ],
+      "phase": "setup",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-009",
+      "title": "i18n: account.listingPhotos namespace",
+      "description": "Add account.json listingPhotos.* in es/en/pt: description.{accommodation,venue,experience} (plural), noPlan.{accommodation,venue,experience}, plansCta, unlimited, breakdown parts (plan, trial, addons, courtesy, permanentGrant, base, preTrialDraft, total), overCapBadge ('No se muestra: superás tu tope'), overCapSummary (plural), loading, readFailed.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [],
+      "blocks": [
+        "T-026"
+      ],
+      "subtasks": [
+        {
+          "title": "es",
+          "completed": false
+        },
+        {
+          "title": "en",
+          "completed": false
+        },
+        {
+          "title": "pt",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "i18n",
+        "web"
+      ],
+      "phase": "setup",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-010",
+      "title": "web: register new keys in KNOWN_LIMIT_KEYS and addon-category",
+      "description": "Add both keys to apps/web/src/lib/billing-limit-error.ts KNOWN_LIMIT_KEYS and to apps/web/src/lib/billing/addon-category.ts as 'media'. Keep billing-limit-key-i18n-coverage.guard.test.ts and exhaustiveness tests green.",
+      "status": "pending",
+      "complexity": 1,
+      "blockedBy": [
+        "T-001",
+        "T-008"
+      ],
+      "blocks": [],
+      "subtasks": [
+        {
+          "title": "KNOWN_LIMIT_KEYS",
+          "completed": false
+        },
+        {
+          "title": "addon-category",
+          "completed": false
+        },
+        {
+          "title": "Guard tests",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "web",
+        "billing"
+      ],
+      "phase": "setup",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-011",
+      "title": "verticals: extract collectFoldableSources from resolveEffectiveSet",
+      "description": "Refactor packages/verticals/src/effective-set/resolve-effective-set.ts so source collection and grantsOf resolution live in an exported-internal collectFoldableSources(args) used by resolveEffectiveSet. No behaviour change: existing effective-set tests stay green unchanged.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [],
+      "blocks": [
+        "T-012"
+      ],
+      "subtasks": [
+        {
+          "title": "Extract helper",
+          "completed": false
+        },
+        {
+          "title": "Existing tests green",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "verticals",
+        "refactor"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-012",
+      "title": "verticals: resolveEffectiveLimitBreakdown",
+      "description": "New packages/verticals/src/effective-set/limit-breakdown.ts: resolveEffectiveLimitBreakdown({...ResolveEffectiveSetArgs, keys}) -> per key {total, contributions[{kind, value|'unlimited', sources}]} built from collectFoldableSources + selectPlegableSources, total = foldPlegableSet value. Kind mapping per spec. Tests packages/verticals/test/effective-set/limit-breakdown.test.ts: plan only, plan+2 addons (SUM), addon without live title dropped, trial alone, trial+subscription (trial dropped), grant, unlimited absorbing, total equals fold. Mutations: skip selectPlegableSources; keep trial with subscription.",
+      "status": "pending",
+      "complexity": 3,
+      "blockedBy": [
+        "T-011"
+      ],
+      "blocks": [
+        "T-019"
+      ],
+      "subtasks": [
+        {
+          "title": "Function",
+          "completed": false
+        },
+        {
+          "title": "Kind mapping",
+          "completed": false
+        },
+        {
+          "title": "Tests incl. total = fold",
+          "completed": false
+        },
+        {
+          "title": "Mutations",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "verticals"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-013",
+      "title": "verticals: pre-trial draft keys for venue and experience",
+      "description": "Add venue and experience photo keys to PRE_TRIAL_DRAFT_LIMIT_KEYS_BY_VERTICAL (packages/verticals/src/authorization/pre-trial-draft-limit.ts), fix its docblock, extend pre-trial-draft-limit.test.ts and the resolve-listing-access DRAFT fallback test for venue.",
+      "status": "pending",
+      "complexity": 1,
+      "blockedBy": [
+        "T-001"
+      ],
+      "blocks": [
+        "T-019"
+      ],
+      "subtasks": [
+        {
+          "title": "Map entries",
+          "completed": false
+        },
+        {
+          "title": "Docblock",
+          "completed": false
+        },
+        {
+          "title": "Tests",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "verticals",
+        "authorization"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-014",
+      "title": "api: generalize photo-limit helpers per vertical",
+      "description": "In apps/api/src/utils/listing-access/photo-limit.ts add listingGalleryPhotoLimit(vertical) (requested = visible non-featured + 1 via the vertical's media model) and listingCoverPhotoLimit(vertical) (requested 1); keep accommodationGalleryPhotoLimit as a thin alias for existing callers. Update test/utils/listing-access/photo-limit.test.ts for all three verticals. Mutation: requested = used.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [
+        "T-002"
+      ],
+      "blocks": [
+        "T-015",
+        "T-016",
+        "T-019"
+      ],
+      "subtasks": [
+        {
+          "title": "Helpers",
+          "completed": false
+        },
+        {
+          "title": "Tests per vertical",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "api",
+        "authorization"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-015",
+      "title": "api: step 7 on venue/experience protected addMedia and addFeaturedMedia",
+      "description": "Declare listingAccess.limit on routes/venue/protected/addMedia.ts, addFeaturedMedia.ts and the experience equivalents. New tests apps/api/test/routes/{venue,experience}/protected/addMedia.photo-limit.test.ts: 403 LIMIT_REACHED details {limitKey,currentCount,maxAllowed}; cover needs cap >= 1.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [
+        "T-014"
+      ],
+      "blocks": [
+        "T-030",
+        "T-033"
+      ],
+      "subtasks": [
+        {
+          "title": "Four routes",
+          "completed": false
+        },
+        {
+          "title": "Route tests",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "api"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-016",
+      "title": "api: upload-entity listing branches and rate-limit constant",
+      "description": "Split UPLOAD_LISTING_ACCESS venue/experience into gallery and featured entries with the new limit helpers (literal listingAccess objects, G2). Replace PROTECTED_ENTITY_UPLOAD_RATE_LIMIT_MAX derivation with an explicit constant 51. Remove the getGalleryCap check for listing verticals (keep for content entities). Update protected-upload-entity*.test.ts and gallery-cap-enforcement.test.ts; assert no Cloudinary call on a refused upload.",
+      "status": "pending",
+      "complexity": 3,
+      "blockedBy": [
+        "T-014"
+      ],
+      "blocks": [
+        "T-030",
+        "T-037"
+      ],
+      "subtasks": [
+        {
+          "title": "Split entries",
+          "completed": false
+        },
+        {
+          "title": "Rate-limit constant",
+          "completed": false
+        },
+        {
+          "title": "Drop listing literal check",
+          "completed": false
+        },
+        {
+          "title": "Tests",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "api",
+        "media"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-017",
+      "title": "service-core: drop literal gallery caps in listing services",
+      "description": "Remove the getGalleryCap gallery-count checks from accommodation.service.ts (~3681), venue/venue.media.ts (~181) and experience/experience.media.ts (~189). Keep post/event. Update addMedia.gallery-cap.test.ts, venue.media.test.ts, experience.media.test.ts to assert no QUOTA_EXCEEDED for listing galleries.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [],
+      "blocks": [
+        "T-037"
+      ],
+      "subtasks": [
+        {
+          "title": "Three services",
+          "completed": false
+        },
+        {
+          "title": "Tests",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "service-core",
+        "media"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-018",
+      "title": "api: drop literal caps for listing verticals in admin upload and stock import",
+      "description": "In routes/media/admin/upload.ts (~441-467) and routes/media/admin/import-stock.ts (~153) skip getGalleryCap when entityType is accommodation/venue/experience; keep the owner step 7 for accommodation. Update upload-defensive-hardening.test.ts and admin/import-stock.test.ts.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [],
+      "blocks": [
+        "T-037"
+      ],
+      "subtasks": [
+        {
+          "title": "Admin upload",
+          "completed": false
+        },
+        {
+          "title": "Stock import",
+          "completed": false
+        },
+        {
+          "title": "Tests",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "api",
+        "admin",
+        "media"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-019",
+      "title": "api: resolveListingPhotoAllowance util",
+      "description": "New apps/api/src/utils/listing-access/photo-allowance.ts: cap from the same effectiveSet port and DRAFT fallback step 7 uses; used and hiddenCount via the media model + partitionGalleryByCap; breakdown via resolveEffectiveLimitBreakdown, null + warn log when totals differ or it throws. Tests apps/api/test/utils/listing-access/photo-allowance.test.ts. Mutation: return breakdown when totals differ.",
+      "status": "pending",
+      "complexity": 3,
+      "blockedBy": [
+        "T-003",
+        "T-012",
+        "T-013",
+        "T-014"
+      ],
+      "blocks": [
+        "T-020"
+      ],
+      "subtasks": [
+        {
+          "title": "Util",
+          "completed": false
+        },
+        {
+          "title": "Mismatch -> null + warn",
+          "completed": false
+        },
+        {
+          "title": "Tests",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "api"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-020",
+      "title": "api: GET {accommodations|venues|experiences}/{id}/photo-allowance",
+      "description": "Three protected routes (getPhotoAllowance.ts) with listingAccess READ_OWN like sectionStates.ts, response ListingPhotoAllowanceSchema; register in the vertical routers. Route tests: 401, foreign 404, no-plan NONE answers 200, DRAFT pre-trial PRE_TRIAL_DRAFT.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [
+        "T-019"
+      ],
+      "blocks": [
+        "T-024",
+        "T-035"
+      ],
+      "subtasks": [
+        {
+          "title": "Three routes",
+          "completed": false
+        },
+        {
+          "title": "Router registration",
+          "completed": false
+        },
+        {
+          "title": "Route tests",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "api"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-021",
+      "title": "api: trim venue/experience public galleries to the owner's cap",
+      "description": "In apps/api/src/utils/public-listing-projector.ts trim media.gallery with partitionGalleryByCap using the owner effective set already read by readOwnerEffectiveSets; never touch featuredImage. Tests: cap 15 with 20 photos -> 15, cover present, cap 0 -> cover only, unlimited untouched. Mutation: trim featuredImage.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [
+        "T-002"
+      ],
+      "blocks": [
+        "T-031",
+        "T-032"
+      ],
+      "subtasks": [
+        {
+          "title": "Trim",
+          "completed": false
+        },
+        {
+          "title": "Tests",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "api",
+        "public"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-022",
+      "title": "api: trim accommodation public galleries and add no-store on lookup failure",
+      "description": "Same trim in apps/api/src/utils/public-accommodation-projection.ts; add onEffectiveSetFailure no-store hook to accommodation public routes (getById, getBySlug, getByDestination, getTopRatedByDestination, similar, user/feature/destination lists) like venue getBySlug:137. Tests incl. throwing effective set -> cover only + Cache-Control no-store.",
+      "status": "pending",
+      "complexity": 3,
+      "blockedBy": [
+        "T-002"
+      ],
+      "blocks": [
+        "T-031"
+      ],
+      "subtasks": [
+        {
+          "title": "Projection trim",
+          "completed": false
+        },
+        {
+          "title": "No-store hook on routes",
+          "completed": false
+        },
+        {
+          "title": "Tests",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "api",
+        "public",
+        "cache"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-023",
+      "title": "api: coverage-changed gallery revalidation listener",
+      "description": "New apps/api/src/utils/listing-media/gallery-coverage-revalidation.ts subscribeListingGalleryRevalidation(): for listing verticals invalidateEffectiveSetsForUser first, then getListingPublicationPorts().afterCommit.revalidate({vertical, listingIds}) for the owner's PUBLISHED non-deleted listings; errors logged not thrown; in-flight tracking like featured-sync-listener. Wire in apps/api/src/index.ts next to subscribeListingFeaturedSync and in shutdown. Tests: order, DRAFT excluded, non-listing vertical ignored, error swallowed.",
+      "status": "pending",
+      "complexity": 3,
+      "blockedBy": [],
+      "blocks": [
+        "T-032",
+        "T-035"
+      ],
+      "subtasks": [
+        {
+          "title": "Listener",
+          "completed": false
+        },
+        {
+          "title": "Wiring + shutdown",
+          "completed": false
+        },
+        {
+          "title": "Tests",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "api",
+        "cache"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-024",
+      "title": "web: createListingPhotoApi adapter",
+      "description": "New apps/web/src/lib/api/listing-photo-api.ts createListingPhotoApi({vertical}) delegating to accommodationMediaApi / listingMediaApi and normalizing rows to ListingPhotoRow; add getAllowance endpoint calls in endpoints-protected.ts. Tests per vertical (correct path segments).",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [
+        "T-020"
+      ],
+      "blocks": [
+        "T-025",
+        "T-026"
+      ],
+      "subtasks": [
+        {
+          "title": "Adapter",
+          "completed": false
+        },
+        {
+          "title": "getAllowance endpoints",
+          "completed": false
+        },
+        {
+          "title": "Tests",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "web",
+        "api-client"
+      ],
+      "phase": "integration",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-025",
+      "title": "web: generalize photo hooks to {api, vertical, listingId}",
+      "description": "Change use-photo-section.ts and use-photo-gallery-mutations.ts to take the adapter; every error path via translateApiError; refetch allowance after upload batch, delete and cover change. Extend use-photo-gallery-mutations.entitlement-error.test.tsx and hydration tests to venue/experience. Mutation: visibleApiMessage instead of translateApiError.",
+      "status": "pending",
+      "complexity": 3,
+      "blockedBy": [
+        "T-024"
+      ],
+      "blocks": [
+        "T-027"
+      ],
+      "subtasks": [
+        {
+          "title": "Hook signatures",
+          "completed": false
+        },
+        {
+          "title": "translateApiError everywhere",
+          "completed": false
+        },
+        {
+          "title": "Allowance refetch",
+          "completed": false
+        },
+        {
+          "title": "Tests per vertical",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "web"
+      ],
+      "phase": "integration",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-026",
+      "title": "web: resolveGalleryCapView and description states with breakdown",
+      "description": "Replace resolveEffectiveGalleryCap in photo-section-helpers.ts with resolveGalleryCapView({allowance,isLoading,failed}) -> loading/limited/unlimited/none/failed; remove MAX_PHOTOS_LIMIT_KEY; PhotoSectionDescription renders the five states with account.listingPhotos copy, per-vertical pricing link and the breakdown line (only when breakdown non-null). Tests: photo-section-helpers.test.ts, plan-cap tests for three verticals, unlimited shows 'Sin límite'.",
+      "status": "pending",
+      "complexity": 3,
+      "blockedBy": [
+        "T-024",
+        "T-009"
+      ],
+      "blocks": [
+        "T-027"
+      ],
+      "subtasks": [
+        {
+          "title": "Pure view function",
+          "completed": false
+        },
+        {
+          "title": "Description states",
+          "completed": false
+        },
+        {
+          "title": "Breakdown line",
+          "completed": false
+        },
+        {
+          "title": "Tests",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "web",
+        "i18n"
+      ],
+      "phase": "integration",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-027",
+      "title": "web: over-cap marking and summary alert",
+      "description": "SortablePhotoGallery marks approved visible non-featured tiles at index >= cap (partitionGalleryByCap) with the badge, dimmed CSS Module class, aria-describedby; controls stay enabled. Summary Alert when hiddenCount > 0 with tPlural. Tests: marking recomputed after reorder/delete/cover; PENDING never marked. Mutation: mark from index cap+1.",
+      "status": "pending",
+      "complexity": 3,
+      "blockedBy": [
+        "T-025",
+        "T-026"
+      ],
+      "blocks": [
+        "T-028",
+        "T-034"
+      ],
+      "subtasks": [
+        {
+          "title": "Tile badge + CSS",
+          "completed": false
+        },
+        {
+          "title": "Summary alert",
+          "completed": false
+        },
+        {
+          "title": "Tests",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "web",
+        "a11y"
+      ],
+      "phase": "integration",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-028",
+      "title": "web: one PhotoSection for both fotos.astro pages",
+      "description": "PhotoSection props become {vertical, listingId, publishContext?}; propiedades/[id]/editar/fotos.astro and comercio/[vertical]/[id]/editar/fotos.astro render it (videos widget untouched). Port reorder/metadata/delete-confirm tests to venue/experience cases (drag-reorder, PhotoMetadataEditor, confirm). Session-blind guard stays green.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [
+        "T-027"
+      ],
+      "blocks": [
+        "T-033",
+        "T-036",
+        "T-038"
+      ],
+      "subtasks": [
+        {
+          "title": "Props",
+          "completed": false
+        },
+        {
+          "title": "Both pages",
+          "completed": false
+        },
+        {
+          "title": "Ported tests",
+          "completed": false
+        },
+        {
+          "title": "Session-blind guard",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "web",
+        "astro"
+      ],
+      "phase": "integration",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-029",
+      "title": "admin: drop literal caps from listing gallery managers",
+      "description": "GalleryManager.tsx and ListingGalleryManager.tsx show the count without /N and never block uploads client-side; ContentGalleryManager unchanged. Update their tests.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [],
+      "blocks": [
+        "T-037"
+      ],
+      "subtasks": [
+        {
+          "title": "Two components",
+          "completed": false
+        },
+        {
+          "title": "Tests",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "admin"
+      ],
+      "phase": "integration",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-030",
+      "title": "api integration: effective cap from plan, packs and grants",
+      "description": "apps/api/test/integration/listing-photos/effective-cap.integration.test.ts on a real DB: venue-pro + 1 pack = 50 (51st refused), 2 packs = 70, permanent grant 30, experience and accommodation (extra-photos-20, 70 > old literal 50). Check non-zero test count.",
+      "status": "pending",
+      "complexity": 3,
+      "blockedBy": [
+        "T-005",
+        "T-007",
+        "T-015",
+        "T-016"
+      ],
+      "blocks": [
+        "T-034"
+      ],
+      "subtasks": [
+        {
+          "title": "Scenarios",
+          "completed": false
+        },
+        {
+          "title": "Non-zero count",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "api",
+        "integration"
+      ],
+      "phase": "testing",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-031",
+      "title": "e2e: give guest-11's seed owner coverage",
+      "description": "apps/e2e/tests/guest/guest-11-listing-detail-mobile.spec.ts T-033 needs >1 slide; read fixtures permanent-grant-flow.ts / listing-owner-trial.ts and grant coverage to the owner of paraiso-calido-country-house-colon before the assertion. Keep the assertion.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [
+        "T-021",
+        "T-022"
+      ],
+      "blocks": [
+        "T-039"
+      ],
+      "subtasks": [
+        {
+          "title": "Pick fixture",
+          "completed": false
+        },
+        {
+          "title": "Wire it",
+          "completed": false
+        },
+        {
+          "title": "Run spec",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "e2e"
+      ],
+      "phase": "testing",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-032",
+      "title": "api integration: over-cap hidden publicly and reappears",
+      "description": "apps/api/test/integration/listing-photos/over-cap-public.integration.test.ts: 20 photos at cap 15 -> 15 public, rows unchanged; add pack + notice -> 20; expire -> 15; listener purge called. Non-zero test count.",
+      "status": "pending",
+      "complexity": 3,
+      "blockedBy": [
+        "T-021",
+        "T-023",
+        "T-007"
+      ],
+      "blocks": [
+        "T-034"
+      ],
+      "subtasks": [
+        {
+          "title": "Hide",
+          "completed": false
+        },
+        {
+          "title": "Reappear",
+          "completed": false
+        },
+        {
+          "title": "Rows unchanged",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "api",
+        "integration"
+      ],
+      "phase": "testing",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-033",
+      "title": "e2e: venue photo cap journey",
+      "description": "New apps/e2e/tests/verticals/listing-photos-cap.spec.ts with fixtures/listing-editor-helpers.ts: trial venue owner uploads to 15, cap line visible, 16th refused with localized message (no 'Limit reached'), reorder persists after reload.",
+      "status": "pending",
+      "complexity": 3,
+      "blockedBy": [
+        "T-028",
+        "T-015"
+      ],
+      "blocks": [
+        "T-039"
+      ],
+      "subtasks": [
+        {
+          "title": "Spec",
+          "completed": false
+        },
+        {
+          "title": "Run locally",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "e2e"
+      ],
+      "phase": "testing",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-034",
+      "title": "Mutation pass over the new behaviours",
+      "description": "Apply each mutation listed in the spec's Testing Strategy table one at a time, run the owning test file, confirm it fails with a non-zero test count, revert. Record results on the Linear issue at closeout (not in repo).",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [
+        "T-030",
+        "T-032",
+        "T-027"
+      ],
+      "blocks": [
+        "T-039"
+      ],
+      "subtasks": [
+        {
+          "title": "One mutation per behaviour",
+          "completed": false
+        },
+        {
+          "title": "Revert each",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "testing"
+      ],
+      "phase": "testing",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-035",
+      "title": "Docs: error contract, route architecture, web CLAUDE.md",
+      "description": "Update apps/api/docs/error-contract.md (listing uploads no longer 422 GALLERY_LIMIT_EXCEEDED), apps/api/docs/route-architecture.md (photo-allowance routes), apps/web/CLAUDE.md (one PhotoSection), and the docblock of apps/web/src/pages/[lang]/presentacion/comer-y-salir/index.astro:33 ('flat 30').",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [
+        "T-020",
+        "T-023"
+      ],
+      "blocks": [
+        "T-039"
+      ],
+      "subtasks": [
+        {
+          "title": "error-contract",
+          "completed": false
+        },
+        {
+          "title": "route-architecture",
+          "completed": false
+        },
+        {
+          "title": "web CLAUDE.md",
+          "completed": false
+        },
+        {
+          "title": "comer-y-salir docblock",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "docs"
+      ],
+      "phase": "docs",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-036",
+      "title": "Smoke checklist entry for staging",
+      "description": "Add the HOS-2495 steps to the staging section of docs/billing/smoke-checklist.md: buy extra-photos-venue-20 in the MP sandbox, cap moves to +20, cancel/expire hides photos, check a venue gallery right after deploy (R-1).",
+      "status": "pending",
+      "complexity": 1,
+      "blockedBy": [
+        "T-028"
+      ],
+      "blocks": [
+        "T-039"
+      ],
+      "subtasks": [
+        {
+          "title": "Checklist steps",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "docs",
+        "billing",
+        "smoke"
+      ],
+      "phase": "docs",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-037",
+      "title": "Shrink ENTITY_GALLERY_CAPS to content entities",
+      "description": "Remove accommodation/venue/experience from ENTITY_GALLERY_CAPS and narrow getGalleryCap's parameter to 'destination'|'event'|'post' so a listing call is a type error; rg gate for getGalleryCap/ENTITY_GALLERY_CAPS usages with listing verticals returns nothing. Update media-upload.schema.test.ts.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [
+        "T-016",
+        "T-017",
+        "T-018",
+        "T-029"
+      ],
+      "blocks": [
+        "T-039"
+      ],
+      "subtasks": [
+        {
+          "title": "Shrink map",
+          "completed": false
+        },
+        {
+          "title": "Narrow type",
+          "completed": false
+        },
+        {
+          "title": "rg gate",
+          "completed": false
+        },
+        {
+          "title": "Tests",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "schemas",
+        "cleanup"
+      ],
+      "phase": "cleanup",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-038",
+      "title": "Delete the legacy venue/experience editor files",
+      "description": "Delete components/listing/editor/{MediaSection.client.tsx,use-listing-media.ts,use-listing-media-upload.ts,listing-media-upload.ts,media-section-helpers.ts} and their tests (after T-028 ported them); add apps/web/test/static-guards/no-legacy-listing-media-section.test.ts asserting no import remains.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [
+        "T-028"
+      ],
+      "blocks": [
+        "T-039"
+      ],
+      "subtasks": [
+        {
+          "title": "Delete files",
+          "completed": false
+        },
+        {
+          "title": "Delete/port tests",
+          "completed": false
+        },
+        {
+          "title": "Static test",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "web",
+        "cleanup"
+      ],
+      "phase": "cleanup",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-039",
+      "title": "Final gate: guards, typecheck, affected suites",
+      "description": "Run pnpm check:guards, scripts/check-seed-dual-write.sh on the committed diff, pnpm env:check:registry, CI=true pnpm typecheck, biome with --max-diagnostics=400, and each affected package's suite one at a time (never all at once). Fix any frozen enum/add-on counts found.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [
+        "T-031",
+        "T-033",
+        "T-034",
+        "T-035",
+        "T-036",
+        "T-037",
+        "T-038"
+      ],
+      "blocks": [],
+      "subtasks": [
+        {
+          "title": "check:guards",
+          "completed": false
+        },
+        {
+          "title": "dual-write",
+          "completed": false
+        },
+        {
+          "title": "typecheck",
+          "completed": false
+        },
+        {
+          "title": "per-package suites",
+          "completed": false
+        }
+      ],
+      "tags": [
+        "quality"
+      ],
+      "phase": "cleanup",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-26T09:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    }
+  ],
+  "summary": {
+    "total": 39,
+    "pending": 39,
+    "inProgress": 0,
+    "completed": 0,
+    "blocked": 0,
+    "averageComplexity": 2.2
+  }
+}
