@@ -23,6 +23,10 @@ const planTableSrc = readFileSync(
     resolve(__dirname, '../../../src/components/features/PlanTable.astro'),
     'utf8'
 );
+const sectionsCss = readFileSync(
+    resolve(__dirname, '../../../src/pages/[lang]/funcionalidades/features-sections.css'),
+    'utf8'
+);
 
 describe('Funcionalidades page — subnav links are keyboard-operable', () => {
     it('renders subnav links as real anchor elements with an href (natively focusable)', () => {
@@ -60,7 +64,7 @@ describe('Funcionalidades page — decorative hero blobs are hidden from assisti
 describe('PlanTable — horizontally-scrollable region reachability', () => {
     it('wraps the table in a scrollable container (overflow-x: auto via .fx-tscroll)', () => {
         expect(planTableSrc).toContain('<div class="fx-tscroll"');
-        expect(pageSrc).toContain(':global(.fx-tscroll) {');
+        expect(sectionsCss).toMatch(/:global\(\.fx-tscroll\)\s*\{[^}]*overflow-x:\s*auto/);
     });
 
     /**

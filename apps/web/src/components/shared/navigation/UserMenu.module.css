@@ -218,6 +218,11 @@
     padding: 6px 0;
 }
 
+.subscriptionSubtitle {
+    display: block;
+    color: var(--core-muted-foreground);
+}
+
 .menuLink,
 .signOutButton {
     display: flex;

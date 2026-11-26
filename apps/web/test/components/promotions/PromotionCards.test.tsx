@@ -35,11 +35,11 @@ describe('PromotionCards', () => {
                 locale="es"
                 items={[visibleItem({ audience: 'vip' })]}
                 freeQuota={3}
-                vipPlanName={null}
+                vipPlanName="Explorer"
                 showPlace={false}
             />
         );
-        expect(screen.getByText('VIP')).toBeInTheDocument();
+        expect(screen.getByText('Explorer')).toBeInTheDocument();
         expect(screen.queryByRole('button')).toBeNull();
         expect(screen.queryByRole('link')).toBeNull();
     });
@@ -50,11 +50,12 @@ describe('PromotionCards', () => {
                 locale="es"
                 items={[lockedItem(), lockedItem({ key: 'k2', audience: 'plus' })]}
                 freeQuota={3}
-                vipPlanName="Viajero VIP"
+                vipPlanName="Explorer"
                 showPlace
             />
         );
-        const vip = screen.getByRole('button', { name: 'Promoción solo para VIP' });
+        const vip = screen.getByRole('button', { name: 'Promoción exclusiva del plan Explorer' });
+        expect(within(vip).getByText('Promoción exclusiva del plan Explorer')).toBeVisible();
         const hidden = screen.getByRole('button', { name: 'Promoción oculta' });
         expect(vip).toHaveAttribute('aria-disabled', 'true');
         expect(hidden).toHaveAttribute('aria-disabled', 'true');
@@ -76,7 +77,9 @@ describe('PromotionCards', () => {
         const dialog = document.querySelector('dialog');
         expect(dialog?.hasAttribute('open')).toBe(false);
 
-        fireEvent.click(screen.getByRole('button', { name: 'Promoción solo para VIP' }));
+        fireEvent.click(
+            screen.getByRole('button', { name: 'Promoción exclusiva del plan Viajero VIP' })
+        );
 
         expect(dialog?.hasAttribute('open')).toBe(true);
         expect(dialog).toHaveTextContent('hasta 4 promociones que no son VIP por página');
@@ -98,9 +101,39 @@ describe('PromotionCards', () => {
                 showPlace
             />
         );
-        fireEvent.click(screen.getByRole('button', { name: 'Promoción solo para VIP' }));
+        const locked = screen.getByRole('button', { name: 'Promoción oculta' });
+        expect(within(locked).getByText('Promoción oculta')).toBeVisible();
+        fireEvent.click(locked);
         const dialog = document.querySelector('dialog');
         expect(dialog).toHaveTextContent('solo algunas promociones');
         expect(dialog).not.toHaveTextContent('ves todas las promociones');
+    });
+
+    it.each([
+        {
+            locale: 'en',
+            label: 'Promotion exclusive to the Explorer plan',
+            fallback: 'Hidden promotion'
+        },
+        { locale: 'pt', label: 'Promoção exclusiva do plano Explorer', fallback: 'Promoção oculta' }
+    ] as const)('localizes the catalog label and neutral fallback in $locale', ({
+        locale,
+        label,
+        fallback
+    }) => {
+        render(
+            <PromotionCards
+                locale={locale}
+                items={[lockedItem(), lockedItem({ key: 'k2', audience: 'plus' })]}
+                freeQuota={3}
+                vipPlanName="Explorer"
+                showPlace
+            />
+        );
+
+        expect(within(screen.getByRole('button', { name: label })).getByText(label)).toBeVisible();
+        expect(
+            within(screen.getByRole('button', { name: fallback })).getByText(fallback)
+        ).toBeVisible();
     });
 });

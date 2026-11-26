@@ -40,13 +40,13 @@ describe('ExperienceCard.astro', () => {
     });
 
     describe('price tag', () => {
-        it('renders ExperiencePriceTag for price display', () => {
-            expect(src).toContain('ExperiencePriceTag');
+        it('renders the shared price footer', () => {
+            expect(src).toContain('<CardPriceFooter');
         });
 
-        it('passes priceFrom and isPriceOnRequest to ExperiencePriceTag', () => {
-            expect(src).toContain('priceFrom={data.priceFrom}');
-            expect(src).toContain('isPriceOnRequest={data.isPriceOnRequest}');
+        it('passes the resolved price to the shared footer', () => {
+            expect(src).toContain('resolveExperiencePriceDisplay(data)');
+            expect(src).toContain('price={price}');
         });
     });
 
@@ -72,14 +72,14 @@ describe('ExperienceCard.astro', () => {
 
     describe('featured badge', () => {
         it('renders the featured badge when data.isFeatured is true', () => {
-            expect(src).toContain('data.isFeatured');
+            expect(src).toContain("photoBadge === 'featured'");
             expect(src).toContain('featured-badge');
         });
     });
 
     describe('new badge', () => {
         it('renders a "new" badge for recently created listings', () => {
-            expect(src).toContain('isNew');
+            expect(src).toContain("photoBadge === 'new'");
         });
     });
 

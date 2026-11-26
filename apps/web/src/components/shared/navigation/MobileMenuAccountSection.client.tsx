@@ -21,12 +21,14 @@
 import { BuildingIcon, ChevronDownIcon } from '@repo/icons';
 import type { MouseEvent } from 'react';
 import { useEffect, useRef, useState } from 'react';
+import { PlanBadge } from '@/components/shared/ui/PlanBadge';
 import { PUBLISH_CTA_OPTIONS } from '@/config/discovery-doors';
 import { getInitials as getInitialsShared } from '@/lib/avatar-utils';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import styles from './MobileMenu.module.css';
+import { useTouristMenuPlan } from './use-tourist-menu-plan';
 
 /** Authenticated user data, as passed through from `MobileMenu.client.tsx`. */
 interface MobileMenuAccountSectionUser {
@@ -65,6 +67,7 @@ export function MobileMenuAccountSection({
     onLinkClick
 }: MobileMenuAccountSectionProps) {
     const [isPublishOpen, setIsPublishOpen] = useState(false);
+    const plan = useTouristMenuPlan({ account: user?.email, open: isOpen });
     const publishTriggerRef = useRef<HTMLButtonElement>(null);
     const publishPanelRef = useRef<HTMLDivElement>(null);
     const publishTriggerLabel = t('nav.publishCta', 'Publicar');
@@ -189,6 +192,7 @@ export function MobileMenuAccountSection({
                             {t('account.title')}
                             <small className={styles.userSecondary}>
                                 {user.name || user.email}
+                                <PlanBadge name={plan?.paid ? plan.name : null} />
                             </small>
                         </span>
                     </button>

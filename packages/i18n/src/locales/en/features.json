@@ -70,7 +70,7 @@
         "who": "For travelers",
         "eyebrow": "your getaway, made easier",
         "title": "Explore for free. Save what you love. When you want more, there's more.",
-        "description": "The whole catalog is public and you can browse it without an account. A free account lets you save favorites, leave reviews and message hosts. And if you travel often, the Plus and VIP plans add a comparison tool, price alerts, collections and exclusive offers.",
+        "description": "The whole catalog is public and you can browse it without an account. A free account lets you save favorites, leave reviews and message hosts.",
         "list": {
             "search": {
                 "title": "Search without the hassle",
@@ -112,9 +112,7 @@
         "table": {
             "header": "With your account",
             "plans": {
-                "free": "Free",
-                "plus": "Plus",
-                "vip": "VIP"
+                "free": "Free"
             },
             "rows": {
                 "favorites": {
@@ -195,10 +193,6 @@
             "calendarSync": {
                 "title": "Google Calendar sync",
                 "description": "Connect your Google Calendar with read-only access to block out booked dates and avoid double bookings."
-            },
-            "vipTraveler": {
-                "title": "Plus, you travel as a VIP",
-                "description": "Every host gets the full VIP traveler pack for free: unlimited favorites, the comparison tool, alerts and more."
             },
             "guestChat": {
                 "title": "AI chat for your guests",

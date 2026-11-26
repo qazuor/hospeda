@@ -78,11 +78,12 @@ import HospedinFigure from '@/components/presentacion/HospedinFigure.astro';
 import PresentationBrandBar from '@/components/presentacion/PresentationBrandBar.astro';
 import PresentationFooter from '@/components/presentacion/PresentationFooter.astro';
 import PlanTabs from '@/components/presentacion/PlanTabs.astro';
+import InheritedTravelerOffer from '@/components/presentacion/InheritedTravelerOffer.astro';
 import type { SupportedLocale } from '@/lib/i18n';
 import { getBrandPhoneLocalDisplay } from '@/lib/brand-phone';
 import { getSiteUrl } from '@/lib/env';
 
-import { CACHE_TAG_SITE_CONFIG } from '@repo/cache-tags';
+import { CACHE_TAG_PRICING } from '@repo/cache-tags';
 import { applyCacheHeaders } from '@/lib/cache/response-cache';
 
 const locale = Astro.locals.locale as SupportedLocale;
@@ -97,15 +98,13 @@ const ctaUrlText = ctaHref;
 // parameterized so a real number change does not require re-editing prose.
 const brandPhone = getBrandPhoneLocalDisplay();
 
-// --- Edge cacheability (HOS-369 W2-2) ---
-// No session and no API call: the content is hardcoded copy, so it only
-// changes on deploy. Same class and tag as the `/funcionalidades/` brochure.
+// The inherited offer reads the public tourist catalog without a session.
 applyCacheHeaders({
 	locals: Astro.locals,
 	headers: Astro.response.headers,
 	cacheable: true,
-	cacheClass: 'static',
-	tags: [CACHE_TAG_SITE_CONFIG]
+	cacheClass: 'pricing',
+	tags: [CACHE_TAG_PRICING]
 });
 
 const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/alojamientos/`;
@@ -308,19 +307,7 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/alo
       preguntas frecuentes, promociones, estadísticas básicas y la ayuda de la inteligencia
       artificial (ver abajo).
     </p>
-    <div class="notice">
-      <h3>Además, sos turista VIP en Hospeda 100% bonificado.</h3>
-      <p>
-        Hospeda tiene una <strong>cuenta paga para viajeros</strong>: favoritos y alertas de precio sin límite, comparador, historial de búsquedas,
-        recomendaciones, ofertas exclusivas y &mdash;lo más útil&mdash; <strong>ver el WhatsApp de
-        los otros anfitriones</strong>.
-      </p>
-      <p>
-        <strong>Con cualquiera de los tres planes eso viene incluido.</strong> No es un descuento ni
-        una promoción: el plan de anfitrión trae adentro el paquete completo de turista VIP. Cuando
-        salís vos de viaje por la zona, usás el sitio con todo desbloqueado.
-      </p>
-    </div>
+    <InheritedTravelerOffer locale={locale} />
   </section>
 
   <section>

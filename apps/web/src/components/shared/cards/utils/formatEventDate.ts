@@ -34,6 +34,8 @@ const BCP47_MAP: Readonly<Record<SupportedLocale, string>> = {
  * Input for {@link formatEventDate}.
  */
 export interface FormatEventDateParams {
+    /** Date-only events must not display their stored midnight as a time. */
+    readonly isAllDay?: boolean;
     /**
      * ISO 8601 start date-time string.
      * Converted to `Date` internally; invalid strings produce `'Invalid Date'`.
@@ -342,7 +344,9 @@ export function formatEventDate(params: FormatEventDateParams): FormatEventDateR
     const timeSuffix = mode === 'rangeWithTime' ? ' hs' : '';
 
     const dateLine = buildDateLine(startDate, endDate, intlLocale, multiLineRange);
-    const timeLine = buildTimeLine(startDate, endDate, intlLocale, timeSuffix);
+    const timeLine = params.isAllDay
+        ? null
+        : buildTimeLine(startDate, endDate, intlLocale, timeSuffix);
     const monthAbbr = mode === 'rangeWithTime' ? getMonthAbbr(startDate, intlLocale) : null;
 
     return { mode, dateLine, timeLine, monthAbbr };

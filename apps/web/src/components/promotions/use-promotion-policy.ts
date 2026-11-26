@@ -11,6 +11,7 @@
 import { EntitlementKeyEnum, PublicPlanCatalogResponseSchema } from '@repo/schemas';
 import { useEffect, useState } from 'react';
 import { z } from 'zod';
+import { resolvePaidBenefit } from '@/lib/billing/plan-badge';
 
 /**
  * Reads the first tourist plan that grants `vip_promotions_access`.
@@ -18,11 +19,14 @@ import { z } from 'zod';
  * @param input - API base URL.
  * @returns The plan name, or `null` on any failure.
  */
-export async function readVipPlanName(input: { readonly apiUrl: string }): Promise<string | null> {
+export async function readVipPlanName(input: {
+    readonly apiUrl: string;
+    readonly entitlement?: string;
+}): Promise<string | null> {
     try {
         const response = await fetch(
             `${input.apiUrl.replace(/\/$/, '')}/api/v1/public/plan-catalog?vertical=tourist`,
-            { headers: { Accept: 'application/json' } }
+            { headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(4_000) }
         );
         if (!response.ok) return null;
         const envelope = z
@@ -30,11 +34,11 @@ export async function readVipPlanName(input: { readonly apiUrl: string }): Promi
             .safeParse(await response.json());
         if (!envelope.success) return null;
         const parsed = PublicPlanCatalogResponseSchema.safeParse(envelope.data.data);
-        if (!parsed.success) return null;
-        const plan = parsed.data.plans.find((candidate) =>
-            candidate.entitlements.includes(EntitlementKeyEnum.VIP_PROMOTIONS_ACCESS)
-        );
-        return plan?.name ?? null;
+        if (!parsed.success || parsed.data.vertical !== 'tourist') return null;
+        return resolvePaidBenefit({
+            ...parsed.data,
+            entitlement: input.entitlement ?? EntitlementKeyEnum.VIP_PROMOTIONS_ACCESS
+        });
     } catch {
         return null;
     }
@@ -44,22 +48,26 @@ export async function readVipPlanName(input: { readonly apiUrl: string }): Promi
  * @param input - API base URL and whether to read.
  * @returns `{ vipPlanName }`, `null` until read or when unreadable.
  */
-export function useVipPlanName(input: { readonly apiUrl: string; readonly enabled: boolean }): {
+export function useVipPlanName(input: {
+    readonly apiUrl: string;
+    readonly enabled: boolean;
+    readonly entitlement?: string;
+}): {
     readonly vipPlanName: string | null;
 } {
     const [vipPlanName, setVipPlanName] = useState<string | null>(null);
-    const { apiUrl, enabled } = input;
+    const { apiUrl, enabled, entitlement } = input;
     useEffect(() => {
         if (!enabled) return;
         let cancelled = false;
         const read = async (): Promise<void> => {
-            const name = await readVipPlanName({ apiUrl });
+            const name = await readVipPlanName({ apiUrl, entitlement });
             if (!cancelled) setVipPlanName(name);
         };
         void read();
         return () => {
             cancelled = true;
         };
-    }, [apiUrl, enabled]);
+    }, [apiUrl, enabled, entitlement]);
     return { vipPlanName };
 }

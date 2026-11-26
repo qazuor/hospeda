@@ -45,9 +45,33 @@ describe('resolveTouristVipBenefitKeys', () => {
             {
                 entitlements: new Set(['vip_feature']),
                 limits: new Set(['vip_cap']),
-                plan: { slug: 'vip', entitlements: ['vip_feature'], limits: { vip_cap: 10 } }
+                plan: { slug: 'vip', entitlements: ['vip_feature'], limits: { vip_cap: 10 } },
+                badgeName: 'vip'
             }
         );
+    });
+
+    it('keeps the catalog label without price alerts when another paid-only benefit remains', () => {
+        const floor = plan({ slug: 'floor', entitlements: ['favorites'], limits: {} });
+        const paid = {
+            ...plan({
+                slug: 'paid',
+                entitlements: ['favorites', 'compare'],
+                limits: {},
+                billingOptions: { monthly: 'monthly', annual: null }
+            }),
+            name: 'Renamed traveler tier'
+        };
+
+        const withDelta = resolveTouristVipBenefitKeys({
+            result: { ok: true, plans: [floor, paid] }
+        });
+        const withoutDelta = resolveTouristVipBenefitKeys({
+            result: { ok: true, plans: [floor, { ...paid, entitlements: floor.entitlements }] }
+        });
+
+        expect(withDelta?.badgeName).toBe(paid.name);
+        expect(withoutDelta?.badgeName).toBeNull();
     });
 
     it('HOS-2398 exposes the top sellable tier as the plan the inherited cells resolve against', () => {

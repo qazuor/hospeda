@@ -1,0 +1,49 @@
+---
+import { CrownIcon } from '@repo/icons';
+import { EntitlementKeyEnum, type PromotionWindow } from '@repo/schemas';
+import { VenuePromoBadge } from '@/components/venue/VenuePromoBadge.client';
+import { getPlanBadgeName } from '@/lib/billing/gate-plan-names';
+import { createTranslations, type SupportedLocale } from '@/lib/i18n';
+import type { PromotionBadges } from '@/lib/promotions/promotion-badges';
+import CardTooltip from './CardTooltip.astro';
+
+interface Props {
+    readonly badges: PromotionBadges;
+    readonly locale: SupportedLocale;
+    readonly windows?: readonly PromotionWindow[];
+}
+
+const { badges, locale, windows } = Astro.props;
+const { t } = createTranslations(locale);
+const plan = badges.vip
+    ? await getPlanBadgeName({ entitlement: EntitlementKeyEnum.VIP_PROMOTIONS_ACCESS })
+    : null;
+---
+
+{badges.free && (
+    <CardTooltip class="promotion-pill" description={t('common.promotions.badges.publicHint')}>
+        {windows?.length ? <VenuePromoBadge client:idle windows={windows} locale={locale} /> : t('common.promotions.badges.promo')}
+    </CardTooltip>
+)}
+{plan && (
+    <CardTooltip class="promotion-pill promotion-pill--plan" description={t('common.promotions.badges.planHint', undefined, { plan })}>
+        <CrownIcon size={14} aria-hidden="true" />
+        <span class="promotion-pill__label">{t('common.promotions.badges.plan', undefined, { plan })}</span>
+    </CardTooltip>
+)}
+
+<style>
+    :global(.card-tooltip-trigger.promotion-pill) {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding-inline: 0.5rem;
+        border-radius: var(--radius-pill);
+        background: var(--core-card-lm03);
+        color: var(--core-foreground);
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    :global(.card-tooltip-trigger.promotion-pill--plan) { border: 1px solid var(--brand-primary); }
+    .promotion-pill__label { min-width: 0; overflow-wrap: anywhere; text-align: start; }
+</style>

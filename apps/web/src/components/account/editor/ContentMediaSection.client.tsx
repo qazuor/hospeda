@@ -74,6 +74,8 @@ export interface ContentMediaSectionProps {
     readonly entityId: string;
     /** `true` when the moderation lock forbids editing (HOS-374 §7.6.3). */
     readonly disabled?: boolean;
+    /** Reports whether the editor has a persisted featured image. */
+    readonly onFeaturedImageChange?: (present: boolean) => void;
 }
 
 /**
@@ -91,7 +93,8 @@ export function ContentMediaSection({
     locale,
     entity,
     entityId,
-    disabled = false
+    disabled = false,
+    onFeaturedImageChange
 }: ContentMediaSectionProps): JSX.Element {
     const { t, tPlural } = createTranslations(locale);
     const galleryInputRef = useRef<HTMLInputElement>(null);
@@ -103,6 +106,10 @@ export function ContentMediaSection({
     const [isUploading, setIsUploading] = useState(false);
     const [opLoading, setOpLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        onFeaturedImageChange?.(isHydrated && featuredItem !== null);
+    }, [featuredItem, isHydrated, onFeaturedImageChange]);
 
     const galleryCap = getGalleryCap(entity);
     const isGalleryFull = galleryItems.length >= galleryCap;

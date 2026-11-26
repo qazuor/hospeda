@@ -118,6 +118,8 @@ export interface PublicationSectionProps {
      * surprising thing.
      */
     readonly hasUnsavedChanges: boolean;
+    /** Optional editorial prerequisite that blocks publication but allows unpublishing. */
+    readonly publicationBlock?: string;
     /** Called with the new visibility after a successful publish-state change. */
     readonly onVisibilityChange: (visibility: EditorContentVisibility) => void;
     /** Called with `'APPROVED'` after a successful approve action (HOS-1037). */
@@ -176,6 +178,7 @@ export function PublicationSection({
     canPublish,
     canDelete,
     hasUnsavedChanges,
+    publicationBlock,
     onVisibilityChange,
     onModerationStateChange
 }: PublicationSectionProps): JSX.Element {
@@ -288,7 +291,11 @@ export function PublicationSection({
                         <Button
                             variant="primary"
                             onClick={handlePrimaryAction}
-                            disabled={isPublishing || hasUnsavedChanges}
+                            disabled={
+                                isPublishing ||
+                                hasUnsavedChanges ||
+                                (!isLive && Boolean(publicationBlock))
+                            }
                             data-testid="content-publish-toggle"
                         >
                             {isLive ? labels.unpublish : labels.publish}
@@ -330,6 +337,9 @@ export function PublicationSection({
 
             {canPublish && hasUnsavedChanges && (
                 <p className={fieldStyles.fieldHint}>{labels.blockedByUnsaved}</p>
+            )}
+            {canPublish && !isLive && publicationBlock && (
+                <p className={fieldStyles.fieldHint}>{publicationBlock}</p>
             )}
         </fieldset>
     );
