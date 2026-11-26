@@ -11,19 +11,22 @@
  * 2. rate limits the call per client and user (`tool-rate-limit.ts`); a call
  *    over the limit is answered with a `RATE_LIMIT_EXCEEDED` tool error, is
  *    not run and is not audited (a flood must not flood the audit log);
- * 3. validates the raw arguments with `parseToolInput`, so a malformed call
+ * 3. runs the `ai_assistant_access` plan gate (`ai-assistant-gate.ts`, T-040):
+ *    a refused or undecidable call is answered with its failure, audited, and
+ *    never parsed nor run; `aiAccessExempt` tools skip it;
+ * 4. validates the raw arguments with `parseToolInput`, so a malformed call
  *    is answered with the same Spanish `VALIDATION_ERROR` message (naming the
  *    fields) every other channel gets. The SDK does NOT validate first: the
  *    server answers `tools/call` itself instead of through
  *    `McpServer.registerTool`, whose built-in English validation error
  *    bypassed both this message and the audit;
- * 4. runs the tool with `executeTool` (person-state check, handler, Spanish
+ * 5. runs the tool with `executeTool` (person-state check, handler, Spanish
  *    error mapping);
- * 5. audits every call that reached step 3, read or write, with
+ * 6. audits every call that reached step 3, read or write, with
  *    `recordMcpToolCall` (success, denied or error), malformed calls included
  *    (AC-12; D-12 of HOS-2335 added reads and the `isWrite` flag). A
  *    rate-limited call and a crash inside this binder leave no record (R-16);
- * 6. renders the outcome as an MCP result: text content on success,
+ * 7. renders the outcome as an MCP result: text content on success,
  *    `isError: true` with the Spanish message on failure (and, when the
  *    refusal has a portal page, its URL on a last line of the text and in
  *    `structuredContent.action`, HOS-2326), plus
@@ -48,6 +51,7 @@ import { buildMcpWwwAuthenticate } from '../../middlewares/mcp-auth';
 import { resolveRecipientLocale } from '../../services/notification-recipient-locale';
 import { env } from '../../utils/env';
 import { apiLogger } from '../../utils/logger';
+import { checkAiAssistantGate } from './ai-assistant-gate';
 import { getMcpCaller, type McpCaller, type McpCallerSource } from './caller';
 import { recordMcpToolCall } from './record-tool-call';
 import { consumeMcpToolCall } from './tool-rate-limit';
@@ -330,6 +334,15 @@ export async function handleMcpToolCall<TSchema extends z.ZodObject, TData>({
         // Once per call: every portal link of the answer carries the user's web
         // language. Falls back to `es`, never throws.
         const locale = await resolveRecipientLocale({ userId: actor.id });
+
+        // The plan gate (T-040): a refused call never reaches the handler and
+        // is audited like any other refusal, with no validated input.
+        const gateFailure = await checkAiAssistantGate({ definition, userId: actor.id, locale });
+        if (gateFailure) {
+            const refused: ToolRunOutcome<TData> = { ok: false, failure: gateFailure };
+            recordToolCall({ definition, actor, mcpAuth, parsed: { ok: false }, outcome: refused });
+            return renderOutcome(refused);
+        }
 
         const parsed = parseToolInput({ definition, input: rawInput, locale });
         const outcome: ToolRunOutcome<TData> = parsed.ok
