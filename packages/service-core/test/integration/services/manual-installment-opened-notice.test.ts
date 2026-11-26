@@ -540,7 +540,7 @@ describe('HOS-2130 manual installment opened integration', () => {
         }
     });
 
-    it('does not mail the owner of a manual renewal outside partner', async () => {
+    it('mails the owner of a manual renewal whatever the vertical: the subscription method decides (HOS-2196)', async () => {
         // Arrange
         const { owner, version, option } = await seed('accommodation');
         const [subscription] = await getServiceTestDb()
@@ -572,6 +572,6 @@ describe('HOS-2130 manual installment opened integration', () => {
             { ...startPorts(), clock: { now: () => baseTime } }
         );
         // Assert
-        expect(await ownerMail(owner.id)).toEqual([]);
+        expect(await ownerMail(owner.id)).toHaveLength(1);
     });
 });
