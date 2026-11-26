@@ -107,9 +107,17 @@ describe('resolveAiAssistantAccess (HOS-2184 T-040)', () => {
         ports.coverage.mockReset();
     });
 
-    it('grants when one vertical grants the key, and reads no coverage', async () => {
-        // Arrange
-        arrange({ granting: [VerticalEnum.VENUE] });
+    // Realism note: PRE_TRIAL grants the key, so an untouched vertical (the
+    // default [PRE_TRIAL, BASE] sources) is listed in `granting` wherever the
+    // real effective set would grant it. The first version of these tests left
+    // untouched verticals NOT granting, which hid the bug below.
+
+    it('grants when a vertical with plan state grants the key', async () => {
+        // Arrange: venue under a subscription; the other two untouched (pre-trial, granting).
+        arrange({
+            granting: [VerticalEnum.ACCOMMODATION, VerticalEnum.VENUE, VerticalEnum.EXPERIENCE],
+            sources: { venue: [SUBSCRIPTION, BASE] }
+        });
 
         // Act
         const access = await resolveAiAssistantAccess({ userId: USER_ID });
@@ -117,14 +125,49 @@ describe('resolveAiAssistantAccess (HOS-2184 T-040)', () => {
         // Assert
         expect(access).toEqual({ kind: 'GRANTED', hasAccess: true, vertical: VerticalEnum.VENUE });
         expect(ports.effectiveSet).toHaveBeenCalledTimes(3);
-        expect(ports.coverage).not.toHaveBeenCalled();
+        expect(ports.coverage).toHaveBeenCalledTimes(3);
+    });
+
+    it('grants an owner in a running trial (a trial row is plan state)', async () => {
+        // Arrange
+        const running = {
+            ...PRE_TRIAL,
+            since: new Date('2026-11-01T00:00:00.000Z'),
+            until: new Date('2026-12-01T00:00:00.000Z')
+        } as CoverageSource;
+        arrange({
+            granting: [VerticalEnum.ACCOMMODATION, VerticalEnum.VENUE, VerticalEnum.EXPERIENCE],
+            sources: { venue: [running, BASE] }
+        });
+
+        // Act
+        const access = await resolveAiAssistantAccess({ userId: USER_ID });
+
+        // Assert
+        expect(access).toEqual({ kind: 'GRANTED', hasAccess: true, vertical: VerticalEnum.VENUE });
+    });
+
+    it('refuses a floor-only venue owner even though the untouched verticals grant (staging smoke regression)', async () => {
+        // Arrange: venue trial ended, nothing bought; accommodation and experience
+        // never touched, so their pre-trial grants the key.
+        arrange({
+            granting: [VerticalEnum.ACCOMMODATION, VerticalEnum.EXPERIENCE],
+            sources: { venue: [BASE] }
+        });
+
+        // Act
+        const access = await resolveAiAssistantAccess({ userId: USER_ID });
+
+        // Assert
+        expect(access).toEqual({ kind: 'REFUSED', hasAccess: false, vertical: VerticalEnum.VENUE });
     });
 
     it('grants even when another vertical could not be read', async () => {
         // Arrange
         arrange({
             granting: [VerticalEnum.EXPERIENCE],
-            failingSet: [VerticalEnum.ACCOMMODATION]
+            failingSet: [VerticalEnum.ACCOMMODATION],
+            sources: { experience: [SUBSCRIPTION, BASE] }
         });
 
         // Act
@@ -138,7 +181,7 @@ describe('resolveAiAssistantAccess (HOS-2184 T-040)', () => {
         });
     });
 
-    it('answers UNAVAILABLE, never a refusal, when none grants and a read failed', async () => {
+    it('answers UNAVAILABLE, never a refusal, when nothing counts and a set read failed', async () => {
         // Arrange
         arrange({ failingSet: [VerticalEnum.VENUE], sources: { accommodation: [BASE] } });
 
@@ -147,12 +190,15 @@ describe('resolveAiAssistantAccess (HOS-2184 T-040)', () => {
 
         // Assert
         expect(access).toEqual({ kind: 'UNAVAILABLE', hasAccess: false });
-        expect(ports.coverage).not.toHaveBeenCalled();
     });
 
-    it('answers UNAVAILABLE when none grants and a coverage read failed', async () => {
-        // Arrange
-        arrange({ failingCoverage: [VerticalEnum.EXPERIENCE] });
+    it("answers UNAVAILABLE when the granting vertical's coverage could not be read", async () => {
+        // Arrange: venue grants, but whether the account holds a plan there is unknown.
+        arrange({
+            granting: [VerticalEnum.VENUE],
+            failingCoverage: [VerticalEnum.VENUE],
+            sources: { accommodation: [BASE], experience: [BASE] }
+        });
 
         // Act
         const access = await resolveAiAssistantAccess({ userId: USER_ID });
@@ -161,35 +207,21 @@ describe('resolveAiAssistantAccess (HOS-2184 T-040)', () => {
         expect(access).toEqual({ kind: 'UNAVAILABLE', hasAccess: false });
     });
 
-    it('does not gate an account with no plan state in any vertical (provider, partner, staff)', async () => {
-        // Arrange: PRE_TRIAL + floor everywhere, and (hypothetically) no key granted.
-        arrange({});
+    it('does not gate an account with no plan state in any vertical (new owner, provider, partner, staff)', async () => {
+        // Arrange: PRE_TRIAL + floor everywhere, all granting.
+        arrange({
+            granting: [VerticalEnum.ACCOMMODATION, VerticalEnum.VENUE, VerticalEnum.EXPERIENCE]
+        });
 
         // Act
         const access = await resolveAiAssistantAccess({ userId: USER_ID });
 
         // Assert
         expect(access).toEqual({ kind: 'NOT_GATED', hasAccess: true });
-        expect(ports.coverage).toHaveBeenCalledTimes(3);
-    });
-
-    it('refuses a floor-only owner (trial ended, nothing bought), naming that vertical', async () => {
-        // Arrange: a trial row with no running trial leaves the floor alone.
-        arrange({ sources: { experience: [BASE] } });
-
-        // Act
-        const access = await resolveAiAssistantAccess({ userId: USER_ID });
-
-        // Assert
-        expect(access).toEqual({
-            kind: 'REFUSED',
-            hasAccess: false,
-            vertical: VerticalEnum.EXPERIENCE
-        });
     });
 
     it('refuses with the FIRST vertical the owner holds a plan in', async () => {
-        // Arrange
+        // Arrange: a subscription whose plan does not grant the key, plus a floor.
         arrange({ sources: { venue: [SUBSCRIPTION, BASE], experience: [BASE] } });
 
         // Act
@@ -209,6 +241,10 @@ describe('resolveAiAssistantAccess (HOS-2184 T-040)', () => {
         // Assert
         expect(AI_ASSISTANT_ACCESS_KEY).toBe('ai_assistant_access');
         expect(ports.effectiveSet).toHaveBeenCalledWith({
+            userId: USER_ID,
+            vertical: VerticalEnum.ACCOMMODATION
+        });
+        expect(ports.coverage).toHaveBeenCalledWith({
             userId: USER_ID,
             vertical: VerticalEnum.ACCOMMODATION
         });
