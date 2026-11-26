@@ -297,8 +297,13 @@ that** they come back by themselves when my cap returns.
   client-side for a listing vertical; `ContentGalleryManager.tsx` keeps its literal
   caps for destination/event/post.
 - **AC-24 (session-blind pages)** — **Given** `apps/web/test/pages/cacheable-pages-are-session-blind.guard.test.ts`,
-  **Then** it stays green: neither `fotos.astro` page reads the allowance, the
-  effective set or the session server-side; the cap is fetched by the client island.
+  **Then** it stays green, and `apps/web/test/pages/photo-editor-pages-are-session-blind.guard.test.ts`
+  proves that neither `fotos.astro` page, nor any SSR helper it runs, reads the
+  allowance or the effective set server-side: the cap is fetched by the client island.
+  The pages may still run the shared editor resolvers (`resolve-editor-page.ts`,
+  `resolve-listing-editor-page.ts`), whose session-based authentication, ownership
+  check and navigation states are required for any private account route and are
+  exempt from the session-blind rule like the rest of `mi-cuenta/` (D-18).
 
 ### UX Considerations
 
@@ -315,6 +320,7 @@ that** they come back by themselves when my cap returns.
      after every reorder/delete/cover change; allowance refetched after delete and
      cover change (they change `used`).
 - **States of the description line** (`PhotoSectionDescription.client.tsx`):
+
   | State | Condition | Copy (es) |
   |---|---|---|
   | Loading | allowance in flight | "Cargando tu límite de fotos…" |
@@ -322,6 +328,7 @@ that** they come back by themselves when my cap returns.
   | Unlimited | `status: 'UNLIMITED'` | "Sin límite de fotos" |
   | None | `status: 'NONE'` | per vertical no-plan copy + "Ver planes" link to that vertical's pricing page |
   | Failed | request failed | "No pudimos cargar tu límite de fotos. Probá recargar la página." |
+
 - **Over-cap tile**: badge "No se muestra: superás tu tope" (es), "Not shown: over your limit" (en),
   "Não aparece: você passou do seu limite" (pt); tile dimmed via a CSS Module class,
   never `display:none`; screen readers read the badge through the tile's accessible
@@ -552,6 +559,7 @@ the deploy runs `db:seed:migrate` before traffic (existing hops flow). R-1 cover
   version like a BASE and maps to `BASE`), `ADDON → ADDON`, `COURTESY → COURTESY`,
   `GRANT → PERMANENT_GRANT`, `BASE → BASE`. Contributions with value 0 are omitted.
   Order: PLAN, TRIAL, COURTESY, PERMANENT_GRANT, ADDON, BASE, PRE_TRIAL_DRAFT.
+
 - **Computation** (`resolveListingPhotoAllowance`, api util):
   1. `cap` = exactly what step 7 would use for a gallery write on this listing:
      `ports.effectiveSet(...)` → `limits.get(...)`; if absent and the listing is a
@@ -726,6 +734,7 @@ any frozen count of limit keys or add-ons found by running the suites of
 a new enum value trips frozen guards in several packages).
 
 **e2e** (`apps/e2e/tests`):
+
 - `guest/guest-11-listing-detail-mobile.spec.ts:182-207` asserts more than one gallery
   slide on `paraiso-calido-country-house-colon`. Its seeded owner has no billing state
   (HOS-1416), so after this spec its public gallery is trimmed to 0. The test must
@@ -753,7 +762,7 @@ time (never the whole monorepo at once).
 | R-2 | Seed/dev/e2e listings owned by billing-less users show cover only | H | M | Documented; guest-11 fixture fix (T-031); dev users can get a permanent grant through admin; no prod impact (published prod listings have coverage) |
 | R-3 | Coverage notice lost (process restart) → public page stale until edge TTL / reconciler | L | M | Existing backstops; listener invalidates the snapshot before purging; no-store on lookup failure |
 | R-4 | Breakdown fold (fresh) differs from cached step-7 snapshot | L | L | `breakdown: null` + warn (AC-5); cap always from the step-7 source |
-| R-5 | Removing `ENTITY_GALLERY_CAPS` keys makes `getGalleryCap('venue')` silently return the fallback 50 somewhere missed | M | M | `getGalleryCap` narrowed to `'destination'|'event'|'post'` (type error on a listing vertical); rg gate in T-037 |
+| R-5 | Removing `ENTITY_GALLERY_CAPS` keys makes `getGalleryCap('venue')` silently return the fallback 50 somewhere missed | M | M | `getGalleryCap` narrowed to `'destination' \| 'event' \| 'post'` (type error on a listing vertical); rg gate in T-037 |
 | R-6 | Upload burst 51/min refuses a 70-photo single pass | M | L | Known, OQ-5; error is localized (429 message already Spanish, `upload-entity.ts:~100`) |
 | R-7 | Day-one hiding surprises venue owners with >15 photos | M | M | Over-cap summary Alert names the cause and links the pack; nothing is deleted |
 | R-8 | Purge storm for an owner with many listings on each notice | L | L | Only PUBLISHED listings of one vertical; owners have few |
@@ -824,6 +833,7 @@ Phases are pause points. Tasks are in `tasks/state.json`.
 | D-15 | On a public effective-set failure the gallery fails closed (cover only) and the response is `no-store` | Same as every paid field (`deniedSet`); `no-store` keeps the damage to one request; accommodation gains the venue hook | spec author |
 | D-16 | Purge = new coverage-changed listener that invalidates the snapshot first, then reuses the publication `revalidate` port for the owner's PUBLISHED listings | Reuses the only listing purge path that also evicts the API memory cache (`ports.ts:312-349`); the featured sync purges only changed rows | spec author |
 | D-17 | The upload burst limit keeps 51/min as an explicit constant, decoupled from `ENTITY_GALLERY_CAPS` | Removing listing caps would otherwise change it silently (`max(...)` over a smaller set = 20); the value is a separate question (OQ-5) | spec author |
+| D-18 | AC-24 is "no SSR read of the photo cap / effective set", not "no SSR session read": the editor resolvers keep their session-based auth, ownership and navigation states | Every private account page needs them, and the general session-blind guard already exempts `mi-cuenta/`; the photo-specific promise is that the cap is client-side. Wording clarified after the independent review (rounds 2-3) flagged the literal as contradicting the real route | spec author (implementation phase) |
 
 ## Open Questions (non-blocking; defaults apply)
 
@@ -847,7 +857,7 @@ Phases are pause points. Tasks are in `tasks/state.json`.
 **Pass 1 — completeness against the brief.** Checked every brief item: shared
 component (AC-20, D-9), effective cap + breakdown (AC-4/5, D-6), new keys and values
 (AC-21, D-10), trial/pre-trial mirror (AC-8/9), add-ons (AC-21, D-12), over-cap hide
-+ editor marking + reappear (AC-14/15, D-13), cover rule stated (Definitions, AC-19),
+and editor marking + reappear (AC-14/15, D-13), cover rule stated (Definitions, AC-19),
 decisions D-1…D-8 logged, literal removal (AC-17), admin facts verified, raw errors
 (AC-10), CSS Modules / i18n / session-blind (AC-24), videos and HOS-2659 out of scope,
 cache purge with triggers (AC-18). Added AC-22 (lookup failure) and AC-23 (admin),
