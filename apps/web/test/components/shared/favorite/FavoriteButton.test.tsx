@@ -48,7 +48,9 @@ vi.mock('../../../../src/lib/i18n', async (importOriginal) => {
         createT:
             (locale: Parameters<typeof createT>[0]) =>
             (key: string, fallback?: string, params?: Parameters<ReturnType<typeof createT>>[2]) =>
-                key.startsWith('common.card.')
+                key.startsWith('common.card.') ||
+                key.startsWith('ui.favorite.audit.') ||
+                key === 'billing.common.viewPlans'
                     ? createT(locale)(key, fallback, params)
                     : (fallback ?? key)
     };
@@ -72,12 +74,14 @@ vi.mock('../../../../src/components/shared/favorite/FavoriteButton.module.css', 
 vi.mock('../../../../src/components/auth/AuthRequiredPopover.client', () => ({
     AuthRequiredPopover: ({
         onClose,
-        returnUrl
+        returnUrl,
+        benefit
     }: {
         message: string;
         onClose: () => void;
         locale?: string;
         returnUrl?: string;
+        benefit?: string;
     }) => (
         <div
             role="dialog"
@@ -85,6 +89,7 @@ vi.mock('../../../../src/components/auth/AuthRequiredPopover.client', () => ({
             data-testid="auth-required-popover"
             data-return-url={returnUrl}
         >
+            {benefit}
             <button
                 type="button"
                 onClick={onClose}
@@ -118,6 +123,8 @@ vi.mock('@repo/icons', () => ({
 const mockToggle = vi.fn();
 const mockCheckBulk = vi.fn();
 const { mockList, mockLimit } = vi.hoisted(() => ({ mockList: vi.fn(), mockLimit: vi.fn() }));
+const { mockPlans } = vi.hoisted(() => ({ mockPlans: vi.fn() }));
+vi.mock('@/lib/billing/fetch-plans', () => ({ fetchPublicPlans: mockPlans }));
 vi.mock('@/hooks/useMyEntitlements', () => ({ useMyEntitlements: () => ({ limit: mockLimit }) }));
 const trackEventSpy = vi.fn();
 
@@ -247,6 +254,9 @@ async function renderButton(props: FavoriteButtonProps) {
 
 beforeEach(() => {
     vi.clearAllMocks();
+    mockLimit.mockReturnValue(0);
+    mockList.mockReset();
+    mockPlans.mockReset().mockResolvedValue({ ok: false, error: 'Unavailable' });
 
     // A guest tap persists a pending action (HOS-1925); never let it leak.
     window.sessionStorage.clear();
@@ -648,10 +658,7 @@ describe('FavoriteButton — API 403 LIMIT_REACHED', () => {
         });
     });
 
-    it('calls addToast with upgrade action CTA when details.limitKey is provided', async () => {
-        // Arrange — error with details.limitKey='max_favorites': the helper looks up
-        // billing.limit.max_favorites.* but in tests the i18n mock always returns the
-        // fallback string. We verify the important contract: the action href is present.
+    it('offers plans and favorite management in a compact, informational limit toast', async () => {
         mockToggle.mockResolvedValue({
             ok: false,
             error: {
@@ -672,15 +679,17 @@ describe('FavoriteButton — API 403 LIMIT_REACHED', () => {
         // Act
         fireEvent.click(screen.getByRole('button'));
 
-        // Assert — the toast is an error with an upgrade CTA action.
-        // The i18n mock returns fallbacks, so we verify shape not exact string.
         await waitFor(() => {
             expect(mockAddToast).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    type: 'error',
-                    action: expect.objectContaining({
-                        href: expect.stringContaining('suscripcion')
-                    })
+                    type: 'info',
+                    layout: 'compact',
+                    message: 'Guardá más de 3 favoritos con otro plan',
+                    action: { label: 'Ver planes', href: '/es/planes/turistas/precios/' },
+                    secondaryAction: {
+                        label: 'Administrar mis favoritos',
+                        href: '/es/mi-cuenta/favoritos/'
+                    }
                 })
             );
         });
@@ -963,6 +972,25 @@ describe('FavoriteButton — client-side resolution (WB0-3)', () => {
 // ---------------------------------------------------------------------------
 
 describe('FavoriteButton — success toasts on toggle', () => {
+    it.each([
+        [7, 'Guardado · 4 de 7 favoritos'],
+        [2147483647, 'Guardado · Favoritos ilimitados']
+    ])('announces confirmed usage for effective limit %i even without a tooltip', async (max, message) => {
+        mockLimit.mockReturnValue(max);
+        mockList.mockResolvedValue({ ok: true, data: { total: 4 } });
+        const { button } = await renderButton(arrangeUser());
+        expect(mockList).not.toHaveBeenCalled();
+
+        fireEvent.click(button);
+
+        await waitFor(() =>
+            expect(mockAddToast).toHaveBeenCalledWith(
+                expect.objectContaining({ type: 'success', message })
+            )
+        );
+        if (max === 7) expect(mockList).toHaveBeenCalledTimes(1);
+        else expect(mockList).not.toHaveBeenCalled();
+    });
     it('calls addToast with success type and "saved" message when favoriting succeeds', async () => {
         // Arrange
         mockToggle.mockResolvedValue({
@@ -1031,6 +1059,48 @@ describe('FavoriteButton — success toasts on toggle', () => {
 // ---------------------------------------------------------------------------
 
 describe('FavoriteButton — pill variant + count badge', () => {
+    it('keeps the catalog usage on the card heart without a visible quota badge', async () => {
+        mockLimit.mockReturnValue(7);
+        mockList.mockResolvedValue({ ok: true, data: { total: 3 } });
+
+        const { button } = await renderButton(arrangeUser({ showUsage: 'tooltip' }));
+
+        await waitFor(() => expect(button).toHaveAttribute('title', '3 de 7 favoritos'));
+        expect(button).toHaveAttribute('aria-description', '3 de 7 favoritos');
+        expect(screen.queryByText('3/7')).not.toBeInTheDocument();
+    });
+
+    it('explains the guest benefit using the tourist catalog floor and paid plan', async () => {
+        mockPlans.mockResolvedValue({
+            ok: true,
+            plans: [
+                {
+                    vertical: 'tourist',
+                    slug: 'floor',
+                    name: 'Floor',
+                    isActive: true,
+                    limits: { max_favorites: 7 }
+                },
+                {
+                    vertical: 'tourist',
+                    slug: 'pro',
+                    name: 'Viajero Plus',
+                    isActive: true,
+                    billingOptions: { monthly: 'monthly', annual: null },
+                    limits: { max_favorites: 2147483647 }
+                }
+            ]
+        });
+        const { button } = await renderButton(arrangeGuest());
+        expect(mockPlans).not.toHaveBeenCalled();
+
+        fireEvent.click(button);
+
+        expect(
+            await screen.findByText('7 favoritos gratis · ilimitados con Viajero Plus')
+        ).toBeVisible();
+        expect(mockList).not.toHaveBeenCalled();
+    });
     it.each([
         [7, 'Favorites: 3 of 7', '3/7'],
         [2147483647, 'Unlimited favorites', '∞']

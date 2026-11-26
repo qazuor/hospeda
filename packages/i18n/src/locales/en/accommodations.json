@@ -1154,6 +1154,7 @@
         "guestSignUp": "Create a free account",
         "guestSignIn": "Sign in",
         "fabLabel": "Ask AI about this accommodation",
+        "dockLabel": "AI",
         "panelLabel": "AI Chat — Accommodation Questions",
         "headerDisclaimer": "Responses are AI-generated and may contain errors. Always verify information with the accommodation.",
         "readNotice": "The host can read the questions you ask in this chat. Do not share personal data.",

@@ -57,6 +57,12 @@ export const AiChatFab = forwardRef<HTMLButtonElement, AiChatFabProps>(function 
                 aria-hidden="true"
                 data-testid="ai-chat-fab-icon"
             />
+            <span
+                className={styles.dockLabel}
+                aria-hidden="true"
+            >
+                {t('accommodations.aiChat.dockLabel')}
+            </span>
         </button>
     );
 });

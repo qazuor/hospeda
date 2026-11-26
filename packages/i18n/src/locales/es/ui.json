@@ -177,6 +177,16 @@
         "progress": "Progreso"
     },
     "favorite": {
+        "audit": {
+            "usage": "{{count}} de {{max}} favoritos",
+            "savedUsage": "Guardado · {{usage}}",
+            "savedUnlimited": "Guardado · Favoritos ilimitados",
+            "guestBenefit": "{{max}} favoritos gratis · ilimitados con {{plan}}",
+            "guestFree": "Guardá hasta {{max}} favoritos gratis",
+            "limit": "Guardá más de {{max}} favoritos con otro plan",
+            "limitUnknown": "Explorá planes para guardar más favoritos",
+            "manage": "Administrar mis favoritos"
+        },
         "add": "Agregar a favoritos",
         "loading": "Verificando favorito...",
         "auth_required": {

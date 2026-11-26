@@ -170,6 +170,31 @@
     border-color: var(--core-foreground-a25);
 }
 
+.compact .icon {
+    display: none;
+}
+
+.compact .body {
+    gap: 0;
+}
+
+.compact .message {
+    font-size: 0.875rem;
+}
+
+.compact .action {
+    min-height: 32px;
+    padding-block: 0;
+    padding-inline: var(--space-1);
+    text-decoration: underline;
+    background: transparent;
+    border: 0;
+}
+
+.compact .actionPrimary {
+    color: var(--brand-primary);
+}
+
 /* Close button wrapped so the circular countdown ring can sit behind it. */
 .closeWrap {
     position: relative;

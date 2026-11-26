@@ -204,6 +204,14 @@ describe('ToastViewport floating stack (HOS-2651)', () => {
     const cssPath = resolve(__dirname, '../../../src/components/ui/ToastViewport.module.css');
     const cssSrc = readFileSync(cssPath, 'utf8');
 
+    it('fits compact toast actions on a single row below the message', () => {
+        expect(cssSrc).toMatch(/\.compact \.icon\s*\{\s*display: none;/);
+        expect(cssSrc).toMatch(/\.compact \.body\s*\{\s*gap: 0;/);
+        expect(cssSrc).toMatch(
+            /\.compact \.action\s*\{[^}]*min-height: 32px;[^}]*padding-inline: var\(--space-1\);/
+        );
+    });
+
     it('keeps a bottom anchor above the active controls at both breakpoints', () => {
         const anchors = cssSrc.match(/inset-block-end:[^;]+;/g);
 

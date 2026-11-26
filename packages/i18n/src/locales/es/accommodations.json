@@ -1154,6 +1154,7 @@
         "guestSignUp": "Crear cuenta gratis",
         "guestSignIn": "Ingresar",
         "fabLabel": "Preguntarle a la IA sobre este alojamiento",
+        "dockLabel": "IA",
         "panelLabel": "Chat con IA — Preguntas sobre el alojamiento",
         "headerDisclaimer": "Las respuestas son generadas por IA y pueden contener errores. Verificá siempre la información con el alojamiento.",
         "readNotice": "El anfitrión puede leer las preguntas que hagas en este chat. No compartas datos personales.",

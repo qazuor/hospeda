@@ -24,6 +24,10 @@
         box-shadow 0.2s ease;
 }
 
+.dockLabel {
+    display: none;
+}
+
 @media (max-width: 767px) {
     .fab {
         display: none;
@@ -34,6 +38,14 @@
         position: static;
         width: 44px;
         height: 44px;
+        flex-direction: column;
+        padding: 0;
+    }
+
+    :global([data-mobile-dock]) .dockLabel {
+        display: block;
+        font-size: 0.625rem;
+        line-height: 1;
     }
 }
 
