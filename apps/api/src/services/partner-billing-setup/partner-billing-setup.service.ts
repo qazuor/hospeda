@@ -153,6 +153,8 @@ type Locked = {
     readonly partnerId: string;
     readonly planVersionId: string;
     readonly paymentMethods: readonly string[];
+    /** The owner's account email, declared (never confirmed) as the card payer, like the public S1. */
+    readonly ownerEmail: string;
 };
 
 /** Authorizes the act, locks the Partner and reads the chosen option, inside the caller's tx. */
@@ -199,7 +201,15 @@ async function lockPartnerAndChoice(input: {
             ServiceErrorCode.VALIDATION_ERROR,
             'Billing option is unavailable'
         );
+    const ownerUser = await userModel.findOne({ id: partner.ownerUserId });
+    if (!ownerUser)
+        throw rejection(
+            'PARTNER_WITHOUT_OWNER',
+            ServiceErrorCode.ALREADY_EXISTS,
+            'Partner owner not found'
+        );
     return {
+        ownerEmail: ownerUser.email,
         ownerUserId: partner.ownerUserId,
         partnerId: partner.id,
         planVersionId: choice.planVersionId,
@@ -326,7 +336,10 @@ async function configureWithCard(
         {
             userId: locked.ownerUserId,
             billingOptionId: input.billingOptionId,
-            returnUrl: input.returnUrl
+            returnUrl: input.returnUrl,
+            // Same as the public S1: the preapproval carries a declared payer email, and the
+            // creations sweep looks an orphan up by it (the owner's account email).
+            payerEmail: locked.ownerEmail
         },
         ports
     );
