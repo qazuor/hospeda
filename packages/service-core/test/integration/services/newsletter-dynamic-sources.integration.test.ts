@@ -120,6 +120,10 @@ describe('newsletter dynamic sources against PostgreSQL', () => {
                 expect(
                     await source.fetchCandidates({ block, now, excludeIds: [], limit: 2 })
                 ).toEqual(ids.slice(0, 2));
+                // C only has views outside the window: zero views never fill the block.
+                expect(
+                    await source.fetchCandidates({ block, now, excludeIds: [], limit: 3 })
+                ).toEqual(ids.slice(0, 2));
                 expect(
                     await source.fetchCandidates({
                         block: { ...block, params: { destinationId, windowDays: 1 } },
@@ -127,7 +131,7 @@ describe('newsletter dynamic sources against PostgreSQL', () => {
                         excludeIds: [],
                         limit: 3
                     })
-                ).toEqual(ids);
+                ).toEqual([]);
             });
         }
     );
@@ -209,6 +213,15 @@ describe('newsletter dynamic sources against PostgreSQL', () => {
                 .update(accommodations)
                 .set({ reviewsCount: 10 })
                 .where(inArray(accommodations.id, ids));
+            // One view each, so most_viewed is filtered only by eligibility here.
+            await tx.insert(entityViews).values(
+                ids.map((entityId) => ({
+                    entityType: 'ACCOMMODATION' as const,
+                    entityId,
+                    visitorHash: `eligibility-${entityId}`,
+                    viewedAt: now
+                }))
+            );
             await tx
                 .update(accommodations)
                 .set({ publicationStatus: PublicationStatusEnum.UNPUBLISHED_BY_BILLING })

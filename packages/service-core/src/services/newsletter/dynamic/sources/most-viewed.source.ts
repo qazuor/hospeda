@@ -1,10 +1,14 @@
 import { accommodations, entityViews, getDb } from '@repo/db';
 import { EntityTypeEnum } from '@repo/schemas';
-import { and, asc, count, desc, eq, gte, notInArray } from 'drizzle-orm';
+import { and, asc, count, desc, eq, gt, gte, notInArray } from 'drizzle-orm';
 import { eligibleAccommodationPredicate } from '../eligible-accommodation.predicate.js';
 import type { SourceResolverInput } from './source.types.js';
 
-/** Count views in the injected clock's window, preserving zero-view candidates. */
+/**
+ * Count views in the injected clock's window. Accommodations with zero views in
+ * the window are excluded (owner decision 2026-11-26): "most viewed" never pads
+ * with unseen items; minItems/ifBelowMin handle a short block instead.
+ */
 export async function mostViewedSource(input: SourceResolverInput): Promise<readonly string[]> {
     if (input.limit <= 0) return [];
     const since = new Date(
@@ -30,6 +34,7 @@ export async function mostViewedSource(input: SourceResolverInput): Promise<read
             )
         )
         .groupBy(accommodations.id)
+        .having(gt(count(entityViews.id), 0))
         .orderBy(desc(count(entityViews.id)), asc(accommodations.id))
         .limit(input.limit);
     return rows.map(({ id }) => id);
