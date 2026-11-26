@@ -146,15 +146,20 @@ describe('CategoryTiles.astro', () => {
     });
 
     describe('responsive layout', () => {
-        it('uses flex-wrap so the last row centres instead of left-aligning', () => {
-            expect(src).toMatch(/\.category-tiles__grid[\s\S]*?display:\s*flex/);
-            expect(src).toMatch(/\.category-tiles__grid[\s\S]*?flex-wrap:\s*wrap/);
-            expect(src).toMatch(/\.category-tiles__grid[\s\S]*?justify-content:\s*center/);
+        // HOS-2654: a fixed 3-column grid (2 on phones) inside a centred
+        // max-width replaces the flex-wrap row, so six tiles form even rows.
+        it('lays the tiles on a centred three-column grid', () => {
+            expect(src).toMatch(/\.category-tiles__grid \{[^}]*display:\s*grid/);
+            expect(src).toMatch(
+                /\.category-tiles__grid \{[^}]*grid-template-columns:\s*repeat\(3,\s*minmax\(0,\s*1fr\)\)/
+            );
+            expect(src).toMatch(/\.category-tiles__grid \{[^}]*margin-inline:\s*auto/);
         });
 
-        it('sets a flex-basis and max-width on each tile so they stay compact', () => {
-            expect(src).toMatch(/\.category-tiles__tile[\s\S]*?flex:\s*1\s+1\s+\d+px/);
-            expect(src).toMatch(/\.category-tiles__tile[\s\S]*?max-width:\s*\d+px/);
+        it('drops to two columns on phones', () => {
+            expect(src).toMatch(
+                /@media \(max-width: 640px\)[\s\S]*?\.category-tiles__grid \{[^}]*repeat\(2,\s*minmax\(0,\s*1fr\)\)/
+            );
         });
     });
 
