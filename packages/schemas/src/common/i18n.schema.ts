@@ -131,6 +131,8 @@ export interface TranslationMeta {
             provider?: string;
             /** AI model used for auto-translation (e.g. 'gemini-1.5-flash'). */
             model?: string;
+            /** SHA-256 hex of the normalized Spanish source this translation was written for (HOS-2658). */
+            sourceHash?: string;
         };
     };
 }
@@ -147,7 +149,11 @@ export const TranslationMetaSchema = z.record(
             autoTranslated: z.boolean(),
             translatedAt: z.string(),
             provider: z.string().optional(),
-            model: z.string().optional()
+            model: z.string().optional(),
+            sourceHash: z
+                .string()
+                .regex(/^[0-9a-f]{64}$/)
+                .optional()
         })
     )
 );
