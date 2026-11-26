@@ -142,8 +142,20 @@ vi.mock('@repo/db/schemas', () => ({
         translationMeta: 'translation_meta',
         nameI18n: 'name_i18n',
         descriptionI18n: 'description_i18n'
-    }
+    },
+    // HOS-2658: venue and experience are admin-translatable (AC-30, AC-31).
+    venues: { id: 'id', deletedAt: 'deleted_at', translationMeta: 'translation_meta' },
+    experiences: { id: 'id', deletedAt: 'deleted_at', translationMeta: 'translation_meta' }
 }));
+
+/**
+ * HOS-2658 AC-31: the admin route is unmetered. The quota gate is spied so a
+ * test can prove it is never reached from here.
+ */
+const { quotaSpies } = vi.hoisted(() => ({
+    quotaSpies: { enforceAiQuota: vi.fn(), evaluateAiQuota: vi.fn() }
+}));
+vi.mock('../../../../src/utils/listing-access/ai-quota-gate', () => quotaSpies);
 
 /**
  * `create-app.ts` transitively imports a large middleware chain. The route
@@ -161,6 +173,7 @@ vi.mock('../../../../src/utils/create-app', () => {
 // Imports (after mocks are hoisted)
 // ---------------------------------------------------------------------------
 
+import { computeTranslationSourceHash } from '@repo/service-core';
 import { adminAiTranslateRoute } from '../../../../src/routes/ai/admin/translate.js';
 
 // ---------------------------------------------------------------------------
@@ -295,5 +308,163 @@ describe('admin AI translate route — pointOfInterest (HOS-143 T-013 / AC-8)', 
         const body = (await res.json()) as { success: boolean; error: { code: string } };
         expect(body.success).toBe(false);
         expect(body.error.code).toBe('VALIDATION_ERROR');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// HOS-2658 — venue and experience (AC-30, AC-31)
+// ---------------------------------------------------------------------------
+
+const VENUE_ID = '66666666-6666-4666-8666-666666666666';
+const EXPERIENCE_ID = '77777777-7777-4777-8777-777777777777';
+const MANUAL_META = { autoTranslated: false, translatedAt: '2026-01-01T00:00:00.000Z' } as const;
+
+const PUT_OVERRIDE = (body: unknown) =>
+    adminAiTranslateRoute.request('/override', {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(body)
+    });
+
+const hashOf = (text: string) => computeTranslationSourceHash({ text }).hash;
+
+describe('admin AI translate route — venue and experience (HOS-2658)', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        generateTextCalls.length = 0;
+        dbState.updateSetCalls.length = 0;
+        dbState.row = {
+            id: VENUE_ID,
+            ownerId: 'owner-1',
+            name: 'La Parrilla del Puerto',
+            summary: null,
+            description: null,
+            richDescription: null,
+            nameI18n: { es: 'La Parrilla del Puerto', en: '', pt: '' },
+            summaryI18n: null,
+            descriptionI18n: null,
+            richDescriptionI18n: null,
+            entryNoteI18n: { es: 'Gratis hasta la 1', en: '', pt: '' },
+            translationMeta: { name: { en: MANUAL_META } }
+        };
+    });
+
+    it('override on a venue entryNote writes a MANUAL pair with the source hash (AC-30)', async () => {
+        // Act
+        const res = await PUT_OVERRIDE({
+            entityType: 'venue',
+            entityId: VENUE_ID,
+            locale: 'en',
+            fieldType: 'entryNote',
+            value: 'Free until 1am'
+        });
+
+        // Assert
+        expect(res.status).toBe(200);
+        expect(await res.json()).toEqual({
+            success: true,
+            data: { entityType: 'venue', entityId: VENUE_ID, fieldType: 'entryNote', locale: 'en' }
+        });
+        expect(dbState.updateSetCalls).toHaveLength(1);
+        const setArg = dbState.updateSetCalls[0] as Record<string, unknown>;
+        expect(setArg.entryNoteI18n).toEqual({
+            es: 'Gratis hasta la 1',
+            en: 'Free until 1am',
+            pt: ''
+        });
+        expect(setArg.translationMeta).toEqual({
+            name: { en: MANUAL_META },
+            entryNote: {
+                en: {
+                    autoTranslated: false,
+                    translatedAt: expect.any(String),
+                    sourceHash: hashOf('Gratis hasta la 1')
+                }
+            }
+        });
+        expect(quotaSpies.enforceAiQuota).not.toHaveBeenCalled();
+    });
+
+    it('override on an experience name writes a MANUAL pair with the source hash (AC-30)', async () => {
+        // Arrange
+        dbState.row = {
+            id: EXPERIENCE_ID,
+            name: 'Paseo en kayak',
+            nameI18n: { es: 'Paseo en kayak', en: '', pt: '' },
+            translationMeta: {}
+        };
+
+        // Act
+        const res = await PUT_OVERRIDE({
+            entityType: 'experience',
+            entityId: EXPERIENCE_ID,
+            locale: 'pt',
+            fieldType: 'name',
+            value: 'Passeio de caiaque'
+        });
+
+        // Assert
+        expect(res.status).toBe(200);
+        const setArg = dbState.updateSetCalls[0] as Record<string, unknown>;
+        expect(setArg.nameI18n).toEqual({ es: 'Paseo en kayak', en: '', pt: 'Passeio de caiaque' });
+        expect(setArg.translationMeta).toEqual({
+            name: {
+                pt: {
+                    autoTranslated: false,
+                    translatedAt: expect.any(String),
+                    sourceHash: hashOf('Paseo en kayak')
+                }
+            }
+        });
+    });
+
+    it('translate on a venue persists AUTOMATIC pairs with sourceHash, skips the MANUAL pair and never touches the quota (AC-31)', async () => {
+        // Act
+        const res = await POST({ entityType: 'venue', entityId: VENUE_ID, sourceLocale: 'es' });
+
+        // Assert
+        expect(res.status).toBe(200);
+        expect(dbState.updateSetCalls).toHaveLength(1);
+        const setArg = dbState.updateSetCalls[0] as Record<string, unknown>;
+        // name.en is MANUAL (empty on purpose): kept empty, meta byte-for-byte.
+        expect(setArg.nameI18n).toEqual({
+            es: 'La Parrilla del Puerto',
+            en: '',
+            pt: 'Translated (pt)'
+        });
+        expect(setArg.entryNoteI18n).toEqual({
+            es: 'Gratis hasta la 1',
+            en: 'Translated (en)',
+            pt: 'Translated (pt)'
+        });
+        const auto = (source: string) => ({
+            autoTranslated: true,
+            translatedAt: expect.any(String),
+            provider: 'stub',
+            model: 'stub-model',
+            sourceHash: hashOf(source)
+        });
+        expect(setArg.translationMeta).toEqual({
+            name: { en: MANUAL_META, pt: auto('La Parrilla del Puerto') },
+            entryNote: { en: auto('Gratis hasta la 1'), pt: auto('Gratis hasta la 1') }
+        });
+        expect(quotaSpies.enforceAiQuota).not.toHaveBeenCalled();
+        expect(quotaSpies.evaluateAiQuota).not.toHaveBeenCalled();
+    });
+
+    it('rejects venue on the batch route (batch enum unchanged) with 400', async () => {
+        // Act
+        const res = await adminAiTranslateRoute.request('/batch', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ entityType: 'venue' })
+        });
+
+        // Assert
+        expect(res.status).toBe(400);
+        expect(await res.json()).toEqual({
+            success: false,
+            error: { code: 'VALIDATION_ERROR', message: 'Invalid request body' }
+        });
     });
 });

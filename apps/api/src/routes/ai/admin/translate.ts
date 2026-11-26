@@ -38,8 +38,23 @@ const BatchTranslateRequestSchema = z.object({
     batchSize: z.coerce.number().int().min(1).max(50).default(10)
 });
 
+/**
+ * Entity types the single-entity translate and the override accept. HOS-2658
+ * adds `venue` and `experience` (AC-30, AC-31); the batch enum above stays
+ * unchanged (spec §7 out of scope).
+ */
+const SINGLE_ENTITY_TRANSLATABLE_TYPES = [
+    'accommodation',
+    'destination',
+    'event',
+    'post',
+    'pointOfInterest',
+    'venue',
+    'experience'
+] as const;
+
 const TranslateEntityRequestSchema = z.object({
-    entityType: z.enum(['accommodation', 'destination', 'event', 'post', 'pointOfInterest']),
+    entityType: z.enum(SINGLE_ENTITY_TRANSLATABLE_TYPES),
     entityId: z.string().uuid(),
     // The locale the editor is working in; translations flow OUT of it. Defaults
     // to Spanish for backward compatibility.
@@ -50,7 +65,7 @@ const TranslateEntityRequestSchema = z.object({
 });
 
 const OverrideRequestSchema = z.object({
-    entityType: z.enum(['accommodation', 'destination', 'event', 'post', 'pointOfInterest']),
+    entityType: z.enum(SINGLE_ENTITY_TRANSLATABLE_TYPES),
     entityId: z.string().uuid(),
     locale: z.enum(['en', 'pt']),
     fieldType: z.string().min(1).max(100),
