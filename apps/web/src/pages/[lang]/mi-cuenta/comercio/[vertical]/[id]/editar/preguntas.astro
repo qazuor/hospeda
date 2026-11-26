@@ -3,7 +3,7 @@
  * @file preguntas.astro
  * @description FAQ section of the venue/experience editor (HOS-1080).
  *
- * `ListingFaqManager` owns its own endpoints (HOS-811) — nothing here reaches
+ * `FaqSection` owns its own endpoints (HOS-811) — nothing here reaches
  * the listing PATCH or its dirty tracking — so this page mounts it directly,
  * with no form and no save button, exactly as the accommodation editor's
  * `preguntas` route does.
@@ -15,7 +15,7 @@
  * @rendering SSR (prerender = false — authenticated, owner-scoped data)
  */
 
-import { ListingFaqManager } from '@/components/listing/ListingFaqManager.client';
+import { FaqSection } from '@/components/account/editor/FaqSection.client';
 import ListingEditorSectionLayout from '@/layouts/ListingEditorSectionLayout.astro';
 import { readListingFaqs } from '@/lib/listing/listing-editor-detail';
 import { resolveListingEditorPage } from '@/lib/editor/resolve-listing-editor-page';
@@ -47,7 +47,11 @@ const initialFaqs = readListingFaqs({ detail });
 	currentSectionSlug="preguntas"
 	title={t('listing.owner.editor.sectionNav.faqs', 'Preguntas frecuentes')}
 >
-	<ListingFaqManager
+	<FaqSection
+		namespace="listing.owner.editor.faqManager"
+		showCategory={true}
+		errorSurface="inline"
+		validationMode="required"
 		client:load
 		vertical={vertical}
 		listingId={listingId}
