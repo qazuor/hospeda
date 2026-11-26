@@ -47,7 +47,10 @@ describe('wordmark caller integration', () => {
         expect(features).toMatch(/<Image\s+src=\{logoSrc\}[\s\S]*?class="fx-hero__logo"/);
         const footer = readSource({ file: 'layouts/Footer.astro' });
         expect(footer).toContain('tone="inverse"');
-        expect(footer).toContain('background-color: var(--footer-bg)');
+        // HOS-2655: the footer styles live in footer-base.css, imported by Footer.astro.
+        expect(footer).toContain('import "./footer-base.css";');
+        const footerCss = readSource({ file: 'layouts/footer-base.css' });
+        expect(footerCss).toContain('background-color: var(--footer-bg)');
     });
 
     it('owns the account-header type tokens and compact responsive geometry', () => {

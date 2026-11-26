@@ -1,10 +1,7 @@
 ---
 /**
  * @file LegalLayout.astro
- * @description Layout for legal/policy pages with table of contents sidebar
- * and narrow prose content area optimized for readability.
- *
- * Used by: privacy policy, terms and conditions.
+ * @description Shared legal hero, articles and responsive table of contents.
  */
 
 import { getSiteUrl } from '@/lib/env';
@@ -13,13 +10,26 @@ import { createTranslations } from '@/lib/i18n';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import BaseLayout from './BaseLayout.astro';
 import SEOHead from '@/components/seo/SEOHead.astro';
+import FAQPageJsonLd from '@/components/seo/FAQPageJsonLd.astro';
+import { ChevronDownIcon } from '@repo/icons';
+
+/** Resolved article copy and optional supplementary paragraphs or links. */
+export interface LegalArticle {
+    readonly id: string;
+    readonly heading: string;
+    readonly body: string;
+    readonly bullets?: readonly string[];
+    readonly table?: { readonly columns: readonly string[]; readonly rows: readonly (readonly string[])[] };
+    readonly links?: readonly { readonly href: string; readonly label: string }[];
+    readonly managePreferences?: string;
+}
 
 interface Props {
 	readonly locale: SupportedLocale;
 	readonly title?: string;
 	readonly description?: string;
 	readonly lastUpdated?: string;
-	readonly showToc?: boolean;
+	readonly articles?: readonly LegalArticle[];
 	readonly canonicalPath?: string;
 }
 
@@ -28,16 +38,18 @@ const {
 	title,
 	description,
 	lastUpdated,
-	showToc = true,
+	articles = [],
 	canonicalPath = Astro.url.pathname,
 } = Astro.props;
 
 const { t } = createTranslations(locale);
+const showToc = articles.length > 0;
 const siteBase = getSiteUrl();
 const canonicalUrl = new URL(canonicalPath, siteBase).href;
 
 const resolvedTitle = title ?? 'Hospeda';
 const resolvedDescription = description ?? 'Información legal de Hospeda';
+const updatedLabel = lastUpdated ? new Intl.DateTimeFormat(locale, { dateStyle: 'long', timeZone: 'UTC' }).format(new Date(lastUpdated)) : undefined;
 ---
 
 <BaseLayout locale={locale} title={resolvedTitle} description={resolvedDescription}>
@@ -49,6 +61,10 @@ const resolvedDescription = description ?? 'Información legal de Hospeda';
 		canonical={canonicalUrl}
 	/>
 	<slot name="head-extra" slot="head" />
+	{showToc && <FAQPageJsonLd slot="head" sections={articles.map(({ heading, body, bullets, table }) => ({
+		heading,
+		body: [body, ...(bullets ?? []), ...(table?.rows.map((row) => row.join(' — ')) ?? [])].join('\n')
+	}))} />}
 
 	<!-- Page header -->
 	<div class="legal-header">
@@ -56,9 +72,9 @@ const resolvedDescription = description ?? 'Información legal de Hospeda';
             <!-- Legal titles are already short; the shared trail also emits their JSON-LD. -->
 			<Breadcrumbs class="legal-breadcrumbs" locale={locale} items={[{ label: resolvedTitle }]} />
 			<h1 class="legal-header__title">{resolvedTitle}</h1>
-			{lastUpdated && (
+			{updatedLabel && (
 				<p class="legal-header__date">
-					{t('common.legal.lastUpdated', 'Última actualización')}: {lastUpdated}
+					{t('common.legal.lastUpdated')}: <time datetime={lastUpdated}>{updatedLabel}</time>
 				</p>
 			)}
 		</div>
@@ -75,17 +91,46 @@ const resolvedDescription = description ?? 'Información legal de Hospeda';
 	<div class="legal-body">
 		<div class:list={['legal-body__container', { 'legal-body__container--no-toc': !showToc }]}>
 			{showToc && (
-				<aside class="legal-toc">
-					<h2 class="legal-toc__heading">{t('common.legal.toc', 'Contenido')}</h2>
-					<slot name="toc" />
+				<aside class="legal-toc" id="legal-toc" tabindex="-1">
+					<details>
+						<summary>{t('common.legal.toc')} <ChevronDownIcon size="sm" aria-hidden="true" /></summary>
+						<nav aria-label={t('common.legal.toc')}>
+							<ul>{articles.map(({ id, heading }) => <li><a href={`#${id}`}>{heading}</a></li>)}</ul>
+						</nav>
+					</details>
 				</aside>
 			)}
 			<div class="legal-prose">
 				<slot />
+				{articles.map(({ id, heading, body, bullets, table, links, managePreferences }) => (
+					<section id={id} class="legal-article">
+						<h2>{heading}</h2>
+						<p>{body}</p>
+						{bullets && <ul>{bullets.map((bullet) => <li>{bullet}</li>)}</ul>}
+						{table && <table aria-label={heading}>
+							<thead><tr>{table.columns.map((column) => <th scope="col">{column}</th>)}</tr></thead>
+							<tbody>{table.rows.map(([name, ...cells]) => <tr><th scope="row"><code>{name}</code></th>{cells.map((cell) => <td>{cell}</td>)}</tr>)}</tbody>
+						</table>}
+						{links?.map(({ href, label }) => <p><a href={href}>{label}</a></p>)}
+						{managePreferences && <button type="button" class="legal-preferences" data-cookie-consent-reopen>{managePreferences}</button>}
+						<p class="legal-toc-return"><a href="#legal-toc">{t('common.legal.backToContents')}</a></p>
+					</section>
+				))}
 			</div>
 		</div>
 	</div>
 </BaseLayout>
+
+<script>
+	const desktop = window.matchMedia('(min-width: 769px)');
+	const syncContents = () => {
+		const details = document.querySelector<HTMLDetailsElement>('#legal-toc details');
+		if (details) details.open = desktop.matches;
+	};
+	syncContents();
+	desktop.addEventListener('change', syncContents);
+	document.addEventListener('astro:page-load', syncContents);
+</script>
 
 <style>
 	.legal-header {
@@ -143,7 +188,7 @@ const resolvedDescription = description ?? 'Información legal de Hospeda';
 		margin: 0 auto;
 		padding: 0 var(--space-container-x);
 		display: grid;
-		grid-template-columns: 220px 1fr;
+		grid-template-columns: 220px minmax(0, 1fr);
 		gap: var(--space-8);
 		align-items: start;
 	}
@@ -154,19 +199,44 @@ const resolvedDescription = description ?? 'Información legal de Hospeda';
 
 	.legal-toc {
 		position: sticky;
-		top: 130px;
+		top: calc(var(--navbar-height) + var(--space-4));
+		scroll-margin-top: calc(var(--navbar-height) + var(--space-4));
 	}
 
-	.legal-toc__heading {
+	.legal-toc summary {
 		font-family: var(--font-heading);
 		font-weight: 600;
 		font-size: var(--text-lg);
 		color: var(--core-foreground);
-		margin: 0 0 var(--space-4);
+		cursor: pointer;
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding-block: var(--space-3);
+		list-style: none;
+	}
+	.legal-toc summary::-webkit-details-marker { display: none; }
+	.legal-toc details[open] summary :global(svg) { transform: rotate(180deg); }
+	.legal-toc ul { list-style: none; padding: 0; margin: 0; }
+	.legal-toc a { display: block; padding-block: var(--space-2); color: var(--core-foreground); }
+	.legal-article { scroll-margin-top: calc(var(--navbar-height) + var(--space-4)); }
+	.legal-toc-return { font-size: var(--text-body-sm); }
+	.legal-prose table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+	.legal-prose :is(th, td) { padding: var(--space-2); text-align: start; vertical-align: top; border: 1px solid var(--border); overflow-wrap: anywhere; }
+	.legal-article ul { list-style: disc; padding-inline-start: var(--space-6); }
+	.legal-preferences {
+		min-block-size: 44px;
+		padding: var(--space-2) var(--space-4);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-button);
+		background: var(--core-card);
+		color: var(--core-foreground);
+		cursor: pointer;
 	}
 
 	.legal-prose {
-		max-width: 65ch;
+		max-width: 95ch;
+		min-width: 0;
 		font-family: var(--font-sans);
 		line-height: 1.7;
 		color: var(--core-foreground);

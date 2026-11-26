@@ -3,6 +3,50 @@
     "description": "Learn how Hospeda uses cookies and similar technologies to improve your experience on the site.",
     "heading": "Cookie Policy",
     "lastUpdated": "Last updated: November 18, 2026",
+    "managePreferences": "Manage preferences",
+    "inventory": {
+        "name": "Name",
+        "purpose": "Purpose",
+        "duration": "Duration",
+        "session": {
+            "purpose": "Keep you signed in.",
+            "duration": "Browser session, or up to 7 days and renewable if you stay signed in"
+        },
+        "sessionCache": {
+            "purpose": "Temporarily cache session data to avoid repeated requests.",
+            "duration": "Up to 5 minutes; if you do not stay signed in, the browser deletes it at the end of the session"
+        },
+        "consent": { "purpose": "Remember your cookie choices.", "duration": "1 year" },
+        "dontRemember": {
+            "purpose": "Limit sign-in to the current browser session when you choose not to stay signed in.",
+            "duration": "Browser session"
+        },
+        "signInState": {
+            "purpose": "Verify the return to Hospeda after signing in with an external provider.",
+            "duration": "5 minutes"
+        },
+        "oauthLogout": {
+            "purpose": "Verify a sign-out confirmation requested by a connected app when that feature is enabled.",
+            "duration": "5 minutes"
+        },
+        "visitor": {
+            "purpose": "Relate API requests from the same visitor in our technical logs, including when not signed in.",
+            "duration": "Browser session"
+        },
+        "calendarState": {
+            "purpose": "Verify the return to Hospeda when you connect Google Calendar to a listing.",
+            "duration": "5 minutes"
+        },
+        "announcements": {
+            "purpose": "Remember site announcements you dismissed.",
+            "duration": "1 year"
+        }
+    },
+    "recording": {
+        "association": "Recordings are pseudonymous and may be associated with your account identifier when you are signed in.",
+        "masking": "All text and form inputs are masked. Only a sample of sessions is recorded.",
+        "retention": "Recordings are kept for up to 60 days and then deleted automatically."
+    },
     "sections": {
         "whatAreCookies": {
             "title": "1. What are cookies",
@@ -10,23 +54,23 @@
         },
         "cookiesWeUse": {
             "title": "2. What cookies we use",
-            "body": "Hospeda uses strictly necessary cookies for the site to function (such as user session and language preference), which do not require your consent. With your consent, we may use analytics cookies to understand how visitors interact with the site and improve the experience. We do not currently use marketing or advertising cookies."
+            "body": "We use cookies for features such as signing in and remembering your privacy preferences. Language and theme are remembered in browser local storage. Optional analytics depend on your consent. We do not currently use marketing or advertising cookies."
         },
         "sessionRecording": {
             "title": "Session recordings and heatmaps",
-            "body": "If you accept analytics cookies, Hospeda may record browsing sessions and click and scroll heatmaps using Umami, an analytics tool that we host ourselves. Recordings are pseudonymous: if you are logged in, they may be associated with your account identifier. Recording only happens if you have accepted analytics cookies, and only while this feature is switched on. All text and all form inputs are masked, so what you type is not recorded. Only a sample of sessions is recorded, not all of them. Recordings are kept for a limited period of up to 60 days and are then deleted automatically."
+            "body": "If you accept analytics cookies and the feature is enabled, Hospeda may record sessions and click and scroll heatmaps with Umami, a tool we host ourselves."
         },
         "cookieList": {
             "title": "3. Cookie list",
-            "body": "Below we detail the main cookies this site may store on your device: 'hospeda-session' (authenticated session, necessary, browser session duration), 'lang' (language preference, necessary, persistent for 1 year), 'cookie-consent' (your consent status, necessary, persistent for 1 year). We do not use advertising tracking cookies or share data with ad networks."
+            "body": "These are the first-party cookies Hospeda uses. The asterisk represents a name prefix that can vary by environment. The session cache may be split across cookies with numbered suffixes. We do not use advertising tracking cookies or share data with ad networks."
         },
         "manageCookies": {
             "title": "4. How to manage cookies",
-            "body": "You can manage or delete cookies from your browser settings. Most browsers allow you to reject all cookies, accept only those from specific sites, or delete them when you close the browser. Please note that disabling necessary cookies may affect the proper functioning of the site, including access to your account."
+            "body": "Use the button in this section to change or withdraw your consent. You can also manage or delete cookies in your browser. Disabling necessary cookies may affect access to your account."
         },
         "thirdPartyCookies": {
             "title": "5. Third-party cookies",
-            "body": "Some external services we use may set their own cookies: Cloudinary (optimized image delivery, no user tracking), Sentry (error monitoring, only with your consent), MercadoPago (payment processing during checkout). These third parties have their own privacy policies and we have no direct control over their cookies."
+            "body": "When you go to Mercado Pago to authorize a payment, that site may use its own cookies under its policy. Hospeda uses Cloudinary to deliver images and Sentry to monitor errors when monitoring is enabled with consent. These services have their own privacy policies."
         },
         "policyChanges": {
             "title": "6. Changes to this policy",

@@ -7,10 +7,13 @@
 
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { render } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { CookieConsentBanner } from '@/components/legal/CookieConsentBanner.client';
-import { CONSENT_COOKIE_NAME, CONSENT_VERSION } from '@/lib/cookie-consent';
+import * as consent from '@/lib/cookie-consent';
+import { createTranslations } from '@/lib/i18n';
+
+const { CONSENT_COOKIE_NAME, CONSENT_VERSION } = consent;
 
 const LOCALES = resolve(import.meta.dirname, '../../../../packages/i18n/src/locales');
 
@@ -32,6 +35,95 @@ beforeAll(() => {
             disconnect(): void {}
         } as unknown as typeof ResizeObserver;
     }
+});
+
+describe('cookie policy preferences', () => {
+    it.each([
+        ['before', 'savePreferences'],
+        ['after', 'savePreferences'],
+        ['before', 'rejectAll'],
+        ['after', 'rejectAll']
+    ] as const)('opens section 4 preferences %s hydration and restores focus after %s', (clickTiming, action) => {
+        const layout = readFileSync(
+            resolve(import.meta.dirname, '../../src/layouts/LegalLayout.astro'),
+            'utf8'
+        );
+        const footer = readFileSync(
+            resolve(import.meta.dirname, '../../src/layouts/Footer.astro'),
+            'utf8'
+        );
+        const markup = layout.match(/\{managePreferences && (<button[^\n]+<\/button>)\}/)?.[1];
+        // Execute the real delegated click listener without booting the unrelated footer scripts.
+        const wiring = footer.match(
+            /import \{ ([^}]+) \} from '@\/lib\/cookie-consent';\s*(document\.addEventListener\('click',[\s\S]+?\n {4}\}\);)/
+        );
+        if (!markup || !wiring)
+            throw new Error('Cookie preferences trigger or delegated listener not found');
+
+        const { t } = createTranslations('es');
+        const section = document.createElement('section');
+        section.innerHTML = markup.replace('{managePreferences}', t('cookies.managePreferences'));
+        document.body.append(section);
+        const controller = new AbortController();
+        const install = new Function(
+            'consent',
+            'document',
+            `const { ${wiring[1]} } = consent;\n${wiring[2]}`
+        );
+        install(consent, {
+            addEventListener: (type: string, listener: EventListener) =>
+                document.addEventListener(type, listener, { signal: controller.signal })
+        });
+        consent.saveConsent({ crashReporting: true, analytics: false, marketing: false });
+        const trigger = within(section).getByRole('button', {
+            name: t('cookies.managePreferences')
+        });
+
+        try {
+            trigger.focus();
+            if (clickTiming === 'before') fireEvent.click(trigger);
+            render(
+                <CookieConsentBanner
+                    locale="es"
+                    cookiesPolicyUrl="/es/legal/cookies/"
+                />
+            );
+            if (clickTiming === 'after') {
+                expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+                fireEvent.click(trigger);
+            }
+
+            const panel = screen.getByRole('dialog', { name: t('cookieConsent.title') });
+            expect(panel).toHaveFocus();
+            const dialog = within(panel);
+            const crashReporting = dialog.getByRole('switch', {
+                name: t('cookieConsent.categories.crashReporting.label')
+            });
+            const analytics = dialog.getByRole('switch', {
+                name: t('cookieConsent.categories.analytics.label')
+            });
+            expect(crashReporting).toBeChecked();
+            expect(analytics).not.toBeChecked();
+            if (action === 'savePreferences') fireEvent.click(analytics);
+            const close = dialog.getByRole('button', {
+                name: t(`cookieConsent.buttons.${action}`)
+            });
+            close.focus();
+            fireEvent.click(close);
+
+            expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+            expect(trigger).toHaveFocus();
+            expect(consent.getConsent()).toMatchObject({
+                necessary: true,
+                crashReporting: action === 'savePreferences',
+                analytics: action === 'savePreferences',
+                marketing: false
+            });
+        } finally {
+            controller.abort();
+            section.remove();
+        }
+    });
 });
 
 afterEach(() => {

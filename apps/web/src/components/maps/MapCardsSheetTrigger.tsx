@@ -1,4 +1,3 @@
-import { MapIcon } from '@repo/icons';
 import { DockPortal } from '@/components/shared/dock/DockPortal';
 import sidebarStyles from './MapCardsSidebar.module.css';
 
@@ -8,8 +7,6 @@ export interface MapCardsSheetTriggerProps {
     readonly label: string;
     /** Short visible label ("12 resultados") used where the full one does not fit. */
     readonly shortLabel?: string;
-    /** Result count shown next to an icon on the narrowest phones. */
-    readonly count?: number;
     readonly isSheetOpen: boolean;
     readonly onOpen: () => void;
 }
@@ -19,15 +16,11 @@ export interface MapCardsSheetTriggerProps {
  * MapCardsSidebar because the dock row's backdrop-filter captures fixed
  * descendants and would change their viewport positioning.
  *
- * HOS-1780: the dock must stay on one row, so the visible text degrades with
- * the viewport (full label, short label, icon + count) through CSS only. The
- * `aria-label` carries the full label in every mode, and each visible part
- * is `aria-hidden` so nothing is announced twice.
+ * The dock stays on one row; the button text may wrap inside the button.
  */
 export function MapCardsSheetTrigger({
     label,
     shortLabel,
-    count,
     isSheetOpen,
     onOpen
 }: MapCardsSheetTriggerProps) {
@@ -55,18 +48,6 @@ export function MapCardsSheetTrigger({
                     data-sheet-trigger-part="short"
                 >
                     {shortLabel ?? label}
-                </span>
-                <span
-                    className={sidebarStyles.sheetTriggerCount}
-                    aria-hidden="true"
-                    data-sheet-trigger-part="count"
-                >
-                    <MapIcon
-                        size={16}
-                        weight="bold"
-                        aria-hidden="true"
-                    />
-                    <span>{count ?? shortLabel ?? label}</span>
                 </span>
             </button>
         </DockPortal>

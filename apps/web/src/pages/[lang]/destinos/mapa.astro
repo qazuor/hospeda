@@ -19,6 +19,7 @@ import { toDestinationCardProps } from '@/lib/api/transforms';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
+import { listingBounds } from '@/lib/maps/listing-bounds';
 import { CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
 import { applyCacheHeaders } from '@/lib/cache/response-cache';
 
@@ -72,9 +73,7 @@ const mapItems = cards
 
 const LITORAL_CENTER: [number, number] = [-31.8, -58.5];
 const LITORAL_ZOOM = 8;
-const mapCenter: [number, number] = mapItems.length > 0
-	? [mapItems[0].coordinates.lat, mapItems[0].coordinates.lng]
-	: LITORAL_CENTER;
+const { bounds: initialBounds } = listingBounds({ points: mapItems.map(({ coordinates }) => coordinates) });
 
 const listHref = buildUrl({ locale, path: 'destinos' });
 ---
@@ -84,7 +83,7 @@ const listHref = buildUrl({ locale, path: 'destinos' });
 	title={`${t('destinations.title', 'Destinos')} — ${t('accommodations.viewToggle.map', 'Mapa')}`}
 	description={t('destinations.description', 'Explorá los destinos turísticos del Litoral Entrerriano.')}
 	noindex={true}
-	totalCount={hasError ? undefined : total}
+	compactContentGap
 >
 	<Breadcrumbs
 		slot="breadcrumbs"
@@ -108,6 +107,8 @@ const listHref = buildUrl({ locale, path: 'destinos' });
 	)}
 
 	{!hasError && cards.length > 0 && (
+		<div class="map-toolbar">
+		<p>{tPlural('ui.listing.resultsFound', total)}</p>
 		<div class="view-toggle" role="tablist" aria-label={t('accommodations.viewToggle.ariaLabel', 'Vista')}>
 			<a href={listHref} class="view-toggle__btn" role="tab" aria-selected="false">
 				{t('accommodations.viewToggle.list', 'Lista')}
@@ -115,6 +116,7 @@ const listHref = buildUrl({ locale, path: 'destinos' });
 			<span class="view-toggle__btn view-toggle__btn--active" role="tab" aria-selected="true">
 				{t('accommodations.viewToggle.map', 'Mapa')}
 			</span>
+		</div>
 		</div>
 	)}
 
@@ -124,8 +126,10 @@ const listHref = buildUrl({ locale, path: 'destinos' });
 				client:only="react"
 				mode="destination-list"
 				items={mapItems}
-				initialCenter={mapCenter}
+				initialCenter={LITORAL_CENTER}
+				initialBounds={initialBounds}
 				initialZoom={LITORAL_ZOOM}
+				locale={locale}
 				ariaLabel={t('maps.ariaLabelDestination')}
 				i18nStrings={{
 					attribution: t('maps.attribution'),
@@ -138,11 +142,19 @@ const listHref = buildUrl({ locale, path: 'destinos' });
 </ListingLayout>
 
 <style>
+	.map-toolbar {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-2);
+		margin-block-end: var(--space-4);
+	}
+	.map-toolbar p { margin: 0; color: var(--core-muted-foreground); }
 	.view-toggle {
 		display: inline-flex;
+		flex: none;
 		gap: var(--space-2, 8px);
 		padding: 4px;
-		margin: 0 0 var(--space-4, 16px);
 		background-color: var(--surface-warm, #faf6f0);
 		border-radius: var(--radius-pill, 9999px);
 	}

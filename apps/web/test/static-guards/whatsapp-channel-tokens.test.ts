@@ -112,7 +112,9 @@ const OWNING_FILES: readonly string[] = [
     'components/listing/contact/ListingActionBarWhatsapp.module.css',
     'components/newsletter/WhatsAppCTA.module.css',
     // HOS-2256: the venue WhatsApp button. Inked in `VenueWhatsAppButton.test.tsx`.
-    'components/venue/VenueWhatsAppButton.module.css'
+    'components/venue/VenueWhatsAppButton.module.css',
+    // HOS-2655: the FAQ help-band WhatsApp button. Inked in `test/pages/hos2655-audit.test.ts`.
+    'pages/[lang]/preguntas-frecuentes/faq-whatsapp-button.css'
 ];
 
 /**
@@ -149,6 +151,9 @@ const EXPECTED_REFERENCES: Readonly<Record<string, Readonly<Record<string, numbe
         '--channel-whatsapp': 1,
         '--channel-whatsapp-foreground': 1,
         '--channel-whatsapp-hover': 1
+    },
+    'pages/[lang]/preguntas-frecuentes/faq-whatsapp-button.css': {
+        '--channel-whatsapp-text': 2
     }
 };
 

@@ -1,0 +1,6 @@
+/* FAQ help-band WhatsApp button (HOS-2655). Owned by the HOS-314 channel-token guard. */
+.faq-still__btn--secondary {
+    background-color: var(--core-card);
+    color: var(--channel-whatsapp-text);
+    border: 1px solid var(--channel-whatsapp-text);
+}

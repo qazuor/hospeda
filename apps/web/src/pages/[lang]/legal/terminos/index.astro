@@ -1,107 +1,27 @@
 ---
-/**
- * @file legal/terminos/index.astro
- * @description Terms and conditions page with 10 numbered sections and ToC.
- * @route /{lang}/legal/terminos/
- * @rendering SSR + Cloudflare cache (HOS-74 — see [lang]/index.astro)
- */
-
-import LegalLayout from '@/layouts/LegalLayout.astro';
-import FAQPageJsonLd from '@/components/seo/FAQPageJsonLd.astro';
-import { createTranslations } from '@/lib/i18n';
-import type { SupportedLocale } from '@/lib/i18n';
-
+/** Public terms and links to related legal pages. */
 import { CACHE_TAG_SITE_CONFIG } from '@repo/cache-tags';
+import LegalLayout from '@/layouts/LegalLayout.astro';
 import { applyCacheHeaders } from '@/lib/cache/response-cache';
-const locale = Astro.locals.locale as SupportedLocale;
+import { createTranslations } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+
+const locale = Astro.locals.locale;
 const { t } = createTranslations(locale);
+applyCacheHeaders({ locals: Astro.locals, headers: Astro.response.headers, cacheable: true,
+    cacheClass: 'static', tags: [CACHE_TAG_SITE_CONFIG] });
 
-// --- Edge cacheability (HOS-369 W2-2) ---
-// No session, no API call — the content is i18n + code, so it only changes on
-// deploy. Tagged `site-config`: the only tag with a live purger. The TTL comes
-// from the `static` cache class (see `lib/cache/cache-classes.ts`); what
-// bounds the post-deploy staleness window is HOS-427's deploy purge, which
-// evicts the environment catch-all tag this response carries. Note that purge
-// fires 45s after the container serves its FIRST REQUEST, not after the deploy,
-// and nothing bounds when that first request arrives — see HOS-428.
-applyCacheHeaders({
-	locals: Astro.locals,
-	headers: Astro.response.headers,
-	cacheable: true,
-	cacheClass: 'static',
-	tags: [CACHE_TAG_SITE_CONFIG]
-});
-
-const sections = [
-	{ id: 'aceptacion', titleKey: 'terms.section1.title', titleFb: 'Aceptación de los términos', contentKey: 'terms.section1.content', contentFb: 'Al acceder y utilizar la plataforma Hospeda (en adelante, "el Servicio"), usted acepta estar sujeto a estos Términos y Condiciones. Si no está de acuerdo con alguna parte de estos términos, no podrá acceder al Servicio.' },
-	{ id: 'uso-servicio', titleKey: 'terms.section2.title', titleFb: 'Uso del servicio', contentKey: 'terms.section2.content', contentFb: 'El Servicio está destinado a facilitar la conexión entre propietarios de alojamientos turísticos y viajeros en la región del litoral entrerriano, Argentina. Usted se compromete a utilizar el Servicio únicamente para fines legítimos y de acuerdo con estos Términos.' },
-	{ id: 'registro', titleKey: 'terms.section3.title', titleFb: 'Registro de cuenta', contentKey: 'terms.section3.content', contentFb: 'Para utilizar ciertas funcionalidades del Servicio, deberá crear una cuenta proporcionando información precisa, completa y actualizada. Usted es responsable de mantener la confidencialidad de su contraseña y de todas las actividades que ocurran bajo su cuenta.' },
-	{ id: 'publicacion', titleKey: 'terms.section4.title', titleFb: 'Publicación de alojamientos', contentKey: 'terms.section4.content', contentFb: 'Los propietarios que publiquen alojamientos en la plataforma garantizan que la información proporcionada es veraz, precisa y completa. Hospeda se reserva el derecho de revisar, modificar o eliminar cualquier publicación que no cumpla con nuestras políticas.' },
-	{ id: 'reservas', titleKey: 'terms.section5.title', titleFb: 'Reservas y pagos', contentKey: 'terms.section5.content', contentFb: 'Las reservas se realizan directamente entre el viajero y el propietario del alojamiento. Hospeda actúa como intermediario facilitando la conexión, pero no es parte directa de la transacción. Los pagos se procesan a través de MercadoPago.' },
-	{ id: 'cancelaciones', titleKey: 'terms.section6.title', titleFb: 'Cancelaciones y reembolsos', contentKey: 'terms.section6.content', contentFb: 'Las políticas de cancelación son definidas por cada propietario. Hospeda facilita el proceso de cancelación pero no es responsable de los reembolsos, que dependen de la política del propietario y las condiciones de la reserva.' },
-	{ id: 'propiedad-intelectual', titleKey: 'terms.section7.title', titleFb: 'Propiedad intelectual', contentKey: 'terms.section7.content', contentFb: 'Todo el contenido de la plataforma, incluyendo textos, imágenes, logotipos, diseños y software, es propiedad de Hospeda o de sus respectivos titulares. Queda prohibida su reproducción sin autorización expresa.' },
-	{ id: 'limitacion', titleKey: 'terms.section8.title', titleFb: 'Limitación de responsabilidad', contentKey: 'terms.section8.content', contentFb: 'Hospeda no garantiza la disponibilidad ininterrumpida del Servicio ni la exactitud de la información proporcionada por terceros. En ningún caso seremos responsables por daños indirectos, incidentales o consecuentes.' },
-	{ id: 'modificaciones', titleKey: 'terms.section9.title', titleFb: 'Modificaciones', contentKey: 'terms.section9.content', contentFb: 'Nos reservamos el derecho de modificar estos Términos en cualquier momento. Las modificaciones entrarán en vigor desde su publicación en la plataforma. El uso continuado del Servicio constituye aceptación de los términos modificados.' },
-	{ id: 'contacto', titleKey: 'terms.section10.title', titleFb: 'Contacto', contentKey: 'terms.section10.content', contentFb: 'Para consultas sobre estos Términos y Condiciones, podés contactarnos a info@hospeda.com.ar o a través de nuestro formulario de contacto.' },
-] as const;
-
-const faqSections = sections.map((section) => ({
-	heading: t(section.titleKey, section.titleFb),
-	body: t(section.contentKey, section.contentFb)
+const ids = ['aceptacion', 'uso-servicio', 'registro', 'publicacion', 'reservas', 'cancelaciones',
+    'propiedad-intelectual', 'limitacion', 'modificaciones', 'contacto'] as const;
+const articles = ids.map((id) => ({
+    id,
+    heading: t(`terms.articles.${id}.title`),
+    body: t(`terms.articles.${id}.body`),
+    links: id === 'reservas' ? [{
+        href: buildUrl({ locale, path: '/legal/privacidad/' }), label: t('privacy.title')
+    }] : id === 'contacto' ? [{
+        href: buildUrl({ locale, path: '/legal/arrepentimiento/' }), label: t('terms.withdrawal.title')
+    }] : undefined
 }));
 ---
-
-<LegalLayout
-	locale={locale}
-	title={t('terms.title', 'Términos y Condiciones')}
-	description={t('terms.description', 'Términos y condiciones de uso de la plataforma Hospeda.')}
-	lastUpdated="15 de marzo de 2026"
-	showToc={true}
->
-	<FAQPageJsonLd slot="head-extra" sections={faqSections} />
-	<Fragment slot="toc">
-		<ol class="toc-list">
-			{sections.map((section, i) => (
-				<li>
-					<a href={`#${section.id}`} class="toc-link">
-						{i + 1}. {t(section.titleKey, section.titleFb)}
-					</a>
-				</li>
-			))}
-		</ol>
-	</Fragment>
-
-	{sections.map((section, i) => (
-		<section id={section.id}>
-			<h2>{i + 1}. {t(section.titleKey, section.titleFb)}</h2>
-			<p>{t(section.contentKey, section.contentFb)}</p>
-		</section>
-	))}
-</LegalLayout>
-
-<style>
-	.toc-list {
-		list-style: none;
-		padding: 0;
-		margin: 0;
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-2);
-	}
-
-	.toc-link {
-		display: block;
-		padding: var(--space-2) var(--space-3);
-		font-family: var(--font-sans);
-		font-size: var(--text-body-sm);
-		color: var(--core-muted-foreground);
-		text-decoration: none;
-		border-left: 2px solid transparent;
-		transition: color var(--duration-fast) ease, border-color var(--duration-fast) ease;
-	}
-
-	.toc-link:hover {
-		color: var(--core-foreground);
-		border-left-color: var(--brand-accent);
-	}
-</style>
+<LegalLayout locale={locale} title={t('terms.title')} description={t('terms.description')} lastUpdated="2026-11-26" articles={articles} />
