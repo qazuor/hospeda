@@ -39,7 +39,7 @@ import {
     TouristVipInheritedCancel
 } from '../../templates/billing/index.js';
 import { formatCurrency, formatDate } from '../../templates/utils/index.js';
-import { SUBSCRIPTION_PATH } from './account-listing-paths.js';
+import { buildReceiptUrl, SUBSCRIPTION_PATH } from './account-listing-paths.js';
 import { createBillingAddonRenderers } from './billing-addon-renderers.js';
 import { createBillingCancellationNoticeRenderers } from './billing-cancellation-notice-renderers.js';
 import { createBillingChargebackRenderers } from './billing-chargeback-renderers.js';
@@ -353,7 +353,7 @@ function paidAfterCancellation(row: EmailOutboxRow, subscriptionUrl: string) {
     };
 }
 
-function paymentCredited(row: EmailOutboxRow) {
+function paymentCredited(row: EmailOutboxRow, siteUrl: string) {
     const data = objectPayload(row);
     const hasSubscription =
         Object.hasOwn(data, 'subscriptionId') &&
@@ -390,6 +390,7 @@ function paymentCredited(row: EmailOutboxRow) {
                 receiptNumber={data.receiptNumber}
                 creditedDate={creditedDate}
                 planName={typeof data.planName === 'string' ? data.planName : null}
+                receiptUrl={buildReceiptUrl({ siteUrl, receiptId: data.receiptId })}
             />
         )
     };
@@ -418,7 +419,7 @@ export function createBillingSignupRenderers(input: {
             signupDeclined({ data: objectPayload(row), subscriptionUrl }),
         'billing.grace-started': ({ row }) => graceStarted(row, subscriptionUrl),
         'billing.paid-after-cancellation': ({ row }) => paidAfterCancellation(row, subscriptionUrl),
-        'billing.payment-credited': ({ row }) => paymentCredited(row),
+        'billing.payment-credited': ({ row }) => paymentCredited(row, input.siteUrl),
         'billing.signup-confirmed': ({ row }) => confirmed(row),
         'billing.before-cancel': ({ row }) => beforeCancel(row),
         'billing.attempt-replaced-cancel': ({ row }) => attemptReplacedCancel(row),
