@@ -25,7 +25,7 @@ import {
 } from '../../../utils/accommodation-catalog-relations';
 import { getActorFromContext } from '../../../utils/actor';
 import { stripRichDescriptionFields } from '../../../utils/entitlement-filter';
-import { getListingAccessPorts } from '../../../utils/listing-access/ports';
+import { ownerHasEntitlement } from '../../../utils/listing-access/owner-has-entitlement';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
@@ -112,23 +112,11 @@ export const protectedGetOwnAccommodationByIdRoute = createProtectedRoute({
 
         // The editor can read its own listing, but paid rich content follows
         // the listing owner's effective entitlement, including for admin readers.
-        let canUseRichDescription = false;
-        try {
-            const userId = accommodation.ownerId;
-            const vertical = VerticalEnum.ACCOMMODATION;
-            const effective = await getListingAccessPorts().effectiveSet({ userId, vertical });
-            canUseRichDescription =
-                (effective.entitlements.get({
-                    key: 'can_use_rich_description',
-                    userId,
-                    vertical
-                }) ?? 0) > 0;
-        } catch {
-            apiLogger.warn(
-                { accommodationId: accommodation.id },
-                'Rich description entitlement lookup failed'
-            );
-        }
+        const { has: canUseRichDescription } = await ownerHasEntitlement({
+            ownerId: accommodation.ownerId,
+            vertical: VerticalEnum.ACCOMMODATION,
+            key: 'can_use_rich_description'
+        });
         const visibleAccommodation = canUseRichDescription
             ? accommodation
             : stripRichDescriptionFields(accommodation);
