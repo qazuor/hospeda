@@ -32,6 +32,58 @@ const validCampaignBase = {
     deletedAt: null
 };
 
+describe('NewsletterCampaignSchema resolved content', () => {
+    const campaign = { ...validCampaignBase, contentType: null };
+
+    it('accepts historical campaigns without resolution fields', () => {
+        const parsed = NewsletterCampaignSchema.parse(campaign);
+        expect(parsed).not.toHaveProperty('resolvedBodyJson');
+        expect(parsed).not.toHaveProperty('resolvedAt');
+    });
+
+    it('accepts explicit null resolution fields on unresolved campaigns', () => {
+        const parsed = NewsletterCampaignSchema.parse({
+            ...campaign,
+            resolvedBodyJson: null,
+            resolvedAt: null
+        });
+        expect(parsed.resolvedBodyJson).toBeNull();
+        expect(parsed.resolvedAt).toBeNull();
+    });
+
+    it.each([
+        new Date('2026-11-26T12:00:00Z'),
+        '2026-11-26T12:00:00Z'
+    ])('preserves resolved documents and timestamp %s', (resolvedAt) => {
+        const resolvedBodyJson = {
+            type: 'doc',
+            content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Resolved' }] }]
+        };
+        const parsed = NewsletterCampaignSchema.parse({
+            ...campaign,
+            resolvedBodyJson,
+            resolvedAt
+        });
+        expect(parsed.resolvedBodyJson).toEqual(resolvedBodyJson);
+        expect(parsed.resolvedAt).toEqual(resolvedAt);
+    });
+
+    it('rejects malformed resolved documents', () => {
+        expect(
+            NewsletterCampaignSchema.safeParse({
+                ...campaign,
+                resolvedBodyJson: { type: 'paragraph' }
+            }).success
+        ).toBe(false);
+    });
+
+    it('rejects malformed resolution timestamps', () => {
+        expect(
+            NewsletterCampaignSchema.safeParse({ ...campaign, resolvedAt: 'yesterday' }).success
+        ).toBe(false);
+    });
+});
+
 describe('NewsletterCampaignSchema.contentType', () => {
     it('accepts null (legacy no-segmentation default)', () => {
         const parsed = NewsletterCampaignSchema.parse({

@@ -34,6 +34,12 @@ export const newsletterCampaigns = pgTable(
         /** TipTap document JSON. Rendered to HTML at send time. */
         bodyJson: jsonb('body_json').notNull(),
 
+        /** Frozen document resolved once at dispatch for consistent delivery batches. */
+        resolvedBodyJson: jsonb('resolved_body_json'),
+
+        /** When dynamic content was resolved. NULL until dispatch. */
+        resolvedAt: timestamp('resolved_at', { withTimezone: true }),
+
         /** Lifecycle state. See NewsletterCampaignStatusEnum for transitions. */
         status: NewsletterCampaignStatusPgEnum('status').notNull().default('draft'),
 

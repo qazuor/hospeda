@@ -77,6 +77,12 @@ export const NewsletterCampaignSchema = z.object({
     /** TipTap document JSON. Rendered to HTML at send time. */
     bodyJson: TiptapDocumentSchema,
 
+    /** Frozen document resolved at dispatch. Absent on historical payloads. */
+    resolvedBodyJson: TiptapDocumentSchema.nullable().optional(),
+
+    /** Resolution timestamp. NULL until dispatch; absent on historical payloads. */
+    resolvedAt: z.union([z.string().datetime(), z.date()]).nullable().optional(),
+
     /** Lifecycle state. */
     status: z.nativeEnum(NewsletterCampaignStatusEnum),
 
