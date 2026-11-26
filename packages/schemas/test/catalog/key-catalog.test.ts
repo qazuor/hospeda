@@ -137,7 +137,13 @@ describe('vertical activation events (DEC-TRIAL-006)', () => {
  * change of the code and the migration still turns this file red.
  */
 const EXPECTED_BASE_KEYS = ['activate_trial', 'recover_own_listing', 'subscribe_to_plan'];
-const EXPECTED_GLOBAL_KEYS = ['has_verification_badge', 'priority_support', 'vip_support'];
+// HOS-2184 G-6 added ai_assistant_access (one answer per account, from any vertical).
+const EXPECTED_GLOBAL_KEYS = [
+    'ai_assistant_access',
+    'has_verification_badge',
+    'priority_support',
+    'vip_support'
+];
 const EXPECTED_LISTING_CAPS = [
     'max_accommodations',
     'max_experiences',

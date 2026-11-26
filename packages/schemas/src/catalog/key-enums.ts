@@ -55,6 +55,7 @@ export enum EntitlementKeyEnum {
     AI_TRANSLATE = 'ai_translate',
     AI_ACCOMMODATION_IMPORT = 'ai_accommodation_import',
     AI_FAQ_DRAFT = 'ai_faq_draft',
+    AI_ASSISTANT_ACCESS = 'ai_assistant_access',
     PARTNER_PUBLIC_PAGE = 'partner_public_page',
     PARTNER_CAROUSEL_PRESENCE = 'partner_carousel_presence',
     RECOVER_OWN_LISTING = 'recover_own_listing',

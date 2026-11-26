@@ -61,6 +61,7 @@ export const ADDON_CATEGORY_BY_KEY: Readonly<Record<string, AddonCategory>> = {
     ai_translate: 'other',
     ai_accommodation_import: 'other',
     ai_faq_draft: 'other',
+    ai_assistant_access: 'other',
     partner_public_page: 'other',
     partner_carousel_presence: 'other',
     recover_own_listing: 'other',

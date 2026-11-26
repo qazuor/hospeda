@@ -33,6 +33,10 @@ const MIGRATION_0251 = path.join(
     REPO_ROOT,
     'packages/db/src/migrations/0251_hos2589_promotion_catalog_keys.sql'
 );
+const MIGRATION_0252 = path.join(
+    REPO_ROOT,
+    'packages/db/src/migrations/0252_hos2184_ai_assistant_access_catalog.sql'
+);
 
 const NEW_KEY: CatalogKeyDefinition = {
     key: 'zz_new_capability',
@@ -64,14 +68,15 @@ const GREEN = {
     '0129_gorgeous_storm.sql': readFileSync(MIGRATION_0129, 'utf8'),
     '0140_misty_captain_britain.sql': readFileSync(MIGRATION_0140, 'utf8'),
     '0202_hos_2105_faq_draft_catalog.sql': readFileSync(MIGRATION_0202, 'utf8'),
-    '0251_hos2589_promotion_catalog_keys.sql': readFileSync(MIGRATION_0251, 'utf8')
+    '0251_hos2589_promotion_catalog_keys.sql': readFileSync(MIGRATION_0251, 'utf8'),
+    '0252_hos2184_ai_assistant_access_catalog.sql': readFileSync(MIGRATION_0252, 'utf8')
 };
 
 describe('scripts/generate-catalog-sql.ts', () => {
     it('reproduces the original INSERT statements of 0129_gorgeous_storm.sql byte for byte', () => {
         const migration = readFileSync(MIGRATION_0129, 'utf8');
         const compared = migration.slice(migration.indexOf('INSERT INTO'));
-        // These keys were added later (0202, 0251); the original 0129 INSERT stays frozen.
+        // These keys were added later (0202, 0251, 0252); the original 0129 INSERT stays frozen.
         const originalKeys = buildCatalogKeyLoad({
             definitions: CATALOG_KEY_DEFINITIONS.filter(
                 (d) =>
@@ -81,7 +86,9 @@ describe('scripts/generate-catalog-sql.ts', () => {
                         'max_ai_faq_draft_per_month',
                         // HOS-2589 (0251).
                         'vip_only_promotions',
-                        'max_free_visible_promotions'
+                        'max_free_visible_promotions',
+                        // HOS-2184 (0252).
+                        'ai_assistant_access'
                     ].includes(d.key)
             )
         });

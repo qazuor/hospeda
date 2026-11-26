@@ -149,3 +149,31 @@ export const PRODUCTION_PLAN_FREE_VISIBLE_PROMOTIONS_LIMIT = {
     slug: 'floor',
     limit: { key: 'max_free_visible_promotions', value: 3 }
 } as const;
+
+/**
+ * HOS-2184 G-6 (owner decision, 2026-11-25): every plan of the accommodation, venue
+ * and experience verticals grants the AI assistant connector (MCP) on day one: the
+ * three sellable plans and the pre-trial plan of each. Read by data-migration 0193,
+ * which grants the global `ai_assistant_access` key to EVERY version of these plans
+ * through the bounded additive-grant lane, so live subscribers (pinned to their
+ * version) receive it too.
+ *
+ * Deliberately absent: the `floor` plans (an owner whose paid plan or trial ended
+ * gets the «not included in your plan» answer), the `trial` plans (the trial derives
+ * its entitlements from Premium, `trial-ratchet.ts`), and the tourist and partner
+ * verticals. Restricting it later is a catalog edit: publish a version without it.
+ */
+export const PRODUCTION_PLAN_AI_ASSISTANT_ACCESS_GRANTS = [
+    { vertical: 'accommodation', slug: 'owner-basico' },
+    { vertical: 'accommodation', slug: 'owner-pro' },
+    { vertical: 'accommodation', slug: 'owner-premium' },
+    { vertical: 'accommodation', slug: 'pre-trial' },
+    { vertical: 'venue', slug: 'venue-basico' },
+    { vertical: 'venue', slug: 'venue-pro' },
+    { vertical: 'venue', slug: 'venue-premium' },
+    { vertical: 'venue', slug: 'pre-trial' },
+    { vertical: 'experience', slug: 'experience-basico' },
+    { vertical: 'experience', slug: 'experience-pro' },
+    { vertical: 'experience', slug: 'experience-premium' },
+    { vertical: 'experience', slug: 'pre-trial' }
+] as const;
