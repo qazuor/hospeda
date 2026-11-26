@@ -103,6 +103,8 @@ export const PORTAL_ROUTE_TEMPLATES = {
     accountPublicProfile: 'mi-cuenta/publica',
     /** The host dashboard. */
     hostDashboard: 'mi-cuenta/host-dashboard',
+    /** The reviews received on the owner's accommodations, where the host answers them (HOS-2199). */
+    receivedReviews: 'mi-cuenta/resenas-recibidas',
     /** The owner's promotions list. */
     promotions: 'mi-cuenta/promociones',
     /** The form that creates a promotion. */
@@ -169,6 +171,7 @@ export const PORTAL_PAGE_LABELS = {
     accountHome: 'Ir a mi cuenta',
     accountPublicProfile: 'Ver mi perfil público',
     hostDashboard: 'Abrir mi panel de anfitrión',
+    receivedReviews: 'Ver las reseñas recibidas',
     promotions: 'Ver mis promociones',
     promotionNew: 'Crear una promoción',
     promotionEdit: 'Editar la promoción',

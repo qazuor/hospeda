@@ -222,6 +222,10 @@
             "path": "/api/v1/admin/accommodations/reviews/:id/restore"
         },
         {
+            "method": "POST",
+            "path": "/api/v1/admin/accommodations/reviews/replies/:id/moderate"
+        },
+        {
             "method": "GET",
             "path": "/api/v1/admin/addon-catalog"
         },
@@ -2658,6 +2662,18 @@
             "path": "/api/v1/protected/accommodations/:accommodationId/reviews"
         },
         {
+            "method": "DELETE",
+            "path": "/api/v1/protected/accommodations/:accommodationId/reviews/:reviewId/reply"
+        },
+        {
+            "method": "PATCH",
+            "path": "/api/v1/protected/accommodations/:accommodationId/reviews/:reviewId/reply"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/protected/accommodations/:accommodationId/reviews/:reviewId/reply"
+        },
+        {
             "method": "GET",
             "path": "/api/v1/protected/accommodations/:id"
         },
@@ -3796,6 +3812,10 @@
         {
             "method": "POST",
             "path": "/api/v1/protected/users/me/newsletter/toggle"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/protected/users/me/received-reviews"
         },
         {
             "method": "GET",

@@ -97,6 +97,7 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'account.profileCompletion',
     'account.provider',
     'account.recommendations',
+    'account.receivedReviews',
     'account.reviews',
     'account.searchHistory',
     'account.setPassword',

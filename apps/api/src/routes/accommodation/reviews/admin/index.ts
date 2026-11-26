@@ -8,6 +8,7 @@ import { adminGetAccommodationReviewByIdRoute } from './getById';
 import { adminHardDeleteAccommodationReviewRoute } from './hardDelete';
 import { adminListAccommodationReviewsRoute } from './list';
 import { adminModerateAccommodationReviewRoute } from './moderate';
+import { adminModerateAccommodationReviewReplyRoute } from './moderateReply';
 import { adminRestoreAccommodationReviewRoute } from './restore';
 import { adminUpdateAccommodationReviewRoute } from './update';
 
@@ -34,5 +35,8 @@ app.route('/', adminHardDeleteAccommodationReviewRoute);
 // POST /:id/moderate - Approve or reject review (SPEC-166 T-020)
 // Registered after /:id CRUD routes; the /moderate suffix makes it unambiguous.
 app.route('/', adminModerateAccommodationReviewRoute);
+
+// POST /replies/:id/moderate - Approve or hide a host reply (HOS-2199)
+app.route('/', adminModerateAccommodationReviewReplyRoute);
 
 export { app as adminAccommodationReviewRoutes };

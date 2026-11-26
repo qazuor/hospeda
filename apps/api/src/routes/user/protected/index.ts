@@ -7,6 +7,7 @@ import { protectedGetMyEffectiveSetRoute } from './effective-set';
 import { protectedGetUserByIdRoute } from './getById';
 import { newsletterToggleRoute } from './newsletter';
 import { protectedPatchUserRoute } from './patch';
+import { userReceivedReviewsRoute } from './received-reviews';
 import { userReviewsRoute } from './reviews';
 import { userStatsRoute } from './stats';
 import { tourProgressGetRoute, tourProgressRoute } from './tourProgress';
@@ -17,6 +18,9 @@ const app = createRouter();
 
 // GET /me/reviews - User reviews (registered before /:id to avoid path conflicts)
 app.route('/', userReviewsRoute);
+
+// GET /me/received-reviews - Reviews received on own accommodations (HOS-2199)
+app.route('/', userReceivedReviewsRoute);
 
 // GET /me/stats - User statistics
 app.route('/', userStatsRoute);
