@@ -1,22 +1,18 @@
 /** Minimal owner create step: create a draft, then open its full editor. */
-import { ExperiencePriceUnitEnum } from '@repo/schemas';
 import { type FormEvent, type JSX, useEffect, useRef, useState } from 'react';
 import styles from '@/components/account/CreateStep.module.css';
 import { CreateTextField } from '@/components/account/CreateTextField';
 import { Alert } from '@/components/account/ui/Alert';
 import { Button } from '@/components/account/ui/Button';
-import { Checkbox } from '@/components/account/ui/Checkbox';
 import { Field } from '@/components/account/ui/Field';
 import { Section } from '@/components/account/ui/Section';
 import { Select } from '@/components/account/ui/Select';
-import { TextInput } from '@/components/account/ui/TextInput';
 import type { DestinationOption } from '@/components/listing/destination-option';
 import { useZodForm } from '@/lib/forms/use-zod-form';
 import { sectionHelpId } from '@/lib/help/section-help-id';
 import { createTranslations, type SupportedLocale } from '@/lib/i18n';
 import { LISTING_VERTICAL_FORM_CONFIG } from '@/lib/listing/listing-vertical-form-config';
 import { createOwnerListing, type VenueOrExperience } from '@/lib/listing/owner-listings';
-import { centsToPesosInputValue, parsePesosInputToCents } from '@/lib/listing/price-units';
 import { buildUrl } from '@/lib/urls';
 
 export interface ListingCreateFormProps {
@@ -41,11 +37,7 @@ export function ListingCreateForm({
     const [name, setName] = useState('');
     const [listingType, setListingType] = useState('');
     const [summary, setSummary] = useState('');
-    const [description, setDescription] = useState('');
     const [destinationId, setDestinationId] = useState('');
-    const [priceFromCents, setPriceFromCents] = useState<number | null>(null);
-    const [priceUnit, setPriceUnit] = useState('');
-    const [isPriceOnRequest, setIsPriceOnRequest] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const formRef = useRef<HTMLFormElement>(null);
     useEffect(() => {
@@ -59,14 +51,8 @@ export function ListingCreateForm({
             name,
             type: listingType || undefined,
             summary,
-            description,
             destinationId: destinationId || undefined
         };
-        if (config.showsPriceFields) {
-            payload.priceFrom = isPriceOnRequest ? null : (priceFromCents ?? undefined);
-            payload.priceUnit = isPriceOnRequest ? null : priceUnit || undefined;
-            payload.isPriceOnRequest = isPriceOnRequest;
-        }
         // Business lines and policies are optional at create and belong to the editor.
         // The venue endpoint derives business lines from the selected type.
         const parsed = validate(payload);
@@ -149,18 +135,6 @@ export function ListingCreateForm({
                     max={300}
                     rows={2}
                 />
-                <CreateTextField
-                    id="cc-description"
-                    locale={locale}
-                    label={t('listing.owner.create.fields.description', 'Descripción')}
-                    hint={t('listing.owner.create.hint.description')}
-                    error={fieldErrors.description}
-                    value={description}
-                    onChange={setDescription}
-                    min={20}
-                    max={2000}
-                    rows={5}
-                />
                 {destinationsLoadFailed || destinations.length === 0 ? (
                     <Alert
                         tone="danger"
@@ -183,7 +157,7 @@ export function ListingCreateForm({
                         label={t('listing.owner.create.fields.destination', 'Ciudad / Destino')}
                         hint={t('listing.owner.create.hint.destination')}
                         error={fieldErrors.destinationId}
-                        optional
+                        required
                     >
                         <Select
                             value={destinationId}
@@ -202,64 +176,6 @@ export function ListingCreateForm({
                             ))}
                         </Select>
                     </Field>
-                )}
-                {config.showsPriceFields && (
-                    <>
-                        <Checkbox
-                            label={t(
-                                'listing.owner.editor.sections.isPriceOnRequest',
-                                'Precio a consultar'
-                            )}
-                            checked={isPriceOnRequest}
-                            onChange={(event) => setIsPriceOnRequest(event.target.checked)}
-                        />
-                        <Field
-                            id="cc-priceFrom"
-                            locale={locale}
-                            label={t('listing.owner.editor.sections.priceFrom', 'Precio desde')}
-                            hint={t('listing.owner.create.hint.price')}
-                            error={fieldErrors.priceFrom}
-                            required={!isPriceOnRequest}
-                        >
-                            <TextInput
-                                type="number"
-                                min={0}
-                                step={1}
-                                disabled={isPriceOnRequest}
-                                value={centsToPesosInputValue({ cents: priceFromCents })}
-                                onChange={(event) =>
-                                    setPriceFromCents(
-                                        parsePesosInputToCents({ raw: event.target.value })
-                                    )
-                                }
-                            />
-                        </Field>
-                        <Field
-                            id="cc-priceUnit"
-                            locale={locale}
-                            label={t('listing.owner.editor.sections.priceUnit', 'Unidad de precio')}
-                            error={fieldErrors.priceUnit}
-                            required={!isPriceOnRequest}
-                        >
-                            <Select
-                                value={priceUnit}
-                                disabled={isPriceOnRequest}
-                                onChange={(event) => setPriceUnit(event.target.value)}
-                            >
-                                <option value="">
-                                    {t('listing.owner.create.placeholder.priceUnit')}
-                                </option>
-                                {Object.values(ExperiencePriceUnitEnum).map((unit) => (
-                                    <option
-                                        key={unit}
-                                        value={unit}
-                                    >
-                                        {t(`listing.owner.editor.priceUnitOption.${unit}`, unit)}
-                                    </option>
-                                ))}
-                            </Select>
-                        </Field>
-                    </>
                 )}
                 {formError && (
                     <Alert

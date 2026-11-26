@@ -498,14 +498,11 @@
                 "name": "Usá el nombre con el que te conocen tus clientes.",
                 "type": "Elegí la categoría que mejor describa lo que ofrecés.",
                 "summary": "Contá lo esencial en una frase. Se muestra en los listados.",
-                "description": "Describí qué ofrecés. Después vas a poder ampliar los detalles.",
-                "destination": "Elegí la ciudad de tu ficha. Podés completarla después en el editor.",
-                "price": "Ingresá el importe en pesos argentinos o marcá Precio a consultar."
+                "destination": "Elegí la ciudad o destino de tu ficha."
             },
             "placeholder": {
                 "type": "Elegí una categoría",
-                "destination": "Elegí una ciudad o destino",
-                "priceUnit": "Elegí una unidad de precio"
+                "destination": "Elegí una ciudad o destino"
             },
             "fields": {
                 "name": {
@@ -514,7 +511,6 @@
                 },
                 "type": "Categoría",
                 "summary": "Resumen",
-                "description": "Descripción",
                 "destination": "Ciudad / Destino",
                 "destinationLoadError": "No pudimos cargar el listado de ciudades / destinos. Recargá la página para reintentar.",
                 "destinationEmpty": "Todavía no hay ciudades / destinos cargados. Contactanos para poder completar este campo."

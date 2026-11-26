@@ -20,15 +20,24 @@
  * primitives themselves are covered by their own suites.
  */
 
-import { DestinationTypeEnum, RoleEnum, RoleGrantReason, ServiceErrorCode } from '@repo/schemas';
+import {
+    DestinationTypeEnum,
+    ExperienceDraftCreateInputSchema,
+    RoleEnum,
+    RoleGrantReason,
+    ServiceErrorCode,
+    VenueDraftCreateInputSchema
+} from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
+import { ExperienceService } from '../../../src/services/experience/experience.service';
 import type {
     ListingCatalogModel,
     ListingEntity,
     ListingJunctionModel
 } from '../../../src/services/listing/base-listing.service';
 import { BaseListingService } from '../../../src/services/listing/base-listing.service';
+import { VenueService } from '../../../src/services/venue/venue.service';
 import type {
     Actor,
     PaginatedListOutput,
@@ -87,6 +96,7 @@ type TestEntity = ListingEntity & { readonly type: string };
 
 const createSchema = z.object({
     name: z.string(),
+    description: z.string().min(20),
     slug: z.string().optional(),
     type: z.string(),
     destinationId: z.string().optional(),
@@ -153,6 +163,10 @@ class TestListingService extends BaseListingService<
     protected readonly createSchema = createSchema;
     protected readonly updateSchema = updateSchema;
     protected readonly searchSchema = searchSchema;
+
+    protected override get ownerCreateSchema() {
+        return createSchema.extend({ description: z.string().max(2000) });
+    }
 
     public set destModel(m: typeof this._destinationModel) {
         this._destinationModel = m;
@@ -233,6 +247,25 @@ function makeService() {
     return { svc, model, amenityJunction, featureJunction };
 }
 
+/** Real vertical hooks and schemas, with only database I/O replaced. */
+function stubListingDatabase(
+    service: VenueService | ExperienceService,
+    model: ReturnType<typeof makeModel>
+): void {
+    Object.defineProperty(service, 'model', { value: model });
+    Object.defineProperty(service, '_destinationModel', {
+        value: {
+            findById: vi
+                .fn()
+                .mockResolvedValue({ id: DEST_ID_CITY, destinationType: DestinationTypeEnum.CITY })
+        }
+    });
+    // This private readback is database I/O, not part of the create validation/hooks.
+    Object.defineProperty(service, '_refetchWithWriteRelations', {
+        value: async (entity: unknown) => entity
+    });
+}
+
 /** The account this spec exists for: signed in, zero listing anything. */
 const plainUserActor: Actor = {
     id: OWNER_ID,
@@ -249,6 +282,7 @@ const hostActor: Actor = {
 
 const VALID_INPUT = {
     name: 'La Parrilla del Puerto',
+    description: 'A complete description for the admin create contract.',
     type: 'RESTAURANT',
     destinationId: DEST_ID_CITY,
     ownerId: OWNER_ID
@@ -268,6 +302,77 @@ beforeEach(() => {
 });
 
 describe('BaseListingService.createForOwner (HOS-687 §6.1)', () => {
+    it('runs real venue hooks with an empty description and preserves admin validation', async () => {
+        const model = makeModel();
+        const svc = new VenueService({});
+        stubListingDatabase(svc, model);
+        const input = VenueDraftCreateInputSchema.parse({
+            ...VALID_INPUT,
+            type: 'BAR',
+            summary: 'A riverside venue',
+            description: ''
+        });
+        expect((await svc.create(plainUserActor, input)).error?.code).toBe(
+            ServiceErrorCode.VALIDATION_ERROR
+        );
+        const result = await svc.createForOwner(plainUserActor, input);
+        expect(result.error).toBeUndefined();
+        expect(model.create).toHaveBeenCalledWith(
+            expect.objectContaining({
+                description: '',
+                businessLines: ['food', 'nightlife'],
+                slug: expect.any(String)
+            }),
+            FAKE_TX
+        );
+        expect(mockGrantRole).toHaveBeenCalledOnce();
+    });
+
+    it('runs real experience hooks with empty content and no pricing', async () => {
+        const model = makeModel();
+        const svc = new ExperienceService({});
+        stubListingDatabase(svc, model);
+        const input = ExperienceDraftCreateInputSchema.parse({
+            ...VALID_INPUT,
+            type: 'EXCURSION',
+            summary: 'A riverside excursion',
+            description: ''
+        });
+        expect((await svc.create(plainUserActor, input)).error?.code).toBe(
+            ServiceErrorCode.VALIDATION_ERROR
+        );
+        const result = await svc.createForOwner(plainUserActor, input);
+        expect(result.error).toBeUndefined();
+        expect(model.create).toHaveBeenCalledWith(
+            expect.objectContaining({
+                description: '',
+                priceFrom: null,
+                priceUnit: null,
+                isPriceOnRequest: false,
+                slug: expect.any(String)
+            }),
+            FAKE_TX
+        );
+        expect(mockGrantRole).toHaveBeenCalledOnce();
+    });
+
+    it('persists empty-description owner drafts through the full create lifecycle, while admin stays strict', async () => {
+        const { svc, model } = makeService();
+        const draft = { ...VALID_INPUT, description: '' };
+        const admin = await svc.create(plainUserActor, draft);
+        expect(admin.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
+        expect(model.create).not.toHaveBeenCalled();
+
+        const owner = await svc.createForOwner(plainUserActor, draft);
+        expect(owner.error).toBeUndefined();
+        expect(model.create).toHaveBeenCalledWith(
+            expect.objectContaining({ description: '' }),
+            FAKE_TX
+        );
+        expect(mockGrantRole).toHaveBeenCalledOnce();
+        expect(mockScheduleRevalidation).toHaveBeenCalledOnce();
+    });
+
     it('grants the vertical role to the creating account (AC-1)', async () => {
         const { svc } = makeService();
 

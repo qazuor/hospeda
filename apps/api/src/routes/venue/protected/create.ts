@@ -4,10 +4,8 @@
  *   POST /api/v1/protected/venues/
  *
  * Mirrors the accommodation owner create (`POST /protected/accommodations/`)
- * and the admin create at `venue/admin/create.ts`. The venue
- * owner-create payload has its own required shape
- * (`priceFrom`/`priceUnit`/`isPriceOnRequest`), so this vertical has its own
- * route; the experience one lives in `experience/protected/create.ts`.
+ * and the admin create at `venue/admin/create.ts`. Owners may leave the draft
+ * description unfinished; the experience route lives in `experience/protected/create.ts`.
  *
  * ## D-3 — server-forced fields
  *
@@ -42,7 +40,7 @@ import {
     ServiceErrorCode,
     sectionsTouchedByBody,
     sectionTraitsTouchedByBody,
-    VenueAdminCreateInputSchema,
+    VenueDraftCreateInputSchema,
     type VenueOwnerCreateInput,
     VenueOwnerCreateInputSchema,
     VenueProtectedSchema,
@@ -60,7 +58,7 @@ const venueService = new VenueService({ logger: apiLogger });
 
 /**
  * Creates a venue listing for its owner exactly as this route does: the
- * server-forced `ownerId`, the re-parse through the full admin create schema,
+ * server-forced `ownerId`, the re-parse through the owner draft persistence schema,
  * then `VenueService.createForOwner` (role grant + insert in one transaction).
  * Shared by this route and the owner assistant's `create_listing` tool
  * (HOS-2329, spec HOS-2335 C-6), which runs the route's listing-access step
@@ -68,7 +66,7 @@ const venueService = new VenueService({ logger: apiLogger });
  *
  * @param input - The actor and the validated owner-create body
  * @returns The created venue
- * @throws {ServiceError} VALIDATION_ERROR on a body the admin schema refuses,
+ * @throws {ServiceError} VALIDATION_ERROR on a body the draft schema refuses,
  *   or the service's error
  */
 export async function createVenueListingForOwner(input: {
@@ -78,21 +76,12 @@ export async function createVenueListingForOwner(input: {
     const { actor } = input;
     const data = input.body as VenueOwnerCreateInput;
 
-    // Re-parse through the FULL admin create schema so every other
-    // .default() field (isFeatured, reviewsCount,
-    // averageRating) is populated the same way an admin create would be —
-    // `create()` re-validates against this exact schema internally, so this
-    // is a cheap, type-correct way to merge the server-forced fields without
-    // hand-listing every default (D-3).
-    //
-    // `safeParse`, not `.parse()` (HOS-1954): the owner schema keeps
-    // `destinationId` optional (publish-readiness is a separate gate) while the
-    // admin schema REQUIRES it, so an owner body without it passes the route
-    // validator and fails here. A bare `.parse()` threw a raw ZodError that
-    // surfaced as a 500 `INTERNAL_ERROR`; a 4xx must never be that
-    // (`apps/api/docs/error-contract.md`). Same shape as the experience route.
-    const parsed = VenueAdminCreateInputSchema.safeParse({
+    // Preserve admin defaults and required destination/owner fields, but permit
+    // an unfinished description in this owner-only draft path (HOS-2641).
+    // safeParse keeps re-validation errors mapped to 4xx (HOS-1954).
+    const parsed = VenueDraftCreateInputSchema.safeParse({
         ...data,
+        description: data.description ?? '',
         ownerId: actor.id
     });
 

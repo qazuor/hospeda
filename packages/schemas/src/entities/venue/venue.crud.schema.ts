@@ -121,6 +121,14 @@ export const VenueAdminCreateInputSchema = VenueSchema.omit({
 /** TypeScript type for {@link VenueAdminCreateInputSchema}. */
 export type VenueAdminCreateInput = z.infer<typeof VenueAdminCreateInputSchema>;
 
+/** Owner draft persistence allows an empty description; admin create stays strict. */
+export const VenueDraftCreateInputSchema = VenueAdminCreateInputSchema.extend({
+    description: z.string().max(2000, { message: 'zodError.listing.description.max' })
+});
+
+/** TypeScript type for owner draft persistence. */
+export type VenueDraftCreateInput = z.infer<typeof VenueDraftCreateInputSchema>;
+
 /**
  * Schema for the admin create response.
  * Returns the complete venue object.
@@ -293,10 +301,9 @@ export type VenueOwnerUpdateInput = z.infer<typeof VenueOwnerUpdateInputSchema>;
  * - `reviewsCount`, `averageRating`, `rating` — server-computed aggregates;
  *   nonsensical on a brand-new listing with no reviews yet.
  *
- * `destinationId` stays `.optional()` (mirrors the admin create schema): the
- * create schema is deliberately permissive — publish-readiness is a SEPARATE
- * gate evaluated by `resolveListingCompleteness` at checkout time, not by this
- * schema (HOS-166 §6.6).
+ * Description may be omitted for a draft, but must meet normal limits when supplied.
+ * `destinationId` stays optional here; the web form and draft persistence require it.
+ * Publish-readiness is a separate `resolveListingCompleteness` gate.
  */
 export const VenueOwnerCreateInputSchema = VenueSchema.omit({
     id: true,
@@ -357,6 +364,8 @@ export const VenueOwnerCreateInputSchema = VenueSchema.omit({
     averageRating: true,
     rating: true
 }).extend({
+    /** Filled later in the editor; supplied descriptions retain their normal minimum. */
+    description: VenueSchema.shape.description.optional(),
     /**
      * HOS-2258: linked videos go through the same rules as the owner PATCH
      * (max 6, `APPROVED` stamped by the server). The route declares the

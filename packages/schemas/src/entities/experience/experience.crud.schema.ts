@@ -119,6 +119,20 @@ export function requirePricingUnlessOnRequest(
     requirePriceFromUnlessOnRequest(value, ctx);
 }
 
+/** Owner drafts may omit pricing; a supplied price still needs its billing unit. */
+export function requirePriceUnitWhenPriced(
+    value: {
+        readonly priceFrom?: number | null;
+        readonly priceUnit?: string | null;
+        readonly isPriceOnRequest?: boolean;
+    },
+    ctx: z.RefinementCtx
+): void {
+    if (value.priceFrom !== null && value.priceFrom !== undefined) {
+        requirePriceUnitUnlessOnRequest(value, ctx);
+    }
+}
+
 // ============================================================================
 // ADMIN CREATE SCHEMAS
 // ============================================================================
@@ -216,6 +230,16 @@ export const ExperienceAdminCreateInputCheckedSchema = ExperienceAdminCreateInpu
 
 /** TypeScript type for {@link ExperienceAdminCreateInputSchema}. */
 export type ExperienceAdminCreateInput = z.infer<typeof ExperienceAdminCreateInputSchema>;
+
+/** Owner draft persistence permits unfinished content; admin create stays strict. */
+export const ExperienceDraftCreateInputSchema = ExperienceAdminCreateInputSchema.extend({
+    description: z.string().max(2000, { message: 'zodError.listing.description.max' }),
+    priceFrom: ExperienceSchema.shape.priceFrom.default(null),
+    priceUnit: ExperienceSchema.shape.priceUnit.default(null)
+}).superRefine(requirePriceUnitWhenPriced);
+
+/** TypeScript type for owner draft persistence. */
+export type ExperienceDraftCreateInput = z.infer<typeof ExperienceDraftCreateInputSchema>;
 
 /**
  * Schema for the admin create response.
@@ -398,8 +422,9 @@ export type ExperienceOwnerUpdateInput = z.infer<typeof ExperienceOwnerUpdateInp
  *   the PB publication transitions move it (HOS-1641).
  * - `reviewsCount`, `averageRating`, `rating` — server-computed aggregates.
  *
- * `destinationId` stays `.optional()` (mirrors the admin create schema) —
- * publish-readiness is a separate gate (`resolveListingCompleteness`, §6.6).
+ * Description and pricing may be omitted for a draft and filled in the editor.
+ * Supplied descriptions retain their normal limits. `destinationId` stays optional
+ * here; the web form and draft persistence require it. Publish-readiness is separate.
  */
 export const ExperienceOwnerCreateInputSchema = ExperienceSchema.omit({
     id: true,
@@ -453,6 +478,8 @@ export const ExperienceOwnerCreateInputSchema = ExperienceSchema.omit({
     media: true,
     meetingPointDirections: true
 }).extend({
+    description: ExperienceSchema.shape.description.optional(),
+    priceFrom: ExperienceSchema.shape.priceFrom.optional(),
     businessLines: z
         .array(z.enum(['standard'], { error: 'zodError.venue.businessLines.invalid' }), {
             error: 'zodError.venue.businessLines.invalidType'
@@ -478,7 +505,7 @@ export const ExperienceOwnerCreateInputSchema = ExperienceSchema.omit({
 
 /**
  * {@link ExperienceOwnerCreateInputSchema} plus the cross-field pricing rule
- * (see {@link requirePriceUnitUnlessOnRequest}). The owner create route
+ * (see {@link requirePriceUnitWhenPriced}). The owner create route
  * validates against THIS one.
  *
  * The plain schema above must stay refinement-free: `ListingCreateForm`
@@ -486,7 +513,7 @@ export const ExperienceOwnerCreateInputSchema = ExperienceSchema.omit({
  * object schema.
  */
 export const ExperienceOwnerCreateInputCheckedSchema = ExperienceOwnerCreateInputSchema.superRefine(
-    requirePricingUnlessOnRequest
+    requirePriceUnitWhenPriced
 );
 
 /** TypeScript type for {@link ExperienceOwnerCreateInputSchema}. */

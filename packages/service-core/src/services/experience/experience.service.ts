@@ -46,6 +46,7 @@ import {
     type ExperienceAdminCreateInput,
     ExperienceAdminCreateInputSchema,
     ExperienceAdminSearchSchema,
+    ExperienceDraftCreateInputSchema,
     type ExperienceOwnerUpdateInput,
     ExperienceOwnerUpdateInputSchema,
     type ExperienceSearch,
@@ -132,6 +133,10 @@ export class ExperienceService extends BaseListingService<
 
     protected readonly model: ExperienceModel;
     protected readonly createSchema = ExperienceAdminCreateInputSchema;
+
+    protected override get ownerCreateSchema() {
+        return ExperienceDraftCreateInputSchema;
+    }
     protected readonly updateSchema = ExperienceUpdateInputSchema;
     protected readonly searchSchema = ExperienceSearchSchema;
     protected readonly normalizers: CrudNormalizersFromSchemas<

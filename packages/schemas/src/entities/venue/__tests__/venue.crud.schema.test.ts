@@ -45,6 +45,25 @@ const buildAdminCreateInput = (
     ...overrides
 });
 
+describe('owner draft minimums (HOS-2641)', () => {
+    const minimum = {
+        name: 'A venue',
+        summary: 'A venue summary',
+        type: VenueTypeEnum.BAR,
+        destinationId: VALID_UUID
+    };
+
+    it('accepts the four initial fields', () => {
+        expect(VenueOwnerCreateInputSchema.safeParse(minimum).success).toBe(true);
+    });
+
+    it.each(['', 'Short'])('rejects an explicitly unfinished description (%s)', (description) => {
+        const result = VenueOwnerCreateInputSchema.safeParse({ ...minimum, description });
+        expect(result.success).toBe(false);
+        expect(result.error?.issues.map((issue) => issue.path.join('.'))).toEqual(['description']);
+    });
+});
+
 // ============================================================================
 // venueAdminCreateInputSchema
 // ============================================================================

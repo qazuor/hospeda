@@ -6,13 +6,17 @@ import {
 } from '../../src/entities/accommodation/accommodation.crud.schema.js';
 import { resolveMissingPublishRequirements } from '../../src/entities/accommodation/accommodation.publish-requirements.js';
 import {
+    ExperienceAdminCreateInputCheckedSchema,
     ExperienceAdminCreateInputSchema,
+    ExperienceDraftCreateInputSchema,
+    ExperienceOwnerCreateInputCheckedSchema,
     ExperienceOwnerCreateInputSchema,
     ExperienceOwnerUpdateInputSchema,
     ExperienceUpdateInputSchema
 } from '../../src/entities/experience/experience.crud.schema.js';
 import {
     VenueAdminCreateInputSchema,
+    VenueDraftCreateInputSchema,
     VenueOwnerCreateInputSchema,
     VenueOwnerUpdateInputSchema,
     VenueUpdateInputSchema
@@ -86,7 +90,105 @@ const inputCases: readonly InputCase[] = [
 const issuePaths = (result: ReturnType<InputCase['schema']['safeParse']>): string[] =>
     (result.error?.issues ?? []).map((issue) => issue.path.map(String).join('.'));
 
-describe('TEST:1748:2 input and publish minimums are untouched', () => {
+describe('TEST:1748:2 supplied content and publish minimums remain strict', () => {
+    const minimum = {
+        name: 'Tour',
+        summary: VALID_SUMMARY,
+        type: 'EXCURSION',
+        destinationId: UUID
+    };
+
+    it.each([
+        ['venue', VenueOwnerCreateInputSchema, VenueDraftCreateInputSchema, 'BAR'],
+        [
+            'experience',
+            ExperienceOwnerCreateInputCheckedSchema,
+            ExperienceDraftCreateInputSchema,
+            'EXCURSION'
+        ]
+    ] as const)('%s accepts four-field owner create and empty-description persistence', (_vertical, owner, draft, type) => {
+        expect(owner.safeParse({ ...minimum, type }).success).toBe(true);
+        expect(draft.safeParse({ ...minimum, type, ownerId: UUID, description: '' }).success).toBe(
+            true
+        );
+        expect(
+            draft.safeParse({ ...minimum, type, ownerId: UUID, description: 'x'.repeat(2001) })
+                .success
+        ).toBe(false);
+        expect(draft.safeParse({ ...minimum, type, description: '' }).success).toBe(false);
+        expect(
+            draft.safeParse({
+                ...minimum,
+                type,
+                destinationId: undefined,
+                ownerId: UUID,
+                description: ''
+            }).success
+        ).toBe(false);
+    });
+
+    it('defaults unfinished experience pricing to NULL/NULL/false at persistence', () => {
+        const draft = ExperienceDraftCreateInputSchema.parse({
+            ...minimum,
+            ownerId: UUID,
+            description: ''
+        });
+        expect(draft).toMatchObject({ priceFrom: null, priceUnit: null, isPriceOnRequest: false });
+    });
+
+    it.each([
+        undefined,
+        null,
+        0,
+        1000
+    ])('requires a unit only when an owner draft supplies a price (%s)', (priceFrom) => {
+        const input = { ...minimum, priceFrom };
+        const result = ExperienceOwnerCreateInputCheckedSchema.safeParse(input);
+        expect(result.success).toBe(priceFrom == null);
+        if (!result.success) {
+            expect(result.error.issues).toEqual([
+                expect.objectContaining({
+                    path: ['priceUnit'],
+                    message: 'zodError.experience.priceUnit.requiredUnlessOnRequest'
+                })
+            ]);
+        }
+        expect(
+            ExperienceOwnerCreateInputCheckedSchema.safeParse({ ...input, priceUnit: 'per_person' })
+                .success
+        ).toBe(true);
+        expect(
+            ExperienceOwnerCreateInputCheckedSchema.safeParse({ ...input, isPriceOnRequest: true })
+                .success
+        ).toBe(true);
+        expect(
+            ExperienceDraftCreateInputSchema.safeParse({ ...input, ownerId: UUID, description: '' })
+                .success
+        ).toBe(priceFrom == null);
+    });
+
+    it.each([
+        [VenueAdminCreateInputSchema, venueBase],
+        [ExperienceAdminCreateInputCheckedSchema, experienceBase]
+    ] as const)('admin create still requires description', (schema, base) => {
+        const result = schema.safeParse({ ...base, description: undefined });
+        expect(result.success).toBe(false);
+        expect(result.error?.issues.map((issue) => issue.path.join('.'))).toContain('description');
+    });
+
+    it('admin experience create still requires pricing', () => {
+        expect(
+            ExperienceAdminCreateInputCheckedSchema.safeParse({
+                ...experienceBase,
+                priceFrom: null,
+                priceUnit: null
+            }).success
+        ).toBe(false);
+    });
+
+    it.each(inputCases)('$name rejects a short supplied description', (c) => {
+        expect(c.schema.safeParse({ ...c.base, description: 'Short' }).success).toBe(false);
+    });
     it.each(inputCases)('$name accepts its base payload', (c) => {
         // Arrange / Act
         const result = c.schema.safeParse(c.base);

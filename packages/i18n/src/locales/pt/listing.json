@@ -498,14 +498,11 @@
                 "name": "Use o nome pelo qual seus clientes conhecem você.",
                 "type": "Escolha a categoria que melhor descreve o que você oferece.",
                 "summary": "Resuma o que você oferece em uma frase. Ela aparece nas listagens.",
-                "description": "Descreva o que você oferece. Você pode acrescentar detalhes depois.",
-                "destination": "Escolha a cidade do seu anúncio. Você pode preencher este campo depois no editor.",
-                "price": "Informe o valor em pesos argentinos ou selecione Preço sob consulta."
+                "destination": "Escolha a cidade ou destino do seu anúncio."
             },
             "placeholder": {
                 "type": "Escolha uma categoria",
-                "destination": "Escolha uma cidade ou destino",
-                "priceUnit": "Escolha uma unidade de preço"
+                "destination": "Escolha uma cidade ou destino"
             },
             "fields": {
                 "name": {
@@ -514,7 +511,6 @@
                 },
                 "type": "Categoria",
                 "summary": "Resumo",
-                "description": "Descrição",
                 "destination": "Cidade / Destino",
                 "destinationLoadError": "Não conseguimos carregar a lista de cidades / destinos. Recarregue a página para tentar novamente.",
                 "destinationEmpty": "Ainda não há cidades / destinos cadastrados. Entre em contato para que possamos ajudar a preencher este campo."
