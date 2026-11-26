@@ -5,11 +5,32 @@
  * - The pin: every registry tool's declared permissions, by name. Adding,
  *   dropping or changing one is a deliberate edit of this table.
  * - The static check: in each tool file, the permissions the HANDLER refuses
- *   on (`if (!actor.permissions.includes(PermissionEnum.X))`) are exactly the
- *   ones the tools defined there declare. Blind spot: a check through a helper
- *   or another shape is not seen; a permission that only trims a block (a
- *   ternary such as `get_owner_summary`'s billing block) is not a refusal and
- *   is rightly not read as one.
+ *   on (`if (!actor.permissions.includes(PermissionEnum.X))`), plus the ones
+ *   listed in {@link SERVICE_ENFORCED}, are exactly the ones the tools defined
+ *   there declare.
+ *
+ * Blind spot: the pattern only sees INLINE handler checks. A check done inside
+ * a service or a helper (`HostTradeService.listForHost` →
+ * `checkCanViewHostTrade`) is invisible to it, so those are pinned by hand in
+ * {@link SERVICE_ENFORCED}, each with the place that enforces it. A new
+ * service-level check is caught by nobody but a reviewer: adding one means
+ * adding its row there.
+ *
+ * Audited and deliberately NOT declared (HOS-2184 review M3): checks that are
+ * not tool-wide, so declaring them would hide a tool an account can use.
+ * - `update_listing_basic` / `update_listing_amenities`: the permission depends
+ *   on the vertical (`ACCOMMODATION_UPDATE_OWN`, `VENUE_EDIT_OWN`,
+ *   `EXPERIENCE_EDIT_OWN`), and an accommodation content write authorised by
+ *   the listing-access chain (action 15, `checkAction15CanUpdate`) needs none.
+ * - `create_listing`: venue and experience creation declare none on purpose
+ *   (HOS-687, it is how an account becomes an owner); accommodation goes
+ *   through `/host-onboarding/start`, which declares none either.
+ * - `get_owner_summary`: `ACCOMMODATION_VIEW_OWN` gates only the host metrics
+ *   branch (`getStatsForHostAccommodations`), and `CONVERSATION_VIEW_OWN` /
+ *   `BILLING_VIEW_OWN` only trim blocks.
+ * - The benefit-usage tools: row ownership, never a permission (HOS-376).
+ * - Every other listing read or write: ownership (`findIdsByOwnerId`, step 4
+ *   of the access pipeline), not a permission.
  *
  * @module test/mcp/tools/required-permissions.registry
  */
@@ -41,11 +62,20 @@ const PINNED: Readonly<Record<string, readonly PermissionEnum[]>> = {
     list_inquiries: [PermissionEnum.CONVERSATION_VIEW_OWN],
     get_inquiry: [PermissionEnum.CONVERSATION_VIEW_OWN],
     reply_inquiry: [PermissionEnum.CONVERSATION_REPLY_OWN],
-    search_providers: [],
+    search_providers: [PermissionEnum.HOST_TRADE_VIEW],
     list_benefit_usages: [],
     confirm_benefit_usage: [],
     reject_benefit_usage: [],
     undo_benefit_rejection: []
+};
+
+/**
+ * Permissions a tool declares because a SERVICE refuses without them, which
+ * the inline pattern cannot see. Member names, as `refusedPermissions` returns.
+ */
+const SERVICE_ENFORCED: Readonly<Record<string, readonly string[]>> = {
+    // HostTradeService.listForHost → checkCanViewHostTrade (host-trade.permissions.ts)
+    search_providers: ['HOST_TRADE_VIEW']
 };
 
 /** Every `.ts` file under a directory. */
@@ -97,8 +127,9 @@ describe('requiredPermissions (HOS-2184 T-042)', () => {
 
         // Act
         const mismatches = files.flatMap(({ path, source }) => {
-            const refused = new Set(refusedPermissions(source));
+            const inline = refusedPermissions(source);
             return definedToolNames(source).flatMap((name) => {
+                const refused = new Set([...inline, ...(SERVICE_ENFORCED[name] ?? [])]);
                 const definition = byName.get(name);
                 const declared = new Set(
                     (definition?.requiredPermissions ?? []).map(

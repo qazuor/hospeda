@@ -318,7 +318,13 @@ describe('/mcp endpoint', () => {
             expect(message.id).toBe(2);
             // The actor holds none of the permissions a tool may require
             // (HOS-2184 T-042), so the permission-gated tools are hidden.
-            const hidden = ['get_my_plan', 'list_inquiries', 'get_inquiry', 'reply_inquiry'];
+            const hidden = [
+                'get_my_plan',
+                'list_inquiries',
+                'get_inquiry',
+                'reply_inquiry',
+                'search_providers'
+            ];
             expect(message.result?.tools?.map((tool) => tool.name)).toEqual(
                 MCP_TOOL_DEFINITIONS.map((definition) => definition.name).filter(
                     (name) => !hidden.includes(name)
