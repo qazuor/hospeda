@@ -9,11 +9,7 @@
     /* Mobile: full-width slab at the bottom, comfortable thumb reach. */
     inset-inline: var(--space-4, 1rem);
     /* Lift mobile toasts above the cookie banner and the measured dock. */
-    inset-block-end: calc(
-        var(--space-4, 1rem) +
-        var(--bottom-safe-inset, 0px) +
-        var(--mobile-dock-height, 0px)
-    );
+    inset-block-end: calc(var(--space-4) + var(--floating-controls-bottom));
 }
 
 @media (min-width: 768px) {
@@ -22,7 +18,10 @@
         inset-inline: auto;
         inset-block-start: auto;
         inset-inline-end: var(--space-6, 1.5rem);
-        inset-block-end: var(--space-6, 1.5rem);
+        inset-block-end: calc(
+            var(--space-6) +
+            var(--floating-toast-bottom, var(--floating-controls-bottom))
+        );
         max-width: 420px;
         width: 100%;
     }
@@ -31,41 +30,6 @@
 .viewportEmpty {
     /* Stay mounted so the aria-live region is preserved between toasts. */
     pointer-events: none;
-}
-
-/*
- * Post-review fix (HOS-85): while the floating accommodation CompareBar is
- * visible, it sits bottom-anchored with a z-index deliberately above this
- * viewport's (see the rationale comment on `.bar` in CompareBar.module.css),
- * so a bottom-anchored toast would be hidden behind it. Move the toast
- * viewport to the top of the screen instead whenever that flag is present.
- *
- * `[data-compare-bar-visible]` is published on `<html>` by CompareBar itself
- * (mirrors the `data-mobile-menu-open` / `data-filters-drawer-open`
- * conventions in `feedback-overrides.css`) — this file only reacts to it, so
- * ToastViewport stays decoupled from the compare feature/store. When the bar
- * is not visible, `.viewport`'s normal bottom-anchored rules above apply.
- *
- * The attribute-selector prefix gives this rule higher specificity than the
- * plain `.viewport` rules above (including the desktop media query one), so
- * a single unqualified declaration here overrides both breakpoints without
- * needing to duplicate the horizontal (`inset-inline*`) positioning.
- *
- * `:global(...)` wraps the `html[...]` selector because it targets a
- * non-locally-scoped element (`<html>`), not a CSS Module class — same
- * convention as `MapCardsSidebar.module.css`'s `data-filters-drawer-open` /
- * `data-search-panel-open` / `data-mobile-menu-open` rules.
- */
-:global(html[data-compare-bar-visible]) .viewport {
-    inset-block-start: var(--space-4, 1rem);
-    inset-block-end: auto;
-}
-
-@media (min-width: 768px) {
-    :global(html[data-compare-bar-visible]) .viewport {
-        inset-block-start: var(--space-6, 1.5rem);
-        inset-block-end: auto;
-    }
 }
 
 .toast {
@@ -79,8 +43,8 @@
     display: flex;
     align-items: stretch;
     gap: var(--space-3, 0.75rem);
-    padding: var(--space-4, 1rem);
-    min-height: 88px;
+    padding: var(--space-1) var(--space-2);
+    min-height: 48px;
     /*
      * background-color / border / box-shadow / border-radius come from the
      * shared `.overlay-surface` primitive (see apps/web/src/styles/
@@ -106,7 +70,8 @@
  * import order between this module and the shared global stylesheet.
  */
 .toast:global(.overlay-surface) {
-    background-color: var(--toast-bg, var(--surface-overlay, #fff));
+    background-color: var(--surface-overlay);
+    border-inline-start: var(--space-1) solid var(--toast-accent, var(--info));
 }
 
 /* Body fills the middle column and centers content vertically so short
@@ -125,7 +90,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 36px;
+    width: 24px;
     height: 36px;
     flex-shrink: 0;
     /* Center by default (text-only toasts). When the toast has actions
@@ -163,6 +128,7 @@
 }
 
 .action {
+    min-height: 40px;
     font-family: var(--font-sans);
     font-size: 0.8125rem;
     font-weight: 600;
@@ -180,8 +146,8 @@
 }
 
 .actionPrimary {
-    background-color: var(--toast-accent, var(--brand-primary));
-    color: var(--toast-accent-foreground, #fff);
+    background-color: var(--core-foreground-a05);
+    color: var(--core-foreground);
 }
 
 .actionPrimary:hover,

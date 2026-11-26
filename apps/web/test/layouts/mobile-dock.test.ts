@@ -70,7 +70,10 @@ describe('TEST:1768:6 bars stack with the dock', () => {
         expect(dock).toContain('bottom: var(--bottom-safe-inset, 0px)');
         const baseRule = toast.match(/\.viewport\s*\{([^}]+)\}/)?.[1] ?? '';
         expect(baseRule).toMatch(
-            /inset-block-end:\s*calc\([^;]*var\(--bottom-safe-inset, 0px\)\s*\+\s*var\(--mobile-dock-height, 0px\)[^;]*\)/
+            /inset-block-end:\s*calc\([^;]*var\(--floating-controls-bottom\)[^;]*\)/
+        );
+        expect(globalCss).toContain(
+            '--floating-controls-bottom: calc(var(--bottom-safe-inset, 0px) + var(--mobile-dock-height))'
         );
     });
 });

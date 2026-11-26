@@ -5,14 +5,14 @@
 
 .fab {
     position: fixed;
-    bottom: 24px;
-    right: 24px;
+    bottom: var(--floating-chat-bottom);
+    right: var(--space-6);
     z-index: 1000;
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 56px;
-    height: 56px;
+    width: var(--floating-chat-size);
+    height: var(--floating-chat-size);
     border: none;
     border-radius: var(--radius-pill, 9999px);
     background-color: var(--brand-primary, #2563eb);

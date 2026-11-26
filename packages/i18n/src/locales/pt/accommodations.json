@@ -449,6 +449,11 @@
         },
         "listingContact": {
             "bar": {
+                "dockMenu": "Cardápio",
+                "dockChat": "Chat",
+                "dockSave": "Salvar",
+                "dockShare": "Compartilhar",
+                "dockCompare": "Comparar",
                 "actions": {
                     "inquire": "Enviar consulta",
                     "viewMenu": "Ver cardápio",

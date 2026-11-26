@@ -787,6 +787,11 @@
         },
         "listingContact": {
             "bar": {
+                "dockMenu": "Carta",
+                "dockChat": "Chat",
+                "dockSave": "Guardar",
+                "dockShare": "Compartir",
+                "dockCompare": "Comparar",
                 "actions": {
                     "inquire": "Consultar",
                     "viewMenu": "Ver carta",

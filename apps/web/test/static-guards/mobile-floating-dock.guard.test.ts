@@ -49,6 +49,7 @@ const FIXED_POSITION_FILES: Readonly<Record<string, FixedPositionCategory>> = Ob
     'components/accommodation/AiChatWidget.module.css': 'overlay',
     'components/legal/CookieConsentBanner.module.css': 'bottom-bar',
     'components/ui/ToastViewport.module.css': 'bottom-bar',
+    'components/ShareButtons.module.css': 'overlay',
     // HOS-2413 account kit: the save bar and the toast region sit at the bottom edge.
     'components/account/ui/StickySaveBar.module.css': 'bottom-bar',
     'components/account/ui/Toast.module.css': 'bottom-bar',

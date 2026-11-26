@@ -82,6 +82,25 @@ const experience: ListingActionBarButtonsProps = {
     fallbackHref: '#experience-contact'
 };
 
+it.each([
+    ['es', ['Chat', 'WhatsApp', 'Llamar', 'Guardar', 'Compartir', 'Comparar']],
+    ['en', ['Chat', 'WhatsApp', 'Call', 'Save', 'Share', 'Compare']],
+    ['pt', ['Chat', 'WhatsApp', 'Ligar', 'Salvar', 'Compartilhar', 'Comparar']]
+] as const)('labels all accommodation dock actions in %s', (locale, labels) => {
+    const { container } = render(
+        <ListingActionBarButtons
+            {...accommodation}
+            locale={locale}
+        />
+    );
+
+    const visibleLabels = Array.from(container.querySelectorAll('[data-action] > .label')).map(
+        (node) => node.textContent
+    );
+
+    expect(visibleLabels).toEqual(labels);
+});
+
 const venue: ListingActionBarButtonsProps = {
     ...accommodation,
     vertical: 'venue',
@@ -557,7 +576,7 @@ describe('ListingActionBarButtons: HOS-2607 glyphs', () => {
 
         // Assert
         expect(menu).toHaveAttribute('data-menu-glyph', glyph);
-        expect(menu.innerHTML).toBe(
+        expect(menu.querySelector('svg')?.outerHTML).toBe(
             markupOf(
                 <Icon
                     size={22}
@@ -578,7 +597,7 @@ describe('ListingActionBarButtons: HOS-2607 glyphs', () => {
 
         const menu = screen.getByRole('link', { name: 'Ver carta' });
         expect(menu).toHaveAttribute('data-menu-glyph', 'food');
-        expect(menu.innerHTML).toBe(
+        expect(menu.querySelector('svg')?.outerHTML).toBe(
             markupOf(
                 <ForkKnifeIcon
                     size={22}
@@ -599,7 +618,7 @@ describe('ListingActionBarButtons: HOS-2607 glyphs', () => {
         render(<ListingActionBarButtons {...props} />);
 
         const link = screen.getByRole('link', { name: 'Escribir por WhatsApp' });
-        expect(link.innerHTML).toBe(
+        expect(link.querySelector('svg')?.outerHTML).toBe(
             markupOf(
                 <WhatsappIcon
                     size={22}
@@ -611,7 +630,7 @@ describe('ListingActionBarButtons: HOS-2607 glyphs', () => {
         // (The brand mark's own SVG <title> is not painted, and the svg is aria-hidden.)
         const outsideSvg = link.cloneNode(true) as HTMLElement;
         for (const svg of outsideSvg.querySelectorAll('svg')) svg.remove();
-        expect(outsideSvg.textContent?.trim()).toBe('');
+        expect(outsideSvg.textContent?.trim()).toBe('WhatsApp');
         expect(link.querySelector('svg text')).toBeNull();
         expect(link.querySelector('svg')).toHaveAttribute('aria-hidden', 'true');
     });
