@@ -15,6 +15,9 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+// Imported statically: a cold `await import()` inside the test counted the module
+// graph's transform against the 15s test timeout and timed out on loaded CI shards.
+import { comparisonScrollsOnMobile } from '../../../src/components/billing/plan-comparison-table.helpers';
 
 const src = readFileSync(
     resolve(__dirname, '../../../src/components/billing/PlanComparisonTable.astro'),
@@ -304,10 +307,7 @@ describe('PlanComparisonTable.astro — phone width (HOS-2599)', () => {
         expect(src).toMatch(/\.comparison-table--fits-mobile\s*\{\s*min-width:\s*0;/);
     });
 
-    it('scrolls only above two plan columns, so Gratis + VIP never hides VIP', async () => {
-        const { comparisonScrollsOnMobile } = await import(
-            '../../../src/components/billing/plan-comparison-table.helpers'
-        );
+    it('scrolls only above two plan columns, so Gratis + VIP never hides VIP', () => {
         expect(comparisonScrollsOnMobile({ planCount: 2 })).toBe(false);
         expect(comparisonScrollsOnMobile({ planCount: 3 })).toBe(true);
     });
