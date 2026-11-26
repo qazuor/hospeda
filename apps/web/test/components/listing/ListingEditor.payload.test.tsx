@@ -36,17 +36,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ListingEditorFormSectionId } from '../../../src/components/listing/editor/listing-section-payload';
 import { ListingEditor } from '../../../src/components/listing/ListingEditor.client';
-import type { ListingI18nValues } from '../../../src/components/listing/ListingTranslationPanel.client';
 import type { ListingDetail } from '../../../src/lib/listing/owner-listings';
-
-const { I18N_EDITED } = vi.hoisted(() => ({
-    I18N_EDITED: {
-        nameI18n: { es: 'Nombre ES', en: 'Name EN', pt: '' },
-        summaryI18n: { es: 'Resumen ES', en: '', pt: '' },
-        descriptionI18n: { es: 'Descripción ES', en: '', pt: '' },
-        richDescriptionI18n: { es: 'Ampliada ES', en: '', pt: '' }
-    }
-}));
 
 vi.mock('@/store/toast-store', () => ({ addToast: vi.fn() }));
 
@@ -54,87 +44,13 @@ vi.mock('../../../src/components/listing/ListingEditor.module.css', () => ({
     default: new Proxy({} as Record<string, string>, { get: (_t, prop) => String(prop) })
 }));
 
-// Shallow-stub the translation panel's UI (its own rendering behaviour,
-// including the ES display fallback, is covered by
-// ListingTranslationPanel.test.tsx) but keep `parseListingI18nValues`
-// REAL — not stubbed. It seeds `initialValues` here exactly as the real panel
-// would receive it (fallback-free, HOS-902), which is what lets these tests
-// assert on the real diff behaviour of `buildPatchPayload` rather than a
-// canned stand-in.
-//
-// Three triggers, each firing `onChange` the way the real panel would from a
-// single field edit:
-//  - `i18n-trigger` replaces the WHOLE i18n state at once (the pre-existing
-//    "every field actually edited" test below).
-//  - `i18n-summary-en-trigger` changes ONLY `summaryI18n.en`, built from
-//    `initialValues` — proves an untouched sibling FIELD never reaches the
-//    wire (HOS-902, field-level).
-//  - `i18n-name-en-trigger` changes ONLY `nameI18n.en`, built from
-//    `initialValues` — proves editing one LOCALE of a field never re-sends a
-//    fabricated value for its untouched `es` locale (HOS-902, locale-level —
-//    the gap the field-level fix alone did not close: `nameI18n` still ships
-//    whole across its three locales since the DB column is replaced, not
-//    merged per locale — see `sameValue`'s JSDoc in
-//    `ListingEditor.client.tsx`).
-vi.mock(
-    '../../../src/components/listing/ListingTranslationPanel.client',
-    async (importOriginal) => {
-        const actual =
-            await importOriginal<
-                typeof import('../../../src/components/listing/ListingTranslationPanel.client')
-            >();
-        return {
-            ...actual,
-            ListingTranslationPanel: ({
-                initialValues,
-                onChange
-            }: {
-                initialValues: ListingI18nValues;
-                onChange: (next: ListingI18nValues) => void;
-            }) => (
-                <>
-                    <button
-                        type="button"
-                        data-testid="i18n-trigger"
-                        onClick={() => onChange(I18N_EDITED)}
-                    >
-                        i18n
-                    </button>
-                    <button
-                        type="button"
-                        data-testid="i18n-summary-en-trigger"
-                        onClick={() =>
-                            onChange({
-                                ...initialValues,
-                                summaryI18n: {
-                                    ...initialValues.summaryI18n,
-                                    en: 'Nuevo resumen EN'
-                                }
-                            })
-                        }
-                    >
-                        edit summary en only
-                    </button>
-                    <button
-                        type="button"
-                        data-testid="i18n-name-en-trigger"
-                        onClick={() =>
-                            onChange({
-                                ...initialValues,
-                                nameI18n: {
-                                    ...initialValues.nameI18n,
-                                    en: 'The Grill'
-                                }
-                            })
-                        }
-                    >
-                        edit name en only
-                    </button>
-                </>
-            )
-        };
-    }
-);
+// HOS-2658: the translations page mounts the self-persisting section; its own
+// behaviour is covered by ListingTranslationsSection.test.tsx.
+vi.mock('@/components/account/editor/ListingTranslationsSection.client', () => ({
+    ListingTranslationsSection: ({ listingId }: { listingId: string }) => (
+        <div data-testid="translations-section">{listingId}</div>
+    )
+}));
 
 // HOS-371: `richDescription` is a TipTap editor now. This suite pins PATCH body
 // shapes, so booting a real editor per render would only add runtime — the
@@ -757,101 +673,41 @@ describe('ListingEditor — PATCH payload contract (HOS-258)', () => {
             );
         });
 
-        it('sends all four i18n fields together when EVERY one of them was actually edited', async () => {
+        it.each([
+            'venue',
+            'experience'
+        ] as const)('never sends the four *I18n keys from the %s save bar (HOS-2658, AC-22)', async (vertical) => {
+            renderEditor(
+                vertical,
+                buildListing({
+                    nameI18n: { es: 'La Parrilla', en: 'The Grill', pt: 'A Grelha' },
+                    summaryI18n: { es: 'Resumen', en: 'Summary', pt: 'Resumo' },
+                    descriptionI18n: { es: 'Desc', en: 'Desc EN', pt: 'Desc PT' },
+                    richDescriptionI18n: { es: 'Rica', en: 'Rich', pt: 'Rica PT' }
+                })
+            );
+
+            fireEvent.change(screen.getByLabelText(/^Nombre (del comercio|de la experiencia)/), {
+                target: { value: 'La Parrilla Nueva' }
+            });
+            fireEvent.click(saveButton());
+
+            const body = await wireBody();
+            expect(body).toHaveProperty('name', 'La Parrilla Nueva');
+            for (const key of [
+                'nameI18n',
+                'summaryI18n',
+                'descriptionI18n',
+                'richDescriptionI18n'
+            ]) {
+                expect(body).not.toHaveProperty(key);
+            }
+        });
+
+        it('mounts the self-persisting translations section on the translations page', () => {
             renderEditor('venue', buildListing(), 'translations');
 
-            fireEvent.click(screen.getByTestId('i18n-trigger'));
-            fireEvent.click(saveButton());
-
-            const body = await wireBody();
-            expect(body).toMatchObject({
-                nameI18n: I18N_EDITED.nameI18n,
-                summaryI18n: I18N_EDITED.summaryI18n,
-                descriptionI18n: I18N_EDITED.descriptionI18n,
-                richDescriptionI18n: I18N_EDITED.richDescriptionI18n
-            });
-        });
-
-        // HOS-902, field-level: editing one FIELD must not re-send its untouched
-        // siblings at all. `nameI18n`/`descriptionI18n`/`richDescriptionI18n`
-        // must be entirely ABSENT from the payload when only `summaryI18n`
-        // changed — not merely unchanged in value, but not sent.
-        it('does not send an untouched i18n field when only a sibling field changed (HOS-902)', async () => {
-            renderEditor('venue', buildListing({ name: 'La Parrilla Original' }), 'translations');
-
-            fireEvent.click(screen.getByTestId('i18n-summary-en-trigger'));
-            fireEvent.click(saveButton());
-
-            const body = await wireBody();
-            expect(body).toStrictEqual({
-                summaryI18n: { es: '', en: 'Nuevo resumen EN', pt: '' }
-            });
-            expect(body).not.toHaveProperty('nameI18n');
-            expect(body).not.toHaveProperty('descriptionI18n');
-            expect(body).not.toHaveProperty('richDescriptionI18n');
-        });
-
-        // Same, `experience` vertical (HOS-902 scope explicitly covers both —
-        // `ListingEditor` serves venue and experience through the
-        // same `buildPatchPayload`/i18n code path, which is vertical-agnostic;
-        // the price/practical-info branches are the only ones that fork on
-        // `vertical`).
-        it('does not send an untouched i18n field for the experience vertical either (HOS-902)', async () => {
-            renderEditor('experience', buildListing({ name: 'Paseo Original' }), 'translations');
-
-            fireEvent.click(screen.getByTestId('i18n-summary-en-trigger'));
-            fireEvent.click(saveButton());
-
-            const body = await wireBody();
-            expect(body).toStrictEqual({
-                summaryI18n: { es: '', en: 'Nuevo resumen EN', pt: '' }
-            });
-            expect(body).not.toHaveProperty('nameI18n');
-            expect(body).not.toHaveProperty('descriptionI18n');
-            expect(body).not.toHaveProperty('richDescriptionI18n');
-        });
-
-        // HOS-902, LOCALE-level — the key regression test, and the gap the
-        // field-level fix alone did NOT close.
-        //
-        // `nameI18n` is a single JSONB column, replaced wholesale on save (not
-        // merged per locale — `venue.model.ts`/`experience.model.ts` do
-        // not list it in `mergeableJsonbColumns`, only `contactInfo` is there).
-        // So editing only `nameI18n.en` still sends the WHOLE `nameI18n` object,
-        // `es` included. The listing here has a plain `name` but an EMPTY
-        // `nameI18n` — the ES tab would show "La Parrilla Original" as a
-        // FALLBACK (HOS-902's original fix). If that fallback ever leaked into
-        // `formData`/`baseline` (an earlier version of this fix baked it into
-        // `parseListingI18nValues`), this save would silently write "La
-        // Parrilla Original" into `nameI18n.es` — a value the owner never
-        // typed — and the public ficha (which PREFERS `nameI18n` over `name`,
-        // see `apps/web/src/lib/api/transforms.ts`) would freeze on that text
-        // forever, impossible to fix by renaming the plain `name` field again.
-        it('does not leak the ES display fallback into nameI18n.es when only nameI18n.en changed (HOS-902)', async () => {
-            renderEditor('venue', buildListing({ name: 'La Parrilla Original' }), 'translations');
-
-            fireEvent.click(screen.getByTestId('i18n-name-en-trigger'));
-            fireEvent.click(saveButton());
-
-            const body = await wireBody();
-            // The whole nameI18n object DOES travel (column replaces wholesale)
-            // — but `es` must be the real stored value (empty), never the
-            // plain-column fallback text.
-            expect(body).toStrictEqual({
-                nameI18n: { es: '', en: 'The Grill', pt: '' }
-            });
-        });
-
-        it('does not leak the ES display fallback for the experience vertical either (HOS-902)', async () => {
-            renderEditor('experience', buildListing({ name: 'Paseo Original' }), 'translations');
-
-            fireEvent.click(screen.getByTestId('i18n-name-en-trigger'));
-            fireEvent.click(saveButton());
-
-            const body = await wireBody();
-            expect(body).toStrictEqual({
-                nameI18n: { es: '', en: 'The Grill', pt: '' }
-            });
+            expect(screen.getByTestId('translations-section')).toHaveTextContent('abc');
         });
     });
 

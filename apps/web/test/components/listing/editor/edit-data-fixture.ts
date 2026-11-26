@@ -52,12 +52,6 @@ export function buildEditData(overrides: Partial<ListingEditData> = {}): Listing
         policies: {},
         amenityIds: new Set<string>(),
         featureIds: new Set<string>(),
-        i18nValues: {
-            nameI18n: blankI18n(),
-            summaryI18n: blankI18n(),
-            descriptionI18n: blankI18n(),
-            richDescriptionI18n: blankI18n()
-        },
         refreshSlugFromName: false,
         ...overrides
     };

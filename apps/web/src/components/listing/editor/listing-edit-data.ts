@@ -11,7 +11,6 @@
 import type { I18nText, OpeningHours } from '@repo/schemas';
 import type { AmenityAttributeValue } from '@/lib/api/types';
 import type { ListingPolicyValues } from '@/lib/listing/listing-policies';
-import type { ListingI18nValues } from '../ListingTranslationPanel.client';
 
 /**
  * The `contactInfo` members this surface exposes, in render order.
@@ -214,7 +213,6 @@ export interface ListingEditData {
      */
     readonly amenityAttributes: Readonly<Record<string, AmenityAttributeValue>>;
     readonly featureIds: ReadonlySet<string>;
-    readonly i18nValues: ListingI18nValues;
     readonly refreshSlugFromName: boolean;
 }
 
