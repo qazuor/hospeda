@@ -473,7 +473,7 @@
                 "priceOnRequest": "Consultar preço"
             },
             "panel": {
-                "title": "Fale com {{name}}",
+                "title": "Fale com o anfitrião: {{name}}",
                 "shortcuts": { "whatsapp": "WhatsApp", "phone": "Ligar", "email": "E-mail" },
                 "trust": "Sua consulta vai direto para o anfitrião. Sem comissões."
             },
@@ -547,6 +547,8 @@
             "cta": "Consultar pelo WhatsApp",
             "messageTemplate": "Olá, tenho interesse em mais informações sobre {{name}}",
             "numberLabel": "WhatsApp do anfitrião",
+            "compactGate": "Ver o WhatsApp do anfitrião",
+            "previewLabel": "Mensagem a enviar",
             "upsellText_one": "Assine o plano {{plans}} para ver o WhatsApp do anfitrião.",
             "upsellText_other": "Assine um dos planos {{plans}} para ver o WhatsApp do anfitrião.",
             "upsellTextNoPlans": "Seu plano atual não inclui ver o WhatsApp do anfitrião.",

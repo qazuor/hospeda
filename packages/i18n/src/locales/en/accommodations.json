@@ -473,7 +473,7 @@
                 "priceOnRequest": "Ask for pricing"
             },
             "panel": {
-                "title": "Contact {{name}}",
+                "title": "Contact the host: {{name}}",
                 "shortcuts": { "whatsapp": "WhatsApp", "phone": "Call", "email": "Email" },
                 "trust": "Your inquiry goes directly to the host. No commission."
             },
@@ -547,6 +547,8 @@
             "cta": "Contact via WhatsApp",
             "messageTemplate": "Hi, I'm interested in more information about {{name}}",
             "numberLabel": "Host's WhatsApp",
+            "compactGate": "View the host's WhatsApp",
+            "previewLabel": "Message to send",
             "upsellText_one": "Subscribe to the {{plans}} plan to see the host's WhatsApp.",
             "upsellText_other": "Subscribe to one of the {{plans}} plans to see the host's WhatsApp.",
             "upsellTextNoPlans": "Your current plan does not include seeing the host's WhatsApp.",

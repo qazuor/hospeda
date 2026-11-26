@@ -58,6 +58,25 @@ describe('VenueWhatsAppButton', () => {
         expect(getWhatsApp).not.toHaveBeenCalled();
     });
 
+    it.each([
+        'PUBLIC',
+        'LOGGED_IN_ONLY'
+    ] as const)('uses the phone button treatment for the inline %s channel', (mode) => {
+        render(
+            <VenueWhatsAppButton
+                {...base}
+                inlineChannel
+                whatsapp={mode === 'PUBLIC' ? { mode, number: NUMBER } : { mode }}
+            />
+        );
+
+        const link = screen.getByRole('link');
+        expect(link).toHaveClass('btn-gradient--sm', 'btn-gradient--outline-primary');
+        if (mode === 'PUBLIC')
+            expect(link).toHaveAttribute('data-interaction-kind', 'WHATSAPP_CLICK');
+        else expect(link).not.toHaveAttribute('data-interaction-kind');
+    });
+
     it('AC-18 server markup of LOGGED_IN_ONLY has no number and sends anonymous visitors to sign in', () => {
         const html = renderToStaticMarkup(
             <VenueWhatsAppButton

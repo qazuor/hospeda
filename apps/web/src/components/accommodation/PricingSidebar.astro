@@ -12,11 +12,13 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { DEFAULT_ACCOMMODATION_CURRENCY } from '@/lib/listing-contact/listing-contact-price';
 import type { ListingContactPrice } from '@/lib/listing-contact/listing-contact-price';
 import { resolvePriceCardAction } from '@/lib/listing-contact/price-card-action';
-import { ConversationCta } from './ConversationCta.client';
+import { ListingContactActions } from '@/components/listing/contact/ListingContactActions';
 import { UsersIcon, MoonIcon, CalendarIcon, ChevronDownIcon } from '@repo/icons';
 
 interface Props {
   readonly accommodationId: string;
+  readonly panelId: string;
+  readonly hasWhatsapp: boolean;
   readonly price: AccommodationDetailData['price'];
   readonly contactPrice: ListingContactPrice;
   readonly extraInfo?: AccommodationDetailData['extraInfo'];
@@ -25,7 +27,7 @@ interface Props {
   readonly lang: string;
 }
 
-const { accommodationId, price, contactPrice, extraInfo, policies, lang } = Astro.props;
+const { accommodationId, panelId, hasWhatsapp, price, contactPrice, extraInfo, policies, lang } = Astro.props;
 const { t, tPlural } = createTranslations(lang as SupportedLocale);
 
 const primary = resolvePriceCardAction({ canInquire: true });
@@ -122,7 +124,7 @@ const hasDiscounts = discountEntries.length > 0;
   <ListingPriceCard listingId={accommodationId} vertical="accommodation" locale={lang as SupportedLocale} price={contactPrice} action={primary} hostReply stacked>
     {primary.kind === 'inquire' && (
       <div class="pricing-sidebar__consult">
-        <ConversationCta client:idle accommodationId={accommodationId} locale={lang as SupportedLocale} labelKey={primary.labelKey} />
+        <ListingContactActions client:idle listingId={accommodationId} panelId={panelId} hasWhatsapp={hasWhatsapp} vertical="accommodation" locale={lang as SupportedLocale} primaryLabelKey={primary.labelKey} origin="summary" />
       </div>
     )}
   </ListingPriceCard>

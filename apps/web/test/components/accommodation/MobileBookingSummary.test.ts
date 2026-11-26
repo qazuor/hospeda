@@ -2,6 +2,16 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
+it('offers the WhatsApp shortcut directly at the desktop price', () => {
+    const sidebar = readFileSync(
+        resolve(__dirname, '../../../src/components/accommodation/PricingSidebar.astro'),
+        'utf8'
+    );
+    expect(sidebar).toMatch(
+        /<ListingPriceCard[\s\S]*?<ListingContactActions[\s\S]*?hasWhatsapp=\{hasWhatsapp\}[\s\S]*?<\/ListingPriceCard>/
+    );
+});
+
 const source = (path: string) => readFileSync(resolve(__dirname, '../../../src', path), 'utf8');
 
 describe('MobileBookingSummary', () => {
@@ -24,7 +34,7 @@ describe('MobileBookingSummary', () => {
     it('keeps the price CTA in a session-blind Astro card with client-side conversation lookup', () => {
         const sidebar = source('components/accommodation/PricingSidebar.astro');
         expect(sidebar).toContain('<ListingPriceCard');
-        expect(sidebar).toContain('<ConversationCta client:idle accommodationId={accommodationId}');
+        expect(sidebar).toContain('<ListingContactActions client:idle listingId={accommodationId}');
         expect(sidebar).not.toMatch(/Astro\.locals|\/protected\//);
     });
 
@@ -32,7 +42,7 @@ describe('MobileBookingSummary', () => {
         const sidebar = source('components/accommodation/PricingSidebar.astro');
         const summary = source('components/accommodation/MobileBookingSummary.astro');
 
-        expect(sidebar).toContain('labelKey={primary.labelKey}');
+        expect(sidebar).toContain('primaryLabelKey={primary.labelKey}');
         expect(summary).toContain('primaryLabelKey={primary.labelKey}');
         expect(summary).toContain('<ListingPriceCard');
     });

@@ -913,7 +913,7 @@ const { sections: faqSections, inLanguage: faqInLanguage } = buildFaqJsonLdSecti
     <!-- Sidebar -->
     <Fragment slot="sidebar">
         <div class="acc-sidebar">
-            <PricingSidebar accommodationId={accommodation.id} price={accommodation.price} contactPrice={contactPrice} extraInfo={accommodation.extraInfo} policies={accommodation.policies} lang={locale} />
+            <PricingSidebar accommodationId={accommodation.id} panelId={panelId} hasWhatsapp={accommodation.hasWhatsapp} price={accommodation.price} contactPrice={contactPrice} extraInfo={accommodation.extraInfo} policies={accommodation.policies} lang={locale} />
             <ListingPriceAlert accommodationId={accommodation.id} apiUrl={getApiUrl()} locale={locale} placement="sidebar" />
             <ContactCard>
                 <ContactHostShell contactInfo={accommodation.contactInfo} locale={locale}>
@@ -925,6 +925,7 @@ const { sections: faqSections, inLanguage: faqInLanguage } = buildFaqJsonLdSecti
                         whatsappPlansHref={whatsappPlansHref}
                         gatePlanNames={whatsappGatePlanNames}
                         phone={accommodation.contactInfo?.phone}
+                        email={accommodation.contactInfo?.email}
                         capacity={accommodation.extraInfo?.capacity}
                         initialMessage={prefilledMessage}
                         locale={locale}

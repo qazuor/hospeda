@@ -235,7 +235,7 @@ test.describe('GUEST-13: listing action bar @p1 @guest @discovery @messaging', (
             await expect(trigger).toHaveAttribute('aria-haspopup', 'dialog', { timeout: 15_000 });
             await trigger.tap();
 
-            const dialog = page.getByRole('dialog', { name: /^Consultá a \S/ });
+            const dialog = page.getByRole('dialog', { name: /^Consultá al anfitrión: \S/ });
             await expect(dialog).toBeVisible();
             const region = dialog.getByRole('region', { name: 'WhatsApp' });
             await expect(region).toBeFocused();

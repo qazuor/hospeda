@@ -38,6 +38,22 @@ const DATA_TYPES_PATH = join(__dirname, '../../../src/data/types.ts');
 const TRANSFORMS_PATH = join(__dirname, '../../../src/lib/api/transforms.ts');
 
 describe('venue contact block — no whatsapp read path (HOS-1076)', () => {
+    it('places the gated venue island within the contact channel row, before social links', () => {
+        const block = readFileSync(
+            join(__dirname, '../../../src/components/listing/contact/ListingContactBlock.astro'),
+            'utf8'
+        );
+        const page = readFileSync(
+            join(__dirname, '../../../src/pages/[lang]/comer-y-salir/[slug].astro'),
+            'utf8'
+        );
+
+        expect(block).toMatch(
+            /class="listing-contact__channels"[\s\S]*?<VenueWhatsAppContact[\s\S]*?<ListingSocialLinks/
+        );
+        expect(page).not.toContain('Component: VenueWhatsAppContact');
+        expect(page).toContain('venueWhatsAppContact:');
+    });
     it('the allowed social keys and their list in listing-contact-block.ts have no whatsapp entry', () => {
         const source = readFileSync(CONTACT_BLOCK_PATH, 'utf-8');
         const keys = source.match(/type PublicSocialKey = [^;]*;/);

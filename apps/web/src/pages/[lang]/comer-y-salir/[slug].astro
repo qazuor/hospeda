@@ -37,7 +37,6 @@ import VenueNightInfo from '@/components/venue/VenueNightInfo.astro';
 import ListingHouseRules from '@/components/listing/ListingHouseRules.astro';
 import OpeningHoursSection from '@/components/venue/OpeningHoursSection.astro';
 import ListingContactBlock from '@/components/listing/contact/ListingContactBlock.astro';
-import VenueWhatsAppContact from '@/components/venue/VenueWhatsAppContact.astro';
 import LocationSection from '@/components/listing/location/LocationSection.astro';
 import { buildVenueJsonLdPlace } from '@/lib/venue/venue-address';
 import { hasVenuePublicContact } from '@/lib/venue-contact';
@@ -343,20 +342,18 @@ interface VenueDetailBlock {
 
 const hasOpeningHours =
     venue.openingHours !== null && Object.keys(venue.openingHours).length > 0;
-const hasContactBlock = hasVenueContact;
 /** HOS-2579 §6.5: the street line, the exact pin and the counted map link; `null` without an address. */
 const venueLocation = buildVenueLocation({ venue, locale });
 
 /**
- * HOS-2579 §6.4: the shared contact block. Its builder renders on the same
- * `hasVenuePublicContact` predicate as `hasVenueContact`, so it is non-null
- * exactly when `hasContactBlock` is true.
+ * HOS-2579 §6.4: the shared contact block, including WhatsApp-only venues.
  */
 const venueContactBlock = buildVenueContactBlock({
     listingId: venue.id,
     contactInfo: venue.contactInfo,
     socialNetworks: venue.socialNetworks,
     menuUrl: venue.menuUrl,
+    hasWhatsapp: Boolean(venueWhatsApp),
     locale
 });
 
@@ -400,15 +397,16 @@ const venueDetailSectionBlocks: Readonly<
     ],
     contact: [
         ...(venueContactBlock
-            ? [{ Component: ListingContactBlock, props: { ...venueContactBlock } }]
-            : []),
-        // HOS-2256: the WhatsApp button. The component decides by itself whether
-        // there is anything to show (the owner's choice rides the public payload;
-        // the page reads no session), like the other self-hiding blocks.
-        {
-            Component: VenueWhatsAppContact,
-            props: { venue, signInHref: reviewSignInHref, locale }
-        }
+            ? [{
+                  Component: ListingContactBlock,
+                  props: {
+                      ...venueContactBlock,
+                      venueWhatsAppContact: venueWhatsApp
+                          ? { venue: { id: venue.id, name: venue.name, whatsapp: venueWhatsApp }, signInHref: reviewSignInHref, locale }
+                          : undefined
+                  }
+              }]
+            : [])
     ],
     menu: [
         {
@@ -458,7 +456,7 @@ const hasDescriptionSection = hasListingDescription({
     richDescription: venue.richDescription
 });
 const hasOffersSection = hasVenueOffersContent({ venue, showEventsCta });
-const hasContactSection = venueContactBlock !== null || Boolean(venueWhatsApp);
+const hasContactSection = venueContactBlock !== null;
 const hasSummarySection = Boolean(venue.priceRange || barPhoneHref || venue.contactInfo?.workEmail) || contactMode.kind !== 'none';
 const hasPoliciesSection = hasHouseRules({ policies: houseRulePolicies, locale });
 const sectionTabs = buildListingSectionTabs({

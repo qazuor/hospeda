@@ -68,6 +68,8 @@ export interface VenueWhatsAppButtonProps {
     /** Sign-in URL that returns to this page, for anonymous visitors. */
     readonly signInHref: string;
     readonly locale: SupportedLocale;
+    /** Use the same outline treatment as the other links in the contact block. */
+    readonly inlineChannel?: boolean;
 }
 
 /** Where the signed-in visitor's lookup stands. */
@@ -86,7 +88,8 @@ export function VenueWhatsAppButton({
     venueName,
     whatsapp,
     signInHref,
-    locale
+    locale,
+    inlineChannel = false
 }: VenueWhatsAppButtonProps) {
     const { t } = createTranslations(locale);
     // Simple mode (no `initialUser`): `user` starts `null` for everyone, so the
@@ -125,6 +128,20 @@ export function VenueWhatsAppButton({
     const renderLink = (number: string) => {
         const { url } = buildWhatsAppLink({ phone: number, message });
         if (!url) return null;
+        if (inlineChannel)
+            return (
+                <GradientButton
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    variant="outline-primary"
+                    size="sm"
+                    className="listing-contact__channel"
+                    leadingIcon={<WhatsAppGlyph size={16} />}
+                    label={cta}
+                    dataAttributes={{ 'data-interaction-kind': 'WHATSAPP_CLICK' }}
+                />
+            );
         return (
             <a
                 href={url}
@@ -153,8 +170,9 @@ export function VenueWhatsAppButton({
                 as="a"
                 href={signInHref}
                 variant="outline-primary"
-                size="md"
-                leadingIcon={<WhatsAppGlyph size={20} />}
+                size={inlineChannel ? 'sm' : 'md'}
+                className={inlineChannel ? 'listing-contact__channel' : undefined}
+                leadingIcon={<WhatsAppGlyph size={inlineChannel ? 16 : 20} />}
                 label={t(
                     'venue.detail.whatsapp.signInCta',
                     'Iniciá sesión para escribir por WhatsApp'
