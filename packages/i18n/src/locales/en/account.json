@@ -593,6 +593,10 @@
             "label": "AI assistants sections",
             "assistants": "Assistants",
             "history": "History"
+        },
+        "noAccess": {
+            "body": "The AI assistant is not included in your current plan. It comes included at no extra cost in every paid plan.",
+            "cta": "See plans"
         }
     },
     "subscription": {
@@ -1612,7 +1616,9 @@
             "create": {
                 "pageTitle": "New post",
                 "sectionTitle": "Post details",
-                "placeholder": { "category": "Choose a category" },
+                "placeholder": {
+                    "category": "Choose a category"
+                },
                 "subtitle": "Fill in the basics now — you'll be able to add photos and more details afterward in the editor.",
                 "field": {
                     "title": "Title",
