@@ -61,6 +61,7 @@ const PRE_TRIAL: CoverageResponse = { covered: false, sources: [preTrialSource, 
 
 /** Ports for an actor whose effective set holds `limits` and nothing else. */
 function accessPorts(args: {
+    readonly vertical?: VerticalEnum;
     readonly limits?: readonly { readonly key: string; readonly value: number }[];
     readonly entitlements?: readonly { readonly key: string; readonly value: number }[];
     readonly draftLimits?: ReadonlyMap<string, number>;
@@ -70,7 +71,7 @@ function accessPorts(args: {
         rehydrateEffectiveSet({
             version: 1,
             userId,
-            vertical: VERTICAL,
+            vertical: args.vertical ?? VERTICAL,
             hasLiveNonTrialTitle: false,
             inheritsTouristVip: false,
             entries: [
@@ -112,6 +113,49 @@ function draftEdit(args: {
 }
 
 describe('HOS-1721 pre-trial photo limit on a DRAFT (step 7)', () => {
+    it.each([
+        [VerticalEnum.VENUE, 'max_photos_per_venue', 'edit_venue_info'],
+        [VerticalEnum.EXPERIENCE, 'max_photos_per_experience', 'edit_experience_info']
+    ])('uses the %s photo fallback on a DRAFT only', async (vertical, key, entitlement) => {
+        const ports = accessPorts({
+            vertical,
+            draftLimits: new Map([[key, 15]]),
+            entitlements: [{ key: entitlement, value: 1 }]
+        });
+
+        const atCap = await resolveListingAccess({
+            ...draftEdit({ key, requested: 15 }),
+            vertical,
+            ...ports
+        });
+        const overCap = await resolveListingAccess({
+            ...draftEdit({ key, requested: 16 }),
+            vertical,
+            ...ports
+        });
+        const published = await resolveListingAccess({
+            ...draftEdit({ key, requested: 1, status: PublicationStatusEnum.PUBLISHED }),
+            vertical,
+            ...ports
+        });
+
+        expect(atCap).toEqual({ allowed: true, subjectId: OWNER, evaluatedSteps: [4, 5, 7] });
+        expect(overCap).toEqual({
+            allowed: false,
+            reason: 'LIMIT_REACHED',
+            key,
+            max: 15,
+            requested: 16
+        });
+        expect(published).toEqual({
+            allowed: false,
+            reason: 'LIMIT_REACHED',
+            key,
+            max: 0,
+            requested: 1
+        });
+        expect(ports.preTrialDraftLimits.mock.calls).toHaveLength(2);
+    });
     it('allows the main photo on the own DRAFT of a pre-trial actor with empty limits', async () => {
         // Arrange
         const ports = accessPorts({});
@@ -271,13 +315,20 @@ describe('isPreTrialCoverage', () => {
 });
 
 describe('resolvePreTrialDraftLimits', () => {
-    function catalogWithTrial(args: { readonly trialDays?: number } = {}) {
+    function catalogWithTrial(
+        args: {
+            readonly trialDays?: number;
+            readonly vertical?: VerticalEnum;
+            readonly key?: string;
+        } = {}
+    ) {
         const catalog = createInMemoryCatalog();
         catalog.addPlanVersion(
             planVersionRow({
                 rank: 10,
+                vertical: args.vertical ?? VERTICAL,
                 limits: [
-                    { key: PHOTOS, value: 15, aggregationStrategy: 'SUM' },
+                    { key: args.key ?? PHOTOS, value: 15, aggregationStrategy: 'SUM' },
                     { key: AI_QUOTA, value: 5, aggregationStrategy: 'SUM' }
                 ]
             })
@@ -285,12 +336,14 @@ describe('resolvePreTrialDraftLimits', () => {
         catalog.addPlanVersion(
             planVersionRow({
                 rank: 30,
-                limits: [{ key: PHOTOS, value: 40, aggregationStrategy: 'SUM' }]
+                vertical: args.vertical ?? VERTICAL,
+                limits: [{ key: args.key ?? PHOTOS, value: 40, aggregationStrategy: 'SUM' }]
             })
         );
         const trialVersionId = catalog.addPlanVersion(
             planVersionRow({
                 planId: 'trial-plan',
+                vertical: args.vertical ?? VERTICAL,
                 sellable: false,
                 limits: [{ key: 'max_accommodations', value: 3, aggregationStrategy: 'SUM' }]
             })
@@ -305,20 +358,24 @@ describe('resolvePreTrialDraftLimits', () => {
         return { reader: catalog.reader, trialPlans };
     }
 
-    it('resolves the photo cap the trial would grant, from the lowest-rank sellable version', async () => {
+    it.each([
+        [VERTICAL, PHOTOS],
+        [VerticalEnum.VENUE, 'max_photos_per_venue'],
+        [VerticalEnum.EXPERIENCE, 'max_photos_per_experience']
+    ])('resolves the %s photo cap from the lowest-rank sellable version', async (vertical, key) => {
         // Arrange
-        const { reader, trialPlans } = catalogWithTrial();
+        const { reader, trialPlans } = catalogWithTrial({ vertical, key });
         // Act
         const limits = await resolvePreTrialDraftLimits({
             billing: { coverage: async () => PRE_TRIAL },
             reader,
             trialPlans,
             userId: OWNER,
-            vertical: VERTICAL
+            vertical
         });
         // Assert: only photo keys, never the AI quota nor the trial overrides.
-        expect([...limits.entries()]).toEqual([[PHOTOS, 15]]);
-        expect(PRE_TRIAL_DRAFT_LIMIT_KEYS_BY_VERTICAL).toEqual({ [VERTICAL]: [PHOTOS] });
+        expect([...limits.entries()]).toEqual([[key, 15]]);
+        expect(PRE_TRIAL_DRAFT_LIMIT_KEYS_BY_VERTICAL[vertical]).toEqual([key]);
     });
 
     it('resolves nothing for an actor who is not pre-trial', async () => {

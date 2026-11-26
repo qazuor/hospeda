@@ -1,20 +1,15 @@
 /**
  * packages/service-core/test/services/accommodation/addMedia.gallery-cap.test.ts
  *
- * HOS-389 §2 — registering a gallery row must respect the per-entity cap.
+ * HOS-2495 (AC-17) — registering a gallery row is NOT capped by a literal.
  *
- * The cap was already enforced server-side, but only at the UPLOAD routes
- * (`media/protected/upload-entity.ts`, `media/admin/upload.ts`) — the step that
- * costs a Cloudinary asset. `addMedia`, the step that registers the row, never
- * checked it, so anything calling it directly with an already-uploaded URL
- * walked straight past the limit.
- *
- * The expected count is read from `getGalleryCap` rather than hardcoded: the
- * point of the fix is that both paths consult ONE constant, and a test asserting
- * `50` would keep passing while the service drifted onto a private literal.
+ * HOS-389 §2 added a literal `getGalleryCap('accommodation')` (50) here. With
+ * the owner's effective photo limit enforced by step 7 on every route that
+ * reaches `addMedia`, that literal only refused what the owner paid for: a
+ * Premium plan (50) with one `extra-photos-20` pack (70) was cut at 51.
  */
 import { resetDb, setDb } from '@repo/db';
-import { getGalleryCap, ModerationStatusEnum, PermissionEnum, RoleEnum } from '@repo/schemas';
+import { ModerationStatusEnum, PermissionEnum, RoleEnum } from '@repo/schemas';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
 import type { ServiceConfig } from '../../../src/types';
@@ -48,7 +43,8 @@ vi.mock('../../../src/revalidation/revalidation-init.js', () => ({
 }));
 
 const ACCOMMODATION_ID = '00000000-0000-4000-8000-0000000000a1';
-const CAP = getGalleryCap('accommodation');
+/** The literal cap this service used to enforce. */
+const OLD_LITERAL_CAP = 50;
 
 const ownerActor = {
     id: '00000000-0000-4000-8000-0000000000ff',
@@ -147,33 +143,16 @@ const validMedia = {
     moderationState: ModerationStatusEnum.APPROVED
 };
 
-describe('AccommodationService.addMedia — gallery cap (HOS-389 §2)', () => {
+describe('AccommodationService.addMedia — no literal gallery cap (HOS-2495)', () => {
     afterEach(() => {
         resetDb();
     });
 
-    it('refuses to register a row once the gallery is at cap, and writes nothing', async () => {
-        const dbMock = makeMediaDbMock({ visibleCount: CAP });
-        setDb(dbMock as never);
-
-        const result = await buildService().addMedia(
-            ownerActor as never,
-            {
-                accommodationId: ACCOMMODATION_ID,
-                media: validMedia
-            } as never
-        );
-
-        expect(result.error?.code).toBe('QUOTA_EXCEEDED');
-        // The row must not land: a rejection that still inserts is worse than
-        // no cap at all, because the caller is told it failed.
-        expect(dbMock._insertSpy).not.toHaveBeenCalled();
-    });
-
-    it('accepts the last photo that still fits', async () => {
-        // Boundary: at CAP-1 the gallery has room for exactly one more. An
-        // off-by-one here would cap owners one photo below their real allowance.
-        const dbMock = makeMediaDbMock({ visibleCount: CAP - 1 });
+    it.each([
+        OLD_LITERAL_CAP,
+        69
+    ])('registers a row with %s gallery photos already visible (past the old literal)', async (visibleCount) => {
+        const dbMock = makeMediaDbMock({ visibleCount });
         setDb(dbMock as never);
 
         const result = await buildService().addMedia(
@@ -202,12 +181,5 @@ describe('AccommodationService.addMedia — gallery cap (HOS-389 §2)', () => {
 
         expect(result.error).toBeUndefined();
         expect(dbMock._insertSpy).toHaveBeenCalledTimes(1);
-    });
-
-    it('reports the real numbers so the caller can render them', () => {
-        // The cap is a shared constant, not a local literal — this is what ties
-        // the service to the same value the upload routes enforce.
-        expect(CAP).toBeGreaterThan(0);
-        expect(getGalleryCap('accommodation')).toBe(CAP);
     });
 });

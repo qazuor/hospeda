@@ -38,7 +38,9 @@ describe('TEST:1692:7 the staff bypass set covers every permission read on a clo
         }
     });
 
-    it('instruments the current 39 declarations and six route-read permissions', () => {
+    // HOS-2495 added three READ_OWN photo-allowance reads (39 -> 42). They read no
+    // PermissionEnum value (listingAccess decides), so the six permissions hold.
+    it('instruments the current 42 declarations and six route-read permissions', () => {
         const permissions = [
             ...new Set(
                 closedListRows.flatMap(({ text }) =>
@@ -48,7 +50,14 @@ describe('TEST:1692:7 the staff bypass set covers every permission read on a clo
                 )
             )
         ].sort();
-        expect(closedListRows).toHaveLength(39);
+        expect(closedListRows).toHaveLength(42);
+        expect(closedListRows.map(({ file }) => file)).toEqual(
+            expect.arrayContaining([
+                'accommodation/protected/getPhotoAllowance.ts',
+                'experience/protected/getPhotoAllowance.ts',
+                'venue/protected/getPhotoAllowance.ts'
+            ])
+        );
         expect(permissions).toEqual([
             'ACCOMMODATION_VIEW_ALL',
             'BILLING_VIEW_OWN',

@@ -27,6 +27,24 @@ const { mockListMedia, mockUploadEntityImage, mockAddMedia, mockAddFeaturedMedia
 );
 
 vi.mock('@/lib/api/endpoints-protected', () => ({
+    listingPhotoAllowanceApi: {
+        // HOS-2495: the cap is the listing's photo allowance.
+        getAllowance: vi.fn(() =>
+            Promise.resolve({
+                ok: true,
+                data: {
+                    limitKey: 'max_photos_per_accommodation',
+                    status: 'LIMITED',
+                    cap: 50,
+                    source: 'EFFECTIVE_SET',
+                    used: 0,
+                    hiddenCount: 0,
+                    coverAllowed: true,
+                    breakdown: null
+                }
+            })
+        )
+    },
     accommodationMediaApi: {
         listMedia: mockListMedia,
         addMedia: mockAddMedia,
@@ -43,17 +61,11 @@ vi.mock('@/lib/media/upload-entity', () => ({
     uploadEntityImage: mockUploadEntityImage
 }));
 
-vi.mock('@/hooks/useMyEntitlements', () => ({
-    useMyEntitlements: () => ({
-        has: () => false,
-        limit: () => 50,
-        plan: null,
-        isLoading: false,
-        error: null
-    })
-}));
-
-const props: PhotoSectionProps = { locale: 'es', accommodationId: 'acc-uuid-123' };
+const props: PhotoSectionProps = {
+    locale: 'es',
+    vertical: 'accommodation',
+    listingId: 'acc-uuid-123'
+};
 
 interface Case {
     readonly name: string;

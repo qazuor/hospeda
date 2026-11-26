@@ -536,6 +536,27 @@ touching PR to `staging` (CLAUDE.md). This part is TEST:B13a:14 and TEST:U1:19.
   - Step 6, cancelling a migration and the «nothing changes» email: `hueco`.
   - The annual customer untouched: `hueco`.
 
+### S24 — Listing photo cap and the venue photo pack (HOS-2495)
+
+- **Preconditions:** Staging has HOS-2495 deployed. On the VPS, `hops --target=staging db-seed-migrate --status` lists `0196-hos-2495-listing-photo-limits-grant` as applied (the VPS `hops` is a compiled binary: run `hops update` first, or the status reads an old checkout). Mercado Pago sandbox. A venue owner on `venue-basico` (cap 15) with a published venue holding a cover and 16 approved gallery photos, and an experience owner with a published experience.
+- **Steps:**
+  1. Right after the deploy, open the public page of a published venue and of a published experience whose owners have coverage. Both galleries still show their photos (not the cover alone).
+  2. As the venue owner, open `/es/mi-cuenta/comercio/venue/{id}/editar/fotos/`. The cap line reads «Subí hasta 15 fotos de tu ficha de Comer y salir.» with «15 de tu plan = 15»; photo 16 carries «No se muestra: superás tu tope» and the summary counts 1; the public page shows 15 gallery photos.
+  3. Move photo 16 up one place. Reload the editor: the badge is now on the photo that moved down. Reload the public page: it shows the new order and still 15 photos.
+  4. Buy «Extra Venue Photos Pack (+20 photos)» in the Mercado Pago sandbox. After the webhook, reload the editor: the cap reads 35 with «15 de tu plan + 20 de packs de fotos = 35», no tile is marked, and the public page shows all 16.
+  5. Cancel the pack (or let it end). Reload: the cap is back to 15, photo 16 is marked again, and the public page shows 15 after the cache revalidates.
+  6. As the experience owner, open the experience `fotos` page: the same editor, the experience copy and cap; upload one photo, edit its alt text, delete it with the confirmation.
+  7. With an owner who has no plan and no trial, open `fotos`: «necesitás un plan» with a «Ver planes» link, uploads disabled, existing photos listed. No screen at any step shows «Limit reached» or «Entitlement required».
+- **Expected:** The cap in the editor, the number step 7 enforces and the public gallery agree at every step. Buying and losing the pack moves the cap and the hidden photos with it. No raw API message reaches the screen.
+- **Evidence:** Captures of the editor cap line and breakdown at 15 and 35, of the over-cap badge before and after the reorder, and of the public gallery count at each step; the sandbox preapproval ID of the pack.
+- **Covers:** HOS-2495 AC-1, AC-5, AC-6, AC-10, AC-11, AC-14, AC-15, AC-20; risk R-1.
+- **Coverage:**
+  - Step 1, galleries intact after the deploy (R-1): `hueco` (needs the real migration order on the VPS).
+  - Steps 2 and 3, cap line, badge and reorder: `e2e: verticals/listing-photos-cap.spec.ts (PR)` with seeded rows on the trial cap; `unit: apps/web/test/components/host/editor/PhotoSection.verticals.test.tsx`.
+  - Steps 4 and 5, buying and losing the pack: `sólo MP real` for the purchase; the cap arithmetic is covered by the API allowance tests.
+  - Step 6, the experience editor: `unit: PhotoSection.verticals.test.tsx` (experience cases).
+  - Step 7, no plan: `unit: PhotoSection.plan-cap.test.tsx` (AC-6), `PhotoSectionDescription.test.tsx`.
+
 ### Sign-off
 
 | Date | Executor | PR | Result | Notes |

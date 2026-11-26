@@ -61,8 +61,11 @@ class MockXHR {
         this.listeners[event]?.push(handler);
     }
 
-    send(): void {
-        // No-op — tests trigger response events manually.
+    body: FormData | null = null;
+
+    send(body: FormData): void {
+        // Tests trigger response events manually; the body is kept for assertions.
+        this.body = body;
     }
 
     /** Fires every handler registered for `event`, simulating a real XHR event. */
@@ -86,9 +89,38 @@ describe('uploadEntityImage', () => {
         vi.unstubAllGlobals();
     });
 
+    describe('form fields per vertical and role (HOS-2495)', () => {
+        it('defaults to an accommodation gallery upload', () => {
+            void uploadEntityImage({ file: buildTestFile(), entityId: 'acc-1' });
+
+            const body = MockXHR.instances[0]?.body;
+            expect({
+                entityType: body?.get('entityType'),
+                entityId: body?.get('entityId'),
+                role: body?.get('role')
+            }).toEqual({ entityType: 'accommodation', entityId: 'acc-1', role: 'gallery' });
+        });
+
+        it('sends the venue vertical and the featured role when asked', () => {
+            void uploadEntityImage({
+                file: buildTestFile(),
+                entityType: 'venue',
+                entityId: 'venue-1',
+                role: 'featured'
+            });
+
+            const body = MockXHR.instances[0]?.body;
+            expect({
+                entityType: body?.get('entityType'),
+                entityId: body?.get('entityId'),
+                role: body?.get('role')
+            }).toEqual({ entityType: 'venue', entityId: 'venue-1', role: 'featured' });
+        });
+    });
+
     describe('timeout resiliency (BETA-134)', () => {
         it('should configure a bounded, positive xhr.timeout', () => {
-            void uploadEntityImage({ file: buildTestFile(), accommodationId: 'acc-1' });
+            void uploadEntityImage({ file: buildTestFile(), entityId: 'acc-1' });
 
             const xhr = MockXHR.instances[0];
             expect(xhr).toBeDefined();
@@ -97,7 +129,7 @@ describe('uploadEntityImage', () => {
         });
 
         it('should reject with a typed timeout error when the XHR times out', async () => {
-            const promise = uploadEntityImage({ file: buildTestFile(), accommodationId: 'acc-1' });
+            const promise = uploadEntityImage({ file: buildTestFile(), entityId: 'acc-1' });
             const xhr = MockXHR.instances[0];
 
             xhr?.trigger('timeout');
@@ -108,7 +140,7 @@ describe('uploadEntityImage', () => {
         it('should reject with a clear timeout-like message (not a generic parse failure) when the response body is empty', async () => {
             // Arrange: simulates a reverse proxy killing the connection and
             // replacing our JSON response with an empty/non-JSON body.
-            const promise = uploadEntityImage({ file: buildTestFile(), accommodationId: 'acc-1' });
+            const promise = uploadEntityImage({ file: buildTestFile(), entityId: 'acc-1' });
             const xhr = MockXHR.instances[0];
             if (!xhr) throw new Error('expected an XHR instance to have been created');
             xhr.status = 504;
@@ -125,7 +157,7 @@ describe('uploadEntityImage', () => {
         it('should still surface the generic invalid-response message for a genuinely malformed, non-empty body', async () => {
             // Regression guard: real corruption (non-empty but unparseable
             // body) keeps its original, distinct message.
-            const promise = uploadEntityImage({ file: buildTestFile(), accommodationId: 'acc-1' });
+            const promise = uploadEntityImage({ file: buildTestFile(), entityId: 'acc-1' });
             const xhr = MockXHR.instances[0];
             if (!xhr) throw new Error('expected an XHR instance to have been created');
             xhr.status = 200;
@@ -139,7 +171,7 @@ describe('uploadEntityImage', () => {
 
     describe('absolute API URL (HOS-201)', () => {
         it('should open an absolute API URL (with host), not a relative path', () => {
-            void uploadEntityImage({ file: buildTestFile(), accommodationId: 'acc-1' });
+            void uploadEntityImage({ file: buildTestFile(), entityId: 'acc-1' });
 
             const xhr = MockXHR.instances[0];
             if (!xhr) throw new Error('expected an XHR instance to have been created');
@@ -152,7 +184,7 @@ describe('uploadEntityImage', () => {
         });
 
         it('should keep sending the session cookie cross-origin (withCredentials)', () => {
-            void uploadEntityImage({ file: buildTestFile(), accommodationId: 'acc-1' });
+            void uploadEntityImage({ file: buildTestFile(), entityId: 'acc-1' });
 
             const xhr = MockXHR.instances[0];
             expect(xhr?.withCredentials).toBe(true);
@@ -161,7 +193,7 @@ describe('uploadEntityImage', () => {
 
     describe('happy path (regression)', () => {
         it('should resolve with the uploaded image metadata on a valid success response', async () => {
-            const promise = uploadEntityImage({ file: buildTestFile(), accommodationId: 'acc-1' });
+            const promise = uploadEntityImage({ file: buildTestFile(), entityId: 'acc-1' });
             const xhr = MockXHR.instances[0];
             if (!xhr) throw new Error('expected an XHR instance to have been created');
             xhr.status = 200;
@@ -183,7 +215,7 @@ describe('uploadEntityImage', () => {
         });
 
         it('should reject with the server error message on a typed error response', async () => {
-            const promise = uploadEntityImage({ file: buildTestFile(), accommodationId: 'acc-1' });
+            const promise = uploadEntityImage({ file: buildTestFile(), entityId: 'acc-1' });
             const xhr = MockXHR.instances[0];
             if (!xhr) throw new Error('expected an XHR instance to have been created');
             xhr.status = 502;
@@ -198,7 +230,7 @@ describe('uploadEntityImage', () => {
         });
 
         it('should carry code, reason and details on the typed error (HOS-1218)', async () => {
-            const promise = uploadEntityImage({ file: buildTestFile(), accommodationId: 'acc-1' });
+            const promise = uploadEntityImage({ file: buildTestFile(), entityId: 'acc-1' });
             const xhr = MockXHR.instances[0];
             if (!xhr) throw new Error('expected an XHR instance to have been created');
             xhr.status = 422;
@@ -223,11 +255,11 @@ describe('uploadEntityImage', () => {
         });
 
         it('should tag transport failures with a translatable code (HOS-1218)', async () => {
-            const timeout = uploadEntityImage({ file: buildTestFile(), accommodationId: 'acc-1' });
+            const timeout = uploadEntityImage({ file: buildTestFile(), entityId: 'acc-1' });
             MockXHR.instances[0]?.trigger('timeout');
             expect(await timeout.catch((e: unknown) => e)).toMatchObject({ code: 'TIMEOUT' });
 
-            const network = uploadEntityImage({ file: buildTestFile(), accommodationId: 'acc-1' });
+            const network = uploadEntityImage({ file: buildTestFile(), entityId: 'acc-1' });
             MockXHR.instances[1]?.trigger('error');
             expect(await network.catch((e: unknown) => e)).toMatchObject({
                 code: 'NETWORK_ERROR'
@@ -278,7 +310,7 @@ describe('uploadEntityImage', () => {
 
     describe('network error (regression)', () => {
         it('should reject with a network error message on an XHR error event', async () => {
-            const promise = uploadEntityImage({ file: buildTestFile(), accommodationId: 'acc-1' });
+            const promise = uploadEntityImage({ file: buildTestFile(), entityId: 'acc-1' });
             const xhr = MockXHR.instances[0];
 
             xhr?.trigger('error');

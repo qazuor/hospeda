@@ -29,7 +29,8 @@ import { stripRichDescriptionSyntax, stripVideoEmbeds } from '../lib/content-det
 import {
     deniedSet,
     projectPublicListing,
-    readOwnerEffectiveSets
+    readOwnerEffectiveSets,
+    trimPublicGallery
 } from './public-listing-projector';
 
 /** An accommodation row as the public readers hold it before serialization. */
@@ -112,19 +113,26 @@ function applyNonRemovalSteps(args: {
  * Reads the effective set once per distinct owner. An owner whose set cannot be
  * read, or a row without an owner, is treated as holding nothing (fail closed).
  *
+ * The public gallery is trimmed to the owner's effective photo cap (HOS-2495);
+ * the cover is never touched.
+ *
  * @param args.listings - Accommodation rows of one response page.
+ * @param args.onEffectiveSetFailure - Called once per failed owner lookup, so the
+ *   route can answer `Cache-Control: no-store` instead of caching the fail-closed page.
  * @returns The rows (same order, gated fields applied) and the owner-level AI chat
  *   flag (`hasAiChat` on public cards; a capability of the owner, not a section).
  */
 export async function projectPublicAccommodationPage<T extends PublicAccommodationRecord>(args: {
     readonly listings: readonly T[];
+    readonly onEffectiveSetFailure?: () => void;
 }): Promise<{ readonly items: T[]; readonly aiChatByOwner: ReadonlyMap<string, boolean> }> {
     const ownerIds = args.listings
         .map(ownerIdOf)
         .filter((ownerId): ownerId is string => ownerId !== undefined);
     const effectiveByOwner = await readOwnerEffectiveSets({
         vertical: 'accommodation',
-        ownerIds
+        ownerIds,
+        onEffectiveSetFailure: args.onEffectiveSetFailure
     });
     const aiChatByOwner = new Map<string, boolean>(
         [...effectiveByOwner].map(([ownerId, effective]) => [
@@ -139,13 +147,14 @@ export async function projectPublicAccommodationPage<T extends PublicAccommodati
     const items = args.listings.map((listing) => {
         const ownerId = ownerIdOf(listing);
         const userId = ownerId ?? '';
+        const effective =
+            (ownerId && effectiveByOwner.get(ownerId)) || deniedSet(userId, 'accommodation');
         const resolved = resolveListingSections({
             vertical: 'accommodation',
             // Every accommodation section is common to the single `standard` rubro,
             // so the stored business lines do not change what is offered.
             businessLines: [],
-            effective:
-                (ownerId && effectiveByOwner.get(ownerId)) || deniedSet(userId, 'accommodation'),
+            effective,
             userId
         });
         const original = listing as Record<string, unknown>;
@@ -154,7 +163,12 @@ export async function projectPublicAccommodationPage<T extends PublicAccommodati
             listing: original,
             states: resolved.sections
         });
-        return applyNonRemovalSteps({ projected, original, states: resolved.sections }) as T;
+        return trimPublicGallery({
+            vertical: 'accommodation',
+            listing: applyNonRemovalSteps({ projected, original, states: resolved.sections }),
+            ownerId: userId,
+            effective
+        }) as T;
     });
     return { items, aiChatByOwner };
 }
@@ -163,10 +177,12 @@ export async function projectPublicAccommodationPage<T extends PublicAccommodati
  * Applies the owner-effective public-field gating to a page of accommodations.
  *
  * @param args.listings - Accommodation rows of one response page.
+ * @param args.onEffectiveSetFailure - See {@link projectPublicAccommodationPage}.
  * @returns The same rows, in the same order, with the gated fields applied.
  */
 export async function projectPublicAccommodations<T extends PublicAccommodationRecord>(args: {
     readonly listings: readonly T[];
+    readonly onEffectiveSetFailure?: () => void;
 }): Promise<T[]> {
     return (await projectPublicAccommodationPage(args)).items;
 }

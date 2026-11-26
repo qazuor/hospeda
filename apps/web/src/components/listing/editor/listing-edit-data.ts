@@ -75,7 +75,7 @@ export const LOCATION_ADDRESS_KEYS = ['street', 'number', 'floor', 'apartment'] 
  * two. It replaced the 18 independent `useState` slots + manual `dirty` Set this
  * editor used to carry, which made per-section extraction impossible.
  *
- * Media is deliberately NOT part of this type (HOS-372): `MediaSection` owns its
+ * Media is deliberately NOT part of this type (HOS-372): `PhotoSection` owns its
  * own state and persists every photo operation immediately against the
  * relational media endpoints, so photos are never diffed into the PATCH body.
  */

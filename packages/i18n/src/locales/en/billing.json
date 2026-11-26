@@ -388,6 +388,18 @@
                 "secondaryCta": "View my experiences"
             }
         },
+        "max_photos_per_venue": {
+            "title": "You've reached your venue photo limit",
+            "message_one": "You've uploaded {{currentCount}} of {{maxAllowed}} allowed photo. Add a photo pack to upload more.",
+            "message_other": "You've uploaded {{currentCount}} of {{maxAllowed}} allowed photos. Add a photo pack to upload more.",
+            "cta": "View photo packs"
+        },
+        "max_photos_per_experience": {
+            "title": "You've reached your experience photo limit",
+            "message_one": "You've uploaded {{currentCount}} of {{maxAllowed}} allowed photo. Add a photo pack to upload more.",
+            "message_other": "You've uploaded {{currentCount}} of {{maxAllowed}} allowed photos. Add a photo pack to upload more.",
+            "cta": "View photo packs"
+        },
         "max_photos_per_accommodation": {
             "title": "You've reached your photo limit",
             "message_one": "You've uploaded {{currentCount}} of {{maxAllowed}} photo allowed in your plan. Upgrade to upload more.",
@@ -794,6 +806,8 @@
             "max_venues": "Published Food & nightlife listings",
             "max_experiences": "Published experiences",
             "max_photos_per_accommodation": "Photos per accommodation",
+            "max_photos_per_venue": "Photos per venue",
+            "max_photos_per_experience": "Photos per experience",
             "max_active_promotions": "Active promotions",
             "max_favorites": "Favorites",
             "max_properties": "Complex properties",
@@ -820,6 +834,8 @@
     "limitHelp": {
         "max_accommodations": "How many places you can have published at once. At the cap you need to unpublish one, or move up a plan, to add another.",
         "max_photos_per_accommodation": "How many photos you can upload to each place. At the cap you have to delete one to upload another.",
+        "max_photos_per_venue": "How many photos you can upload to each venue's gallery. The cover photo doesn't count.",
+        "max_photos_per_experience": "How many photos you can upload to each experience's gallery. The cover photo doesn't count.",
         "max_active_promotions": "How many promotions you can run at the same time. At the cap you need to end one to launch another.",
         "max_favorites": "How many places you can save as favourites. At the cap you have to remove one to save another.",
         "max_properties": "How many properties you can manage inside a complex. At the cap you need a higher plan to add another.",
@@ -847,6 +863,14 @@
         "extra-accommodations-5": {
             "name": "Extra Accommodations Pack (+5)",
             "description": "Adds 5 additional accommodations to your plan. Renews monthly."
+        },
+        "extra-photos-venue-20": {
+            "name": "Extra venue photos (+20)",
+            "description": "Adds 20 gallery photos to each venue listing. Renews monthly."
+        },
+        "extra-photos-experience-20": {
+            "name": "Extra experience photos (+20)",
+            "description": "Adds 20 gallery photos to each experience listing. Renews monthly."
         },
         "extra-photos-20": {
             "name": "Extra Photos Pack (+20 photos)",

@@ -31,7 +31,7 @@ export const publicGetSimilarRoute = createPublicRoute({
     },
     responseSchema: z.array(AccommodationPublicSchema),
     handler: async (
-        _ctx: Context,
+        ctx: Context,
         params: Record<string, unknown>,
         _body: unknown,
         query?: Record<string, unknown>
@@ -227,7 +227,8 @@ export const publicGetSimilarRoute = createPublicRoute({
         //
         // Apply the owner-effective paid-field grants to each similar listing.
         const gatedRows = await projectPublicAccommodations({
-            listings: rows as readonly (Record<string, unknown> & { destination?: unknown })[]
+            listings: rows as readonly (Record<string, unknown> & { destination?: unknown })[],
+            onEffectiveSetFailure: () => ctx.header('Cache-Control', 'no-store')
         });
         const mappedRows = rows.map((row, index) => {
             const { destination, ...rest } = gatedRows[index] as Record<string, unknown> & {

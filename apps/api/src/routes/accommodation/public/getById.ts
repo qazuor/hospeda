@@ -41,7 +41,7 @@ export const publicGetAccommodationByIdRoute = createPublicRoute({
         id: AccommodationIdSchema
     },
     responseSchema: AccommodationPublicSchema.nullable(),
-    handler: async (_ctx: Context, params: Record<string, unknown>) => {
+    handler: async (ctx: Context, params: Record<string, unknown>) => {
         // HOS-353: resolve visibility against a GUEST actor, never the caller.
         //
         // `checkCanView` consults the reader through four mechanisms — `isOwner`,
@@ -74,7 +74,10 @@ export const publicGetAccommodationByIdRoute = createPublicRoute({
             isFeatured: resolvePublicIsFeatured(result.data)
         };
 
-        const [gated] = await projectPublicAccommodations({ listings: [accommodation] });
+        const [gated] = await projectPublicAccommodations({
+            listings: [accommodation],
+            onEffectiveSetFailure: () => ctx.header('Cache-Control', 'no-store')
+        });
         return gated as typeof accommodation;
     },
     options: {

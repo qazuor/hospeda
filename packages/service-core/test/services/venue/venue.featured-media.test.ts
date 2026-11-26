@@ -53,13 +53,7 @@ vi.mock('@repo/db', async (importOriginal) => {
 
 // ---------------------------------------------------------------------------
 
-import {
-    getGalleryCap,
-    ModerationStatusEnum,
-    PermissionEnum,
-    RoleEnum,
-    ServiceErrorCode
-} from '@repo/schemas';
+import { ModerationStatusEnum, PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { addVenueFeaturedMedia } from '../../../src/services/venue/venue.media';
 import type { Actor } from '../../../src/types';
@@ -70,7 +64,8 @@ const PREVIOUS_ID = '00000000-0000-4000-a000-000000000002';
 const OWNER_ID = '00000000-0000-4000-a000-000000000003';
 
 /** 30 for the venue and experience verticals — the cap this wiring must actually pass on. */
-const ENTITY_CAP = getGalleryCap('venue');
+/** A full gallery at the old literal cap (HOS-2495 removed the literal; the cover stays exempt). */
+const ENTITY_CAP = 30;
 
 const PAYLOAD = { url: 'https://cdn.example.com/new-cover.jpg' };
 

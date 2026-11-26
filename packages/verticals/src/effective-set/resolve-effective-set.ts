@@ -122,10 +122,12 @@ async function grantsOf(
     throw new UnresolvedCoverageSourceError(source.type);
 }
 
-/** Resolves only user + vertical coverage. LISTING deltas never enter the set: the listing featured sync (`featured/sync-listing-featured.ts`, HOS-1718) reads them. */
-export async function resolveEffectiveSet(
-    args: ResolveEffectiveSetArgs
-): Promise<ResolvedEffectiveSet> {
+/** Collects user and vertical source grants before folding; listing-scoped deltas stay separate. @internal */
+export async function collectFoldableSources(args: ResolveEffectiveSetArgs): Promise<{
+    readonly foldable: readonly FoldableSource[];
+    readonly liveTitle: boolean;
+    readonly inheritsTouristVip: boolean;
+}> {
     const coverage = await args.billing.coverage({ userId: args.userId, vertical: args.vertical });
     const sources = coverage.sources.filter((source) => source.scope !== 'LISTING');
     const liveTitle = hasLiveNonTrialTitle({ sources });
@@ -184,6 +186,14 @@ export async function resolveEffectiveSet(
             }
         }
     }
+    return { foldable, liveTitle, inheritsTouristVip };
+}
+
+/** Resolves only user + vertical coverage. LISTING deltas never enter the set: the listing featured sync (`featured/sync-listing-featured.ts`, HOS-1718) reads them. */
+export async function resolveEffectiveSet(
+    args: ResolveEffectiveSetArgs
+): Promise<ResolvedEffectiveSet> {
+    const { foldable, liveTitle, inheritsTouristVip } = await collectFoldableSources(args);
     const folded = foldPlegableSet({ sources: foldable });
     const strategies = new Map(
         foldable.flatMap(({ grants }) =>

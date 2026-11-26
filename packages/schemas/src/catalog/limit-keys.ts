@@ -15,6 +15,8 @@ const ROWS: readonly KeyRow[] = [
     ['max_experiences', 'vertical', 'SUM', 'UNPUBLISH', 'COMMERCIAL'],
     ['max_properties', 'vertical', 'SUM', 'UNPUBLISH', 'COMMERCIAL'],
     ['max_photos_per_accommodation', 'vertical', 'SUM', 'ARCHIVE', 'COMMERCIAL'],
+    ['max_photos_per_venue', 'vertical', 'SUM', 'ARCHIVE', 'COMMERCIAL'],
+    ['max_photos_per_experience', 'vertical', 'SUM', 'ARCHIVE', 'COMMERCIAL'],
     ['max_active_promotions', 'vertical', 'SUM', 'ARCHIVE', 'COMMERCIAL'],
     ['max_active_private_galleries', 'vertical', 'SUM', 'ARCHIVE', 'COMMERCIAL'],
     ['max_favorites', 'vertical', 'SUM', 'ARCHIVE', 'COMMERCIAL'],
