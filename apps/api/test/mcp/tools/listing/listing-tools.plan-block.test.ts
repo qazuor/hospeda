@@ -89,6 +89,7 @@ import { runTool } from '../../../../src/mcp/tools/run-tool';
 import type { ToolDefinition } from '../../../../src/mcp/tools/tool-definition';
 import { injectClock } from '../../../../src/utils/clock';
 import { validateApiEnv } from '../../../../src/utils/env';
+import { apiLogger } from '../../../../src/utils/logger';
 
 const NOW = new Date('2026-11-18T12:00:00.000Z');
 const LISTING_ID = '9a1f5c2e-6b7d-4e8f-a0b1-c2d3e4f5a6b7';
@@ -206,7 +207,10 @@ describe('plan status in the listing tools (HOS-2184 T-035, AC-16)', () => {
             });
             expect(stats).not.toHaveProperty('omitted');
             expect(readerSpy.calls).toEqual([
-                expect.objectContaining({ userId: OWNER_ID, vertical: VerticalEnum.ACCOMMODATION })
+                expect.objectContaining({
+                    userId: OWNER_ID,
+                    verticals: [VerticalEnum.ACCOMMODATION]
+                })
             ]);
         });
 
@@ -276,7 +280,17 @@ describe('plan status in the listing tools (HOS-2184 T-035, AC-16)', () => {
                 venue: expected.venue
             });
             expect(result.plans).toMatchObject({ venue: { status: 'TRIAL', trialDaysLeft: 7 } });
-            expect(readerSpy.calls).toHaveLength(1);
+            // One read, restricted to the three listing verticals (review B4).
+            expect(readerSpy.calls).toEqual([
+                expect.objectContaining({
+                    userId: OWNER_ID,
+                    verticals: [
+                        VerticalEnum.ACCOMMODATION,
+                        VerticalEnum.VENUE,
+                        VerticalEnum.EXPERIENCE
+                    ]
+                })
+            ]);
             expect((result.listings as unknown[]).length).toBe(3);
         });
 
@@ -299,6 +313,7 @@ describe('plan status in the listing tools (HOS-2184 T-035, AC-16)', () => {
             // Arrange
             givenOwnListings();
             planMocks.readOwnPlanState.mockRejectedValue(new Error('db down'));
+            const warn = vi.spyOn(apiLogger, 'warn');
 
             // Act
             const result = await run<Record<string, unknown>>(listMyListingsTool, owner());
@@ -307,6 +322,12 @@ describe('plan status in the listing tools (HOS-2184 T-035, AC-16)', () => {
             expect(result).not.toHaveProperty('plans');
             expect(result.omitted).toEqual({ plans: 'unavailable' });
             expect(result.total).toBe(3);
+            // The log line names the tool that lost its block (review B4).
+            expect(warn).toHaveBeenCalledWith(
+                expect.objectContaining({ userId: OWNER_ID }),
+                'list_my_listings: plan read failed; subscription block omitted'
+            );
+            warn.mockRestore();
         });
     });
 });

@@ -94,7 +94,12 @@ export const getOwnerSummaryTool = defineTool({
             readFixRequestItems({ ownerId: actor.id, verticals: verticalsWithListings, locale }),
             readDraftAttention({ rows, locale }),
             actor.permissions.includes(PermissionEnum.BILLING_VIEW_OWN)
-                ? readSubscriptionBlock({ userId: actor.id, locale, now })
+                ? readSubscriptionBlock({
+                      userId: actor.id,
+                      locale,
+                      now,
+                      tool: 'get_owner_summary'
+                  })
                 : undefined
         ]);
         if (unanswered.error) {

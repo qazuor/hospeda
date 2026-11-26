@@ -168,7 +168,7 @@ async function readPlanPart(input: {
         userId: input.userId,
         locale: input.locale,
         now: getClock().clock.now(),
-        vertical: input.vertical,
+        verticals: [input.vertical],
         tool: 'get_listing_stats'
     });
     if (block.unavailable) {

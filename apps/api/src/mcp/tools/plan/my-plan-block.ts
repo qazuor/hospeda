@@ -40,21 +40,22 @@ export interface SubscriptionBlock {
  * @param args.userId - The owner
  * @param args.locale - Locale of labels and links
  * @param args.now - The caller's clock instant
- * @param args.vertical - Only this vertical; all of them when omitted
- * @param args.tool - The embedding tool, for the log line
+ * @param args.verticals - Only these verticals; all of them when omitted
+ * @param args.tool - The embedding tool, for the log line (required: the
+ *   line must name the tool that lost its block)
  * @returns The block, or `{ unavailable: true }`
  */
 export async function readSubscriptionBlock(args: {
     readonly userId: string;
     readonly locale: PortalLocale | undefined;
     readonly now: Date;
-    readonly vertical?: MyPlanVertical;
-    readonly tool?: string;
+    readonly verticals?: readonly MyPlanVertical[];
+    readonly tool: string;
 }): Promise<SubscriptionBlock> {
     try {
         const plan = await readMyPlan({
             userId: args.userId,
-            ...(args.vertical ? { vertical: args.vertical } : {}),
+            ...(args.verticals ? { verticals: args.verticals } : {}),
             ...(args.locale ? { locale: args.locale } : {}),
             now: args.now
         });
@@ -69,7 +70,7 @@ export async function readSubscriptionBlock(args: {
                 userId: args.userId,
                 error: error instanceof Error ? error.message : String(error)
             },
-            `${args.tool ?? 'get_owner_summary'}: plan read failed; subscription block omitted`
+            `${args.tool}: plan read failed; subscription block omitted`
         );
         return { unavailable: true };
     }

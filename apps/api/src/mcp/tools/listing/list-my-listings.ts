@@ -280,6 +280,7 @@ async function readPlansPart({
         userId,
         locale,
         now: getClock().clock.now(),
+        verticals: LISTING_TOOL_VERTICALS,
         tool: 'list_my_listings'
     });
     if (block.unavailable) {
