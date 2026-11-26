@@ -29,6 +29,7 @@
 
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import PageHelpLink from '@/components/account/help/PageHelpLink.astro';
+import { EditorAutoSaveChip } from '@/components/account/editor-shell/EditorAutoSaveChip.client';
 import { Alert, LockedState, PageHeader } from '@/components/account/ui';
 import { PostEditor } from '@/components/post/editor/PostEditor.client';
 import { destinationsApi } from '@/lib/api/endpoints';
@@ -131,6 +132,7 @@ const title = t('account.myContent.posts.editor.pageTitle', 'Editar publicación
             })}
         >
             <PageHelpLink slot="help" locale={locale} />
+            <EditorAutoSaveChip slot="actions" client:idle locale={locale} saveModel="bar" />
         </PageHeader>
 
         <Alert

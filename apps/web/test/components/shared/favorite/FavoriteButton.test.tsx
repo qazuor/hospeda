@@ -42,9 +42,17 @@ import { resetFavoritesStore } from '../../../../src/store/favorites-store';
 // Module mocks
 // ---------------------------------------------------------------------------
 
-vi.mock('../../../../src/lib/i18n', () => ({
-    createT: (_locale: string) => (key: string, fallback?: string) => fallback ?? key
-}));
+vi.mock('../../../../src/lib/i18n', async (importOriginal) => {
+    const { createT } = await importOriginal<typeof import('@/lib/i18n')>();
+    return {
+        createT:
+            (locale: Parameters<typeof createT>[0]) =>
+            (key: string, fallback?: string, params?: Parameters<ReturnType<typeof createT>>[2]) =>
+                key.startsWith('common.card.')
+                    ? createT(locale)(key, fallback, params)
+                    : (fallback ?? key)
+    };
+});
 
 vi.mock('../../../../src/lib/cn', () => ({
     cn: (...classes: (string | undefined | false | null)[]) => classes.filter(Boolean).join(' ')
@@ -71,7 +79,6 @@ vi.mock('../../../../src/components/auth/AuthRequiredPopover.client', () => ({
         locale?: string;
         returnUrl?: string;
     }) => (
-        // biome-ignore lint/a11y/useSemanticElements: mock element — <dialog> not needed in test DOM
         <div
             role="dialog"
             aria-label="Autenticacion requerida"
@@ -110,6 +117,8 @@ vi.mock('@repo/icons', () => ({
 // Mock the API module — individual tests override specific methods as needed.
 const mockToggle = vi.fn();
 const mockCheckBulk = vi.fn();
+const { mockList, mockLimit } = vi.hoisted(() => ({ mockList: vi.fn(), mockLimit: vi.fn() }));
+vi.mock('@/hooks/useMyEntitlements', () => ({ useMyEntitlements: () => ({ limit: mockLimit }) }));
 const trackEventSpy = vi.fn();
 
 vi.mock('../../../../src/lib/analytics/umami-client', () => ({
@@ -119,7 +128,8 @@ vi.mock('../../../../src/lib/analytics/umami-client', () => ({
 vi.mock('../../../../src/lib/api/endpoints-protected', () => ({
     userBookmarksApi: {
         toggle: (...args: unknown[]) => mockToggle(...args),
-        checkBulk: (...args: unknown[]) => mockCheckBulk(...args)
+        checkBulk: (...args: unknown[]) => mockCheckBulk(...args),
+        list: mockList
     }
 }));
 
@@ -825,14 +835,12 @@ describe('FavoriteButton — client-side resolution (WB0-3)', () => {
 
         // Act
         render(
-            <>
-                {ids.map((entityId) => (
-                    <FavoriteButton
-                        key={entityId}
-                        {...buildProps({ entityId })}
-                    />
-                ))}
-            </>
+            ids.map((entityId) => (
+                <FavoriteButton
+                    key={entityId}
+                    {...buildProps({ entityId })}
+                />
+            ))
         );
         await waitFor(() => {
             expect(screen.getAllByRole('button')[0]).not.toHaveAttribute('data-hydrating');
@@ -1023,6 +1031,31 @@ describe('FavoriteButton — success toasts on toggle', () => {
 // ---------------------------------------------------------------------------
 
 describe('FavoriteButton — pill variant + count badge', () => {
+    it.each([
+        [7, 'Favorites: 3 of 7', '3/7'],
+        [2147483647, 'Unlimited favorites', '∞']
+    ])('shows the viewer’s quota for a detail heart with catalog cap %i', async (max, label, counter) => {
+        mockLimit.mockImplementation((key: string) => (key === 'max_favorites' ? max : 0));
+        mockList.mockResolvedValue({ ok: true, data: { total: 3 } });
+
+        const { button } = await renderButton(arrangeUser({ showUsage: true, locale: 'en' }));
+
+        expect(await screen.findByText(counter)).toBeVisible();
+        expect(button).toHaveAttribute('aria-description', label);
+    });
+
+    it('refreshes the visible quota after adding a favorite', async () => {
+        mockLimit.mockImplementation((key: string) => (key === 'max_favorites' ? 5 : 0));
+        mockList.mockResolvedValue({ ok: true, data: { total: 3 } });
+        const { button } = await renderButton(arrangeUser({ showUsage: true, locale: 'en' }));
+        expect(await screen.findByText('3/5')).toBeVisible();
+        mockList.mockResolvedValue({ ok: true, data: { total: 4 } });
+
+        fireEvent.click(button);
+
+        expect(await screen.findByText('4/5')).toBeVisible();
+        expect(button).toHaveAttribute('aria-description', 'Favorites: 4 of 5');
+    });
     it('shows count badge when variant=pill and count >= 3', async () => {
         // Arrange / Act
         await renderButton(arrangeUser({ variant: 'pill', count: 42 }));

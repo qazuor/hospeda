@@ -37,7 +37,7 @@ import StepsSection from '@/components/marketing/StepsSection.astro';
 import FaqSection from '@/components/marketing/FaqSection.astro';
 import GradientButton from '@/components/shared/ui/GradientButton.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
-import { NEUTRAL_PLANS_PATH } from '@/lib/billing/addon-purchase';
+import { PLANS_INDEX_PATH } from '@/lib/billing/addon-purchase';
 import { breadcrumbLabel } from '@/lib/navigation/breadcrumb-labels';
 import JsonLd from '@/components/seo/JsonLd.astro';
 import { applyCacheHeaders } from '@/lib/cache/response-cache';
@@ -142,7 +142,7 @@ const pricingHref = buildUrl({ locale, path: PRICING_PAGE_PATH_BY_AUDIENCE.exper
 >
     <JsonLd slot="head-extra" data={faqJsonLd} />
 
-    <Breadcrumbs slot="breadcrumbs" locale={locale} items={[{ label: breadcrumbLabel({ t, key: 'plans' }), path: NEUTRAL_PLANS_PATH }, { label: breadcrumbLabel({ t, key: 'plansExperiences' }) }]} />
+    <Breadcrumbs slot="breadcrumbs" locale={locale} items={[{ label: breadcrumbLabel({ t, key: 'plans' }), path: PLANS_INDEX_PATH }, { label: breadcrumbLabel({ t, key: 'plansExperiences' }) }]} />
 
     <MarketingHero
         tagline={t('experience.landing.benefits.tagline')}

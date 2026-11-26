@@ -9,8 +9,8 @@
  * `gateVideoEmbed`) and the downgrade excess preview helper
  * (`computeDowngradeExcess`) import the detection functions from here so that
  * a change to the pattern set propagates to both consumers automatically; the
- * strip helpers are consumed only by the middleware gates (the downgrade
- * preview is read-only and never mutates content).
+ * strip helpers are consumed by the public accommodation projection
+ * (`public-accommodation-projection.ts`, HOS-2209).
  *
  * **Why lib/ and not a service?**
  * These are pure, stateless string-inspection functions with no I/O dependency.
@@ -121,12 +121,43 @@ export function containsRichDescription(value: string): boolean {
  * ```
  */
 export function stripRichDescriptionSyntax(value: string): string {
+    // One pass can expose syntax that was hidden by the thing it removed
+    // (`<<b>b>` -> `<b>`), so repeat until the text stops changing. Every
+    // replacement in a pass deletes characters, so a pass that changes the text
+    // strictly shortens it and the loop always terminates: there is no pass
+    // limit that could return half-cleaned text.
+    let current = value;
+    for (;;) {
+        const next = stripRichDescriptionPass(current);
+        if (next === current || next.length >= current.length) break;
+        current = next;
+    }
+    // Final guard, independent of the regexes above: HTML can only start with
+    // `<` followed by a letter, `/`, `!` or `?`. A whole run of `<` before such a
+    // character is dropped (`<<!--` must not leave a `<` behind), so a tag,
+    // comment or autolink is impossible whatever shape the input had. A bare
+    // comparison such as `2 < 4` is untouched.
+    return current.replace(/<+(?=[a-zA-Z/!?])/g, '');
+}
+
+/** One neutralization pass; see {@link stripRichDescriptionSyntax}. */
+function stripRichDescriptionPass(value: string): string {
     return value
+        .replace(/<\/?[a-zA-Z][^>]*>/g, '') // HTML tags -> keep inner text (HOS-2209)
+        .replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1') // Images -> alt text
+        .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1') // Markdown links -> link text
+        .replace(/\[([^\]]+)\]\[[^\]]*\]/g, '$1') // Reference links -> link text
+        .replace(/^\s*\[[^\]]+\]:\s+\S.*$/gm, '') // Reference definitions
         .replace(/\*\*([^*]+)\*\*/g, '$1') // Bold (**text**) -> text
+        .replace(/__([^_]+)__/g, '$1') // Bold (__text__) -> text (HOS-2209)
+        .replace(/~~([^~]+)~~/g, '$1') // Strikethrough (~~text~~) -> text (HOS-2209)
         .replace(/(^|[^*])\*([^*\s][^*]*)\*/g, '$1$2') // Italic (*text*) -> text
-        .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // Markdown links -> link text
         .replace(/^#{1,6}\s+/gm, '') // ATX heading markers
+        .replace(/^```.*$/gm, '') // Code fence lines (HOS-2209)
+        .replace(/^\s*([-*_=])(?:\s*\1){2,}\s*$/gm, '') // Rules and setext underlines
         .replace(/^[-*+]\s+/gm, '') // Unordered list bullet markers
+        .replace(/^\d+[.)]\s+/gm, '') // Ordered list markers (HOS-2209)
+        .replace(/^>\s?/gm, '') // Blockquote markers (HOS-2209)
         .replace(/`([^`\n]+)`/g, '$1'); // Inline code -> code text
 }
 

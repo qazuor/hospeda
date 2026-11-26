@@ -25,11 +25,6 @@ vi.mock('../../../src/components/auth/SignIn.module.css', () => ({
     default: new Proxy({} as Record<string, string>, { get: (_t, prop) => String(prop) })
 }));
 
-vi.mock('../../../src/lib/i18n', () => {
-    const t = (key: string, fallback?: string): string => fallback ?? key;
-    return { createTranslations: () => ({ t }) };
-});
-
 const signInEmailMock = vi.fn();
 vi.mock('../../../src/lib/auth-client', () => ({
     signIn: { email: (...args: unknown[]) => signInEmailMock(...args), social: vi.fn() }
@@ -84,10 +79,27 @@ describe('SignIn email guard (HOS-190 slice 3)', () => {
         });
         fireEvent.click(screen.getByRole('button', { name: 'Iniciar sesión' }));
 
-        expect(await screen.findByRole('alert')).toHaveTextContent(
+        expect(screen.getByLabelText(/Correo electrónico/i)).toHaveAccessibleDescription(
             'Ingresá tu correo electrónico.'
         );
+        expect(screen.getByLabelText(/Correo electrónico/i)).toHaveFocus();
         expect(signInEmailMock).not.toHaveBeenCalled();
+    });
+
+    it('describes both empty fields and puts recovery immediately after the password', () => {
+        renderIsland();
+
+        fireEvent.submit(screen.getByRole('form'));
+
+        expect(screen.getByLabelText(/Correo electrónico/)).toHaveFocus();
+        expect(screen.getByLabelText(/^Contraseña/)).toHaveAccessibleDescription(
+            'Ingresá tu contraseña.'
+        );
+        const recovery = screen.getByRole('link', { name: /Olvidaste tu contraseña/i });
+        expect(recovery).toHaveAttribute('href', '/es/auth/forgot-password/');
+        expect(
+            recovery.compareDocumentPosition(screen.getByRole('button', { name: 'Iniciar sesión' }))
+        ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
     });
 
     it('blocks submit and does not call signIn.email when email is malformed', async () => {
@@ -102,7 +114,7 @@ describe('SignIn email guard (HOS-190 slice 3)', () => {
         });
         fireEvent.click(screen.getByRole('button', { name: 'Iniciar sesión' }));
 
-        expect(await screen.findByRole('alert')).toHaveTextContent(
+        expect(screen.getByLabelText(/Correo electrónico/i)).toHaveAccessibleDescription(
             'Ingresá un correo electrónico válido.'
         );
         expect(signInEmailMock).not.toHaveBeenCalled();
@@ -128,8 +140,9 @@ describe('SignIn email guard (HOS-190 slice 3)', () => {
         });
     });
 
-    it('server-renders the real sign-in form fields on first paint', () => {
-        document.body.innerHTML = renderToStaticMarkup(
+    it('serializes both credentials when the server-rendered form is submitted natively', () => {
+        const markup = document.createElement('div');
+        markup.innerHTML = renderToStaticMarkup(
             <SignIn
                 locale="es"
                 redirectTo="/es/mi-cuenta/"
@@ -138,19 +151,28 @@ describe('SignIn email guard (HOS-190 slice 3)', () => {
             />
         );
 
-        expect(screen.getByRole('form', { name: 'Iniciar sesión' })).toBeInTheDocument();
-        expect(screen.getByLabelText(/Correo electrónico/)).toBeInTheDocument();
-        expect(screen.getByLabelText(/^Contraseña/)).toBeInTheDocument();
+        const form = markup.querySelector('form');
+        const email = markup.querySelector<HTMLInputElement>('#signin-email');
+        const password = markup.querySelector<HTMLInputElement>('#signin-password');
+        if (!form || !email || !password) throw new Error('Missing sign-in form or controls');
+        email.value = 'user@example.com';
+        password.value = 'Test-only password';
+        const submit = vi.fn((event: Event) => {
+            event.preventDefault();
+            return Object.fromEntries(new FormData(form));
+        });
+        form.addEventListener('submit', submit);
+
+        form.requestSubmit();
+
+        expect(form).toHaveAttribute('method', 'post');
+        expect(submit).toHaveReturnedWith({ email: email.value, password: password.value });
+        expect(signInEmailMock).not.toHaveBeenCalled();
     });
 });
 
 describe('SignIn controlled email (HOS-959)', () => {
     beforeEach(() => {
-        // The SSR test in the previous describe block writes straight into
-        // document.body, which RTL's auto-cleanup does not own and
-        // therefore leaves behind — reset it or getByLabelText below can
-        // pick up the stale SSR markup instead of this test's own render.
-        document.body.innerHTML = '';
         signInEmailMock.mockReset();
         signInEmailMock.mockResolvedValue({ error: null });
     });
@@ -190,10 +212,6 @@ describe('SignIn controlled email (HOS-959)', () => {
 
 describe('SignIn password reveal (HOS-796)', () => {
     beforeEach(() => {
-        // The SSR test above writes straight into document.body, which RTL's
-        // auto-cleanup does not own and therefore leaves behind. Without this
-        // reset, every query here finds two of each control.
-        document.body.innerHTML = '';
         signInEmailMock.mockReset();
         signInEmailMock.mockResolvedValue({ error: null });
     });
@@ -365,11 +383,14 @@ describe('SignIn invalidates the cached /auth/me snapshot (HOS-1206)', () => {
     });
 
     it('keeps the snapshot when the sign-in fails (the visitor is still a guest)', async () => {
-        signInEmailMock.mockResolvedValue({ error: { message: 'Invalid credentials' } });
+        signInEmailMock.mockResolvedValue({ error: { code: 'INVALID_EMAIL_OR_PASSWORD' } });
 
         await submitValidCredentials();
 
-        await screen.findByRole('alert');
+        expect(await screen.findByRole('alert')).toHaveTextContent(
+            'El correo electrónico o la contraseña son incorrectos.'
+        );
+        expect(screen.getByRole('textbox')).not.toHaveAccessibleDescription();
         expect(sessionStorage.getItem('authMeSnapshot')).toBe(GUEST_SNAPSHOT);
     });
 });

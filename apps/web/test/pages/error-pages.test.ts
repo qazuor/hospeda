@@ -10,6 +10,7 @@ import { describe, expect, it } from 'vitest';
 const src404 = readFileSync(resolve(__dirname, '../../src/pages/404.astro'), 'utf8');
 
 const src500 = readFileSync(resolve(__dirname, '../../src/pages/500.astro'), 'utf8');
+const errorLayout = readFileSync(resolve(__dirname, '../../src/layouts/ErrorLayout.astro'), 'utf8');
 
 describe('404.astro', () => {
     it('should use ErrorLayout (crash-resistant, not BaseLayout)', () => {
@@ -33,10 +34,20 @@ describe('404.astro', () => {
     it('should have a link to home', () => {
         expect(src404).toContain('homeUrl');
         expect(src404).toContain('href={homeUrl}');
+        expect(src404).toMatch(/href=\{homeUrl\}[^>]+variant="primary"/);
+        expect(src404).toMatch(/<ErrorLayout[^>]+showSearch/);
     });
 
     it('should use buildUrl for home link', () => {
         expect(src404).toContain('buildUrl');
+    });
+
+    it('offers public navigation and a GET search wired to the accommodation query', () => {
+        expect(errorLayout).toContain('role="search"');
+        expect(errorLayout).toContain('name="q"');
+        for (const path of ['alojamientos', 'destinos', 'eventos']) {
+            expect(errorLayout).toContain(`path: '${path}'`);
+        }
     });
 });
 

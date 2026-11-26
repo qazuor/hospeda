@@ -54,7 +54,7 @@
         "errorMessage": "Could not send the message. Please try again.",
         "ariaLabel": "Contact form",
         "accommodationId": "Accommodation ID",
-        "lastNameError": "Last name must be at least 2 characters",
+        "lastNameError": "Enter your last name (at least 2 letters)",
         "emailError": "Please enter a valid email address",
         "messageError": "Message must be at least 10 characters",
         "accommodationIdError": "Accommodation ID is required and must be a valid UUID",

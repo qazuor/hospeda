@@ -25,7 +25,7 @@
 
 import { EntitlementKeyEnum, VerticalEnum } from '@repo/schemas';
 import { resolveListingSections } from '@repo/verticals';
-import { stripVideoEmbeds } from '../lib/content-detection.js';
+import { stripRichDescriptionSyntax, stripVideoEmbeds } from '../lib/content-detection.js';
 import {
     deniedSet,
     projectPublicListing,
@@ -79,6 +79,23 @@ function applyNonRemovalSteps(args: {
         }
         const media = result.media;
         if (isPlainObject(media) && 'videos' in media) result.media = { ...media, videos: [] };
+    }
+    // HOS-2209: without the rich-description key, plain Markdown in `description`
+    // must not render on the public page. The write-time gate is gone (HOS-1416),
+    // so the strip runs here, in addition to and independent of the video step.
+    if (states.get('basicInfo')?.traits.get('richDescription') !== 'available') {
+        if (typeof result.description === 'string') {
+            result.description = stripRichDescriptionSyntax(result.description);
+        }
+        const descriptionI18n = result.descriptionI18n;
+        if (isPlainObject(descriptionI18n)) {
+            result.descriptionI18n = Object.fromEntries(
+                Object.entries(descriptionI18n).map(([locale, text]) => [
+                    locale,
+                    typeof text === 'string' ? stripRichDescriptionSyntax(text) : text
+                ])
+            );
+        }
     }
     const contactInfo = result.contactInfo;
     if (isPlainObject(contactInfo)) {

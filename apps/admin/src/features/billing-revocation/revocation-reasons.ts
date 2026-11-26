@@ -3,41 +3,33 @@
  * The reasons administrative action 8 with reason revocation (S36, HOS-1678)
  * can be refused with, and the copy the panel shows for each one.
  *
- * The panel cannot import `REVOKE_SUBSCRIPTION_REJECTIONS` (it lives in
- * `@repo/service-core`, server only), so the twelve `reason` values of the
- * API's error contract are mirrored here as a closed tuple. Every map below is
- * an exhaustive `Record`: a reason added to the tuple without its copy breaks
- * the typecheck. A reason the API sends that is NOT in the tuple is shown as
- * an unknown refusal with its code (H8), never as something confirmable.
+ * The twelve `reason` values are the shared `REVOKE_SUBSCRIPTION_REJECTIONS`
+ * tuple, imported from `@repo/schemas` (the same single source of truth the API
+ * uses, since `@repo/service-core` is server only and out of reach here). Every
+ * map below is an exhaustive `Record`: a reason added to the tuple without its
+ * copy breaks the typecheck. A reason the API sends that is NOT in the tuple is
+ * shown as an unknown refusal with its code (H8), never as something confirmable.
  *
  * @module revocation-reasons
  */
 
 import type { TranslationKey } from '@repo/i18n';
-import type { SubscriptionRevocationCancelCall, SubscriptionRevocationOrigin } from '@repo/schemas';
+import {
+    REVOKE_SUBSCRIPTION_REJECTIONS,
+    type RevokeSubscriptionRejection,
+    type SubscriptionRevocationCancelCall,
+    type SubscriptionRevocationOrigin
+} from '@repo/schemas';
 import { isApiError } from '@/lib/errors';
 
 /**
  * Every `reason` the revocation preview and act answer a refusal with
  * (`apps/api/docs/error-contract.md`, «Action 8 revocation rejections»).
  */
-export const KNOWN_REVOCATION_REASONS = [
-    'SUBSCRIPTION_NOT_FOUND',
-    'ADMINISTRATIVE_ACTION_FORBIDDEN',
-    'REVOCATION_NOT_PRINCIPAL',
-    'REVOCATION_STATE_NOT_ALLOWED',
-    'REVOCATION_NO_CREDITED_PAYMENT',
-    'REVOCATION_WINDOW_CLOSED',
-    'REVOCATION_AMOUNT_UNAVAILABLE',
-    'REVOCATION_PAYMENT_CHANGED',
-    'REVOCATION_STATE_CHANGED',
-    'PAYMENT_NOT_REFUNDABLE',
-    'REFUND_EXCEEDS_BALANCE',
-    'REFUND_AMOUNT_INVALID'
-] as const;
+export const KNOWN_REVOCATION_REASONS = REVOKE_SUBSCRIPTION_REJECTIONS;
 
 /** One refusal reason of the revocation the panel has copy for. */
-export type KnownRevocationReason = (typeof KNOWN_REVOCATION_REASONS)[number];
+export type KnownRevocationReason = RevokeSubscriptionRejection;
 
 /**
  * The 409s of the act that mean "something changed since the preview": the
@@ -46,7 +38,7 @@ export type KnownRevocationReason = (typeof KNOWN_REVOCATION_REASONS)[number];
 export const REVOCATION_NOTICE_REASONS = [
     'REVOCATION_PAYMENT_CHANGED',
     'REVOCATION_STATE_CHANGED'
-] as const;
+] as const satisfies readonly RevokeSubscriptionRejection[];
 
 /** A refusal of the act the screen answers with a notice and a fresh preview. */
 export type RevocationNoticeReason = (typeof REVOCATION_NOTICE_REASONS)[number];

@@ -12,6 +12,11 @@
         "websiteLabel": "Sitio web"
     },
     "claim": {
+        "instructionsTitle": "Cómo reclamar un Partner",
+        "instructions": "Abrí el enlace de invitación que te enviamos por correo y usá la misma dirección para ingresar o crear tu cuenta. Si no tenés el enlace, contactanos.",
+        "invalidLinkTitle": "El enlace no es válido",
+        "contactCta": "Contactanos",
+        "homeCta": "Volver al inicio",
         "seo": {
             "title": "Reclamá tu Partner",
             "description": "Vinculá tu Partner aprobado a tu cuenta de Hospeda."
@@ -33,7 +38,7 @@
         "claiming": "Reclamando…",
         "success": "Listo: el Partner quedó vinculado a tu cuenta.",
         "successCta": "Ir a Mi Cuenta de Partner",
-        "notFound": "No encontramos este Partner. Revisá que el link esté completo.",
+        "notFound": "No pudimos validar la invitación. Abrí el enlace completo del correo o contactanos para pedir ayuda.",
         "alreadyClaimed": "Este Partner ya tiene dueño; si no fuiste vos, escribinos a soporte",
         "accountAlreadyOwns": "Tu cuenta ya es dueña de un Partner. Cada cuenta administra un solo Partner: el segundo negocio se reclama con otra cuenta. Si necesitás ayuda, escribinos a soporte.",
         "emailMismatch": "Este Partner solo se puede reclamar con la cuenta del correo al que se envió el link de reclamo. Cerrá sesión e iniciá sesión con esa cuenta. Si el Partner es tuyo pero querés administrarlo con otro correo, escribinos a Hospeda.",

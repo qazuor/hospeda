@@ -1876,14 +1876,17 @@ export const PRODUCTION_PLAN_CATALOG = [
  * Catalog publications after the immutable V2.4b baseline. Owned by the seed
  * package (migration 0133 consumes the entitlement list, HOS-2037; migration 0156
  * the quota-grant list, HOS-2077; migration 0188 the tourist-key removals from the
- * owner plans, HOS-2398; migration 0191 the HOS-2589 promotion grants; migration 0193 the HOS-2184 AI assistant grants); re-exported here so the catalog source stays the one
- * place to read the whole catalog. Not part of the generated SQL on purpose: see
- * the constants' own docblock (GUARD:G18).
+ * owner plans, HOS-2398; migration 0191 the HOS-2589 promotion grants; migration 0193
+ * the HOS-2184 AI assistant grants; migration 0194 the HOS-2180 featured-listing
+ * grants); re-exported here so the catalog source stays the one place to read the
+ * whole catalog. Not part of the generated SQL on purpose: see the constants' own
+ * docblock (GUARD:G18).
  */
 export {
     OWNER_PLAN_REMOVED_TOURIST_ENTITLEMENT_KEYS,
     OWNER_PLAN_REMOVED_TOURIST_LIMIT_KEYS,
     PRODUCTION_PLAN_AI_ASSISTANT_ACCESS_GRANTS,
+    PRODUCTION_PLAN_FEATURED_LISTING_GRANTS,
     PRODUCTION_PLAN_FREE_VISIBLE_PROMOTIONS_LIMIT,
     PRODUCTION_PLAN_NEXT_VERSION_ENTITLEMENTS,
     PRODUCTION_PLAN_NEXT_VERSION_QUOTA_GRANTS,

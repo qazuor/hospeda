@@ -269,7 +269,9 @@ test.describe('TEST:V7:22 AC:V7:19 AC:V7:7 Partner application, claim, and Gold 
             `${WEB_URL}/es/partners/reclamar/#partner=${partnerId}&secret=${encodeURIComponent(`${secret}x`)}`
         );
         await expect(
-            tamperedPage.getByText('No encontramos este Partner. Revisá que el link esté completo.')
+            tamperedPage.getByText(
+                'No pudimos validar la invitación. Abrí el enlace completo del correo o contactanos para pedir ayuda.'
+            )
         ).toBeVisible();
         await tamperedPage.close();
     });

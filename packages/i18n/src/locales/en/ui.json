@@ -50,6 +50,7 @@
         "debugInfo": "Debug info"
     },
     "navigation": {
+        "detail": "Detail",
         "navigation": "Navigation",
         "home": "Home",
         "formProgress": "Form progress",

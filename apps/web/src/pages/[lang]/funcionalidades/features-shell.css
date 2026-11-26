@@ -1,0 +1,463 @@
+/* Smooth in-page scroll for the subnav anchor links (AC-2.1), disabled
+ * under reduced motion so the jump is instant instead (AC-2.3). Scoped to
+ * `:global(html)` because the scroll-triggering element (the anchor's
+ * target) lives outside this component's own DOM subtree conceptually —
+ * `scroll-behavior` must be set on the scrolling box itself. */
+:global(html:has(.fx-page)) {
+    scroll-behavior: smooth;
+    /* This standalone page has no site Header (that's the whole point), so
+	 * the Header's own JS-measured `--navbar-height` override never runs
+	 * and the global 80px design-token default would leave anchor targets
+	 * (subnav clicks, scroll-padding-top) offset by ~20px too much under
+	 * this page's own, shorter, 60px top bar. Must stay numerically equal
+	 * to `--fx-topbar-h` below (also 60px) — that's the actual rendered
+	 * bar height driving `.fx-topbar__in`'s `min-height`. */
+    --navbar-height: 60px;
+}
+@media (prefers-reduced-motion: reduce) {
+    :global(html:has(.fx-page)) {
+        scroll-behavior: auto;
+    }
+}
+
+/* ==========================================================================
+ * Local token bridge — maps every brochure color/radius/shadow name to a
+ * real global.css / @repo/design-tokens token, scoped to this page only.
+ * Nothing below this block ever hardcodes a color, radius, or font. Dark
+ * mode works automatically because every `--fx-*` variable resolves to a
+ * theme-aware token.
+ * ========================================================================== */
+.fx-page {
+    /* Rendered height of `.fx-topbar` (see `.fx-topbar__in`'s min-height).
+	 * Declared here (not on `.fx-topbar` itself) so it's visible to every
+	 * descendant, including the plan tables' sticky `<thead>` rendered by
+	 * the child `PlanTable` component further down the page. */
+    --fx-topbar-h: 60px;
+    --fx-river: var(--hospeda-river);
+    --fx-river-ink: var(--brand-primary);
+    --fx-river-soft: var(--brand-primary-a12);
+    --fx-sun: var(--brand-accent);
+    --fx-sun-ink: var(--brand-accent);
+    --fx-sun-soft: var(--brand-accent-a12);
+    --fx-forest: var(--hospeda-forest);
+    --fx-forest-ink: var(--hospeda-forest);
+    --fx-forest-soft: color-mix(in oklab, var(--hospeda-forest) 12%, transparent);
+    --fx-sky: var(--hospeda-sky);
+    --fx-gold: var(--warning);
+    --fx-gold-soft: color-mix(in oklab, var(--warning) 16%, transparent);
+    --fx-sand: var(--surface-warm);
+    --fx-card: var(--core-card);
+    --fx-ink: var(--core-foreground);
+    --fx-ink-2: var(--core-muted-foreground);
+    --fx-line: var(--border);
+    --fx-r-card: var(--radius-card);
+    --fx-r-md: var(--radius-md);
+    --fx-r-pill: var(--radius-pill);
+    --fx-shadow-sm: var(--shadow-card);
+    --fx-shadow: var(--shadow-card-hover);
+
+    background-color: var(--core-background);
+    color: var(--fx-ink);
+}
+
+.fx-container {
+    max-width: var(--container-max);
+    margin-inline: auto;
+    padding-inline: var(--space-container-x);
+}
+
+/* --- generic section --- */
+.fx-section {
+    position: relative;
+    padding-block: var(--space-section);
+    overflow: clip;
+}
+.fx-section--warm {
+    background-color: var(--fx-sand);
+}
+.fx-section--sand {
+    background-color: color-mix(in oklab, var(--fx-sand) 70%, var(--core-background));
+}
+.fx-eyebrow {
+    display: block;
+    font-family: var(--font-decorative);
+    font-weight: 600;
+    font-size: 1.6rem;
+    line-height: 1;
+    color: var(--fx-sun-ink);
+}
+.fx-eyebrow--block {
+    margin-top: var(--space-4);
+}
+.fx-eyebrow--gold {
+    color: var(--fx-gold);
+}
+.fx-section--river .fx-eyebrow--block {
+    color: var(--fx-river-ink);
+}
+.fx-section--forest .fx-eyebrow--block {
+    color: var(--fx-forest-ink);
+}
+
+.fx-section-head {
+    max-width: 64ch;
+    margin-bottom: var(--space-8);
+}
+.fx-h2 {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: clamp(1.6rem, 4vw, 2.5rem);
+    letter-spacing: -0.02em;
+    line-height: 1.08;
+    margin: var(--space-2) 0 0;
+    color: var(--fx-ink);
+    text-wrap: balance;
+}
+.fx-lead {
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    color: var(--fx-ink-2);
+    margin: var(--space-3) 0 0;
+    max-width: 62ch;
+    line-height: 1.6;
+}
+.fx-note {
+    font-size: var(--text-body-sm);
+    color: var(--fx-ink-2);
+    margin: var(--space-3) 2px 0;
+    line-height: 1.5;
+}
+
+.fx-who {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-caption);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--fx-river-ink);
+    background-color: var(--fx-river-soft);
+    padding: 6px 13px;
+    border-radius: var(--fx-r-pill);
+}
+.fx-who--sun {
+    color: var(--fx-sun-ink);
+    background-color: var(--fx-sun-soft);
+}
+.fx-who--forest {
+    color: var(--fx-forest-ink);
+    background-color: var(--fx-forest-soft);
+}
+
+/* --- hero --- */
+.fx-hero {
+    position: relative;
+    overflow: hidden;
+    padding-block: clamp(3rem, 9vw, 6.5rem) clamp(2.5rem, 7vw, 5rem);
+}
+.fx-hero__blobs {
+    position: absolute;
+    inset: -10% -5% auto;
+    height: 120%;
+    z-index: 0;
+    filter: blur(46px);
+    opacity: 0.55;
+    pointer-events: none;
+}
+.fx-blob {
+    position: absolute;
+    border-radius: 50%;
+}
+.fx-blob--1 {
+    width: 46vw;
+    height: 46vw;
+    max-width: 560px;
+    max-height: 560px;
+    left: -8%;
+    top: -14%;
+    background: radial-gradient(circle at 40% 40%, var(--fx-river), transparent 68%);
+    animation: fx-drift1 22s ease-in-out infinite;
+}
+.fx-blob--2 {
+    width: 38vw;
+    height: 38vw;
+    max-width: 460px;
+    max-height: 460px;
+    right: -6%;
+    top: 2%;
+    background: radial-gradient(circle at 50% 50%, var(--fx-sky), transparent 66%);
+    animation: fx-drift2 26s ease-in-out infinite;
+}
+.fx-blob--3 {
+    width: 26vw;
+    height: 26vw;
+    max-width: 320px;
+    max-height: 320px;
+    right: 14%;
+    top: -8%;
+    background: radial-gradient(circle at 50% 50%, var(--fx-sun), transparent 60%);
+    animation: fx-drift3 18s ease-in-out infinite;
+}
+.fx-blob--4 {
+    width: 34vw;
+    height: 34vw;
+    max-width: 420px;
+    max-height: 420px;
+    left: 26%;
+    top: 34%;
+    background: radial-gradient(circle at 50% 50%, var(--fx-forest), transparent 66%);
+    animation: fx-drift1 30s ease-in-out infinite;
+}
+@keyframes fx-drift1 {
+    0%,
+    100% {
+        transform: translate(0, 0);
+    }
+    50% {
+        transform: translate(3%, 4%);
+    }
+}
+@keyframes fx-drift2 {
+    0%,
+    100% {
+        transform: translate(0, 0);
+    }
+    50% {
+        transform: translate(-4%, 3%);
+    }
+}
+@keyframes fx-drift3 {
+    0%,
+    100% {
+        transform: translate(0, 0);
+    }
+    50% {
+        transform: translate(-3%, 5%);
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .fx-blob {
+        animation: none;
+    }
+}
+
+.fx-hero__in {
+    position: relative;
+    z-index: 1;
+    max-width: 46rem;
+}
+.fx-hero__logo {
+    margin-bottom: var(--space-5);
+    filter: drop-shadow(0 6px 16px var(--brand-primary-a25));
+}
+.fx-hand {
+    font-family: var(--font-decorative);
+    color: var(--fx-sun-ink);
+    font-weight: 600;
+    font-size: clamp(1.6rem, 4vw, 2.4rem);
+    line-height: 1;
+    display: block;
+    margin-bottom: var(--space-2);
+}
+.fx-hero__title {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: clamp(2.1rem, 6.2vw, 3.9rem);
+    line-height: 1.02;
+    letter-spacing: -0.025em;
+    margin: 0.1em 0 0;
+    color: var(--fx-ink);
+    text-wrap: balance;
+}
+.fx-hero__accent {
+    font-style: normal;
+    color: var(--fx-river-ink);
+}
+.fx-hero__lede {
+    font-family: var(--font-sans);
+    font-size: clamp(1.05rem, 2.1vw, 1.25rem);
+    color: var(--fx-ink-2);
+    max-width: 60ch;
+    margin: var(--space-6) 0 0;
+    line-height: 1.55;
+}
+.fx-hero__stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    margin-top: var(--space-8);
+}
+.fx-pill {
+    display: inline-flex;
+    align-items: baseline;
+    gap: var(--space-2);
+    background-color: var(--fx-card);
+    border: 1px solid var(--fx-line);
+    border-radius: var(--fx-r-pill);
+    padding: 9px 16px;
+    box-shadow: var(--fx-shadow-sm);
+    font-size: var(--text-body-sm);
+    color: var(--fx-ink-2);
+}
+.fx-pill b {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: var(--fx-ink);
+    font-variant-numeric: tabular-nums;
+}
+.fx-pill--river b {
+    color: var(--fx-river-ink);
+}
+.fx-pill--sun b {
+    color: var(--fx-sun-ink);
+}
+.fx-pill--forest b {
+    color: var(--fx-forest-ink);
+}
+
+/* --- top bar (this page's own chrome — logo + subnav + theme toggle) ---
+ * This is the ONLY sticky bar on the page (there is no site Header to
+ * collide with). `--fx-topbar-h` is the single source of truth for its
+ * height, reused below to keep scroll-padding, the sticky subnav-link
+ * offset, and the sticky plan-table `<thead>` all in sync. */
+.fx-topbar {
+    --fx-topbar-h: 60px;
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    background-color: color-mix(in oklab, var(--core-background) 86%, transparent);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--fx-line);
+}
+.fx-topbar__in {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    min-height: var(--fx-topbar-h);
+}
+.fx-topbar__brand {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    flex: none;
+    color: var(--fx-ink);
+    text-decoration: none;
+}
+
+/* --- subnav (nested inside the top bar) --- */
+.fx-subnav {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+.fx-subnav__in {
+    display: flex;
+    gap: 4px;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+.fx-subnav__in::-webkit-scrollbar {
+    display: none;
+}
+.fx-subnav__link {
+    font-size: var(--text-body-sm);
+    font-weight: 500;
+    color: var(--fx-ink-2);
+    text-decoration: none;
+    padding: 8px 12px;
+    border-radius: var(--fx-r-pill);
+    white-space: nowrap;
+    transition:
+        color var(--duration-fast, 0.15s),
+        background-color var(--duration-fast, 0.15s);
+}
+.fx-subnav__link:hover {
+    color: var(--fx-ink);
+    background-color: var(--fx-river-soft);
+}
+.fx-subnav__link[data-active="true"] {
+    color: var(--fx-river-ink);
+    background-color: var(--fx-river-soft);
+    font-weight: 600;
+}
+
+/* --- grids & cards --- */
+.fx-grid {
+    display: grid;
+    gap: var(--space-card-gap);
+}
+.fx-grid--2 {
+    grid-template-columns: repeat(2, 1fr);
+}
+.fx-grid--3 {
+    grid-template-columns: repeat(3, 1fr);
+}
+.fx-grid--4 {
+    grid-template-columns: repeat(4, 1fr);
+}
+@media (max-width: 860px) {
+    .fx-grid--3,
+    .fx-grid--4 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+@media (max-width: 560px) {
+    .fx-grid--2,
+    .fx-grid--3,
+    .fx-grid--4 {
+        grid-template-columns: 1fr;
+    }
+}
+
+.fx-card {
+    background-color: var(--fx-card);
+    border: 1px solid var(--fx-line);
+    border-radius: var(--fx-r-card);
+    padding: var(--space-6);
+    box-shadow: var(--fx-shadow-sm);
+    transition:
+        transform var(--duration-normal, 0.2s),
+        box-shadow var(--duration-normal, 0.2s);
+}
+.fx-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--fx-shadow);
+}
+.fx-ico {
+    width: 44px;
+    height: 44px;
+    border-radius: 13px;
+    display: grid;
+    place-items: center;
+    margin-bottom: var(--space-4);
+    background-color: var(--fx-river-soft);
+    color: var(--fx-river-ink);
+}
+.fx-ico--sun {
+    background-color: var(--fx-sun-soft);
+    color: var(--fx-sun-ink);
+}
+.fx-ico--forest {
+    background-color: var(--fx-forest-soft);
+    color: var(--fx-forest-ink);
+}
+.fx-ico--sky {
+    background-color: color-mix(in oklab, var(--fx-sky) 20%, transparent);
+    color: var(--fx-sky);
+}
+.fx-card__title {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 1.15rem;
+    margin: 0 0 7px;
+    letter-spacing: -0.01em;
+    color: var(--fx-ink);
+}
+.fx-card__desc {
+    margin: 0;
+    color: var(--fx-ink-2);
+    font-size: var(--text-body-sm);
+    line-height: 1.55;
+}

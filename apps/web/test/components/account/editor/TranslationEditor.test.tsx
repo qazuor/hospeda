@@ -9,6 +9,41 @@ import { createT } from '@/lib/i18n';
 describe('TranslationEditor', () => {
     afterEach(() => vi.unstubAllGlobals());
 
+    it.each([
+        'accommodation',
+        'venue',
+        'experience'
+    ] as const)('shows the missing warning only once for %s', (vertical) => {
+        const t = createT('en');
+        const notice = t('host.properties.editor.translation.missingNotice', undefined, {
+            locales: 'EN, PT'
+        });
+        render(
+            <TranslationEditor
+                locale="en"
+                vertical={vertical}
+                description="Review content"
+                defaultLocale="es"
+                ariaLabel="Content languages"
+                missingNotice={notice}
+                tabs={(['es', 'en', 'pt'] as const).map((locale) => ({
+                    locale,
+                    count: locale === 'es' ? 0 : 2,
+                    countLabel: 'Missing fields',
+                    content: <li>{locale}</li>
+                }))}
+            />
+        );
+        expect(screen.getAllByText(notice)).toHaveLength(1);
+        expect(
+            screen.queryByText(
+                t('account.editorPresentation.missingHint', undefined, { locales: 'EN: 2, PT: 2' })
+            )
+        ).toBeNull();
+        fireEvent.click(screen.getByRole('tab', { name: /^EN/ }));
+        expect(screen.getAllByText(notice)).toHaveLength(1);
+    });
+
     it('resizes on width changes and disconnects its observer on unmount', () => {
         let notify: (() => void) | undefined;
         const disconnect = vi.fn();

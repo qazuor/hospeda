@@ -6,7 +6,7 @@ import {
     PaymentProviderError,
     type ProviderRead
 } from '@repo/payments';
-import { ServiceErrorCode } from '@repo/schemas';
+import { ServiceErrorCode, type SettleExternalChargeRejection } from '@repo/schemas';
 import { isAdministrativeActionPermitted, resolveAdministrativeActionStep } from '@repo/verticals';
 import { type Actor, ServiceError } from '../../../types';
 import { isSystemActor } from '../../../utils/system-actor';
@@ -17,6 +17,7 @@ import { type RecordChargeFactPorts, recordChargeFact } from './record-charge-fa
 
 const ACTION = 'ACC_14' as const;
 
+export type { SettleExternalChargeRejection } from '@repo/schemas';
 /**
  * Administrative action 14 settles motive 19's unrecorded approved charge (ACC:14, AC:B5:11, HOS-1550).
  * The reception rule is `recordChargeFact`, so this service calls it once and does not rewrite its branches (H-5).
@@ -24,17 +25,12 @@ const ACTION = 'ACC_14' as const;
  * S2 for `PENDING_AUTHORIZATION` is outside the reception rule (H-6). Reading the subscription owner
  * before P1's transaction creates no TOCTOU: a subscription's owner does not change (H-8).
  */
-export const SETTLE_EXTERNAL_CHARGE_REJECTIONS = [
-    'CHARGE_NOT_FOUND',
-    'CHARGE_NOT_LINKED',
-    'ADMINISTRATIVE_ACTION_FORBIDDEN',
-    'CHARGE_NOT_SETTLEABLE',
-    'CHARGE_NOT_APPROVED',
-    'CHARGE_ALREADY_RECORDED'
-] as const;
-
-/** A rejection reason returned when an external charge cannot be settled. */
-export type SettleExternalChargeRejection = (typeof SETTLE_EXTERNAL_CHARGE_REJECTIONS)[number];
+/**
+ * Every `reason` a rejection of `settleExternalCharge` carries. The tuple and its type live in
+ * `@repo/schemas` (single source of truth) and are re-exported here so existing consumers keep
+ * importing them from `@repo/service-core`.
+ */
+export { SETTLE_EXTERNAL_CHARGE_REJECTIONS } from '@repo/schemas';
 
 /** Reception outcome of the row's applicable billing rule. */
 export type ChargeReception =

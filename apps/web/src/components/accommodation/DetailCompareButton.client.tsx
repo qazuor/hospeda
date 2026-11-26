@@ -25,6 +25,8 @@
 
 import { CheckIcon, ColumnIcon } from '@repo/icons';
 import type { FC, MouseEvent } from 'react';
+import { UsageCounter } from '@/components/shared/ui/UsageCounter';
+import usageStyles from '@/components/shared/ui/UsageCounter.module.css';
 import { useCompareGuard } from '@/hooks/useCompareGuard';
 import { resolvePlanGateMessage } from '@/lib/billing/plan-name-list';
 import { cn } from '@/lib/cn';
@@ -93,7 +95,11 @@ export const DetailCompareButton: FC<DetailCompareButtonProps> = ({
     labels
 }) => {
     const { t, tPlural } = createTranslations(locale);
-    const { isInList, isLoading, maxItems, toggle } = useCompareGuard();
+    const { isInList, isLoading, maxItems, count, canCompare, toggle } = useCompareGuard();
+    const usage =
+        !isLoading && canCompare && Number.isFinite(maxItems) && maxItems > 0
+            ? t('common.card.compareUsage', undefined, { count, max: maxItems })
+            : undefined;
 
     const selected = isInList(accommodationId);
 
@@ -163,11 +169,13 @@ export const DetailCompareButton: FC<DetailCompareButtonProps> = ({
         });
     };
 
-    return (
+    const button = (
         <button
             type="button"
             aria-pressed={selected}
             aria-busy={isLoading}
+            title={usage}
+            aria-description={usage}
             data-selected={selected ? 'true' : undefined}
             className={cn(styles.button, className)}
             onClick={handleClick}
@@ -188,5 +196,11 @@ export const DetailCompareButton: FC<DetailCompareButtonProps> = ({
             <span className={styles.label}>{label}</span>
             <span className="sr-only">, {accommodationName}</span>
         </button>
+    );
+    return (
+        <span className={usage ? usageStyles.group : undefined}>
+            {button}
+            {usage && <UsageCounter value={`${count}/${maxItems}`} />}
+        </span>
     );
 };

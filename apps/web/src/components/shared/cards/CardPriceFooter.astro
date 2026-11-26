@@ -1,0 +1,59 @@
+---
+import { ArrowRightIcon } from '@repo/icons';
+import { createTranslations, type SupportedLocale } from '@/lib/i18n';
+
+interface Props {
+    readonly locale: SupportedLocale;
+    readonly cta: string;
+    readonly price?: string | null;
+    readonly prefix?: string;
+    readonly unit?: string;
+    readonly href?: string;
+    readonly listingName?: string;
+}
+
+const { locale, cta, price, prefix, unit, href, listingName } = Astro.props;
+const { t } = createTranslations(locale);
+---
+
+<footer class="card-price-footer">
+    <div class="card-price-footer__price">
+        {price && prefix && <small>{prefix}</small>}
+        <strong>{price || t('experience.priceOnRequest')}</strong>
+        {price && unit && <small>{unit}</small>}
+    </div>
+    {href ? (
+        <a href={href} class="card-price-footer__link">
+            <span class="card-price-footer__cta">{cta}<ArrowRightIcon size={14} aria-hidden="true" /></span>
+            {listingName && <span class="sr-only"> — {listingName}</span>}
+        </a>
+    ) : <span class="card-price-footer__cta">{cta}<ArrowRightIcon size={14} aria-hidden="true" /></span>}
+    {Astro.slots.has('meta') && <div class="card-price-footer__meta"><slot name="meta" /></div>}
+</footer>
+
+<style>
+    .card-price-footer {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 0.5rem;
+        min-block-size: 4.5rem;
+        margin-block-start: auto;
+        border-block-start: 1px solid var(--brand-primary-a15);
+        font-size: var(--text-sm);
+    }
+    .card-price-footer__price { display: flex; flex-direction: column; }
+    .card-price-footer__link { text-decoration: none; }
+    .card-price-footer__link::after { content: ''; position: absolute; inset: 0; z-index: 1; }
+    .card-price-footer__link:focus-visible::after { outline: 2px solid var(--brand-primary); outline-offset: 2px; }
+    .card-price-footer__cta {
+        position: relative;
+        z-index: 6;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        color: var(--brand-primary);
+        font-weight: 600;
+    }
+    .card-price-footer__meta { display: flex; gap: 0.5rem; grid-column: 1 / -1; min-block-size: 1.5rem; }
+</style>
