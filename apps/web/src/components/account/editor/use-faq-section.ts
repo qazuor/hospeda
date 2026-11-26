@@ -1,8 +1,8 @@
 /**
  * @file use-faq-section.ts
- * @description State and requests of the accommodation FAQ editor (HOS-393,
- * HOS-2490). Every action persists immediately against the accommodation FAQ
- * endpoints (`auto` save model): nothing here flows through the parent
+ * @description State and requests of the shared owner FAQ editor (HOS-2643).
+ * Every action persists immediately through its injected adapter
+ * (`auto` save model): nothing here flows through the parent
  * editor's PATCH payload or dirty tracking.
  */
 
@@ -10,20 +10,28 @@ import { useCallback, useState } from 'react';
 import { useFaqAiDraft } from '@/hooks/use-faq-ai-draft';
 import { useFaqPrefill } from '@/hooks/use-faq-prefill';
 import { apiClient } from '@/lib/api/client';
-import { type AccommodationFaqItem, accommodationFaqApi } from '@/lib/api/endpoints-protected';
+import type { FaqPersistence } from '@/lib/api/faq-persistence';
 import { translateApiError } from '@/lib/api-errors';
 import { createTranslations, type SupportedLocale } from '@/lib/i18n';
 import { webLogger } from '@/lib/logger';
 import { addToast } from '@/store/toast-store';
-import { EMPTY_FAQ_EDITOR, type FaqEditor, sortFaqs } from './faq-section-model';
-import { type FaqFieldErrors, validateFaqEditorValues } from './faq-validation';
+import {
+    buildFaqBody,
+    EMPTY_FAQ_EDITOR,
+    type FaqConfig,
+    type FaqEditor,
+    type FaqFieldErrors,
+    type ListingFaq,
+    sortFaqs,
+    validateFaqEditorValues
+} from './faq-model';
 
 /** Options of {@link useFaqSection}. */
-export interface UseFaqSectionInput {
+export interface UseFaqSectionInput extends FaqConfig {
     readonly locale: SupportedLocale;
-    readonly accommodationId: string;
+    readonly persistence: FaqPersistence;
     /** Pre-fetched FAQs from the SSR editor page (may be empty). */
-    readonly initialFaqs: readonly AccommodationFaqItem[];
+    readonly initialFaqs: readonly ListingFaq[];
 }
 
 /**
@@ -32,10 +40,11 @@ export interface UseFaqSectionInput {
  * @param input - See {@link UseFaqSectionInput}.
  * @returns The state, its setters and the action handlers.
  */
-export function useFaqSection({ locale, accommodationId, initialFaqs }: UseFaqSectionInput) {
+export function useFaqSection({ locale, persistence, initialFaqs, ...config }: UseFaqSectionInput) {
     const { t } = createTranslations(locale);
+    const { namespace, showCategory, errorSurface, validationMode } = config;
 
-    const [faqs, setFaqs] = useState<readonly AccommodationFaqItem[]>(() => sortFaqs(initialFaqs));
+    const [faqs, setFaqs] = useState<readonly ListingFaq[]>(() => sortFaqs({ faqs: initialFaqs }));
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editValues, setEditValues] = useState<FaqEditor>(EMPTY_FAQ_EDITOR);
     const [editFieldErrors, setEditFieldErrors] = useState<FaqFieldErrors>({});
@@ -64,10 +73,13 @@ export function useFaqSection({ locale, accommodationId, initialFaqs }: UseFaqSe
         )
     });
 
-    const reportError = useCallback((message: string) => {
-        setActionError(message);
-        addToast({ type: 'error', message });
-    }, []);
+    const reportError = useCallback(
+        (message: string) => {
+            setActionError(message);
+            if (errorSurface === 'toast') addToast({ type: 'error', message });
+        },
+        [errorSurface]
+    );
 
     /**
      * Publishes a failed validation: marks the fields inline, fires the shared
@@ -88,6 +100,7 @@ export function useFaqSection({ locale, accommodationId, initialFaqs }: UseFaqSe
                 setEditFieldErrors(errors);
             }
 
+            if (validationMode !== 'schema') return true;
             addToast({
                 type: 'error',
                 message: t('validation.formHasErrors', 'Revisá los campos marcados')
@@ -105,7 +118,7 @@ export function useFaqSection({ locale, accommodationId, initialFaqs }: UseFaqSe
 
             return true;
         },
-        [t]
+        [t, validationMode]
     );
 
     /** HOS-2428: surface the server's reason instead of one generic line. */
@@ -114,20 +127,17 @@ export function useFaqSection({ locale, accommodationId, initialFaqs }: UseFaqSe
             translateApiError({
                 error,
                 t,
-                fallback: t(
-                    'host.properties.editor.faq.saveError',
-                    'No se pudo guardar la pregunta.'
-                )
+                fallback: t(`${namespace}.saveError`, 'No se pudo guardar la pregunta.')
             }),
-        [t]
+        [t, namespace]
     );
 
     // -- Add ---------------------------------------------------------------
 
     const startAdd = useCallback(() => {
         setIsAdding(true);
-        setAddFieldErrors({});
-    }, []);
+        if (validationMode === 'schema') setAddFieldErrors({});
+    }, [validationMode]);
 
     const cancelAdd = useCallback(() => {
         setIsAdding(false);
@@ -136,7 +146,16 @@ export function useFaqSection({ locale, accommodationId, initialFaqs }: UseFaqSe
     }, []);
 
     const handleAddSubmit = useCallback(async () => {
-        if (reportValidationErrors(validateFaqEditorValues(addValues, t), 'add')) {
+        if (
+            reportValidationErrors(
+                validateFaqEditorValues({
+                    values: addValues,
+                    t,
+                    config: { namespace, showCategory, errorSurface, validationMode }
+                }),
+                'add'
+            )
+        ) {
             return;
         }
 
@@ -144,17 +163,11 @@ export function useFaqSection({ locale, accommodationId, initialFaqs }: UseFaqSe
         setActionError(null);
         setAddFieldErrors({});
 
-        const result = await accommodationFaqApi.add({
-            accommodationId,
-            question: addValues.question.trim(),
-            answer: addValues.answer.trim(),
-            isVisibleOnListing: addValues.isVisibleOnListing,
-            isUsableByAi: addValues.isUsableByAi
-        });
+        const result = await persistence.add(buildFaqBody({ values: addValues, showCategory }));
 
         setBusyId(null);
         if (result.ok) {
-            setFaqs((prev) => sortFaqs([...prev, result.data.faq]));
+            setFaqs((prev) => sortFaqs({ faqs: [...prev, result.data.faq] }));
             setAddValues(EMPTY_FAQ_EDITOR);
             setAddFieldErrors({});
             setIsAdding(false);
@@ -176,7 +189,11 @@ export function useFaqSection({ locale, accommodationId, initialFaqs }: UseFaqSe
         }
     }, [
         addValues,
-        accommodationId,
+        persistence,
+        namespace,
+        showCategory,
+        errorSurface,
+        validationMode,
         t,
         reportError,
         reportValidationErrors,
@@ -186,11 +203,12 @@ export function useFaqSection({ locale, accommodationId, initialFaqs }: UseFaqSe
 
     // -- Edit --------------------------------------------------------------
 
-    const startEdit = useCallback((faq: AccommodationFaqItem) => {
+    const startEdit = useCallback((faq: ListingFaq) => {
         setEditingId(faq.id);
         setEditValues({
             question: faq.question,
             answer: faq.answer,
+            category: faq.category ?? '',
             isVisibleOnListing: faq.isVisibleOnListing,
             isUsableByAi: faq.isUsableByAi
         });
@@ -206,7 +224,17 @@ export function useFaqSection({ locale, accommodationId, initialFaqs }: UseFaqSe
 
     const handleEditSubmit = useCallback(
         async (faqId: string) => {
-            if (reportValidationErrors(validateFaqEditorValues(editValues, t), 'edit', faqId)) {
+            if (
+                reportValidationErrors(
+                    validateFaqEditorValues({
+                        values: editValues,
+                        t,
+                        config: { namespace, showCategory, errorSurface, validationMode }
+                    }),
+                    'edit',
+                    faqId
+                )
+            ) {
                 return;
             }
 
@@ -214,19 +242,17 @@ export function useFaqSection({ locale, accommodationId, initialFaqs }: UseFaqSe
             setActionError(null);
             setEditFieldErrors({});
 
-            const result = await accommodationFaqApi.update({
-                accommodationId,
+            const result = await persistence.update({
                 faqId,
-                question: editValues.question.trim(),
-                answer: editValues.answer.trim(),
-                isVisibleOnListing: editValues.isVisibleOnListing,
-                isUsableByAi: editValues.isUsableByAi
+                body: buildFaqBody({ values: editValues, showCategory })
             });
 
             setBusyId(null);
             if (result.ok) {
                 setFaqs((prev) =>
-                    sortFaqs(prev.map((f) => (f.id === faqId ? { ...f, ...result.data.faq } : f)))
+                    sortFaqs({
+                        faqs: prev.map((f) => (f.id === faqId ? { ...f, ...result.data.faq } : f))
+                    })
                 );
                 setEditingId(null);
                 setEditValues(EMPTY_FAQ_EDITOR);
@@ -236,7 +262,18 @@ export function useFaqSection({ locale, accommodationId, initialFaqs }: UseFaqSe
                 reportError(saveErrorMessage(result.error));
             }
         },
-        [editValues, accommodationId, t, reportError, reportValidationErrors, saveErrorMessage]
+        [
+            editValues,
+            persistence,
+            namespace,
+            showCategory,
+            errorSurface,
+            validationMode,
+            t,
+            reportError,
+            reportValidationErrors,
+            saveErrorMessage
+        ]
     );
 
     // -- Remove (the Repeater asks for confirmation first) -------------------
@@ -248,20 +285,18 @@ export function useFaqSection({ locale, accommodationId, initialFaqs }: UseFaqSe
             setBusyId(faq.id);
             setActionError(null);
 
-            const result = await accommodationFaqApi.remove({ accommodationId, faqId: faq.id });
+            const result = await persistence.remove({ faqId: faq.id });
 
             setBusyId(null);
             if (result.ok) {
                 setFaqs((prev) => prev.filter((f) => f.id !== faq.id));
-                if (editingId === faq.id) cancelEdit();
+                if (validationMode === 'schema' && editingId === faq.id) cancelEdit();
             } else {
                 webLogger.warn('[FaqSection] remove failed:', result.error);
-                reportError(
-                    t('host.properties.editor.faq.deleteError', 'No se pudo eliminar la pregunta.')
-                );
+                reportError(t(`${namespace}.deleteError`, 'No se pudo eliminar la pregunta.'));
             }
         },
-        [faqs, accommodationId, editingId, cancelEdit, t, reportError]
+        [faqs, persistence, namespace, validationMode, editingId, cancelEdit, t, reportError]
     );
 
     // -- Reorder -----------------------------------------------------------
@@ -279,25 +314,24 @@ export function useFaqSection({ locale, accommodationId, initialFaqs }: UseFaqSe
             arr[swapIndex] = current;
 
             // Swap in local state optimistically.
-            const reordered: AccommodationFaqItem[] = arr.map((f, i) => ({
+            const reordered: ListingFaq[] = arr.map((f, i) => ({
                 ...f,
                 displayOrder: i
             }));
             setFaqs(reordered);
             setActionError(null);
 
-            const result = await accommodationFaqApi.reorder({
-                accommodationId,
+            const result = await persistence.reorder({
                 order: reordered.map((f) => ({ faqId: f.id, displayOrder: f.displayOrder ?? 0 }))
             });
 
             if (!result.ok) {
                 webLogger.warn('[FaqSection] reorder failed:', result.error);
-                setFaqs(sortFaqs(previous));
-                reportError(t('host.properties.editor.faq.reorderError', 'No se pudo reordenar.'));
+                setFaqs(sortFaqs({ faqs: previous }));
+                reportError(t(`${namespace}.reorderError`, 'No se pudo reordenar.'));
             }
         },
-        [faqs, accommodationId, t, reportError]
+        [faqs, persistence, namespace, t, reportError]
     );
 
     return {

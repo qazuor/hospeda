@@ -7,7 +7,7 @@
  */
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { FaqSection } from '@/components/host/editor/FaqSection.client';
+import { FaqSection } from '@/components/account/editor/FaqSection.client';
 
 const { mockAdd, mockUpdate } = vi.hoisted(() => ({ mockAdd: vi.fn(), mockUpdate: vi.fn() }));
 
@@ -46,8 +46,13 @@ describe('FaqSection save errors (HOS-2428)', () => {
         });
         render(
             <FaqSection
+                vertical="accommodation"
+                namespace="host.properties.editor.faq"
+                showCategory={false}
+                errorSurface="toast"
+                validationMode="schema"
                 locale="es"
-                accommodationId="acc-1"
+                listingId="acc-1"
                 initialFaqs={[]}
             />
         );
@@ -68,8 +73,13 @@ describe('FaqSection save errors (HOS-2428)', () => {
         });
         render(
             <FaqSection
+                vertical="accommodation"
+                namespace="host.properties.editor.faq"
+                showCategory={false}
+                errorSurface="toast"
+                validationMode="schema"
                 locale="es"
-                accommodationId="acc-1"
+                listingId="acc-1"
                 initialFaqs={[]}
             />
         );

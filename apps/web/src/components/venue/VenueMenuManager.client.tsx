@@ -18,7 +18,7 @@
  * mandatory and nothing here excludes anything else: an owner may publish with
  * a photo alone, and is never made to type forty dishes.
  *
- * ## Why this manager persists on its own, like `ListingFaqManager`
+ * ## Why this manager persists on its own, like `FaqSection`
  *
  * The parent editor's PATCH body is a diff of `ListingEditData`, and a carta is
  * a nested document with its own endpoints. It is mounted inside the form for
