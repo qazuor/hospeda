@@ -11,14 +11,15 @@
         },
         "mode": {
             "toggleLabel": "Comparar alojamientos",
-            "activeLabel": "Comparando",
+            "activeLabel": "Salir de comparar",
             "on": "Modo comparación activado",
             "off": "Modo comparación desactivado",
             "bannerHint": "Elegí los alojamientos que querés comparar"
         },
         "gate": {
             "authMessage": "Iniciá sesión para comparar alojamientos.",
-            "upsellMessage": "Tu plan no incluye la comparación de alojamientos.",
+            "upsellMessage": "Compará alojamientos lado a lado.",
+            "benefit": "Compará hasta {{count}} alojamientos lado a lado con {{plan}}.",
             "upsellCta": "Ver planes"
         },
         "toast": {

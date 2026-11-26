@@ -11,14 +11,15 @@
         },
         "mode": {
             "toggleLabel": "Comparar hospedagens",
-            "activeLabel": "Comparando",
+            "activeLabel": "Sair da comparação",
             "on": "Modo de comparação ativado",
             "off": "Modo de comparação desativado",
             "bannerHint": "Escolha as hospedagens que você quer comparar"
         },
         "gate": {
             "authMessage": "Faça login para comparar hospedagens.",
-            "upsellMessage": "Seu plano não inclui a comparação de hospedagens.",
+            "upsellMessage": "Compare hospedagens lado a lado.",
+            "benefit": "Compare até {{count}} hospedagens lado a lado com {{plan}}.",
             "upsellCta": "Ver planos"
         },
         "toast": {

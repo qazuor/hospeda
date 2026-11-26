@@ -28,7 +28,10 @@ describe('CompareModeControls.astro (HOS-85 T-005)', () => {
     });
 
     it('mounts CompareModeToggle with client:idle and the locale prop', () => {
-        expect(src).toMatch(/<CompareModeToggle\s+client:idle\s+locale=\{locale\}\s*\/>/);
+        expect(src).toMatch(
+            /<CompareModeToggle\s+client:idle\s+locale=\{locale\}[^>]*planName=\{planName\}/
+        );
+        expect(src).toContain('resolvePlanBadge');
     });
 
     it('does not import or mount CompareModeBanner (removed post-review)', () => {

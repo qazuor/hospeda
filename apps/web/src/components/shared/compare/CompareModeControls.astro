@@ -17,16 +17,15 @@
  * the active state (label + visual style change), so a separate banner is
  * redundant — see `CompareModeToggle.client.tsx`.
  *
- * `CompareModeToggle` gates on the comparison entitlement and needs to know
- * whether the visitor is authenticated, to choose between the guest auth
- * popover and the paid upsell. Since HOS-369 WB0-4 it resolves that itself,
- * client-side: this wrapper forwards nothing about the visitor, which is what
- * lets the listing pages be edge-cached.
+ * The island resolves the visitor's entitlement. This wrapper forwards only
+ * public catalog metadata, keeping listing pages session-blind.
  *
  * @module components/shared/compare/CompareModeControls
  */
 
 import type { SupportedLocale } from '@/lib/i18n';
+import { fetchPublicPlans } from '@/lib/billing/fetch-plans';
+import { resolvePlanBadge, touristBadgeCatalog } from '@/lib/billing/plan-badge';
 import { CompareModeToggle } from './CompareModeToggle.client';
 
 interface Props {
@@ -35,10 +34,16 @@ interface Props {
 }
 
 const { locale } = Astro.props;
+const result = await fetchPublicPlans({ vertical: 'tourist' });
+const entitlement = 'can_compare_accommodations';
+const planName = resolvePlanBadge({ result, entitlement });
+const planCapacity = planName ? touristBadgeCatalog({ result }).plans.find(
+	(plan) => plan.entitlements.includes(entitlement)
+)?.limits.max_compare_items : undefined;
 ---
 
 <div class="compare-mode-controls">
-	<CompareModeToggle client:idle locale={locale} />
+	<CompareModeToggle client:idle locale={locale} planName={planName} planCapacity={planCapacity} />
 </div>
 
 <style>

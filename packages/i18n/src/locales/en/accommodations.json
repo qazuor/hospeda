@@ -11,14 +11,15 @@
         },
         "mode": {
             "toggleLabel": "Compare accommodations",
-            "activeLabel": "Comparing",
+            "activeLabel": "Exit comparison",
             "on": "Comparison mode on",
             "off": "Comparison mode off",
             "bannerHint": "Choose the accommodations you want to compare"
         },
         "gate": {
             "authMessage": "Sign in to compare accommodations.",
-            "upsellMessage": "Your plan does not include accommodation comparison.",
+            "upsellMessage": "Compare accommodations side by side.",
+            "benefit": "Compare up to {{count}} accommodations side by side with {{plan}}.",
             "upsellCta": "View plans"
         },
         "toast": {
