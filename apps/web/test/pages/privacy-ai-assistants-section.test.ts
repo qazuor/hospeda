@@ -31,7 +31,7 @@ describe('privacy page, AI assistants section (HOS-2184)', () => {
     });
 
     it('shows the updated date', () => {
-        expect(src).toContain('lastUpdated="26 de noviembre de 2026"');
+        expect(src).toContain('lastUpdated="2026-11-26"');
     });
 
     it.each([

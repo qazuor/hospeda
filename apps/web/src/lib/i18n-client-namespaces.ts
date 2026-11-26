@@ -355,6 +355,7 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'maps.attribution',
     'maps.hideSurroundings',
     'maps.showSurroundings',
+    'maps.viewDetails',
     'nav.accommodations',
     'nav.blog',
     'nav.closeMenu',

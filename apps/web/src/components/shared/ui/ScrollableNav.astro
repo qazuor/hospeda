@@ -28,25 +28,31 @@
  * ```
  */
 
+import { ChevronLeftIcon, ChevronRightIcon } from '@repo/icons';
+import { createTranslations } from '@/lib/i18n';
+
 interface Props {
 	/** Accessible label for the <nav> wrapper. */
 	readonly ariaLabel?: string;
 	/** Additional class merged onto the inner scrollable element. */
 	readonly innerClass?: string;
+	/** On desktop show a grid instead of an overflowing row. */
+	readonly desktopGrid?: boolean;
 }
 
-const { ariaLabel, innerClass } = Astro.props;
+const { ariaLabel, innerClass, desktopGrid } = Astro.props;
+const { t } = createTranslations(Astro.locals.locale);
 ---
 
-<div class="scrollable-nav" data-scrollable-nav>
+<div class="scrollable-nav" data-scrollable-nav data-desktop-grid={desktopGrid ? '' : undefined}>
 	<button
 		type="button"
 		class="scrollable-nav__arrow scrollable-nav__arrow--prev"
-		aria-label="Anterior"
+		aria-label={t('ui.pagination.previous')}
 		data-scrollable-nav-prev
 		tabindex="-1"
 	>
-		&lsaquo;
+		<ChevronLeftIcon size="sm" aria-hidden="true" />
 	</button>
 
 	<nav
@@ -60,11 +66,11 @@ const { ariaLabel, innerClass } = Astro.props;
 	<button
 		type="button"
 		class="scrollable-nav__arrow scrollable-nav__arrow--next"
-		aria-label="Siguiente"
+		aria-label={t('ui.pagination.next')}
 		data-scrollable-nav-next
 		tabindex="-1"
 	>
-		&rsaquo;
+		<ChevronRightIcon size="sm" aria-hidden="true" />
 	</button>
 </div>
 
@@ -236,6 +242,13 @@ const { ariaLabel, innerClass } = Astro.props;
 	   Desktop: arrows are the primary affordance (mouse can't swipe)
 	   ============================================================ */
 	@media (min-width: 768px) {
+		.scrollable-nav[data-desktop-grid] .scrollable-nav__inner {
+			display: grid;
+			grid-template-columns: repeat(4, minmax(0, 1fr));
+			padding-inline: 0;
+			overflow: visible;
+		}
+		.scrollable-nav[data-desktop-grid] .scrollable-nav__arrow { display: none; }
 		.scrollable-nav__inner {
 			overflow-x: auto;
 			overflow-y: hidden;

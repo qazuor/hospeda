@@ -25,11 +25,12 @@ describe('tourist landing presentation', () => {
         );
     });
 
-    it('uses an accessible native disclosure with a rotating decorative chevron', () => {
+    it('uses the shared native disclosure with decorative open and closed icons', () => {
         const faq = source('components/marketing/FaqSection.astro');
-        expect(faq).toContain('<details');
-        expect(faq).toContain('ChevronDownIcon');
-        expect(faq).toContain('.faq__item[open]');
-        expect(faq).toContain('rotate(180deg)');
+        const shared = source('components/shared/ui/FaqAccordion.astro');
+        expect(faq).toContain('<FaqAccordion');
+        expect(shared).toContain('<summary>');
+        expect(shared).toContain('<AddIcon');
+        expect(shared).toContain('<MinusIcon');
     });
 });

@@ -1,0 +1,296 @@
+/* ════════════════════════════════════════════════════════════════════
+   Responsive — tablet (≥768px)
+   ════════════════════════════════════════════════════════════════════ */
+@media (min-width: 48rem) {
+    .footer__main-grid {
+        grid-template-columns: minmax(16rem, 22rem) 1fr;
+        gap: clamp(2.5rem, 5vw, 5rem);
+        align-items: start;
+    }
+
+    /* Undo mobile-only centering: brand block returns to flex-start
+       left-aligned, and trust items hug the start so the 4-column
+       inline strip reads from left to right. */
+    .footer__brand {
+        align-items: flex-start;
+        text-align: left;
+    }
+
+    .footer__trust-item {
+        justify-content: flex-start;
+    }
+
+    /* Desktop: texto + form lado a lado dentro del bloque centrado.
+       El bloque sigue centrado en el footer (max-width + margin auto en
+       el default); acá solo lo pasamos a row con un gap chico para que
+       título/desc lean junto al input, sin un hueco grande entre ellos. */
+    .footer__newsletter-inner {
+        flex-direction: row;
+        align-items: center;
+        gap: 2.25rem;
+        text-align: left;
+    }
+
+    .footer__newsletter-text {
+        align-items: flex-start;
+        flex: 0 0 auto;
+        max-width: 22rem;
+    }
+
+    .footer__newsletter {
+        flex-direction: row;
+        align-items: center;
+    }
+
+    .footer__newsletter-btn {
+        align-self: auto;
+    }
+
+    /* Nav: 3 static columns, accordion behaviour disabled */
+    .footer__nav {
+        grid-template-columns: repeat(3, 1fr);
+        gap: clamp(1rem, 3vw, 3rem);
+    }
+
+    .footer__nav-col {
+        border-bottom: none;
+        padding-block: 0;
+    }
+
+    .footer__nav-heading {
+        min-height: 0;
+        cursor: default;
+        pointer-events: none;
+        margin-bottom: 0.875rem;
+        font-size: var(--text-body);
+        font-weight: 600;
+        color: var(--footer-fg);
+        text-transform: none;
+        letter-spacing: 0;
+        /* Revert mobile heading centering so the column titles align with
+           their links on tablet+. */
+        justify-content: flex-start;
+    }
+
+    .footer__nav-heading svg {
+        display: none;
+    }
+
+    /* Tablet+ reverts the mobile 2-column grid back to a vertical stack
+       inside each nav section (the section columns themselves already
+       sit side-by-side in `.footer__nav` above). Drop the centering
+       set on mobile too. */
+    .footer__nav-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.625rem;
+        padding: 0;
+        text-align: left;
+    }
+
+    /* Trust signals: 4 columns inline */
+    .footer__trust-inner {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        gap: 2rem;
+    }
+
+    .footer__trust-list {
+        grid-template-columns: repeat(4, auto);
+        gap: clamp(1rem, 2vw, 2rem);
+        flex: 1;
+    }
+
+    /* Give legal links the full row so they don't compete with contacts. */
+    .footer__bottom-inner {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        text-align: left;
+        gap: 1.25rem;
+    }
+
+    .footer__bottom-contact {
+        justify-content: flex-start;
+    }
+
+    .footer__legal {
+        grid-column: 1 / -1;
+        grid-row: 2;
+    }
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   Responsive — desktop (≥1024px)
+   ════════════════════════════════════════════════════════════════════ */
+@media (min-width: 64rem) {
+    .footer__main-grid {
+        grid-template-columns: minmax(18rem, 24rem) 1fr;
+    }
+
+    .footer__nav {
+        justify-items: end;
+    }
+
+    .footer__nav-col {
+        min-width: 9rem;
+    }
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   Responsive — mobile compact (<768px)
+   Reduces the footer height by roughly half without removing content:
+   tighter spacing, smaller type, closed accordions (see script below).
+   Declared last so it wins over the mobile-first base rules; desktop
+   is untouched because every rule lives inside this media query.
+   ════════════════════════════════════════════════════════════════════ */
+@media (max-width: 47.99rem) {
+    .footer__main {
+        padding-block: 1.5rem 1rem;
+    }
+
+    .footer__main-grid {
+        gap: 0.75rem;
+    }
+
+    /* Brand: logo and socials share a row, description sits below. */
+    .footer__brand {
+        display: grid;
+        grid-template-columns: auto auto;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.5rem 0.75rem;
+        text-align: left;
+    }
+
+    .footer__logo {
+        grid-column: 1;
+        grid-row: 1;
+        gap: 0.5rem;
+    }
+
+    .footer__brand-social {
+        grid-column: 2;
+        grid-row: 1;
+    }
+
+    .footer__brand-desc {
+        grid-column: 1 / -1;
+        grid-row: 2;
+        max-width: none;
+        font-size: var(--text-caption);
+        line-height: 1.5;
+    }
+
+    /* Accordions: compact summary rows, still >= 44px tap targets. */
+    .footer__nav {
+        gap: 0;
+    }
+
+    .footer__nav-col {
+        padding-block: 0;
+    }
+
+    .footer__nav-heading {
+        min-height: 2.75rem;
+        padding-block: 0;
+    }
+
+    .footer__nav-list {
+        row-gap: 0.5rem;
+        padding: 0.25rem 0 0.75rem;
+    }
+
+    .footer__nav-link {
+        font-size: var(--text-caption);
+    }
+
+    /* Newsletter */
+    .footer__newsletter-zone {
+        padding-block: 1rem;
+    }
+
+    .footer__newsletter-inner {
+        gap: 0.625rem;
+    }
+
+    .footer__newsletter-title {
+        font-size: var(--text-body);
+    }
+
+    .footer__newsletter-desc {
+        font-size: var(--text-caption);
+        line-height: 1.4;
+    }
+
+    /* Trust: tight 2x2 with smaller icons and text. */
+    .footer__trust {
+        padding-block: 0.75rem;
+    }
+
+    .footer__trust-inner {
+        gap: 0.625rem;
+    }
+
+    .footer__trust-list {
+        gap: 0.5rem 0.75rem;
+    }
+
+    .footer__trust-item {
+        gap: 0.375rem;
+    }
+
+    .footer__trust-icon {
+        width: 1.125rem;
+        height: 1.125rem;
+    }
+
+    .footer__trust-strong {
+        font-size: var(--text-caption);
+    }
+
+    .footer__trust-meta {
+        font-size: 0.6875rem;
+    }
+
+    .footer__payments-list {
+        gap: 0.625rem;
+    }
+
+    .footer__payments-list .footer__payment {
+        width: var(--footer-payment-size, 1.5rem);
+        height: var(--footer-payment-size, 1.5rem);
+    }
+
+    .footer__payment-item--amex {
+        --footer-payment-size: 2.75rem;
+    }
+
+    /* Bottom bar */
+    .footer__bottom {
+        padding-block: 0.75rem;
+    }
+
+    .footer__bottom-inner {
+        gap: 0.5rem;
+    }
+
+    .footer__bottom-contact {
+        flex-wrap: nowrap;
+        gap: 0.75rem;
+    }
+
+    .footer__contact-link {
+        font-size: var(--text-caption);
+        gap: 0.375rem;
+    }
+
+    .footer__legal {
+        gap: 0.25rem 0.75rem;
+    }
+
+    .footer__copyright {
+        font-size: 0.6875rem;
+    }
+}

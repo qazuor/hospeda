@@ -231,7 +231,7 @@ const PILL = '.sheetTrigger';
 const SHORT_Q = 'max-width: 449px';
 const COUNT_Q = 'max-width: 419px';
 
-describe('HOS-1780 map results pill degrades full -> short -> icon + count', () => {
+describe('map results keep a visible text label in the dock at every width', () => {
     const display = (selector: string, query: string): string | undefined =>
         valueUnder(mapCards, selector, query, 'display');
 
@@ -240,9 +240,6 @@ describe('HOS-1780 map results pill degrades full -> short -> icon + count', () 
             mapCards.filter((r) => r.selector === sel && r.queries.length === 0);
         expect(base('.sheetTriggerFull')).toEqual([]);
         expect(base('.sheetTriggerShort').at(-1)?.decls.display).toBe('none');
-        expect(base('.sheetTriggerCount').find((r) => 'display' in r.decls)?.decls.display).toBe(
-            'none'
-        );
     });
 
     it('swaps the full label for the short one at 449px and below', () => {
@@ -250,17 +247,16 @@ describe('HOS-1780 map results pill degrades full -> short -> icon + count', () 
         expect(display('.sheetTriggerShort', SHORT_Q)).toBe('inline');
     });
 
-    it('swaps the short label for icon + count at 419px and below', () => {
-        expect(display('.sheetTriggerShort', COUNT_Q)).toBe('none');
-        expect(display('.sheetTriggerCount', COUNT_Q)).toBe('inline-flex');
+    it('keeps the short label and allows it to wrap on narrow phones', () => {
+        expect(display('.sheetTriggerShort', COUNT_Q)).toBeUndefined();
+        expect(valueUnder(mapCards, `[data-mobile-dock] ${PILL}`, COUNT_Q, 'white-space')).toBe(
+            'normal'
+        );
     });
 
-    it('keeps the icon + count variant a 44px-wide target inside the dock', () => {
+    it('keeps the compact button a 44px-wide target inside the dock', () => {
         expect(valueUnder(mapCards, `[data-mobile-dock] ${PILL}`, COUNT_Q, 'min-width')).toBe(
             '44px'
-        );
-        expect(valueUnder(mapCards, `[data-mobile-dock] ${PILL}`, COUNT_Q, 'justify-content')).toBe(
-            'center'
         );
     });
 
@@ -273,16 +269,16 @@ describe('HOS-1780 map results pill degrades full -> short -> icon + count', () 
         for (const rule of base) expect(swap[0].order > rule.order).toBe(true);
     });
 
-    it('wires the three variants and keeps the full label as the accessible name', () => {
+    it('wires both text variants and keeps the full label as the accessible name', () => {
         const tsx = read('components/maps/MapCardsSheetTrigger.tsx');
         expect(tsx).toMatch(/aria-label=\{label\}/);
-        for (const cls of ['sheetTriggerFull', 'sheetTriggerShort', 'sheetTriggerCount']) {
+        for (const cls of ['sheetTriggerFull', 'sheetTriggerShort']) {
             expect(tsx).toContain(`sidebarStyles.${cls}`);
         }
         // Each visible part is aria-hidden so the name is not announced twice,
         // and none is removed from the DOM or hidden with a rule that drops the
         // button's own name.
-        expect(tsx.match(/aria-hidden="true"/g)?.length).toBeGreaterThanOrEqual(3);
+        expect(tsx.match(/aria-hidden="true"/g)?.length).toBe(2);
     });
 
     it('feeds the short label through i18n in es, en and pt', () => {

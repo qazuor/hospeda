@@ -60,6 +60,8 @@ const LEGITIMATE_IDENTICAL: Readonly<Record<string, readonly TargetLocale[]>> = 
     // and the add-on purchase steps).
     Plan: ['en'],
     Complementos: ['pt'],
+    // HOS-2655 cookie inventory: identical spelling in Brazilian Portuguese.
+    '5 minutos': ['pt'],
     // HOS-2649 card labels: identical spelling in Brazilian Portuguese.
     'Favoritos: {{count}} de {{max}}': ['pt'],
     'Favoritos ilimitados': ['pt'],
