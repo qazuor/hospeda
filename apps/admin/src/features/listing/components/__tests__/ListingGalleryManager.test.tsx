@@ -86,9 +86,8 @@ vi.mock('@/hooks/use-media-upload', () => ({
     })
 }));
 
-// @repo/schemas mock — provide ENTITY_GALLERY_CAPS + ModerationStatusEnum
+// @repo/schemas mock — provide ModerationStatusEnum (HOS-2495: no listing cap)
 vi.mock('@repo/schemas', () => ({
-    ENTITY_GALLERY_CAPS: { venue: 30, experience: 30 },
     ModerationStatusEnum: { APPROVED: 'APPROVED', PENDING: 'PENDING', REJECTED: 'REJECTED' }
 }));
 

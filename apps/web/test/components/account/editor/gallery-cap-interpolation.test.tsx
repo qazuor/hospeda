@@ -116,7 +116,7 @@ describe('gallery cap interpolation (HOS-1934)', () => {
 
     it('interpolates the cap in the cap-reached error of the listing editor', async () => {
         // Arrange
-        const cap = getGalleryCap('venue');
+        const cap = 30; // the legacy editor's fixed cap (HOS-2495: no listing literal in @repo/schemas)
         mockListListing.mockReturnValue(listOk(fullGalleryOf(cap)));
         render(
             <MediaSection

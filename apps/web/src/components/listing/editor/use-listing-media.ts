@@ -8,7 +8,7 @@
  * persisted action to the shell auto-save chip.
  */
 
-import { getGalleryCap, type Image } from '@repo/schemas';
+import type { Image } from '@repo/schemas';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { runRetryableEditorAutoSave } from '@/components/account/editor-shell/editor-auto-save-signal';
 import type { PhotoMetadataUpdateBody } from '@/components/host/editor/photo-section-helpers';
@@ -22,6 +22,9 @@ import { webLogger } from '@/lib/logger';
 import { addToast } from '@/store/toast-store';
 import { type ListingMediaItem, legacyToDisplay, rowToItem } from './listing-media-upload';
 import { useListingMediaUpload } from './use-listing-media-upload';
+
+/** The fixed client cap this legacy editor always used (venue/experience: 30). */
+const LEGACY_LISTING_GALLERY_CAP = 30;
 
 /** Params of {@link useListingMedia}. */
 export interface UseListingMediaParams {
@@ -75,7 +78,11 @@ export function useListingMedia({
     const [opLoading, setOpLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const galleryCap = getGalleryCap(vertical);
+    // HOS-2495: `getGalleryCap` no longer accepts a listing vertical. This legacy
+    // editor keeps its old fixed client cap until the shared photo editor
+    // replaces it (T-028) and this file is deleted (T-038); the server already
+    // enforces the owner's effective cap.
+    const galleryCap = LEGACY_LISTING_GALLERY_CAP;
     const isGalleryFull = galleryItems.length >= galleryCap;
     // Selecting exactly one remaining slot with `multiple` on would still let
     // the OS picker offer more than one file, only to reject the whole batch

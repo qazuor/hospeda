@@ -28,7 +28,6 @@
  */
 
 import { DEFAULT_ENTITY_MAX_FILE_SIZE_MB, mbToBytes } from '@repo/media';
-import { getGalleryCap } from '@repo/schemas';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
@@ -561,7 +560,7 @@ describe('MediaSection — per-operation persistence (HOS-372)', () => {
     // ── Gallery cap enforcement ────────────────────────────────────────
 
     describe('gallery cap enforcement', () => {
-        const GALLERY_CAP = getGalleryCap('venue');
+        const GALLERY_CAP = 30; // the legacy editor's fixed cap (HOS-2495: no listing literal in @repo/schemas)
 
         it('hides the add (+) button when the gallery is at the cap', async () => {
             const fullGallery = Array.from({ length: GALLERY_CAP }, (_, i) => ({
@@ -601,7 +600,7 @@ describe('MediaSection — per-operation persistence (HOS-372)', () => {
     // starts, and uploads run sequentially.
 
     describe('multi-file gallery upload (HOS-832)', () => {
-        const GALLERY_CAP = getGalleryCap('venue');
+        const GALLERY_CAP = 30; // the legacy editor's fixed cap (HOS-2495: no listing literal in @repo/schemas)
 
         it('declares `multiple` on the gallery input when more than one slot remains', async () => {
             render(<MediaSection {...defaultProps} />);
