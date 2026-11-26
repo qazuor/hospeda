@@ -11,6 +11,13 @@
  * whose entitlement key the owner lacks answers 403 `ENTITLEMENT_REQUIRED`. A
  * body that only clears fields (`null`) declares no section and writes through,
  * because `null` never counts as a touch.
+ *
+ * ## Entry note translations (HOS-2658)
+ *
+ * The service writes only `entryNoteI18n.es` (the Spanish source, AC-25). The
+ * `en` / `pt` a staff edit sends are an explicit correction, so the handler
+ * persists every changed one as a MANUAL pair through the single translation
+ * writer (`applyStaffEntryNotePairs`) instead of dropping it.
  */
 import {
     sectionsTouchedByBody,
@@ -23,6 +30,7 @@ import { ServiceError, VenueService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { runListingContentCall } from '../../../middlewares/listing-access';
+import { applyStaffEntryNotePairs } from '../../../services/translation/staff-entry-note-pairs';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
@@ -75,6 +83,13 @@ export const adminUpdateVenueRoute = createAdminRoute({
             throw new ServiceError(result.error.code, result.error.message, result.error.details);
         }
 
-        return result.data;
+        // HOS-2658: the service writes only `entryNoteI18n.es` (AC-25); a staff
+        // edit's `en`/`pt` are persisted as MANUAL pairs by the single writer.
+        const { venue } = await applyStaffEntryNotePairs({
+            venueId: id as string,
+            body: data.entryNoteI18n,
+            updated: result.data as unknown as Record<string, unknown>
+        });
+        return venue;
     }
 });
