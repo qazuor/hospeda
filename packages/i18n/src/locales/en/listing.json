@@ -277,27 +277,6 @@
                 "per_person": "Per person",
                 "per_group": "Per group"
             },
-            "translationPanel": {
-                "sectionTitle": "Translations",
-                "sectionDescription": {
-                    "venue": "Edit the translations of the main fields of your listing in the three available languages.",
-                    "experience": "Edit the translations of the main fields of your experience in the three available languages."
-                },
-                "fieldName": "Name",
-                "fieldSummary": "Summary",
-                "fieldDescription": "Description",
-                "fieldRichDescription": "Extended description",
-                "localePlaceholder": "Enter text in {{locale}}...",
-                "saveSuccess": "Translations saved.",
-                "saveError": "Could not save translations.",
-                "generating": "Generating translations...",
-                "generateButton": "Generate missing translations",
-                "missingCount": "Empty fields: {{count}}",
-                "missingNotice": "Translations missing in {{locales}}.",
-                "statusFilled": "Filled",
-                "statusEmpty": "Empty",
-                "statusSource": "Original"
-            },
             "faqManager": {
                 "sectionTitle": "Frequently asked questions",
                 "emptyState": "No questions yet. Add the first one.",

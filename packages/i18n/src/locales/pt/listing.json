@@ -277,27 +277,6 @@
                 "per_person": "Por pessoa",
                 "per_group": "Por grupo"
             },
-            "translationPanel": {
-                "sectionTitle": "Traduções",
-                "sectionDescription": {
-                    "venue": "Edite as traduções dos campos principais do seu estabelecimento nos três idiomas disponíveis.",
-                    "experience": "Edite as traduções dos campos principais da sua experiência nos três idiomas disponíveis."
-                },
-                "fieldName": "Nome",
-                "fieldSummary": "Resumo",
-                "fieldDescription": "Descrição",
-                "fieldRichDescription": "Descrição ampliada",
-                "localePlaceholder": "Digite o texto em {{locale}}...",
-                "saveSuccess": "Traduções salvas.",
-                "saveError": "Não foi possível salvar as traduções.",
-                "generating": "Gerando traduções...",
-                "generateButton": "Gerar traduções ausentes",
-                "missingCount": "Campos vazios: {{count}}",
-                "missingNotice": "Faltam traduções em {{locales}}.",
-                "statusFilled": "Preenchido",
-                "statusEmpty": "Vazio",
-                "statusSource": "Original"
-            },
             "faqManager": {
                 "sectionTitle": "Perguntas frequentes",
                 "emptyState": "Ainda não há perguntas. Adicione a primeira.",

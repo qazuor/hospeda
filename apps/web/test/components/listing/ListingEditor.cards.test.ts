@@ -22,7 +22,9 @@ const read = (path: string) => readFileSync(path, 'utf8');
 
 const fieldsCss = read(resolve(EDITOR_DIR, 'editor-fields.module.css'));
 const editorCss = read(resolve(LISTING_DIR, 'ListingEditor.module.css'));
-const translationPanel = read(resolve(LISTING_DIR, 'ListingTranslationPanel.client.tsx'));
+const translationPanel = read(
+    resolve(LISTING_DIR, '../account/editor/ListingTranslationsSection.client.tsx')
+);
 const sharedTranslationEditor = read(
     resolve(LISTING_DIR, '../account/editor/TranslationEditor.tsx')
 );
@@ -179,6 +181,7 @@ describe('ListingEditor — per-section cards (HOS-371)', () => {
     it('drops the translation panel resets and margin that would cancel or hollow the card', () => {
         expect(translationPanel).not.toContain('<fieldset');
         expect(translationPanel).not.toContain('ListingTranslationPanel.module.css');
+        expect(translationPanel).not.toMatch(/<Section\b/);
         expect(sharedTranslationEditor).not.toMatch(/<Section[^>]*className=/);
     });
 
