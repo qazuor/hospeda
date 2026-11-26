@@ -1,11 +1,28 @@
 // TEST:V1:1 and TEST:V1:3 — the full migration chain on an empty disposable database.
+
+import { execFileSync } from 'node:child_process';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import {
     CATALOG_KEY_DEFINITIONS,
     VERTICAL_ACTIVATION_EVENT_BY_VERTICAL,
     VerticalEnum
 } from '@repo/schemas';
-import { afterAll, describe, expect, it } from 'vitest';
+import { Pool } from 'pg';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { closeTestPool, getTestPool, withCleanSlate } from './helpers.ts';
+import { protectScratchPool, waitForNoConnections } from './support/scratch-database.ts';
+
+const pkgDir = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
+
+/** Returns the test server URL pointed at `database`. */
+function urlFor({ database }: { readonly database: string }): string {
+    const base = process.env.HOSPEDA_TEST_DATABASE_URL;
+    if (!base) throw new Error('HOSPEDA_TEST_DATABASE_URL is not set');
+    const url = new URL(base);
+    url.pathname = `/${database}`;
+    return url.toString();
+}
 
 afterAll(async () => {
     await closeTestPool();
@@ -130,9 +147,48 @@ describe('TEST:V1:3 — catalog_key table after db:migrate from empty', () => {
     });
 });
 
+// The shared integration database is migrated once by the global setup, but every
+// earlier file that calls withCleanSlate TRUNCATEs the migration-written addon catalog
+// (MIGRATION_CATALOG_TABLES). Whether these rows survive depends on file order, so
+// this describe runs `db:migrate` on its own scratch database instead.
 describe('listing photo packs after db:migrate from empty', () => {
+    const scratchDb = `hospeda_scratch_photo_packs_${process.pid}`;
+    let admin: Pool;
+    let scratch: Pool;
+
+    beforeAll(async () => {
+        admin = new Pool({ connectionString: urlFor({ database: 'postgres' }) });
+        await admin.query(`DROP DATABASE IF EXISTS "${scratchDb}" WITH (FORCE)`);
+        await admin.query(`CREATE DATABASE "${scratchDb}"`);
+        execFileSync(
+            process.execPath,
+            [
+                resolve(pkgDir, 'node_modules/tsx/dist/cli.mjs'),
+                'node_modules/drizzle-kit/bin.cjs',
+                'migrate',
+                '--config',
+                'drizzle.config.ts'
+            ],
+            {
+                cwd: pkgDir,
+                env: { ...process.env, HOSPEDA_DATABASE_URL: urlFor({ database: scratchDb }) },
+                stdio: 'pipe',
+                timeout: 180_000
+            }
+        );
+        scratch = new Pool({ connectionString: urlFor({ database: scratchDb }) });
+        protectScratchPool({ pool: scratch });
+    }, 200_000);
+
+    afterAll(async () => {
+        await scratch?.end();
+        await waitForNoConnections({ admin, database: scratchDb });
+        await admin.query(`DROP DATABASE IF EXISTS "${scratchDb}" WITH (FORCE)`);
+        await admin.end();
+    });
+
     it('joins each pack to exactly one recurring product and one matching limit', async () => {
-        const { rows } = await getTestPool().query(`
+        const { rows } = await scratch.query(`
             SELECT a.slug, v.validity, v.validity_days, v.scope_type, l.key, l.value,
                    p.price, p.currency, p.charge_kind, p.cycle, p.compatible_verticals
             FROM addon a
