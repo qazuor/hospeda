@@ -12,6 +12,8 @@ export * from './newsletter-campaign.http.schema.js';
 export * from './newsletter-campaign.schema.js';
 export * from './newsletter-delivery.http.schema.js';
 export * from './newsletter-delivery.schema.js';
+export * from './newsletter-dynamic-block.defaults.js';
+export * from './newsletter-dynamic-block.schema.js';
 
 // Admin search schemas
 export * from './newsletter-subscriber.admin-search.schema.js';
