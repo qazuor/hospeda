@@ -1,6 +1,6 @@
 /**
  * HOS-2184 phase B T-041 (API half) — `GET /api/v1/protected/ai-connections/access`:
- * the session user's `{ hasAccess }`, decided by the same
+ * the session user's `{ hasAccess, vertical? }`, decided by the same
  * `resolveAiAssistantAccess` the MCP tools run (mocked here; its own suite is
  * `test/mcp/access/ai-assistant-access.test.ts`).
  *
@@ -71,7 +71,7 @@ describe('GET /api/v1/protected/ai-connections/access', () => {
         expect((await res.json()).data).toEqual({ hasAccess: true });
     });
 
-    it('answers hasAccess false when the owner plans do not include it', async () => {
+    it('answers hasAccess false and the plans vertical when the owner plans do not include it', async () => {
         // Arrange
         resolveMock.mockResolvedValue({ kind: 'REFUSED', hasAccess: false, vertical: 'venue' });
 
@@ -80,7 +80,7 @@ describe('GET /api/v1/protected/ai-connections/access', () => {
 
         // Assert
         expect(res.status).toBe(200);
-        expect((await res.json()).data).toEqual({ hasAccess: false });
+        expect((await res.json()).data).toEqual({ hasAccess: false, vertical: 'venue' });
     });
 
     it('answers 503 SERVICE_UNAVAILABLE, never a false, when it cannot be decided', async () => {

@@ -6,7 +6,9 @@
  * call, so the panel can never promise what the tools would refuse.
  *
  * - granted, or not gated (no plan in any owner vertical) → `{ hasAccess: true }`;
- * - refused (the owner's plans do not include it) → `{ hasAccess: false }`;
+ * - refused (the owner's plans do not include it) → `{ hasAccess: false,
+ *   vertical }`, where `vertical` is the plans page to link to (the one the MCP
+ *   refusal links to);
  * - undecidable (an effective set or coverage read failed) → 503
  *   `SERVICE_UNAVAILABLE`, never a `false` the panel would show as an upsell.
  *
@@ -46,6 +48,10 @@ export const getAiAssistantAccessRoute = createProtectedRoute({
             );
         }
 
-        return { hasAccess: access.hasAccess };
+        if (access.kind === 'REFUSED') {
+            return { hasAccess: false, vertical: access.vertical };
+        }
+
+        return { hasAccess: true };
     }
 });
