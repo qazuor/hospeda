@@ -58,7 +58,7 @@ Con un asistente conectado podés, por ejemplo, {{article:reviews|leer tus rese�
 
 - Antes de aprobar el acceso, la pantalla te muestra qué puede hacer el asistente.
 - Al desconectarlo pierde el acceso de inmediato, y podés volver a conectarlo.
-- El asistente viene incluido en tu plan, sin costo extra y sin límite de uso. Si ya no tenés un plan activo, el asistente te avisa y te muestra los planes.
+- El asistente viene incluido en tu plan, sin costo extra y sin límite de uso. Si tu cuenta tiene solo el plan gratuito, el asistente te avisa y te muestra los planes, y en Mi cuenta → Asistentes de IA vas a ver el mismo aviso.
 
 ## Qué NO esperar
 
