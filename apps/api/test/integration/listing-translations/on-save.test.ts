@@ -18,6 +18,8 @@ import {
 } from '@repo/service-core';
 import { rehydrateEffectiveSet } from '@repo/verticals';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import * as backfill from '../../../../../packages/seed/src/data-migrations/0194-hos-2658-venue-experience-translation-meta';
+import type { SeedMigrationCtx } from '../../../../../packages/seed/src/data-migrations/types';
 import { initApp } from '../../../src/app';
 import { createTranslationServiceAdapter } from '../../../src/services/translation-service.adapter';
 import { validateApiEnv } from '../../../src/utils/env';
@@ -549,35 +551,34 @@ describe('on-save translation (HOS-2658)', () => {
         expect(provider.calls.map((callArgs) => callArgs.locale)).toEqual(['pt']);
     });
 
-    it('a backfilled AUTOMATIC experience pair is regenerated on the next changed save (AC-27)', async () => {
-        // Arrange: the shape 0194 leaves behind (no provider/model).
-        const { ownerId, id } = await seedListing('experience');
-        await setColumns('experience', id, {
-            name: 'Kayak',
-            name_i18n: { es: 'Kayak', en: 'Kayak tour', pt: 'Passeio' },
-            translation_meta: {
-                name: {
-                    en: {
-                        autoTranslated: true,
-                        translatedAt: '2026-11-26T00:00:00.000Z',
-                        sourceHash: hash('Kayak')
-                    },
-                    pt: {
-                        autoTranslated: true,
-                        translatedAt: '2026-11-26T00:00:00.000Z',
-                        sourceHash: hash('Kayak')
-                    }
-                }
-            }
+    it('a venue pair migrated by the real 0194 backfill is regenerated on the next changed save (AC-27)', async () => {
+        // Arrange: a pre-migration venue (translations, no meta) run through 0194 itself.
+        const { ownerId, id } = await seedListing('venue');
+        await setColumns('venue', id, {
+            name: 'Bar del Puerto',
+            name_i18n: { es: 'Bar del Puerto', en: 'Harbour Bar', pt: 'Bar do Porto' },
+            translation_meta: {}
+        });
+        await getDb().transaction(async (tx) => {
+            await backfill.up({ db: tx } as unknown as SeedMigrationCtx);
         });
 
         // Act
-        await patchAndSettle('experience', id, ownerId, { name: 'Kayak al atardecer' });
+        await patchAndSettle('venue', id, ownerId, { name: 'Bar del Puerto Viejo' });
 
         // Assert
-        const row = await readRow('experience', id, ['name_i18n']);
-        expect(row.name_i18n).toEqual({ es: 'Kayak al atardecer', en: 'AI (en)', pt: 'AI (pt)' });
-        expect(row.translation_meta?.name?.en?.sourceHash).toBe(hash('Kayak al atardecer'));
+        const row = await readRow('venue', id, ['name_i18n']);
+        expect(row.name_i18n).toEqual({
+            es: 'Bar del Puerto Viejo',
+            en: 'AI (en)',
+            pt: 'AI (pt)'
+        });
+        const meta = row.translation_meta?.name;
+        expect(meta).toEqual({
+            en: autoMeta('Bar del Puerto Viejo', meta?.en?.translatedAt),
+            pt: autoMeta('Bar del Puerto Viejo', meta?.pt?.translatedAt)
+        });
+        expect(provider.calls.map((callArgs) => callArgs.locale)).toEqual(['en', 'pt']);
         expect(await usageRows(ownerId)).toEqual([{ feature: 'translate', status: 'success' }]);
     });
 });
