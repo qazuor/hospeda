@@ -78,12 +78,12 @@ export type AudienceCardId = 'host' | 'tourist' | 'venue' | 'experience';
 /**
  * Display order of the audience cards.
  *
- * Host first and tourist second because those two are the conversion funnel the
- * rest of the site already points at; the three newer verticals follow.
+ * The chooser leads with travelers, followed by the three publishing audiences
+ * (HOS-2654, CARD-087 H-3).
  */
 export const AUDIENCE_CARD_ORDER: readonly AudienceCardId[] = [
-    'host',
     'tourist',
+    'host',
     'venue',
     'experience'
 ] as const;
@@ -261,6 +261,7 @@ export type AudienceTrialDays = Readonly<Record<AudienceCardId, number | null>>;
 
 /** Everything one round of plan fetches tells the index, per audience. */
 export interface AudienceOffers {
+    readonly touristPlans: readonly PublicPlanData[];
     readonly startingPrices: AudienceStartingPrices;
     readonly trialDays: AudienceTrialDays;
 }
@@ -378,14 +379,15 @@ export function resolveAudienceTrialDays(results: AudiencePlanResults): Audience
  * would double the request count and open a window where the two lines on one
  * card describe different snapshots of the catalogue.
  *
- * `fetchPublicPlans` never rejects, so a failing vertical degrades to `null` for
- * that audience alone — on both readings — and leaves the other four intact.
+ * `fetchPublicPlans` never rejects. A failing vertical leaves that audience's
+ * price and trial unavailable without affecting the other three audiences.
  *
  * SSR-only: called from `/suscriptores/planes/index.astro`'s frontmatter. It
  * imports `@repo/billing` at runtime, which is why nothing reachable from a
  * client island may import this module (see the HOS-360 barrel guard).
  *
- * @returns Price and trial per audience, `null` where either is unresolvable.
+ * @returns Price and trial per audience (`null` when unavailable), and the tourist
+ * catalog (`[]` when unavailable) from the same round of requests.
  */
 export async function fetchAudienceOffers(): Promise<AudienceOffers> {
     const [accommodation, tourist, venue, experience] = await Promise.all(
@@ -396,7 +398,8 @@ export async function fetchAudienceOffers(): Promise<AudienceOffers> {
 
     return {
         startingPrices: resolveAudienceStartingPrices(results),
-        trialDays: resolveAudienceTrialDays(results)
+        trialDays: resolveAudienceTrialDays(results),
+        touristPlans: plansOf(tourist)
     };
 }
 

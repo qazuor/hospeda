@@ -22,7 +22,7 @@
             "count": "500+",
             "rating": "4.8/5",
             "ratingOf": "de 500+",
-            "subtext": "viajantes que ja encontraram seu lugar"
+            "subtext": "média das avaliações"
         }
     },
     "search": {
@@ -281,6 +281,7 @@
         "destinationSearchLabel": "Buscar entre los destinos",
         "destinationSearchPlaceholder": "Buscá un destino",
         "featuredDestinationLabel": "Destino destacado",
+        "popularDestinations": "Destinos mais procurados",
         "noDestinationsMatch": "No hay destinos que coincidan con tu búsqueda",
         "noTypesMatch": "No hay tipos que coincidan con tu búsqueda",
         "typeSearchLabel": "Buscar entre los tipos de alojamiento",

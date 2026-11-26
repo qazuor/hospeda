@@ -13,10 +13,10 @@ interface Props {
 const { plan, intlLocale, locale } = Astro.props;
 const { t } = createTranslations(locale);
 const annual = getComparisonAnnualPrice({ plan });
-const freeLabel = t('pricing.free');
+const freeLabel = t('pricing.noCost');
 ---
 
-<span class="comparison-price comparison-price--monthly">
+<span class:list={['comparison-price comparison-price--monthly', { 'comparison-price--free': plan.monthlyPriceArs === 0 }]}>
     <span class="comparison-price__amount">{formatPriceArs({ cents: plan.monthlyPriceArs, intlLocale, freeLabel })}</span>
     {plan.monthlyPriceArs > 0 && <span class="comparison-price__period">{t('pricing.period.month')}</span>}
 </span>
@@ -26,6 +26,9 @@ const freeLabel = t('pricing.free');
 </span>}
 
 <style>
+    .comparison-price--free .comparison-price__amount {
+        color: var(--core-foreground);
+    }
     .comparison-price--annual { display: none; }
     :global(html[data-pricing-billing='annual']) .comparison-price--monthly:has(+ .comparison-price--annual) { display: none; }
     :global(html[data-pricing-billing='annual']) .comparison-price--annual { display: inline; }

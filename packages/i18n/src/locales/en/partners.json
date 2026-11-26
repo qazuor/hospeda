@@ -5,6 +5,7 @@
         "institution": "Institution"
     },
     "detail": {
+        "newTab": "(opens in a new tab)",
         "metaTitle": "{name} — Hospeda partner",
         "metaDescription": "Meet {name}, a Hospeda partner in the Entre Ríos Litoral.",
         "contactHeading": "Contact",

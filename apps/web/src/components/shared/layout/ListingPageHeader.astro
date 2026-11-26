@@ -34,7 +34,7 @@ const { tagline, title, subtitle, class: className } = Astro.props;
 		{tagline && (
 			<p class="listing-page-header__tagline wh-compact-hide">{tagline}</p>
 		)}
-		<h1 class="listing-page-header__title wh-compact-title">{title}</h1>
+		<h1 class:list={['listing-page-header__title wh-compact-title', { 'listing-page-header__title--with-media': Astro.slots.has('title-media') }]}><slot name="title-media" />{title}</h1>
 		{subtitle && (
 			<p class="listing-page-header__subtitle wh-compact-hide">{subtitle}</p>
 		)}
@@ -42,6 +42,11 @@ const { tagline, title, subtitle, class: className } = Astro.props;
 </div>
 
 <style>
+	.listing-page-header__title--with-media {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-3);
+	}
 	.listing-page-header__tagline {
 		font-family: var(--font-decorative);
 		font-weight: 700;

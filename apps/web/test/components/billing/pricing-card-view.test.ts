@@ -25,7 +25,8 @@ import type { TranslationFn } from '@/lib/i18n';
  * does for any key with no locale entry. Keeps these assertions about the
  * BUILD, not about the Spanish copy (that is the locale guards' job).
  */
-const t: TranslationFn = (_key, fallback) => fallback ?? '';
+const t: TranslationFn = (key, fallback) =>
+    key === 'pricing.noCost' ? 'Sin costo' : (fallback ?? '');
 
 function plan(input: Partial<PricingPlan> & Pick<PricingPlan, 'slug'>): PricingPlan {
     return {
@@ -169,8 +170,8 @@ describe('buildPricingCardViews — what the ANNUAL cadence shows', () => {
         ]);
 
         expect(cards[0]?.annualDisplay).toBe('free');
-        expect(cards[0]?.monthlyFormatted).toBe('Gratis');
-        expect(cards[0]?.annualFormatted).toBe('Gratis');
+        expect(cards[0]?.monthlyFormatted).toBe('Sin costo');
+        expect(cards[0]?.annualFormatted).toBe('Sin costo');
     });
 
     it('still calls a PAID monthly-only tier monthly-only', () => {
@@ -249,7 +250,7 @@ describe('buildPricingCardViews — the rest of the card', () => {
     it('renders a zero monthly price as the free label, not as "$0"', () => {
         const { cards } = build([plan({ slug: 'free', monthlyPriceArs: 0 })]);
 
-        expect(cards[0]?.monthlyFormatted).toBe('Gratis');
+        expect(cards[0]?.monthlyFormatted).toBe('Sin costo');
     });
 });
 

@@ -10,7 +10,7 @@
  * - Mobile: Only the carousel column (map is hidden via CSS)
  */
 
-import { LocationIcon, StarIcon } from '@repo/icons';
+import { ArrowLeftIcon, ArrowRightIcon, LocationIcon, StarIcon } from '@repo/icons';
 import useEmblaCarousel from 'embla-carousel-react';
 import { type ReactElement, useCallback, useEffect, useState } from 'react';
 import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
@@ -404,7 +404,10 @@ function DestinationsIslandInner({ destinations, locale }: DestinationsIslandPro
                         onClick={scrollPrev}
                         aria-label={t('destinations.carousel.previous', 'Previous destination')}
                     >
-                        ←
+                        <ArrowLeftIcon
+                            size={20}
+                            aria-hidden="true"
+                        />
                     </button>
 
                     <span
@@ -427,7 +430,10 @@ function DestinationsIslandInner({ destinations, locale }: DestinationsIslandPro
                         onClick={scrollNext}
                         aria-label={t('destinations.carousel.next', 'Next destination')}
                     >
-                        →
+                        <ArrowRightIcon
+                            size={20}
+                            aria-hidden="true"
+                        />
                     </button>
                 </nav>
 

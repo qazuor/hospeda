@@ -158,10 +158,12 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'billing.addonPurchase',
     'billing.checkout',
     'billing.common',
+    'billing.entitlement',
     'billing.limit',
     // HOS-1759 — the checkout island resolves the selected plan's localized
     // name through `billing/plan-name.ts`.
     'billing.plan',
+    'pricing.planStatus',
     // HOS-1491 — the subscribe button and the publish button's no-plans
     // rejection render these keys in the browser.
     'publish.noPlans',

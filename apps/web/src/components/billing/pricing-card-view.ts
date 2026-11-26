@@ -219,7 +219,7 @@ export function buildPricingCardViews(input: BuildPricingCardViewsInput): Pricin
     const annualHintTemplate = t('pricing.annualHint', 'Pagando por año ahorrás {percent}%');
     const seeAllTemplate = t('pricing.seeAll', 'Ver todo lo que incluye ({count} más)');
     const selectAriaTemplate = t('pricing.select.aria', 'Seleccionar el plan {plan}');
-    const freeLabel = t('pricing.free', 'Gratis');
+    const freeLabel = t('pricing.noCost');
 
     const deltas = computePlanDeltas({ plans });
 

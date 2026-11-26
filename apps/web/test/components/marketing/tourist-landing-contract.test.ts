@@ -8,8 +8,12 @@ describe('tourist landing presentation', () => {
     it('fills all hero icon slots while keeping the flat accent CTA', () => {
         const page = source('pages/[lang]/planes/turistas/index.astro');
         for (const slot of ['icon-1', 'icon-2', 'icon-3']) expect(page).toContain(`slot="${slot}"`);
-        expect(page).toContain('variant="accent"');
-        expect(page).toContain('flat');
+        // HOS-2654: the CTA is the plan-aware TouristPlanAction island, which
+        // renders the flat accent button itself.
+        expect(page).toMatch(/<TouristPlanAction\s+slot="cta"/);
+        const action = source('components/billing/TouristPlanAction.client.tsx');
+        expect(action).toContain('variant="accent"');
+        expect(action).toMatch(/variant="accent"\s+flat/);
     });
 
     it('decorates inline accent text, including wrapped lines', () => {

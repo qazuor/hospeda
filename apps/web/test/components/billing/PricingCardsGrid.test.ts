@@ -414,9 +414,7 @@ describe('PricingCardsGrid.astro', () => {
 
         it('keeps the summary the FIRST child of the details in the markup', () => {
             // Non-negotiable: `<summary>` is only the disclosure's label — and
-            // only keyboard-operable as one — when it is the first child. The
-            // owner wanted the control at the foot of the list; that is a
-            // presentational reorder, never a DOM move.
+            // only keyboard-operable as one — when it is the first child.
             const details = src.match(
                 /<details class="pricing-card__more">([\s\S]*?)<\/details>/
             )?.[1];
@@ -427,17 +425,6 @@ describe('PricingCardsGrid.astro', () => {
             expect(summaryAt).toBeGreaterThan(-1);
             expect(listAt).toBeGreaterThan(-1);
             expect(summaryAt).toBeLessThan(listAt);
-        });
-
-        it('moves the trigger to the foot of the list with CSS alone', () => {
-            // Open, the control used to sit between the lines already showing
-            // and the ones just revealed, splitting the list in two.
-            const detailsRule = src.match(/\.pricing-card__more \{([^}]*)\}/)?.[1] ?? '';
-            const summaryRule = src.match(/\.pricing-card__more-summary \{([^}]*)\}/)?.[1] ?? '';
-
-            expect(detailsRule).toContain('display: flex;');
-            expect(detailsRule).toContain('flex-direction: column;');
-            expect(summaryRule).toContain('order: 2;');
         });
 
         it('carries BOTH labels in the DOM and alternates them on [open]', () => {
@@ -467,13 +454,25 @@ describe('PricingCardsGrid.astro', () => {
             expect(src).toContain("t('pricing.seeLess'");
         });
 
-        it('keeps the revealed lines free of focusable content, which is what makes the reorder safe', () => {
-            // Reordering with flex does NOT reorder tabbing. The reorder is only
-            // harmless because the summary's next tab stop is the CTA, below it
-            // in both orders. A link or a button inside a revealed line would
-            // send focus visually BACKWARDS.
-            expect(itemSrc).not.toMatch(/<(a|button|input|select|textarea)\b/);
-            expect(itemSrc).not.toContain('tabindex');
+        it('keeps expanded disclosure tab stops in visual reading order', () => {
+            const details = src.match(
+                /<details class="pricing-card__more">([\s\S]*?)<\/details>/
+            )?.[1];
+            const focusableItem = /<(?:a|button|input|select|textarea|summary)\b|\btabindex\s*=/i;
+            const disclosureRules = [...src.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
+                .filter(([, selector]) =>
+                    /\.pricing-card__(?:more[\s:[.>,]|more-summary\b|items\b)/.test(selector ?? '')
+                )
+                .map(([, , declarations]) => declarations)
+                .join('\n');
+
+            expect(details).toMatch(/<\/summary>\s*<ul[\s\S]*<PricingCardItemLine/);
+            // This is a real tab stop: CSS must not put it above the outer summary.
+            expect(itemSrc).toMatch(/<summary\b/);
+            expect(itemSrc).toMatch(focusableItem);
+            expect(disclosureRules).not.toMatch(
+                /(?:^|[;\s])order\s*:|flex-direction\s*:\s*column-reverse/
+            );
         });
     });
 

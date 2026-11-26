@@ -10,8 +10,8 @@
  * Owner audience filters out complex plans and renders a teaser note below.
  * Tourist audience shows experience + AI groups.
  *
- * Renders a semantically accessible <table> with sticky first column and
- * horizontal scroll on mobile.
+ * Keeps table semantics while using stacked benefit rows for up to two plans
+ * on mobile and horizontal scrolling for wider comparisons.
  *
  * @prop locale - Active locale.
  * @prop plans - Plans from the API (may include complex plans for owners —
@@ -23,7 +23,7 @@
  */
 
 import { CheckIcon, MinusIcon } from '@repo/icons';
-import PlanComparisonPrice from './PlanComparisonPrice.astro';
+import PlanComparisonHeaderActions from './PlanComparisonHeaderActions.astro';
 import './comparison-scroll.css';
 import { COMPARISON_ROW_ICONS } from '@/components/billing/comparison-row-icons';
 import { getLineMarkText } from '@/components/billing/plan-comparison-catalog-rows';
@@ -57,13 +57,7 @@ interface Props {
 	 */
 	readonly audience: Exclude<PricingAudience, 'partner'>;
 	readonly intlLocale: string;
-	/**
-	 * Where each column's CTA points for a NON-accommodation audience, where
-	 * there is no in-page checkout to start. Ignored for `owner` / `tourist`:
-	 * their purchase island was removed with the old billing (HOS-1637,
-	 * AC:B13a:21) and those columns carry no CTA until the leaf that rewrites
-	 * pricing adds one. Omitted renders no CTA at all rather than a dead link.
-	 */
+	/** Optional CTA link for venue and experience columns only (HOS-1032). */
 	readonly ctaHref?: string;
 	/**
 	 * The sellable Tourist VIP plan, read from the tourist catalog. An owner plan
@@ -95,7 +89,7 @@ const groups = getComparisonGroups(audience);
 
 <div class="comparison-scroll" data-comparison-scroll>
 <div class="comparison-table__wrapper" data-comparison-viewport role="region" aria-label={t('pricing.comparison.link', 'Comparativa')} tabindex="0">
-	<table class:list={['comparison-table', { 'comparison-table--fits-mobile': !scrollsOnMobile }]}>
+	<table class:list={['comparison-table', { 'comparison-table--fits-mobile': !scrollsOnMobile }]} role="table">
 		<thead>
 			<tr>
 				<th scope="col" class="comparison-table__label-col">
@@ -104,20 +98,9 @@ const groups = getComparisonGroups(audience);
 				{activePlans.map((plan) => (
 					<th scope="col" class="comparison-table__plan-col">
 						<span class="comparison-table__plan-name">{getPlanName({ plan, t })}</span>
-						<PlanComparisonPrice plan={plan} intlLocale={intlLocale} locale={locale} />
-						<span class="comparison-table__plan-cta">
-							{/*
-								Same rule as `PricingCardsGrid`'s `ctaMode` (HOS-1032): a
-								venue or experience tier is not bought from a marketing page.
-								The accommodation audiences render no CTA here: their purchase
-								island was removed with the old billing (HOS-1637, AC:B13a:21).
-							*/}
-							{!isAccommodationAudience && ctaHref && (
-								<a class="comparison-table__plan-link" href={ctaHref}>
-									{t('pricing.comparison.cta', 'Elegir plan')}
-								</a>
-							)}
-						</span>
+						<PlanComparisonHeaderActions plan={plan} locale={locale} intlLocale={intlLocale}
+							touristPlans={audience === 'tourist' ? activePlans : undefined}
+							ctaHref={isAccommodationAudience ? undefined : ctaHref} />
 					</th>
 				))}
 			</tr>
@@ -201,6 +184,10 @@ const groups = getComparisonGroups(audience);
 )}
 
 <style>
+	.comparison-table__plan-col:has([data-current-tourist-plan]) {
+		background-color: var(--surface-warm);
+	}
+
 	.comparison-table__wrapper {
 		max-width: var(--container-max);
 		margin: 0 auto;
@@ -268,34 +255,6 @@ const groups = getComparisonGroups(audience);
 		font-size: var(--text-body-lg);
 		color: var(--core-foreground);
 		margin-bottom: var(--space-1);
-	}
-
-	/* OQ-4: per-column purchase CTA in each plan header, so users can buy
-	   straight from the comparison table without returning to the selector. */
-	.comparison-table__plan-cta {
-		display: block;
-		margin-top: var(--space-3);
-	}
-
-	/* The venue/experience-audience CTA (HOS-1032): a plain link where the
-	   accommodation audiences mount the purchase island. Styled to read as the
-	   same control so a column does not look unfinished next to one that has a
-	   button — the difference is where it goes, not how important it is. */
-	.comparison-table__plan-link {
-		display: inline-block;
-		padding: var(--space-2) var(--space-4);
-		border-radius: var(--radius-button);
-		background-color: var(--brand-accent);
-		color: var(--accent-foreground);
-		font-family: var(--font-sans);
-		font-size: var(--text-body-sm);
-		font-weight: 600;
-		text-decoration: none;
-		transition: opacity var(--duration-normal) ease-in-out;
-	}
-
-	.comparison-table__plan-link:hover {
-		opacity: 0.85;
 	}
 
 	/* OQ-5: mobile-only hint that the table scrolls horizontally. Hidden on
@@ -475,6 +434,46 @@ const groups = getComparisonGroups(audience);
 		/* HOS-2599: Gratis + VIP fit 390px; no 600px floor hides the VIP column. */
 		.comparison-table--fits-mobile { min-width: 0; }
 		.comparison-table--fits-mobile .comparison-table__plan-col { min-width: 0; padding-inline: var(--space-2); }
+		.comparison-table__wrapper:has(.comparison-table--fits-mobile) {
+			overflow: visible;
+		}
+		.comparison-table--fits-mobile thead {
+			position: sticky;
+			top: var(--navbar-height, 80px);
+			z-index: 3;
+			background: var(--core-card);
+		}
+		.comparison-table--fits-mobile,
+		.comparison-table--fits-mobile thead,
+		.comparison-table--fits-mobile tbody {
+			display: block;
+		}
+		.comparison-table--fits-mobile thead tr {
+			display: flex;
+		}
+		.comparison-table--fits-mobile thead .comparison-table__label-col {
+			position: absolute;
+			width: 1px;
+			height: 1px;
+			padding: 0;
+			clip-path: inset(50%);
+		}
+		.comparison-table--fits-mobile thead .comparison-table__plan-col {
+			flex: 1;
+		}
+		.comparison-table--fits-mobile tbody tr {
+			display: flex;
+			flex-wrap: wrap;
+		}
+		.comparison-table--fits-mobile tbody th {
+			width: 100%;
+			position: static;
+		}
+		.comparison-table--fits-mobile tbody td {
+			flex: 1;
+			border-radius: var(--radius-pill);
+			background: var(--core-card);
+		}
 		.comparison-table__scroll-hint {
 			display: flex;
 			align-items: center;
