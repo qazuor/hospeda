@@ -40,6 +40,8 @@ export interface PlanChangeChoices {
     readonly choices: readonly PlanChangeChoice[];
     /** What the payer declared on the current subscription; prefills the form (HOS-2218). */
     readonly declaredPayerEmail: string;
+    /** `true` when `declaredPayerEmail` is the remembered email, not the subscription's own (HOS-2616). */
+    readonly payerEmailRemembered: boolean;
 }
 
 /**
@@ -56,18 +58,50 @@ async function loadRememberedPayerEmail(): Promise<string> {
     }
 }
 
+/** The payer email a plan-change form starts with, and whether it is the remembered one. */
+export interface PayerEmailPrefill {
+    readonly email: string;
+    /** `true` when the subscription declared none and the field fell back to the remembered email. */
+    readonly remembered: boolean;
+}
+
+/**
+ * Resolve the plan-change form's starting email from the declared one of the subscription
+ * (HOS-2218), falling back to the remembered one (HOS-2616). Both are declarations, never a
+ * confirmed identity; `email` is `''` when none is known.
+ */
+async function resolvePayerEmailPrefill({
+    declared
+}: {
+    readonly declared: string;
+}): Promise<PayerEmailPrefill> {
+    if (declared) return { email: declared, remembered: false };
+    const remembered = await loadRememberedPayerEmail();
+    return { email: remembered, remembered: remembered !== '' };
+}
+
 /**
  * Read the email the payer declared on one owned subscription, to prefill the plan-change
- * form (HOS-2218). It is a declaration, never a confirmed identity; `''` when none is known.
+ * form (HOS-2218), or the remembered one when it declared none.
  */
+export async function loadPayerEmailPrefill({
+    subscriptionId
+}: {
+    readonly subscriptionId: string;
+}): Promise<PayerEmailPrefill> {
+    const current = await billingSubscriptionApi.read({ subscriptionId });
+    return resolvePayerEmailPrefill({
+        declared: current.ok ? (current.data.declaredPayerEmail ?? '') : ''
+    });
+}
+
+/** The prefill email alone; `''` when none is known. */
 export async function loadDeclaredPayerEmail({
     subscriptionId
 }: {
     readonly subscriptionId: string;
 }): Promise<string> {
-    const current = await billingSubscriptionApi.read({ subscriptionId });
-    const declared = current.ok ? (current.data.declaredPayerEmail ?? '') : '';
-    return declared || (await loadRememberedPayerEmail());
+    return (await loadPayerEmailPrefill({ subscriptionId })).email;
 }
 
 /** Validate a declared payer email before sending it; `null` when it is not an email. */
@@ -116,9 +150,13 @@ export async function loadPlanChangeChoices({
                 })
             }));
     });
+    const prefill = await resolvePayerEmailPrefill({
+        declared: current.data.declaredPayerEmail ?? ''
+    });
     return {
         choices,
-        declaredPayerEmail: current.data.declaredPayerEmail || (await loadRememberedPayerEmail())
+        declaredPayerEmail: prefill.email,
+        payerEmailRemembered: prefill.remembered
     };
 }
 
