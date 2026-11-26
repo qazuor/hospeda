@@ -71,7 +71,9 @@ vi.mock('../../../src/middlewares/actor', async (importOriginal) => ({
                 // HOS-2562: a real client (a business vertical), so the OAuth
                 // flow and `/mcp` let them through. The tourist journey is in
                 // `mcp-oauth-real-client.test.ts`.
-                permissions: ['accommodation.create'],
+                // `conversation.reply.own` makes `reply_inquiry` visible in
+                // `tools/list` (HOS-2184 T-042 publishes only what the actor may use).
+                permissions: ['accommodation.create', 'conversation.reply.own'],
                 emailVerified: true
             }) as unknown as Actor
     )

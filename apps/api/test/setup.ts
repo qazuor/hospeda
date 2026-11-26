@@ -397,6 +397,17 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     };
 });
 
+// The AI assistant plan gate (HOS-2184 T-040) reads three effective sets on
+// EVERY MCP tool call. Suites that drive the binder test their tool, not the
+// gate, so it lets every call through by default. The gate's own suites
+// (`test/mcp/access/`, `test/lib/mcp/bind-tool.ai-gate.test.ts`) read the real
+// module with `vi.importActual` or mock it again in their own file. A plain
+// function, not `vi.fn`: a suite's `vi.resetAllMocks()` must not turn it off.
+vi.mock('../src/mcp/access/ai-assistant-access', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('../src/mcp/access/ai-assistant-access')>()),
+    resolveAiAssistantAccess: async () => ({ kind: 'NOT_GATED', hasAccess: true })
+}));
+
 // Global test cleanup
 afterAll(async () => {
     // Cleanup test environment

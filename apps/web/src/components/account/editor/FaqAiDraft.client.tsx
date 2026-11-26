@@ -6,21 +6,20 @@
  * saved on its own; the whole block sits behind the `ai_faq_draft` plan
  * entitlement.
  *
- * @module components/listing/ListingFaqAiDraft.client
+ * @module components/account/editor/FaqAiDraft.client
  */
 
-import type { JSX } from 'react';
+import { Fragment, type JSX } from 'react';
 import styles from '@/components/account/editor/FaqEditor.module.css';
 import { Button } from '@/components/account/ui/Button';
 import { PlanEntitlementGate } from '@/components/host/editor/PlanEntitlementGate.client';
 import type { FaqAiDraftState } from '@/hooks/use-faq-ai-draft';
 import type { SupportedLocale, TranslationFn } from '@/lib/i18n';
-import type { VenueOrExperience } from '@/lib/listing/owner-listings';
 
-/** Props of {@link ListingFaqAiDraft}. */
-export interface ListingFaqAiDraftProps {
+/** Props of {@link FaqAiDraft}. */
+export interface FaqAiDraftProps {
     readonly locale: SupportedLocale;
-    readonly vertical: VenueOrExperience;
+    readonly vertical: 'accommodation' | 'venue' | 'experience';
     /** The assistant message the question came from. */
     readonly messageId: string;
     readonly faqAiDraft: FaqAiDraftState;
@@ -34,10 +33,10 @@ export interface ListingFaqAiDraftProps {
 /**
  * The plan-gated AI suggestion button, its disclaimer and its feedback.
  *
- * @param props - See {@link ListingFaqAiDraftProps}.
+ * @param props - See {@link FaqAiDraftProps}.
  * @returns The gated block.
  */
-export function ListingFaqAiDraft({
+export function FaqAiDraft({
     locale,
     vertical,
     messageId,
@@ -45,7 +44,8 @@ export function ListingFaqAiDraft({
     isAiDraftContent,
     onDraft,
     t
-}: ListingFaqAiDraftProps): JSX.Element {
+}: FaqAiDraftProps): JSX.Element {
+    const Wrapper = vertical === 'accommodation' ? Fragment : 'div';
     return (
         <PlanEntitlementGate
             entitlementKey="ai_faq_draft"
@@ -53,7 +53,7 @@ export function ListingFaqAiDraft({
             vertical={vertical}
             fallback={null}
         >
-            <div className={styles.stack}>
+            <Wrapper {...(vertical === 'accommodation' ? {} : { className: styles.stack })}>
                 <Button
                     variant="secondary"
                     size="lg"
@@ -90,7 +90,7 @@ export function ListingFaqAiDraft({
                         )}
                     </p>
                 )}
-            </div>
+            </Wrapper>
         </PlanEntitlementGate>
     );
 }
