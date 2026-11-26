@@ -1,4 +1,19 @@
 {
+    "dynamicBlock": {
+        "title": "Contenido dinámico",
+        "entityType": "Tipo de entidad",
+        "accommodation": "Alojamientos",
+        "source": "Fuente",
+        "count": "Cantidad de elementos",
+        "edit": "Editar bloque",
+        "invalidConfig": "Este bloque tiene una configuración inválida.",
+        "sources": {
+            "newest": "Más recientes",
+            "most_viewed": "Más vistos",
+            "top_rated": "Mejor valorados",
+            "featured": "Destacados"
+        }
+    },
     "subscribers": {
         "title": "Suscriptores",
         "filterStatus": "Estado",

@@ -1,4 +1,19 @@
 {
+    "dynamicBlock": {
+        "title": "Conteúdo dinâmico",
+        "entityType": "Tipo de entidade",
+        "accommodation": "Hospedagens",
+        "source": "Fonte",
+        "count": "Quantidade de itens",
+        "edit": "Editar bloco",
+        "invalidConfig": "Este bloco tem uma configuração inválida.",
+        "sources": {
+            "newest": "Mais recentes",
+            "most_viewed": "Mais vistos",
+            "top_rated": "Mais bem avaliados",
+            "featured": "Destaques"
+        }
+    },
     "subscribers": {
         "title": "Suscriptores",
         "filterStatus": "Estado",

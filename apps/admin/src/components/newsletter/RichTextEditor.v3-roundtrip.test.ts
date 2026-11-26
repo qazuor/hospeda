@@ -17,10 +17,22 @@
  * unlike the async ProseMirror view mount.
  */
 
+import {
+    DynamicBlockConfigSchema,
+    NewsletterDynamicEntityTypeEnum,
+    NewsletterDynamicSourceEnum,
+    NewsletterIfBelowMinEnum
+} from '@repo/schemas';
 import type { JSONContent } from '@tiptap/react';
 import { Editor } from '@tiptap/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { NEWSLETTER_EDITOR_EXTENSIONS } from './RichTextEditor';
+
+const dynamicConfig = {
+    entityType: NewsletterDynamicEntityTypeEnum.ACCOMMODATION,
+    source: NewsletterDynamicSourceEnum.NEWEST,
+    count: 4
+};
 
 /**
  * Constructs a headless editor with the component's real, exported extension
@@ -41,6 +53,127 @@ afterEach(() => {
 });
 
 describe('newsletter RichTextEditor — Tiptap v3 extension compatibility', () => {
+    it('inserts an atomic root block with a valid generated key and shared defaults', () => {
+        editor = createNewsletterEditor(null);
+        expect(editor.commands.insertDynamicBlock({ config: dynamicConfig })).toBe(true);
+        const block = editor.getJSON().content?.find((node) => node.type === 'dynamicBlock');
+        expect(block?.attrs?.blockKey).toMatch(/^[a-z0-9-]{8,64}$/);
+        expect(block?.attrs?.ifBelowMinManual).toBe(false);
+        expect(block?.content).toBeUndefined();
+        const config = DynamicBlockConfigSchema.parse(JSON.parse(block?.attrs?.config));
+        expect(config).toMatchObject({
+            ...dynamicConfig,
+            blockKey: block?.attrs?.blockKey,
+            minItems: 1,
+            ifBelowMin: NewsletterIfBelowMinEnum.SKIP_RUN
+        });
+        expect(editor.schema.nodes.dynamicBlock.spec.atom).toBe(true);
+        expect(editor.commands.insertDynamicBlock({ config: dynamicConfig })).toBe(true);
+        const blocks = editor.getJSON().content?.filter((node) => node.type === 'dynamicBlock');
+        expect(new Set(blocks?.map((node) => node.attrs?.blockKey)).size).toBe(2);
+    });
+
+    it.each([
+        false,
+        true
+    ])('preserves all dynamic attrs through setContent (manual=%s)', (manual) => {
+        editor = createNewsletterEditor(null);
+        editor.commands.insertDynamicBlock({ config: dynamicConfig });
+        const json = editor.getJSON();
+        const block = json.content?.find((node) => node.type === 'dynamicBlock');
+        if (!block?.attrs) throw new Error('Expected inserted dynamic block');
+        block.attrs.ifBelowMinManual = manual;
+        // Preserve the exact serialized config, including whitespace and manual policy.
+        block.attrs.config = JSON.stringify(
+            {
+                ...JSON.parse(block.attrs.config),
+                ifBelowMin: NewsletterIfBelowMinEnum.SEND_ANYWAY
+            },
+            null,
+            2
+        );
+        editor.commands.setContent(json);
+        expect(editor.getJSON().content?.find((node) => node.type === 'dynamicBlock')).toEqual(
+            block
+        );
+        const saved = editor.getJSON();
+        editor.commands.setContent(saved);
+        expect(editor.getJSON()).toEqual(saved);
+    });
+
+    it('preserves config and boolean attrs through HTML serialization', () => {
+        editor = createNewsletterEditor(null);
+        editor.commands.insertDynamicBlock({ config: dynamicConfig });
+        editor.commands.updateAttributes('dynamicBlock', { ifBelowMinManual: true });
+        const before = editor.getJSON().content?.find((node) => node.type === 'dynamicBlock');
+        editor.commands.setContent(editor.getHTML());
+        expect(editor.getJSON().content?.find((node) => node.type === 'dynamicBlock')).toEqual(
+            before
+        );
+    });
+
+    it.each([
+        'blockquote',
+        'bulletList',
+        'orderedList'
+    ])('inserts outside %s and forbids nesting', (type) => {
+        const paragraph = { type: 'paragraph', content: [{ type: 'text', text: 'Keep me' }] };
+        const container = {
+            type,
+            content:
+                type === 'blockquote' ? [paragraph] : [{ type: 'listItem', content: [paragraph] }]
+        };
+        editor = createNewsletterEditor({ type: 'doc', content: [container] });
+        editor.commands.setTextSelection(type === 'blockquote' ? 2 : 3);
+        expect(editor.commands.insertDynamicBlock({ config: dynamicConfig })).toBe(true);
+        const json = editor.getJSON();
+        expect(json.content?.[0].type).toBe(type);
+        expect(json.content?.[1].type).toBe('dynamicBlock');
+        expect(editor.getText()).toContain('Keep me');
+        expect(() =>
+            editor?.schema
+                .nodeFromJSON({
+                    type: 'doc',
+                    content: [
+                        {
+                            type: 'blockquote',
+                            content: [json.content?.[1]]
+                        }
+                    ]
+                })
+                .check()
+        ).toThrow();
+        expect(() =>
+            editor?.schema
+                .nodeFromJSON({
+                    type: 'doc',
+                    content: [
+                        {
+                            type: 'bulletList',
+                            content: [
+                                {
+                                    type: 'listItem',
+                                    content: [paragraph, json.content?.[1]]
+                                }
+                            ]
+                        }
+                    ]
+                })
+                .check()
+        ).toThrow();
+    });
+
+    it.each([
+        { ...dynamicConfig, count: 0 },
+        { ...dynamicConfig, source: NewsletterDynamicSourceEnum.FEATURED },
+        { ...dynamicConfig, entityType: NewsletterDynamicEntityTypeEnum.VENUE }
+    ])('rejects invalid configuration without changing the document: %j', (config) => {
+        editor = createNewsletterEditor(null);
+        const before = editor.getJSON();
+        expect(editor.commands.insertDynamicBlock({ config })).toBe(false);
+        expect(editor.getJSON()).toEqual(before);
+    });
+
     it('constructs with the full extension set without throwing (the #1890 canary)', () => {
         expect(() => {
             editor = createNewsletterEditor(null);

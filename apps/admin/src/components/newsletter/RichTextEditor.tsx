@@ -19,6 +19,7 @@ import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { useCallback, useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
+import { DynamicBlock, NewsletterDocument } from './dynamic-block/dynamic-block.extension';
 
 // Re-export so pages can `import { type TiptapDocument } from '@/components/newsletter/RichTextEditor'`
 export type { TiptapDocument };
@@ -32,7 +33,9 @@ export type { TiptapDocument };
  * `openOnClick: false` behavior.
  */
 export const NEWSLETTER_EDITOR_EXTENSIONS = [
-    StarterKit.configure({ link: { openOnClick: false } }),
+    StarterKit.configure({ document: false, link: { openOnClick: false } }),
+    NewsletterDocument,
+    DynamicBlock,
     Image,
     TextAlign.configure({ types: ['heading', 'paragraph'] })
 ];

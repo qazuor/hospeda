@@ -1,4 +1,19 @@
 {
+    "dynamicBlock": {
+        "title": "Dynamic content",
+        "entityType": "Entity type",
+        "accommodation": "Accommodations",
+        "source": "Source",
+        "count": "Item count",
+        "edit": "Edit block",
+        "invalidConfig": "This block has an invalid configuration.",
+        "sources": {
+            "newest": "Newest",
+            "most_viewed": "Most viewed",
+            "top_rated": "Top rated",
+            "featured": "Featured"
+        }
+    },
     "subscribers": {
         "title": "Suscriptores",
         "filterStatus": "Estado",
