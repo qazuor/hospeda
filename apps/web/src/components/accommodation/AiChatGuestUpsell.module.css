@@ -76,8 +76,8 @@
 }
 
 .secondary {
-    color: var(--brand-primary, #2563eb);
-    text-decoration: underline;
+    border: 1px solid var(--core-muted-foreground);
+    color: var(--core-foreground);
 }
 
 .primary:focus-visible,

@@ -14,7 +14,9 @@ import { resolveAiChatCopy } from '@/lib/ai-chat-copy';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import styles from './AiChatGuestUpsell.module.css';
+import { AiChatSuggestions } from './AiChatSuggestions';
 
+/** Inputs for the signed-out AI chat gate. */
 export interface AiChatGuestUpsellProps {
     /** Which kind of listing the chat is about (varies the copy). */
     readonly entityType: AiChatEntityType;
@@ -23,6 +25,7 @@ export interface AiChatGuestUpsellProps {
     readonly returnUrl: string;
     /** Ref to the primary CTA, so the panel can move focus there on open. */
     readonly primaryRef: Ref<HTMLAnchorElement>;
+    readonly monthlyQuota?: number;
 }
 
 /**
@@ -57,12 +60,12 @@ export function AiChatGuestUpsell({
     entityType,
     locale,
     returnUrl,
-    primaryRef
+    primaryRef,
+    monthlyQuota
 }: AiChatGuestUpsellProps) {
     const { t } = createTranslations(locale);
     const copy = (suffix: string): string => resolveAiChatCopy({ t, entityType, suffix });
     const { signUpHref, signInHref } = buildAiChatAuthHrefs({ locale, returnUrl });
-    const examples = ['guestExample1', 'guestExample2', 'guestExample3'];
 
     return (
         <div
@@ -71,17 +74,17 @@ export function AiChatGuestUpsell({
         >
             <p className={styles.intro}>{copy('guestIntro')}</p>
             <p className={styles.lead}>{copy('guestExamplesLead')}</p>
-            <ul className={styles.examples}>
-                {examples.map((suffix) => (
-                    <li
-                        key={suffix}
-                        className={styles.example}
-                    >
-                        {copy(suffix)}
-                    </li>
-                ))}
-            </ul>
-            <p className={styles.free}>{copy('guestFree')}</p>
+            <AiChatSuggestions
+                copy={copy}
+                action={{ href: signUpHref }}
+            />
+            <p className={styles.free}>
+                {monthlyQuota === undefined
+                    ? copy('guestFree')
+                    : t('accommodations.aiChat.guestMonthlyQuota', undefined, {
+                          quota: monthlyQuota
+                      })}
+            </p>
             <a
                 ref={primaryRef}
                 href={signUpHref}

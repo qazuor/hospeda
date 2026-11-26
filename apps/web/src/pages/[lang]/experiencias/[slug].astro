@@ -510,6 +510,8 @@ const headerProps = buildExperienceHeader({
         client:idle
         entityType="experience"
         entityId={experience.id}
+        listingPrice={contactPrice}
+        canConsult={contactChannels.length > 0}
         locale={locale}
         apiUrl={getApiUrl()}
     />
