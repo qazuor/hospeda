@@ -169,13 +169,13 @@ async function usageRows(userId: string): Promise<{ feature: string; status: str
     return result.rows as { feature: string; status: string }[];
 }
 
-function call(
+async function call(
     method: 'GET' | 'PUT' | 'POST',
     path: string,
     ownerId: string | null,
     body?: unknown
 ): Promise<Response> {
-    return app.request(path, {
+    return await app.request(path, {
         method,
         headers:
             ownerId === null
