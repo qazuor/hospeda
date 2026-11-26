@@ -917,21 +917,21 @@
             "addons": "Complementos"
         },
         "receipts": {
-            "title": "Seus recibos",
+            "title": "Seus comprovantes",
             "loadError": "Não conseguimos carregar seus recibos.",
             "number": "Comprovante n.º {{number}}",
-            "view": "Ver recibo",
-            "viewLabel": "Ver o recibo n.º {{number}}",
+            "view": "Ver comprovante",
+            "viewLabel": "Ver o comprovante n.º {{number}}",
             "kindPlan": "Assinatura",
             "kindAddon": "Complemento",
             "page": {
-                "title": "Recibo",
+                "title": "Comprovante",
                 "loading": "Preparando seu recibo…",
-                "open": "Abrir recibo",
-                "download": "Baixar recibo",
-                "notFound": "Não encontramos esse recibo.",
+                "open": "Abrir comprovante",
+                "download": "Baixar comprovante",
+                "notFound": "Não encontramos esse comprovante.",
                 "notFoundHint": "Confira se você entrou com a conta que fez o pagamento.",
-                "error": "Não conseguimos abrir o recibo. Tente de novo em instantes.",
+                "error": "Não conseguimos abrir o comprovante. Tente de novo em instantes.",
                 "retry": "Tentar novamente",
                 "back": "Voltar para Minha assinatura"
             }
