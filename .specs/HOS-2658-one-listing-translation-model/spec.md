@@ -528,7 +528,7 @@ Migration numbers are the next free ones on 2026-11-26 (`0252_*` and data-migrat
   (`:81`): `translationMeta: jsonb('translation_meta').$type<TranslationMeta>().default({}),`
   importing `TranslationMeta` from `@repo/schemas` (same as `accommodation.dbschema.ts:74`).
 - `packages/db/src/schemas/experience/experiences.dbschema.ts`: same after `:61`.
-- Run `pnpm db:generate` → `packages/db/src/migrations/0253_<generated>.sql` containing
+- Run `pnpm db:generate` → `packages/db/src/migrations/0255_hos2658_venue_experience_translation_meta.sql` (generated as 0253, re-chained to 0255 on top of staging 0254 after the 2026-11-26 merge) containing
   exactly two `ALTER TABLE ... ADD COLUMN "translation_meta" jsonb DEFAULT '{}'::jsonb;`.
   Commit the SQL + `meta/` snapshot. No extras, no index (the column is read by primary key only).
 
