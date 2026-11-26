@@ -19,7 +19,7 @@ function sameValue(input: { a: unknown; b: unknown }): boolean {
 function buildChanges(input: { context: PublicationContext }): PlanPublicationChange[] {
     const { content, previous } = input.context;
     const changes: PlanPublicationChange[] = [];
-    const settings: readonly [string, unknown, unknown][] = [
+    const settings: [string, unknown, unknown][] = [
         ['rank', previous?.rank ?? null, content.rank],
         ['sellable', previous?.sellable ?? null, content.sellable],
         ['trialDays', previous?.trialDays ?? null, content.trialDays],
@@ -27,6 +27,8 @@ function buildChanges(input: { context: PublicationContext }): PlanPublicationCh
         ['allowsPause', previous?.allowsPause ?? null, content.allowsPause],
         ['inheritsTouristVip', previous?.inheritsTouristVip ?? null, content.inheritsTouristVip]
     ];
+    if (content.paymentMethods)
+        settings.push(['paymentMethods', previous?.paymentMethods ?? null, content.paymentMethods]);
     for (const [key, from, to] of settings) {
         if (!sameValue({ a: from, b: to })) changes.push({ key, kind: 'setting', from, to });
     }

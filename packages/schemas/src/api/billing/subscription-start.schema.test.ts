@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { isSelfServiceCardCheckout } from './plan-payment-methods.schema';
 import {
-    isManualPaymentOnlyVertical,
-    MANUAL_PAYMENT_ONLY_VERTICALS,
     PendingAttemptCancellationResponseSchema,
     StartSubscriptionRejectionReasonSchema,
     StartSubscriptionRequestSchema,
@@ -83,19 +82,18 @@ describe('TEST:B3:2 subscription start request', () => {
             'CREATION_NOT_APPLIED',
             'PREVIOUS_ATTEMPT_IN_PROGRESS',
             'PROVIDER_REJECTED',
-            'PARTNER_MANUAL_ONLY',
+            'PLAN_NOT_SELF_SERVICE',
             'PROVIDER_BUSY',
             'PROVIDER_UNAVAILABLE'
         ]);
         expect(StartSubscriptionRejectionReasonSchema.safeParse('OTHER').success).toBe(false);
     });
 
-    it('TEST:1739:5 keeps exactly Partner in the manual-payment-only set', () => {
-        expect(MANUAL_PAYMENT_ONLY_VERTICALS).toEqual(['partner']);
-        expect(isManualPaymentOnlyVertical({ vertical: 'partner' })).toBe(true);
-        for (const vertical of ['accommodation', 'venue', 'experience', 'tourist', 'other']) {
-            expect(isManualPaymentOnlyVertical({ vertical })).toBe(false);
-        }
+    it('HOS-2196 sells self-service only a card-only plan, read from the plan and not the vertical', () => {
+        expect(isSelfServiceCardCheckout({ paymentMethods: ['CARD'] })).toBe(true);
+        expect(isSelfServiceCardCheckout({ paymentMethods: ['CARD', 'MANUAL'] })).toBe(false);
+        expect(isSelfServiceCardCheckout({ paymentMethods: ['MANUAL'] })).toBe(false);
+        expect(isSelfServiceCardCheckout({ paymentMethods: [] })).toBe(false);
     });
 
     it('publishes only the sanitized checkout link field', () => {

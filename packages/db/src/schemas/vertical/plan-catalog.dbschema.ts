@@ -1,4 +1,4 @@
-import { PLAN_ROLES } from '@repo/schemas';
+import { PLAN_PAYMENT_METHODS, PLAN_ROLES } from '@repo/schemas';
 import { sql } from 'drizzle-orm';
 import {
     boolean,
@@ -114,6 +114,16 @@ export const planVersions = pgTable(
         allowsPause: boolean('allows_pause').notNull(),
         /** Whether it inherits the Tourist VIP benefits (DEC-ENT-003). */
         inheritsTouristVip: boolean('inherits_tourist_vip').notNull().default(false),
+        /**
+         * Payment methods a subscription to this version can use (HOS-2196): `CARD` (recurring
+         * Mercado Pago preapproval), `MANUAL` (installments the team records), or both. Versioned
+         * with the rest of what has an effect. A plan that also accepts `MANUAL` is sold by the
+         * team (administrative action 6), never through the public checkout.
+         */
+        paymentMethods: text('payment_methods')
+            .array()
+            .notNull()
+            .default(sql`ARRAY['CARD']::text[]`),
         createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
         updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
     },
@@ -132,7 +142,11 @@ export const planVersions = pgTable(
             .on(t.vertical, t.rank)
             .where(sql`${t.sellable} AND ${t.current}`),
         graceDaysCheck: check('ck_plan_version_grace_days', sql`${t.graceDays} >= 0`),
-        trialDaysCheck: check('ck_plan_version_trial_days', sql`${t.trialDays} >= 0`)
+        trialDaysCheck: check('ck_plan_version_trial_days', sql`${t.trialDays} >= 0`),
+        paymentMethodsCheck: check(
+            'ck_plan_version_payment_methods',
+            sql`cardinality(${t.paymentMethods}) >= 1 AND ${t.paymentMethods} <@ ARRAY[${quotedList(PLAN_PAYMENT_METHODS)}]::text[]`
+        )
     })
 );
 

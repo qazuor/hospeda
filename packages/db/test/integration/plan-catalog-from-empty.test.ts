@@ -249,6 +249,7 @@ describe('TEST:1819:1 AC:1:3 — TEST:V2:1 — the catalog tables after db:migra
             'trial_days',
             'allows_pause',
             'inherits_tourist_vip',
+            'payment_methods',
             'vertical'
         ]) {
             expect(byName[column]?.is_nullable, column).toBe('NO');
@@ -363,6 +364,7 @@ describe('TEST:V2:2 — cosmetics mutate; what has an effect is only published a
         ['trial_days', '0'],
         ['allows_pause', 'false'],
         ['inherits_tourist_vip', 'true'],
+        ['payment_methods', "ARRAY['CARD','MANUAL']::text[]"],
         ['vertical', "'venue'"]
     ])('an UPDATE of plan_version.%s is rejected', async (column, value) => {
         await inRolledBackTx(async ({ client, attempt }) => {

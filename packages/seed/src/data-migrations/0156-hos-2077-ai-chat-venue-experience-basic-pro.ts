@@ -165,7 +165,9 @@ export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
                 graceDays: current.graceDays,
                 trialDays: current.trialDays,
                 allowsPause: current.allowsPause,
-                inheritsTouristVip: current.inheritsTouristVip
+                inheritsTouristVip: current.inheritsTouristVip,
+                // HOS-2196: a republished version keeps the payment methods of the one it replaces.
+                paymentMethods: current.paymentMethods
             })
             .returning({ id: planVersions.id });
         const newVersionId = next[0]?.id;

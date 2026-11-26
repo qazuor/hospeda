@@ -134,6 +134,7 @@ BEGIN
      OR NEW.trial_days IS DISTINCT FROM OLD.trial_days
      OR NEW.allows_pause IS DISTINCT FROM OLD.allows_pause
      OR NEW.inherits_tourist_vip IS DISTINCT FROM OLD.inherits_tourist_vip
+     OR NEW.payment_methods IS DISTINCT FROM OLD.payment_methods
      OR NEW.created_at IS DISTINCT FROM OLD.created_at THEN
     RAISE EXCEPTION 'plan_version is immutable except current: publish a new version instead'
       USING ERRCODE = 'P0001';

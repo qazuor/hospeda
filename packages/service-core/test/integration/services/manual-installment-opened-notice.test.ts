@@ -61,7 +61,8 @@ async function seed(vertical: 'partner' | 'accommodation' = 'partner') {
             sellable: true,
             current: true,
             trialDays: 0,
-            allowsPause: false
+            allowsPause: false,
+            paymentMethods: vertical === 'partner' ? ['CARD', 'MANUAL'] : ['CARD']
         })
         .returning();
     if (!version) throw new Error('Version seed failed');
@@ -291,7 +292,8 @@ describe('HOS-2130 manual installment opened integration', () => {
                 sellable: true,
                 current: true,
                 trialDays: 0,
-                allowsPause: false
+                allowsPause: false,
+                paymentMethods: ['CARD', 'MANUAL']
             })
             .returning();
         if (!destinationVersion) throw new Error('Destination version seed failed');

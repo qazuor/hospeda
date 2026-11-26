@@ -6,13 +6,15 @@ import {
 } from '../../../../src/services/billing/subscription/manual-installment-opened-notice.js';
 
 describe('HOS-2130 manual installment opened notice', () => {
-    it('mails the owner only for verticals that pay manually', () => {
+    it('mails the owner only for a subscription paid manually, whatever its vertical (HOS-2196)', () => {
         // Arrange
-        const verticals = ['partner', 'accommodation', 'venue', null] as const;
+        const methods = ['MANUAL', 'CARD', null] as const;
         // Act
-        const results = verticals.map((vertical) => isManualInstallmentOwnerNotified({ vertical }));
+        const results = methods.map((paymentMethod) =>
+            isManualInstallmentOwnerNotified({ paymentMethod })
+        );
         // Assert
-        expect(results).toEqual([true, false, false, false]);
+        expect(results).toEqual([true, false, false]);
     });
 
     it('snapshots an ARS amount and drops what it cannot show', () => {

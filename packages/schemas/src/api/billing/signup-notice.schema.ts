@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { BillingCycleSchema } from '../../catalog/plan-publication.schema.js';
 import { VerticalEnumSchema } from '../../enums/vertical.schema.js';
+import { PlanPaymentMethodsSchema } from './plan-payment-methods.schema.js';
 import { CommitmentTakenBySchema } from './subscription-start.schema.js';
 
 /**
@@ -57,6 +58,8 @@ export const SignupNoticeResponseSchema = z.object({
         .optional(),
     /** Vertical selected by the billing option. */
     vertical: VerticalEnumSchema,
+    /** Payment methods the selected plan version accepts (HOS-2196); absent reads as card-only. */
+    paymentMethods: PlanPaymentMethodsSchema.optional(),
     /** Tourist VIP status after a suspended plan holder returns to service. */
     touristVip: z.discriminatedUnion('status', [
         z.object({ status: z.literal('CANCELLED_ON_RETURN') }),

@@ -5,7 +5,7 @@ import {
     manualPaymentModel,
     subscriptionModel
 } from '@repo/db';
-import { isManualPaymentOnlyVertical, ServiceErrorCode } from '@repo/schemas';
+import { acceptsPaymentMethod, ServiceErrorCode } from '@repo/schemas';
 import { z } from 'zod';
 import { ServiceError } from '../../../types';
 import { extractPostgresErrorCause } from '../../../utils';
@@ -60,10 +60,10 @@ export async function startManualSubscription(
         billingOptionId: input.billingOptionId
     });
     const choice = await readBillingChoice({ billingOptionId: parsed.billingOptionId });
-    if (!isManualPaymentOnlyVertical({ vertical: choice.vertical })) {
+    if (!acceptsPaymentMethod({ paymentMethods: choice.paymentMethods, method: 'MANUAL' })) {
         throw new ServiceError(
             ServiceErrorCode.VALIDATION_ERROR,
-            'Manual payment is not available for this vertical',
+            'Manual payment is not accepted by this plan',
             undefined,
             'MANUAL_PAYMENT_NOT_AVAILABLE'
         );
