@@ -1,0 +1,45 @@
+---
+/** Accessible GET form that preserves filters while resetting pagination. */
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { buildListingSortForm } from '@/lib/listing-navigation';
+
+interface Props {
+	readonly locale: SupportedLocale;
+	readonly options: readonly { readonly value: string; readonly label: string }[];
+}
+
+const { locale, options } = Astro.props;
+const { t } = createTranslations(locale);
+const { path, carried, currentSort } = buildListingSortForm({ url: Astro.url, options });
+---
+
+<form method="get" action={path} class="listing-sort" data-astro-reload>
+	{carried.map(([name, value]) => <input type="hidden" name={name} value={value} />)}
+	<label>
+		{t('ui.filter.sortBy')}
+		<select name="sortBy">
+			{options.map(({ value, label }) => <option value={value} selected={value === currentSort}>{label}</option>)}
+		</select>
+	</label>
+	<button type="submit">{t('ui.listing.applySort')}</button>
+</form>
+
+<style>
+	.listing-sort, label {
+		display: flex;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: var(--space-2);
+		font-size: var(--text-body-sm);
+	}
+	select, button {
+		font: inherit;
+		min-height: 44px;
+		padding: var(--space-2);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-button);
+		background: var(--core-card);
+		color: var(--core-foreground);
+	}
+</style>

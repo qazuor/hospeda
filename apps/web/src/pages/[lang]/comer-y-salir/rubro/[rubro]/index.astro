@@ -23,6 +23,7 @@
  */
 
 import ListingLayout from '@/layouts/ListingLayout.astro';
+import ActiveFacet from '@/components/shared/layout/ActiveFacet.astro';
 import ItemListJsonLd from '@/components/seo/ItemListJsonLd.astro';
 import CollectionPageJsonLd from '@/components/seo/CollectionPageJsonLd.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
@@ -35,11 +36,6 @@ import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
 import Pagination from '@/components/shared/feedback/Pagination.astro';
 import { FilterSidebar } from '@/components/shared/filters/FilterSidebar.client';
 import FilterChips from '@/components/shared/ui/FilterChips.astro';
-import {
-    buildVenueListingSummary,
-    DEFAULT_VENUE_TYPES,
-    DEFAULT_PRICE_RANGES
-} from '@/lib/listing-summary';
 import {
     venueApi,
     destinationsApi,
@@ -62,6 +58,7 @@ import {
 import {
     buildVenueFilterGroups,
     buildVenueTypeChips,
+    loadVenueTypeCounts,
     narrowVenueFilterCatalog
 } from '@/lib/venue/venue-listing-filters';
 import { CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
@@ -258,28 +255,6 @@ if (amenitiesParam) initialParams.amenities = amenitiesParam;
 if (featuresParam) initialParams.features = featuresParam;
 initialParams.sortBy = sortKey;
 
-const destinationCatalog = destinations.map((d) => ({
-    key: d.id,
-    label: { es: d.name, en: d.name, pt: d.name } as const
-}));
-const filterSummary = buildVenueListingSummary({
-    locale,
-    filters: {
-        text: q,
-        type,
-        destinationId,
-        priceRange,
-        isFeatured,
-        minRating
-    },
-    counts: { shown: cards.length, total },
-    sort: { sortKey },
-    catalogs: {
-        destinations: destinationCatalog,
-        types: DEFAULT_VENUE_TYPES,
-        priceRanges: DEFAULT_PRICE_RANGES
-    }
-});
 
 const { canonicalPath, prevPath, nextPath } = buildPaginationLinks({
     basePath: baseUrl,
@@ -292,7 +267,8 @@ const typeChips = buildVenueTypeChips({
     types: narrowedCatalog.types,
     baseUrl,
     searchParams: url.searchParams,
-    activeType: type
+    activeType: type,
+    counts: await loadVenueTypeCounts({ types: narrowedCatalog.types, businessLine: collection.businessLine })
 });
 
 // --- Structured data ---
@@ -316,7 +292,9 @@ const itemListEntries = cards.map((card) => ({
     filterPosition="left"
     ogTagline={ogTagline}
     totalCount={total}
-    filterSummary={filterSummary}
+    resultKind="venues"
+    facetLabel={businessLineLabel.toLocaleLowerCase(locale)}
+    sortOptions={sortOptions}
     noindex={isEmptyCollection}
 >
     <CollectionPageJsonLd
@@ -357,8 +335,7 @@ const itemListEntries = cards.map((card) => ({
         slot="filters"
         client:load
         locale={locale}
-        filters={filterGroups}
-        sortOptions={sortOptions}
+        filters={[{ id: 'business-line', type: 'section-header', label: businessLineLabel }, ...filterGroups]}
         initialParams={initialParams}
     />
 
@@ -369,6 +346,7 @@ const itemListEntries = cards.map((card) => ({
         prevLabel={t('common.prev', 'Anterior')}
         nextLabel={t('common.next', 'Siguiente')}
     />
+    <ActiveFacet slot="results-actions" locale={locale} label={businessLineLabel} clearHref={listBaseUrl} clearLabel={t('ui.listing.allVenues')} />
 
     <VenueFilterOptionsDegradation failed={!filterOptionsResult.ok || !amenitiesResult.ok || !featuresResult.ok} />
 

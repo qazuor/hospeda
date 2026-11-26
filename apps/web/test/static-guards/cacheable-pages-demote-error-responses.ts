@@ -333,7 +333,7 @@ function blankStringLiterals({ code }: { readonly code: string }): string {
  * ## Why this is structural and not a regex
  *
  * The distinction decides whether a component may CERTIFY the pages that render
- * it. `components/ErrorBanner.astro` marks behind `if (variant === 'error')`,
+ * it. A generic banner might mark behind `if (variant === 'error')`,
  * which is right at runtime — `warning`/`info` are advisory notes on content
  * that rendered fine — but it means rendering that component is not by itself
  * proof that anything was marked.

@@ -159,7 +159,7 @@
 }
 
 .chevron {
-    font-size: 0.625rem;
+    font-size: 1.125rem;
     transition: transform var(--duration-normal) ease;
     flex-shrink: 0;
     color: var(--core-muted-foreground);

@@ -1,5 +1,4 @@
 import { buildAvailabilityParams } from '@/lib/availability-params';
-import type { AccommodationSummaryFilters } from '../accommodation-listing-summary';
 import { ACCOMMODATION_LISTING_FILTER_PARAMS } from './listing-filter-params';
 
 /** Query params that change ordering only. They are never filters but must survive pagination. */
@@ -35,10 +34,9 @@ export interface AccommodationListingApiQuery {
     readonly checkOut?: string;
 }
 
-/** Parsed listing filters shared by the listing pages and the summary. */
+/** Parsed listing filters shared by the listing pages. */
 export interface ParsedAccommodationListingFilters {
     readonly apiQuery: AccommodationListingApiQuery;
-    readonly summaryFilters: AccommodationSummaryFilters;
     /** Allowlisted params (plus sort) as received, for pagination links. `page` is never included. */
     readonly paginationParams: URLSearchParams;
     readonly q?: string;
@@ -77,20 +75,20 @@ export interface ParsedAccommodationListingFilters {
 
 /**
  * Reads ONLY the allowlisted listing filter params and derives the API query and
- * the summary filters from them. Anything else in the URL is ignored.
+ * the pagination params from them. Anything else in the URL is ignored.
  *
  * Coercion and defaults are identical to what the listing pages did inline.
  *
  * @param input.searchParams - The request URL's search params.
  * @param input.ignoreTypeFacet - Skip `types`/`type` (the type is fixed by the URL path).
- * @returns Parsed values, the API query, the summary filters and the pagination params.
+ * @returns Parsed values, the API query and the pagination params.
  */
 export function parseAccommodationListingFilters(input: {
     readonly searchParams: URLSearchParams;
     readonly ignoreTypeFacet?: boolean;
 }): ParsedAccommodationListingFilters {
     const raw = new Map<string, string>();
-    for (const { param } of ACCOMMODATION_LISTING_FILTER_PARAMS) {
+    for (const param of ACCOMMODATION_LISTING_FILTER_PARAMS) {
         if (input.ignoreTypeFacet && (param === 'types' || param === 'type')) continue;
         const value = input.searchParams.get(param);
         if (value !== null) raw.set(param, value);
@@ -175,33 +173,6 @@ export function parseAccommodationListingFilters(input: {
         ...availabilityParams
     };
 
-    const hasPriceFilter =
-        minPrice !== undefined || maxPrice !== undefined || includeNoPrice !== undefined;
-    const summaryFilters: AccommodationSummaryFilters = {
-        types: (types ?? legacyType)?.split(',').filter(Boolean),
-        text: q,
-        price: hasPriceFilter
-            ? { min: minPrice, max: maxPrice, includeWithoutPrice: includeNoPrice }
-            : undefined,
-        destinations: destinationIds?.split(',').filter(Boolean),
-        guests: minGuests,
-        amenities: amenitiesParam?.split(',').filter(Boolean),
-        services: featuresParam?.split(',').filter(Boolean),
-        minRating,
-        includeWithoutRating: includeNoReviews,
-        bedrooms: minBedrooms,
-        bathrooms: minBathrooms,
-        featured: isFeatured ?? null,
-        quickAmenities: { wifi: hasWifi, pool: hasPool, parking: hasParking, pets: allowsPets },
-        location: hasGeoRadius ? { radiusKm: radius } : undefined,
-        // Described from the VALIDATED pair, never the raw dates: a malformed or
-        // inverted range is not sent to the API, so it must not be summarised.
-        availability:
-            'checkIn' in availabilityParams
-                ? { checkIn: availabilityParams.checkIn, checkOut: availabilityParams.checkOut }
-                : undefined
-    };
-
     const paginationParams = new URLSearchParams();
     for (const [key, value] of raw) paginationParams.set(key, value);
     for (const key of PAGINATION_CARRIED_CONTROL_PARAMS) {
@@ -211,7 +182,6 @@ export function parseAccommodationListingFilters(input: {
 
     return {
         apiQuery,
-        summaryFilters,
         paginationParams,
         q,
         types,
@@ -246,22 +216,4 @@ export function parseAccommodationListingFilters(input: {
         availabilityParams,
         minGuests
     };
-}
-
-/**
- * The `subjectTotal` the summary needs when a type filter is active.
- *
- * When types are active the API already filters by type, so `total` IS the
- * type-specific count. Uses the summary's own types (`types ?? legacyType`) so a
- * legacy `?type=HOTEL` link gets the same subject as `?types=HOTEL`.
- *
- * @param input.summaryFilters - Summary filters from {@link parseAccommodationListingFilters}.
- * @param input.total - Total results reported by the API.
- * @returns `total` when a type filter is active, otherwise `undefined`.
- */
-export function resolveSummarySubjectTotal(input: {
-    readonly summaryFilters: AccommodationSummaryFilters;
-    readonly total: number;
-}): number | undefined {
-    return (input.summaryFilters.types?.length ?? 0) > 0 ? input.total : undefined;
 }

@@ -3,7 +3,7 @@
  * @file alojamientos/mapa.astro
  * @description Map view of accommodations listing. Full-width Leaflet map
  * with FilterSidebar and toggle to switch back to list view. Pagination is
- * replaced by a higher fetch cap (100 items) bounded by viewport bbox.
+ * replaced by a cap on displayed pins/cards, independent of filtered totals.
  * @route /{lang}/alojamientos/mapa/
  * @rendering SSR
  */
@@ -19,7 +19,8 @@ import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
 import MapPlaceholder from '@/components/MapPlaceholder.astro';
 import { AccommodationsListingMap } from '@/components/maps/AccommodationsListingMap.client';
 import { FilterSidebar } from '@/components/shared/filters/FilterSidebar.client';
-import { accommodationsApi, destinationsApi, SSR_PUBLIC_CACHE_TTL_MS } from '@/lib/api/endpoints';
+import { destinationsApi, SSR_PUBLIC_CACHE_TTL_MS } from '@/lib/api/endpoints';
+import { loadAccommodationMapResults } from '@/lib/accommodation-map-results';
 import { fetchAccommodationFilterCatalog } from '@/lib/filters/accommodation-filter-catalog';
 import { toAccommodationCardProps } from '@/lib/api/transforms';
 import { buildAvailabilityParams } from '@/lib/availability-params';
@@ -40,15 +41,14 @@ const locale = Astro.locals.locale as SupportedLocale;
 const compareGatePlanNames = await getGatePlanNames({
 	entitlement: EntitlementKeyEnum.CAN_COMPARE_ACCOMMODATIONS
 });
-const { t } = createTranslations(locale);
+const { t, tPlural } = createTranslations(locale);
 const priceConsultLabel = t('home.accommodations.price.consult', 'Precio a consultar');
 const consultAvailabilityLabel = t(
 	'home.accommodations.price.consultAvailability',
 	'Consultar disponibilidad'
 );
-// Map view fetches up to MAP_FETCH_CAP items in the current viewport bbox.
-// No traditional pagination — clusters keep rendering manageable.
-const MAP_FETCH_CAP = 100;
+// No visible pagination; cap the initial pins/cards independently of totals.
+const MAP_DISPLAY_CAP = 100;
 
 const url = Astro.url;
 
@@ -130,43 +130,7 @@ const destinations = destinationsResult.ok ? destinationsResult.data.items : [];
 // Fetch amenities + features for filter chips (accommodation-scoped, fully paged — HOS-2057)
 const { amenities, features } = await fetchAccommodationFilterCatalog();
 
-// Fetch up to MAP_FETCH_CAP accommodations for the initial map view.
-// Subsequent panning will refetch via useViewportSearch with bbox params.
-const result = await accommodationsApi.list({
-	page: 1,
-	pageSize: MAP_FETCH_CAP,
-	q,
-	types,
-	destinationIds,
-	minPrice,
-	maxPrice,
-	sortBy,
-	sortOrder,
-	isFeatured,
-	minGuests,
-	minBedrooms,
-	minBathrooms,
-	minRating,
-	amenities: amenitiesParam,
-	features: featuresParam,
-	includeAmenities: true,
-	includeNoPrice,
-	includeNoReviews,
-	// H-120: availability filter on the initial SSR fetch.
-	...availabilityParams,
-});
-
-const hasError = !result.ok;
-const items = result.ok ? result.data.items : [];
-const total = result.ok ? result.data.pagination.total : 0;
-
-// BETA-166: the same filters used for the initial SSR fetch above must also
-// be forwarded to `useViewportSearch` (via `AccommodationsListingMap`'s
-// `extraSearchParams` prop). That hook refetches on every `moveend`/`zoomend`
-// — including the one `FitBoundsOnce` fires on first mount — and previously
-// sent ONLY the viewport bbox + `pageSize`, silently dropping every active
-// filter a few hundred ms after load and replacing the correctly filtered
-// `initialItems` with an unfiltered, capped-at-100 result set.
+// BETA-166 / H-120: SSR and viewport requests share the same filter payload.
 const mapExtraSearchParams = {
 	q,
 	types,
@@ -185,39 +149,26 @@ const mapExtraSearchParams = {
 	includeAmenities: true,
 	includeNoPrice,
 	includeNoReviews,
-	// H-120: the viewport refetch must carry the availability filter too —
-	// otherwise the first `moveend` replaces the filtered SSR results with
-	// unfiltered ones a few hundred ms after load.
 	...availabilityParams,
 };
 
-const baseCards = items.map((item) => toAccommodationCardProps({ item: item as unknown as Record<string, unknown>, locale }));
+const result = await loadAccommodationMapResults({ filters: mapExtraSearchParams, displayCap: MAP_DISPLAY_CAP });
+const hasError = !result.ok;
+const { items, locatedCount, unlocatedCount } = result.ok
+	? result.data
+	: { items: [], locatedCount: 0, unlocatedCount: 0 };
 
-// HOS-186: single SSR bulk favorite check, same as the list view
-// (alojamientos/index.astro). Without it `toAccommodationCardProps` leaves
-// `isFavorited === undefined`, so each of the up-to-MAP_FETCH_CAP
-// FavoriteButtons (sidebar cards + map popups) fired its own /check on mount —
-// ~100 protected requests in ~2s, which is what tripped the rate limiter in
-// production. Guests skip the call entirely (they never fetch).
-//
-// On any failure we degrade silently: each FavoriteButton can still hydrate
-// itself via its own /check fallback, so the page render is never blocked.
-
-// HOS-369 WB0-5: favourite state is per-user, so it is no longer resolved
-// here — the hearts resolve it themselves after hydration, once per page load
-// for the whole grid (`store/favorites-store`).
-const cards = baseCards;
+// HOS-369 WB0-5: favourites resolve client-side; keep SSR session-blind.
+const locatedCards = items.map((item) => toAccommodationCardProps({ item: item as unknown as Record<string, unknown>, locale }));
 
 const LITORAL_CENTER: [number, number] = [-31.8, -58.5];
 const LITORAL_ZOOM = 8;
-const firstWithCoords = cards.find((c) => c.approximateLocation);
+const firstWithCoords = locatedCards[0];
 const mapCenter: [number, number] = firstWithCoords?.approximateLocation
 	? [firstWithCoords.approximateLocation.lat, firstWithCoords.approximateLocation.lng]
 	: LITORAL_CENTER;
-const mapHasItems = cards.some((c) => c.approximateLocation);
-
-const { filterGroups, sortOptions, filterSummary } = buildAccommodationMapFilters({
-	locale, destinations, amenities, features, query: mapExtraSearchParams, shown: cards.length, total
+const { filterGroups, sortOptions } = buildAccommodationMapFilters({
+	locale, destinations, amenities, features
 });
 
 // Build initial filter params for the sidebar
@@ -250,7 +201,7 @@ const listHref = buildListingViewHref({
 }).href;
 
 const { typeLabels, detailHrefById, reviewsLabelById, photosLabelById, priceLabelById, newColors } =
-	buildAccommodationMapLabels({ locale, cards });
+	buildAccommodationMapLabels({ locale, cards: locatedCards });
 ---
 
 <ListingLayout
@@ -260,8 +211,8 @@ const { typeLabels, detailHrefById, reviewsLabelById, photosLabelById, priceLabe
 	showFilters={true}
 	filterPosition="left"
 	noindex={true}
-	totalCount={total}
-	filterSummary={filterSummary}
+	totalCount={locatedCount}
+	resultKind="accommodations"
 ><!--
 	BETA-22: totalCount/filterSummary render as ListingLayout's
 	`.listing-results-summary`, in-flow at the top of the content column
@@ -303,11 +254,11 @@ const { typeLabels, detailHrefById, reviewsLabelById, photosLabelById, priceLabe
 	{/* Two sibling expressions on purpose: a `slot` attribute on a child of the
 	    bare `<>` shorthand is ignored by Astro, which dumps the dock toggle into
 	    the default slot (the page content) instead of the mobile dock. */}
-	{!hasError && cards.length > 0 && (
+	{!hasError && locatedCount > 0 && (
 		<ListingViewToggle slot="dock-start" locale={locale} active="map" listHref={listHref} variant="dock" />
 	)}
 
-	{!hasError && cards.length > 0 && (
+	{!hasError && locatedCount + unlocatedCount > 0 && (
 		<div class="map-view-toggle">
 			<ListingViewToggle locale={locale} active="map" listHref={listHref} variant="inline" />
 		</div>
@@ -317,7 +268,11 @@ const { typeLabels, detailHrefById, reviewsLabelById, photosLabelById, priceLabe
 		<ErrorBanner locale={locale} error={result.error} entityName="alojamientos" />
 	)}
 
-	{!hasError && cards.length === 0 && (
+	{unlocatedCount > 0 && <p class="map-unlocated">
+		{tPlural('ui.listing.unlocated', unlocatedCount)} · <a href={listHref}>{t('ui.listing.viewList')}</a>
+	</p>}
+
+	{!hasError && locatedCount === 0 && (
 		<EmptyState
 			locale={locale}
 			variant="no-results"
@@ -325,11 +280,12 @@ const { typeLabels, detailHrefById, reviewsLabelById, photosLabelById, priceLabe
 		/>
 	)}
 
-	{!hasError && cards.length > 0 && mapHasItems && (
+	{!hasError && locatedCount > 0 && (
 		<div class="acc-listing-map" id="acc-listing-map">
 			<AccommodationsListingMap
 				client:only="react"
-				initialItems={cards}
+				initialItems={locatedCards}
+				filteredLocatedCount={locatedCount}
 				initialCenter={mapCenter}
 				initialZoom={LITORAL_ZOOM}
 				ariaLabel={t('maps.ariaLabelAccommodation')}
@@ -385,6 +341,11 @@ const { typeLabels, detailHrefById, reviewsLabelById, photosLabelById, priceLabe
 </ListingLayout>
 
 <style>
+	.map-unlocated {
+		color: var(--core-muted-foreground);
+		font-size: var(--text-body-sm);
+	}
+	.map-unlocated a { text-decoration: underline; }
 	.map-view-toggle {
 		margin: var(--space-4, 16px) 0;
 	}

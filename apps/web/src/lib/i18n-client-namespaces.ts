@@ -165,6 +165,8 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     // HOS-1977 — the publish button's LIMIT_REACHED rejection renders
     // these keys in the browser.
     'publish.limitReached',
+    // HOS-2632 — the same rejection also offers the catalog add-on that widens the cap.
+    'publish.capAddon',
     'blog.categories',
     'comments.form',
     'comments.thread',

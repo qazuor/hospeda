@@ -25,7 +25,7 @@
         "results_one": "{{count}} establishment found",
         "results_other": "{{count}} establishments found",
         "search": "Text search",
-        "searchPlaceholder": "Search by name or description...",
+        "searchPlaceholder": "Search venues",
         "destination": "Destination",
         "type": "Establishment type",
         "priceRange": "Price range",

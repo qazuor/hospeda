@@ -1,141 +1,26 @@
 import { AccommodationTypeEnum } from '@repo/schemas';
 import type { FilterGroup } from '@/components/shared/filters/FilterSidebar.client';
-import type { CatalogEntry } from '@/lib/accommodation-listing-summary';
-import {
-    buildAccommodationListingSummary,
-    DEFAULT_TYPE_GRAMMAR
-} from '@/lib/accommodation-listing-summary';
 import type { toAccommodationCardProps } from '@/lib/api/transforms';
 import { getAccommodationTypeLabel, getBadgeStatusColor } from '@/lib/colors';
 import type { AccommodationFilterCatalog } from '@/lib/filters/accommodation-filter-catalog';
 import { formatPrice } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { resolveI18nText } from '@/lib/resolve-i18n-text';
 import { buildUrl } from '@/lib/urls';
 
-type SummaryQuery = Readonly<{
-    types?: string;
-    q?: string;
-    minPrice?: number;
-    maxPrice?: number;
-    includeNoPrice?: boolean;
-    destinationIds?: string;
-    minGuests?: number;
-    amenities?: string;
-    features?: string;
-    minRating?: number;
-    includeNoReviews?: boolean;
-    minBedrooms?: number;
-    minBathrooms?: number;
-    isFeatured?: boolean;
-    sortBy?: string;
-    sortOrder?: 'asc' | 'desc';
-}>;
-
-/** Builds the filter controls and localized results summary for the accommodation map. */
+/** Builds the filter controls and sort options for the accommodation map (HOS-2650 moved the result caption to `lib/listing-results.ts`). */
 export function buildAccommodationMapFilters({
     locale,
     destinations,
     amenities,
-    features,
-    query,
-    shown,
-    total
+    features
 }: {
     readonly locale: SupportedLocale;
     readonly destinations: readonly { readonly id: string; readonly name: string }[];
     readonly amenities: AccommodationFilterCatalog['amenities'];
     readonly features: AccommodationFilterCatalog['features'];
-    readonly query: SummaryQuery;
-    readonly shown: number;
-    readonly total: number;
 }) {
-    const {
-        types,
-        q,
-        minPrice,
-        maxPrice,
-        includeNoPrice,
-        destinationIds,
-        minGuests,
-        amenities: amenitiesParam,
-        features: featuresParam,
-        minRating,
-        includeNoReviews,
-        minBedrooms,
-        minBathrooms,
-        isFeatured,
-        sortBy,
-        sortOrder
-    } = query;
     const { t } = createTranslations(locale);
-    const { t: tEs } = createTranslations('es');
-    const { t: tEn } = createTranslations('en');
-    const { t: tPt } = createTranslations('pt');
-    // Filter summary
-    const destinationCatalog: readonly CatalogEntry[] = destinations.map((d) => ({
-        key: d.id,
-        label: {
-            es: resolveI18nText(d.name, 'es'),
-            en: resolveI18nText(d.name, 'en'),
-            pt: resolveI18nText(d.name, 'pt')
-        }
-    }));
-    // SPEC-266: `name` was dropped from the amenities/features catalog. `slug` is
-    // now the canonical identifier and is also the i18n key segment.
-    // slug is nullish per schema; coerce null→undefined to satisfy the t() signature.
-    const amenityCatalog: readonly CatalogEntry[] = amenities.map((a) => ({
-        key: a.id,
-        label: {
-            es: tEs(`accommodations.amenityNames.${a.slug ?? ''}`, a.slug ?? undefined),
-            en: tEn(`accommodations.amenityNames.${a.slug ?? ''}`, a.slug ?? undefined),
-            pt: tPt(`accommodations.amenityNames.${a.slug ?? ''}`, a.slug ?? undefined)
-        }
-    }));
-    const featureCatalog: readonly CatalogEntry[] = features.map((f) => ({
-        key: f.id,
-        label: {
-            es: tEs(`accommodations.featureNames.${f.slug ?? ''}`, f.slug ?? undefined),
-            en: tEn(`accommodations.featureNames.${f.slug ?? ''}`, f.slug ?? undefined),
-            pt: tPt(`accommodations.featureNames.${f.slug ?? ''}`, f.slug ?? undefined)
-        }
-    }));
-
-    const typesArray = types?.split(',').filter(Boolean) ?? [];
-    const filterSummary = buildAccommodationListingSummary({
-        locale,
-        filters: {
-            types: typesArray.length > 0 ? typesArray : undefined,
-            text: q,
-            price:
-                minPrice !== undefined || maxPrice !== undefined || includeNoPrice
-                    ? { min: minPrice, max: maxPrice, includeWithoutPrice: includeNoPrice }
-                    : undefined,
-            destinations: destinationIds?.split(',').filter(Boolean),
-            guests: minGuests,
-            amenities: amenitiesParam?.split(',').filter(Boolean),
-            services: featuresParam?.split(',').filter(Boolean),
-            minRating,
-            includeWithoutRating: includeNoReviews,
-            bedrooms: minBedrooms,
-            bathrooms: minBathrooms,
-            featured: isFeatured ?? null
-        },
-        counts: {
-            shown,
-            globalTotal: total,
-            subjectTotal: typesArray.length > 0 ? total : undefined
-        },
-        sort: sortBy ? { key: sortBy, direction: sortOrder ?? 'asc' } : undefined,
-        catalogs: {
-            types: DEFAULT_TYPE_GRAMMAR,
-            destinations: destinationCatalog,
-            amenities: amenityCatalog,
-            services: featureCatalog
-        }
-    });
-
     // Filter sidebar config (same as list view)
     const filterGroups: FilterGroup[] = [
         {
@@ -296,7 +181,7 @@ export function buildAccommodationMapFilters({
         { value: 'mostSaved', label: t('ui.sort.most_bookmarked', 'Más guardados') }
     ];
 
-    return { filterGroups, sortOptions, filterSummary };
+    return { filterGroups, sortOptions };
 }
 
 /** Builds the serializable localized labels for sidebar cards and marker popups. */

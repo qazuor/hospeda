@@ -17,6 +17,9 @@
         "body": "Ya alcanzaste el límite de publicaciones de tu plan. Despublicá otra ficha o mejorá tu plan.",
         "cta": "Mejorar mi plan"
     },
+    "capAddon": {
+        "cta": "Ampliar con {{name}} ({{price}})"
+    },
     "noPlans": {
         "title": "Esta vertical no tiene planes disponibles",
         "body": "Tu ficha sigue sin publicar. No hay nada que contratar ni una prueba gratis que empezar."

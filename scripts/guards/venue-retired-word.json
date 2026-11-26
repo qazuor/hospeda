@@ -15,12 +15,10 @@
                 "apps/web/src/components/event/editor/BasicInfoSection.client.tsx": 2,
                 "apps/web/src/components/shared/cards/utils/postCategoryIcon.ts": 3,
                 "apps/web/src/lib/colors.ts": 5,
-                "apps/web/src/lib/event-listing-summary/summary.catalogs.ts": 2,
                 "apps/web/src/lib/facet-slugs.ts": 3,
                 "apps/web/src/lib/filters/events-filter-groups.ts": 2,
                 "apps/web/src/lib/filters/facet-config.ts": 1,
                 "apps/web/src/lib/filters/toggle-query-param.ts": 2,
-                "apps/web/src/lib/post-listing-summary/summary.catalogs.ts": 2,
                 "apps/web/src/pages/[lang]/eventos/index.astro": 2,
                 "apps/web/src/pages/[lang]/publicaciones/index.astro": 5,
                 "apps/web/src/styles/css-var-themes.css": 2,
@@ -259,7 +257,6 @@
                 "packages/i18n/src/locales/pt/footer.json": 1,
                 "docs/architecture/entity-model-reference.md": 4,
                 "apps/web/src/lib/api/endpoints.ts": 1,
-                "apps/web/src/lib/post-listing-summary/summary.types.ts": 1,
                 "apps/web/test/components/FilterSidebar.test.tsx": 1,
                 "apps/web/test/components/shared/cards/utils/eventCategoryIcon.test.ts": 2,
                 "apps/web/test/components/shared/filters/filter-reducer.test.ts": 1,
@@ -403,5 +400,5 @@
         }
     },
     "historyWordFiles": 14,
-    "ledgerFingerprint": "615d44e2a42936134f5ebd20864ad8e76cce476f81a9dbc83396db8566a0395a"
+    "ledgerFingerprint": "9546370c041f5d62e82bce7de22f72c9b90d4e08127cc1b823078cc13242cc86"
 }
