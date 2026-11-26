@@ -1,4 +1,36 @@
 {
+    "listingPhotos": {
+        "description": {
+            "accommodation_one": "Upload up to {{cap}} photo of your accommodation.",
+            "accommodation_other": "Upload up to {{cap}} photos of your accommodation.",
+            "venue_one": "Upload up to {{cap}} photo of your venue.",
+            "venue_other": "Upload up to {{cap}} photos of your venue.",
+            "experience_one": "Upload up to {{cap}} photo of your experience.",
+            "experience_other": "Upload up to {{cap}} photos of your experience."
+        },
+        "noPlan": {
+            "accommodation": "To upload accommodation photos, you need a plan that includes them.",
+            "venue": "To upload venue photos, you need a plan that includes them.",
+            "experience": "To upload experience photos, you need a plan that includes them."
+        },
+        "plansCta": "View plans",
+        "unlimited": "No photo limit",
+        "breakdown": {
+            "plan": "{{value}} from your plan",
+            "trial": "{{value}} from your trial",
+            "addons": "{{value}} from photo packs",
+            "courtesy": "{{value}} from your courtesy access",
+            "permanentGrant": "{{value}} from your permanent grant",
+            "base": "{{value}} from your base allowance",
+            "preTrialDraft": "{{value}} for your draft before the trial",
+            "total": "{{parts}} = {{cap}}"
+        },
+        "overCapBadge": "Not shown: over your limit",
+        "overCapSummary_one": "{{count}} photo is hidden because you're over your limit. Add a photo pack or reorder your photos to choose which ones are shown.",
+        "overCapSummary_other": "{{count}} photos are hidden because you're over your limit. Add a photo pack or reorder your photos to choose which ones are shown.",
+        "loading": "Loading your photo limit…",
+        "readFailed": "We couldn't load your photo limit. Try reloading the page."
+    },
     "editorHub": {
         "publicationStatus": "Publication status",
         "publicationUnavailable": "Publication status unavailable",

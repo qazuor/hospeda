@@ -1,5 +1,5 @@
 {
-  "contentHash": "9c93797f17c53d31c08a3e15834325fbacf0d706cd9775a29398d5232ccf4471",
+  "contentHash": "84a7c921950ac25aa400e3dfdd7ee7958915019922faf044bcd6f0861f3d12a9",
   "locales": {
     "es": [
       {
@@ -1049,6 +1049,8 @@
         ],
         "covers": [
           "limit:max_photos_per_accommodation",
+          "limit:max_photos_per_experience",
+          "limit:max_photos_per_venue",
           "section:experience.fotos",
           "section:venue.fotos"
         ],
@@ -1095,10 +1097,10 @@
           "create-listing",
           "change-plan"
         ],
-        "reviewedAt": "2026-11-25",
+        "reviewedAt": "2026-11-26",
         "sections": {
           "canDo": "Cargar la foto principal y sumar fotos a la galería desde la sección «Fotos» del editor:\n{{link:section:accommodation:fotos|Fotos de tu alojamiento}}, {{link:section:venue:fotos|Fotos de tu comercio}} o {{link:section:experience:fotos|Fotos de tu experiencia}}.\n\nEn alojamientos también podés reordenar la galería y elegir la portada.",
-          "expect": "- Cada cambio se guarda al instante, sin un botón de guardar.\n- La foto principal es obligatoria para publicar: sin ella, {{article:publish-requirements|los requisitos para publicar}} no se cumplen.\n- Fotos que entran en la galería de un alojamiento: {{limit:max_photos_per_accommodation:accommodation}}. El editor te avisa cuántas te quedan.",
+          "expect": "- Cada cambio se guarda al instante, sin un botón de guardar.\n- La foto principal es obligatoria para publicar: sin ella, {{article:publish-requirements|los requisitos para publicar}} no se cumplen.\n- Fotos que entran en la galería de un alojamiento: {{limit:max_photos_per_accommodation:accommodation}}. El editor te avisa cuántas te quedan.\n- Fotos que incluye el plan para la galería de tu ficha de Comer y salir: {{limit:max_photos_per_venue:venue}}. Para una experiencia: {{limit:max_photos_per_experience:experience}}. Los packs de fotos amplían el tope sin contar la portada.",
           "howTo": {
             "after": "",
             "steps": [

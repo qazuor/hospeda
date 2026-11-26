@@ -42,9 +42,11 @@ covers:
   - "section:venue.fotos"
   - "section:experience.fotos"
   - "limit:max_photos_per_accommodation"
+  - "limit:max_photos_per_venue"
+  - "limit:max_photos_per_experience"
 entryFor:
   - "section:accommodation.fotos"
-reviewedAt: "2026-11-25"
+reviewedAt: "2026-11-26"
 ---
 
 ## Qué podés hacer
@@ -69,6 +71,7 @@ En alojamientos también podés reordenar la galería y elegir la portada.
 - Cada cambio se guarda al instante, sin un botón de guardar.
 - La foto principal es obligatoria para publicar: sin ella, {{article:publish-requirements|los requisitos para publicar}} no se cumplen.
 - Fotos que entran en la galería de un alojamiento: {{limit:max_photos_per_accommodation:accommodation}}. El editor te avisa cuántas te quedan.
+- Fotos que incluye el plan para la galería de tu ficha de Comer y salir: {{limit:max_photos_per_venue:venue}}. Para una experiencia: {{limit:max_photos_per_experience:experience}}. Los packs de fotos amplían el tope sin contar la portada.
 
 ## Qué NO esperar
 

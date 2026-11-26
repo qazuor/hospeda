@@ -1,4 +1,36 @@
 {
+    "listingPhotos": {
+        "description": {
+            "accommodation_one": "Envie até {{cap}} foto da sua hospedagem.",
+            "accommodation_other": "Envie até {{cap}} fotos da sua hospedagem.",
+            "venue_one": "Envie até {{cap}} foto do seu estabelecimento.",
+            "venue_other": "Envie até {{cap}} fotos do seu estabelecimento.",
+            "experience_one": "Envie até {{cap}} foto da sua experiência.",
+            "experience_other": "Envie até {{cap}} fotos da sua experiência."
+        },
+        "noPlan": {
+            "accommodation": "Para enviar fotos da sua hospedagem, você precisa de um plano que as inclua.",
+            "venue": "Para enviar fotos do seu estabelecimento, você precisa de um plano que as inclua.",
+            "experience": "Para enviar fotos da sua experiência, você precisa de um plano que as inclua."
+        },
+        "plansCta": "Ver planos",
+        "unlimited": "Sem limite de fotos",
+        "breakdown": {
+            "plan": "{{value}} do seu plano",
+            "trial": "{{value}} do seu período de teste",
+            "addons": "{{value}} dos pacotes de fotos",
+            "courtesy": "{{value}} da sua cortesia",
+            "permanentGrant": "{{value}} do seu benefício permanente",
+            "base": "{{value}} da sua cota básica",
+            "preTrialDraft": "{{value}} para seu rascunho antes do período de teste",
+            "total": "{{parts}} = {{cap}}"
+        },
+        "overCapBadge": "Não aparece: você passou do seu limite",
+        "overCapSummary_one": "{{count}} foto não aparece porque você passou do limite. Adicione um pacote ou reordene as fotos para escolher quais aparecem.",
+        "overCapSummary_other": "{{count}} fotos não aparecem porque você passou do limite. Adicione um pacote ou reordene as fotos para escolher quais aparecem.",
+        "loading": "Carregando seu limite de fotos…",
+        "readFailed": "Não foi possível carregar seu limite de fotos. Tente recarregar a página."
+    },
     "editorHub": {
         "publicationStatus": "Estado de publicação",
         "publicationUnavailable": "Estado de publicação indisponível",
