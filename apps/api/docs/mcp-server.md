@@ -223,11 +223,16 @@ per (user, vertical), so the gate reads accommodation, venue and experience with
 `probeEffectiveKeys` (it throws on a failed read; `readEffectiveKeys` would turn
 an outage into an upsell).
 
-- Any vertical grants the key: the call runs.
-- None grants and a read failed: `SERVICE_UNAVAILABLE`, no link.
-- None grants and the account holds no plan state in any of the three (billing's
-  coverage is only the implicit PRE_TRIAL + floor pair everywhere): not gated.
-  This covers providers, partners, editors and staff; each tool still authorizes.
+A vertical only counts where the account holds plan state (billing's coverage
+is anything but the implicit PRE_TRIAL + floor pair). PRE_TRIAL grants the key,
+so without this rule every floor-only owner would pass through a vertical they
+never touched (found in the staging smoke, 2026-11-26).
+
+- A vertical with plan state grants the key: the call runs.
+- Nothing counts and a read failed: `SERVICE_UNAVAILABLE`, no link.
+- The account holds no plan state in any of the three: not gated. This covers an
+  owner who has not started yet, providers, partners, editors and staff; each
+  tool still authorizes.
 - Otherwise: `ENTITLEMENT_REQUIRED`, reason `AI_ASSISTANT_NOT_IN_PLAN`, a Spanish
   message and a link to the plans page of the first vertical the owner has a plan
   in. There is no add-on. In practice only a floor-only owner (trial over, nothing
