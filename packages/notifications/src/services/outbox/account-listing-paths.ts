@@ -25,7 +25,8 @@ export const ACCOUNT_LISTINGS_PATH: Readonly<Record<ListingNoticeVertical, strin
 export const SUBSCRIPTION_PATH = '/es/mi-cuenta/suscripcion/';
 
 /**
- * The page behind a notice's "Ver recibo" button (HOS-2566). It needs the
+ * The link behind a notice's "Ver recibo" button (HOS-2566): Mi Suscripción with the
+ * receipt open. The receipt needs the
  * owner's session: the receipt is read through an authenticated API route, and
  * a receipt that is somebody else's answers the same "not found" as one that
  * does not exist.
@@ -37,7 +38,7 @@ export function buildReceiptUrl(input: {
     readonly siteUrl: string;
     readonly receiptId: string;
 }): string {
-    return `${input.siteUrl.replace(/\/$/, '')}/es/mi-cuenta/recibo/${encodeURIComponent(input.receiptId)}/`;
+    return `${input.siteUrl.replace(/\/$/, '')}${SUBSCRIPTION_PATH}?recibo=${encodeURIComponent(input.receiptId)}`;
 }
 
 /** The public contact page, where a notice sends a reader with questions. */

@@ -55,7 +55,7 @@ const amountOf = (receipt: OwnReceipt) =>
                         </div>
                         <a
                             class={styles.link}
-                            href={buildUrl({ locale, path: `mi-cuenta/recibo/${receipt.id}` })}
+                            href={`${buildUrl({ locale, path: 'mi-cuenta/suscripcion' })}?recibo=${receipt.id}`}
                             aria-label={t('account.subscription.receipts.viewLabel', undefined, { number: receipt.receiptNumber })}
                         >{t('account.subscription.receipts.view')}</a>
                     </li>

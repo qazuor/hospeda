@@ -130,8 +130,12 @@ describe('TEST:1675:1 AC:1675:1 AC:1675:3 the signup-declined, grace-started and
         for (const id of [paymentId, subscriptionId, addonInstanceId])
             expect(html).not.toContain(id);
         // HOS-2566: the receipt id travels only inside the authenticated "Ver recibo" link.
-        expect(html.replaceAll(`/es/mi-cuenta/recibo/${receiptId}/`, '')).not.toContain(receiptId);
-        expect(html).toContain(`href="https://hospeda.test/es/mi-cuenta/recibo/${receiptId}/"`);
+        expect(html.replaceAll(`/es/mi-cuenta/suscripcion/?recibo=${receiptId}`, '')).not.toContain(
+            receiptId
+        );
+        expect(html).toContain(
+            `href="https://hospeda.test/es/mi-cuenta/suscripcion/?recibo=${receiptId}"`
+        );
         expect(html).toContain('Ver recibo');
     });
 
