@@ -508,7 +508,15 @@
                 "withGuests": "Olá, está disponível {{guests}}?",
                 "withDatesAndGuests": "Olá, está disponível {{dates}} {{guests}}?"
             },
-            "summary": { "title": "Preço e contato" },
+            "summary": {
+                "title": "Preço e contato",
+                "fromPrice": "A partir de {{amount}}",
+                "priceOnRequest": "Preço sob consulta",
+                "requestPrice": "Solicitar preço",
+                "writeEmail": "Enviar um e-mail",
+                "requestByEmail": "Consulte o preço por e-mail.",
+                "hostReply": "O anfitrião responderá com o preço."
+            },
             "units": {
                 "perNight": "/noite",
                 "perDay": "/dia",

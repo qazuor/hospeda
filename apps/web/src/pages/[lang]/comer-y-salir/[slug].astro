@@ -459,7 +459,7 @@ const hasDescriptionSection = hasListingDescription({
 });
 const hasOffersSection = hasVenueOffersContent({ venue, showEventsCta });
 const hasContactSection = venueContactBlock !== null || Boolean(venueWhatsApp);
-const hasSummarySection = Boolean(venue.priceRange) || contactMode.kind !== 'none';
+const hasSummarySection = Boolean(venue.priceRange || barPhoneHref || venue.contactInfo?.workEmail) || contactMode.kind !== 'none';
 const hasPoliciesSection = hasHouseRules({ policies: houseRulePolicies, locale });
 const sectionTabs = buildListingSectionTabs({
     present: {
@@ -622,6 +622,8 @@ const headerProps = buildVenueHeader({
                 locale={locale}
                 priceRange={venue.priceRange}
                 contactMode={contactMode}
+                phoneHref={barPhoneHref}
+                email={venue.contactInfo?.workEmail}
                 panelId={contactPanelId}
                 fallbackHref={`#${VENUE_CONTACT_ANCHOR_ID}`}
             />
