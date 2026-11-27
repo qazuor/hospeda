@@ -44,10 +44,17 @@ import { PlanBadge } from '@/components/shared/ui/PlanBadge';
 import { useAccountPermissions } from '@/hooks/use-account-permissions';
 import { usePriceAlertGateState } from '@/hooks/use-price-alert-gate-state';
 import { translateApiError } from '@/lib/api-errors';
-import { formatDate } from '@/lib/format-utils';
+import { formatDate, formatPrice } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { webLogger } from '@/lib/logger';
+import {
+    parsePercentInput,
+    parseTargetPriceInput,
+    percentFromTargetPrice,
+    priceFromPercent,
+    toCentavos
+} from '@/lib/price-alert-threshold';
 import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 import { addToast } from '@/store/toast-store';
 import styles from './PriceAlertButton.module.css';
@@ -60,6 +67,7 @@ interface CreateSuccessResponse {
     readonly data?: {
         readonly id?: string;
         readonly targetPercentDrop?: number | null;
+        readonly basePriceSnapshot?: number | null;
         readonly createdAt?: string;
     };
 }
@@ -86,6 +94,10 @@ export interface PriceAlertButtonProps {
     readonly locale: SupportedLocale;
     /** Public name of the plan that unlocks this feature. */
     readonly planName?: string | null;
+    /** Current listing price in decimal currency units (pesos). Enables the price preview and target-price mode. */
+    readonly price?: number | null;
+    /** ISO currency of {@link PriceAlertButtonProps.price}; defaults to ARS. */
+    readonly currency?: string | null;
 }
 
 /** In-flight mutation kind, for spinner + disabled-state wiring. */
@@ -104,7 +116,9 @@ export function PriceAlertButton({
     accommodationId,
     apiUrl,
     locale,
-    planName = null
+    planName = null,
+    price = null,
+    currency = null
 }: PriceAlertButtonProps) {
     const { t } = createTranslations(locale);
     const base = apiUrl.replace(/\/$/, '');
@@ -117,10 +131,52 @@ export function PriceAlertButton({
     const gateTrigger = useRef<HTMLButtonElement>(null);
     const titleId = useId();
     const [createOpen, setCreateOpen] = useState(false);
+    const [mode, setMode] = useState<'percent' | 'price'>('percent');
     const [target, setTarget] = useState('');
-    const targetPercentDrop = Number(target);
-    const validTarget =
-        Number.isInteger(targetPercentDrop) && targetPercentDrop >= 1 && targetPercentDrop <= 100;
+    const [targetPriceText, setTargetPriceText] = useState('');
+    const currentCentavos = price !== null && price > 0 ? toCentavos({ amount: price }) : null;
+    const money = (centavos: number) =>
+        formatPrice({
+            amount: Math.floor(centavos / 100),
+            currency: currency ?? undefined,
+            locale
+        });
+
+    // The percentage actually sent to the API, plus what the dialog previews.
+    let targetPercentDrop: number | null = null;
+    let previewPrice: number | null = null;
+    let previewEquivalent: number | null = null;
+    let inputError: string | null = null;
+    if (mode === 'percent') {
+        targetPercentDrop = parsePercentInput({ raw: target });
+        if (targetPercentDrop !== null && currentCentavos !== null) {
+            previewPrice = priceFromPercent({ currentCentavos, percent: targetPercentDrop });
+        } else if (target.trim() !== '' && targetPercentDrop === null) {
+            inputError = t('accommodations.detail.priceAlert.errorPercent');
+        }
+    } else if (currentCentavos !== null && targetPriceText.trim() !== '') {
+        const targetCentavos = parseTargetPriceInput({ raw: targetPriceText });
+        const result =
+            targetCentavos === null
+                ? ({ ok: false, reason: 'not_positive' } as const)
+                : percentFromTargetPrice({ currentCentavos, targetCentavos });
+        if (result.ok) {
+            targetPercentDrop = result.percent;
+            previewEquivalent = result.percent;
+            previewPrice = result.thresholdCentavos;
+        } else if (result.reason === 'not_positive') {
+            inputError = t('accommodations.detail.priceAlert.errorPriceInvalid');
+        } else if (result.reason === 'not_below_current') {
+            inputError = t('accommodations.detail.priceAlert.errorPriceNotBelow', undefined, {
+                price: money(currentCentavos)
+            });
+        } else {
+            inputError = t('accommodations.detail.priceAlert.errorPriceTooClose', undefined, {
+                price: money(priceFromPercent({ currentCentavos, percent: 1 }))
+            });
+        }
+    }
+    const validTarget = targetPercentDrop !== null;
 
     // ── State ─────────────────────────────────────────────────────────────────
     // Local mirrors of the resolved gate so a successful create/cancel can flip
@@ -128,6 +184,7 @@ export function PriceAlertButton({
     const [hasAlert, setHasAlert] = useState(false);
     const [alertId, setAlertId] = useState<string | null>(null);
     const [threshold, setThreshold] = useState<number | null>(null);
+    const [baseSnapshot, setBaseSnapshot] = useState<number | null>(null);
     const [createdAt, setCreatedAt] = useState<Date | string | null>(null);
     const [phase, setPhase] = useState<SubmitPhase>('idle');
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -142,8 +199,16 @@ export function PriceAlertButton({
         setHasAlert(gate.hasAlert);
         setAlertId(gate.alertId);
         setThreshold(gate.targetPercentDrop);
+        setBaseSnapshot(gate.basePriceSnapshot);
         setCreatedAt(gate.createdAt);
-    }, [gate.isResolving, gate.hasAlert, gate.alertId, gate.targetPercentDrop, gate.createdAt]);
+    }, [
+        gate.isResolving,
+        gate.hasAlert,
+        gate.alertId,
+        gate.targetPercentDrop,
+        gate.basePriceSnapshot,
+        gate.createdAt
+    ]);
 
     const isSubmitting = phase !== 'idle';
 
@@ -207,6 +272,7 @@ export function PriceAlertButton({
             setHasAlert(true);
             setAlertId(body.data?.id ?? null);
             setThreshold(body.data?.targetPercentDrop ?? null);
+            setBaseSnapshot(body.data?.basePriceSnapshot ?? null);
             setCreatedAt(body.data?.createdAt ?? null);
             setCreateOpen(false);
             addToast({ type: 'success', message: createSuccessMsg });
@@ -298,9 +364,23 @@ export function PriceAlertButton({
                     <p>
                         {threshold === null
                             ? t('accommodations.detail.priceAlert.defaultThreshold')
-                            : t('accommodations.detail.priceAlert.activeThreshold', undefined, {
-                                  threshold
-                              })}
+                            : baseSnapshot === null
+                              ? t('accommodations.detail.priceAlert.activeThreshold', undefined, {
+                                    threshold
+                                })
+                              : t(
+                                    'accommodations.detail.priceAlert.activeThresholdPrice',
+                                    undefined,
+                                    {
+                                        percent: threshold,
+                                        price: money(
+                                            priceFromPercent({
+                                                currentCentavos: baseSnapshot,
+                                                percent: threshold
+                                            })
+                                        )
+                                    }
+                                )}
                     </p>
                     {createdAt && (
                         <p>
@@ -432,6 +512,8 @@ export function PriceAlertButton({
                 className={styles.priceAlertButtonCreate}
                 onClick={() => {
                     setTarget('');
+                    setTargetPriceText('');
+                    setMode('percent');
                     setErrorMessage(null);
                     setCreateOpen(true);
                 }}
@@ -476,18 +558,97 @@ export function PriceAlertButton({
                             void handleCreate();
                         }}
                     >
-                        <label>
-                            {t('accommodations.detail.priceAlert.targetPercent')}{' '}
-                            <input
-                                type="number"
-                                min={1}
-                                max={100}
-                                step={1}
-                                required
-                                value={target}
-                                onChange={(event) => setTarget(event.currentTarget.value)}
-                            />
-                        </label>
+                        {currentCentavos !== null && (
+                            <>
+                                <p className={styles.priceAlertCurrent}>
+                                    {t('accommodations.detail.priceAlert.currentPrice', undefined, {
+                                        price: money(currentCentavos)
+                                    })}
+                                </p>
+                                <fieldset className={styles.priceAlertModes}>
+                                    <legend className={styles.priceAlertModesLegend}>
+                                        {t('accommodations.detail.priceAlert.modeLabel')}
+                                    </legend>
+                                    {(['percent', 'price'] as const).map((value) => (
+                                        <label
+                                            key={value}
+                                            className={styles.priceAlertMode}
+                                        >
+                                            <input
+                                                type="radio"
+                                                name={`${titleId}-mode`}
+                                                value={value}
+                                                checked={mode === value}
+                                                onChange={() => setMode(value)}
+                                            />
+                                            {t(
+                                                value === 'percent'
+                                                    ? 'accommodations.detail.priceAlert.modePercent'
+                                                    : 'accommodations.detail.priceAlert.modePrice'
+                                            )}
+                                        </label>
+                                    ))}
+                                </fieldset>
+                            </>
+                        )}
+                        {mode === 'percent' || currentCentavos === null ? (
+                            <label>
+                                {t('accommodations.detail.priceAlert.targetPercent')}{' '}
+                                <input
+                                    type="number"
+                                    min={1}
+                                    max={100}
+                                    step={1}
+                                    required
+                                    value={target}
+                                    aria-invalid={inputError !== null}
+                                    onChange={(event) => setTarget(event.currentTarget.value)}
+                                />
+                            </label>
+                        ) : (
+                            <label>
+                                {t('accommodations.detail.priceAlert.targetPrice')}{' '}
+                                <input
+                                    type="text"
+                                    inputMode="decimal"
+                                    required
+                                    value={targetPriceText}
+                                    aria-invalid={inputError !== null}
+                                    onChange={(event) =>
+                                        setTargetPriceText(event.currentTarget.value)
+                                    }
+                                />
+                            </label>
+                        )}
+                        <div
+                            className={styles.priceAlertPreview}
+                            aria-live="polite"
+                        >
+                            {previewEquivalent !== null && (
+                                <p>
+                                    {t(
+                                        'accommodations.detail.priceAlert.previewEquivalent',
+                                        undefined,
+                                        { percent: previewEquivalent }
+                                    )}
+                                </p>
+                            )}
+                            {previewPrice !== null && (
+                                <p>
+                                    {t('accommodations.detail.priceAlert.previewPrice', undefined, {
+                                        price: money(previewPrice)
+                                    })}
+                                </p>
+                            )}
+                            {inputError && (
+                                <p
+                                    className={styles.priceAlertError}
+                                    role="alert"
+                                >
+                                    {inputError}
+                                </p>
+                            )}
+                        </div>
                         <button
                             type="submit"
                             className={styles.priceAlertButtonCreate}

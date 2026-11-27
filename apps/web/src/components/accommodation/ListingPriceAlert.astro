@@ -10,8 +10,11 @@ interface Props {
     readonly apiUrl: string;
     readonly locale: SupportedLocale;
     readonly placement: 'summary' | 'sidebar';
+    /** Current price in decimal currency units; enables the threshold preview. */
+    readonly price?: number | null;
+    readonly currency?: string | null;
 }
-const { accommodationId, apiUrl, locale, placement } = Astro.props;
+const { accommodationId, apiUrl, locale, placement, price = null, currency = null } = Astro.props;
 const result = await fetchPublicPlans({ vertical: 'tourist' });
 const planName = resolvePlanBadge({ result, entitlement: 'price_alerts' });
 ---
@@ -22,6 +25,8 @@ const planName = resolvePlanBadge({ result, entitlement: 'price_alerts' });
         apiUrl={apiUrl}
         locale={locale}
         planName={planName}
+        price={price}
+        currency={currency}
     />
 </div>
 <style>
