@@ -342,18 +342,18 @@
             "blockedBy": ["T-005", "T-012", "T-015"],
             "tags": ["service-core"],
             "description": "send() delegates to dynamic/ (do not grow newsletter-campaign.service.ts), resolves with phase send, 422 DYNAMIC_BLOCK_BELOW_MIN keeps draft and inserts no deliveries, writes resolved_body_json/resolved_at inside the same transaction as deliveries. Tests in newsletter-campaign.service.test.ts (AC-F1-8 at service level, persistence).",
-            "status": "pending",
+            "status": "completed",
             "blocks": ["T-017", "T-019"],
             "subtasks": [],
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-11-26T18:39:36.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-11-27T00:49:51.000Z"
             }
         },
         {
@@ -364,18 +364,18 @@
             "blockedBy": ["T-016"],
             "tags": ["service-core"],
             "description": "newsletter-delivery.service.ts:657 renders resolved_body_json ?? body_json via segments; never resolves; doc with dynamicBlock and null resolved => deliveries failed DYNAMIC_BLOCK_UNRESOLVED, transport not called. Tests AC-F1-10, AC-F1-11, AC-F1-16 in newsletter-delivery.service.test.ts.",
-            "status": "pending",
+            "status": "completed",
             "blocks": ["T-023"],
             "subtasks": [],
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-11-26T18:39:36.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-11-27T00:49:51.000Z"
             }
         },
         {
@@ -386,18 +386,18 @@
             "blockedBy": ["T-015"],
             "tags": ["service-core"],
             "description": "sendTestEmailFromContent next to sendTestEmail (:959); testSend resolves without writes. Test AC-F1-13 (campaign unchanged).",
-            "status": "pending",
+            "status": "completed",
             "blocks": ["T-019"],
             "subtasks": [],
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-11-26T18:39:36.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-11-27T00:49:51.000Z"
             }
         },
         {
@@ -408,18 +408,18 @@
             "blockedBy": ["T-016", "T-018"],
             "tags": ["api"],
             "description": "apps/api/src/routes/newsletter/admin/campaigns.ts POST /campaigns/{id}/resolve-preview (no writes, AC-F1-12) and 422 mapping; new dynamic-sources.ts GET /dynamic-sources (featured enabled:false, entity types with enabled flags, sources per type); delivery-factory.ts injects real port and segment renderer. Tests in apps/api/test/routes/newsletter/admin-campaign-actions.test.ts asserting service mock.calls, not just status.",
-            "status": "pending",
+            "status": "completed",
             "blocks": ["T-021", "T-022"],
             "subtasks": [],
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-11-26T18:39:36.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-11-27T00:49:51.000Z"
             }
         },
         {
@@ -452,18 +452,18 @@
             "blockedBy": ["T-020", "T-019", "T-004"],
             "tags": ["admin"],
             "description": "TanStack Form + DynamicBlockConfigSchema.safeParse; entity selector shows 6 types, non-enabled disabled with 'Próximamente'; source list filtered by type; defaults from applyDynamicBlockDefaults. Component test AC-F1-2 and disabled types.",
-            "status": "pending",
+            "status": "completed",
             "blocks": ["T-023"],
             "subtasks": [],
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-11-26T18:39:36.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-11-27T01:23:06.000Z"
             }
         },
         {
@@ -474,18 +474,18 @@
             "blockedBy": ["T-019"],
             "tags": ["admin", "i18n"],
             "description": "CampaignPreview.tsx uses iframe sandbox with HTML from resolve-preview; SendConfirmDialog.tsx shows report and the 422 message; i18n keys es/en/pt. Component tests for both.",
-            "status": "pending",
+            "status": "completed",
             "blocks": ["T-023"],
             "subtasks": [],
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-11-26T18:39:36.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-11-27T01:23:06.000Z"
             }
         },
         {
@@ -513,9 +513,9 @@
     ],
     "summary": {
         "total": 23,
-        "pending": 7,
+        "pending": 1,
         "inProgress": 0,
-        "completed": 16,
+        "completed": 22,
         "blocked": 0,
         "averageComplexity": 2.5
     }

@@ -1,6 +1,6 @@
 # HOS-2636: F1. Bloques dinámicos y resolver
 
-## Progress: 16/23 tasks (70%)
+## Progress: 22/23 tasks (96%)
 
 **Average Complexity:** 2.5/10
 **Critical Path:** T-001 -> T-003 -> T-006 -> T-013 -> T-014 -> T-015 -> T-016 -> T-019 -> T-021 -> T-023 (10 steps)
@@ -89,22 +89,22 @@
 
 ### Integration Phase
 
-- [ ] **T-016** (complexity: 3) - Resolve and persist blocks in campaign send()
+- [x] **T-016** (complexity: 3) - Resolve and persist blocks in campaign send()
   - send() delegates to dynamic/ (do not grow newsletter-campaign.service.ts), resolves with phase send,
   - Blocked by: T-005, T-012, T-015
   - Blocks: T-017, T-019
 
-- [ ] **T-017** (complexity: 3) - Render resolved_body_json in processBatch and fail unresolved blocks
+- [x] **T-017** (complexity: 3) - Render resolved_body_json in processBatch and fail unresolved blocks
   - newsletter-delivery.service.ts:657 renders resolved_body_json ?? body_json via segments; never resol
   - Blocked by: T-016
   - Blocks: T-023
 
-- [ ] **T-018** (complexity: 2) - Add sendTestEmailFromContent and make testSend resolve dry
+- [x] **T-018** (complexity: 2) - Add sendTestEmailFromContent and make testSend resolve dry
   - sendTestEmailFromContent next to sendTestEmail (:959); testSend resolves without writes. Test AC-F1-
   - Blocked by: T-015
   - Blocks: T-019
 
-- [ ] **T-019** (complexity: 3) - Add resolve-preview and dynamic-sources admin routes and wire delivery-factory
+- [x] **T-019** (complexity: 3) - Add resolve-preview and dynamic-sources admin routes and wire delivery-factory
   - apps/api/src/routes/newsletter/admin/campaigns.ts POST /campaigns/{id}/resolve-preview (no writes, A
   - Blocked by: T-016, T-018
   - Blocks: T-021, T-022
@@ -114,12 +114,12 @@
   - Blocked by: T-003
   - Blocks: T-021
 
-- [ ] **T-021** (complexity: 3) - Build dynamic block config panel
+- [x] **T-021** (complexity: 3) - Build dynamic block config panel
   - TanStack Form + DynamicBlockConfigSchema.safeParse; entity selector shows 6 types, non-enabled disab
   - Blocked by: T-020, T-019, T-004
   - Blocks: T-023
 
-- [ ] **T-022** (complexity: 3) - Render API preview in sandboxed iframe and show resolution report on send
+- [x] **T-022** (complexity: 3) - Render API preview in sandboxed iframe and show resolution report on send
   - CampaignPreview.tsx uses iframe sandbox with HTML from resolve-preview; SendConfirmDialog.tsx shows
   - Blocked by: T-019
   - Blocks: T-023
