@@ -12,7 +12,10 @@ interface Props {
     readonly apiUrl: string;
     readonly locale: SupportedLocale;
     readonly placement: 'summary' | 'sidebar';
-    /** Public price of the listing. Without one («Precio a consultar») nothing is rendered. */
+    /**
+     * Public price of the listing. Without one («Precio a consultar») nothing is rendered.
+     * Its amount (decimal currency units) and currency also feed the threshold preview.
+     */
     readonly price: ListingContactPrice;
 }
 const { accommodationId, apiUrl, locale, placement, price } = Astro.props;
@@ -28,6 +31,8 @@ const planName = result ? resolvePlanBadge({ result, entitlement: 'price_alerts'
         apiUrl={apiUrl}
         locale={locale}
         planName={planName}
+        price={price?.amount ?? null}
+        currency={price?.currency ?? null}
     />
 </div>
 )}
