@@ -46,6 +46,7 @@ const { experienceSvc, reviewSvc, faqHelpers } = vi.hoisted(() => {
 
     const faqHelpers = {
         listExperienceFaqs: vi.fn(),
+        listPublicExperienceFaqs: vi.fn(),
         addExperienceFaq: vi.fn(),
         updateExperienceFaq: vi.fn(),
         removeExperienceFaq: vi.fn(),
@@ -86,6 +87,8 @@ vi.mock('@repo/service-core', async (importOriginal) => {
             };
         }),
         listExperienceFaqs: (...args: unknown[]) => faqHelpers.listExperienceFaqs(...args),
+        listPublicExperienceFaqs: (...args: unknown[]) =>
+            faqHelpers.listPublicExperienceFaqs(...args),
         addExperienceFaq: (...args: unknown[]) => faqHelpers.addExperienceFaq(...args),
         updateExperienceFaq: (...args: unknown[]) => faqHelpers.updateExperienceFaq(...args),
         removeExperienceFaq: (...args: unknown[]) => faqHelpers.removeExperienceFaq(...args),
@@ -390,7 +393,7 @@ describe('Experience Routes (SPEC-240 T-022)', () => {
 
         describe('GET /api/v1/public/experiences/:experienceId/faqs', () => {
             it('returns 200 with faqs array', async () => {
-                faqHelpers.listExperienceFaqs.mockResolvedValue({ data: { faqs: [] } });
+                faqHelpers.listPublicExperienceFaqs.mockResolvedValue({ data: { faqs: [] } });
 
                 const res = await app.request(`/api/v1/public/experiences/${EXPERIENCE_ID}/faqs`, {
                     headers: publicHeaders

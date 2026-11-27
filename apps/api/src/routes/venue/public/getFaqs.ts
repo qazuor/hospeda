@@ -2,7 +2,10 @@
  * Public venue FAQs endpoint (T-042)
  * Returns FAQs for a specific venue listing ordered by display_order ASC NULLS LAST.
  *
- * Uses listVenueFaqs() which loads the listing with its `faqs` relation
+ * Uses listPublicVenueFaqs(), which first gates the parent listing with the public
+ * detail read's visibility rule (HOS-2670: 404 for a draft/unpublished or
+ * soft-deleted listing, 410 for one that was published and then deleted), then
+ * listVenueFaqs(), which loads the listing with its `faqs` relation
  * and returns active, non-deleted FAQs. Any authenticated or anonymous actor
  * that can view the listing can read its FAQs (open public).
  *
@@ -13,7 +16,7 @@
  * still ship the private FAQ in the page's payload.
  */
 import { VenueFaqPublicListOutputSchema } from '@repo/schemas';
-import { listVenueFaqs, ServiceError, VenueService } from '@repo/service-core';
+import { listPublicVenueFaqs, ServiceError, VenueService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { getActorFromContext } from '../../../utils/actor';
@@ -47,10 +50,11 @@ export const publicGetVenueFaqsRoute = createPublicRoute({
         // TYPE-WORKAROUND: access the internal venueModel from the service instance
         // to pass to the standalone FAQ helper. The service exposes it via protected
         // `model` — we cast through unknown to satisfy TypeScript without `any`.
-        const model = (venueService as unknown as { model: Parameters<typeof listVenueFaqs>[0] })
-            .model;
+        const model = (
+            venueService as unknown as { model: Parameters<typeof listPublicVenueFaqs>[0] }
+        ).model;
 
-        const result = await listVenueFaqs(model, actor, {
+        const result = await listPublicVenueFaqs(model, actor, {
             venueId: params.venueId as string
         });
 

@@ -68,10 +68,9 @@ import type {
     ServiceOutput
 } from '../../types';
 import { ServiceError } from '../../types';
-import { assertListingReadable, entityNotFoundError, normalizeContactInfo } from '../../utils';
+import { normalizeContactInfo } from '../../utils';
 import { hasPermission } from '../../utils/permission';
 import { filterSoftDeletedRelations } from '../../utils/relations';
-import { EXPERIENCE_ENTITY_NAME } from '../entity-names';
 import type { ListingCatalogModel, ListingJunctionModel } from '../listing/base-listing.service';
 import { BaseListingService } from '../listing/base-listing.service';
 import type { ListingHookState } from '../listing/listing.types';
@@ -88,7 +87,8 @@ import {
     checkExperienceCanEditOwnOrAll,
     checkExperienceCanHardDelete,
     checkExperienceCanRestore,
-    checkExperienceCanView
+    checkExperienceCanView,
+    checkExperienceCanViewEntity
 } from './experience.permissions';
 import { resolveOnRequestPricePatch } from './experience.price-on-request';
 import { projectExperienceOwnerAvatar, projectExperiencePublic } from './experience.projections';
@@ -389,27 +389,9 @@ export class ExperienceService extends BaseListingService<
     }
 
     protected _canView(actor: Actor, entity: Experience): void {
-        checkExperienceCanView(actor);
-
-        // Soft-deleted listings existed but are permanently gone. Only those that
-        // were PUBLISHED (indexable) surface as GONE (410) so crawlers/LLM fetchers
-        // deindex the URL fast; deleted content that was never public
-        // returns NOT_FOUND (404, uniform) to preserve the anti-enumeration
-        // contract (SPEC-092 T-087). Staff with EXPERIENCE_VIEW_ALL still see it
-        // for management (HOS-117 T-022).
-        if (
-            entity.deletedAt !== null &&
-            entity.deletedAt !== undefined &&
-            !hasPermission(actor, PermissionEnum.EXPERIENCE_VIEW_ALL)
-        ) {
-            if (entity.publicationStatus === PublicationStatusEnum.PUBLISHED) {
-                throw new ServiceError(ServiceErrorCode.GONE, 'Experience is gone');
-            }
-            throw entityNotFoundError({ entityName: EXPERIENCE_ENTITY_NAME });
-        }
-
-        if (hasPermission(actor, PermissionEnum.EXPERIENCE_VIEW_ALL)) return;
-        assertListingReadable({ actor, entity, entityName: EXPERIENCE_ENTITY_NAME });
+        // HOS-2670: the predicate lives in `checkExperienceCanViewEntity` so the public FAQ
+        // read gates its parent listing with exactly this rule.
+        checkExperienceCanViewEntity(actor, entity);
     }
 
     protected _canList(actor: Actor): void {

@@ -77,7 +77,9 @@ vi.mock('@repo/service-core', async (importOriginal) => {
             override getById = okExperience as never;
         },
         listVenueFaqs: async () => ({ data: { faqs: FAQS } }),
+        listPublicVenueFaqs: async () => ({ data: { faqs: FAQS } }),
         listExperienceFaqs: async () => ({ data: { faqs: FAQS } }),
+        listPublicExperienceFaqs: async () => ({ data: { faqs: FAQS } }),
         getVenueMenu: async () => ({ data: { sections: [] } }),
         getVenueEvents: async () => ({ data: { events: [] } }),
         getVenueDailySpecials: async () => ({ data: { specials: [] } }),
