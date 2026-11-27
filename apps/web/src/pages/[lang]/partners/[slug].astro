@@ -321,7 +321,8 @@ const contactRows = Object.entries(partner.contactInfo ?? {})
         margin: 0;
     }
 
-    .partner__website a,
+    /* The website link is a filled primary button: it keeps the button's own text
+       colour. A link colour here would put blue text on the blue fill. */
     .partner__list-item a {
         color: var(--brand-primary-link);
     }

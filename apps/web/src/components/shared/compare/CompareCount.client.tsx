@@ -11,6 +11,7 @@
 
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { MIN_TO_COMPARE } from '@/store/compare-limits';
 import { useCompareStore } from '@/store/compare-store';
 import styles from './CompareCount.module.css';
 
@@ -21,18 +22,20 @@ export interface CompareCountProps {
 }
 
 /**
- * Renders the live "Comparás N alojamientos" label, or nothing when the
- * selection is empty.
+ * Renders the live "Comparás N alojamientos" label, or nothing while the
+ * selection is below the comparison minimum.
  *
  * @param props - {@link CompareCountProps}
- * @returns The pluralized count label, or `null` when no accommodation is selected.
+ * @returns The pluralized count label, or `null` below the comparison minimum.
  */
 export function CompareCount({ locale }: CompareCountProps) {
     const { tPlural } = createTranslations(locale);
     const { ids } = useCompareStore();
     const count = ids.length;
 
-    if (count === 0) {
+    // Below the minimum the matrix shows its empty state («No hay alojamientos
+    // para comparar»), so a «Comparás 1 alojamiento» label would contradict it.
+    if (count < MIN_TO_COMPARE) {
         return null;
     }
 

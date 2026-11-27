@@ -43,6 +43,10 @@ const plan = badges.vip
         color: var(--core-foreground);
         font-size: 0.75rem;
         font-weight: 600;
+        /* A pill keeps its natural width: its row wraps instead of squeezing it
+           into two lines (HOS-2667). `overflow-wrap` below still breaks a label
+           that is wider than the whole row. */
+        flex-shrink: 0;
     }
     :global(.card-tooltip-trigger.promotion-pill--plan) { border: 1px solid var(--brand-primary); }
     .promotion-pill__label { min-width: 0; overflow-wrap: anywhere; text-align: start; }
