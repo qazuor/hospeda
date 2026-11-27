@@ -55,3 +55,16 @@ export const ResolvedNewsletterContentSchema = z.object({
 
 /** Frozen document and localized cards stored at dispatch. */
 export type ResolvedNewsletterContent = z.infer<typeof ResolvedNewsletterContentSchema>;
+
+/**
+ * Response contract for a stored snapshot. Same envelope as
+ * {@link ResolvedNewsletterContentSchema}, but the document nodes are not
+ * described recursively: the OpenAPI generator cannot expand a recursive
+ * `z.lazy` schema (it overflows the stack). Writes and rendering keep the
+ * strict recursive validation.
+ */
+export const ResolvedNewsletterContentResponseSchema = z.object({
+    version: z.literal(1),
+    doc: z.object({ type: z.literal('doc'), content: z.array(z.unknown()) }).passthrough(),
+    blocks: z.array(blockSchema)
+});
