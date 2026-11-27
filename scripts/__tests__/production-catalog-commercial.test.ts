@@ -3,13 +3,16 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { run } from '../check-catalog-sql.js';
+import { renderInsert } from '../generate-catalog-sql.js';
 import { catalogId, PRODUCTION_PLAN_CATALOG } from '../production-catalog/catalog.js';
-import { PRODUCTION_PLAN_PRICES } from '../production-catalog/commercial-catalog.js';
+import {
+    PRODUCTION_ADDON_CATALOG,
+    PRODUCTION_PLAN_PRICES
+} from '../production-catalog/commercial-catalog.js';
 import {
     buildAddonLoads,
     buildBillingOptionLoad,
-    buildCommercialCatalogLoads,
-    generateCommercialCatalogSql
+    buildCommercialCatalogLoads
 } from '../production-catalog/commercial-loads.js';
 
 const MIGRATIONS = resolve('packages/db/src/migrations');
@@ -104,11 +107,13 @@ describe('production catalog prices (billing_option)', () => {
 });
 
 describe('production catalog add-ons', () => {
-    it('loads the ten mapped add-ons and leaves the properties pack out', () => {
+    it('loads twelve add-ons and leaves the properties pack out', () => {
         const [addon, version, entitlement, limit, product] = buildAddonLoads();
         expect(addon.rows.map((row) => row[1])).toEqual([
             'extra-accommodations-5',
             'extra-photos-20',
+            'extra-photos-venue-20',
+            'extra-photos-experience-20',
             'extra-venues-1',
             'extra-experiences-1',
             'visibility-boost-7d',
@@ -119,17 +124,21 @@ describe('production catalog add-ons', () => {
             'visibility-boost-experience-30d'
         ]);
         expect(addon.rows.some((row) => row[1] === 'extra-properties-5')).toBe(false);
-        expect(version.rows).toHaveLength(10);
+        expect(version.rows).toHaveLength(12);
         expect(entitlement.rows.map((row) => row[2])).toEqual(Array(6).fill('featured_listing'));
         expect(limit.rows.map((row) => `${row[2]}+${row[3]}`)).toEqual([
             'max_accommodations+5',
             'max_photos_per_accommodation+20',
+            'max_photos_per_venue+20',
+            'max_photos_per_experience+20',
             'max_venues+1',
             'max_experiences+1'
         ]);
         expect(product.rows.map((row) => `${row[3]} ${row[5]} ${row[6]} ${row[7]}`)).toEqual([
             '1300000 PERIODICO monthly {accommodation}',
             '500000 PERIODICO monthly {accommodation}',
+            '500000 PERIODICO monthly {venue}',
+            '500000 PERIODICO monthly {experience}',
             '1500000 PERIODICO monthly {venue}',
             '1500000 PERIODICO monthly {experience}',
             '500000 UNA_VEZ null {accommodation}',
@@ -139,6 +148,26 @@ describe('production catalog add-ons', () => {
             '500000 UNA_VEZ null {experience}',
             '1500000 UNA_VEZ null {experience}'
         ]);
+    });
+
+    it.each(['venue', 'experience'])('makes the %s photo pack subscription-scoped', (vertical) => {
+        const pack = PRODUCTION_ADDON_CATALOG.find(
+            ({ slug }) => slug === `extra-photos-${vertical}-20`
+        );
+
+        expect(pack?.version).toEqual({
+            validity: 'WHILE_SUBSCRIPTION_ALIVE',
+            validityDays: null,
+            scopeType: 'VERTICAL_SUBSCRIPTION',
+            entitlements: [],
+            limits: [{ key: `max_photos_per_${vertical}`, value: 20 }]
+        });
+        expect(pack?.product).toEqual({
+            price: 500_000,
+            chargeKind: 'PERIODICO',
+            cycle: 'monthly',
+            compatibleVerticals: [vertical]
+        });
     });
 
     it('a periodic product never sells a fixed-days version (extras 046)', () => {
@@ -153,16 +182,22 @@ describe('production catalog add-ons', () => {
 });
 
 describe('migration 0176 and GUARD:G18', () => {
-    it('0176 is byte-identical to the generator after its header', () => {
+    it('0176 is byte-identical to the generator for the original offers', () => {
         const sql = readFileSync(join(MIGRATIONS, MIGRATION_0176), 'utf8');
-        expect(sql.slice(sql.indexOf('\n') + 1)).toBe(generateCommercialCatalogSql());
+        const originalAddons = PRODUCTION_ADDON_CATALOG.filter(
+            ({ slug }) => slug !== 'extra-photos-venue-20' && slug !== 'extra-photos-experience-20'
+        );
+        const loads = [buildBillingOptionLoad(), ...buildAddonLoads({ addons: originalAddons })];
+        expect(sql.slice(sql.indexOf('\n') + 1)).toBe(
+            `${loads.map((load) => renderInsert({ load })).join('\n--> statement-breakpoint\n')}\n`
+        );
     });
 
     it('G18 over the real history compares the prices and the add-ons, green', () => {
         const result = run();
         expect(result.exitCode, result.output).toBe(0);
         expect(result.output).toContain('billing_option 24 row(s)');
-        expect(result.output).toContain('addon_product 10 row(s)');
+        expect(result.output).toContain('addon_product 12 row(s)');
     });
 
     it('mutation: without 0176 G18 is red and names every sellable plan option', () => {

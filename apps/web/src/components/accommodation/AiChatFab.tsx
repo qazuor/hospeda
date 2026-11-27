@@ -46,6 +46,7 @@ export const AiChatFab = forwardRef<HTMLButtonElement, AiChatFabProps>(function 
             onClick={onClick}
             aria-label={resolveAiChatCopy({ t, entityType, suffix: 'fabLabel' })}
             data-dock-item
+            data-floating-chat
         >
             {/* HOS-2607: one AI glyph (the robot every other AI surface of the
                 site uses) instead of a chat bubble plus a sparkle badge: the bubble
@@ -56,6 +57,12 @@ export const AiChatFab = forwardRef<HTMLButtonElement, AiChatFabProps>(function 
                 aria-hidden="true"
                 data-testid="ai-chat-fab-icon"
             />
+            <span
+                className={styles.dockLabel}
+                aria-hidden="true"
+            >
+                {t('accommodations.aiChat.dockLabel')}
+            </span>
         </button>
     );
 });

@@ -61,7 +61,8 @@ async function seed(vertical: 'partner' | 'accommodation' = 'partner') {
             sellable: true,
             current: true,
             trialDays: 0,
-            allowsPause: false
+            allowsPause: false,
+            paymentMethods: vertical === 'partner' ? ['CARD', 'MANUAL'] : ['CARD']
         })
         .returning();
     if (!version) throw new Error('Version seed failed');
@@ -291,7 +292,8 @@ describe('HOS-2130 manual installment opened integration', () => {
                 sellable: true,
                 current: true,
                 trialDays: 0,
-                allowsPause: false
+                allowsPause: false,
+                paymentMethods: ['CARD', 'MANUAL']
             })
             .returning();
         if (!destinationVersion) throw new Error('Destination version seed failed');
@@ -538,7 +540,7 @@ describe('HOS-2130 manual installment opened integration', () => {
         }
     });
 
-    it('does not mail the owner of a manual renewal outside partner', async () => {
+    it('mails the owner of a manual renewal whatever the vertical: the subscription method decides (HOS-2196)', async () => {
         // Arrange
         const { owner, version, option } = await seed('accommodation');
         const [subscription] = await getServiceTestDb()
@@ -570,6 +572,6 @@ describe('HOS-2130 manual installment opened integration', () => {
             { ...startPorts(), clock: { now: () => baseTime } }
         );
         // Assert
-        expect(await ownerMail(owner.id)).toEqual([]);
+        expect(await ownerMail(owner.id)).toHaveLength(1);
     });
 });

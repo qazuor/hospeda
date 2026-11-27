@@ -34,6 +34,31 @@
     outline-offset: 2px;
 }
 
+.selectLabel {
+    position: absolute;
+    inset-block-start: var(--space-3);
+    inset-inline-start: var(--space-3);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2);
+    background-color: var(--core-card);
+    color: var(--core-foreground);
+    border-radius: var(--radius-button);
+    font-size: var(--text-body-sm);
+}
+
+.selectBox {
+    inline-size: var(--space-4);
+    block-size: var(--space-4);
+    border: 2px solid currentColor;
+    border-radius: var(--radius-sm);
+}
+
+.selectBox[data-checked="true"] {
+    background-color: var(--brand-primary);
+}
+
 /* --- Selected (accommodation is in the comparison list) --- */
 .overlay[aria-checked="true"] {
     border-color: var(--brand-primary);

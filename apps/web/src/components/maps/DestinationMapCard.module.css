@@ -1,0 +1,64 @@
+.destinationSelection {
+    position: absolute;
+    z-index: 600;
+    inset-inline-start: 50%;
+    inset-block-end: var(--space-6);
+    transform: translateX(-50%);
+    display: flex;
+    width: min(100% - var(--space-6), 24rem);
+    background: var(--core-card);
+    border-radius: var(--radius-card);
+    overflow: hidden;
+    box-shadow: var(--shadow-card);
+}
+
+.destinationSelection:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
+/* Reserve thumbnail space before the image has loaded (HOS-95). */
+.popupImageWrapper {
+    width: 28%;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    background-color: var(--surface-warm);
+    flex: none;
+}
+
+.popupImage {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.destinationSelection .body {
+    min-width: 0;
+    padding-inline-end: calc(44px + var(--space-4));
+}
+
+.detailsLink {
+    min-block-size: 44px;
+}
+
+.close {
+    position: absolute;
+    inset-block-start: var(--space-2);
+    inset-inline-end: var(--space-2);
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-pill);
+    background: var(--core-card);
+    color: var(--core-foreground);
+    cursor: pointer;
+    box-shadow: var(--shadow-card);
+}
+
+.close:hover {
+    background: var(--surface-warm);
+}

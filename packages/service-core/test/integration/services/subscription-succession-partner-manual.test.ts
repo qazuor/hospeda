@@ -41,7 +41,8 @@ describe('TEST:1739:3 succession rejects manual-only Partner plans', () => {
                 sellable: true,
                 current: true,
                 trialDays: 0,
-                allowsPause: false
+                allowsPause: false,
+                paymentMethods: ['CARD', 'MANUAL']
             })
             .returning();
         if (!version) throw new Error('Could not seed partner succession plan version');
@@ -88,7 +89,7 @@ describe('TEST:1739:3 succession rejects manual-only Partner plans', () => {
         if ('error' in result) {
             expect(result.error).toMatchObject({
                 code: 'VALIDATION_ERROR',
-                reason: 'PARTNER_MANUAL_ONLY'
+                reason: 'PLAN_NOT_SELF_SERVICE'
             });
         }
         expect(readAuthorization).not.toHaveBeenCalled();

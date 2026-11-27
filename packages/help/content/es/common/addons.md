@@ -34,7 +34,7 @@ covers:
   - "page:mi-cuenta/suscripcion"
 entryFor:
   - "page:mi-cuenta/complementos"
-reviewedAt: "2026-11-25"
+reviewedAt: "2026-11-26"
 ---
 
 ## Qué podés hacer

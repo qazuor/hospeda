@@ -35,6 +35,24 @@ const { mockListMedia, mockAddMedia, mockUploadEntityImage } = vi.hoisted(() => 
 }));
 
 vi.mock('@/lib/api/endpoints-protected', () => ({
+    listingPhotoAllowanceApi: {
+        // HOS-2495: the cap is the listing's photo allowance.
+        getAllowance: vi.fn(() =>
+            Promise.resolve({
+                ok: true,
+                data: {
+                    limitKey: 'max_photos_per_accommodation',
+                    status: 'LIMITED',
+                    cap: 15,
+                    source: 'EFFECTIVE_SET',
+                    used: 0,
+                    hiddenCount: 0,
+                    coverAllowed: true,
+                    breakdown: null
+                }
+            })
+        )
+    },
     accommodationMediaApi: {
         listMedia: mockListMedia,
         addMedia: mockAddMedia,
@@ -50,24 +68,13 @@ vi.mock('@/lib/media/upload-entity', () => ({
     uploadEntityImage: mockUploadEntityImage
 }));
 
-// HOS-1024: the client-side gallery cap now comes from the plan (via
-// `useMyEntitlements`), not the flat entity ceiling. Fixed at 15 to match
-// `makeLimitReached()`'s `maxAllowed: 15` below — this suite is about the
-// SERVER's LIMIT_REACHED response, not the client-side cap resolution
-// itself (covered by `PhotoSection.plan-cap.test.tsx`).
-vi.mock('@/hooks/useMyEntitlements', () => ({
-    useMyEntitlements: () => ({
-        has: () => false,
-        limit: () => 15,
-        plan: null,
-        isLoading: false,
-        error: null
-    })
-}));
-
 const ACC_ID = 'acc-uuid-123';
 
-const defaultProps: PhotoSectionProps = { locale: 'es', accommodationId: ACC_ID };
+const defaultProps: PhotoSectionProps = {
+    locale: 'es',
+    vertical: 'accommodation',
+    listingId: ACC_ID
+};
 
 const PLAN_HREF = '/es/mi-cuenta/suscripcion/';
 

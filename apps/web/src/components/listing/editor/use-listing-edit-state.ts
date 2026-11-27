@@ -8,7 +8,6 @@
 import { useCallback, useState } from 'react';
 import type { AmenityAttributeValue } from '@/lib/api/types';
 import { setListingPolicy } from '@/lib/listing/listing-policies';
-import type { ListingI18nValues } from '../ListingTranslationPanel.client';
 import type {
     ContactValues,
     ListingEditData,
@@ -140,17 +139,6 @@ export function useListingEditState({
         setStatus({ kind: 'idle' });
     }, []);
 
-    /**
-     * Handle i18n panel changes. The callback always carries the FULL
-     * `ListingI18nValues` shape (that is the panel's state), but the PATCH
-     * diff (`buildPatchPayload`) still compares and sends each of the four
-     * fields independently — see its JSDoc (HOS-902).
-     */
-    const handleI18nChange = useCallback((updated: ListingI18nValues) => {
-        setFormData((prev) => ({ ...prev, i18nValues: updated }));
-        setStatus({ kind: 'idle' });
-    }, []);
-
     return {
         formData,
         setFormData,
@@ -165,7 +153,6 @@ export function useListingEditState({
         onPolicyChange,
         toggleAmenity,
         changeAmenityAttribute,
-        toggleFeature,
-        handleI18nChange
+        toggleFeature
     };
 }

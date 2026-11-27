@@ -1,4 +1,5 @@
 import type { TranslationKey } from '@repo/i18n';
+import type { PlanPaymentMethod } from '@repo/schemas';
 import { useState } from 'react';
 import {
     AlertDialog,
@@ -44,21 +45,54 @@ export function PartnerBillingSetupDialog({
     const mutation = usePartnerBillingSetupMutation(partnerId);
     const [optionId, setOptionId] = useState('');
     const [reason, setReason] = useState('');
+    const [chosenMethod, setChosenMethod] = useState<PlanPaymentMethod | ''>('');
     const [reviewing, setReviewing] = useState(false);
+    const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
+    const [copied, setCopied] = useState(false);
     const [errorKey, setErrorKey] = useState<TranslationKey | null>(null);
     const option = preview.data?.options.find((item) => item.billingOptionId === optionId);
+    // HOS-2196: the plan declares the methods; a single one needs no choice.
+    const accepted = option?.paymentMethods ?? [];
+    const method: PlanPaymentMethod | '' =
+        accepted.length === 1
+            ? (accepted[0] ?? '')
+            : chosenMethod && accepted.includes(chosenMethod)
+              ? chosenMethod
+              : '';
+    const close = (next: boolean) => {
+        if (!next) {
+            setCheckoutUrl(null);
+            setCopied(false);
+        }
+        onOpenChange(next);
+    };
+    const copyLink = async () => {
+        if (!checkoutUrl) return;
+        try {
+            await navigator.clipboard.writeText(checkoutUrl);
+            setCopied(true);
+        } catch {
+            setCopied(false);
+        }
+    };
     const confirm = async () => {
-        if (!option || !reason.trim()) return;
+        if (!option || !method || !reason.trim()) return;
         setErrorKey(null);
         try {
-            await mutation.mutateAsync({
+            const result = await mutation.mutateAsync({
                 billingOptionId: option.billingOptionId,
+                paymentMethod: method,
                 reason: reason.trim(),
                 confirm: true
             });
             setReviewing(false);
             setOptionId('');
+            setChosenMethod('');
             setReason('');
+            if (result.checkoutUrl) {
+                setCheckoutUrl(result.checkoutUrl);
+                return;
+            }
             onOpenChange(false);
         } catch (error) {
             setErrorKey(partnerBillingSetupErrorKey(error));
@@ -68,7 +102,7 @@ export function PartnerBillingSetupDialog({
     return (
         <AlertDialog
             open={open}
-            onOpenChange={onOpenChange}
+            onOpenChange={close}
         >
             <AlertDialogContent data-testid="partner-billing-setup-dialog">
                 <AlertDialogHeader>
@@ -79,10 +113,39 @@ export function PartnerBillingSetupDialog({
                         {t('admin-entities.partnerBillingSetup.state')}
                     </AlertDialogDescription>
                 </AlertDialogHeader>
-                {reviewing && preview.data && option ? (
+                {checkoutUrl ? (
+                    <div
+                        className="space-y-2 rounded-md border p-3"
+                        data-testid="partner-billing-setup-link"
+                    >
+                        <p className="font-medium">
+                            {t('admin-entities.partnerBillingSetup.linkTitle')}
+                        </p>
+                        <p>{t('admin-entities.partnerBillingSetup.linkHelp')}</p>
+                        <input
+                            readOnly
+                            aria-label={t('admin-entities.partnerBillingSetup.linkTitle')}
+                            className="w-full rounded-md border p-2 text-sm"
+                            value={checkoutUrl}
+                            onFocus={(event) => event.currentTarget.select()}
+                        />
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => void copyLink()}
+                        >
+                            {t(
+                                copied
+                                    ? 'admin-entities.partnerBillingSetup.copied'
+                                    : 'admin-entities.partnerBillingSetup.copy'
+                            )}
+                        </Button>
+                    </div>
+                ) : reviewing && preview.data && option && method ? (
                     <PartnerBillingSetupConfirmation
                         preview={preview.data}
                         option={option}
+                        method={method}
                     />
                 ) : (
                     <div className="space-y-3">
@@ -99,6 +162,34 @@ export function PartnerBillingSetupDialog({
                             selectedId={optionId}
                             onSelect={setOptionId}
                         />
+                        {accepted.length > 1 ? (
+                            <fieldset className="space-y-2">
+                                <legend className="font-medium">
+                                    {t('admin-entities.partnerBillingSetup.methodChoice')}
+                                </legend>
+                                {accepted.map((item) => (
+                                    <label
+                                        key={item}
+                                        className="flex items-center gap-2 rounded-md border p-2"
+                                    >
+                                        <input
+                                            type="radio"
+                                            name="partner-billing-method"
+                                            value={item}
+                                            checked={method === item}
+                                            onChange={() => setChosenMethod(item)}
+                                        />
+                                        <span>
+                                            {t(
+                                                item === 'CARD'
+                                                    ? 'admin-entities.partnerBillingSetup.card'
+                                                    : 'admin-entities.partnerBillingSetup.manual'
+                                            )}
+                                        </span>
+                                    </label>
+                                ))}
+                            </fieldset>
+                        ) : null}
                         <div className="space-y-2">
                             <Label htmlFor="partner-billing-setup-reason">
                                 {t('admin-entities.partnerBillingSetup.reasonLabel')}
@@ -115,9 +206,13 @@ export function PartnerBillingSetupDialog({
                 {errorKey ? <p role="alert">{t(errorKey)}</p> : null}
                 <AlertDialogFooter>
                     <AlertDialogCancel>
-                        {t('admin-entities.partnerBillingSetup.cancel')}
+                        {t(
+                            checkoutUrl
+                                ? 'admin-entities.partnerBillingSetup.close'
+                                : 'admin-entities.partnerBillingSetup.cancel'
+                        )}
                     </AlertDialogCancel>
-                    {reviewing ? (
+                    {checkoutUrl ? null : reviewing ? (
                         <>
                             <Button
                                 variant="outline"
@@ -134,7 +229,7 @@ export function PartnerBillingSetupDialog({
                         </>
                     ) : (
                         <Button
-                            disabled={!option || !reason.trim() || preview.isLoading}
+                            disabled={!option || !method || !reason.trim() || preview.isLoading}
                             onClick={() => {
                                 setErrorKey(null);
                                 setReviewing(true);

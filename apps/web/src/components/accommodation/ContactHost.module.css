@@ -87,7 +87,7 @@
     font-weight: 600;
     color: var(--accent-foreground);
     background-color: var(--brand-accent);
-    border: none;
+    border: 1px solid transparent;
     border-radius: var(--radius-button, 8px);
     padding: var(--space-3, 12px) var(--space-4, 16px);
     cursor: pointer;
@@ -101,9 +101,27 @@
     background-color: var(--brand-accent-lm05);
 }
 
+.submitButton:where([data-secondary] *):not(:disabled) {
+    color: var(--core-foreground);
+    background-color: var(--core-background);
+    border-color: var(--border);
+}
+
+.submitButton:where([data-secondary] *):hover:not(:disabled) {
+    background-color: var(--muted);
+}
+
 .submitButton:disabled {
-    opacity: 0.5;
+    color: var(--core-foreground);
+    background-color: var(--muted);
+    border-color: var(--border);
     cursor: not-allowed;
+}
+
+.missingFields {
+    margin: 0;
+    color: var(--core-foreground);
+    font: var(--app-meta);
 }
 
 .successNotice {

@@ -385,6 +385,7 @@ Adding a theme is just a new CSS block. No code changes needed:
 - Primary locale is `es`. Other locales (`en`, `pt`) will be translated later
 - Until translated, `en` and `pt` fall back to `es` strings
 - URL structure: `/{locale}/rest/of/path/` with trailing slash enforced
+- **Listing content translations (HOS-2658)**: the `en`/`pt` versions of a listing's name, summary, description, rich description and venue entry note are edited ONLY in the editor's translations section, through `GET`/`PUT /api/v1/protected/{vertical}/{id}/translations` and `POST .../translations/ai`. The owner PATCH of the save bar never carries `*I18n` keys: the schema strips them
 
 ```astro
 ---
@@ -447,6 +448,22 @@ media, amenities, price). **Owners create their own listings** since HOS-166 §7
 create/provision path still exists in parallel — it is no longer the only way in.
 Full reference:
 [docs/listing-owner-self-service.md](docs/listing-owner-self-service.md).
+
+**One photo editor for the three listing verticals (HOS-2495).** Accommodation
+(`propiedades/[id]/editar/fotos.astro`) and venue/experience
+(`comercio/[vertical]/[id]/editar/fotos.astro`) both render
+`components/host/editor/PhotoSection.client.tsx` with `{ vertical, listingId }`.
+The vertical picks the endpoints through `lib/api/listing-photo-api.ts`. The cap
+is NOT computed on the client: `use-photo-allowance.ts` reads
+`GET /api/v1/protected/{vertical}s/{id}/photo-allowance`, and
+`photo-cap-view.ts` turns it into five states (loading, limited with its
+breakdown, unlimited, no plan with a pricing link, failed read). A failed read
+never says "no plan". Approved gallery photos beyond the cap stay editable and
+carry «No se muestra: superás tu tope», computed with the same
+`partitionGalleryByCap` the public projector uses. Every API error goes through
+`translateApiError`. The venue/experience-only `MediaSection` was deleted;
+`test/static-guards/no-legacy-listing-media-section.test.ts` keeps it from
+coming back.
 
 ### Auth UI
 

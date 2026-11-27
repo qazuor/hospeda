@@ -19,6 +19,7 @@ import type { AccommodationCardData } from '@/data/types';
 import { useViewportSearch } from '@/hooks/useViewportSearch';
 import { getAccommodationTypeIcon } from '@/lib/accommodation-type-icons';
 import type { SupportedLocale } from '@/lib/i18n';
+import { listingBounds } from '@/lib/maps/listing-bounds';
 import { buildImageEndpointUrl, isCloudinaryDeliveryUrl } from '@/lib/media';
 
 import layoutStyles from './AccommodationsListingMap.module.css';
@@ -61,6 +62,8 @@ interface SidebarI18n {
 }
 
 interface AccommodationsListingMapProps {
+    /** Total located inventory matching the listing filters, independent of viewport and card cap. */
+    readonly filteredLocatedCount?: number;
     readonly initialItems: ReadonlyArray<AccommodationCardData>;
     readonly initialCenter: [number, number];
     readonly initialZoom?: number;
@@ -132,6 +135,7 @@ interface AccommodationsListingMapProps {
     readonly gatePlanNames?: readonly string[];
 }
 
+/** Coordinates the accommodation map, viewport results and cards. */
 export function AccommodationsListingMap({
     initialItems,
     initialCenter,
@@ -155,6 +159,7 @@ export function AccommodationsListingMap({
     priceLabelById,
     showSidebar = false,
     sidebarI18n,
+    filteredLocatedCount,
     extraSearchParams,
     locale = 'es',
     gatePlanNames = []
@@ -191,27 +196,10 @@ export function AccommodationsListingMap({
      * search) so the initial framing is deterministic — after that, panning
      * is driven by the user, not by refetches.
      */
-    const initialBounds = useMemo<[[number, number], [number, number]] | undefined>(() => {
-        let minLat = Number.POSITIVE_INFINITY;
-        let maxLat = Number.NEGATIVE_INFINITY;
-        let minLng = Number.POSITIVE_INFINITY;
-        let maxLng = Number.NEGATIVE_INFINITY;
-        let count = 0;
-        for (const item of initialItems) {
-            const loc = item.approximateLocation;
-            if (!loc) continue;
-            if (loc.lat < minLat) minLat = loc.lat;
-            if (loc.lat > maxLat) maxLat = loc.lat;
-            if (loc.lng < minLng) minLng = loc.lng;
-            if (loc.lng > maxLng) maxLng = loc.lng;
-            count++;
-        }
-        if (count === 0) return undefined;
-        return [
-            [minLat, minLng],
-            [maxLat, maxLng]
-        ];
-    }, [initialItems]);
+    const { bounds: initialBounds } = useMemo(
+        () => listingBounds({ points: initialItems.map((item) => item.approximateLocation) }),
+        [initialItems]
+    );
 
     const mapItems = useMemo(
         () =>
@@ -405,7 +393,8 @@ export function AccommodationsListingMap({
                     isFetching={isFetching}
                     i18n={{
                         resultsHeading: sidebarI18n.resultsHeading,
-                        resultsCount: sidebarCountFn,
+                        resultsCount: (visibleCount) =>
+                            sidebarCountFn(filteredLocatedCount ?? visibleCount),
                         emptyState: sidebarI18n.emptyState,
                         openSheet: sidebarI18n.openSheet,
                         openSheetCount: openSheetCountFn,

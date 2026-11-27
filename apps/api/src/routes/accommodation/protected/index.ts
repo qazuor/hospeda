@@ -8,6 +8,7 @@
  */
 import { createRouter } from '../../../utils/create-app';
 import { ownerAccommodationLocationRoutes } from '../../listing-location/index';
+import { ownerAccommodationTranslationRoutes } from '../../listing-translations/index';
 import { protectedAccommodationReviewRoutes } from '../reviews/protected/index.js';
 import { addFaqRoute } from './addFaq';
 import { protectedAddFeaturedMediaRoute } from './addFeaturedMedia';
@@ -28,6 +29,7 @@ import { protectedGetOwnAccommodationByIdRoute } from './getById';
 import { getFaqsRoute } from './getFaqs';
 import { protectedGetMediaRoute } from './getMedia';
 import { protectedGetOccupancyRoute } from './getOccupancy';
+import { protectedGetAccommodationPhotoAllowanceRoute } from './getPhotoAllowance';
 import { protectedGetWhatsAppRoute } from './getWhatsApp';
 import { hostFavoritesBreakdownRoute } from './hostFavoritesBreakdown';
 import { hostMarketComparisonRoute } from './hostMarketComparison';
@@ -73,6 +75,10 @@ ownershipRoutes.route('/', protectedAccommodationSupportEditsRoute);
 ownershipRoutes.route('/', protectedAccommodationReportFixedRoute);
 // POST /:id/location-exception-request - owner asks for an address exception (HOS-2192)
 ownershipRoutes.route('/', ownerAccommodationLocationRoutes.requestException);
+// GET/PUT /:id/translations + POST /:id/translations/ai - owner translations (HOS-2658)
+ownershipRoutes.route('/', ownerAccommodationTranslationRoutes.get);
+ownershipRoutes.route('/', ownerAccommodationTranslationRoutes.putManual);
+ownershipRoutes.route('/', ownerAccommodationTranslationRoutes.postAi);
 // POST /:id/publish - Transition DRAFT (or INACTIVE) → ACTIVE (HOS-110)
 ownershipRoutes.route('/', protectedPublishAccommodationRoute);
 
@@ -100,6 +106,7 @@ app.route('/', protectedGetAccommodationQrCodeRoute);
 
 // GET /:id/sections - Section and trait availability for the owner (HOS-1809)
 app.route('/', protectedGetAccommodationSectionStatesRoute);
+app.route('/', protectedGetAccommodationPhotoAllowanceRoute);
 
 // GET /:id - Get own accommodation by ID (ownership check in handler)
 app.route('/', protectedGetOwnAccommodationByIdRoute);

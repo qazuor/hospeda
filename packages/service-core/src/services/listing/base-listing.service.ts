@@ -79,6 +79,11 @@ import {
     assertSupportCreateIsDraft,
     assertSupportEditContentOnly
 } from './listing-support-edit';
+import {
+    DEFAULT_LISTING_TRANSLATION_SOURCE_FIELDS,
+    fireListingTranslationOnSave,
+    readListingTranslationSources
+} from './listing-translation-on-save';
 
 /** Resolves the catalog preselection for a create request without validating its options. */
 export function resolveBusinessLinesOnCreate(args: {
@@ -250,6 +255,27 @@ export abstract class BaseListingService<
      * @example `'venue'` for the venue service.
      */
     protected abstract get _revalidationEntityType(): 'venue' | 'experience';
+
+    /**
+     * Translation source fields of this vertical (HOS-2658). Their Spanish text
+     * is translated on save; `VenueService` adds `'entryNote'`.
+     */
+    protected get _translationSourceFields(): readonly string[] {
+        return DEFAULT_LISTING_TRANSLATION_SOURCE_FIELDS;
+    }
+
+    /**
+     * Reads this vertical's translation sources from a listing row (HOS-2658).
+     *
+     * @param entity - The listing row.
+     * @returns Field id → Spanish source (`undefined` when absent).
+     */
+    protected _readTranslationSources(
+        entity: Readonly<Record<string, unknown>>
+    ): Readonly<Record<string, string | undefined>> {
+        return readListingTranslationSources({ entity, fields: this._translationSourceFields })
+            .sources;
+    }
 
     /**
      * Amenity junction table model (injectable for testing).
@@ -814,6 +840,14 @@ export abstract class BaseListingService<
             }).changes
         });
 
+        // --- On-save AI translation (HOS-2658): every non-empty source ---
+        fireListingTranslationOnSave({
+            vertical: this._revalidationEntityType,
+            entityId: entity.id,
+            ownerId: entity.ownerId as string,
+            current: this._readTranslationSources(entity as Record<string, unknown>)
+        });
+
         // --- Edge cache revalidation (HOS-369 W2-4) ---
         // Appended to the existing junction-sync body rather than overriding
         // the hook: this class already owns `_afterCreate`/`_afterUpdate`, so
@@ -871,6 +905,13 @@ export abstract class BaseListingService<
             if (typedCtx.hookState !== undefined) {
                 // HOS-1499: the row before the edit, for the event's old values.
                 typedCtx.hookState.ownerActBefore = current ?? null;
+                // HOS-2658: the Spanish sources before the edit, so only the
+                // fields that change are translated on save.
+                if (current) {
+                    typedCtx.hookState.previousTranslatableFields = this._readTranslationSources(
+                        current as Record<string, unknown>
+                    );
+                }
             }
             if (
                 current &&
@@ -1056,6 +1097,15 @@ export abstract class BaseListingService<
                 before: before ?? null,
                 payload: typedCtx.hookState?.ownerActPayload ?? {}
             }).changes
+        });
+
+        // --- On-save AI translation (HOS-2658): only the changed sources ---
+        fireListingTranslationOnSave({
+            vertical: this._revalidationEntityType,
+            entityId: entity.id,
+            ownerId: ((before?.ownerId as string | null | undefined) ?? entity.ownerId) as string,
+            current: this._readTranslationSources(entity as Record<string, unknown>),
+            previous: typedCtx.hookState?.previousTranslatableFields ?? {}
         });
 
         // --- Edge cache revalidation (HOS-369 W2-4) ---

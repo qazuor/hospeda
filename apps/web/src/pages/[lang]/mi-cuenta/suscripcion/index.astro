@@ -34,12 +34,14 @@ import PageHelpLink from '@/components/account/help/PageHelpLink.astro';
 import SubscriptionTabs from '@/components/account/SubscriptionTabs.astro';
 import TrialSummary from '@/components/account/TrialSummary.astro';
 import MySubscriptions from '@/components/account/MySubscriptions.astro';
+import ReceiptsList from '@/components/account/ReceiptsList.astro';
+import { ReceiptViewer } from '@/components/account/receipts/ReceiptViewer.client';
 import { ExpiredDeclinedSignupNotice } from '@/components/account/ExpiredDeclinedSignupNotice';
 import { PromoCodeRedeem } from '@/components/account/PromoCodeRedeem.client';
 import StripMercadoPagoReturnParams from '@/components/billing/StripMercadoPagoReturnParams.astro';
 import { SubscriptionReturn } from '@/components/billing/SubscriptionReturn.client';
 import { AddonPurchaseGate } from '@/components/billing/addon-purchase/AddonPurchaseGate.client';
-import { TrialStatusEnum } from '@repo/schemas';
+import { TrialStatusEnum, type OwnReceipt } from '@repo/schemas';
 import { billingSubscriptionApi, publishApi, type PublishVerticalSlug } from '@/lib/api/endpoints-protected';
 import { parseOwnSubscriptions } from '@/lib/billing/self-cancel';
 import { parseReturnSubscriptionId, selectDeclinedNoticesToShow } from '@/lib/billing/subscription-return';
@@ -86,6 +88,23 @@ try {
 } catch {
 	 ownSubscriptions = null;
 }
+
+// HOS-2566: the owner's payment receipts; a failed read is shown as such, never as «none».
+let ownReceipts: readonly OwnReceipt[] | null = null;
+try {
+	const receiptsRead = await billingSubscriptionApi.listReceipts({ cookieHeader });
+	ownReceipts = receiptsRead.ok ? receiptsRead.data.receipts : null;
+} catch {
+	ownReceipts = null;
+}
+
+// HOS-2566: `?recibo=<receiptId>` is where every «Ver recibo» button leads. The page reads
+// nothing about the receipt: the island fetches the PDF with the owner's session, so a
+// receipt of somebody else answers «not found» exactly like one that does not exist.
+// The same shape the API's `z.string().uuid()` accepts, so a malformed id is ignored here.
+const RECEIPT_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const requestedReceipt = Astro.url.searchParams.get('recibo');
+const receiptId = requestedReceipt && RECEIPT_ID.test(requestedReceipt) ? requestedReceipt : null;
 
 const billingPresence = await hasBillingPresence({ userId: user.id, cookieHeader });
 
@@ -155,7 +174,14 @@ if (returnSubscriptionId) {
 		/>
 	))}
 	<div data-subscription-sections class="sub-page__sections">
+	{receiptId && (
+		<section aria-labelledby="receipt-viewer-title" data-testid="receipt-section">
+			<h2 id="receipt-viewer-title">{t('account.subscription.receipts.page.title')}</h2>
+			<ReceiptViewer client:load locale={locale} receiptId={receiptId} backHref={buildUrl({ locale, path: 'mi-cuenta/suscripcion' })} />
+		</section>
+	)}
 	<MySubscriptions locale={locale} result={ownSubscriptions} plansPath={resolveEmptySubscriptionPlansPath({ roles: user.roles })} />
+	<ReceiptsList locale={locale} receipts={ownReceipts} />
     {addonVerticals.map((vertical) => (
         <Section id={`addons-${vertical}`} helpId="section:complementos.recurrentes" title={t('billing.addonPurchase.verticalTitle', undefined, { vertical: t(resolveMySubscriptionVerticalLabelKey({ vertical })) })}>
             <AddonPurchaseGate client:visible locale={locale} returnOrderRequestId={null} accountEmail={user.email} onlyVertical={vertical} plansPath={plansPathForVertical({ vertical })} />

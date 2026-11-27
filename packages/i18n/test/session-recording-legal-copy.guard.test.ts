@@ -12,6 +12,7 @@
 import { describe, expect, it } from 'vitest';
 
 type SectionFile = {
+    readonly recording?: Readonly<Record<string, string>>;
     readonly sections?: {
         readonly sessionRecording?: { readonly title?: string; readonly body?: string };
     };
@@ -24,6 +25,9 @@ const MODULES = import.meta.glob<SectionFile>('../src/locales/*/{cookies,privacy
 
 const LOCALES = ['es', 'en', 'pt'] as const;
 const FILES = ['cookies', 'privacy'] as const;
+
+const recordingText = (mod?: SectionFile) =>
+    [mod?.sections?.sessionRecording?.body, ...Object.values(mod?.recording ?? {})].join(' ');
 
 /** Substrings each locale's paragraph must carry (masking, consent, sampling, retention). */
 const REQUIRED: Readonly<Record<(typeof LOCALES)[number], readonly RegExp[]>> = {
@@ -53,7 +57,7 @@ describe('session recording legal copy (HOS-2347 OQ-7)', () => {
                 expect(section?.title, 'title').toBeTruthy();
                 expect(section?.body, 'body').toBeTruthy();
                 for (const pattern of REQUIRED[locale]) {
-                    expect(section?.body).toMatch(pattern);
+                    expect(recordingText(mod)).toMatch(pattern);
                 }
             });
         }
@@ -61,7 +65,7 @@ describe('session recording legal copy (HOS-2347 OQ-7)', () => {
 
     it('never calls the recordings anonymous: they are pseudonymous', () => {
         for (const mod of Object.values(MODULES)) {
-            const text = `${mod.sections?.sessionRecording?.title} ${mod.sections?.sessionRecording?.body}`;
+            const text = `${mod.sections?.sessionRecording?.title} ${recordingText(mod)}`;
             expect(text).not.toMatch(/an[oó]nim|anonymi|an[oô]nim/i);
         }
         for (const [locale, pattern] of [
@@ -70,9 +74,7 @@ describe('session recording legal copy (HOS-2347 OQ-7)', () => {
             ['pt', /pseudônimas/]
         ] as const) {
             for (const file of FILES) {
-                const body =
-                    MODULES[`../src/locales/${locale}/${file}.json`]?.sections?.sessionRecording
-                        ?.body;
+                const body = recordingText(MODULES[`../src/locales/${locale}/${file}.json`]);
                 expect(body).toMatch(pattern);
                 expect(body).toMatch(/account|cuenta|conta/);
             }
@@ -81,7 +83,7 @@ describe('session recording legal copy (HOS-2347 OQ-7)', () => {
 
     it('never pins a fixed retention: 14 and 30 days are not promised', () => {
         for (const mod of Object.values(MODULES)) {
-            expect(mod.sections?.sessionRecording?.body).not.toMatch(/\b(14|30)\b/);
+            expect(recordingText(mod)).not.toMatch(/\b(14|30)\b/);
         }
     });
 });

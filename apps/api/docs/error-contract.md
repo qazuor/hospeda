@@ -101,6 +101,8 @@ The listing resolver then evaluates its own steps 3, 4, 4b, 5, 6 and 7 in order.
 | `NO_PLANS_AVAILABLE` | 403 | `FORBIDDEN` | Message: `no_plans_available` (la vertical no tiene ninguna versión de plan vigente y vendible; no es `subscription_required`: no hay nada que contratar) |
 | `LIMIT_REACHED` | 403 | `LIMIT_REACHED` | `{ limitKey, currentCount, maxAllowed }` |
 
+**Listing photos (HOS-2495).** Accommodation, venue and experience photos are capped by step 7 alone, against the owner's effective `max_photos_per_{vertical}` (plan + add-ons + courtesy + permanent grant, or the pre-trial draft allowance). A gallery `addMedia` and a gallery upload through `POST /api/v1/protected/media/upload-entity` ask for `visible non-featured + 1`; a featured upload asks for `requested: 1`, so an owner at the gallery cap can still change the cover. The refusal is 403 `LIMIT_REACHED` with `{ limitKey, currentCount, maxAllowed }`. Listing verticals no longer answer 422 `GALLERY_LIMIT_EXCEEDED` (only destination, event and post keep a literal cap) nor 429 `QUOTA_EXCEEDED` for photos. `GET .../{id}/photo-allowance` never answers 403: an owner without coverage reads `status: 'NONE'`. Clients render every one of these through `translateApiError`; the raw `message` ("Limit reached", "Entitlement required") is never shown.
+
 An administrative action with actor and subject on the same account receives
 403 `FORBIDDEN` at listing step 3. For action 15, the subject is the owner read
 from the listing row; coverage, entitlements and limits (steps 5 through 7)
@@ -336,6 +338,7 @@ so an unrelated `VALIDATION_ERROR` that happened to mimic that payload keeps its
 | `ALREADY_EXISTS` with `reason: 'LOCATION_EXCEPTION_REVOKE_CONFLICT'` | `{ reason: 'LOCATION_EXCEPTION_REVOKE_CONFLICT', existingListingId }` | The admin form links to the owner's other published listing that would share the address once the exception is removed. Admin-only route; the id is the same owner's. |
 | `VALIDATION_ERROR` with `reason: 'BUSINESS_LINES_INVALID'` | `{ field: 'businessLines', reason }` | `apps/web/src/lib/forms/field-errors.ts` maps `details.reason` to the business-line selector's message; without it production falls back to the generic banner instead of naming the rejected rule. |
 | `VALIDATION_ERROR` with `reason: 'SECTION_ABSENT'` | `{ reason: 'SECTION_ABSENT', section }` | The admin create form needs the absent section identifier to explain which section the selected business lines do not offer. |
+| `VALIDATION_ERROR` with `reason: 'NO_SOURCE_TEXT'` | `{ reason: 'NO_SOURCE_TEXT' }` | "Traducir con IA" on a field whose Spanish source is empty (HOS-2658 AC-20). The translations section tells the owner to write the Spanish first instead of showing a generic error. Gated on the code AND the exact top-level reason; carries no listing data. |
 
 This list is deliberately short — a conservative choice over opening `details`
 on every 4xx, made explicitly by the issue owner (see HOS-700's decision
@@ -548,7 +551,7 @@ Two rules specific to this surface:
 
 ## S1 rejections (B3)
 
-`PLAN_NOT_FOR_SALE` and `PARTNER_MANUAL_ONLY` are 422 `VALIDATION_ERROR`; `PREVIOUS_ATTEMPT_CLOSING` and `COMMITMENT_TAKEN` are 409 `ALREADY_EXISTS`; `TOURIST_VIP_INHERITED` is 409 `ALREADY_EXISTS`. `PARTNER_MANUAL_ONLY` means Partner never starts a card checkout: the official path is the manual subscription created by administrative action 6 (HOS-1489) and paid by bank transfer (PM-617, HOS-1782). `TOURIST_VIP_INHERITED` means the person already has the benefit; it is not a missing entitlement (`403 ENTITLEMENT_REQUIRED`).
+`PLAN_NOT_FOR_SALE` and `PLAN_NOT_SELF_SERVICE` are 422 `VALIDATION_ERROR`; `PREVIOUS_ATTEMPT_CLOSING` and `COMMITMENT_TAKEN` are 409 `ALREADY_EXISTS`; `TOURIST_VIP_INHERITED` is 409 `ALREADY_EXISTS`. `PLAN_NOT_SELF_SERVICE` means the plan version also accepts manual payment (`plan_version.payment_methods`, HOS-2196), so the team sells it and the public `?opcion=` checkout refuses it (HOS-1739; today Partner). The team creates the subscription with administrative action 6 (HOS-1489), choosing among the methods the plan accepts: a manual one (paid by bank transfer, PM-617) or a card one, which returns the single-use Mercado Pago authorization link. Action 6 answers `PAYMENT_METHOD_NOT_ACCEPTED` (422 `VALIDATION_ERROR`) when the chosen method is not one the plan accepts, and `PROVIDER_REJECTED` (422) or `PROVIDER_BUSY`/`PROVIDER_UNAVAILABLE` (503) when the provider refuses the card authorization. `TOURIST_VIP_INHERITED` means the person already has the benefit; it is not a missing entitlement (`403 ENTITLEMENT_REQUIRED`).
 
 `NEW_PAID_SIGNUPS_FROZEN` answers 409 at HTTP step 6 (business rules), after
 resource 404s and S1's own 422 rejections. The first-publish PB1 refusal also

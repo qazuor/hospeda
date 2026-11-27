@@ -2,12 +2,7 @@ import { act, render, renderHook, screen, waitFor } from '@testing-library/react
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CalendarSyncLauncher } from '@/components/host/editor/CalendarSyncLauncher.client';
 import { PlanEntitlementGate } from '@/components/host/editor/PlanEntitlementGate.client';
-import {
-    MAX_PHOTOS_LIMIT_KEY,
-    resolveEffectiveGalleryCap
-} from '@/components/host/editor/photo-section-helpers';
 import { evaluateCompareAdd, useCompareGuard } from '@/hooks/useCompareGuard';
-import { useMyEntitlements } from '@/hooks/useMyEntitlements';
 import { clearCompare } from '@/store/compare-store';
 
 const state = vi.hoisted(() => ({
@@ -118,27 +113,9 @@ describe('TEST:B13a:25 effective-set consumers', () => {
         expect(screen.queryByTestId('sync-panel')).not.toBeInTheDocument();
     });
 
-    it('PhotoSection resolves catalog caps 5 and 15, but not a failed read', async () => {
-        const createResult = () =>
-            renderHook(() => {
-                const entitlements = useMyEntitlements({ vertical: 'accommodation' });
-                return resolveEffectiveGalleryCap({
-                    planLimit: entitlements.limit(MAX_PHOTOS_LIMIT_KEY),
-                    isEntitlementsLoading: entitlements.isLoading
-                });
-            });
-        state.response = effectiveSet({}, { [MAX_PHOTOS_LIMIT_KEY]: 5 });
-        let { result, unmount } = createResult();
-        await waitFor(() => expect(result.current).toEqual({ cap: 5, isResolved: true }));
-        unmount();
-        state.response = effectiveSet({}, { [MAX_PHOTOS_LIMIT_KEY]: 15 });
-        ({ result, unmount } = createResult());
-        await waitFor(() => expect(result.current).toEqual({ cap: 15, isResolved: true }));
-        unmount();
-        state.response = { ...effectiveSet({}, {}), failed: true };
-        ({ result } = createResult());
-        await waitFor(() => expect(result.current.isResolved).toBe(false));
-    });
+    // HOS-2495: PhotoSection no longer reads the effective set. Its cap is the
+    // listing's `photo-allowance` (the number step 7 enforces), covered by
+    // `host/editor/photo-cap-view.test.ts` and `PhotoSection.plan-cap.test.tsx`.
 
     it('useCompareGuard applies effective entitlement and limits 3 and 5; failed reads upsell', async () => {
         state.response = effectiveSet({ can_compare_accommodations: 1 }, { max_compare_items: 3 });

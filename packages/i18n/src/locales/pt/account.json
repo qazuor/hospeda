@@ -1,4 +1,37 @@
 {
+    "listingPhotos": {
+        "description": {
+            "accommodation_one": "Envie até {{cap}} foto da sua hospedagem.",
+            "accommodation_other": "Envie até {{cap}} fotos da sua hospedagem.",
+            "venue_one": "Envie até {{cap}} foto do seu estabelecimento.",
+            "venue_other": "Envie até {{cap}} fotos do seu estabelecimento.",
+            "experience_one": "Envie até {{cap}} foto da sua experiência.",
+            "experience_other": "Envie até {{cap}} fotos da sua experiência."
+        },
+        "noPlan": {
+            "accommodation": "Para enviar fotos da sua hospedagem, você precisa de um plano que as inclua.",
+            "venue": "Para enviar fotos do seu estabelecimento, você precisa de um plano que as inclua.",
+            "experience": "Para enviar fotos da sua experiência, você precisa de um plano que as inclua."
+        },
+        "plansCta": "Ver planos",
+        "unlimited": "Sem limite de fotos",
+        "breakdown": {
+            "plan": "{{value}} do seu plano",
+            "trial": "{{value}} do seu período de teste",
+            "addons": "{{value}} dos pacotes de fotos",
+            "courtesy": "{{value}} da sua cortesia",
+            "permanentGrant": "{{value}} do seu benefício permanente",
+            "base": "{{value}} da sua cota básica",
+            "preTrialDraft": "{{value}} para seu rascunho antes do período de teste",
+            "total": "{{parts}} = {{cap}}",
+            "unlimitedValue": "sem limite"
+        },
+        "overCapBadge": "Não aparece: você passou do seu limite",
+        "overCapSummary_one": "{{count}} foto não aparece porque você passou do limite. Adicione um pacote ou reordene as fotos para escolher quais aparecem.",
+        "overCapSummary_other": "{{count}} fotos não aparecem porque você passou do limite. Adicione um pacote ou reordene as fotos para escolher quais aparecem.",
+        "loading": "Carregando seu limite de fotos…",
+        "readFailed": "Não foi possível carregar seu limite de fotos. Tente recarregar a página."
+    },
     "editorHub": {
         "publicationStatus": "Estado de publicação",
         "publicationUnavailable": "Estado de publicação indisponível",
@@ -12,6 +45,49 @@
         "faqTitle": "Perguntas e respostas",
         "translationTitle": "Conteúdo por idioma",
         "missingHint": "Faltam traduções em {{locales}}. Abra cada aba de idioma para revisar os campos pendentes."
+    },
+    "editorTranslations": {
+        "title": "Traduções",
+        "description": "Quando você salva um texto em espanhol, nós o traduzimos para o inglês e o português. Você pode corrigir qualquer tradução: a sua nunca é sobrescrita.",
+        "sourceHint": "Este texto é editado na seção «{{section}}».",
+        "field": {
+            "name": "Nome",
+            "summary": "Resumo",
+            "description": "Descrição",
+            "richDescription": "Descrição ampliada",
+            "entryNote": "Aviso de entrada"
+        },
+        "state": {
+            "auto": "Tradução automática",
+            "manual": "Corrigida por você",
+            "manualEmpty": "Sem tradução: o espanhol é exibido",
+            "stale": "O texto em espanhol mudou, esta tradução pode estar desatualizada",
+            "pending": "Tradução pendente",
+            "noQuota": "Sem tradução automática: você atingiu a cota do mês",
+            "noEntitlement": "Sem tradução automática: seu plano não a inclui",
+            "noSource": "Ainda não há texto em espanhol"
+        },
+        "action": {
+            "save": "Salvar",
+            "translateAi": "Traduzir com IA",
+            "translateAiDisabled": {
+                "noQuota": "Você atingiu a cota de traduções deste mês",
+                "noEntitlement": "Seu plano não inclui tradução com IA",
+                "noSource": "Escreva primeiro o texto em espanhol"
+            },
+            "refresh": "Atualizar",
+            "retry": "Tentar novamente"
+        },
+        "toast": {
+            "saved": "Tradução salva",
+            "aiDone": "Tradução gerada",
+            "aiFailed": "Não conseguimos traduzir agora. Tente novamente mais tarde.",
+            "loadFailed": "Não conseguimos carregar as traduções"
+        },
+        "manualHint": "Se você a editar, ela fica sendo sua e a IA não a altera mais.",
+        "pendingHint": "Há traduções em andamento. Toque em «Atualizar» para ver se já estão prontas.",
+        "reviewCount": "{{count}} a revisar",
+        "loading": "Carregando traduções…"
     },
     "whatsNewModal": {
         "title": "Novidades",
@@ -915,6 +991,26 @@
             "ariaLabel": "Seções da assinatura",
             "plan": "Plano",
             "addons": "Complementos"
+        },
+        "receipts": {
+            "title": "Seus comprovantes",
+            "loadError": "Não conseguimos carregar seus recibos.",
+            "number": "Comprovante n.º {{number}}",
+            "view": "Ver comprovante",
+            "viewLabel": "Ver o comprovante n.º {{number}}",
+            "kindPlan": "Assinatura",
+            "kindAddon": "Complemento",
+            "page": {
+                "title": "Comprovante",
+                "loading": "Preparando seu recibo…",
+                "open": "Abrir comprovante",
+                "download": "Baixar comprovante",
+                "notFound": "Não encontramos esse comprovante.",
+                "notFoundHint": "Confira se você entrou com a conta que fez o pagamento.",
+                "error": "Não conseguimos abrir o comprovante. Tente de novo em instantes.",
+                "retry": "Tentar novamente",
+                "back": "Voltar para Minha assinatura"
+            }
         }
     },
     "favorites": {

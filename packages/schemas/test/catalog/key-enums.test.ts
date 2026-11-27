@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { ENTITLEMENT_KEY_DEFINITIONS, LIMIT_KEY_DEFINITIONS } from '../../src/catalog/index.js';
+import {
+    ENTITLEMENT_KEY_DEFINITIONS,
+    getCatalogKey,
+    LIMIT_KEY_DEFINITIONS
+} from '../../src/catalog/index.js';
 import { EntitlementKeyEnum, LimitKeyEnum } from '../../src/catalog/key-enums.js';
 
 describe('TEST:1626:1 catalog key enums', () => {
@@ -25,5 +29,25 @@ describe('TEST:1626:1 catalog key enums', () => {
         for (const [name, value] of enumEntries) {
             expect(name).toBe(value.toUpperCase());
         }
+    });
+
+    it.each([
+        ['max_photos_per_venue', 'MAX_PHOTOS_PER_VENUE'],
+        ['max_photos_per_experience', 'MAX_PHOTOS_PER_EXPERIENCE']
+    ] as const)('declares %s as a summed commercial limit scoped to its vertical', (key, member) => {
+        const expectedDefinition = {
+            key,
+            kind: 'limit',
+            scope: 'vertical',
+            aggregationStrategy: 'SUM',
+            enforcementStrategy: 'ARCHIVE',
+            keyClass: 'COMMERCIAL'
+        };
+
+        const definition = getCatalogKey({ key });
+        const enumValue = LimitKeyEnum[member];
+
+        expect(definition).toStrictEqual(expectedDefinition);
+        expect(enumValue).toBe(key);
     });
 });

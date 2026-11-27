@@ -167,7 +167,7 @@ export function ListingEditor({
         aggregateFields: LISTING_AGGREGATE_FIELDS
     });
 
-    // HOS-372: media is never buffered here (MediaSection persists per
+    // HOS-372: media is never buffered here (PhotoSection persists per
     // operation on its own route). The readers live in `listing-initial-data.ts`.
     const buildInitialEditData = (): ListingEditData =>
         buildListingInitialEditData({ initialData });
@@ -185,8 +185,7 @@ export function ListingEditor({
         onPolicyChange,
         toggleAmenity,
         changeAmenityAttribute,
-        toggleFeature,
-        handleI18nChange
+        toggleFeature
     } = useListingEditState({ buildInitialEditData });
     // TYPE-WORKAROUND: the detail is a venue|experience union; the publication status is read by key.
     const data = initialData as unknown as Record<string, unknown>;
@@ -456,7 +455,6 @@ export function ListingEditor({
                 onToggleAmenity: toggleAmenity,
                 onToggleFeature: toggleFeature,
                 onChangeAmenityAttribute: changeAmenityAttribute,
-                onI18nChange: handleI18nChange,
                 shouldOfferSlugRefresh,
                 listingId
             })}

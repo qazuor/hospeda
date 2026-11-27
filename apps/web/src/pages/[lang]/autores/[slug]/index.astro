@@ -44,7 +44,7 @@
  * structured data on a `noindex` page is noise (§6.8).
  */
 
-import EmptyState from '@/components/EmptyState.astro';
+import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import { Image } from 'astro:assets';
 import ProfilePageJsonLd from '@/components/seo/ProfilePageJsonLd.astro';
 import ArticleCard from '@/components/shared/cards/ArticleCard.astro';
@@ -324,20 +324,14 @@ const metaDescription =
 		locale={locale}
 		tagline={t('authors.tagline', 'Autor')}
 		title={authorName}
-	/>
-
-	{/*
-	  An author with no avatar AND no bio AND no published social links gets no
-	  profile card at all — not an empty box and not a placeholder silhouette.
-	  An empty profile should look empty (§8).
-	*/}
-	{(avatar || bio || socialLinks.length > 0) && (
-		<div class="author-page__profile">
+		subtitle={[postsPagination && `${totalPosts} ${t('authors.posts.heading')}`, eventsPagination && `${totalEvents} ${t('authors.events.heading')}`].filter(Boolean).join(' · ')}
+	>
+		<Fragment slot="title-media">
 			{avatar && (
 				shouldProxyAvatar ? (
 					<Image
 						src={avatar}
-						alt={authorName}
+						alt=""
 						class="author-page__avatar"
 						width={96}
 						height={96}
@@ -348,7 +342,7 @@ const metaDescription =
 				) : (
 					<img
 						src={avatar}
-						alt={authorName}
+						alt=""
 						class="author-page__avatar"
 						width={96}
 						height={96}
@@ -357,7 +351,11 @@ const metaDescription =
 					/>
 				)
 			)}
+		</Fragment>
+	</ListingPageHeader>
 
+	{(bio || socialLinks.length > 0) && (
+		<div class="author-page__profile">
 			{(bio || socialLinks.length > 0) && (
 				<div class="author-page__info">
 					{bio && <p class="author-page__bio">{bio}</p>}
@@ -452,16 +450,16 @@ const metaDescription =
 		</>
 	) : (
 		<EmptyState
+			locale={locale}
+			variant="empty"
 			title={t('authors.empty.title', 'Sin contenido publicado')}
-			description={t(
+			message={t(
 				'authors.empty.description',
 				'Este autor todavía no tiene notas ni eventos publicados. Volvé pronto.'
 			)}
-		>
-			<a href={buildUrl({ locale, path: 'publicaciones' })} class="btn btn--outline">
-				{t('blog.byAuthor.viewAll')}
-			</a>
-		</EmptyState>
+			actionUrl={buildUrl({ locale, path: 'publicaciones' })}
+			actionLabel={t('blog.byAuthor.viewAll')}
+		/>
 	)}
 </ListingLayout>
 

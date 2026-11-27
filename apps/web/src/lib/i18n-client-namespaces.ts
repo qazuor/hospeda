@@ -79,8 +79,12 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'account.editProfile',
     'account.editorFields',
     'account.editorPresentation',
+    'account.editorTranslations',
     'account.favorites',
     'account.help',
+    // HOS-2495 — the shared photo editor island (`host/editor/PhotoSection`)
+    // renders its cap breakdown and over-cap marks from these.
+    'account.listingPhotos',
     // HOS-2413 — the account kit (`components/account/ui/`) renders these in islands.
     'account.menu',
     'account.myContent',
@@ -154,10 +158,13 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'billing.addon',
     'billing.addonPurchase',
     'billing.checkout',
+    'billing.common',
+    'billing.entitlement',
     'billing.limit',
     // HOS-1759 — the checkout island resolves the selected plan's localized
     // name through `billing/plan-name.ts`.
     'billing.plan',
+    'pricing.planStatus',
     // HOS-1491 — the subscribe button and the publish button's no-plans
     // rejection render these keys in the browser.
     'publish.noPlans',
@@ -351,6 +358,7 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'maps.attribution',
     'maps.hideSurroundings',
     'maps.showSurroundings',
+    'maps.viewDetails',
     'nav.accommodations',
     'nav.blog',
     'nav.closeMenu',

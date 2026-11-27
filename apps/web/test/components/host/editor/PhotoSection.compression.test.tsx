@@ -55,6 +55,24 @@ vi.mock('@/lib/logger', () => ({
 }));
 
 vi.mock('@/lib/api/endpoints-protected', () => ({
+    listingPhotoAllowanceApi: {
+        // HOS-2495: the cap is the listing's photo allowance.
+        getAllowance: vi.fn(() =>
+            Promise.resolve({
+                ok: true,
+                data: {
+                    limitKey: 'max_photos_per_accommodation',
+                    status: 'LIMITED',
+                    cap: 50,
+                    source: 'EFFECTIVE_SET',
+                    used: 0,
+                    hiddenCount: 0,
+                    coverAllowed: true,
+                    breakdown: null
+                }
+            })
+        )
+    },
     accommodationMediaApi: {
         listMedia: mockListMedia,
         addMedia: mockAddMedia,
@@ -82,15 +100,14 @@ vi.mock('@/store/toast-store', () => ({
     addToast: mockAddToast
 }));
 
-vi.mock('@repo/schemas', async (importOriginal) => ({
-    ...(await importOriginal<typeof import('@repo/schemas')>()),
-    ENTITY_GALLERY_CAPS: { accommodation: 50 }
-}));
-
 const ACC_ID = 'acc-uuid-332';
 const CAP_BYTES = mbToBytes(DEFAULT_ENTITY_MAX_FILE_SIZE_MB);
 
-const defaultProps: PhotoSectionProps = { locale: 'es', accommodationId: ACC_ID };
+const defaultProps: PhotoSectionProps = {
+    locale: 'es',
+    vertical: 'accommodation',
+    listingId: ACC_ID
+};
 
 const fileOfBytes = (bytes: number, name = 'photo.heic', type = 'image/heic'): File =>
     new File([new Uint8Array(new ArrayBuffer(bytes))], name, { type });

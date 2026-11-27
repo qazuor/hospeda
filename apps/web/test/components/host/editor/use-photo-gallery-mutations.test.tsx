@@ -2,6 +2,7 @@ import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { usePhotoAltWarningGuard } from '@/components/host/editor/use-photo-alt-warning-guard';
 import { usePhotoGalleryMutations } from '@/components/host/editor/use-photo-gallery-mutations';
+import { createListingPhotoApi } from '@/lib/api/listing-photo-api';
 import type { AccommodationMediaItem } from '@/lib/api/types';
 import { __resetLeaveWarningRegistry } from '@/lib/forms/leave-warning-registry';
 
@@ -67,7 +68,9 @@ describe('photo text saves and the HOS-1018 warning registry', () => {
                 galleryItems: [photo, { ...photo, id: 'photo-2', alt: '' }]
             });
             return usePhotoGalleryMutations({
-                accommodationId: 'accommodation-1',
+                api: createListingPhotoApi({ vertical: 'accommodation' }),
+                listingId: 'accommodation-1',
+                onUsageChanged: vi.fn().mockResolvedValue(undefined),
                 t: (_key, fallback) => fallback ?? '',
                 featuredItem: null,
                 galleryItems: [photo, { ...photo, id: 'photo-2', alt: '' }],
@@ -115,7 +118,9 @@ describe('photo text saves and the HOS-1018 warning registry', () => {
                 galleryItems: [incompletePhoto, { ...photo, id: 'photo-2', alt: '' }]
             });
             return usePhotoGalleryMutations({
-                accommodationId: 'accommodation-1',
+                api: createListingPhotoApi({ vertical: 'accommodation' }),
+                listingId: 'accommodation-1',
+                onUsageChanged: vi.fn().mockResolvedValue(undefined),
                 t: (_key, fallback) => fallback ?? '',
                 featuredItem: null,
                 galleryItems: [incompletePhoto, { ...photo, id: 'photo-2', alt: '' }],
@@ -165,7 +170,9 @@ describe('photo text saves and the HOS-1018 warning registry', () => {
                 galleryItems: [incompletePhoto]
             });
             return usePhotoGalleryMutations({
-                accommodationId: 'accommodation-1',
+                api: createListingPhotoApi({ vertical: 'accommodation' }),
+                listingId: 'accommodation-1',
+                onUsageChanged: vi.fn().mockResolvedValue(undefined),
                 t: (_key, fallback) => fallback ?? '',
                 featuredItem: null,
                 galleryItems: [incompletePhoto],
@@ -201,7 +208,9 @@ describe('photo text saves and the HOS-1018 warning registry', () => {
                 galleryItems: [completePhoto, incompletePhoto]
             });
             return usePhotoGalleryMutations({
-                accommodationId: 'accommodation-1',
+                api: createListingPhotoApi({ vertical: 'accommodation' }),
+                listingId: 'accommodation-1',
+                onUsageChanged: vi.fn().mockResolvedValue(undefined),
                 t: (_key, fallback) => fallback ?? '',
                 featuredItem: null,
                 galleryItems: [completePhoto, incompletePhoto],
@@ -250,7 +259,9 @@ describe('photo text saves and the HOS-1018 warning registry', () => {
         );
         const { result } = renderHook(() =>
             usePhotoGalleryMutations({
-                accommodationId: 'accommodation-1',
+                api: createListingPhotoApi({ vertical: 'accommodation' }),
+                listingId: 'accommodation-1',
+                onUsageChanged: vi.fn().mockResolvedValue(undefined),
                 t: (_key, fallback) => fallback ?? '',
                 featuredItem: null,
                 galleryItems: [photo],

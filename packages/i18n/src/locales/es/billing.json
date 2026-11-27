@@ -284,7 +284,7 @@
                 "providerRejected": "Mercado Pago no aceptó los datos del pago. Revisá que el email sea el de tu cuenta de Mercado Pago y volvé a intentar.",
                 "providerBusy": "Mercado Pago está con mucha demanda en este momento. Esperá un minuto y volvé a intentar.",
                 "providerUnavailable": "El proveedor de pagos no respondió. Probá de nuevo en unos minutos.",
-                "partnerManualOnly": "La suscripción de aliados no se contrata desde acá. Nuestro equipo te va a contactar para coordinar el pago y activarla."
+                "planNotSelfService": "La suscripción de aliados no se contrata desde acá. Nuestro equipo te va a contactar para coordinar el pago y activarla."
             },
             "trialNotice": {
                 "running_one": "Estás en tu período de prueba: te queda {{days}} día, hasta el {{date}}.",
@@ -387,6 +387,18 @@
                 "primaryCta": "Ver mi suscripción",
                 "secondaryCta": "Ver mis experiencias"
             }
+        },
+        "max_photos_per_venue": {
+            "title": "Alcanzaste el tope de fotos de tu ficha de Comer y salir",
+            "message_one": "Ya subiste {{currentCount}} de {{maxAllowed}} foto permitida. Sumá un pack para subir más.",
+            "message_other": "Ya subiste {{currentCount}} de {{maxAllowed}} fotos permitidas. Sumá un pack para subir más.",
+            "cta": "Ver packs de fotos"
+        },
+        "max_photos_per_experience": {
+            "title": "Alcanzaste el tope de fotos de tu experiencia",
+            "message_one": "Ya subiste {{currentCount}} de {{maxAllowed}} foto permitida. Sumá un pack para subir más.",
+            "message_other": "Ya subiste {{currentCount}} de {{maxAllowed}} fotos permitidas. Sumá un pack para subir más.",
+            "cta": "Ver packs de fotos"
         },
         "max_photos_per_accommodation": {
             "title": "Llegaste al límite de fotos",
@@ -794,6 +806,8 @@
             "max_venues": "Fichas de Comer y salir publicadas",
             "max_experiences": "Experiencias publicadas",
             "max_photos_per_accommodation": "Fotos por alojamiento",
+            "max_photos_per_venue": "Fotos por ficha de Comer y salir",
+            "max_photos_per_experience": "Fotos por experiencia",
             "max_active_promotions": "Promociones activas",
             "max_favorites": "Favoritos",
             "max_properties": "Propiedades del complejo",
@@ -820,6 +834,8 @@
     "limitHelp": {
         "max_accommodations": "Cuántos alojamientos podés tener publicados al mismo tiempo. Al llegar al tope necesitás despublicar uno o pasar a un plan mayor para sumar otro.",
         "max_photos_per_accommodation": "Cuántas fotos podés subir a cada alojamiento. Al llegar al tope tenés que borrar una para subir otra.",
+        "max_photos_per_venue": "Cuántas fotos podés subir a la galería de cada ficha de Comer y salir. La portada no cuenta.",
+        "max_photos_per_experience": "Cuántas fotos podés subir a la galería de cada experiencia. La portada no cuenta.",
         "max_active_promotions": "Cuántas promociones podés tener activas a la vez. Al llegar al tope necesitás finalizar una para lanzar otra.",
         "max_favorites": "Cuántos alojamientos podés guardar como favoritos. Al llegar al tope tenés que quitar uno para guardar otro.",
         "max_properties": "Cuántas propiedades podés administrar dentro de un complejo. Al llegar al tope necesitás un plan mayor para sumar otra.",
@@ -847,6 +863,14 @@
         "extra-accommodations-5": {
             "name": "Pack de alojamientos extra (+5)",
             "description": "Suma 5 alojamientos más a tu plan. Se renueva todos los meses."
+        },
+        "extra-photos-venue-20": {
+            "name": "Pack de fotos para Comer y salir (+20)",
+            "description": "Sumá 20 fotos a la galería de cada ficha de Comer y salir. Se renueva cada mes."
+        },
+        "extra-photos-experience-20": {
+            "name": "Pack de fotos para experiencias (+20)",
+            "description": "Sumá 20 fotos a la galería de cada experiencia. Se renueva cada mes."
         },
         "extra-photos-20": {
             "name": "Pack de fotos extra (+20 fotos)",

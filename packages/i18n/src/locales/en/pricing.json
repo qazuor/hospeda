@@ -1,4 +1,13 @@
 {
+    "noCost": "No cost",
+    "planStatus": {
+        "current": "Your current plan",
+        "named": "Your current plan: {{plan}}",
+        "manage": "Manage my plan",
+        "upgrade": "Upgrade to {{plan}}",
+        "offer": "{{free}} or {{paid}} from {{price}}",
+        "compare": "Compare {{free}} and {{paid}}"
+    },
     "hub": {
         "title": "Hospeda plans",
         "tagline": "Your place on Hospeda",
@@ -99,7 +108,7 @@
         "tagline": "Plans and pricing",
         "heading": "A plan for every audience",
         "subtitle": "There are four ways to join Hospeda. Pick yours and see what each one includes.",
-        "cardsHeading": "Choose your audience",
+        "cardsHeading": "Do you want to travel or publish a listing?",
         "highlightsLabel": "What you get",
         "from": "From {{price}}",
         "trial_one": "{{count}} day free trial",
@@ -121,7 +130,7 @@
                 "cta": "See traveller plans",
                 "highlights": {
                     "item1": "Save favourites and organise them into travel collections.",
-                    "item2": "Get price alerts and unlock exclusive deals.",
+                    "item2": "Discover destinations and plan your getaways.",
                     "item3": "Compare places to stay and write your own reviews."
                 }
             },

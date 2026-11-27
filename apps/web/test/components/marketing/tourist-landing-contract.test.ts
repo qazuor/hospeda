@@ -8,8 +8,12 @@ describe('tourist landing presentation', () => {
     it('fills all hero icon slots while keeping the flat accent CTA', () => {
         const page = source('pages/[lang]/planes/turistas/index.astro');
         for (const slot of ['icon-1', 'icon-2', 'icon-3']) expect(page).toContain(`slot="${slot}"`);
-        expect(page).toContain('variant="accent"');
-        expect(page).toContain('flat');
+        // HOS-2654: the CTA is the plan-aware TouristPlanAction island, which
+        // renders the flat accent button itself.
+        expect(page).toMatch(/<TouristPlanAction\s+slot="cta"/);
+        const action = source('components/billing/TouristPlanAction.client.tsx');
+        expect(action).toContain('variant="accent"');
+        expect(action).toMatch(/variant="accent"\s+flat/);
     });
 
     it('decorates inline accent text, including wrapped lines', () => {
@@ -25,11 +29,12 @@ describe('tourist landing presentation', () => {
         );
     });
 
-    it('uses an accessible native disclosure with a rotating decorative chevron', () => {
+    it('uses the shared native disclosure with decorative open and closed icons', () => {
         const faq = source('components/marketing/FaqSection.astro');
-        expect(faq).toContain('<details');
-        expect(faq).toContain('ChevronDownIcon');
-        expect(faq).toContain('.faq__item[open]');
-        expect(faq).toContain('rotate(180deg)');
+        const shared = source('components/shared/ui/FaqAccordion.astro');
+        expect(faq).toContain('<FaqAccordion');
+        expect(shared).toContain('<summary>');
+        expect(shared).toContain('<AddIcon');
+        expect(shared).toContain('<MinusIcon');
     });
 });

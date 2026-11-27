@@ -11,7 +11,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     _resetTranslationService,
     getTranslationService,
-    initializeTranslationService
+    initializeTranslationService,
+    type TranslationInput
 } from '../../src/translation/translation-init';
 
 /** Minimal stub implementation of TranslationService. */
@@ -89,5 +90,46 @@ describe('_resetTranslationService', () => {
 
         // Assert
         expect(getTranslationService()).toBeUndefined();
+    });
+});
+
+describe('TranslationInput.billing (HOS-2658)', () => {
+    afterEach(() => {
+        _resetTranslationService();
+    });
+
+    it('carries the listing billing context through to the service unchanged', async () => {
+        // Arrange
+        const stub = makeTranslationStub();
+        initializeTranslationService(stub);
+        const input: TranslationInput = {
+            entityType: 'venue',
+            entityId: 'venue-1',
+            fields: { name: 'Bar del Puerto' },
+            billing: { vertical: 'venue', ownerId: 'owner-1' }
+        };
+
+        // Act
+        await getTranslationService()?.translate(input);
+
+        // Assert
+        expect(stub.translate).toHaveBeenCalledWith({
+            entityType: 'venue',
+            entityId: 'venue-1',
+            fields: { name: 'Bar del Puerto' },
+            billing: { vertical: 'venue', ownerId: 'owner-1' }
+        });
+    });
+
+    it('keeps billing optional for the legacy unmetered entity types', () => {
+        // Arrange / Act
+        const input: TranslationInput = {
+            entityType: 'destination',
+            entityId: 'dest-1',
+            fields: { name: 'Colón' }
+        };
+
+        // Assert
+        expect(input.billing).toBeUndefined();
     });
 });

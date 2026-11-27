@@ -7,8 +7,7 @@
  * placeholder replaced by `venue` and `experience`.
  */
 
-import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { parseHelpAnchor } from '../../../../packages/help/src/anchors';
@@ -16,13 +15,10 @@ import { parseHelpAnchor } from '../../../../packages/help/src/anchors';
 const SRC = resolve(__dirname, '../../src');
 
 function sourceFiles(): string[] {
-    return execFileSync('git', ['ls-files', '--', 'apps/web/src'], {
-        cwd: resolve(__dirname, '../../../..'),
-        encoding: 'utf8'
-    })
-        .split('\n')
+    // Scan the working tree so newly added files are checked and deleted files are not opened.
+    return readdirSync(SRC, { recursive: true })
         .filter((file) => /\.(tsx?|astro)$/.test(file))
-        .map((file) => resolve(__dirname, '../../../..', file));
+        .map((file) => resolve(SRC, file));
 }
 
 describe('help anchor literals in apps/web/src', () => {

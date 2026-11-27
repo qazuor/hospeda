@@ -135,7 +135,8 @@ async function openReviewDialog(page: Page, venue: CreatedVenue): Promise<Locato
     // The island is client:visible and resolves the session client-side: scroll
     // it into view and wait for the authenticated CTA to appear.
     await page.locator('.venue-detail__review-form').scrollIntoViewIfNeeded();
-    const trigger = page.getByRole('button', { name: 'Dejar reseña' });
+    // CARD-052 H-8: a venue with no published reviews shows the first-review invitation.
+    const trigger = page.getByRole('button', { name: 'Sé el primero en reseñar' });
     await expect(trigger).toBeVisible();
     await trigger.click();
 

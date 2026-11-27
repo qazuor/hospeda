@@ -1,0 +1,58 @@
+---
+/**
+ * @file PlanComparisonHeaderActions.astro
+ * @description Price, hydrated current-plan marker, and optional link for a comparison column.
+ */
+import type { PublicPlanData } from '@/lib/billing/fetch-plans';
+import { createTranslations, type SupportedLocale } from '@/lib/i18n';
+import PlanComparisonPrice from './PlanComparisonPrice.astro';
+import { TouristPlanAction } from './TouristPlanAction.client';
+
+interface Props {
+	readonly plan: PublicPlanData;
+	readonly touristPlans?: readonly PublicPlanData[];
+	readonly intlLocale: string;
+	readonly locale: SupportedLocale;
+	readonly ctaHref?: string;
+}
+
+const { plan, touristPlans, intlLocale, locale, ctaHref } = Astro.props;
+const { t } = createTranslations(locale);
+---
+
+{touristPlans && plan.planVersionId && (
+	<TouristPlanAction client:idle locale={locale} plans={touristPlans} mode="column" planVersionId={plan.planVersionId} />
+)}
+<PlanComparisonPrice plan={plan} intlLocale={intlLocale} locale={locale} />
+<span class="comparison-table__plan-cta">
+	{ctaHref && (
+		<a class="comparison-table__plan-link" href={ctaHref}>
+			{t('pricing.comparison.cta', 'Elegir plan')}
+		</a>
+	)}
+</span>
+
+<style>
+	.comparison-table__plan-cta {
+		display: block;
+		margin-top: var(--space-3);
+	}
+
+	/* Venue and experience columns link out rather than starting in-page checkout. */
+	.comparison-table__plan-link {
+		display: inline-block;
+		padding: var(--space-2) var(--space-4);
+		border-radius: var(--radius-button);
+		background-color: var(--brand-accent);
+		color: var(--accent-foreground);
+		font-family: var(--font-sans);
+		font-size: var(--text-body-sm);
+		font-weight: 600;
+		text-decoration: none;
+		transition: opacity var(--duration-normal) ease-in-out;
+	}
+
+	.comparison-table__plan-link:hover {
+		opacity: 0.85;
+	}
+</style>

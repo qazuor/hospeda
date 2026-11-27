@@ -119,9 +119,10 @@ const LISTING_OWNER_DENIED: Readonly<Record<string, string>> = {
     rating: 'aggregate, written by the review subsystem',
     adminInfo:
         'staff-only internal notes, with their own permission-gated write path (setAdminInfo), stripped from public projections',
-    translationMeta: 'SPEC-212 curation metadata, written by the AI translation pipeline',
     media: 'the media jsonb column was dropped (HOS-372); photos live in the relational media table'
 };
+
+const TRANSLATION_META_WRITE_OWNER = 'written only by writeTranslationPairs (HOS-2658)';
 
 /** Every entity base and the write-input schemas derived from it. */
 export const ENTITIES: readonly EntityEntry[] = [
@@ -134,6 +135,7 @@ export const ENTITIES: readonly EntityEntry[] = [
             isVerified: 'set by the admin verify endpoint',
             verifiedAt: 'set by the admin verify endpoint',
             verifiedById: 'set by the admin verify endpoint',
+            translationMeta: TRANSLATION_META_WRITE_OWNER,
             publicationStatus:
                 'written only by the PB publication transitions; a listing is born DRAFT (HOS-1641)',
             showExternalReputation: 'driven by the external-reputation subsystem'
@@ -148,7 +150,7 @@ export const ENTITIES: readonly EntityEntry[] = [
                     adminInfo averageRating contactInfo description descriptionI18n destinationId
                     extraInfo faqs iaData lastWarnedAt location media name nameI18n ownerId price rating
                     reviewsCount richDescription richDescriptionI18n seo slug socialNetworks summary
-                    summaryI18n tags translationMeta type videos
+                    summaryI18n tags type videos
                     policies
                 `)
             },
@@ -160,7 +162,7 @@ export const ENTITIES: readonly EntityEntry[] = [
                     adminInfo averageRating contactInfo description descriptionI18n destinationId
                     extraInfo faqs iaData lastWarnedAt location name nameI18n ownerId price rating
                     reviewsCount richDescription richDescriptionI18n seo slug socialNetworks summary
-                    summaryI18n tags translationMeta type videos
+                    summaryI18n tags type videos
                     policies
                 `)
             }
@@ -239,6 +241,7 @@ export const ENTITIES: readonly EntityEntry[] = [
         writableProbe: 'name',
         neverFromBody: {
             ...AUDIT_COLUMNS,
+            translationMeta: TRANSLATION_META_WRITE_OWNER,
             publicationStatus:
                 'written only by the PB publication transitions; a listing is born DRAFT (HOS-1641)'
         },
@@ -254,7 +257,7 @@ export const ENTITIES: readonly EntityEntry[] = [
                     media meetingPoint meetingPointDirections meetingPointLat meetingPointLong name
                     nameI18n openingHours ownerId priceFrom priceUnit rating requirements reviewsCount
                     richDescription richDescriptionI18n seo slug socialNetworks summary summaryI18n tags
-                    translationMeta type videos whatToBring
+                    type videos whatToBring
                     policies
                 `)
             },
@@ -267,7 +270,7 @@ export const ENTITIES: readonly EntityEntry[] = [
                     descriptionI18n destinationId durationMinutes faqs isPriceOnRequest meetingPoint
                     meetingPointDirections meetingPointLat meetingPointLong name nameI18n openingHours
                     priceFrom priceUnit rating requirements richDescription richDescriptionI18n seo slug
-                    socialNetworks summary summaryI18n tags translationMeta type videos whatToBring
+                    socialNetworks summary summaryI18n tags type videos whatToBring
                     policies
                 `)
             },
@@ -294,12 +297,14 @@ export const ENTITIES: readonly EntityEntry[] = [
                 name: 'ExperienceOwnerUpdateInputSchema',
                 schema: ExperienceOwnerUpdateInputSchema as unknown as Parseable,
                 tier: 'owner',
+                // HOS-2658: the four listing *I18n columns left the owner PATCH;
+                // their en/pt values are written only by PUT /{id}/translations.
                 accepts: fields(`
-                    contactInfo description descriptionI18n
+                    contactInfo description
                     destinationId durationMinutes isPriceOnRequest meetingPoint
-                    meetingPointDirections meetingPointLat meetingPointLong name nameI18n
+                    meetingPointDirections meetingPointLat meetingPointLong name
                     openingHours priceFrom priceUnit requirements richDescription
-                    richDescriptionI18n socialNetworks summary summaryI18n type videos whatToBring
+                    socialNetworks summary type videos whatToBring
                     policies
                 `)
             }
@@ -311,6 +316,7 @@ export const ENTITIES: readonly EntityEntry[] = [
         writableProbe: 'name',
         neverFromBody: {
             ...AUDIT_COLUMNS,
+            translationMeta: TRANSLATION_META_WRITE_OWNER,
             menuFileUrl:
                 'written only by POST/DELETE /venues/{id}/menu-file, in the same request that stores or destroys the asset (HOS-895)',
             menuFilePublicId:
@@ -329,7 +335,7 @@ export const ENTITIES: readonly EntityEntry[] = [
                     location adminInfo averageRating contactInfo description descriptionI18n destinationId faqs
                     media menuUrl name nameI18n openingHours ownerId priceRange rating reviewsCount
                     richDescription richDescriptionI18n seo slug socialNetworks summary summaryI18n tags
-                    translationMeta type videos
+                    type videos
                     entryKind entryNoteI18n entryPriceFrom
                     whatsappVisibility
                     policies
@@ -342,7 +348,7 @@ export const ENTITIES: readonly EntityEntry[] = [
                 accepts: fields(`
                     location adminInfo contactInfo description descriptionI18n destinationId faqs menuUrl name
                     nameI18n openingHours priceRange rating richDescription richDescriptionI18n seo slug
-                    socialNetworks summary summaryI18n tags translationMeta type videos
+                    socialNetworks summary summaryI18n tags type videos
                     entryKind entryNoteI18n entryPriceFrom
                     whatsappVisibility
                     policies
@@ -365,10 +371,12 @@ export const ENTITIES: readonly EntityEntry[] = [
                 name: 'VenueOwnerUpdateInputSchema',
                 schema: VenueOwnerUpdateInputSchema as unknown as Parseable,
                 tier: 'owner',
+                // HOS-2658: the four listing *I18n columns left the owner PATCH;
+                // their en/pt values are written only by PUT /{id}/translations.
                 accepts: fields(`
-                    location contactInfo description descriptionI18n destinationId menuUrl name nameI18n
-                    openingHours priceRange richDescription richDescriptionI18n socialNetworks
-                    summary summaryI18n type videos
+                    location contactInfo description destinationId menuUrl name
+                    openingHours priceRange richDescription socialNetworks
+                    summary type videos
                     entryKind entryNoteI18n entryPriceFrom
                     whatsappVisibility
                     policies

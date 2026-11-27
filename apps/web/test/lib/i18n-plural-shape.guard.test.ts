@@ -129,6 +129,10 @@ const VOCAB_BLOCKLIST = new Set([
     // adjacent to a placeholder by chance, not a noun taking a plural form.
     'tenés',
     'allows',
+    // HOS-2650: "stays" is a plural noun in the listing counts ("{{count}} stays")
+    // and a verb in billing copy ("{{name}} stays active", "Request {{id}} stays
+    // open"). Harvesting the noun would flag the verb.
+    'stays',
     // "The {plan} plan includes {cap} of your {active} listings" puts a verb
     // ending in "es" immediately before a placeholder, so the vocabulary
     // harvest reads "includes" as a noun — and from then on every string
@@ -474,6 +478,21 @@ function findCallSiteOffences(pluralKeys: ReadonlySet<string>): CallSiteOffence[
 // ---------------------------------------------------------------------------
 
 describe('HOS plural audit — i18n `_one`/`_other` shape guard', () => {
+    it('has singular and plural promotion status labels in every locale', () => {
+        for (const locale of LOCALES) {
+            const common = readLocale(locale).get('common');
+            for (const key of ['promotions.visibleStatus', 'promotions.allAccess']) {
+                expect(common?.get(`${key}_one`), `${locale}: ${key}_one`).toEqual(
+                    expect.any(String)
+                );
+                expect(common?.get(`${key}_other`), `${locale}: ${key}_other`).toEqual(
+                    expect.any(String)
+                );
+                expect(common?.has(key), `${locale}: ${key}`).toBe(false);
+            }
+        }
+    });
+
     it('scans a non-empty locale corpus', () => {
         const namespaces = readLocale('es');
         expect(namespaces.size).toBeGreaterThan(40);

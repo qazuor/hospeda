@@ -17,7 +17,7 @@ const styles = readFileSync(
     'utf8'
 );
 const sidebarStyles = readFileSync(
-    resolve(__dirname, '../../../../src/components/maps/MapCardsSidebar.module.css'),
+    resolve(__dirname, '../../../../src/components/maps/MapSidebarCard.module.css'),
     'utf8'
 );
 const popupStyles = readFileSync(
@@ -118,6 +118,9 @@ describe('AccommodationCard.astro', () => {
     });
 
     describe('FavoriteButton island integration (SPEC-098)', () => {
+        it('opts into the shared quota tooltip without adding a second visible counter', () => {
+            expect(src.match(/<FavoriteButton\b[^>]*\/>/)?.[0]).toContain('showUsage="tooltip"');
+        });
         it('should render FavoriteButton with client:visible directive', () => {
             // Defer hydration until the card scrolls into view to keep the
             // initial JS payload small on listing pages with many cards.

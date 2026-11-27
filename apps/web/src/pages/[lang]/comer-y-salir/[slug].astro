@@ -36,8 +36,7 @@ import VenuePromotions from '@/components/venue/VenuePromotions.astro';
 import VenueNightInfo from '@/components/venue/VenueNightInfo.astro';
 import ListingHouseRules from '@/components/listing/ListingHouseRules.astro';
 import OpeningHoursSection from '@/components/venue/OpeningHoursSection.astro';
-import ListingContactBlock from '@/components/listing/contact/ListingContactBlock.astro';
-import VenueWhatsAppContact from '@/components/venue/VenueWhatsAppContact.astro';
+import VenueContactSection from '@/components/venue/VenueContactSection.astro';
 import LocationSection from '@/components/listing/location/LocationSection.astro';
 import { buildVenueJsonLdPlace } from '@/lib/venue/venue-address';
 import { hasVenuePublicContact } from '@/lib/venue-contact';
@@ -272,9 +271,11 @@ const showEventsCta = acceptsEvents && hasVenueContact;
 // The events rule is left out of the house-rules list ONLY when the dedicated
 // CTA renders in its place — otherwise both would say "accepts events" two
 // centimeters apart.
+const paymentMethods = venue.policies?.paymentMethods;
+const policiesWithoutPayments = setListingPolicy({ policies: venue.policies ?? {}, key: 'paymentMethods', value: undefined });
 const houseRulePolicies = showEventsCta
-    ? setListingPolicy({ policies: venue.policies ?? {}, key: 'eventsAllowed', value: undefined })
-    : venue.policies;
+    ? setListingPolicy({ policies: policiesWithoutPayments, key: 'eventsAllowed', value: undefined })
+    : policiesWithoutPayments;
 
 // --- Mobile contact bar (HOS-2532) ---
 // No price and no form. The panel carries WhatsApp only through the HOS-2256 gate
@@ -343,14 +344,11 @@ interface VenueDetailBlock {
 
 const hasOpeningHours =
     venue.openingHours !== null && Object.keys(venue.openingHours).length > 0;
-const hasContactBlock = hasVenueContact;
 /** HOS-2579 §6.5: the street line, the exact pin and the counted map link; `null` without an address. */
 const venueLocation = buildVenueLocation({ venue, locale });
 
 /**
- * HOS-2579 §6.4: the shared contact block. Its builder renders on the same
- * `hasVenuePublicContact` predicate as `hasVenueContact`, so it is non-null
- * exactly when `hasContactBlock` is true.
+ * HOS-2579 §6.4: public venue contact channels. The gated channel is separate.
  */
 const venueContactBlock = buildVenueContactBlock({
     listingId: venue.id,
@@ -359,6 +357,10 @@ const venueContactBlock = buildVenueContactBlock({
     menuUrl: venue.menuUrl,
     locale
 });
+const whatsappContact = venueWhatsApp
+    ? { venue: { id: venue.id, name: venue.name, whatsapp: venueWhatsApp }, signInHref: reviewSignInHref, locale }
+    : undefined;
+const hasContactSection = venueContactBlock !== null || Boolean(whatsappContact);
 
 const venueDetailSectionBlocks: Readonly<
     Record<VenueDetailBodySectionId, readonly VenueDetailBlock[]>
@@ -399,16 +401,12 @@ const venueDetailSectionBlocks: Readonly<
         // public page places the house rules by slot (11, `policies`) since HOS-2579.
     ],
     contact: [
-        ...(venueContactBlock
-            ? [{ Component: ListingContactBlock, props: { ...venueContactBlock } }]
-            : []),
-        // HOS-2256: the WhatsApp button. The component decides by itself whether
-        // there is anything to show (the owner's choice rides the public payload;
-        // the page reads no session), like the other self-hiding blocks.
-        {
-            Component: VenueWhatsAppContact,
-            props: { venue, signInHref: reviewSignInHref, locale }
-        }
+        ...(hasContactSection
+            ? [{
+                  Component: VenueContactSection,
+                  props: { contactBlock: venueContactBlock, whatsappContact, locale }
+              }]
+            : [])
     ],
     menu: [
         {
@@ -458,14 +456,11 @@ const hasDescriptionSection = hasListingDescription({
     richDescription: venue.richDescription
 });
 const hasOffersSection = hasVenueOffersContent({ venue, showEventsCta });
-const hasContactSection = venueContactBlock !== null || Boolean(venueWhatsApp);
-const hasSummarySection = Boolean(venue.priceRange) || contactMode.kind !== 'none';
+const hasSummarySection = Boolean(venue.priceRange || barPhoneHref || venue.contactInfo?.workEmail) || contactMode.kind !== 'none';
 const hasPoliciesSection = hasHouseRules({ policies: houseRulePolicies, locale });
 const sectionTabs = buildListingSectionTabs({
     present: {
         photos: galleryImages.length > 0,
-        details: hasDescriptionSection,
-        amenities: hasOffersSection,
         hours: hasOpeningHours,
         location: venueLocation !== null,
         // The review form always renders, so slot 8 always exists.
@@ -600,6 +595,7 @@ const headerProps = buildVenueHeader({
             locale={locale}
             vertical="venue"
             listingId={venue.id}
+            reviewCount={venue.reviewsCount}
             price={null}
             panelId={contactPanelId}
             primaryLabelKey={
@@ -622,6 +618,8 @@ const headerProps = buildVenueHeader({
                 locale={locale}
                 priceRange={venue.priceRange}
                 contactMode={contactMode}
+                phoneHref={barPhoneHref}
+                email={venue.contactInfo?.workEmail}
                 panelId={contactPanelId}
                 fallbackHref={`#${VENUE_CONTACT_ANCHOR_ID}`}
             />
@@ -644,9 +642,10 @@ const headerProps = buildVenueHeader({
         )}
 
         <!-- Slot 5: opening hours. -->
-        {hoursBlocks.length > 0 && (
+        {(hoursBlocks.length > 0 || paymentMethods?.length) && (
             <ListingDetailSlot name="hours">
                 {hoursBlocks.map(({ Component, props }) => <Component {...props} />)}
+                {paymentMethods?.length ? <ListingHouseRules policies={{ paymentMethods }} locale={locale} /> : null}
             </ListingDetailSlot>
         )}
 
@@ -683,6 +682,7 @@ const headerProps = buildVenueHeader({
                     locale={locale}
                     apiUrl={getApiUrl()}
                     signInHref={reviewSignInHref}
+                    empty={totalReviews === 0}
                 />
             </section>
         </ListingDetailSlot>
@@ -744,6 +744,8 @@ const headerProps = buildVenueHeader({
         client:idle
         entityType="venue"
         entityId={venue.id}
+        listingPrice={null}
+        canConsult={hasChannelsPanel}
         locale={locale}
         apiUrl={getApiUrl()}
     />

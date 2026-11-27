@@ -1,4 +1,37 @@
 {
+    "listingPhotos": {
+        "description": {
+            "accommodation_one": "Upload up to {{cap}} photo of your accommodation.",
+            "accommodation_other": "Upload up to {{cap}} photos of your accommodation.",
+            "venue_one": "Upload up to {{cap}} photo of your venue.",
+            "venue_other": "Upload up to {{cap}} photos of your venue.",
+            "experience_one": "Upload up to {{cap}} photo of your experience.",
+            "experience_other": "Upload up to {{cap}} photos of your experience."
+        },
+        "noPlan": {
+            "accommodation": "To upload accommodation photos, you need a plan that includes them.",
+            "venue": "To upload venue photos, you need a plan that includes them.",
+            "experience": "To upload experience photos, you need a plan that includes them."
+        },
+        "plansCta": "View plans",
+        "unlimited": "No photo limit",
+        "breakdown": {
+            "plan": "{{value}} from your plan",
+            "trial": "{{value}} from your trial",
+            "addons": "{{value}} from photo packs",
+            "courtesy": "{{value}} from your courtesy access",
+            "permanentGrant": "{{value}} from your permanent grant",
+            "base": "{{value}} from your base allowance",
+            "preTrialDraft": "{{value}} for your draft before the trial",
+            "total": "{{parts}} = {{cap}}",
+            "unlimitedValue": "unlimited"
+        },
+        "overCapBadge": "Not shown: over your limit",
+        "overCapSummary_one": "{{count}} photo is hidden because you're over your limit. Add a photo pack or reorder your photos to choose which ones are shown.",
+        "overCapSummary_other": "{{count}} photos are hidden because you're over your limit. Add a photo pack or reorder your photos to choose which ones are shown.",
+        "loading": "Loading your photo limit…",
+        "readFailed": "We couldn't load your photo limit. Try reloading the page."
+    },
     "editorHub": {
         "publicationStatus": "Publication status",
         "publicationUnavailable": "Publication status unavailable",
@@ -12,6 +45,49 @@
         "faqTitle": "Questions and answers",
         "translationTitle": "Content by language",
         "missingHint": "Missing translations: {{locales}}. Open each language tab to review the pending fields."
+    },
+    "editorTranslations": {
+        "title": "Translations",
+        "description": "When you save a text in Spanish, we translate it into English and Portuguese. You can correct any translation: yours is never overwritten.",
+        "sourceHint": "This text is edited in the «{{section}}» section.",
+        "field": {
+            "name": "Name",
+            "summary": "Summary",
+            "description": "Description",
+            "richDescription": "Extended description",
+            "entryNote": "Entry note"
+        },
+        "state": {
+            "auto": "Automatic translation",
+            "manual": "Corrected by you",
+            "manualEmpty": "No translation: the Spanish text is shown",
+            "stale": "The Spanish text changed, this translation may be out of date",
+            "pending": "Translation pending",
+            "noQuota": "No automatic translation: you reached this month’s quota",
+            "noEntitlement": "No automatic translation: your plan does not include it",
+            "noSource": "There is no Spanish text yet"
+        },
+        "action": {
+            "save": "Save",
+            "translateAi": "Translate with AI",
+            "translateAiDisabled": {
+                "noQuota": "You reached this month’s translation quota",
+                "noEntitlement": "Your plan does not include AI translation",
+                "noSource": "Write the Spanish text first"
+            },
+            "refresh": "Refresh",
+            "retry": "Retry"
+        },
+        "toast": {
+            "saved": "Translation saved",
+            "aiDone": "Translation generated",
+            "aiFailed": "We could not translate right now. Please try again in a while.",
+            "loadFailed": "We could not load the translations"
+        },
+        "manualHint": "If you edit it, it becomes yours and AI will not change it again.",
+        "pendingHint": "Some translations are in progress. Press «Refresh» to see whether they are ready.",
+        "reviewCount": "{{count}} to review",
+        "loading": "Loading translations…"
     },
     "whatsNewModal": {
         "title": "What's New",
@@ -915,6 +991,26 @@
             "ariaLabel": "Subscription sections",
             "plan": "Plan",
             "addons": "Add-ons"
+        },
+        "receipts": {
+            "title": "Your receipts",
+            "loadError": "We could not load your receipts.",
+            "number": "Receipt no. {{number}}",
+            "view": "View receipt",
+            "viewLabel": "View receipt no. {{number}}",
+            "kindPlan": "Subscription",
+            "kindAddon": "Add-on",
+            "page": {
+                "title": "Receipt",
+                "loading": "Preparing your receipt…",
+                "open": "Open receipt",
+                "download": "Download receipt",
+                "notFound": "We could not find that receipt.",
+                "notFoundHint": "Check that you are signed in with the account that made the payment.",
+                "error": "We could not open the receipt. Please try again in a moment.",
+                "retry": "Try again",
+                "back": "Back to My subscription"
+            }
         }
     },
     "favorites": {

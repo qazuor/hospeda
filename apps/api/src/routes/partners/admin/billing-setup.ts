@@ -1,4 +1,5 @@
 import { planCatalogModel } from '@repo/db';
+import { PaymentProviderError } from '@repo/payments';
 import {
     PartnerBillingSetupParamsSchema,
     PartnerBillingSetupPreviewResponseSchema,
@@ -18,6 +19,7 @@ import {
 import { getActorFromContext } from '../../../utils/actor';
 import { AuditEventType, auditLog } from '../../../utils/audit-logger';
 import { getClock } from '../../../utils/clock';
+import { env } from '../../../utils/env';
 import { getPaymentProvider } from '../../../utils/payment-provider';
 import { createErrorResponse } from '../../../utils/response-helpers';
 import { createAdminRoute } from '../../../utils/route-factory';
@@ -35,6 +37,7 @@ const REJECTION_ANSWERS: Readonly<
     COMMITMENT_TAKEN: { status: 409, code: ServiceErrorCode.ALREADY_EXISTS },
     PLAN_NOT_FOR_SALE: { status: 422, code: ServiceErrorCode.VALIDATION_ERROR },
     MANUAL_PAYMENT_NOT_AVAILABLE: { status: 422, code: ServiceErrorCode.VALIDATION_ERROR },
+    PAYMENT_METHOD_NOT_ACCEPTED: { status: 422, code: ServiceErrorCode.VALIDATION_ERROR },
     ADMINISTRATIVE_ACTION_FORBIDDEN: { status: 403, code: ServiceErrorCode.FORBIDDEN }
 };
 
@@ -43,6 +46,47 @@ function isRejection(reason: string | undefined): reason is PartnerBillingSetupR
 }
 
 function answerRejection(error: unknown, ctx: Context) {
+    // HOS-2196: the card branch calls the provider, so its refusals are answered like the public S1.
+    if (
+        error instanceof PaymentProviderError &&
+        error.capability === 'authorize' &&
+        error.code === 'REJECTED'
+    ) {
+        return createErrorResponse(
+            {
+                code: ServiceErrorCode.VALIDATION_ERROR,
+                message: 'The payment provider rejected the authorization',
+                reason: 'PROVIDER_REJECTED'
+            },
+            ctx,
+            422
+        );
+    }
+    if (
+        error instanceof PaymentProviderError &&
+        error.capability === 'authorize' &&
+        error.transient
+    ) {
+        const { kind, retryAfterSeconds } = error.transient;
+        return createErrorResponse(
+            {
+                code:
+                    kind === 'RATE_LIMITED'
+                        ? ServiceErrorCode.PROVIDER_RATE_LIMITED
+                        : ServiceErrorCode.SERVICE_UNAVAILABLE,
+                message: 'The payment provider is busy; try again in a minute',
+                reason: kind === 'RATE_LIMITED' ? 'PROVIDER_BUSY' : 'PROVIDER_UNAVAILABLE',
+                ...(retryAfterSeconds === undefined
+                    ? {}
+                    : { details: { retryAfter: retryAfterSeconds } })
+            },
+            ctx,
+            503,
+            retryAfterSeconds === undefined
+                ? undefined
+                : { 'Retry-After': String(retryAfterSeconds) }
+        );
+    }
     const reason = error instanceof ServiceError ? error.reason : undefined;
     if (error instanceof ServiceError && isRejection(reason)) {
         const answer = REJECTION_ANSWERS[reason];
@@ -60,7 +104,8 @@ export const adminPreviewPartnerBillingSetupRoute = createAdminRoute({
     method: 'get',
     path: '/{id}/billing-setup',
     summary: 'Preview Partner billing setup',
-    description: 'Lists sellable Partner manual billing options without writing billing rows.',
+    description:
+        'Lists sellable Partner billing options and the payment methods each accepts, without writing billing rows.',
     tags: ['Partners', 'Admin'],
     requiredPermissions: [PermissionEnum.PARTNER_CONFIGURE_BILLING],
     requestParams: PartnerBillingSetupParamsSchema.shape,
@@ -83,7 +128,8 @@ export const adminConfigurePartnerBillingRoute = createAdminRoute({
     successStatusCode: 200,
     path: '/{id}/billing-setup',
     summary: 'Configure Partner billing',
-    description: 'Creates the Partner owner manual subscription after explicit confirmation.',
+    description:
+        'Creates the Partner owner pending subscription with the chosen payment method (manual installment or card authorization link) after explicit confirmation.',
     tags: ['Partners', 'Admin'],
     requiredPermissions: [PermissionEnum.PARTNER_CONFIGURE_BILLING],
     requestParams: PartnerBillingSetupParamsSchema.shape,
@@ -98,7 +144,9 @@ export const adminConfigurePartnerBillingRoute = createAdminRoute({
                     actor,
                     partnerId: params.id as string,
                     billingOptionId: request.billingOptionId,
-                    reason: request.reason
+                    paymentMethod: request.paymentMethod,
+                    reason: request.reason,
+                    returnUrl: env.HOSPEDA_SITE_URL
                 },
                 {
                     provider: getPaymentProvider(),
@@ -116,14 +164,17 @@ export const adminConfigurePartnerBillingRoute = createAdminRoute({
                 resourceId: params.id as string,
                 metadata: {
                     administrativeAction: 'ACC_6',
+                    paymentMethod: request.paymentMethod,
                     subjectId: params.id as string,
                     reason: request.reason
                 }
             });
             return {
+                paymentMethod: result.paymentMethod,
                 subscriptionId: result.subscriptionId,
                 manualPaymentId: result.manualPaymentId,
-                periodStart: result.periodStart.toISOString(),
+                periodStart: result.periodStart?.toISOString() ?? null,
+                checkoutUrl: result.checkoutUrl,
                 authorizationWindowEndsAt: result.authorizationWindowEndsAt.toISOString(),
                 created: result.created
             };

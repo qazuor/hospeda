@@ -152,6 +152,125 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4810
+    {
+        id: '2026-11-26-destination-page-sticky-side-column',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'La página de destino es más cómoda de recorrer',
+            en: 'The destination page is easier to browse',
+            pt: 'A página do destino é mais confortável de percorrer'
+        },
+        body: {
+            es: 'La columna lateral queda a la vista mientras bajás y la tarjeta del clima ya no se corta. El pie de página y el menú del celular quedan más limpios, con el menú de cuenta completo, y las migas de pan dicen «Departamentos».',
+            en: 'The side column stays in view as you scroll and the weather card is no longer cut off. The footer and the mobile menu are cleaner, with the full account menu, and the breadcrumbs now say "Apartments".',
+            pt: 'A coluna lateral fica à vista enquanto você rola e o cartão do clima não é mais cortado. O rodapé e o menu do celular ficam mais limpos, com o menu de conta completo, e as migalhas de pão dizem «Apartamentos».'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4818
+    {
+        id: '2026-11-26-listing-cards-unified-footer',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'Las tarjetas de alojamientos, locales y experiencias se ven iguales y más limpias',
+            en: 'Accommodation, venue and experience cards look the same and cleaner',
+            pt: 'Os cartões de hospedagens, locais e experiências têm a mesma aparência e são mais limpos'
+        },
+        body: {
+            es: 'Todas comparten un mismo pie con un solo botón y el precio o «Consultar precio», con el rango de precios como $/$$/$$$. Hay como máximo una insignia sobre la foto, y las tarjetas de eventos quedan más prolijas.',
+            en: 'They all share one footer with a single button and the price or "Ask for price", with the price range shown as $/$$/$$$. There is at most one badge over the photo, and event cards are tidier.',
+            pt: 'Todos compartilham o mesmo rodapé com um único botão e o preço ou «Consultar preço», com a faixa de preço como $/$$/$$$. Há no máximo um selo sobre a foto, e os cartões de eventos ficam mais organizados.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4823
+    {
+        id: '2026-11-26-listings-sort-filters-empty-states',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'Los listados se ordenan y se filtran con más claridad',
+            en: 'Listings are clearer to sort and filter',
+            pt: 'As listagens são mais claras para ordenar e filtrar'
+        },
+        body: {
+            es: '«Ordenar por» aparece arriba de los resultados, la frase del resultado es más corta y el panel de filtros se entiende mejor. Cuando no hay resultados, ves caminos reales para seguir, y las tarjetas de destino ya no dicen «0 alojamientos».',
+            en: '"Sort by" appears above the results, the result phrase is shorter and the filter panel is easier to understand. When there are no results you see real ways forward, and destination cards no longer say "0 accommodations".',
+            pt: '«Ordenar por» aparece acima dos resultados, a frase do resultado é mais curta e o painel de filtros é mais fácil de entender. Quando não há resultados, você vê caminhos reais para seguir, e os cartões de destino não dizem mais «0 hospedagens».'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4826
+    {
+        id: '2026-11-26-listing-detail-actions-and-compare',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'La ficha tiene acciones más claras y modo comparar',
+            en: 'Listings have clearer actions and a compare mode',
+            pt: 'A ficha tem ações mais claras e modo comparar'
+        },
+        body: {
+            es: 'En el celular, la barra de acciones muestra el nombre bajo cada ícono, y la tarjeta de precio tiene un botón según el canal (Llamar, Escribir un email o Pedir precio). Las funciones VIP se marcan antes de tocarlas, podés comparar con casillas y el chat de IA muestra tu cupo mensual.',
+            en: 'On mobile, the action bar shows a label under each icon, and the price card has a button that matches the channel (Call, Write an email or Ask for price). VIP features are marked before you tap them, you can compare using checkboxes and the AI chat shows your monthly quota.',
+            pt: 'No celular, a barra de ações mostra o nome sob cada ícone, e o cartão de preço tem um botão conforme o canal (Ligar, Escrever um e-mail ou Pedir preço). Os recursos VIP são marcados antes de você tocar neles, você pode comparar com caixas de seleção e o chat de IA mostra sua cota mensal.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4829
+    {
+        id: '2026-11-26-listing-detail-sections-gallery-reviews',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'La ficha ordena mejor su contenido y simplifica las opiniones',
+            en: 'Listings organise their content better and simplify reviews',
+            pt: 'A ficha organiza melhor o conteúdo e simplifica as avaliações'
+        },
+        body: {
+            es: 'La descripción va primero, la galería y el visor de fotos mejoraron y las opiniones están en un solo bloque, «Tu opinión». Las promociones bloqueadas tienen una invitación clara a desbloquearlas y «Ver carta» de los locales aparece en un único lugar.',
+            en: 'The description comes first, the gallery and photo viewer are better and reviews live in a single "Your opinion" block. Locked promotions have a clear call to action to unlock them and a venue\'s "View menu" appears in a single place.',
+            pt: 'A descrição vem primeiro, a galeria e o visualizador de fotos melhoraram e as avaliações ficam em um único bloco, «Sua opinião». As promoções bloqueadas têm um convite claro para desbloqueá-las e o «Ver cardápio» dos locais aparece em um único lugar.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4825
+    {
+        id: '2026-11-26-home-and-pricing-clarity',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'La portada y los planes son más claros',
+            en: 'The home page and plans are clearer',
+            pt: 'A página inicial e os planos são mais claros'
+        },
+        body: {
+            es: 'Las categorías se ordenan en una grilla pareja, el hero muestra la prueba social con «reseñas» y las flechas del carrusel de destinos son más grandes. Las tablas de planes se leen mejor y «Alertas y ofertas» figura como disponible.',
+            en: 'Categories sit in an even grid, the hero shows social proof as "reviews" and the destination carousel arrows are bigger. Pricing tables are easier to read and "Alerts and deals" is marked as available.',
+            pt: 'As categorias ficam em uma grade uniforme, o hero mostra a prova social como «avaliações» e as setas do carrossel de destinos são maiores. As tabelas de planos são mais fáceis de ler e «Alertas e ofertas» aparece como disponível.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4814
+    {
+        id: '2026-11-26-faq-legal-pages-and-maps',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'Las preguntas frecuentes, las páginas legales y los mapas se usan mejor',
+            en: 'FAQ, legal pages and maps are easier to use',
+            pt: 'As perguntas frequentes, as páginas legais e os mapas são mais fáceis de usar'
+        },
+        body: {
+            es: 'Las preguntas frecuentes tienen buscador y acordeones prolijos, y las páginas legales usan una sola numeración con un índice plegable en el celular. Los mapas encuadran todos los pines y, al tocar uno, aparece una tarjeta.',
+            en: 'The FAQ has a search box and tidy accordions, and legal pages use a single numbering with a collapsible index on mobile. Maps frame all the pins and tapping one shows a card.',
+            pt: 'As perguntas frequentes têm busca e acordeões organizados, e as páginas legais usam uma única numeração com um índice recolhível no celular. Os mapas enquadram todos os pinos e, ao tocar em um, aparece um cartão.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4783
     {
         id: '2026-11-25-account-form-controls-kit',

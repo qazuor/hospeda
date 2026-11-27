@@ -20,6 +20,7 @@
  */
 import { createRouter } from '../../../utils/create-app';
 import { ownerVenueLocationRoutes } from '../../listing-location/index';
+import { ownerVenueTranslationRoutes } from '../../listing-translations/index';
 import { protectedAddVenueFaqRoute } from './addFaq';
 import { protectedAddVenueFeaturedMediaRoute } from './addFeaturedMedia';
 import { protectedAddVenueMediaRoute } from './addMedia';
@@ -34,6 +35,7 @@ import { protectedGetVenueDailySpecialsRoute } from './getDailySpecials';
 import { protectedGetVenueEventsRoute } from './getEvents';
 import { protectedGetVenueMediaRoute } from './getMedia';
 import { protectedGetVenueMenuRoute } from './getMenu';
+import { protectedGetVenuePhotoAllowanceRoute } from './getPhotoAllowance';
 import { protectedGetVenueWhatsappRoute } from './getWhatsapp';
 import { protectedListMyVenueRoute } from './listMine';
 import { protectedListVenuePromotionsRoute } from './listPromotions';
@@ -120,6 +122,7 @@ app.route('/', protectedGetVenueQrCodeRoute);
 // tier sees its own menu, and only writing the structured half is paid.
 app.route('/', protectedGetVenueMenuRoute);
 app.route('/', protectedGetVenueSectionStatesRoute);
+app.route('/', protectedGetVenuePhotoAllowanceRoute);
 
 // PUT /{id}/menu — replace the structured carta. Gated on
 // MANAGE_VENUE_MENU (venue-pro and above).
@@ -199,6 +202,10 @@ app.route('/', protectedVenueReportFixedRoute);
 
 // POST /{id}/location-exception-request - owner asks for an address exception (HOS-2192)
 app.route('/', ownerVenueLocationRoutes.requestException);
+// GET/PUT /{id}/translations + POST /{id}/translations/ai - owner translations (HOS-2658)
+app.route('/', ownerVenueTranslationRoutes.get);
+app.route('/', ownerVenueTranslationRoutes.putManual);
+app.route('/', ownerVenueTranslationRoutes.postAi);
 app.route('/', protectedGetVenueByIdRoute);
 
 // PATCH /{id} — Owner operational update.

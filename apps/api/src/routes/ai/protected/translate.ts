@@ -12,7 +12,8 @@
  * @module apps/api/routes/ai/protected/translate
  */
 
-import { type AiFeature, VerticalEnum } from '@repo/schemas';
+import type { AiFeature } from '@repo/schemas';
+import { ServiceError } from '@repo/service-core';
 import { z } from 'zod';
 
 import { createAiRateLimitMiddlewares } from '../../../middlewares/ai-rate-limit';
@@ -24,6 +25,7 @@ import {
     persistTranslations,
     translateEntity
 } from '../../../services/ai-translate.service';
+import { TRANSLATE_QUOTA_VERTICAL } from '../../../services/translation/metered-translation';
 import { getActorFromContext } from '../../../utils/actor';
 import { meterAiUsage } from '../../../utils/ai-usage-metering';
 import { createRouter } from '../../../utils/create-app';
@@ -178,9 +180,13 @@ protectedAiTranslateRoute.post('/', async (c) => {
             );
         }
 
+        // HOS-2658 AC-32: the quota vertical comes from the per-entity map, not a
+        // literal. Destinations, events and posts keep the ACCOMMODATION
+        // vertical (spec OQ-3). A refusal throws a ServiceError that the catch
+        // below rethrows, so the error handler answers 403.
         await enforceAiQuota({
             userId: actor.id,
-            vertical: VerticalEnum.ACCOMMODATION,
+            vertical: TRANSLATE_QUOTA_VERTICAL[entityType],
             feature: FEATURE,
             entitlementKey: 'ai_translate',
             limitKey: 'max_ai_translate_per_month'
@@ -375,6 +381,14 @@ protectedAiTranslateRoute.post('/', async (c) => {
                 status: 'error',
                 logContext: { entityType, entityId, sourceLocale }
             });
+        }
+
+        // HOS-2658 AC-32: a gate refusal (ENTITLEMENT_REQUIRED / LIMIT_REACHED)
+        // is not a provider failure. It used to be swallowed into the 500
+        // below, so a host out of quota saw "Translation failed". Rethrowing
+        // lets the error handler answer its 403 with the gate's details.
+        if (error instanceof ServiceError) {
+            throw error;
         }
 
         return c.json(

@@ -255,19 +255,27 @@ describe('TEST:V5:26 - G2 (a) and (b): the vertical context is declared and take
             'listingAccess computes its vertical (entityType as never)'
         );
         const undeclared = tempTree();
-        mutate(undeclared, UPLOAD_ENTITY_FILE, 'vertical: VerticalEnum.VENUE, ', '');
+        mutate(
+            undeclared,
+            UPLOAD_ENTITY_FILE,
+            "vertical: VerticalEnum.VENUE,\n            operation: 'EDIT',",
+            "operation: 'EDIT',"
+        );
         expectFailure(
             undeclared,
             `G2 (a): ${UPLOAD_ENTITY_FILE}:`,
             'route-config does not declare its vertical context'
         );
         const noExperience = tempTree();
-        mutate(
-            noExperience,
-            UPLOAD_ENTITY_FILE,
-            "listingAccess: { vertical: VerticalEnum.EXPERIENCE, operation: 'EDIT', idParam: 'id' }",
-            "other: { operation: 'EDIT', idParam: 'id' }"
-        );
+        // Gallery and featured each declare their own experience site: drop both.
+        for (let site = 0; site < 2; site += 1) {
+            mutate(
+                noExperience,
+                UPLOAD_ENTITY_FILE,
+                'vertical: VerticalEnum.EXPERIENCE,\n            operation',
+                'other: true,\n            operation'
+            );
+        }
         expectFailure(
             noExperience,
             `G2 (b): ${UPLOAD_ENTITY_FILE} declares no listingAccess site for VerticalEnum.EXPERIENCE`

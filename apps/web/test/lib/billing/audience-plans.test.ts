@@ -4,16 +4,7 @@
  * (HOS-942 AC-1, AC-8, AC-9). Four audiences since the partner card left with
  * its `/planes/aliados/*` pages (HOS-1637, AC:B13a:21).
  *
- * These assert BEHAVIOUR, not page source. An `.astro` page cannot be rendered
- * in Vitest, so a source-reading test on `planes/index.astro` could only confirm
- * that a string is DECLARED there — never that five cards come out, never that a
- * failed fetch still yields a card. The page is therefore a thin `.map()` over
- * what this module returns, and the substance is asserted here where it can be
- * executed.
- *
- * `getApiUrl` is module-mocked to bypass `validateWebEnv()`, which reads
- * `import.meta.env` and is unavailable under jsdom — the pattern
- * `fetch-plans.test.ts` established.
+ * Tests the model the Astro page maps over, with `getApiUrl` mocked.
  */
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -56,15 +47,7 @@ const makePlan = (overrides: Partial<PublicPlanData> = {}): PublicPlanData => ({
 const ok = (plans: readonly PublicPlanData[]) => ({ ok: true, plans }) as const;
 const failed = (error = 'boom') => ({ ok: false, error }) as const;
 
-/**
- * Trial lengths for the fixtures below — FOUR DIFFERENT NUMBERS, on purpose.
- *
- * The live catalogue currently sits at 30 days for four of the five audiences,
- * which makes it a terrible fixture: a bug that returned a fixed `30` would pass
- * against it on four cards out of five. Every audience here therefore gets its
- * own value, and none of them is 30, so the only implementation that satisfies
- * this file is one that genuinely reads each audience's own plans.
- */
+// Distinct, non-default trial lengths catch hardcoded or cross-audience values.
 const OWNER_TRIAL = 14;
 const OWNER_LONGER_TRIAL = 21;
 const TOURIST_TRIAL = 45;
@@ -162,7 +145,8 @@ describe('audience card model', () => {
         // The partner card linked to `/planes/aliados/`, removed with the old
         // billing; Partner has no subject until V7 and nothing may link to it.
         expect(AUDIENCE_CARD_ORDER).toHaveLength(4);
-        expect([...AUDIENCE_CARD_ORDER]).toEqual(['host', 'tourist', 'venue', 'experience']);
+        // CARD-087 H-3: lead the audience chooser with travelers.
+        expect([...AUDIENCE_CARD_ORDER]).toEqual(['tourist', 'host', 'venue', 'experience']);
         expect(Object.values(AUDIENCE_CARD_PATHS).join(' ')).not.toContain('aliados');
     });
 
@@ -185,14 +169,7 @@ describe('audience card model', () => {
     });
 
     it('never sends a card at a URL that redirects', () => {
-        // HOS-1032 turned `/publicar-restaurante/`, `/publicar-experiencia/` and
-        // both `/suscriptores/planes/<audiencia>/` pages into 301s. The index
-        // pointed at three of them, so this froze a link graph that had gone one
-        // hop stale in the same change that moved the pages.
-        //
-        // Listed as the retired URLs rather than as "must start with planes/",
-        // because the point is not the prefix: it is that no card may name a URL
-        // this repo now answers with a redirect.
+        // HOS-1032 turned these destinations (including `/publicar-restaurante/`) into redirects.
         const RETIRED = [
             'publicar-restaurante',
             'publicar-experiencia',
@@ -326,14 +303,6 @@ describe('resolveAudienceStartingPrices', () => {
 
 describe('resolveAudienceTrialDays', () => {
     it('answers a DIFFERENT number for every paid-start audience that has a trial', () => {
-        // The load-bearing test of the whole feature. Four audiences, four
-        // distinct answers from one call: no constant, no default and no number
-        // copied from a neighbouring card can satisfy this at once.
-        //
-        // It is written as a single `toEqual` rather than five assertions on
-        // purpose — an implementation that resolved ONE audience correctly and
-        // reused it for the rest would pass four separate `toBe` checks that
-        // happened to expect the same value, and this shape cannot.
         expect(resolveAudienceTrialDays(ALL_OK)).toEqual({
             host: OWNER_TRIAL,
             // Tourist starts at a free tier, so its card carries no trial (HOS-1766).
@@ -527,7 +496,3 @@ describe('selectAudiencePlans', () => {
         }
     });
 });
-
-// ---------------------------------------------------------------------------
-// The three fetches (AC-8)
-// ---------------------------------------------------------------------------

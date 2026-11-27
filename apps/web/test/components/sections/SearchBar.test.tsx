@@ -957,11 +957,7 @@ describe('<SearchBar /> breakpoint transitions', () => {
         expect(document.documentElement.style.overflow).toBe('hidden');
     });
 
-    it('starts autofocusing the panel search input once the viewport leaves sheet mode', async () => {
-        // The BETA-24 guard (no autofocus on a sheet, or the virtual keyboard
-        // covers the option list) must follow the LIVE breakpoint too. Read
-        // imperatively inside an effect keyed on [activePanel], it froze
-        // whatever the viewport was when the panel opened.
+    it('restores destination search focus after remounting across the breakpoint', async () => {
         const viewport = mockMobileViewport();
         const user = userEvent.setup();
         render(
@@ -973,9 +969,7 @@ describe('<SearchBar /> breakpoint transitions', () => {
         );
 
         await user.click(screen.getByRole('button', { name: /destino/i }));
-        expect(
-            screen.getByRole('textbox', { name: /buscar entre los destinos/i })
-        ).not.toHaveFocus();
+        expect(screen.getByRole('textbox', { name: /buscar entre los destinos/i })).toHaveFocus();
 
         viewport.setMatches(false);
 
@@ -1182,15 +1176,21 @@ describe('<SearchBar /> sheet focus management', () => {
         await waitFor(() => expect(closeButton).toHaveFocus());
     });
 
-    it('does NOT steal focus into the destination panel search input on a sheet (BETA-24)', async () => {
-        // The focus target must stay the close button: focusing a text input
-        // inside a bottom-sheet pops the virtual keyboard over the option list.
+    it('focuses the destination input and shows the popular destination inventory', async () => {
         mockMobileViewport();
         const user = userEvent.setup();
         render(
             <SearchBar
                 locale="es"
-                destinations={MOCK_DESTINATIONS}
+                destinations={[
+                    {
+                        id: 'colon',
+                        slug: 'colon',
+                        name: 'Colón',
+                        isFeatured: true,
+                        accommodationsCount: 12
+                    }
+                ]}
                 searchBaseUrl={SEARCH_BASE}
             />
         );
@@ -1198,7 +1198,9 @@ describe('<SearchBar /> sheet focus management', () => {
         await user.click(screen.getByRole('button', { name: /destino/i }));
 
         const input = screen.getByRole('textbox', { name: /buscar entre los destinos/i });
-        expect(input).not.toHaveFocus();
+        expect(input).toHaveFocus();
+        expect(screen.getByText('Destinos populares')).toBeInTheDocument();
+        expect(screen.getByRole('option', { name: /Colón \(12\)/ })).toBeInTheDocument();
     });
 
     it('traps Tab and Shift+Tab inside the open sheet', async () => {

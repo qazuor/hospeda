@@ -58,7 +58,8 @@ async function seedChoice(vertical: 'partner' | 'accommodation' = 'partner') {
             sellable: true,
             current: true,
             trialDays: 0,
-            allowsPause: false
+            allowsPause: false,
+            paymentMethods: vertical === 'partner' ? ['CARD', 'MANUAL'] : ['CARD']
         })
         .returning();
     if (!version) throw new Error('Version seed failed');

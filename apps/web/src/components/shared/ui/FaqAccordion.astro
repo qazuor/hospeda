@@ -1,0 +1,71 @@
+---
+/** Shared server-rendered FAQ disclosure. Structured data stays with the page. */
+import { AddIcon, MinusIcon } from '@repo/icons';
+
+interface Item {
+    readonly question: string;
+    readonly answer: string;
+}
+
+interface Props {
+    readonly groups: readonly {
+        readonly id?: string;
+        readonly title?: string;
+        readonly items: readonly Item[];
+    }[];
+    readonly title?: string;
+}
+
+const { groups, title } = Astro.props;
+const populated = groups.filter(({ items }) => items.length > 0);
+const showHeadings = new Set(populated.map(({ title }) => title?.trim()).filter(Boolean)).size >= 2;
+const defaultOpen = populated.reduce((sum, { items }) => sum + items.length, 0) <= 3;
+if (populated.length === 0) return;
+const CategoryHeading = title ? 'h3' : 'h2';
+---
+
+<div class="faq-accordion">
+    {title && <h2>{title}</h2>}
+    {populated.map((group) => (
+        <div class="faq-group" id={group.id} data-faq-group>
+            {showHeadings && group.title && <CategoryHeading>{group.title}</CategoryHeading>}
+            {group.items.map(({ question, answer }) => (
+                <details open={defaultOpen} data-faq-item>
+                    <summary>
+                        <span class="faq-plus" aria-hidden="true"><AddIcon size="sm" /></span>
+                        <span class="faq-minus" aria-hidden="true"><MinusIcon size="sm" /></span>
+                        {question}
+                    </summary>
+                    <p>{answer}</p>
+                </details>
+            ))}
+        </div>
+    ))}
+</div>
+
+<style>
+    .faq-group { scroll-margin-top: var(--navbar-height); }
+    .faq-group + .faq-group { margin-top: var(--space-5); }
+    h2, h3 { margin: 0 0 var(--space-2); font-size: var(--text-h4); }
+    details { border-bottom: 1px solid var(--border); }
+    summary {
+        display: flex;
+        align-items: baseline;
+        gap: var(--space-2);
+        list-style: none;
+        cursor: pointer;
+        padding: var(--space-3) var(--space-2);
+        font-weight: 600;
+    }
+    summary::-webkit-details-marker { display: none; }
+    summary:focus-visible { outline: 2px solid var(--brand-primary); }
+    summary span { flex: none; align-self: start; display: inline-flex; }
+    .faq-minus, details[open] .faq-plus { display: none; }
+    details[open] .faq-minus { display: inline-flex; }
+    p {
+        margin: 0;
+        padding: 0 var(--space-2) var(--space-4) var(--space-8);
+        color: var(--core-muted-foreground);
+        white-space: pre-line;
+    }
+</style>

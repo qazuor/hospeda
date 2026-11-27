@@ -37,6 +37,7 @@ import ListingHouseRules from '@/components/listing/ListingHouseRules.astro';
 import ListingDetailSlot from '@/components/listing/ListingDetailSlot.astro';
 import { ListingSectionTabs } from '@/components/listing/ListingSectionTabs.client';
 import { buildListingSectionTabs, LISTING_SECTION_IDS } from '@/lib/listing-section-tabs';
+import { buildLoginRedirect } from '@/lib/auth-redirect';
 import { hasHouseRules, hasListingDescription } from '@/lib/listing-detail/listing-detail-presence';
 import { renderPlain } from '@/lib/render-plain';
 import LocationSection from '@/components/listing/location/LocationSection.astro';
@@ -257,7 +258,6 @@ const hasContactSection = contactBlock !== null || experience.policies.privateGr
 const sectionTabs = buildListingSectionTabs({
     present: {
         photos: galleryImages.length > 0,
-        details: hasDescriptionSection,
         amenities: hasAmenitiesSection,
         hours: openingHours !== null,
         location: locationSection !== null,
@@ -358,6 +358,7 @@ const headerProps = buildExperienceHeader({
             locale={locale}
             vertical="experience"
             listingId={experience.id}
+            reviewCount={experience.reviewsCount}
             price={contactPrice}
             panelId={panelId}
             primaryLabelKey="accommodations.detail.listingContact.bar.contact"
@@ -372,9 +373,9 @@ const headerProps = buildExperienceHeader({
             <ExperienceSummary
                 listingId={experience.id}
                 locale={locale}
-                priceFrom={experience.priceFrom}
-                priceUnit={experience.priceUnit}
-                isPriceOnRequest={experience.isPriceOnRequest}
+                price={contactPrice}
+                phoneHref={barPhoneHref}
+                email={experience.contactInfo?.workEmail}
                 durationMinutes={experience.durationMinutes}
                 hasContactChannel={contactChannels.length > 0}
                 panelId={panelId}
@@ -432,6 +433,7 @@ const headerProps = buildExperienceHeader({
                 totalReviews={totalReviews}
                 averageRating={experience.averageRating}
                 locale={locale}
+                signInHref={buildLoginRedirect({ locale, currentUrl: `${canonicalPath}#${LISTING_SECTION_IDS.reviews}` })}
             />
         </ListingDetailSlot>
 
@@ -510,6 +512,8 @@ const headerProps = buildExperienceHeader({
         client:idle
         entityType="experience"
         entityId={experience.id}
+        listingPrice={contactPrice}
+        canConsult={contactChannels.length > 0}
         locale={locale}
         apiUrl={getApiUrl()}
     />

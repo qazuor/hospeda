@@ -72,6 +72,8 @@ export const ADDON_CATEGORY_BY_KEY: Readonly<Record<string, AddonCategory>> = {
     max_experiences: 'listings',
     max_properties: 'listings',
     max_photos_per_accommodation: 'media',
+    max_photos_per_venue: 'media',
+    max_photos_per_experience: 'media',
     max_active_promotions: 'other',
     max_active_private_galleries: 'other',
     max_favorites: 'other',

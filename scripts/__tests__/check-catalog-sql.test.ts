@@ -69,14 +69,21 @@ const GREEN = {
     '0140_misty_captain_britain.sql': readFileSync(MIGRATION_0140, 'utf8'),
     '0202_hos_2105_faq_draft_catalog.sql': readFileSync(MIGRATION_0202, 'utf8'),
     '0251_hos2589_promotion_catalog_keys.sql': readFileSync(MIGRATION_0251, 'utf8'),
-    '0252_hos2184_ai_assistant_access_catalog.sql': readFileSync(MIGRATION_0252, 'utf8')
+    '0252_hos2184_ai_assistant_access_catalog.sql': readFileSync(MIGRATION_0252, 'utf8'),
+    '0254_hos2495_listing_photo_keys_and_packs.sql': readFileSync(
+        path.join(
+            REPO_ROOT,
+            'packages/db/src/migrations/0254_hos2495_listing_photo_keys_and_packs.sql'
+        ),
+        'utf8'
+    )
 };
 
 describe('scripts/generate-catalog-sql.ts', () => {
     it('reproduces the original INSERT statements of 0129_gorgeous_storm.sql byte for byte', () => {
         const migration = readFileSync(MIGRATION_0129, 'utf8');
         const compared = migration.slice(migration.indexOf('INSERT INTO'));
-        // These keys were added later (0202, 0251, 0252); the original 0129 INSERT stays frozen.
+        // Later keys do not change the original 0129 INSERT.
         const originalKeys = buildCatalogKeyLoad({
             definitions: CATALOG_KEY_DEFINITIONS.filter(
                 (d) =>
@@ -88,7 +95,9 @@ describe('scripts/generate-catalog-sql.ts', () => {
                         'vip_only_promotions',
                         'max_free_visible_promotions',
                         // HOS-2184 (0252).
-                        'ai_assistant_access'
+                        'ai_assistant_access',
+                        'max_photos_per_venue',
+                        'max_photos_per_experience'
                     ].includes(d.key)
             )
         });
@@ -215,6 +224,33 @@ describe('TEST:V1:5 — GUARD:G18', () => {
         expect(result.output).toContain(
             '0131_patch.sql: a statement writes "catalog_key" in a shape G18 cannot fold'
         );
+    });
+
+    it('HOS-2196 skips an UPDATE that assigns only columns the load does not compare, and stays red on a compared one', () => {
+        const green = run({
+            migrationsDir: migrationsDir({
+                files: {
+                    ...GREEN,
+                    '0131_patch.sql':
+                        'UPDATE "catalog_key" SET "payment_methods" = ARRAY[\'CARD\', \'MANUAL\']::text[] WHERE "scope" = \'global\';\n'
+                }
+            }),
+            loads: [buildCatalogKeyLoad()]
+        });
+        const red = run({
+            migrationsDir: migrationsDir({
+                files: {
+                    ...GREEN,
+                    '0131_patch.sql':
+                        'UPDATE "catalog_key" SET "payment_methods" = \'x\', "key_class" = \'BASE\' WHERE "scope" = \'global\';\n'
+                }
+            }),
+            loads: [buildCatalogKeyLoad()]
+        });
+
+        expect(green.exitCode).toBe(0);
+        expect(red.exitCode).toBe(1);
+        expect(red.output).toContain('cannot fold');
     });
 
     it('is red when two migrations insert the same key', () => {

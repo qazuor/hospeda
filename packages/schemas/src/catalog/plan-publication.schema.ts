@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { PlanPaymentMethodsSchema } from '../api/billing/plan-payment-methods.schema.js';
 import { PlanRoleSchema } from './plan-role.js';
 
 /**
@@ -55,6 +56,11 @@ export const PlanVersionContentSchema = z.object({
     graceDays: z.number().int().nonnegative(),
     allowsPause: z.boolean(),
     inheritsTouristVip: z.boolean(),
+    /**
+     * Payment methods the version accepts (HOS-2196). Omitted means "as the current version" (or
+     * card-only for a plan's first version), so a republish never silently drops a method.
+     */
+    paymentMethods: PlanPaymentMethodsSchema.optional(),
     entitlements: z.array(PlanVersionEntitlementInputSchema).default([]),
     limits: z.array(PlanVersionLimitInputSchema).default([]),
     /** Optional subset of the closed cycles, read by cause (h) of `G-R3`. */

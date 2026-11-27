@@ -33,27 +33,10 @@ import { ListingEditor } from '../../../src/components/listing/ListingEditor.cli
 import { buildListingEditorSections } from '../../../src/lib/editor/listing-editor-registry';
 import type { ListingDetail } from '../../../src/lib/listing/owner-listings';
 
-const { I18N_INITIAL } = vi.hoisted(() => {
-    const blank = () => ({ es: '', en: '', pt: '' });
-    return {
-        I18N_INITIAL: {
-            nameI18n: blank(),
-            summaryI18n: blank(),
-            descriptionI18n: blank(),
-            richDescriptionI18n: blank()
-        }
-    };
-});
-
 vi.mock('@/store/toast-store', () => ({ addToast: vi.fn() }));
 
 vi.mock('../../../src/components/listing/ListingEditor.module.css', () => ({
     default: new Proxy({} as Record<string, string>, { get: (_t, prop) => String(prop) })
-}));
-
-vi.mock('../../../src/components/listing/ListingTranslationPanel.client', () => ({
-    ListingTranslationPanel: () => null,
-    parseListingI18nValues: () => I18N_INITIAL
 }));
 
 // The rich-text editor is irrelevant here and expensive to boot; the sibling
@@ -103,7 +86,7 @@ vi.mock('../../../src/lib/api/client', () => ({
     }
 }));
 
-// `MediaSection` hydrates itself from `listingMediaApi.listMedia` on mount
+// `PhotoSection` hydrates itself from `listingMediaApi.listMedia` on mount
 // (HOS-372), so the editor cannot render without it stubbed.
 vi.mock('../../../src/lib/api/endpoints-protected', () => ({
     listingMediaApi: {

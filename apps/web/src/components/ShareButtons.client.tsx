@@ -184,10 +184,33 @@ export function ShareButtons({
 
     // Focus first popover item when opened
     useEffect(() => {
-        if (isOpen && popoverRef.current) {
-            const firstFocusable = popoverRef.current.querySelector<HTMLElement>('a, button');
-            firstFocusable?.focus();
-        }
+        const popover = popoverRef.current;
+        const trigger = triggerRef.current;
+        if (!isOpen || !popover || !trigger) return;
+        popover.showPopover?.();
+        const position = () => {
+            const anchor = trigger.getBoundingClientRect();
+            const gutter = 8;
+            const above = Math.max(0, anchor.top - 2 * gutter);
+            const below = Math.max(0, window.innerHeight - anchor.bottom - 2 * gutter);
+            const flip = below < popover.scrollHeight && above > below;
+            const left = Math.max(
+                gutter,
+                Math.min(anchor.right, window.innerWidth - gutter) - popover.offsetWidth
+            );
+            popover.style.left = `${left}px`;
+            popover.style.maxHeight = `${flip ? above : below}px`;
+            popover.style.top = flip ? 'auto' : `${anchor.bottom + gutter}px`;
+            popover.style.bottom = flip ? `${window.innerHeight - anchor.top + gutter}px` : 'auto';
+        };
+        position();
+        popover.querySelector<HTMLElement>('a, button')?.focus({ preventScroll: true });
+        window.addEventListener('resize', position);
+        window.addEventListener('scroll', position, true);
+        return () => {
+            window.removeEventListener('resize', position);
+            window.removeEventListener('scroll', position, true);
+        };
     }, [isOpen]);
 
     async function handleMainClick(): Promise<void> {
@@ -328,6 +351,7 @@ export function ShareButtons({
                 // biome-ignore lint/a11y/useAriaPropsSupportedByRole: both possible roles (group and menu) support an accessible name.
                 <div
                     ref={popoverRef}
+                    popover="manual"
                     role={isCompact ? 'group' : 'menu'}
                     aria-label={t('ui.accessibility.shareViaDevice', 'Compartir')}
                     className={styles.popover}

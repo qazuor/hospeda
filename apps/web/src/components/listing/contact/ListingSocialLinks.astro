@@ -47,6 +47,7 @@ const Heading = headingLevel === 2 ? 'h2' : 'h3';
                     rel="noopener noreferrer"
                     variant="outline"
                     size="md"
+                    class="listing-social__target"
                     ariaLabel={ariaLabel}
                     data={{
                         ...trackingData,
@@ -62,6 +63,10 @@ const Heading = headingLevel === 2 ? 'h2' : 'h3';
 )}
 
 <style>
+    .listing-social__list :global(.listing-social__target) {
+        min-inline-size: 44px;
+        min-block-size: 44px;
+    }
     .listing-social {
         display: flex;
         flex-direction: column;

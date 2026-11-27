@@ -1,0 +1,39 @@
+---
+/**
+ * @file VenueContactSection.astro
+ * @description Composes the shared public channels with the dedicated HOS-2256 island.
+ */
+import type { ComponentProps } from 'astro/types';
+import ListingContactBlock from '@/components/listing/contact/ListingContactBlock.astro';
+import { UMAMI_BLOCK_PROPS } from '@/lib/analytics/recording-block';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import type { ListingContactBlockModel } from '@/lib/listing-contact/listing-contact-block';
+import { VENUE_CONTACT_ANCHOR_ID } from '@/lib/venue-contact';
+import VenueWhatsAppContact from './VenueWhatsAppContact.astro';
+
+interface Props {
+    readonly contactBlock: ListingContactBlockModel | null;
+    readonly whatsappContact?: ComponentProps<typeof VenueWhatsAppContact>;
+    readonly locale: SupportedLocale;
+}
+
+const { contactBlock, whatsappContact, locale } = Astro.props;
+const { t } = createTranslations(locale);
+const gatedContactBlock = {
+    channels: [],
+    socialLinks: [],
+    trackingData: {},
+    shell: 'plain',
+    id: VENUE_CONTACT_ANCHOR_ID,
+    blockProps: UMAMI_BLOCK_PROPS,
+    ...contactBlock,
+    heading: contactBlock?.heading ?? t('venue.detail.contactTitle')
+} satisfies ListingContactBlockModel;
+---
+
+{whatsappContact ? (
+    <ListingContactBlock {...gatedContactBlock}>
+        <VenueWhatsAppContact slot="extra-channel" {...whatsappContact} />
+    </ListingContactBlock>
+) : contactBlock && <ListingContactBlock {...contactBlock} />}

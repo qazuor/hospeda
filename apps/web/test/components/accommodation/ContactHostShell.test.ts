@@ -23,9 +23,9 @@ describe('ContactHostShell.astro (source-based)', () => {
     });
 
     it('renders phone, landline, email and website only; never WhatsApp', () => {
-        expect(src).toContain('tel:${contactInfo.phone}');
-        expect(src).toContain('tel:${contactInfo.landlinePhone}');
-        expect(src).toContain('mailto:${contactInfo.email}');
+        expect(src).toMatch(/tel:\$\{contactInfo\.phone\}/);
+        expect(src).toMatch(/tel:\$\{contactInfo\.landlinePhone\}/);
+        expect(src).toMatch(/mailto:\$\{contactInfo\.email\}/);
         expect(src.split('---')[2] ?? '').not.toMatch(/whatsapp/i);
         expect(src).not.toContain('contactInfo.whatsapp');
     });
@@ -35,9 +35,13 @@ describe('ContactHostShell.astro (source-based)', () => {
         expect(src).not.toContain('href={contactInfo.website}');
     });
 
-    it('is wrapped around the sidebar contact card island (it hosts ContactHost) on the page', () => {
+    it('keeps the fallback around the island that hosts the inquiry form', () => {
+        // CARD-022 H-4 moves ContactHost behind the inquiry CTA, not out of the fallback shell.
         expect(page).toMatch(
-            /<ContactHostShell[^>]*>\s*<ListingContactCard\s+client:media="\(min-width: 768px\)"/
+            /<div id="contact">\s*<ContactHostShell[^>]*contactInfo=\{accommodation\.contactInfo\}[^>]*>\s*<ListingContactPanel\s+client:idle\b[\s\S]*?\/>\s*<\/ContactHostShell>/
+        );
+        expect(read('components/listing/contact/ListingContactPanel.client.tsx')).toContain(
+            '<ContactHost'
         );
     });
 });

@@ -84,6 +84,10 @@ export {
     resolveGrantValues,
     selectGrantForVertical
 } from './effective-set/grant-ratchet';
+export {
+    type EffectiveLimitBreakdown,
+    resolveEffectiveLimitBreakdown
+} from './effective-set/limit-breakdown';
 export { hasLiveNonTrialTitle, selectPlegableSources } from './effective-set/plegable';
 export {
     type ResolvedEffectiveSet,

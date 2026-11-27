@@ -1,7 +1,8 @@
 /**
  * @file use-photo-gallery-mutations.ts
- * @description Non-upload photo mutations for the accommodation photo editor
- * (HOS-122): removing the portada, removing a gallery photo, promoting a
+ * @description Non-upload photo mutations for the shared listing photo editor
+ * (HOS-122; accommodation, venue and experience since HOS-2495, through the
+ * vertical's `ListingPhotoApi`): removing the portada, removing a gallery photo, promoting a
  * gallery photo to portada, and manual reordering. Split out of
  * `use-photo-section.ts` to keep both files under the repo's 500-line
  * ceiling.
@@ -10,11 +11,15 @@
  * loading) owned by `usePhotoSection` — they receive the setters as params
  * rather than owning their own `useState`, so there is exactly one source of
  * truth for the section's local state.
+ *
+ * Every failure is rendered through `translateApiError` (HOS-2495, AC-10): a
+ * 403 `ENTITLEMENT_REQUIRED` or `LIMIT_REACHED` shows its localized copy, never
+ * the API's English `message`.
  */
 
 import { useCallback } from 'react';
 import { runRetryableEditorAutoSave } from '@/components/account/editor-shell/editor-auto-save-signal';
-import { accommodationMediaApi } from '@/lib/api/endpoints-protected';
+import type { ListingPhotoApi } from '@/lib/api/listing-photo-api';
 import type { AccommodationMediaItem } from '@/lib/api/types';
 import { translateApiError } from '@/lib/api-errors';
 import { useSingleFlight } from '@/lib/forms/use-single-flight';
@@ -28,7 +33,9 @@ import {
 } from './photo-section-helpers';
 
 export interface UsePhotoGalleryMutationsParams {
-    readonly accommodationId: string;
+    /** The vertical's photo API (HOS-2495). */
+    readonly api: ListingPhotoApi;
+    readonly listingId: string;
     readonly t: Translate;
     readonly featuredItem: AccommodationMediaItem | null;
     readonly galleryItems: readonly AccommodationMediaItem[];
@@ -42,6 +49,12 @@ export interface UsePhotoGalleryMutationsParams {
     readonly reportUploadError: (message: string) => void;
     /** Asks before a delete (HOS-2429); the section renders the kit `useConfirm` dialog. */
     readonly confirmRemoval: () => Promise<boolean>;
+    /**
+     * Re-reads the photo allowance after an operation that changes what counts
+     * against the cap (a delete, a cover change). Reorder and text edits do not
+     * call it: they change no count (HOS-2495).
+     */
+    readonly onUsageChanged: () => Promise<void>;
 }
 
 export interface UsePhotoGalleryMutationsResult {
@@ -63,7 +76,8 @@ export interface UsePhotoGalleryMutationsResult {
  * photo to portada, and manual reordering (buttons and drag-and-drop).
  */
 export function usePhotoGalleryMutations({
-    accommodationId,
+    api,
+    listingId,
     t,
     featuredItem,
     galleryItems,
@@ -73,7 +87,8 @@ export function usePhotoGalleryMutations({
     setError,
     setOpLoading,
     reportUploadError,
-    confirmRemoval
+    confirmRemoval,
+    onUsageChanged
 }: UsePhotoGalleryMutationsParams): UsePhotoGalleryMutationsResult {
     const runSingleFlight = useSingleFlight();
 
@@ -91,12 +106,13 @@ export function usePhotoGalleryMutations({
             save: async () => {
                 setError(null);
                 setOpLoading(true);
-                const result = await accommodationMediaApi.removeMedia({
-                    id: accommodationId,
+                const result = await api.removeMedia({
+                    id: listingId,
                     mediaId
                 });
                 if (result.ok) {
                     setFeaturedItem(null);
+                    void onUsageChanged();
                 } else {
                     setError(
                         translateApiError({
@@ -115,13 +131,15 @@ export function usePhotoGalleryMutations({
         });
     }, [
         featuredItem,
-        accommodationId,
+        api,
+        listingId,
         t,
         setError,
         setOpLoading,
         setFeaturedItem,
         runSingleFlight,
-        confirmRemoval
+        confirmRemoval,
+        onUsageChanged
     ]);
 
     /**
@@ -137,12 +155,13 @@ export function usePhotoGalleryMutations({
                 save: async () => {
                     setError(null);
                     setOpLoading(true);
-                    const result = await accommodationMediaApi.removeMedia({
-                        id: accommodationId,
+                    const result = await api.removeMedia({
+                        id: listingId,
                         mediaId: item.id
                     });
                     if (result.ok) {
                         setGalleryItems((prev) => prev.filter((g) => g.id !== item.id));
+                        void onUsageChanged();
                     } else {
                         setError(
                             translateApiError({
@@ -161,13 +180,15 @@ export function usePhotoGalleryMutations({
             });
         },
         [
-            accommodationId,
+            api,
+            listingId,
             t,
             setError,
             setOpLoading,
             setGalleryItems,
             runSingleFlight,
-            confirmRemoval
+            confirmRemoval,
+            onUsageChanged
         ]
     );
 
@@ -191,8 +212,8 @@ export function usePhotoGalleryMutations({
             setError(null);
             setOpLoading(true);
 
-            const result = await accommodationMediaApi.setFeaturedMedia({
-                id: accommodationId,
+            const result = await api.setFeaturedMedia({
+                id: listingId,
                 mediaId: item.id
             });
 
@@ -211,9 +232,7 @@ export function usePhotoGalleryMutations({
                 return false;
             }
 
-            const refreshed = await accommodationMediaApi
-                .listMedia({ id: accommodationId })
-                .catch(() => null);
+            const refreshed = await api.listMedia({ id: listingId }).catch(() => null);
 
             if (refreshed?.ok) {
                 const { featured, gallery } = splitMediaRows(refreshed.data.media);
@@ -229,17 +248,21 @@ export function usePhotoGalleryMutations({
                 setFeaturedItem(mediaRowToItem(result.data.media));
             }
             setOpLoading(false);
+            // The demoted cover now counts toward the gallery: re-read the cap.
+            void onUsageChanged();
             return true;
         },
         [
-            accommodationId,
+            api,
+            listingId,
             featuredItem,
             t,
             reportUploadError,
             setError,
             setOpLoading,
             setGalleryItems,
-            setFeaturedItem
+            setFeaturedItem,
+            onUsageChanged
         ]
     );
 
@@ -279,8 +302,8 @@ export function usePhotoGalleryMutations({
                     setError(null);
                     setOpLoading(true);
                     setGalleryItems(nextGalleryItems);
-                    const result = await accommodationMediaApi.reorderMedia({
-                        id: accommodationId,
+                    const result = await api.reorderMedia({
+                        id: listingId,
                         orderedIds
                     });
                     if (result.ok) {
@@ -306,7 +329,8 @@ export function usePhotoGalleryMutations({
             });
         },
         [
-            accommodationId,
+            api,
+            listingId,
             featuredItem,
             galleryItems,
             isHydrated,
@@ -367,8 +391,8 @@ export function usePhotoGalleryMutations({
             setError(null);
             setOpLoading(true);
 
-            const result = await accommodationMediaApi.updateMedia({
-                id: accommodationId,
+            const result = await api.updateMedia({
+                id: listingId,
                 mediaId: item.id,
                 body
             });
@@ -398,7 +422,8 @@ export function usePhotoGalleryMutations({
             return true;
         },
         [
-            accommodationId,
+            api,
+            listingId,
             t,
             reportUploadError,
             setError,

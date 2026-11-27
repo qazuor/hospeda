@@ -70,6 +70,8 @@ export enum LimitKeyEnum {
     MAX_EXPERIENCES = 'max_experiences',
     MAX_PROPERTIES = 'max_properties',
     MAX_PHOTOS_PER_ACCOMMODATION = 'max_photos_per_accommodation',
+    MAX_PHOTOS_PER_VENUE = 'max_photos_per_venue',
+    MAX_PHOTOS_PER_EXPERIENCE = 'max_photos_per_experience',
     MAX_ACTIVE_PROMOTIONS = 'max_active_promotions',
     MAX_ACTIVE_PRIVATE_GALLERIES = 'max_active_private_galleries',
     MAX_FAVORITES = 'max_favorites',

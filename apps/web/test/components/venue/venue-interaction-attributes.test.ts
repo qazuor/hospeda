@@ -26,12 +26,14 @@ describe('venue interaction attributes (HOS-2256)', () => {
         );
     });
 
-    it('keeps the venue-contact__menu-btn hook on the menu link (E2E LISTING-OWNER-01 selector)', () => {
-        const menuAnchor = block.slice(
-            block.indexOf('href={menuLink.href}'),
-            block.indexOf("'contact-channel': 'menu'")
-        );
-        expect(menuAnchor).toContain('class="venue-contact__menu-btn"');
+    it('keeps the price-card menu CTA hooks (E2E LISTING-OWNER-01 selector)', () => {
+        // HOS-2652: the venue menu CTA lives in the price card only; the E2E
+        // selects `a.listing-price-card__cta[data-contact-channel="menu"]`.
+        const priceCard = read('components/listing/contact/ListingPriceCard.astro');
+        const anchor = priceCard.slice(priceCard.indexOf('<a'), priceCard.indexOf('</a>'));
+        expect(anchor).toContain('class="listing-price-card__cta');
+        expect(anchor).toContain('data-contact-channel={direct.kind}');
+        expect(priceCard).toContain("direct.kind === 'menu'");
     });
 
     it('marks the contactInfo website as WEBSITE_CLICK', () => {
@@ -56,7 +58,10 @@ describe('venue interaction attributes (HOS-2256)', () => {
 
     it('renders through the shared ListingContactBlock (GradientButton + IconButton, HOS-2533/HOS-2520/HOS-2579)', () => {
         const social = read('components/listing/contact/ListingSocialLinks.astro');
-        expect(page).toContain('Component: ListingContactBlock, props: { ...venueContactBlock }');
+        expect(page).toContain('Component: VenueContactSection');
+        const section = read('components/venue/VenueContactSection.astro');
+        expect(section).toContain('<ListingContactBlock');
+        expect(section).toContain('{...contactBlock}');
         expect(block).toContain('<GradientButton');
         expect(block).toContain('variant="outline-primary"');
         expect(block).toContain("'interaction-kind': interactionKind");
@@ -83,7 +88,7 @@ describe('venue interaction attributes (HOS-2256)', () => {
             /externalMapHref: mapUrl,[\s\S]*?trackingData: \{ 'interaction-kind': 'MAP_CLICK' \}/
         );
         expect(address).toMatch(/href=\{externalMapHref\}[\s\S]*?\{\.\.\.linkData\}/);
-        expect(address).toContain('[`data-${key}`, value]');
+        expect(address).toMatch(/\[`data-\$\{key\}`, value\]/);
     });
 
     it('mounts the island with the venue id, on idle', () => {

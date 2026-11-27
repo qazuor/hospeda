@@ -1,45 +1,30 @@
-/**
- * @file DestinationFaqAccordion.test.ts
- * @description Source-level assertions for the SPEC-158 destination FAQ
- * accordion. Astro components cannot be DOM-rendered in Vitest, so we assert
- * on the component source (per apps/web testing convention).
- */
 import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { groupDetailFaqs } from '@/lib/faq/groups';
 
-const src = readFileSync(
-    resolve(__dirname, '../../../src/components/destination/DestinationFaqAccordion.astro'),
-    'utf8'
-);
+describe('destination FAQ', () => {
+    it('forwards the grouped answers to the shared disclosure with the destination title', () => {
+        const path = '../../../src/components/destination/DestinationFaqAccordion.astro';
 
-describe('DestinationFaqAccordion.astro', () => {
-    it('consumes the shared DetailFaq type', () => {
-        expect(src).toContain("import type { DetailFaq } from '@/data/types'");
-        expect(src).toContain('readonly faqs: readonly DetailFaq[]');
+        const source = readFileSync(new URL(path, import.meta.url), 'utf8');
+
+        expect(source).toContain('@/components/shared/ui/FaqAccordion.astro');
+        expect(source).toContain("title={t('destinations.detail.faq.title')}");
+        expect(source).toContain('groups={groupDetailFaqs({ faqs, locale }).groups}');
     });
 
-    it('renders nothing when there are no FAQs (no empty shell)', () => {
-        expect(src).toContain('if (faqs.length === 0) return;');
-    });
+    it('preserves answer text and does not count blank categories as named', () => {
+        const faqs = [
+            { question: 'How?', answer: 'By bus', category: ' Transport ' },
+            { question: 'When?', answer: 'In spring', category: ' ' },
+            { question: 'Where?', answer: 'Downtown', category: null }
+        ];
 
-    it('is zero-JS: uses native details/summary', () => {
-        expect(src).toContain('<details');
-        expect(src).toContain('<summary');
-        expect(src).not.toContain('client:');
-    });
+        const { groups } = groupDetailFaqs({ faqs, locale: 'en' });
 
-    it('groups FAQs by category with a localized General fallback placed last', () => {
-        expect(src).toContain("t('destinations.detail.faq.generalCategory', 'General')");
-        expect(src).toContain('faq.category ?? generalLabel');
-    });
-
-    it('localizes the section title', () => {
-        expect(src).toContain("t('destinations.detail.faq.title'");
-    });
-
-    it('uses design tokens for typography and color', () => {
-        expect(src).toContain('var(--font-heading)');
-        expect(src).toContain('var(--core-foreground)');
+        expect(groups).toEqual([
+            { title: 'Transport', items: [faqs[0]] },
+            { title: '', items: faqs.slice(1) }
+        ]);
     });
 });

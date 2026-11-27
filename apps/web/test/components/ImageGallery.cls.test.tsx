@@ -359,17 +359,24 @@ describe('ImageGallery detail variant — every cell img carries cellImg class (
         }
     });
 
-    it('count=5: all 4 rendered cell imgs (including overlay bg img) carry class "cellImg"', () => {
-        /**
-         * At count=5: featured(0) + thumb(1) + thumb(2) + overlayBg(3, aria-hidden).
-         * Total = 4 imgs in the grid. The overlay bg img uses the same cellImg class
-         * for consistent cover cropping.
-         */
+    // CARD-026 H-1: exactly five photos are all visible, without an overflow cell.
+    it('count=5: all five photos have cellImg and none is an overlay background', () => {
         const container = renderDetail(5);
         const imgs = Array.from(container.querySelectorAll('[data-count] img'));
-        expect(imgs.length).toBe(4);
+        expect(imgs.length).toBe(5);
         for (const img of imgs) {
-            expect(img.className).toContain('cellImg');
+            expect(img).toHaveClass('cellImg');
+            expect(img).not.toHaveAttribute('aria-hidden', 'true');
+        }
+    });
+
+    it('count=6: each of the four grid images, including the overlay, has cellImg', () => {
+        const container = renderDetail(6);
+        const imgs = Array.from(container.querySelectorAll('[data-count] img'));
+        expect(imgs.length).toBe(4);
+        expect(imgs[3]).toHaveAttribute('aria-hidden', 'true');
+        for (const img of imgs) {
+            expect(img).toHaveClass('cellImg');
         }
     });
 });

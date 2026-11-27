@@ -12,23 +12,40 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const src = readFileSync(resolve(__dirname, '../../src/layouts/Footer.astro'), 'utf8');
+const baseStyles = readFileSync(resolve(__dirname, '../../src/layouts/footer-base.css'), 'utf8');
+const responsiveStyles = readFileSync(
+    resolve(__dirname, '../../src/layouts/footer-responsive.css'),
+    'utf8'
+);
 
 describe('Footer.astro', () => {
-    it('allows legal links to wrap without orphaned separators and keeps legible type', () => {
-        expect(src).not.toContain('.footer__legal li + li::before');
+    it('keeps the layout below 500 lines', () => {
+        for (const contents of [src, baseStyles, responsiveStyles]) {
+            expect(contents.trimEnd().split('\n').length).toBeLessThan(500);
+        }
         expect(src).toMatch(
+            /import "\.\/footer-base\.css";\s*import "\.\/footer-responsive\.css";/
+        );
+    });
+
+    it('allows legal links to wrap without separators and keeps legible type', () => {
+        expect(baseStyles).not.toContain('.footer__legal li + li::before');
+        expect(responsiveStyles).not.toContain('.footer__legal li + li::before');
+        expect(baseStyles).toMatch(
             /\.footer__legal-link\s*\{[^}]*font-size: 0.75rem;[^}]*color: var\(--footer-fg\)/
         );
     });
     it('uses full-width disclosure rows and vector payment logos', () => {
         expect(src.match(/<ChevronDownIcon size=\{20\} aria-hidden="true"/g)).toHaveLength(3);
-        expect(src).toMatch(/\.footer__nav-heading\s*\{[^}]*min-height: 2.75rem/);
+        expect(baseStyles).toMatch(/\.footer__nav-heading\s*\{[^}]*min-height: 2.75rem/);
         expect(src).toContain('size={Icon === AmericanExpressIcon ? 44 : 32}');
     });
 
     it('keeps American Express at 44px in the compact footer and other marks at 24px', () => {
-        const compactStyles = src.split('@media (max-width: 47.99rem) {')[1];
-        const iconRule = compactStyles?.match(/:global\(\.footer__payment\)\s*\{([^}]*)}/)?.[1];
+        const compactStyles = responsiveStyles.split('@media (max-width: 47.99rem) {')[1];
+        const iconRule = compactStyles?.match(
+            /\.footer__payments-list \.footer__payment\s*\{([^}]*)}/
+        )?.[1];
         const amexRule = compactStyles?.match(/\.footer__payment-item--amex\s*\{([^}]*)}/)?.[1];
 
         expect(src).toMatch(
@@ -187,21 +204,21 @@ describe('Footer.astro', () => {
         });
 
         it('keeps accordion summary rows at a 44px minimum tap target on mobile', () => {
-            expect(src).toMatch(/\.footer__nav-heading \{\s*min-height: 2\.75rem;/);
+            expect(responsiveStyles).toMatch(/\.footer__nav-heading \{\s*min-height: 2\.75rem;/);
         });
 
         it('disables accordion behaviour on tablet+ via pointer-events: none', () => {
-            expect(src).toContain('pointer-events: none');
+            expect(responsiveStyles).toMatch(/\.footer__nav-heading\s*\{[^}]*pointer-events: none/);
         });
     });
 
     describe('responsive nav layout', () => {
         it('stacks the nav into a single column on mobile', () => {
-            expect(src).toContain('grid-template-columns: 1fr');
+            expect(baseStyles).toContain('grid-template-columns: 1fr');
         });
 
         it('uses a 3-column nav grid on tablet (≥768px)', () => {
-            expect(src).toContain('grid-template-columns: repeat(3, 1fr)');
+            expect(responsiveStyles).toContain('grid-template-columns: repeat(3, 1fr)');
         });
     });
 
@@ -294,23 +311,23 @@ describe('Footer.astro', () => {
 
     describe('styles', () => {
         it('uses --footer-bg token for background', () => {
-            expect(src).toContain('var(--footer-bg)');
+            expect(baseStyles).toContain('var(--footer-bg)');
         });
 
         it('uses --footer-fg for text color', () => {
-            expect(src).toContain('var(--footer-fg)');
+            expect(baseStyles).toContain('var(--footer-fg)');
         });
 
         it('uses --font-heading for nav headings', () => {
-            expect(src).toContain('var(--font-heading)');
+            expect(baseStyles).toContain('var(--font-heading)');
         });
 
         it('uses --font-sans for nav links', () => {
-            expect(src).toContain('var(--font-sans)');
+            expect(baseStyles).toContain('var(--font-sans)');
         });
 
         it('uses --duration-normal for transitions', () => {
-            expect(src).toContain('var(--duration-normal)');
+            expect(baseStyles).toContain('var(--duration-normal)');
         });
     });
 });

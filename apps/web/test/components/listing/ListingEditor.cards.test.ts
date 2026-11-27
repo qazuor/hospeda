@@ -22,7 +22,9 @@ const read = (path: string) => readFileSync(path, 'utf8');
 
 const fieldsCss = read(resolve(EDITOR_DIR, 'editor-fields.module.css'));
 const editorCss = read(resolve(LISTING_DIR, 'ListingEditor.module.css'));
-const translationPanel = read(resolve(LISTING_DIR, 'ListingTranslationPanel.client.tsx'));
+const translationPanel = read(
+    resolve(LISTING_DIR, '../account/editor/ListingTranslationsSection.client.tsx')
+);
 const sharedTranslationEditor = read(
     resolve(LISTING_DIR, '../account/editor/TranslationEditor.tsx')
 );
@@ -157,7 +159,27 @@ describe('ListingEditor — per-section cards (HOS-371)', () => {
             );
         }
 
-        expect(SECTION_FILES.length).toBeGreaterThanOrEqual(7);
+        // HOS-2495 deleted `MediaSection` (7 -> 6): venue and experience photos
+        // are the shared `PhotoSection`, which lives outside `editor/` and is
+        // guarded by the next test.
+        expect(SECTION_FILES.length).toBeGreaterThanOrEqual(6);
+        expect(SECTION_FILES).not.toContain('MediaSection.client.tsx');
+    });
+
+    it('makes the shared photo section of every vertical own its card (HOS-2495)', () => {
+        // The comercio fotos route mounts `host/editor/PhotoSection`, outside the
+        // `editor/` sweep above; its card is the kit `<Section>` of `PhotoEditor`.
+        const photoSection = stripComments(
+            read(resolve(LISTING_DIR, '../host/editor/PhotoSection.client.tsx'))
+        );
+        const photoEditor = stripComments(
+            read(resolve(LISTING_DIR, '../account/editor/PhotoEditor.tsx'))
+        );
+        const comercioFotosRoute = read(resolve(ROUTES_DIR, 'fotos.astro'));
+
+        expect(comercioFotosRoute).toContain('<PhotoSection');
+        expect(photoSection).toContain('<PhotoEditor');
+        expect(photoEditor).toMatch(/<Section\b/);
     });
 
     it('keeps the orchestrator free of raw sections that would bypass the sweep', () => {
@@ -179,6 +201,7 @@ describe('ListingEditor — per-section cards (HOS-371)', () => {
     it('drops the translation panel resets and margin that would cancel or hollow the card', () => {
         expect(translationPanel).not.toContain('<fieldset');
         expect(translationPanel).not.toContain('ListingTranslationPanel.module.css');
+        expect(translationPanel).not.toMatch(/<Section\b/);
         expect(sharedTranslationEditor).not.toMatch(/<Section[^>]*className=/);
     });
 

@@ -4,15 +4,8 @@
  * Renders a FAB + slide-out panel with focus trap, ESC-to-close,
  * aria-live region for streaming tokens, and price disclaimer.
  *
- * The chat itself is for signed-in visitors only, and that gate is resolved
- * CLIENT-SIDE (HOS-369 WB0-7). A confirmed guest (HOS-2561) still gets the FAB,
- * and the panel shows a sign-up invitation instead of the composer, with no
- * request to the chat API. The page used to wrap the whole mount in
- * `{isAuthenticated && ...}`, which baked the visitor into HTML that must be
- * edge-cacheable; now the page mounts it unconditionally and the widget renders
- * nothing until a session resolves. Unlike the sidebar islands this needs no
- * placeholder: the FAB and panel are both `position: fixed`, so appearing after
- * hydration moves nothing on the page.
+ * Session-blind pages mount the island unconditionally (HOS-369 WB0-7).
+ * Confirmed guests see a sign-up invitation instead of the composer.
  *
  * @module AiChatWidget
  */
@@ -24,21 +17,23 @@ import { DockPortal } from '@/components/shared/dock/DockPortal';
 import { Spinner } from '@/components/shared/feedback/Spinner';
 import { Dialog, DialogBody, DialogHeader } from '@/components/shared/ui/Dialog.client';
 import { useAccountPermissions } from '@/hooks/use-account-permissions';
+import { useListingChatPlan } from '@/hooks/use-listing-chat-plan';
 import { useAccommodationChat } from '@/hooks/useAccommodationChat';
 import { useDialogHistoryBack } from '@/hooks/useDialogHistoryBack';
 import { useVisualViewportInset } from '@/hooks/useVisualViewportInset';
 import { aiChatCopyKey, resolveAiChatCopy, resolveChatError } from '@/lib/ai-chat-copy';
 import { renderChatMarkdown } from '@/lib/ai-search/render-chat-markdown';
-// Shared with every other modal-like surface (Dialog, the AI search drawer).
-// This file used to keep a private copy of the Tab-cycling logic, bound to
-// the PANEL rather than `document` — worse than the shared trap's own prior
-// bug, because a panel listener never runs once focus has fallen out to
-// `<body>` (HOS-350).
 import { trapFocus } from '@/lib/focus-trap';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { openListingContactPanel } from '@/lib/listing-contact/listing-contact-events';
+import type { ListingContactPrice } from '@/lib/listing-contact/listing-contact-price';
+import { buildUrl } from '@/lib/urls';
+import chrome from './AiChatChrome.module.css';
 import { AiChatFab } from './AiChatFab';
 import { AiChatGuestUpsell } from './AiChatGuestUpsell';
+import { AiChatIntro } from './AiChatIntro';
+import { AiChatPriceStrip } from './AiChatPriceStrip';
 import styles from './AiChatWidget.module.css';
 
 /**
@@ -54,12 +49,7 @@ const KEYBOARD_INSET_THRESHOLD_PX = 120;
  */
 const MOBILE_MEDIA_QUERY = '(max-width: 767px)';
 
-/**
- * Tracks whether the viewport is below the mobile breakpoint. Starts `false`
- * (server and first paint render the desktop panel, which only exists once the
- * visitor opens the chat, so there is no hydration mismatch to speak of) and
- * syncs after mount.
- */
+/** Sync the mobile breakpoint after hydration, before the user opens the chat. */
 function useIsMobileViewport(): boolean {
     const [isMobile, setIsMobile] = useState(false);
     useEffect(() => {
@@ -75,6 +65,7 @@ function useIsMobileViewport(): boolean {
 
 export { aiChatCopyKey };
 
+/** Public listing context for the chat island. */
 export interface AiChatWidgetProps {
     /** Which kind of listing the chat is about (HOS-400). */
     readonly entityType: AiChatEntityType;
@@ -82,6 +73,8 @@ export interface AiChatWidgetProps {
     readonly entityId: string;
     readonly locale: SupportedLocale;
     readonly apiUrl: string;
+    readonly listingPrice?: ListingContactPrice;
+    readonly canConsult?: boolean;
 }
 
 /**
@@ -91,11 +84,15 @@ export interface AiChatWidgetProps {
  *
  * @param props - Accommodation ID, locale, and API URL.
  */
-export function AiChatWidget({ entityType, entityId, locale, apiUrl }: AiChatWidgetProps) {
-    // Simple mode (no `initialUser`): `user` starts null, so the server and the
-    // first paint render nothing — the anonymous variant (HOS-369 D-11).
-    // `isResolved` tells a confirmed guest (`user === null` + resolved) from the
-    // not-yet-resolved window, so a signed-in visitor never sees the guest FAB.
+export function AiChatWidget({
+    entityType,
+    entityId,
+    locale,
+    apiUrl,
+    listingPrice,
+    canConsult
+}: AiChatWidgetProps) {
+    // Wait for a confirmed guest or user before rendering the FAB.
     const { user, isResolved } = useAccountPermissions();
     const isGuest = isResolved && !user;
     const [isOpen, setIsOpen] = useState(false);
@@ -103,16 +100,13 @@ export function AiChatWidget({ entityType, entityId, locale, apiUrl }: AiChatWid
     const [isExpanded, setIsExpanded] = useState(false);
     const [draft, setDraft] = useState('');
     const chat = useAccommodationChat({ entityType, entityId, locale, apiUrl });
+    const plan = useListingChatPlan({ apiUrl, enabled: isOpen, viewer: user?.id ?? null });
     const { t } = createTranslations(locale);
     /** Resolves one chat string; a miss falls to human copy, never a raw key. */
     const copy = (suffix: string): string => resolveAiChatCopy({ t, entityType, suffix });
 
     const panelRef = useRef<HTMLDivElement>(null);
     const fabRef = useRef<HTMLButtonElement>(null);
-    /**
-     * Ref to the composer textarea. Used to focus it directly when the panel
-     * opens (W14 — target the textarea, not the first focusable button).
-     */
     const composerTextareaRef = useRef<HTMLTextAreaElement>(null);
     /** Guest panel has no composer: focus lands on the primary CTA instead. */
     const guestCtaRef = useRef<HTMLAnchorElement>(null);
@@ -121,11 +115,7 @@ export function AiChatWidget({ entityType, entityId, locale, apiUrl }: AiChatWid
      *  `isOpen` is already `false` (WCAG dialog focus-return guard). */
     const hasBeenOpenedRef = useRef(false);
 
-    // Back button closes the panel instead of leaving the accommodation page
-    // (HOS-310). This widget builds its own `role="dialog"` rather than using
-    // the shared `Dialog`, so it wires the same hook directly.
-    // On mobile the shared `Dialog` sheet owns history-back, focus trap and
-    // ESC, so this hook is only active for the desktop panel.
+    // The shared mobile Dialog owns its own history and focus handling.
     const { isTopmost } = useDialogHistoryBack({
         isOpen: isOpen && !isMobile,
         onClose: () => setIsOpen(false)
@@ -163,11 +153,7 @@ export function AiChatWidget({ entityType, entityId, locale, apiUrl }: AiChatWid
         const panel = panelRef.current;
         if (!panel) return;
 
-        // W14: Focus the composer textarea directly instead of the first focusable
-        // element (which was the expand button). This gives users an immediately
-        // useful focus target matching their intent (typing a question).
-        // Synchronous call is safe here because this effect only runs when
-        // isOpen=true, meaning the panel (and its textarea) are already in the DOM.
+        // W14: Focus the composer rather than the first header control.
         (composerTextareaRef.current ?? guestCtaRef.current)?.focus();
 
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -179,10 +165,7 @@ export function AiChatWidget({ entityType, entityId, locale, apiUrl }: AiChatWid
                 return;
             }
 
-            // Focus trap: cycles Tab within the panel, and recovers focus
-            // that was LOST while the panel was open. Bound to `document`
-            // (not the panel) so it still catches Tab once focus has fallen
-            // out to `<body>` — see `@/lib/focus-trap`.
+            // Listen on document to recover focus even after it escapes the panel.
             trapFocus(panel, e);
         };
 
@@ -206,11 +189,16 @@ export function AiChatWidget({ entityType, entityId, locale, apiUrl }: AiChatWid
         setDraft('');
     }, [draft, chat]);
 
-    /**
-     * True while streaming has started but no assistant token has arrived yet.
-     * Mirrors the same pattern from SearchChatPanel.client.tsx.
-     */
     const showThinking = chat.state.status === 'streaming' && !chat.state.currentAssistantContent;
+    const consult = () => {
+        setIsOpen(false);
+        openListingContactPanel({ origin: 'bar' });
+    };
+    const planChip = plan?.name && <span className={chrome.planChip}>{plan.name}</span>;
+    const selectSuggestion = (question: string) => {
+        setDraft(question);
+        composerTextareaRef.current?.focus();
+    };
 
     // Every hook above runs unconditionally (Rules of Hooks); the gate is the
     // first thing after them. Not-yet-resolved renders nothing; a confirmed
@@ -231,22 +219,25 @@ export function AiChatWidget({ entityType, entityId, locale, apiUrl }: AiChatWid
                     locale={locale}
                     returnUrl={returnUrl}
                     primaryRef={guestCtaRef}
+                    monthlyQuota={plan?.quota}
                 />
             ) : (
                 <>
-                    <div className={styles.disclaimer}>{copy('headerDisclaimer')}</div>
-                    <div
-                        className={styles.disclaimer}
-                        data-testid="ai-chat-read-notice"
-                    >
-                        {copy('readNotice')}
-                    </div>
-
                     <div
                         className={styles.messages}
                         aria-live="polite"
                         aria-atomic="false"
                     >
+                        <AiChatIntro
+                            copy={copy}
+                            locale={locale}
+                            allowance={plan?.quota}
+                            onSuggestion={
+                                chat.state.status === 'idle' && chat.state.messages.length === 0
+                                    ? selectSuggestion
+                                    : undefined
+                            }
+                        />
                         {chat.state.messages.map((m, i) =>
                             m.role === 'assistant' ? (
                                 <div
@@ -308,6 +299,20 @@ export function AiChatWidget({ entityType, entityId, locale, apiUrl }: AiChatWid
                                     code: chat.state.errorCode,
                                     message: chat.state.errorMessage
                                 })}
+                                {chat.state.errorCode === 'LIMIT_REACHED' &&
+                                    chat.state.errorMessage ===
+                                        'accommodations.aiChat.consumerLimitReached' && (
+                                        <p>
+                                            <a
+                                                href={buildUrl({
+                                                    locale,
+                                                    path: 'planes/turistas/precios/'
+                                                })}
+                                            >
+                                                {t('accommodations.aiChat.consumerLimitUpgradeCta')}
+                                            </a>
+                                        </p>
+                                    )}
                             </div>
                         )}
                         {chat.state.status === 'at_cap' && (
@@ -398,6 +403,7 @@ export function AiChatWidget({ entityType, entityId, locale, apiUrl }: AiChatWid
                         closeLabel={copy('close')}
                     >
                         {copy('panelLabel')}
+                        {planChip}
                     </DialogHeader>
                     <DialogBody bare>
                         <div
@@ -418,7 +424,6 @@ export function AiChatWidget({ entityType, entityId, locale, apiUrl }: AiChatWid
             )}
             {isOpen && !isMobile && (
                 <div
-                    // biome-ignore lint/a11y/useSemanticElements: React dialog needs ref handling; div with role is acceptable per SPEC-200
                     ref={panelRef}
                     role="dialog"
                     aria-modal="true"
@@ -434,8 +439,18 @@ export function AiChatWidget({ entityType, entityId, locale, apiUrl }: AiChatWid
                         } as React.CSSProperties
                     }
                 >
+                    {listingPrice !== undefined && (
+                        <AiChatPriceStrip
+                            price={listingPrice}
+                            locale={locale}
+                            onConsult={canConsult ? consult : undefined}
+                        />
+                    )}
                     <div className={styles.header}>
-                        <h2 className={styles.title}>{copy('panelLabel')}</h2>
+                        <h2 className={styles.title}>
+                            {copy('panelLabel')}
+                            {planChip}
+                        </h2>
                         <div className={styles.headerActions}>
                             {/* HOS-552 / H-139: hidden below the mobile breakpoint via
                                  `.expandButton`'s media query — see AiChatWidget.module.css.

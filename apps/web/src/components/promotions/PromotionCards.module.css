@@ -83,8 +83,13 @@
 
 .placeLink {
     margin-top: auto;
+    align-self: start;
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid currentColor;
+    border-radius: var(--radius-button);
     font-weight: 600;
     color: var(--brand-primary-link);
+    text-decoration: none;
 }
 
 .vipBadge {
@@ -101,7 +106,10 @@
 }
 
 .locked {
-    cursor: pointer;
+    background-color: var(--core-background);
+}
+
+.locked[data-promotion-audience="vip"] {
     background-color: var(--surface-warm);
 }
 
@@ -116,16 +124,19 @@
 }
 
 .placeholder {
-    filter: blur(5px);
-    font-weight: 600;
-    user-select: none;
+    display: block;
+    width: 70%;
+    height: var(--space-3);
+    margin-block: var(--space-2);
+    background-color: var(--border);
+    border-radius: var(--radius-pill);
 }
 
 .lockRow {
     display: inline-flex;
     align-items: center;
     gap: var(--space-2, 8px);
-    margin-top: auto;
+    margin: 0;
     font-size: 0.875rem;
     color: var(--core-muted-foreground);
 }

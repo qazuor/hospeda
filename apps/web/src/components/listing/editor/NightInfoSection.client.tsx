@@ -47,6 +47,12 @@
  * Each note is a `<fieldset>` whose visible `<legend>` names what goes in it
  * (HOS-2600): the tabs alone only said «Español / Inglés / Portugués», so two
  * notes in a row looked identical.
+ *
+ * ## Entry note (HOS-2658)
+ *
+ * The entry note is the exception: it is a translation SOURCE, so this section
+ * edits only its Spanish and a hint points to the Translations section, where
+ * its English and Portuguese pairs are edited (the PATCH ignores body en/pt).
  */
 
 import {
@@ -422,17 +428,32 @@ export function NightInfoSection({
                 )}
 
                 <div className={sectionStyles.full}>
-                    <I18nNoteField
+                    {/* HOS-2658 (AC-25): only the Spanish source is edited here; its
+                        English and Portuguese pairs live in the Translations section. */}
+                    <Field
                         locale={locale}
-                        baseName="entryNoteI18n"
-                        legend={t(
+                        idParts={idOf('entryNoteI18n')}
+                        label={t(
                             'listing.owner.editor.nightInfo.entryNoteLabel',
-                            'Nota sobre la entrada (es/en/pt)'
+                            'Nota sobre la entrada'
                         )}
-                        values={data.entryNoteI18n}
-                        errors={errors}
-                        onChange={(next) => onFieldChange('entryNoteI18n', next)}
-                    />
+                        hint={t(
+                            'listing.owner.editor.nightInfo.entryNoteTranslationsHint',
+                            'Escribila en español. Las versiones en inglés y portugués se editan en la sección Traducciones.'
+                        )}
+                        error={errors.entryNoteI18n ?? errors['entryNoteI18n.es']}
+                    >
+                        <TextInput
+                            value={data.entryNoteI18n.es}
+                            maxLength={200}
+                            onChange={(event) =>
+                                onFieldChange('entryNoteI18n', {
+                                    ...data.entryNoteI18n,
+                                    es: event.target.value
+                                })
+                            }
+                        />
+                    </Field>
                 </div>
 
                 <div className={sectionStyles.full}>

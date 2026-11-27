@@ -73,7 +73,7 @@ export function SignupCheckout({
             ? {
                   state: 'rejected',
                   rejection: resolveSignupRejection({
-                      error: { status: 422, reason: 'PARTNER_MANUAL_ONLY' }
+                      error: { status: 422, reason: 'PLAN_NOT_SELF_SERVICE' }
                   })
               }
             : { state: 'idle' }

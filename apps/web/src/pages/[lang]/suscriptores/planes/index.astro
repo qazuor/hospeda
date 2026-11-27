@@ -76,6 +76,7 @@
  */
 
 import MarketingLayout from '@/layouts/MarketingLayout.astro';
+import { TouristPlanAction } from '@/components/billing/TouristPlanAction.client';
 import MarketingHero from '@/components/marketing/MarketingHero.astro';
 import { createTranslations } from '@/lib/i18n';
 import { getIntlLocale } from '@/lib/pricing-plans';
@@ -115,7 +116,7 @@ applyCacheHeaders({
 	tags: [CACHE_TAG_PRICING]
 });
 
-const { startingPrices, trialDays } = await fetchAudienceOffers();
+const { startingPrices, trialDays, touristPlans } = await fetchAudienceOffers();
 const intlLocale = getIntlLocale(locale);
 
 /** Resolve one card's price line, or `null` when the catalogue did not load. */
@@ -159,7 +160,7 @@ const cards = AUDIENCE_CARD_ORDER.map((id) => ({
 	cta: t(`pricing.index.cards.${id}.cta`),
 	highlights: resolveAudienceHighlights({ id, t }),
 	icon: AUDIENCE_CARD_ICONS[id],
-	priceLabel: priceLabelFor(id),
+	priceLabel: id === 'tourist' ? null : priceLabelFor(id),
 	trialLabel: trialLabelFor(id),
 	/** `/mes` only makes sense next to an amount, not next to the free label. */
 	showPeriod: startingPrices[id]?.kind === 'from'
@@ -198,7 +199,7 @@ const headingMain = headingWords.join(' ');
 	<section class="audiences section" aria-labelledby="audiences-heading">
 		<div class="audiences__container">
 			<h2 class="audiences__heading" id="audiences-heading">
-				{t('pricing.index.cardsHeading', 'Elegí tu audiencia')}
+				{t('pricing.index.cardsHeading')}
 			</h2>
 
 			<ul class="audiences__grid" data-audience-count={cards.length}>
@@ -209,7 +210,7 @@ const headingMain = headingWords.join(' ');
 					const AudienceIcon = card.icon;
 					return (
 						<li class="audiences__item" data-audience={card.id}>
-							<a class="audiences__card" href={card.href}>
+							<div class="audiences__card">
 								{/*
 									`weight="bold"` and not the duotone the hero uses: the
 									factory only forwards `color` (which defaults to
@@ -268,11 +269,13 @@ const headingMain = headingWords.join(' ');
 									<p class="audiences__card-trial">{card.trialLabel}</p>
 								)}
 
-								<span class="audiences__card-cta">
+								{card.id === 'tourist' ? <div class="audiences__card-cta">
+									<TouristPlanAction client:load locale={locale} plans={touristPlans} href={card.href} label={card.cta} fullWidth />
+								</div> : <a class="audiences__card-cta" href={card.href}>
 									{card.cta}
 									<ArrowRightIcon size="sm" weight="bold" />
-								</span>
-							</a>
+								</a>}
+							</div>
 						</li>
 					);
 				})}
@@ -587,6 +590,7 @@ const headingMain = headingWords.join(' ');
 		align-items: center;
 		gap: 0.375rem;
 		margin-block-start: auto;
+		justify-content: center;
 		font-family: var(--font-sans);
 		font-size: var(--text-body-sm, 0.9375rem);
 		font-weight: 600;
@@ -595,6 +599,16 @@ const headingMain = headingWords.join(' ');
 		   CTA deliberately does NOT take `--audience-ink`: two of the five inks
 		   are decorative tints that would not clear AA as body text. */
 		color: var(--brand-primary-link);
+	}
+
+	a.audiences__card-cta {
+		padding: var(--space-3);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-button);
+	}
+
+	div.audiences__card-cta {
+		display: block;
 	}
 
 	/* ─── Shared row tracks ──────────────────────────────────────────

@@ -1,0 +1,419 @@
+.card {
+    display: block;
+    /* Same radius as AccommodationCard.astro (`var(--radius-md, 12px)`). */
+    border-radius: var(--radius-md, 12px);
+    overflow: hidden;
+    background-color: var(--core-card);
+    /* Same border + shadow setup as AccommodationCard.astro. */
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-card, 0 2px 6px oklch(0 0 0 / 0.05), 0 6px 18px oklch(0 0 0 / 0.05));
+    transition: box-shadow 200ms ease-out;
+}
+
+/* Hover: only the image zooms (see `.cardImage` rule below) — the card frame
+ * itself stays still and keeps its border, matching AccommodationCard.astro's
+ * behavior on the listing grid. */
+
+/* Marker-hover sync: when the user hovers the matching map marker, deepen
+ * the shadow a touch so the matching card stands out without flashing a
+ * brand-color border (which felt out of place against the warm palette and
+ * was disorienting at first glance). */
+.cardHovered {
+    box-shadow:
+        0 4px 12px oklch(0 0 0 / 0.1),
+        0 14px 32px oklch(0 0 0 / 0.14);
+}
+
+/* Strip native <button> chrome so the card-as-action looks identical to the
+ * previous <a>-wrapped layout. The element still focuses with Tab and fires
+ * onClick/Enter/Space natively. */
+.cardLink {
+    display: block;
+    width: 100%;
+    padding: 0;
+    margin: 0;
+    border: none;
+    background: transparent;
+    text-align: inherit;
+    text-decoration: none;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+}
+
+.cardLink:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+    border-radius: var(--radius-md, 12px);
+}
+
+/* ----- Card visual: mirrors AccommodationCard.astro ----- */
+
+/* Image area: same height as AccommodationCard mobile (200px). The desktop
+ * card uses a clamp; here the sidebar always renders at sidebar width so we
+ * keep a flat 200px for predictability. */
+.cardImageArea {
+    position: relative;
+    width: 100%;
+    height: 200px;
+    overflow: hidden;
+    background-color: var(--surface-warm, #faf6f0);
+}
+
+.cardImage,
+.cardImagePlaceholder {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 200ms ease-out;
+}
+
+.cardImagePlaceholder {
+    background: linear-gradient(135deg, var(--surface-warm) 0%, var(--core-card) 100%);
+}
+
+.card:hover .cardImage {
+    transform: scale(1.08);
+}
+
+/* Diagonal "Nuevo" status corner (top-left) — same geometry as
+ * AccommodationCard.astro (80×80 triangle, 14px font). `--corner-bg` and
+ * `--corner-text` are set per card by the JSX inline style; the defaults
+ * here register the names with the css-tokens lint pass and provide a sane
+ * fallback if the inline style is omitted. */
+.cardStatusCorner {
+    --corner-bg: var(--brand-accent);
+    --corner-text: var(--accent-foreground);
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 80px;
+    height: 80px;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.cardStatusCorner::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 0;
+    height: 0;
+    border-top: 80px solid var(--corner-bg);
+    border-right: 80px solid transparent;
+}
+
+.cardStatusText {
+    position: absolute;
+    top: 16px;
+    left: 4px;
+    transform: rotate(-45deg);
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: 14px;
+    line-height: 22.4px;
+    color: var(--corner-text);
+    white-space: nowrap;
+}
+
+/* Featured badge: same look as AccommodationCard.astro mobile (bottom-left
+ * above the wave so it doesn't collide with the actions column). Sidebar
+ * cards always render at ~mobile widths, so we keep the mobile placement
+ * regardless of viewport. Look (color/font/padding/icon gap) comes from
+ * the shared `.featured-badge` rule in components.css. */
+.cardFeaturedBadge {
+    position: absolute;
+    bottom: 48px;
+    left: 12px;
+    z-index: 2;
+}
+
+/* Wave separator at the bottom of the image. Same height as
+ * AccommodationCard.astro (40px). */
+.cardWave {
+    position: absolute;
+    /* -1px so the wave's bottom edge overlaps the content area by a pixel,
+     * hiding the antialias seam that sometimes shows between the SVG fill
+     * and the .cardContent background. */
+    bottom: -1px;
+    left: 0;
+    right: 0;
+    height: 40px;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.cardWave svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+/* (the .cardContent rule above already covers padding/gap; the -1px margin
+ * fix for the wave seam is folded into the main .cardContent block below) */
+
+/* Actions column (favorite + photo count) — same positioning as
+ * AccommodationCard.astro (top: 12px, right: 12px, gap: 8px). */
+.cardActions {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-end;
+    z-index: 3;
+}
+
+.cardPhotoCount {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background-color: var(--core-foreground-a55);
+    padding: 6px 12px;
+    border-radius: var(--radius-pill, 9999px);
+    color: var(--primary-foreground, white);
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 13px;
+    line-height: 1.2;
+}
+
+/* ----- Content area: same padding/gap as AccommodationCard mobile ----- */
+.cardContent {
+    /* Mobile-style: tight gap + 12px bottom padding. AccommodationCard uses
+     * `gap: 6px` + `padding-bottom: 12px` on mobile and `gap: 10px` +
+     * `padding-bottom: 20px` on desktop. Sidebar cards always render at the
+     * narrower mobile width, so we keep the mobile values. */
+    padding: 0 16px 12px;
+    /* -1px overlap with the wave above so antialias seams between the wave
+     * SVG fill and this background never become visible. */
+    margin-top: -1px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    background-color: var(--core-card);
+}
+
+/* Category pill + location */
+.cardCategoryRow {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+/* Mirrors `<AccommodationTypeBadge size="xs">` (brand-primary-dark pill,
+ * white uppercase 0.625rem label, 4px 10px padding). */
+.cardTypePill {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+    padding: 4px 10px;
+    border-radius: var(--radius-pill, 9999px);
+    background-color: var(--brand-primary-dark);
+    color: var(--primary-foreground, #fff);
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: 0.625rem;
+    line-height: 1.4;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    box-shadow:
+        0 1px 2px oklch(0 0 0 / 0.08),
+        0 2px 6px oklch(0 0 0 / 0.06);
+}
+
+.cardTypePillLabel {
+    line-height: 1;
+}
+
+.cardLocation {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    font-family: var(--font-sans);
+    font-weight: 500;
+    font-size: 12px;
+    line-height: 1.4;
+    color: var(--core-muted-foreground);
+}
+
+.cardLocation > svg {
+    flex-shrink: 0;
+}
+
+.cardLocation > span:last-child {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+}
+
+/* Name */
+.cardName {
+    margin: 0;
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 1rem;
+    line-height: 22px;
+    color: var(--core-foreground);
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Description — 3 lines on mobile/sidebar width (matches
+ * AccommodationCard.astro mobile rule). */
+.cardDescription {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-weight: 400;
+    font-size: 0.75rem;
+    line-height: 20.8px;
+    color: var(--core-muted-foreground);
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Amenities row */
+.cardAmenities {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--core-muted-foreground);
+}
+
+.cardAmenity {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.cardAmenitiesMore {
+    font-family: var(--font-sans);
+    font-weight: 400;
+    font-size: 11px;
+    line-height: 1.4;
+    color: var(--core-muted-foreground);
+}
+
+/* Stars + rating */
+.cardStars {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.cardStarFilled {
+    color: var(--rating-star, var(--brand-accent));
+    display: inline-flex;
+}
+
+.cardStarEmpty {
+    color: var(--core-muted-foreground);
+    opacity: 0.4;
+    display: inline-flex;
+}
+
+.cardRatingValue {
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: 13px;
+    line-height: 19.2px;
+    color: var(--core-foreground);
+    margin-left: 4px;
+}
+
+/* Hide the reviews count next to stars on mobile, matching
+ * AccommodationCard.astro's mobile rule. The full label still lives inside
+ * the sheet header, just not on each card row. */
+.cardReviewsCount {
+    display: none;
+    font-family: var(--font-sans);
+    font-weight: 400;
+    font-size: 12px;
+    line-height: 19.2px;
+    color: var(--core-muted-foreground);
+}
+
+/* Divider */
+.cardDivider {
+    height: 1px;
+    background-color: var(--border);
+    width: 100%;
+}
+
+/* Price + CTA: matches AccommodationCard.astro (4px top padding, default
+ * baseline-aligned price block + pill CTA). */
+.cardPriceRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 4px;
+    gap: 8px;
+}
+
+.cardPriceBlock {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    white-space: nowrap;
+    min-width: 0;
+}
+
+.cardPriceLabel {
+    font-family: var(--font-sans);
+    font-weight: 400;
+    font-size: 11px;
+    line-height: 17.6px;
+    color: var(--core-muted-foreground);
+}
+
+.cardPriceValue {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 16px;
+    line-height: 24px;
+    color: var(--brand-accent);
+}
+
+.cardPriceValueConsult {
+    font-family: var(--font-sans);
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 17.6px;
+    color: var(--core-muted-foreground);
+    white-space: normal;
+}
+
+.cardCta {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 9999px;
+    font-family: var(--font-sans);
+    font-weight: 500;
+    font-size: 12px;
+    line-height: 19.2px;
+    color: var(--core-foreground);
+    background: linear-gradient(135deg, var(--brand-secondary) 0%, var(--core-background) 100%);
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: opacity 200ms ease-out;
+}
+
+.card:hover .cardCta {
+    opacity: 0.85;
+}
+
+.cardCtaCompact {
+    padding-inline: var(--space-3, 0.75rem);
+}

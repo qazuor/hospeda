@@ -15,6 +15,7 @@ import {
 } from '@/lib/listing-contact/listing-contact-price';
 import { scrollToListingSection } from '@/lib/listing-detail/section-scroll';
 import { getListingSectionTabLabelKey, listingSectionKeySchema } from '@/lib/listing-section-tabs';
+import { syncTabScrollFade } from '@/lib/ui/tab-scroll-fade';
 import { ListingContactActions } from './contact/ListingContactActions';
 import styles from './ListingSectionTabs.module.css';
 
@@ -34,6 +35,7 @@ const propsSchema = z
         locale: z.enum(['es', 'en', 'pt']),
         vertical: z.enum(['accommodation', 'experience', 'venue']),
         listingId: z.string().min(1),
+        reviewCount: z.number().int().nonnegative().optional(),
         price: listingContactPriceSchema,
         panelId: z.string().min(1),
         primaryLabelKey: z.string().min(1),
@@ -126,6 +128,21 @@ export function ListingSectionTabs(props: ListingSectionTabsProps) {
 
     // A tab jump never outlives the island (view transitions unmount it).
     useEffect(() => () => scrollRef.current?.cancel(), []);
+
+    useEffect(() => {
+        const bar = listRef.current;
+        if (!bar || !tabIds) return;
+        const update = () => syncTabScrollFade({ bar });
+        update();
+        bar.addEventListener('scroll', update, { passive: true });
+        const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(update);
+        observer?.observe(bar);
+        for (const child of bar.children) observer?.observe(child);
+        return () => {
+            observer?.disconnect();
+            bar.removeEventListener('scroll', update);
+        };
+    }, [tabIds]);
 
     useEffect(() => {
         const nav = navRef.current;
@@ -289,6 +306,9 @@ export function ListingSectionTabs(props: ListingSectionTabsProps) {
                             {t(
                                 `accommodations.detail.sectionTabs.${getListingSectionTabLabelKey({ key: tab.key, vertical })}`
                             )}
+                            {tab.key === 'reviews' && parsed.data.reviewCount
+                                ? ` (${parsed.data.reviewCount})`
+                                : null}
                         </a>
                     </li>
                 ))}

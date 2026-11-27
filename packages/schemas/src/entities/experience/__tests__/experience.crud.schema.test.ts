@@ -369,23 +369,22 @@ describe('ExperienceOwnerUpdateInputSchema', () => {
             expect(result.success).toBe(false);
         });
 
-        it('should accept nameI18n with valid locale keys', () => {
-            const i18nValue = { es: 'Nombre ES', en: 'Name EN', pt: 'Nome PT' };
-            const result = ExperienceOwnerUpdateInputSchema.safeParse({ nameI18n: i18nValue });
-            expect(result.success).toBe(true);
-            if (result.success) {
-                expect((result.data as Record<string, unknown>).nameI18n).toEqual(i18nValue);
-            }
-        });
-
-        it('should accept summaryI18n, descriptionI18n, richDescriptionI18n simultaneously', () => {
+        it('should strip the four translation columns (HOS-2658 AC-22)', () => {
+            // Arrange
             const i18nValue = { es: 'Texto ES', en: 'Text EN', pt: 'Texto PT' };
+
+            // Act
             const result = ExperienceOwnerUpdateInputSchema.safeParse({
+                name: 'Nombre valido',
+                nameI18n: i18nValue,
                 summaryI18n: i18nValue,
                 descriptionI18n: i18nValue,
                 richDescriptionI18n: i18nValue
             });
+
+            // Assert
             expect(result.success).toBe(true);
+            expect(result.data).toEqual({ name: 'Nombre valido' });
         });
     });
 

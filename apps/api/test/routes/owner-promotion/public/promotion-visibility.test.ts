@@ -329,17 +329,36 @@ describe('GET /visible', () => {
     });
 });
 
-describe('GET /listing (AC-31)', () => {
-    it('applies the quota per page and answers the pagination', async () => {
-        setReader('free');
-        const response = await buildApp('free').request(
+describe('GET /listing (AC-31, D07)', () => {
+    it.each([
+        { reader: 'guest', visibleCount: 0, vipCount: 0, quota: 0 },
+        { reader: 'free', visibleCount: FREE_QUOTA, vipCount: 0, quota: FREE_QUOTA },
+        { reader: 'vip', visibleCount: 7, vipCount: 2, quota: 0 }
+    ] as const)('returns $visibleCount visible promotions to a $reader reader', async ({
+        reader,
+        visibleCount,
+        vipCount,
+        quota
+    }) => {
+        setReader(reader);
+        const response = await buildApp(reader).request(
             '/listing?page=1&pageSize=12&seed=seed-abcdef12'
         );
         expect(response.status).toBe(200);
         const body = (await response.json()) as {
-            data: { items: Item[]; pagination: { total: number; totalPages: number } };
+            data: {
+                items: Item[];
+                pagination: { total: number; totalPages: number };
+                meta: { isVip: boolean; freeQuota: number | null };
+            };
         };
-        expect(body.data.items.filter((item) => item.kind === 'visible')).toHaveLength(FREE_QUOTA);
+        const visible = body.data.items.filter((item) => item.kind === 'visible');
+        expect(visible).toHaveLength(visibleCount);
+        expect(visible.filter((item) => item.audience === 'vip')).toHaveLength(vipCount);
+        expect(body.data.items.filter((item) => item.kind === 'locked')).toHaveLength(
+            7 - visibleCount
+        );
+        expect(body.data.meta).toMatchObject({ isVip: reader === 'vip', freeQuota: quota });
         expect(body.data.pagination).toMatchObject({ total: 7, totalPages: 1 });
         expect(response.headers.get('cache-control')).toBe('private, no-store');
     });

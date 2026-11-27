@@ -3,7 +3,7 @@
  * @description `transformAccommodationTranslations` — BETA-199.
  *
  * This transform is where the protected GET's payload becomes what the
- * TranslationPanel reasons about, and it carries the one distinction the whole
+ * accommodation translations page reasons about, and it carries the one distinction the whole
  * BETA-199 fix rests on: the premium `richDescription` pair is OMITTED from the
  * response when the owner's plan does not include it, and that omission has to
  * survive as `null` rather than collapsing into the same empty shape as an

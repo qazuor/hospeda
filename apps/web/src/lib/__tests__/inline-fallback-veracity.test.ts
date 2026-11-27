@@ -292,10 +292,15 @@ describe('inline fallback veracity (HOS-331)', () => {
         // thousands. Filtering by KEY PREFIX does not work either — the
         // `benefits.owner.*` keys come from BOTH shapes, so such a filter
         // survives total loss of the pair regex. Count the shapes themselves.
+        //
+        // HOS-2655 moved the legal pages (cookies, terms, privacy) to the shared
+        // legal template, which reads every section from i18n and dropped their
+        // `titleFb`/`contentFb` pairs; ~30 pairs remain. The floor only proves the
+        // pair regex still extracts rows, so it stays well above zero.
         const byShape = (shape: 'call' | 'pair') =>
             ALL_FALLBACKS.filter((fb) => fb.shape === shape).length;
         expect(byShape('call')).toBeGreaterThan(1000);
-        expect(byShape('pair')).toBeGreaterThan(50);
+        expect(byShape('pair')).toBeGreaterThan(20);
         const astroRows = ALL_FALLBACKS.filter((fb) => fb.file.endsWith('.astro')).length;
         const tsxRows = ALL_FALLBACKS.filter((fb) => fb.file.endsWith('.tsx')).length;
         expect(astroRows).toBeGreaterThan(500);

@@ -100,10 +100,14 @@ const SAFE_OUTBOUND_HREFS: Readonly<Record<string, string>> = Object.freeze({
         '`PhotoCreditParts.url`, produced by `formatPhotoCredit`, which calls the sanitizer itself',
     'components/shared/ImageAttribution.astro#{credit.url}':
         'same `formatPhotoCredit` output as the lightbox above',
+    'components/account/receipts/ReceiptViewer.client.tsx#{state.objectUrl}':
+        'HOS-2566: a `blob:` URL the island itself creates with `URL.createObjectURL` from the receipt PDF it fetched with the owner session; no stored or user-supplied URL ever reaches it',
     'components/MapPlaceholder.astro#{mapsUrl}':
         'composed here as `https://maps.google.com/?q=` + an encoded address — the scheme is our literal',
     'components/listing/location/LocationSection.astro#{externalMapHref}':
         'only the venue builder sets it (`lib/listing-location/build-location-section.ts`), from `buildVenueMapUrl`, which composes `https://www.openstreetmap.org/` from two `Number()`-parsed coordinates; non-finite values yield null, so the scheme and host are our literal',
+    'components/listing/contact/ListingPriceCard.astro#{direct.href}':
+        '`resolvePriceCardAction` sanitizes menu URLs and emits only validated tel: or encoded mailto: destinations for other direct channels',
     'components/ShareButtons.client.tsx#{link.href}':
         'share intents composed by lib/share-intents.ts from literal provider bases (wa.me, facebook.com/sharer, twitter.com/intent, t.me)',
     'components/presentacion/PresentationShareRow.client.tsx#{buildShareIntentUrl({ network: action.network, url: shortUrl(action.network), title: presentation.headline })}':
@@ -384,7 +388,7 @@ describe('outbound hrefs — the scanner itself', () => {
     });
 
     it('accepts the internal buildUrl shape but still rejects an unsanitized external link in that module', () => {
-        const internal = `href: buildUrl({ locale, path: \`partners/${'${partner.slug}'}\` }), destination: 'OWN_PAGE'`;
+        const internal = `href: buildUrl({ locale, path: \`partners/\${partner.slug}\` }), destination: 'OWN_PAGE'`;
         const external = `href: partner.websiteUrl, rel: 'sponsored nofollow noopener', target: '_blank', destination: 'EXTERNAL'`;
         const internalSite = findLinkSites(internal, 'same-module.ts')[0];
         const externalSite = findLinkSites(external, 'same-module.ts')[0];

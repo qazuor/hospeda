@@ -5,6 +5,7 @@ import type {
     I18nText,
     Seo,
     SocialNetwork,
+    TranslationMeta,
     Video
 } from '@repo/schemas';
 import { BUSINESS_LINES } from '@repo/schemas';
@@ -59,6 +60,8 @@ export const experiences = pgTable(
         summaryI18n: jsonb('summary_i18n').$type<I18nText>(),
         descriptionI18n: jsonb('description_i18n').$type<I18nText>(),
         richDescriptionI18n: jsonb('rich_description_i18n').$type<I18nText>(),
+        /** Per (field, locale) translation provenance; written only by writeTranslationPairs (HOS-2658). */
+        translationMeta: jsonb('translation_meta').$type<TranslationMeta>().default({}),
         /** Experience sub-category (CAR_RENTAL, TOUR_GUIDE, EXCURSION, etc.). */
         type: ExperienceTypePgEnum('type').notNull(),
         businessLines: text('business_lines')

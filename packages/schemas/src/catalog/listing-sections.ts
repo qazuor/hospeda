@@ -170,13 +170,7 @@ export const LISTING_SECTIONS = {
             id: 'translations',
             vertical: 'venue',
             common: true,
-            fields: [
-                'nameI18n',
-                'summaryI18n',
-                'descriptionI18n',
-                'richDescriptionI18n',
-                'translationMeta'
-            ],
+            fields: ['nameI18n', 'summaryI18n', 'descriptionI18n', 'richDescriptionI18n'],
             order: 14,
             group: 'management'
         }
@@ -285,13 +279,7 @@ export const LISTING_SECTIONS = {
             id: 'translations',
             vertical: 'experience',
             common: true,
-            fields: [
-                'nameI18n',
-                'summaryI18n',
-                'descriptionI18n',
-                'richDescriptionI18n',
-                'translationMeta'
-            ],
+            fields: ['nameI18n', 'summaryI18n', 'descriptionI18n', 'richDescriptionI18n'],
             order: 10,
             group: 'management'
         }
@@ -415,13 +403,7 @@ export const LISTING_SECTIONS = {
             id: 'translations',
             vertical: 'accommodation',
             common: true,
-            fields: [
-                'nameI18n',
-                'summaryI18n',
-                'descriptionI18n',
-                'richDescriptionI18n',
-                'translationMeta'
-            ],
+            fields: ['nameI18n', 'summaryI18n', 'descriptionI18n', 'richDescriptionI18n'],
             order: 10,
             group: 'management'
         },

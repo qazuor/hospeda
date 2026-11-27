@@ -177,6 +177,20 @@
         "progress": "Progreso"
     },
     "favorite": {
+        "audit": {
+            "usage_one": "{{current}} de {{count}} favorito",
+            "usage_other": "{{current}} de {{count}} favoritos",
+            "savedUsage": "Guardado · {{usage}}",
+            "savedUnlimited": "Guardado · Favoritos ilimitados",
+            "guestBenefit_one": "{{count}} favorito gratis · ilimitados con {{plan}}",
+            "guestBenefit_other": "{{count}} favoritos gratis · ilimitados con {{plan}}",
+            "guestFree_one": "Guardá hasta {{count}} favorito gratis",
+            "guestFree_other": "Guardá hasta {{count}} favoritos gratis",
+            "limit_one": "Guardá más de {{count}} favorito con otro plan",
+            "limit_other": "Guardá más de {{count}} favoritos con otro plan",
+            "limitUnknown": "Explorá planes para guardar más favoritos",
+            "manage": "Administrar mis favoritos"
+        },
         "add": "Agregar a favoritos",
         "loading": "Verificando favorito...",
         "auth_required": {
@@ -246,6 +260,33 @@
         "dismiss": "Cerrar anuncio"
     },
     "listing": {
+        "accommodations_one": "{{count}} alojamiento",
+        "accommodations_other": "{{count}} alojamientos",
+        "venues_one": "{{count}} local",
+        "venues_other": "{{count}} locales",
+        "experiences_one": "{{count}} experiencia",
+        "experiences_other": "{{count}} experiencias",
+        "events_one": "{{count}} evento",
+        "events_other": "{{count}} eventos",
+        "posts_one": "{{count}} publicación",
+        "posts_other": "{{count}} publicaciones",
+        "results_one": "{{count}} resultado",
+        "results_other": "{{count}} resultados",
+        "facet": "Mostrando {{results}} de {{facet}}",
+        "applySort": "Aplicar orden",
+        "unlocated_one": "{{count}} alojamiento sin ubicación",
+        "unlocated_other": "{{count}} alojamientos sin ubicación",
+        "viewList": "Ver en lista",
+        "allAccommodations": "Ver todos los alojamientos",
+        "noAccommodationQuery": "No encontramos alojamientos para «{{query}}».",
+        "nearbyAccommodations": "Ver alojamientos cercanos",
+        "allEvents": "Ver todos los eventos",
+        "allVenues": "Ver todos los locales",
+        "experienceGroups": {
+            "tours": "Visitas guiadas",
+            "adventure": "Aventura",
+            "rentals": "Alquileres"
+        },
         "resultsFound_one": "{{count}} resultado encontrado",
         "resultsFound_other": "{{count}} resultados encontrados"
     },

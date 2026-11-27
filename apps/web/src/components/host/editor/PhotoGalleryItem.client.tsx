@@ -114,6 +114,13 @@ export interface PhotoGalleryItemProps {
     readonly isDragging?: boolean;
     /** Drag handle wiring; when omitted no handle is rendered. */
     readonly dragHandle?: PhotoDragHandleProps;
+    /**
+     * The photo is beyond the owner's cap, so the public gallery does not show
+     * it (HOS-2495). It is marked and dimmed, never hidden, and every control
+     * stays enabled: reorder, metadata, cover and delete are never refused by
+     * the cap.
+     */
+    readonly isOverCap?: boolean;
 }
 
 /**
@@ -136,7 +143,8 @@ export function PhotoGalleryItem({
     sortableId,
     sortableStyle,
     isDragging = false,
-    dragHandle
+    dragHandle,
+    isOverCap = false
 }: PhotoGalleryItemProps) {
     const { t } = createTranslations(locale);
     const canOperate = !disabled && Boolean(item.id);
@@ -162,8 +170,12 @@ export function PhotoGalleryItem({
         { index: position }
     );
 
+    const overCapNoteId = isOverCap ? `photo-over-cap-${sortableId ?? position}` : undefined;
+
     return (
         <PhotoTile
+            className={isOverCap ? styles.overCapTile : undefined}
+            describedBy={overCapNoteId}
             ref={sortableRef}
             sortableId={sortableId}
             dragStyle={sortableStyle}
@@ -191,10 +203,24 @@ export function PhotoGalleryItem({
                 </Button>
             }
             badge={
-                <PhotoAltBadge
-                    locale={locale}
-                    item={item}
-                />
+                <>
+                    {isOverCap && (
+                        <span
+                            id={overCapNoteId}
+                            className={styles.overCapBadge}
+                            data-testid="photo-over-cap-badge"
+                        >
+                            {t(
+                                'account.listingPhotos.overCapBadge',
+                                'No se muestra: superás tu tope'
+                            )}
+                        </span>
+                    )}
+                    <PhotoAltBadge
+                        locale={locale}
+                        item={item}
+                    />
+                </>
             }
             toolbar={
                 <div

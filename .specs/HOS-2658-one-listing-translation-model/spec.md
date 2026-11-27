@@ -516,7 +516,7 @@ flowchart LR
 | `venues.translation_meta` | NEW `jsonb DEFAULT '{}'::jsonb` (nullable, like accommodations) | structural: `pnpm db:generate` |
 | `experiences.translation_meta` | NEW, same | structural: `pnpm db:generate` |
 | `TranslationMetaSchema` / `TranslationMeta` | + optional `sourceHash: string` (64 hex chars) | schemas (additive) |
-| venue/experience existing en/pt | backfill meta AUTOMATIC with `sourceHash` | seed data-migration `0194-hos-2658-venue-experience-translation-meta` |
+| venue/experience existing en/pt | backfill meta AUTOMATIC with `sourceHash` | seed data-migration `0197-hos-2658-venue-experience-translation-meta` |
 | `plan_version_entitlement` / `plan_version_limit` for 6 venue/experience plans | grant `ai_translate` + `max_ai_translate_per_month` | seed data-migration `0195-hos-2658-ai-translate-venue-experience-grant` (bounded additive-grant lane) |
 
 Migration numbers are the next free ones on 2026-11-26 (`0252_*` and data-migration
@@ -528,7 +528,7 @@ Migration numbers are the next free ones on 2026-11-26 (`0252_*` and data-migrat
   (`:81`): `translationMeta: jsonb('translation_meta').$type<TranslationMeta>().default({}),`
   importing `TranslationMeta` from `@repo/schemas` (same as `accommodation.dbschema.ts:74`).
 - `packages/db/src/schemas/experience/experiences.dbschema.ts`: same after `:61`.
-- Run `pnpm db:generate` → `packages/db/src/migrations/0253_<generated>.sql` containing
+- Run `pnpm db:generate` → `packages/db/src/migrations/0256_hos2658_venue_experience_translation_meta.sql` (generated as 0253, re-chained to 0255 and then 0256 as staging gained 0254 and 0255 on 2026-11-26) containing
   exactly two `ALTER TABLE ... ADD COLUMN "translation_meta" jsonb DEFAULT '{}'::jsonb;`.
   Commit the SQL + `meta/` snapshot. No extras, no index (the column is read by primary key only).
 
@@ -654,6 +654,7 @@ export async function writeTranslationPairs(input: {
 ```
 
 Rules:
+
 - Runs inside `getDb().transaction(...)`; reads the i18n columns + `translation_meta`
   with `.for('update')` (precedent `apps/api/src/utils/trial/trial-machine-ports.ts:108`).
 - An `ai` write onto a pair whose stored meta is `autoTranslated: false` is SKIPPED
@@ -669,6 +670,7 @@ Rules:
 - `found: false` when no row matches (soft-deleted rows ARE matched, same as today).
 
 Refactor, no behaviour change except locking and `sourceHash`:
+
 - `persistTranslations` (`ai-translate.service.ts:711`) builds `ai` writes (computing
   `sourceHash` from `fieldValues[field]`) and delegates; signature unchanged + optional
   last param `overrideManualPairs?: ReadonlySet<string>` (`"field:locale"`).
@@ -702,6 +704,7 @@ export async function getListingTranslationState(input: {
 4. otherwise (behind): `aiStatus === 'quota'` → `noQuota`; `'entitlement'` → `noEntitlement`; else `pending`
 
 `getListingTranslationState`:
+
 - loads the row (`readSourceText` + i18n columns + meta) — `NOT_FOUND` ServiceError if absent;
 - `aiStatus` from `evaluateAiQuota({ userId: row.ownerId, vertical, feature: 'translate',
   entitlementKey: 'ai_translate', limitKey: 'max_ai_translate_per_month' })` mapped
@@ -740,9 +743,9 @@ export async function getListingTranslationState(input: {
   object, rewrite it to `{ es: data.entryNoteI18n.es, en: stored?.en ?? '', pt: stored?.pt ?? '' }`
   using the row loaded by the base hook (AC-25). `null` stays `null`.
 
-#### 8.7 Data-migration 0194: backfill venue/experience meta
+#### 8.7 Data-migration 0197 (renumbered from 0194 after HOS-2180 took it): backfill venue/experience meta
 
-File `packages/seed/src/data-migrations/0194-hos-2658-venue-experience-translation-meta.ts`
+File `packages/seed/src/data-migrations/0197-hos-2658-venue-experience-translation-meta.ts`
 (scaffold with `pnpm db:seed:make hos-2658-venue-experience-translation-meta`):
 
 - `meta = { name, group: 'required', destructive: false, contentOnly: true,
@@ -785,6 +788,7 @@ export const PRODUCTION_PLAN_AI_TRANSLATE_GRANTS = [
 ```
 
   and re-export it from `scripts/production-catalog/catalog.ts:1883-1892`.
+
 - `packages/seed/src/data-migrations/0195-hos-2658-ai-translate-venue-experience-grant.ts`:
   `meta = { name, group: 'required', destructive: false, contentOnly: true }`; `up`
   sets `hospeda.catalog_additive_grant = 'HOS-2658'`, inserts with `gen_random_uuid()`
@@ -803,6 +807,7 @@ All routes below use `createProtectedRoute` and answer in the standard envelope
 404 → business 403/400/502).
 
 New folder `apps/api/src/routes/listing-translations/`:
+
 - `listing-translation-routes.ts` — `listingTranslationRouteOptions({ vertical, tag })`
   returning the three route option objects WITHOUT `listingAccess`; then exported
   `ownerAccommodationTranslationRoutes`, `ownerVenueTranslationRoutes`,
@@ -1017,7 +1022,7 @@ package suites locally).
 - `apps/api/test/routes/ai/admin/translate.test.ts` (extend): AC-30, AC-31 venue/experience.
 - `packages/db/test/integration/venue-experience-translation-meta-column.test.ts`: column
   exists with default `{}` after migrate.
-- `packages/seed/test/data-migrations/0194-hos-2658-venue-experience-translation-meta.test.ts`:
+- `packages/seed/test/data-migrations/0197-hos-2658-venue-experience-translation-meta.test.ts`:
   AC-26 (non-empty pairs only, hash correct, accommodation untouched, idempotent).
 - `packages/seed/test/data-migrations/0195-hos-2658-ai-translate-venue-experience-grant.test.ts`:
   AC-28 values, every version, existing key untouched, list equals
@@ -1049,7 +1054,7 @@ Every DB integration test must report a non-zero executed count (memory:
 select count(*) from venues
 where translation_meta is null
    or (name_i18n->>'en' <> '' and translation_meta->'name'->'en' is null);
--- expected 0 after 0194
+-- expected 0 after 0197
 ```
 
 ### 12. Dependencies
@@ -1086,7 +1091,7 @@ experience), `@repo/i18n` (keys), `scripts/production-catalog/catalog.ts` (re-ex
   Worst case per run today (accommodation 4 fields × 2 locales = 8 calls) is unchanged;
   venue adds `entryNote` (max 200 chars, cheap).
 - **Bottlenecks**: none on the request path (async). GET translations does one row read
-  + one `evaluateAiQuota` (effective set, cached) + one entitlement read.
+  - one `evaluateAiQuota` (effective set, cached) + one entitlement read.
 - **Monitoring**: `ai_usage` by `feature = 'translate'` grouped by `status` and by
   `logContext.trigger` in logs; `warn` count of `listing-translation: on-save run failed`.
 
@@ -1101,7 +1106,7 @@ Atomic tasks live in `tasks/state.json` / `tasks/TODOs.md`. Phases:
    `runMeteredTranslation`; state projection; adapter; service-core hooks (accommodation
    billing, base listing, venue entryNote).
 3. **Integration** — three route sets + mounting; legacy route fix; admin enums +
-   TranslationSection on venue/experience; data-migrations 0194/0195; web API client;
+   TranslationSection on venue/experience; data-migrations 0197/0195; web API client;
    shared section; wire accommodation page and venue/experience renderer; remove PATCH
    i18n path; i18n keys.
 4. **Testing** — integration suites, e2e update + new e2e.

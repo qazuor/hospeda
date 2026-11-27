@@ -17,9 +17,8 @@
  * @module test/routes/media/protected-upload-entity-listing-access
  */
 
-import { accommodationMediaModel } from '@repo/db';
+import { accommodationMediaModel, experienceMediaModel, venueMediaModel } from '@repo/db';
 import {
-    getGalleryCap,
     PermissionEnum,
     PublicationStatusEnum,
     ServiceErrorCode,
@@ -152,7 +151,9 @@ function configure(args: {
                     { key: 'edit_accommodation_info', value: 1, strategy: 'MAX' },
                     { key: 'edit_venue_info', value: 1, strategy: 'MAX' },
                     { key: 'edit_experience_info', value: 1, strategy: 'MAX' },
-                    { key: 'max_photos_per_accommodation', value: maxPhotos, strategy: 'SUM' }
+                    { key: 'max_photos_per_accommodation', value: maxPhotos, strategy: 'SUM' },
+                    { key: 'max_photos_per_venue', value: maxPhotos, strategy: 'SUM' },
+                    { key: 'max_photos_per_experience', value: maxPhotos, strategy: 'SUM' }
                 ]
             })
     );
@@ -255,13 +256,12 @@ describe('TEST:M1682:2 coverage and the plan photo limit gate the upload', () =>
     );
 
     it(
-        'answers LIMIT_REACHED for a full accommodation plan before the general gallery cap',
+        'answers LIMIT_REACHED for a full accommodation plan (old literal of 50 reached too)',
         async () => {
-            const cap = getGalleryCap('accommodation');
             configure({ maxPhotos: 5 });
             vi.mocked(accommodationMediaModel.findByAccommodation).mockResolvedValue({
                 items: [],
-                total: cap
+                total: 50
             } as never);
             const response = await upload({ entityType: 'accommodation', role: 'gallery' });
             expect(response.status).toBe(403);
@@ -314,6 +314,84 @@ describe('TEST:M1682:2 coverage and the plan photo limit gate the upload', () =>
                 state: 'visible',
                 isFeatured: false
             });
+            expect(mocks.upload).toHaveBeenCalledTimes(1);
+        },
+        APP_IMPORT_TIMEOUT_MS
+    );
+});
+
+describe('HOS-2495 the effective photo cap gates every listing vertical', () => {
+    const COUNTERS = [
+        {
+            entityType: 'venue',
+            key: 'max_photos_per_venue',
+            count: () => vi.mocked(venueMediaModel.findByVenue)
+        },
+        {
+            entityType: 'experience',
+            key: 'max_photos_per_experience',
+            count: () => vi.mocked(experienceMediaModel.findByExperience)
+        }
+    ] as const;
+
+    it.each(COUNTERS)(
+        '$entityType stores the 15th gallery photo and refuses the 16th with no asset created',
+        async (row) => {
+            configure({ maxPhotos: 15 });
+            row.count().mockResolvedValueOnce({ items: [], total: 14 } as never);
+            const fifteenth = await upload({ entityType: row.entityType, role: 'gallery' });
+            row.count().mockResolvedValueOnce({ items: [], total: 15 } as never);
+            const sixteenth = await upload({ entityType: row.entityType, role: 'gallery' });
+
+            expect(fifteenth.status).toBe(200);
+            expect(sixteenth.status).toBe(403);
+            expect((sixteenth.body.error as Record<string, unknown>).code).toBe(
+                ServiceErrorCode.LIMIT_REACHED
+            );
+            expect((sixteenth.body.error as Record<string, unknown>).details).toEqual({
+                limitKey: row.key,
+                currentCount: 15,
+                maxAllowed: 15
+            });
+            expect(mocks.upload).toHaveBeenCalledTimes(1);
+        },
+        APP_IMPORT_TIMEOUT_MS
+    );
+
+    it.each(COUNTERS)(
+        '$entityType featured upload asks for 1: allowed at a full gallery, refused at cap 0',
+        async (row) => {
+            configure({ maxPhotos: 15 });
+            row.count().mockResolvedValue({ items: [], total: 15 } as never);
+            const atFullGallery = await upload({ entityType: row.entityType, role: 'featured' });
+            configure({ maxPhotos: 0 });
+            const atZero = await upload({ entityType: row.entityType, role: 'featured' });
+
+            expect(atFullGallery.status).toBe(200);
+            expect(atZero.status).toBe(403);
+            expect((atZero.body.error as Record<string, unknown>).details).toEqual({
+                limitKey: row.key,
+                currentCount: 0,
+                maxAllowed: 0
+            });
+            expect(row.count()).not.toHaveBeenCalled();
+            row.count().mockResolvedValue({ items: [], total: 0 } as never);
+        },
+        APP_IMPORT_TIMEOUT_MS
+    );
+
+    it(
+        'stores the 51st accommodation gallery photo at an effective cap of 70 (AC-17)',
+        async () => {
+            configure({ maxPhotos: 70 });
+            vi.mocked(accommodationMediaModel.findByAccommodation).mockResolvedValue({
+                items: [],
+                total: 50
+            } as never);
+
+            const response = await upload({ entityType: 'accommodation', role: 'gallery' });
+
+            expect(response.status).toBe(200);
             expect(mocks.upload).toHaveBeenCalledTimes(1);
         },
         APP_IMPORT_TIMEOUT_MS

@@ -38,13 +38,14 @@
  */
 
 import { CACHE_TAG_PRICING } from '@repo/cache-tags';
-import { BuildingsIcon, ChatIcon, MapIcon, PriceIcon, StarIcon } from '@repo/icons';
+import { BuildingsIcon, MapIcon, StarIcon } from '@repo/icons';
+import { TOURIST_BENEFIT_CARDS } from '@/lib/billing/tourist-benefit-content';
 import MarketingLayout from '@/layouts/MarketingLayout.astro';
 import MarketingHero from '@/components/marketing/MarketingHero.astro';
 import BenefitsSection from '@/components/marketing/BenefitsSection.astro';
 import StepsSection from '@/components/marketing/StepsSection.astro';
 import FaqSection from '@/components/marketing/FaqSection.astro';
-import GradientButton from '@/components/shared/ui/GradientButton.astro';
+import { TouristPlanAction } from '@/components/billing/TouristPlanAction.client';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import { PLANS_INDEX_PATH } from '@/lib/billing/addon-purchase';
 import { breadcrumbLabel } from '@/lib/navigation/breadcrumb-labels';
@@ -72,17 +73,9 @@ const fetchResult = await fetchPublicPlans({ vertical: 'tourist' });
 const touristPlans = fetchResult.ok ? fetchResult.plans : [];
 const trialDays = computeMinimumTrialDays({ plans: touristPlans });
 
-const benefits = [
-    {
-        Icon: BuildingsIcon,
-        title: t('benefits.tourist.1.title'),
-        desc: t('benefits.tourist.1.desc')
-    },
-    { Icon: PriceIcon, title: t('benefits.tourist.2.title'), desc: t('benefits.tourist.2.desc') },
-    { Icon: StarIcon, title: t('benefits.tourist.3.title'), desc: t('benefits.tourist.3.desc') },
-    { Icon: MapIcon, title: t('benefits.tourist.4.title'), desc: t('benefits.tourist.4.desc') },
-    { Icon: ChatIcon, title: t('benefits.tourist.5.title'), desc: t('benefits.tourist.5.desc') }
-] as const;
+const benefits = TOURIST_BENEFIT_CARDS.map(({ Icon, titleKey, descKey }) => ({
+    Icon, title: t(titleKey), desc: t(descKey)
+}));
 
 const steps = [
     { num: '01', title: t('pricing.tourist.steps.1.title'), desc: t('pricing.tourist.steps.1.desc') },
@@ -139,13 +132,13 @@ const pricingHref = buildUrl({ locale, path: PRICING_PAGE_PATH_BY_AUDIENCE.touri
         <MapIcon slot="icon-1" size="md" weight="duotone" />
         <StarIcon slot="icon-2" size="md" weight="duotone" />
         <BuildingsIcon slot="icon-3" size="md" weight="duotone" />
-        <GradientButton
+        <TouristPlanAction
             slot="cta"
+            client:load
+            locale={locale}
+            plans={touristPlans}
             href={pricingHref}
             label={t('pricing.nav.seePlans')}
-            variant="accent"
-            flat
-            icon="true"
         />
     </MarketingHero>
 
@@ -174,12 +167,13 @@ const pricingHref = buildUrl({ locale, path: PRICING_PAGE_PATH_BY_AUDIENCE.touri
     <section class="sales-cta section section--warm">
         <div class="sales-cta__container section__container">
             <h2 class="sales-cta__title">{t('pricing.tourist.cta.title')}</h2>
-            <GradientButton
+            <TouristPlanAction
+                client:visible
+                locale={locale}
+                plans={touristPlans}
+                mode="closing"
                 href={pricingHref}
                 label={t('pricing.nav.seePlans')}
-                variant="accent"
-                flat
-                icon="true"
             />
         </div>
     </section>

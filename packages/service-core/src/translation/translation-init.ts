@@ -18,12 +18,24 @@ const logger = createLogger('translation-init');
  * Generic enough to work with any translatable entity.
  */
 export interface TranslationInput {
-    /** Entity type (accommodation, destination, event, post). */
+    /** Entity type (accommodation, venue, experience, destination, event, post). */
     entityType: string;
     /** Entity ID (UUID). */
     entityId: string;
     /** Field name → Spanish text value. Only non-empty fields are translated. */
     fields: Record<string, string>;
+    /**
+     * Listing billing context (HOS-2658).
+     *
+     * Present ⇒ a gated + metered listing run: the owner's `ai_translate`
+     * entitlement and monthly limit for `vertical` are enforced and the run is
+     * billed to `ownerId`. Absent ⇒ the legacy unmetered run (destination,
+     * event, post).
+     */
+    readonly billing?: {
+        readonly vertical: 'accommodation' | 'venue' | 'experience';
+        readonly ownerId: string;
+    };
 }
 
 /**

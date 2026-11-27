@@ -73,6 +73,7 @@ import type {
 import { ServiceError } from '../../types';
 import { assertListingReadable, entityNotFoundError, normalizeContactInfo } from '../../utils';
 import { hasPermission } from '../../utils/permission';
+import { filterSoftDeletedRelations } from '../../utils/relations';
 import { VENUE_ENTITY_NAME } from '../entity-names';
 import { resolveSiteUrlFromTargetUrl } from '../hostTrade/host-trade-qr';
 import type { ListingCatalogModel, ListingJunctionModel } from '../listing/base-listing.service';
@@ -82,8 +83,10 @@ import {
     type LocationRuleCurrent,
     resolveLocationKeyPatch
 } from '../listing/listing-location-key';
+import { DEFAULT_LISTING_TRANSLATION_SOURCE_FIELDS } from '../listing/listing-translation-on-save';
 import { QrCodeService } from '../qr-code/qr-code.service';
 import { assertVenueCreateSectionsPresent } from './venue.create-sections';
+import { resolveVenueEntryNoteSource } from './venue.entry-note-source';
 import { attachComposedVenueMedia, attachComposedVenueMediaList } from './venue.media-read';
 import { resolveVenueNightInfoPatch, type VenueNightInfoCurrent } from './venue.night-info';
 import {
@@ -245,6 +248,14 @@ export class VenueService extends BaseListingService<
         return 'venue';
     }
 
+    /**
+     * Venue translation sources: the listing defaults plus `entryNote`, whose
+     * Spanish lives in `entryNoteI18n.es` (HOS-2658).
+     */
+    protected override get _translationSourceFields(): readonly string[] {
+        return [...DEFAULT_LISTING_TRANSLATION_SOURCE_FIELDS, 'entryNote'];
+    }
+
     /** Venue-amenity junction model (satisfies {@link ListingJunctionModel}). */
     protected override get _amenityJunctionModel(): ListingJunctionModel<Record<string, unknown>> {
         return this._amenityJunctionModelInstance;
@@ -310,11 +321,14 @@ export class VenueService extends BaseListingService<
         _actor: Actor,
         ctx: ServiceContext
     ): Promise<Venue | null> {
-        return attachComposedVenueMedia({
+        // HOS-2663: `findOneWithRelations` loads `faqs` regardless of `deletedAt`
+        // (ADR-023), so a deleted FAQ kept coming back on every reload.
+        const composed = await attachComposedVenueMedia({
             entity,
             mediaModel: this._venueMediaModel,
             tx: ctx?.tx
         });
+        return filterSoftDeletedRelations(composed, ['faqs']);
     }
 
     protected override async _afterList(
@@ -760,7 +774,23 @@ export class VenueService extends BaseListingService<
             stored: (current as { whatsappVisibility?: VenueWhatsappVisibilityEnum | null } | null)
                 ?.whatsappVisibility
         });
-        return { ...base, ...nightInfo, ...locationKey, ...whatsapp } as Partial<Venue>;
+        // HOS-2658 (AC-25, DL-9): `entryNoteI18n.es` is the source; the en/pt
+        // pairs belong to the translation writer and are read by the UPDATE
+        // from the locked row, never from the `current` snapshot above.
+        const { es: entryNoteSource } = resolveVenueEntryNoteSource({
+            body: (data as { entryNoteI18n?: unknown }).entryNoteI18n
+        });
+        const entryNote =
+            entryNoteSource === undefined
+                ? {}
+                : this.model.buildEntryNoteSourceUpdate({ es: entryNoteSource });
+        return {
+            ...base,
+            ...nightInfo,
+            ...locationKey,
+            ...whatsapp,
+            ...entryNote
+        } as Partial<Venue>;
     }
 
     // -----------------------------------------------------------------------

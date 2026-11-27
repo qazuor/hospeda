@@ -52,10 +52,6 @@ import ItemListJsonLd from '@/components/seo/ItemListJsonLd.astro';
 import FilterChips from '@/components/shared/ui/FilterChips.astro';
 import { getEventCategoryIconComponent } from '@/components/shared/cards/utils/eventCategoryIcon';
 import { FilterSidebar } from '@/components/shared/filters/FilterSidebar.client';
-import {
-    buildEventListingSummary,
-    DEFAULT_EVENT_CATEGORIES
-} from '@/lib/event-listing-summary';
 import { buildEventsFilterGroups } from '@/lib/filters/events-filter-groups';
 import { canonicalizeFacetValues } from '@/lib/filters/canonical-facet-order';
 import { resolveCappedChipNote, resolveFacetChipHref } from '@/lib/filters/facet-chip-depth';
@@ -236,34 +232,6 @@ const cards = items.map((item) => toEventCardProps({ item: item as unknown as Re
  * Mirrors the accommodations pattern via the parallel `event-listing-summary`
  * module — see SPEC-XXX (events-summary) for the architecture.
  */
-const destinationCatalog = destinations.map((d) => ({
-    key: d.id,
-    label: { es: d.name, en: d.name, pt: d.name } as const
-}));
-const filterSummary = buildEventListingSummary({
-    locale,
-    filters: {
-        text: q,
-        category,
-        destinationId,
-        startDateAfter: startDateAfterFilter,
-        startDateBefore: startDateBeforeFilter,
-        when,
-        isFree,
-        price:
-            priceMin !== undefined || priceMax !== undefined
-                ? { min: priceMin ?? null, max: priceMax ?? null }
-                : null,
-        includeUnpriced: includeUnpricedParam === 'false' ? false : null,
-        isFeatured
-    },
-    counts: { shown: cards.length, total },
-    sort: { sortKey },
-    catalogs: {
-        destinations: destinationCatalog,
-        categories: DEFAULT_EVENT_CATEGORIES
-    }
-});
 
 /**
  * Build the `filterGroups` config for FilterSidebar.
@@ -537,7 +505,8 @@ const itemListEntries = cards.map((card) => ({
 	showFilters={true}
 	filterPosition="left"
 	totalCount={total}
-	filterSummary={filterSummary}
+	resultKind="events"
+	sortOptions={sortOptions}
 >
 	{/* RSS feed-discovery hints (SPEC-157 REQ-6) */}
 	<link
@@ -574,7 +543,6 @@ const itemListEntries = cards.map((card) => ({
 		client:load
 		locale={locale}
 		filters={filterGroups}
-		sortOptions={sortOptions}
 		defaultSort={DEFAULT_SORT_KEY}
 		initialParams={sidebarInitialParams}
 	/>

@@ -36,26 +36,21 @@
  */
 
 import { BellIcon, LockIcon } from '@repo/icons';
-import { EntitlementKeyEnum } from '@repo/schemas';
-import { lazy, type ReactNode, Suspense, useCallback, useEffect, useState } from 'react';
-import { Button } from '@/components/account/ui/Button';
-import { useVipPlanName } from '@/components/promotions/use-promotion-policy';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
+import { CompareUpsellPopover } from '@/components/shared/compare/CompareUpsellPopover.client';
 import { Spinner } from '@/components/shared/feedback/Spinner';
+import { Dialog, DialogBody, DialogHeader } from '@/components/shared/ui/Dialog.client';
 import { PlanBadge } from '@/components/shared/ui/PlanBadge';
 import { useAccountPermissions } from '@/hooks/use-account-permissions';
 import { usePriceAlertGateState } from '@/hooks/use-price-alert-gate-state';
 import { translateApiError } from '@/lib/api-errors';
+import { formatDate } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { webLogger } from '@/lib/logger';
+import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 import { addToast } from '@/store/toast-store';
 import styles from './PriceAlertButton.module.css';
-
-const VipGateDialog = lazy(() =>
-    import('@/components/account/ui/VipGateDialog').then((module) => ({
-        default: module.VipGateDialog
-    }))
-);
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -64,6 +59,8 @@ interface CreateSuccessResponse {
     readonly success: true;
     readonly data?: {
         readonly id?: string;
+        readonly targetPercentDrop?: number | null;
+        readonly createdAt?: string;
     };
 }
 
@@ -87,12 +84,8 @@ export interface PriceAlertButtonProps {
     readonly apiUrl: string;
     /** Active locale for i18n and the upgrade-link URL. */
     readonly locale: SupportedLocale;
-    /**
-     * Anonymous fallback, supplied by the page as the island's slot children
-     * (a `SignInCtaCard`). This is what the server renders and what the edge
-     * caches; it is replaced only once a session resolves in the browser.
-     */
-    readonly children?: ReactNode;
+    /** Public name of the plan that unlocks this feature. */
+    readonly planName?: string | null;
 }
 
 /** In-flight mutation kind, for spinner + disabled-state wiring. */
@@ -111,7 +104,7 @@ export function PriceAlertButton({
     accommodationId,
     apiUrl,
     locale,
-    children
+    planName = null
 }: PriceAlertButtonProps) {
     const { t } = createTranslations(locale);
     const base = apiUrl.replace(/\/$/, '');
@@ -120,18 +113,22 @@ export function PriceAlertButton({
     // branch is what renders on the server and on first paint.
     const { user } = useAccountPermissions();
     const gate = usePriceAlertGateState({ accommodationId, skip: user === null });
-    const { vipPlanName } = useVipPlanName({
-        apiUrl,
-        enabled: true,
-        entitlement: EntitlementKeyEnum.PRICE_ALERTS
-    });
-    const entitledBadge = <PlanBadge name={gate.canCreateAlerts ? vipPlanName : null} />;
+    const entitledBadge = <PlanBadge name={planName} />;
+    const gateTrigger = useRef<HTMLButtonElement>(null);
+    const titleId = useId();
+    const [createOpen, setCreateOpen] = useState(false);
+    const [target, setTarget] = useState('');
+    const targetPercentDrop = Number(target);
+    const validTarget =
+        Number.isInteger(targetPercentDrop) && targetPercentDrop >= 1 && targetPercentDrop <= 100;
 
     // ── State ─────────────────────────────────────────────────────────────────
     // Local mirrors of the resolved gate so a successful create/cancel can flip
     // the rendered branch without a page reload.
     const [hasAlert, setHasAlert] = useState(false);
     const [alertId, setAlertId] = useState<string | null>(null);
+    const [threshold, setThreshold] = useState<number | null>(null);
+    const [createdAt, setCreatedAt] = useState<Date | string | null>(null);
     const [phase, setPhase] = useState<SubmitPhase>('idle');
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [vipGateOpen, setVipGateOpen] = useState(false);
@@ -144,7 +141,9 @@ export function PriceAlertButton({
         if (gate.isResolving) return;
         setHasAlert(gate.hasAlert);
         setAlertId(gate.alertId);
-    }, [gate.isResolving, gate.hasAlert, gate.alertId]);
+        setThreshold(gate.targetPercentDrop);
+        setCreatedAt(gate.createdAt);
+    }, [gate.isResolving, gate.hasAlert, gate.alertId, gate.targetPercentDrop, gate.createdAt]);
 
     const isSubmitting = phase !== 'idle';
 
@@ -165,6 +164,15 @@ export function PriceAlertButton({
     // ── Create ────────────────────────────────────────────────────────────────
 
     const handleCreate = useCallback(async () => {
+        if (
+            !validTarget ||
+            !user ||
+            gate.readFailed ||
+            !gate.canCreateAlerts ||
+            gate.maxReached ||
+            isSubmitting
+        )
+            return;
         setPhase('creating');
         setErrorMessage(null);
         try {
@@ -172,7 +180,7 @@ export function PriceAlertButton({
                 method: 'POST',
                 credentials: 'include',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ accommodationId })
+                body: JSON.stringify({ accommodationId, targetPercentDrop })
             });
 
             if (!res.ok) {
@@ -198,6 +206,9 @@ export function PriceAlertButton({
             const body = (await res.json()) as CreateSuccessResponse;
             setHasAlert(true);
             setAlertId(body.data?.id ?? null);
+            setThreshold(body.data?.targetPercentDrop ?? null);
+            setCreatedAt(body.data?.createdAt ?? null);
+            setCreateOpen(false);
             addToast({ type: 'success', message: createSuccessMsg });
         } catch (err) {
             webLogger.error('[PriceAlertButton] failed to create price alert', err);
@@ -207,7 +218,20 @@ export function PriceAlertButton({
         } finally {
             setPhase('idle');
         }
-    }, [base, accommodationId, createErrorMsg, createSuccessMsg, locale]);
+    }, [
+        base,
+        accommodationId,
+        createErrorMsg,
+        createSuccessMsg,
+        locale,
+        user,
+        gate.readFailed,
+        gate.canCreateAlerts,
+        gate.maxReached,
+        isSubmitting,
+        targetPercentDrop,
+        validTarget
+    ]);
 
     // ── Cancel ────────────────────────────────────────────────────────────────
 
@@ -257,11 +281,6 @@ export function PriceAlertButton({
 
     // ── Render ────────────────────────────────────────────────────────────────
 
-    // Every hook above runs unconditionally (Rules of Hooks); the gate is the
-    // first thing after them. `user === null` covers both a real guest and the
-    // not-yet-resolved window, and both must show the anonymous variant.
-    if (!user) return <>{children}</>;
-
     const errorNode = errorMessage && (
         <p
             className={styles.priceAlertError}
@@ -272,9 +291,27 @@ export function PriceAlertButton({
     );
 
     // Active alert for THIS accommodation.
-    if (hasAlert || gate.hasAlert) {
+    if (user && hasAlert) {
         return (
             <div className={styles.priceAlertWrapper}>
+                <p>
+                    {threshold === null
+                        ? t('accommodations.detail.priceAlert.defaultThreshold')
+                        : t('accommodations.detail.priceAlert.activeThreshold', undefined, {
+                              threshold
+                          })}
+                </p>
+                {createdAt && (
+                    <p>
+                        {t('accommodations.detail.priceAlert.activeDate', undefined, {
+                            date: formatDate({
+                                date: createdAt,
+                                locale,
+                                options: { dateStyle: 'medium', timeZone: 'UTC' }
+                            })
+                        })}
+                    </p>
+                )}
                 <button
                     type="button"
                     className={styles.priceAlertButtonActive}
@@ -303,7 +340,7 @@ export function PriceAlertButton({
     // Signed in, but the alert lookup has not settled yet. Show the create
     // button disabled rather than guessing: enabling it could fire a duplicate
     // create for an alert the visitor already holds.
-    if (gate.isResolving) {
+    if (user && gate.isResolving) {
         return (
             <div className={styles.priceAlertWrapper}>
                 <button
@@ -324,13 +361,14 @@ export function PriceAlertButton({
         );
     }
 
-    if (gate.readFailed || !gate.canCreateAlerts) {
+    if (!user || gate.readFailed || !gate.canCreateAlerts) {
         return (
             <div className={styles.priceAlertWrapper}>
-                <Button
-                    variant="secondary"
-                    fullWidth
-                    onClick={() => setVipGateOpen(true)}
+                <button
+                    type="button"
+                    ref={gateTrigger}
+                    className={styles.priceAlertButtonCreate}
+                    onClick={() => setVipGateOpen((open) => !open)}
                     aria-haspopup="dialog"
                     aria-expanded={vipGateOpen}
                 >
@@ -339,28 +377,25 @@ export function PriceAlertButton({
                         aria-hidden="true"
                     />
                     {t('accommodations.detail.priceAlert.locked', 'Avisame si baja el precio')}
-                    <PlanBadge name={vipPlanName} />
-                </Button>
+                    {entitledBadge}
+                </button>
                 {vipGateOpen && (
-                    <Suspense
-                        fallback={
-                            <Spinner
-                                size="sm"
-                                label={t('common.vipGate.loading')}
-                            />
+                    <CompareUpsellPopover
+                        anchorRef={gateTrigger}
+                        onClose={() => setVipGateOpen(false)}
+                        dialogLabel={t('accommodations.detail.priceAlert.gateTitle')}
+                        message={
+                            planName
+                                ? t('accommodations.detail.priceAlert.gateBenefit', undefined, {
+                                      plan: planName
+                                  })
+                                : t('common.vipGate.priceAlert')
                         }
-                    >
-                        <VipGateDialog
-                            open={vipGateOpen}
-                            onClose={() => setVipGateOpen(false)}
-                            locale={locale}
-                            apiUrl={apiUrl}
-                            title={t('common.vipGate.title')}
-                            body={t('common.vipGate.body')}
-                            featureCopy={t('common.vipGate.priceAlert')}
-                            benefits={[t('common.vipGate.benefit')]}
-                        />
-                    </Suspense>
+                        ctaLabel={t('accommodations.comparison.gate.upsellCta')}
+                        ctaHref={`/${locale}/${PRICING_PAGE_PATH_BY_AUDIENCE.tourist}/`}
+                        closeLabel={t('common.auth.close')}
+                        dismissLabel={t('common.vipGate.notNow')}
+                    />
                 )}
             </div>
         );
@@ -390,7 +425,12 @@ export function PriceAlertButton({
             <button
                 type="button"
                 className={styles.priceAlertButtonCreate}
-                onClick={() => void handleCreate()}
+                onClick={() => {
+                    setTarget('');
+                    setErrorMessage(null);
+                    setCreateOpen(true);
+                }}
+                aria-haspopup="dialog"
                 disabled={isSubmitting}
                 aria-busy={isSubmitting}
             >
@@ -410,7 +450,50 @@ export function PriceAlertButton({
                     </>
                 )}
             </button>
-            {errorNode}
+            <Dialog
+                isOpen={createOpen}
+                onClose={() => setCreateOpen(false)}
+                ariaLabelledBy={titleId}
+                size="sm"
+            >
+                <DialogHeader
+                    titleId={titleId}
+                    onClose={() => setCreateOpen(false)}
+                    closeLabel={t('common.auth.close')}
+                >
+                    {t('accommodations.detail.priceAlert.confirmCreate')}
+                </DialogHeader>
+                <DialogBody>
+                    <form
+                        className={styles.priceAlertWrapper}
+                        onSubmit={(event) => {
+                            event.preventDefault();
+                            void handleCreate();
+                        }}
+                    >
+                        <label>
+                            {t('accommodations.detail.priceAlert.targetPercent')}{' '}
+                            <input
+                                type="number"
+                                min={1}
+                                max={100}
+                                step={1}
+                                required
+                                value={target}
+                                onChange={(event) => setTarget(event.currentTarget.value)}
+                            />
+                        </label>
+                        <button
+                            type="submit"
+                            className={styles.priceAlertButtonCreate}
+                            disabled={isSubmitting || !validTarget}
+                        >
+                            {t('accommodations.detail.priceAlert.confirmCreate')}
+                        </button>
+                        {errorNode}
+                    </form>
+                </DialogBody>
+            </Dialog>
             {entitledBadge}
         </div>
     );

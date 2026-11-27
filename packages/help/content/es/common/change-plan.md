@@ -71,6 +71,7 @@ Comparar los planes en {{link:plans:accommodation|planes para alojamientos}}, {{
 - Si el cambio requiere autorización, pasás por el checkout de Mercado Pago y tu plan actual sigue hasta que autorices.
 - Si el cambio se programa, ves la fecha exacta desde la que rige.
 - Los importes se ven en la lista de opciones y en la página de planes.
+- Debajo de tus suscripciones, «Suscripción» lista tus recibos, cada uno con el botón «Ver recibo». El comprobante se abre en PDF solo con la cuenta que hizo el pago, y no es una factura.
 
 ## Qué NO esperar
 

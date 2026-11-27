@@ -13,6 +13,8 @@
  * and composer textarea autofocus on open (W14).
  */
 
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -22,12 +24,19 @@ import { buildAuthSnapshot } from '../../helpers/auth-session';
 
 vi.mock('@/lib/i18n', () => ({
     createTranslations: () => ({
-        t: (key: string, fallback?: string) => {
+        t: (key: string, fallback?: string, params?: Record<string, unknown>) => {
             const map: Record<string, string> = {
                 'accommodations.aiChat.fabLabel': 'Ask AI about this accommodation',
                 'accommodations.aiChat.panelLabel': 'AI Chat — Accommodation Questions',
                 'accommodations.aiChat.headerDisclaimer':
                     'Responses are AI-generated and may contain errors.',
+                'accommodations.aiChat.noticeLabel': 'About AI and privacy',
+                'accommodations.aiChat.greeting': 'Welcome! What would you like to know?',
+                'accommodations.aiChat.guestMonthlyQuota':
+                    'Consultá hasta {{quota}} veces por mes.',
+                'accommodations.aiChat.monthlyAllowance': '{{quota}} monthly questions',
+                'accommodations.detail.listingContact.bar.inquire': 'Consult',
+                'accommodations.detail.listingContact.bar.priceOnRequest': 'Ask for pricing',
                 'accommodations.aiChat.priceDisclaimer':
                     'Prices and availability may have changed.',
                 'accommodations.aiChat.placeholder': 'Type your question here…',
@@ -47,10 +56,17 @@ vi.mock('@/lib/i18n', () => ({
                 'accommodations.aiChat.unavailable':
                     'AI chat is not available for this accommodation',
                 'accommodations.aiChat.consumerLimitReached':
-                    'You reached your monthly AI chat limit. Upgrade for more access.'
+                    'You reached your monthly AI chat limit. Upgrade for more access.',
+                'accommodations.aiChat.consumerLimitUpgradeCta': 'View plans'
             };
-            return map[key] ?? fallback ?? key;
-        }
+            return (map[key] ?? fallback ?? key).replace(/\{\{(\w+)\}\}/g, (_, name) =>
+                String(params?.[name] ?? '')
+            );
+        },
+        tPlural: (key: string, count: number) =>
+            key === 'accommodations.aiChat.guestMonthlyQuota'
+                ? `Consultá hasta ${count} veces por mes.`
+                : `${count} monthly questions`
     })
 }));
 
@@ -67,6 +83,18 @@ vi.mock('../../../src/components/accommodation/AiChatWidget.module.css', () => (
 }));
 
 const mockUseAccommodationChat = vi.fn();
+const mockPlans = vi.fn();
+const mockSubscriptions = vi.fn();
+const mockPricingSituation = vi.fn();
+const mockEffectiveSet = vi.fn();
+vi.mock('@/lib/billing/fetch-plans', () => ({ fetchPublicPlans: () => mockPlans() }));
+vi.mock('@/lib/api/endpoints-protected', () => ({
+    billingSubscriptionApi: {
+        listMine: () => mockSubscriptions(),
+        pricingSituation: () => mockPricingSituation()
+    },
+    effectiveSetApi: { get: () => mockEffectiveSet() }
+}));
 
 vi.mock('@/hooks/useAccommodationChat', () => ({
     useAccommodationChat: (...args: unknown[]) => mockUseAccommodationChat(...args)
@@ -116,6 +144,28 @@ describe('AiChatWidget', () => {
     };
 
     beforeEach(() => {
+        mockPlans.mockResolvedValue({
+            ok: true,
+            plans: [
+                { vertical: 'tourist', limits: { max_ai_chat_consumer_per_month: 17 } },
+                {
+                    vertical: 'tourist',
+                    slug: 'paid',
+                    isActive: true,
+                    billingOptions: {},
+                    name: 'Catalog Gold',
+                    entitlements: [],
+                    sortOrder: 1,
+                    limits: { max_ai_chat_consumer_per_month: 271 }
+                }
+            ]
+        });
+        mockSubscriptions.mockResolvedValue({ ok: true, data: { subscriptions: [] } });
+        mockPricingSituation.mockResolvedValue({ ok: true, data: { situation: 'CHECKOUT' } });
+        mockEffectiveSet.mockResolvedValue({
+            ok: true,
+            data: { limits: { max_ai_chat_consumer_per_month: 17 } }
+        });
         mockUseAccommodationChat.mockReturnValue(idleChatState);
         // Signed in by default: every suite here is about the chat UI, which
         // only exists for a signed-in visitor. The gate has its own suite below.
@@ -188,7 +238,7 @@ describe('AiChatWidget', () => {
             await openAsGuest();
 
             expect(screen.getByTestId('ai-chat-guest-upsell')).toBeInTheDocument();
-            expect(screen.getByText('Es gratis con tu cuenta.')).toBeInTheDocument();
+            expect(await screen.findByText(/17.*por mes/)).toBeInTheDocument();
             const returnUrl = encodeURIComponent('/es/alojamientos/casa-x/?a=1');
             expect(screen.getByRole('link', { name: 'Crear cuenta gratis' })).toHaveAttribute(
                 'href',
@@ -198,6 +248,28 @@ describe('AiChatWidget', () => {
                 'href',
                 `/es/auth/signin/?returnUrl=${returnUrl}`
             );
+        });
+
+        it('offers three sign-up chips without sending a question', async () => {
+            await openAsGuest();
+
+            const chips = screen.getAllByRole('link', { name: /^¿/ });
+            expect(chips).toHaveLength(3);
+            expect(chips[0]).toHaveAttribute('href', expect.stringContaining('/es/auth/signup/'));
+            expect(idleChatState.send).not.toHaveBeenCalled();
+        });
+
+        it('gives the sign-in link a visible secondary border', async () => {
+            await openAsGuest();
+
+            const css = readFileSync(
+                resolve(
+                    __dirname,
+                    '../../../src/components/accommodation/AiChatGuestUpsell.module.css'
+                ),
+                'utf8'
+            );
+            expect(css).toMatch(/\.secondary\s*\{[^}]*border:\s*1px solid/);
         });
 
         it('shows no composer and moves focus to the primary CTA', async () => {
@@ -272,15 +344,126 @@ describe('AiChatWidget', () => {
         expect(dialog).toHaveAttribute('aria-label', 'AI Chat — Accommodation Questions');
     });
 
-    it('shows the read notice below the disclaimer when the panel is open', async () => {
+    it('keeps both legal disclosures in one initially collapsed notice', async () => {
         const user = userEvent.setup();
         render(<AiChatWidget {...defaultProps} />);
 
         await user.click(screen.getByRole('button', { name: 'Ask AI about this accommodation' }));
 
-        expect(screen.getByTestId('ai-chat-read-notice')).toHaveTextContent(
+        const summary = screen.getByText('About AI and privacy');
+        const notice = summary.closest('details');
+        expect(notice).not.toHaveAttribute('open');
+        await user.click(summary);
+        expect(notice).toHaveAttribute('open');
+        expect(notice).toHaveTextContent('Responses are AI-generated and may contain errors.');
+        expect(notice).toHaveTextContent(
             'El anfitrión puede leer las preguntas que hagas en este chat. No compartas datos personales.'
         );
+    });
+
+    it('greets signed-in users and fills the editable composer from one of three chips', async () => {
+        const user = userEvent.setup();
+        render(<AiChatWidget {...defaultProps} />);
+        await user.click(screen.getByRole('button', { name: 'Ask AI about this accommodation' }));
+
+        expect(screen.getByText('Welcome! What would you like to know?')).toBeInTheDocument();
+        const chips = screen.getAllByRole('button', { name: /^¿/ });
+        expect(chips).toHaveLength(3);
+        await user.click(chips[0]);
+        expect(screen.getByRole('textbox')).toHaveValue('¿Aceptan mascotas?');
+        expect(screen.getByRole('textbox')).toHaveFocus();
+        expect(idleChatState.send).not.toHaveBeenCalled();
+    });
+
+    it('exposes price and opens the existing desktop contact flow', async () => {
+        const user = userEvent.setup();
+        const opened = vi.fn();
+        window.addEventListener('hospeda:listing-contact:open', opened, { once: true });
+        render(
+            <AiChatWidget
+                {...defaultProps}
+                listingPrice={null}
+                canConsult
+            />
+        );
+        await user.click(screen.getByRole('button', { name: 'Ask AI about this accommodation' }));
+
+        expect(screen.getByText('Ask for pricing')).toBeInTheDocument();
+        await user.click(screen.getByRole('button', { name: 'Consult' }));
+        expect(opened).toHaveBeenCalledOnce();
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    });
+
+    it('shows the active paid catalog plan and its allowance without claiming unused quota', async () => {
+        mockPricingSituation.mockResolvedValue({
+            ok: true,
+            data: { situation: 'SUBSCRIBED', status: 'ACTIVE' }
+        });
+        mockSubscriptions.mockResolvedValue({
+            ok: true,
+            data: {
+                subscriptions: [
+                    {
+                        vertical: 'tourist',
+                        status: 'ACTIVE',
+                        plan: { slug: 'paid', name: 'Old name' }
+                    }
+                ]
+            }
+        });
+        const user = userEvent.setup();
+        render(<AiChatWidget {...defaultProps} />);
+        await user.click(screen.getByRole('button', { name: 'Ask AI about this accommodation' }));
+
+        expect(await screen.findByText('Catalog Gold')).toBeInTheDocument();
+        expect(screen.getByText('271 monthly questions')).toBeInTheDocument();
+        expect(screen.queryByText('Old name')).not.toBeInTheDocument();
+    });
+
+    it('shows the inherited catalog plan and allowance without a direct tourist subscription', async () => {
+        mockPricingSituation.mockResolvedValue({
+            ok: true,
+            data: { situation: 'TOURIST_VIP_INHERITED' }
+        });
+        const user = userEvent.setup();
+        render(<AiChatWidget {...defaultProps} />);
+        await user.click(screen.getByRole('button', { name: 'Ask AI about this accommodation' }));
+
+        expect(await screen.findByText('Catalog Gold')).toBeInTheDocument();
+        expect(screen.getByText('271 monthly questions')).toBeInTheDocument();
+        expect(screen.queryByText('17 monthly questions')).not.toBeInTheDocument();
+    });
+
+    it('shows the effective allowance for a grant without inventing a paid plan name', async () => {
+        mockEffectiveSet.mockResolvedValue({
+            ok: true,
+            data: { limits: { max_ai_chat_consumer_per_month: 83 } }
+        });
+        const user = userEvent.setup();
+        render(<AiChatWidget {...defaultProps} />);
+        await user.click(screen.getByRole('button', { name: 'Ask AI about this accommodation' }));
+
+        expect(await screen.findByText('83 monthly questions')).toBeInTheDocument();
+        expect(screen.queryByText('Catalog Gold')).not.toBeInTheDocument();
+        expect(screen.queryByText('17 monthly questions')).not.toBeInTheDocument();
+    });
+
+    it('uses an opaque high-contrast pair for the disabled Send icon', async () => {
+        const user = userEvent.setup();
+        render(<AiChatWidget {...defaultProps} />);
+        await user.click(screen.getByRole('button', { name: 'Ask AI about this accommodation' }));
+
+        expect(screen.getByRole('button', { name: 'Send' })).toBeDisabled();
+        const css = readFileSync(
+            resolve(__dirname, '../../../src/components/accommodation/AiChatWidget.module.css'),
+            'utf8'
+        );
+        expect(css).toMatch(
+            /\.sendButton:disabled\s*\{[^}]*background(?:-color)?: var\(--core-card\)/
+        );
+        expect(css).toMatch(/\.sendButton:disabled\s*\{[^}]*color: var\(--core-foreground\)/);
+        expect(css).not.toMatch(/\.sendButton:disabled\s*\{[^}]*opacity:/);
+        expect(css).toMatch(/\.disclaimer\s*\{[^}]*font-size: (?:0\.75rem|12px)/);
     });
 
     it('displays the header disclaimer when panel is open', async () => {
@@ -292,9 +475,10 @@ describe('AiChatWidget', () => {
                 name: 'Ask AI about this accommodation'
             })
         );
+        await user.click(screen.getByText('About AI and privacy'));
 
         expect(
-            screen.getByText('Responses are AI-generated and may contain errors.')
+            screen.getByText(/Responses are AI-generated and may contain errors\./)
         ).toBeInTheDocument();
     });
 
@@ -679,6 +863,10 @@ describe('AiChatWidget', () => {
             expect(
                 screen.getByText('You reached your monthly AI chat limit. Upgrade for more access.')
             ).toBeInTheDocument();
+            expect(screen.getByRole('link', { name: 'View plans' })).toHaveAttribute(
+                'href',
+                '/es/planes/turistas/precios/'
+            );
         });
 
         it('falls back to localized copy for the code when the message is API prose', async () => {

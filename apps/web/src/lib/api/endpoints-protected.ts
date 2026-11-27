@@ -28,6 +28,7 @@ import type {
     HostTradeReviewCreateBody,
     HostTradeReviewUpdateBody,
     ListingNoticesResponse,
+    ListingPhotoAllowance,
     ListingPurgePreviewResponse,
     ListingSupportEditsResponse,
     ListingTrafficStatsEntityType,
@@ -59,6 +60,7 @@ import {
     type ExperienceListingSectionStatesSchema,
     MAX_BULK_CHECK_ENTITY_IDS,
     type OwnManualInstallmentsResponse,
+    type OwnReceiptsResponseSchema,
     type OwnSubscriptionsResponseSchema,
     type PartnerClaimCheckResponseSchema,
     type PartnerClaimResponseSchema,
@@ -5654,6 +5656,47 @@ export const listingMediaApi = {
 };
 
 // ---------------------------------------------------------------------------
+// Listing photo allowance (HOS-2495)
+// ---------------------------------------------------------------------------
+
+/** A listing vertical whose photos the shared photo editor manages. */
+export type ListingPhotoVertical = 'accommodation' | 'venue' | 'experience';
+
+/** URL path segment of each listing vertical. */
+const LISTING_PHOTO_PATH_SEGMENT = {
+    accommodation: 'accommodations',
+    venue: 'venues',
+    experience: 'experiences'
+} as const satisfies Record<ListingPhotoVertical, string>;
+
+/**
+ * The owner's photo allowance for one listing (HOS-2495): the cap step 7
+ * enforces, how many gallery photos count against it, how many approved ones
+ * the public does not show, and the breakdown of where the cap comes from.
+ *
+ * Never browser-cached: it must reflect `used` right after an upload or delete.
+ */
+export const listingPhotoAllowanceApi = {
+    /**
+     * Read the allowance of a listing the caller owns.
+     *
+     * @param params - Vertical and listing ID
+     * @returns The `ListingPhotoAllowance` payload
+     */
+    getAllowance({
+        vertical,
+        id
+    }: {
+        readonly vertical: ListingPhotoVertical;
+        readonly id: string;
+    }): Promise<ApiResult<ListingPhotoAllowance>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/${LISTING_PHOTO_PATH_SEGMENT[vertical]}/${id}/photo-allowance`
+        });
+    }
+};
+
+// ---------------------------------------------------------------------------
 // Content media (posts / events) — HOS-390
 // ---------------------------------------------------------------------------
 
@@ -5996,6 +6039,17 @@ export const billingSubscriptionApi = {
         readonly cookieHeader?: string;
     }): Promise<ApiResult<z.infer<typeof OwnSubscriptionsResponseSchema>>> {
         return apiClient.getProtected({ path: `${PROTECTED}/billing-subscription/`, cookieHeader });
+    },
+    /** Read the authenticated user's own payment receipts, newest first (HOS-2566). */
+    listReceipts({
+        cookieHeader
+    }: {
+        readonly cookieHeader?: string;
+    }): Promise<ApiResult<z.infer<typeof OwnReceiptsResponseSchema>>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/billing-subscription/receipts`,
+            cookieHeader
+        });
     },
     /** Read the authenticated user's currently open manual installments. */
     listManualInstallments({

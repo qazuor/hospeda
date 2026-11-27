@@ -61,7 +61,8 @@ async function fixture() {
             sellable: true,
             current: true,
             trialDays: 0,
-            allowsPause: false
+            allowsPause: false,
+            paymentMethods: ['CARD', 'MANUAL']
         })
         .returning();
     if (!version) throw new Error('Could not seed partner plan version');
@@ -115,7 +116,7 @@ describe('TEST:1739:2 partner manual-only API rejection', () => {
         expect(response.status).toBe(422);
         const body = await response.json();
         expect(body.error.code).toBe('VALIDATION_ERROR');
-        expect(body.error.reason).toBe('PARTNER_MANUAL_ONLY');
+        expect(body.error.reason).toBe('PLAN_NOT_SELF_SERVICE');
         const rows = await getDb()
             .select()
             .from(subscriptions)

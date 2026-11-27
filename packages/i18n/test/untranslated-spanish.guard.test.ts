@@ -31,6 +31,8 @@ type TargetLocale = (typeof TARGET_LOCALES)[number];
  * Brand names and words that are spelled the same in English / Brazilian Portuguese.
  */
 const LEGITIMATE_IDENTICAL: Readonly<Record<string, readonly TargetLocale[]>> = {
+    Chat: ['en', 'pt'], // HOS-2651: the same short dock label in all three locales.
+    IA: ['pt'], // HOS-2651: Spanish and Portuguese share the same AI abbreviation.
     Email: ['en', 'pt'],
     // HOS-2623 breadcrumb labels: same spelling in Brazilian Portuguese / English.
     'Google Calendar': ['en', 'pt'],
@@ -58,6 +60,8 @@ const LEGITIMATE_IDENTICAL: Readonly<Record<string, readonly TargetLocale[]>> = 
     // and the add-on purchase steps).
     Plan: ['en'],
     Complementos: ['pt'],
+    // HOS-2655 cookie inventory: identical spelling in Brazilian Portuguese.
+    '5 minutos': ['pt'],
     // HOS-2649 card labels: identical spelling in Brazilian Portuguese.
     'Favoritos: {{count}} de {{max}}': ['pt'],
     'Favoritos ilimitados': ['pt'],

@@ -36,18 +36,28 @@ const REPUTATION_ROW = read('components/accommodation/ExternalReputationSummaryR
 const MAP_CSS = read('components/maps/LocationMap.module.css');
 const DIVIDER = read('components/shared/ui/WaveDivider.astro');
 
-describe('sidebar contact card (AC-2.7)', () => {
+describe('sidebar contact entry (AC-2.7)', () => {
     const sidebar = PAGE.match(/<Fragment slot="sidebar">([\s\S]*?)<\/Fragment>/)?.[1] ?? '';
 
-    it('fills the ContactCard slot with the card island, hydrated from the desktop breakpoint', () => {
-        expect(sidebar).toMatch(/<ContactCard>[\s\S]*<ListingContactCard[\s\S]*<\/ContactCard>/);
-        expect(sidebar).toContain('client:media="(min-width: 768px)"');
+    it('hydrates the desktop price actions and connects them to the inquiry panel', () => {
+        // CARD-022 H-4: the inline form is replaced by Consultar opening the shared panel.
+        const pricing = read('components/accommodation/PricingSidebar.astro');
+        expect(sidebar).toMatch(/<PricingSidebar\b[^>]*panelId=\{panelId\}/);
+        expect(sidebar).not.toMatch(/<(?:ListingContactCard|ContactHost)\b/);
+        expect(pricing).toMatch(/<ListingContactActions client:idle\b[^>]*panelId=\{panelId\}/);
+        expect(pricing).toMatch(
+            /@media \(max-width: 1024px\)[\s\S]*?\.pricing-sidebar\s*\{\s*display: none;/
+        );
+        expect(PAGE).toMatch(/<ListingContactPanel\s+client:idle\s+panelId=\{panelId\}/);
     });
 
     it('passes the entitlement flag and the plans href, never a WhatsApp number', () => {
+        // CARD-022 H-4: both entry surfaces now share the gated contact panel.
+        const panel = PAGE.match(/<ListingContactPanel\b[^>]*\/>/)?.[0];
         expect(sidebar).toContain('hasWhatsapp={accommodation.hasWhatsapp}');
-        expect(sidebar).toContain('whatsappPlansHref={whatsappPlansHref}');
-        expect(sidebar).not.toMatch(/whatsappNumber|\bwhatsapp=\{/i);
+        expect(panel).toContain('hasWhatsapp={accommodation.hasWhatsapp}');
+        expect(panel).toContain('whatsappPlansHref={whatsappPlansHref}');
+        expect(`${sidebar}${panel}`).not.toMatch(/whatsappNumber|\bwhatsapp=\{/i);
     });
 
     it('no longer mounts the bare ContactHost or WhatsAppContact in the page', () => {
@@ -89,9 +99,16 @@ describe('single host presentation (owner decision, HOS-2520)', () => {
 });
 
 describe('visual consistency (HOS-2533)', () => {
-    it('puts the wave divider at the top of the after-content slot, only with related content', () => {
+    it('puts a spaced hairline at the top of the after-content slot only with related content', () => {
+        // D25 (EXTRA-2) replaces the decorative wave with a hairline.
         const after = PAGE.match(/<Fragment slot="after-content">([\s\S]*?)<RelatedCarousel/)?.[1];
-        expect(after).toContain('{hasRelatedContent && <WaveDivider />}');
+        expect(after).toMatch(
+            /\{hasRelatedContent && \(\s*<ListingDetailSlot name="related"[^>]*class="acc-related"/
+        );
+        expect(PAGE).not.toMatch(/<WaveDivider\b/);
+        expect(PAGE).toMatch(
+            /\.acc-related\)\s*\{[^}]*border-block-start:\s*1px solid var\(--border\);[^}]*margin-block-start:\s*var\(--space-6\)/
+        );
         expect(PAGE).toMatch(
             /const hasRelatedContent =[^;]*similarCards[^;]*ownerCards[^;]*postItems[^;]*eventItems/
         );

@@ -30,12 +30,7 @@
  *   - `data.moderationState` is always `'APPROVED'`.
  */
 import { generateGalleryId } from '@repo/media';
-import {
-    ENTITY_GALLERY_CAPS,
-    getGalleryCap,
-    UploadResponseDataSchema,
-    VerticalEnum
-} from '@repo/schemas';
+import { getGalleryCap, UploadResponseDataSchema, VerticalEnum } from '@repo/schemas';
 import {
     AccommodationService,
     DestinationService,
@@ -58,7 +53,10 @@ import {
 } from '../../../services/media/upload-helpers';
 import type { ListingAccessConfig } from '../../../types/authorization';
 import { getActorFromContext } from '../../../utils/actor';
-import { accommodationGalleryPhotoLimit } from '../../../utils/listing-access/photo-limit';
+import {
+    listingCoverPhotoLimit,
+    listingGalleryPhotoLimit
+} from '../../../utils/listing-access/photo-limit';
 import { apiLogger } from '../../../utils/logger';
 import { createErrorResponse } from '../../../utils/response-helpers';
 import { createProtectedRoute } from '../../../utils/route-factory';
@@ -96,6 +94,11 @@ const buildUploadRateLimitMessage = ({
 /**
  * Burst allowance for one album, uploaded in a single pass.
  *
+ * HOS-2495 (D-17): an explicit constant. It used to be derived from
+ * `ENTITY_GALLERY_CAPS` (largest cap + 1 = 51); listing galleries no longer have a
+ * literal cap, so the derivation would have silently dropped it. The value stays
+ * 51 per minute (OQ-5).
+ *
  * The cap PLUS ONE, because a complete album is `cap + 1` REQUESTS through this
  * one route: the gallery photos, plus the featured image, which uploads here too
  * (`role=featured`). Sizing the burst to the gallery cap alone left the featured
@@ -108,7 +111,7 @@ const buildUploadRateLimitMessage = ({
  * on it. What sizes this limit is the request count of one upload pass, and that
  * is still `cap` gallery uploads plus one featured upload either way.
  */
-const PROTECTED_ENTITY_UPLOAD_RATE_LIMIT_MAX = Math.max(...Object.values(ENTITY_GALLERY_CAPS)) + 1;
+const PROTECTED_ENTITY_UPLOAD_RATE_LIMIT_MAX = 51;
 
 /**
  * Resolve an entity service per-request for ownership verification.
@@ -147,10 +150,10 @@ type UploadListingAccess = { readonly listingAccess: ListingAccessConfig };
 /**
  * Listing access of the upload, per listing vertical and role (HOS-1682).
  *
- * Each entry mirrors the persisting route the uploaded asset ends up in: the
- * accommodation gallery takes `addMedia`'s plan photo limit, the accommodation
- * featured image takes `addFeaturedMedia`'s `requested: 1`, and venue and
- * experience declare no limit, like their own `addMedia`/`addFeaturedMedia`.
+ * Each entry mirrors the persisting route the uploaded asset ends up in: a
+ * gallery upload takes `addMedia`'s photo limit (`visible non-featured + 1` on the
+ * vertical's photo key) and a featured upload takes `addFeaturedMedia`'s
+ * `requested: 1`, in all three listing verticals (HOS-2495).
  * The vertical is named literally per branch: it is the vertical of the table
  * the service branch reads the listing from, never a value of the request.
  */
@@ -160,7 +163,7 @@ const UPLOAD_LISTING_ACCESS = {
             vertical: VerticalEnum.ACCOMMODATION,
             operation: 'EDIT',
             idParam: 'id',
-            limit: accommodationGalleryPhotoLimit
+            limit: listingGalleryPhotoLimit({ vertical: VerticalEnum.ACCOMMODATION })
         }
     },
     accommodationFeatured: {
@@ -168,14 +171,40 @@ const UPLOAD_LISTING_ACCESS = {
             vertical: VerticalEnum.ACCOMMODATION,
             operation: 'EDIT',
             idParam: 'id',
-            limit: async () => ({ key: 'max_photos_per_accommodation', requested: 1 })
+            limit: listingCoverPhotoLimit({ vertical: VerticalEnum.ACCOMMODATION })
         }
     },
-    venue: {
-        listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' }
+    venueGallery: {
+        listingAccess: {
+            vertical: VerticalEnum.VENUE,
+            operation: 'EDIT',
+            idParam: 'id',
+            limit: listingGalleryPhotoLimit({ vertical: VerticalEnum.VENUE })
+        }
     },
-    experience: {
-        listingAccess: { vertical: VerticalEnum.EXPERIENCE, operation: 'EDIT', idParam: 'id' }
+    venueFeatured: {
+        listingAccess: {
+            vertical: VerticalEnum.VENUE,
+            operation: 'EDIT',
+            idParam: 'id',
+            limit: listingCoverPhotoLimit({ vertical: VerticalEnum.VENUE })
+        }
+    },
+    experienceGallery: {
+        listingAccess: {
+            vertical: VerticalEnum.EXPERIENCE,
+            operation: 'EDIT',
+            idParam: 'id',
+            limit: listingGalleryPhotoLimit({ vertical: VerticalEnum.EXPERIENCE })
+        }
+    },
+    experienceFeatured: {
+        listingAccess: {
+            vertical: VerticalEnum.EXPERIENCE,
+            operation: 'EDIT',
+            idParam: 'id',
+            limit: listingCoverPhotoLimit({ vertical: VerticalEnum.EXPERIENCE })
+        }
     }
 } satisfies Record<string, UploadListingAccess>;
 
@@ -206,9 +235,13 @@ const resolveUploadListingAccess = ({
                 ? UPLOAD_LISTING_ACCESS.accommodationGallery.listingAccess
                 : UPLOAD_LISTING_ACCESS.accommodationFeatured.listingAccess;
         case 'venue':
-            return UPLOAD_LISTING_ACCESS.venue.listingAccess;
+            return role === 'gallery'
+                ? UPLOAD_LISTING_ACCESS.venueGallery.listingAccess
+                : UPLOAD_LISTING_ACCESS.venueFeatured.listingAccess;
         case 'experience':
-            return UPLOAD_LISTING_ACCESS.experience.listingAccess;
+            return role === 'gallery'
+                ? UPLOAD_LISTING_ACCESS.experienceGallery.listingAccess
+                : UPLOAD_LISTING_ACCESS.experienceFeatured.listingAccess;
         case 'destination':
         case 'event':
         case 'post':
@@ -384,8 +417,14 @@ export const protectedUploadEntityRoute = createProtectedRoute({
             }
         }
 
-        // ── 3d. Enforce gallery cap ───────────────────────────────────────────
-        if (role === 'gallery') {
+        // ── 3d. Enforce the literal gallery cap of CONTENT entities ────────────
+        // Listing verticals are capped by step 7 above, against the owner's
+        // effective photo limit (HOS-2495); only destination/event/post keep a
+        // literal cap.
+        if (
+            role === 'gallery' &&
+            (entityType === 'destination' || entityType === 'event' || entityType === 'post')
+        ) {
             // Counted via the shared resolver so this path and the admin upload
             // path can never disagree about where an entity type's photos live —
             // see routes/media/gallery-count.ts.

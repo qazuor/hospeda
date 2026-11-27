@@ -48,6 +48,8 @@ interface DestinationOption {
     readonly name: string;
     /** When true, the option is highlighted as a featured destination. */
     readonly isFeatured?: boolean;
+    /** Public accommodation inventory for this destination. */
+    readonly accommodationsCount?: number;
 }
 
 interface SearchBarProps {
@@ -372,18 +374,13 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
 
     // Reset the per-panel search query whenever the user closes or switches
     // panels, and autofocus the input on the freshly opened panel so power
-    // users can start typing right away. On mobile the panels render as
-    // bottom-sheets; auto-focusing a text input there pops the virtual
-    // keyboard, which overlaps the option list and blocks selection, so we
-    // only autofocus on desktop popover sizes (>900px).
-    // Reads the reactive `isMobileSheet` rather than calling matchMedia
-    // imperatively, so the BETA-24 guard follows live breakpoint changes
-    // instead of freezing whatever the viewport was when the panel opened.
+    // users can start typing right away. The destination sheet also autofocuses;
+    // the type sheet preserves the desktop-only autofocus behavior.
     useEffect(() => {
-        if (activePanel !== 'destination') {
-            setDestinationQuery('');
-        } else if (!isMobileSheet) {
+        if (activePanel === 'destination') {
             destinationSearchInputRef.current?.focus();
+        } else {
+            setDestinationQuery('');
         }
         if (activePanel !== 'type') {
             setTypeQuery('');
@@ -395,10 +392,8 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
     /**
      * Move focus into the sheet when it opens — bottom-sheet mode ONLY.
      *
-     * The target is deliberately the panel's close (X) button and never the
-     * destination/type search `<input>`: focusing a text input inside a mobile
-     * sheet pops the virtual keyboard over the option list (BETA-24, guarded
-     * by the effect above).
+     * The destination sheet focuses its search field in the effect above.
+     * Other sheets place focus on their close button.
      *
      * `isMobileSheet` is a dependency for two reasons: it gates the behaviour,
      * and `PanelLayer` remounts the whole panel subtree when the breakpoint is
@@ -406,7 +401,7 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
      * land on `<body>` after such a remount.
      */
     useEffect(() => {
-        if (!isMobileSheet || activePanel === null) return;
+        if (!isMobileSheet || activePanel === null || activePanel === 'destination') return;
         panelCloseButtonRef.current?.focus();
     }, [activePanel, isMobileSheet]);
 
@@ -839,7 +834,11 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                             />
                         </div>
                         <div
-                            className={cn(styles.panelBody, styles.panelOptionList)}
+                            className={cn(
+                                styles.panelBody,
+                                styles.panelOptionList,
+                                styles.destinationOptions
+                            )}
                             // Carries the listbox role only in sheet mode,
                             // where the panel root is the dialog. On desktop
                             // the root is still the listbox and adding a second
@@ -859,6 +858,23 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                                         {t('home.searchBar.clearTypes', 'Limpiar')}
                                     </span>
                                 </button>
+                            )}
+                            {filteredDestinations.some((dest) => dest.isFeatured) && (
+                                <div
+                                    role="presentation"
+                                    className={styles.popularHeading}
+                                >
+                                    <span
+                                        className="featured-indicator"
+                                        aria-hidden="true"
+                                    >
+                                        <StarIcon
+                                            size={13}
+                                            weight="fill"
+                                        />
+                                    </span>{' '}
+                                    {t('home.searchBar.popularDestinations')}
+                                </div>
                             )}
                             {filteredDestinations.map((dest) => {
                                 const isSelected = selectedDestination?.id === dest.id;
@@ -884,7 +900,19 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                                                 aria-hidden="true"
                                             />
                                         </span>
-                                        <span className="combobox__option-label">{dest.name}</span>
+                                        <span className="combobox__option-label">
+                                            {dest.name}
+                                            {dest.accommodationsCount !== undefined && (
+                                                <>
+                                                    {' '}
+                                                    (
+                                                    {dest.accommodationsCount.toLocaleString(
+                                                        locale
+                                                    )}
+                                                    )
+                                                </>
+                                            )}
+                                        </span>
                                         {dest.isFeatured && (
                                             <span
                                                 className="featured-indicator"

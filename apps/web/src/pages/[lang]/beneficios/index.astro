@@ -7,6 +7,9 @@
  */
 
 import MarketingLayout from '@/layouts/MarketingLayout.astro';
+import { TouristPlanAction } from '@/components/billing/TouristPlanAction.client';
+import { fetchPublicPlans } from '@/lib/billing/fetch-plans';
+import { TOURIST_BENEFIT_CARDS as touristBenefits } from '@/lib/billing/tourist-benefit-content';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import { breadcrumbLabel } from '@/lib/navigation/breadcrumb-labels';
 import MarketingHero from '@/components/marketing/MarketingHero.astro';
@@ -16,7 +19,6 @@ import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import {
-	BuildingsIcon,
 	ChatIcon,
 	CompassIcon,
 	EyeIcon,
@@ -25,7 +27,6 @@ import {
 	MapIcon,
 	MegaphoneIcon,
 	PhoneIcon,
-	PriceIcon,
 	ReceiptIcon,
 	SettingsIcon,
 	ShieldIcon,
@@ -36,10 +37,11 @@ import {
 	UsersThreeIcon,
 } from '@repo/icons';
 
-import { CACHE_TAG_SITE_CONFIG } from '@repo/cache-tags';
+import { CACHE_TAG_PRICING } from '@repo/cache-tags';
 import { applyCacheHeaders } from '@/lib/cache/response-cache';
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
+const touristCatalog = await fetchPublicPlans({ vertical: 'tourist' });
 
 // --- Edge cacheability (HOS-369 W2-2) ---
 // No session, no API call — the content is i18n + code, so it only changes on
@@ -52,18 +54,10 @@ const { t } = createTranslations(locale);
 applyCacheHeaders({
 	locals: Astro.locals,
 	headers: Astro.response.headers,
-	cacheable: true,
-	cacheClass: 'static',
-	tags: [CACHE_TAG_SITE_CONFIG]
+	cacheable: touristCatalog.ok,
+	cacheClass: 'pricing',
+	tags: [CACHE_TAG_PRICING]
 });
-
-const touristBenefits = [
-	{ Icon: BuildingsIcon, titleKey: 'benefits.tourist.1.title', descKey: 'benefits.tourist.1.desc' },
-	{ Icon: PriceIcon, titleKey: 'benefits.tourist.2.title', descKey: 'benefits.tourist.2.desc' },
-	{ Icon: StarIcon, titleKey: 'benefits.tourist.3.title', descKey: 'benefits.tourist.3.desc' },
-	{ Icon: MapIcon, titleKey: 'benefits.tourist.4.title', descKey: 'benefits.tourist.4.desc' },
-	{ Icon: ChatIcon, titleKey: 'benefits.tourist.5.title', descKey: 'benefits.tourist.5.desc' },
-] as const;
 
 const ownerBenefits = [
 	{ Icon: EyeIcon, titleKey: 'benefits.owner.1.title', descKey: 'benefits.owner.1.desc' },
@@ -259,10 +253,13 @@ const inLanguageMap: Record<SupportedLocale, string> = {
 				})}
 			</div>
 			<div class="benefits-section__cta" data-reveal="up">
-				<GradientButton
-					href={buildUrl({ locale, path: 'alojamientos' })}
-					label={t('benefits.tourist.cta')}
-					variant="primary"
+				<TouristPlanAction
+					client:visible
+					locale={locale}
+					plans={touristCatalog.ok ? touristCatalog.plans : []}
+					mode="compare"
+					href={buildUrl({ locale, path: 'planes/turistas' })}
+					label={t('pricing.nav.seePlans')}
 				/>
 			</div>
 		</div>
@@ -583,9 +580,20 @@ const inLanguageMap: Record<SupportedLocale, string> = {
 
 	.benefits-section__grid {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+		grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
 		gap: var(--space-card-gap);
 		text-align: left;
+	}
+
+	.benefits-section__grid:has(> :nth-child(5):last-child) {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+	}
+
+	.benefits-section__grid:has(> :nth-child(5):last-child) > * {
+		flex: 1 1 200px;
+		max-width: 19rem;
 	}
 
 	.benefits-card {

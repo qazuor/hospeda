@@ -24,7 +24,7 @@
  * @module ai-core/engine/errors
  */
 
-import type { AiFeature, AiProviderId } from '@repo/schemas';
+import type { AiFeature, AiProviderId, AiUsageStats } from '@repo/schemas';
 
 // ---------------------------------------------------------------------------
 // Base engine error
@@ -304,6 +304,20 @@ export class AiNoEnabledProviderError extends AiEngineError {
  * }
  * ```
  */
+/**
+ * Spend of a generation the provider already served before its OUTPUT was
+ * blocked by moderation (HOS-2658 AC-19). The provider charged for it, so a
+ * caller that meters usage can still record it as an `error` row.
+ */
+export interface AiModerationBlockedSpend {
+    /** Token usage the provider reported for the blocked generation. */
+    readonly usage: AiUsageStats;
+    /** The provider that served the blocked generation. */
+    readonly provider: AiProviderId;
+    /** The model that produced the blocked generation. */
+    readonly model: string;
+}
+
 export class AiModerationBlockedError extends AiEngineError {
     /** The AI feature whose call was blocked by the moderation pass. */
     readonly feature: AiFeature;
@@ -323,10 +337,18 @@ export class AiModerationBlockedError extends AiEngineError {
      */
     readonly categories: Record<string, boolean>;
 
+    /**
+     * Spend of the blocked generation. Set only on an `'output'` block, where the
+     * provider was already paid; an `'input'` block happens before any
+     * generation call and never carries it.
+     */
+    readonly spend?: AiModerationBlockedSpend;
+
     constructor(input: {
         readonly feature: AiFeature;
         readonly direction: 'input' | 'output';
         readonly categories: Record<string, boolean>;
+        readonly spend?: AiModerationBlockedSpend;
     }) {
         super(
             `AI call for feature '${input.feature}' blocked by content moderation (${input.direction}).`,
@@ -336,6 +358,9 @@ export class AiModerationBlockedError extends AiEngineError {
         this.feature = input.feature;
         this.direction = input.direction;
         this.categories = input.categories;
+        if (input.direction === 'output' && input.spend) {
+            this.spend = input.spend;
+        }
     }
 }
 

@@ -3,6 +3,50 @@
     "description": "Conocé cómo Hospeda usa cookies y tecnologías similares para mejorar tu experiencia en el sitio.",
     "heading": "Política de Cookies",
     "lastUpdated": "Última actualización: 18 de noviembre de 2026",
+    "managePreferences": "Gestionar preferencias",
+    "inventory": {
+        "name": "Nombre",
+        "purpose": "Finalidad",
+        "duration": "Duración",
+        "session": {
+            "purpose": "Mantener la sesión iniciada.",
+            "duration": "Sesión del navegador o hasta 7 días, renovables si mantenés la sesión iniciada"
+        },
+        "sessionCache": {
+            "purpose": "Guardar temporalmente los datos de sesión para evitar consultas repetidas.",
+            "duration": "Hasta 5 minutos; si no mantenés la sesión iniciada, se borra al cerrar el navegador"
+        },
+        "consent": { "purpose": "Recordar tu decisión sobre cookies.", "duration": "1 año" },
+        "announcements": {
+            "purpose": "Recordar los avisos del sitio que cerraste.",
+            "duration": "1 año"
+        },
+        "dontRemember": {
+            "purpose": "Limitar el inicio de sesión a la sesión actual del navegador si elegís no mantener la sesión iniciada.",
+            "duration": "Sesión del navegador"
+        },
+        "signInState": {
+            "purpose": "Verificar el regreso a Hospeda después de iniciar sesión con un proveedor externo.",
+            "duration": "5 minutos"
+        },
+        "oauthLogout": {
+            "purpose": "Verificar la confirmación de cierre de sesión solicitada por una aplicación conectada cuando la función está habilitada.",
+            "duration": "5 minutos"
+        },
+        "visitor": {
+            "purpose": "Relacionar solicitudes a la API de una misma persona en nuestros registros técnicos, incluso sin iniciar sesión.",
+            "duration": "Sesión del navegador"
+        },
+        "calendarState": {
+            "purpose": "Verificar el regreso a Hospeda al conectar Google Calendar con una publicación.",
+            "duration": "5 minutos"
+        }
+    },
+    "recording": {
+        "association": "Las grabaciones son seudónimas y, si iniciaste sesión, pueden quedar asociadas al identificador de tu cuenta.",
+        "masking": "Todo el texto y los campos de formularios se enmascaran. Solo se graba una muestra de las sesiones.",
+        "retention": "Se conservan hasta 60 días y después se eliminan automáticamente."
+    },
     "sections": {
         "whatAreCookies": {
             "title": "1. Qué son las cookies",
@@ -10,23 +54,23 @@
         },
         "cookiesWeUse": {
             "title": "2. Qué cookies utilizamos",
-            "body": "Hospeda utiliza cookies estrictamente necesarias para el funcionamiento del sitio (como la sesión de usuario y el idioma preferido), que no requieren tu consentimiento. En caso de consentimiento, podemos usar cookies de análisis para entender cómo los visitantes interactúan con el sitio y mejorar la experiencia. Actualmente no usamos cookies de marketing ni publicidad."
+            "body": "Usamos cookies para funciones como iniciar sesión y recordar tus preferencias de privacidad. El idioma y el tema se recuerdan en el almacenamiento local del navegador. La analítica opcional depende de tu consentimiento. Actualmente no usamos cookies de marketing ni publicidad."
         },
         "sessionRecording": {
             "title": "Grabaciones de sesión y mapas de calor",
-            "body": "Si aceptás las cookies de analítica, Hospeda puede grabar sesiones de navegación y mapas de calor de clics y desplazamiento con Umami, una herramienta de analítica que alojamos nosotros mismos. Las grabaciones son seudónimas: si iniciaste sesión, pueden quedar asociadas al identificador de tu cuenta. La grabación solo ocurre si aceptaste las cookies de analítica y únicamente mientras esta función esté activada. Todo el texto y todos los campos de formularios se enmascaran, por lo que lo que escribís no queda registrado. Se graba una muestra de las sesiones, no todas. Las grabaciones se conservan por un período limitado de hasta 60 días y después se eliminan automáticamente."
+            "body": "Si aceptás las cookies de analítica y la función está activada, Hospeda puede grabar sesiones y mapas de calor de clics y desplazamiento con Umami, una herramienta que alojamos nosotros mismos."
         },
         "cookieList": {
             "title": "3. Listado de cookies",
-            "body": "A continuación detallamos las principales cookies que este sitio puede almacenar en tu dispositivo: 'hospeda-session' (sesión autenticada, necesaria, duración de la sesión del navegador), 'lang' (preferencia de idioma, necesaria, persistente por 1 año), 'cookie-consent' (estado de tu consentimiento, necesaria, persistente por 1 año). No utilizamos cookies de rastreo publicitario ni compartimos datos con redes de anuncios."
+            "body": "Estas son las cookies propias que usa Hospeda. El asterisco representa un prefijo del nombre que puede variar según el entorno. La caché de sesión puede dividirse en cookies con sufijos numéricos. No utilizamos cookies de rastreo publicitario ni compartimos datos con redes de anuncios."
         },
         "manageCookies": {
             "title": "4. Cómo gestionar las cookies",
-            "body": "Podés gestionar o eliminar las cookies desde la configuración de tu navegador. La mayoría de los navegadores permiten rechazar todas las cookies, aceptar solo las de sitios específicos o eliminarlas al cerrar el navegador. Ten en cuenta que deshabilitar las cookies necesarias puede afectar el correcto funcionamiento del sitio, incluyendo el acceso a tu cuenta."
+            "body": "Usá el botón de esta sección para cambiar o retirar tu consentimiento. También podés gestionar o eliminar las cookies desde tu navegador. Si deshabilitás las cookies necesarias, puede verse afectado el acceso a tu cuenta."
         },
         "thirdPartyCookies": {
             "title": "5. Cookies de terceros",
-            "body": "Algunos servicios externos que usamos pueden establecer sus propias cookies: Cloudinary (entrega de imágenes optimizadas, sin seguimiento de usuarios), Sentry (monitoreo de errores, solo con tu consentimiento), MercadoPago (procesamiento de pagos durante el checkout). Estos terceros tienen sus propias políticas de privacidad y no tenemos control directo sobre sus cookies."
+            "body": "Cuando te dirigís a Mercado Pago para autorizar un pago, ese sitio puede usar sus propias cookies conforme a su política. Hospeda usa Cloudinary para entregar imágenes y Sentry para monitorear errores cuando se habilita el monitoreo con consentimiento. Estos servicios tienen sus propias políticas de privacidad."
         },
         "policyChanges": {
             "title": "6. Cambios a esta política",

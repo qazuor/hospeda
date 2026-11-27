@@ -10,7 +10,6 @@ import type { OpeningHours } from '@repo/schemas';
 import { extractAmenityAttributes } from '@/lib/api/amenity-attributes';
 import { parseListingPolicyValues } from '@/lib/listing/listing-policies';
 import type { ListingDetail } from '@/lib/listing/owner-listings';
-import { parseListingI18nValues } from '../ListingTranslationPanel.client';
 import type { ListingEditData } from './listing-edit-data';
 import { parseLocationValues } from './location-values';
 import { splitDuration } from './PracticalInfoSection.client';
@@ -163,8 +162,6 @@ export function buildListingInitialEditData({
             data.amenityAttributes as readonly Record<string, unknown>[] | undefined
         ),
         featureIds: new Set((data.featureIds as string[] | undefined) ?? []),
-        // T-023: i18n fields (nameI18n, summaryI18n, descriptionI18n, richDescriptionI18n)
-        i18nValues: parseListingI18nValues(data),
         refreshSlugFromName: false
     };
 }

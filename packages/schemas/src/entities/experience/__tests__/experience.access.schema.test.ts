@@ -285,6 +285,32 @@ describe('ExperienceAdminSchema', () => {
         const result = ExperienceAdminSchema.safeParse(raw);
         expect(result.success).toBe(true);
     });
+
+    it('should keep translationMeta for the admin TranslationSection (HOS-2658 AC-30)', () => {
+        // Arrange
+        const translationMeta = {
+            name: {
+                en: {
+                    autoTranslated: false,
+                    translatedAt: '2026-11-20T10:00:00.000Z',
+                    sourceHash: 'a'.repeat(64)
+                }
+            }
+        };
+
+        // Act
+        const result = ExperienceAdminSchema.safeParse({
+            ...buildPublicExperience(),
+            ownerId: VALID_UUID,
+            publicationStatus: 'PUBLISHED',
+            updatedAt: new Date('2024-01-02'),
+            translationMeta
+        });
+
+        // Assert
+        expect(result.success).toBe(true);
+        expect(result.data?.translationMeta).toEqual(translationMeta);
+    });
 });
 
 // ============================================================================

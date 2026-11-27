@@ -55,11 +55,11 @@ describe('plan index — the five audience cards (AC-1)', () => {
         expect(indexSrc).toContain('AUDIENCE_CARD_PATHS[id]');
     });
 
-    it('hydrates nothing — every card is in the SSR HTML', () => {
-        // A `client:*` directive is the only way a card could depend on JS
-        // running. Its absence is what makes "no tabs, no accordion, no
-        // carousel" checkable rather than a claim in a comment.
-        expect(indexSrc).not.toMatch(/\bclient:(load|idle|visible|media|only)\b/);
+    it('hydrates only the tourist action; all cards still render on the server', () => {
+        expect(indexSrc.match(/\bclient:(load|idle|visible|media|only)\b/g)).toEqual([
+            'client:load'
+        ]);
+        expect(indexSrc).toContain('<TouristPlanAction client:load');
     });
 
     it('uses no disclosure widget that could hide a card', () => {
@@ -90,7 +90,8 @@ describe('plan index — the five audience cards (AC-1)', () => {
 
     it('renders one list item per card, each wrapping a real link', () => {
         expect(indexSrc).toContain('<li class="audiences__item"');
-        expect(indexSrc).toContain('<a class="audiences__card" href={card.href}>');
+        expect(indexSrc).toContain('<a class="audiences__card-cta" href={card.href}>');
+        expect(indexSrc).toContain('plans={touristPlans} href={card.href}');
     });
 });
 
@@ -326,7 +327,7 @@ describe('plan index — prices come from the API (AC-8)', () => {
             return (line as string).match(/^\t*/)?.[0].length ?? 0;
         };
 
-        expect(indentOf('<span class="audiences__card-cta">')).toBeLessThan(
+        expect(indentOf('<a class="audiences__card-cta"')).toBeLessThan(
             indentOf('<p class="audiences__card-price">')
         );
     });
@@ -343,7 +344,7 @@ describe('plan index — the trial line is read, never written (R-2)', () => {
         // property of this file is that the page reads `trialDays` off the
         // fetch result and nothing else.
         expect(indexSrc).toContain(
-            'const { startingPrices, trialDays } = await fetchAudienceOffers()'
+            'const { startingPrices, trialDays, touristPlans } = await fetchAudienceOffers()'
         );
         expect(indexSrc).toContain('const days = trialDays[id];');
     });

@@ -394,7 +394,16 @@ describe('TEST:1675:2 AC:1675:1 the four pending templates render through the pr
         const html = renderToStaticMarkup(result.react);
         expect(result.subject.trim()).not.toBe('');
         expect(html).toContain(phrase);
-        for (const value of Object.values(payload)) {
+        for (const [key, value] of Object.entries(payload)) {
+            // HOS-2566: the receipt id travels, by design, only inside the authenticated
+            // «Ver recibo» link; every other identifier stays out of the body.
+            if (template === 'billing.payment-credited' && key === 'receiptId') {
+                expect(html.replaceAll(`?recibo=${String(value)}`, '')).not.toContain(
+                    String(value)
+                );
+                expect(html).toContain(`?recibo=${String(value)}`);
+                continue;
+            }
             if (typeof value === 'string' && value.startsWith('private-'))
                 expect(html).not.toContain(value);
         }

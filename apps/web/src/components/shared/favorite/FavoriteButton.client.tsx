@@ -26,7 +26,7 @@ import type { BookmarkCollectionItem } from '@/lib/api/endpoints-protected';
 import { userBookmarksApi } from '@/lib/api/endpoints-protected';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
-import { createT } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 import type { ContactOrigin } from '@/lib/listing-contact/listing-contact-events';
 import { clearPendingAction, savePendingAction } from '@/lib/pending-action';
 import { setFavoriteStatus, useFavoriteStatus } from '@/store/favorites-store';
@@ -34,6 +34,7 @@ import { UsageCounter } from '../ui/UsageCounter';
 import usageStyles from '../ui/UsageCounter.module.css';
 import { CollectionPickerPopover } from './CollectionPickerPopover';
 import styles from './FavoriteButton.module.css';
+import { useFavoriteGuestBenefit } from './use-favorite-guest-benefit';
 import { useFavoriteToggle } from './use-favorite-toggle';
 import { useFavoriteUsage } from './use-favorite-usage';
 import { usePendingFavorite } from './usePendingFavorite';
@@ -112,8 +113,8 @@ export interface FavoriteButtonProps {
      * retain the pill behaviour without setting this prop.
      */
     readonly showCount?: boolean;
-    /** Display the signed-in viewer’s effective favorite quota, on detail pages. */
-    readonly showUsage?: boolean;
+    /** Show the effective quota with a visible counter, or only as a tooltip on dense cards. */
+    readonly showUsage?: boolean | 'tooltip';
     /** Focus target when a responsive layout hides the guest prompt's trigger. */
     readonly guestPromptFallbackRef?: RefObject<HTMLElement | null>;
     /** Surface this heart lives on, forwarded as `origin` on the favorite events (HOS-2579). */
@@ -180,7 +181,7 @@ export const FavoriteButton: FC<FavoriteButtonProps> = ({
     origin,
     labels
 }) => {
-    const t = createT(locale);
+    const { t, tPlural } = createTranslations(locale);
 
     /**
      * Favorite state, resolved on the client and shared with every other heart
@@ -198,15 +199,18 @@ export const FavoriteButton: FC<FavoriteButtonProps> = ({
     const {
         label: usage,
         counter,
-        refresh: refreshUsage
+        afterToggle
     } = useFavoriteUsage({
-        account: showUsage ? user?.id : undefined,
-        t
+        account: user?.id,
+        showUsage,
+        t,
+        tPlural
     });
     const isSessionResolved = permissions !== null;
 
     /** Whether the auth-required popover is currently visible. */
     const [isPopoverOpen, setIsPopoverOpen] = useState<boolean>(false);
+    const benefit = useFavoriteGuestBenefit({ open: isPopoverOpen, tPlural });
 
     /**
      * The bookmark id + collections list to render in the inline collection
@@ -318,12 +322,13 @@ export const FavoriteButton: FC<FavoriteButtonProps> = ({
         entityType,
         locale,
         t,
+        tPlural,
         origin,
         isFavorited,
         bookmarkId,
         assignedCollectionRef,
         publish,
-        refreshUsage,
+        afterToggle,
         maybeOpenCollectionPicker,
         promptSignIn
     });
@@ -456,6 +461,7 @@ export const FavoriteButton: FC<FavoriteButtonProps> = ({
                         'ui.favorite.auth_required.message',
                         'Para guardar tus favoritos necesitás una cuenta. Es gratis y rápido.'
                     )}
+                    benefit={benefit}
                     onClose={handlePopoverClose}
                     locale={locale}
                     returnUrl={returnUrl}

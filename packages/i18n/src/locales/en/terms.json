@@ -110,6 +110,48 @@
         "title": "Terms and Conditions",
         "description": "Terms and conditions of use for the Hospeda platform"
     },
+    "articles": {
+        "aceptacion": {
+            "title": "1. Acceptance of the terms",
+            "body": "By accessing and using the Hospeda platform (the Service), you agree to these Terms and Conditions. If you do not agree to any part of these terms, you may not access the Service."
+        },
+        "uso-servicio": {
+            "title": "2. Use of the service",
+            "body": "The Service helps travelers discover accommodations, food and drink venues, experiences and other tourism resources and contact providers. You agree to use the Service only for lawful purposes and in accordance with these Terms. If you use the AI tools, verify details affecting your trip, such as prices and availability, with the provider."
+        },
+        "registro": {
+            "title": "3. Account registration",
+            "body": "To use certain features of the Service, you must create an account with accurate, complete and current information. You are responsible for keeping your password confidential and for all activity under your account."
+        },
+        "publicacion": {
+            "title": "4. Publishing listings",
+            "body": "Providers who list accommodations, food and drink venues or experiences guarantee that the information they provide is truthful, accurate and complete. Hospeda reserves the right to review, modify or remove listings that do not meet our policies."
+        },
+        "reservas": {
+            "title": "5. Reservations and payments",
+            "body": "Reservations and their payments are arranged directly between the traveler and the provider. Hospeda facilitates contact and does not process reservation payments. Hospeda subscription payments are processed through Mercado Pago. Plan terms are shown before purchase."
+        },
+        "cancelaciones": {
+            "title": "6. Cancellations and refunds",
+            "body": "Reservation cancellation and refund terms depend on the provider and what was agreed at booking. To cancel a Hospeda subscription, use the subscriptions section of your account. Article 10 links to the channel for exercising the right of withdrawal."
+        },
+        "propiedad-intelectual": {
+            "title": "7. Intellectual property",
+            "body": "All platform content, including text, images, logos, designs and software, is owned by Hospeda or its respective owners. Reproduction without express permission is prohibited."
+        },
+        "limitacion": {
+            "title": "8. Limitation of liability",
+            "body": "Hospeda does not guarantee uninterrupted availability of the Service or the accuracy of information provided by third parties. Under no circumstances are we liable for indirect, incidental or consequential damages."
+        },
+        "modificaciones": {
+            "title": "9. Changes",
+            "body": "We reserve the right to change these Terms at any time. Changes take effect when published on the platform. Continued use of the Service constitutes acceptance of the revised Terms."
+        },
+        "contacto": {
+            "title": "10. Contact",
+            "body": "If you have questions about these Terms and Conditions, contact us at info@hospeda.com.ar or through our contact form."
+        }
+    },
     "withdrawal": {
         "title": "Right of withdrawal",
         "description": "How to withdraw from a Hospeda subscription within 10 calendar days of the charge.",

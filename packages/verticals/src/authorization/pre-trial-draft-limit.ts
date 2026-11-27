@@ -27,20 +27,20 @@
  * Neither case is pruned at publish.
  */
 import type { BillingForVerticals, CoverageResponse } from '@repo/billing-verticals-contract';
-import { VerticalEnum } from '@repo/schemas';
+import { LISTING_PHOTO_LIMIT_KEY_BY_VERTICAL, VerticalEnum } from '@repo/schemas';
 import { resolveTrialValues } from '../effective-set/trial-ratchet';
 import type { PlanCatalogReader } from '../plan-catalog/catalog-reader';
 import type { TrialStartReader } from '../trial/trial-start-types';
 
 /**
- * The limit keys a pre-trial owner may use on a DRAFT, at the trial's cap, per
- * vertical. venue and experience declare no photo limit on their media
- * routes, so they have nothing to allow.
+ * Gallery photo keys a pre-trial owner may use on a DRAFT at the trial's cap.
  */
 export const PRE_TRIAL_DRAFT_LIMIT_KEYS_BY_VERTICAL: Readonly<
     Partial<Record<VerticalEnum, readonly string[]>>
 > = {
-    [VerticalEnum.ACCOMMODATION]: ['max_photos_per_accommodation']
+    [VerticalEnum.ACCOMMODATION]: [LISTING_PHOTO_LIMIT_KEY_BY_VERTICAL.accommodation],
+    [VerticalEnum.VENUE]: [LISTING_PHOTO_LIMIT_KEY_BY_VERTICAL.venue],
+    [VerticalEnum.EXPERIENCE]: [LISTING_PHOTO_LIMIT_KEY_BY_VERTICAL.experience]
 };
 
 /**

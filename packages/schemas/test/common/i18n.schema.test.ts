@@ -1,6 +1,44 @@
 import { describe, expect, it } from 'vitest';
 import { ZodError } from 'zod';
-import { I18nTextSchema, PartialI18nTextSchema } from '../../src/common/i18n.schema.js';
+import {
+    I18nTextSchema,
+    PartialI18nTextSchema,
+    TranslationMetaSchema
+} from '../../src/common/i18n.schema.js';
+
+describe('TranslationMetaSchema sourceHash (HOS-2658)', () => {
+    const pair = { autoTranslated: false, translatedAt: '2026-11-26T00:00:00.000Z' };
+
+    it('preserves metadata written without a source hash', () => {
+        const meta = { name: { en: pair } };
+
+        const result = TranslationMetaSchema.parse(meta);
+
+        expect(result).toEqual(meta);
+    });
+
+    it('preserves a 64-character lowercase hex hash', () => {
+        const meta = { name: { en: { ...pair, sourceHash: '0123456789abcdef'.repeat(4) } } };
+
+        const result = TranslationMetaSchema.parse(meta);
+
+        expect(result).toEqual(meta);
+    });
+
+    it.each([
+        ['uppercase', 'A'.repeat(64)],
+        ['short', 'a'.repeat(63)],
+        ['non-hex', 'g'.repeat(64)]
+    ])('rejects a %s hash', (_label, sourceHash) => {
+        const meta = { name: { en: { ...pair, sourceHash } } };
+
+        const result = TranslationMetaSchema.safeParse(meta);
+
+        expect(result.error?.issues.map(({ code, path }) => ({ code, path }))).toEqual([
+            { code: 'invalid_format', path: ['name', 'en', 'sourceHash'] }
+        ]);
+    });
+});
 
 describe('I18nTextSchema (unchanged by HOS-142)', () => {
     it('requires es/en/pt to all be strings', () => {

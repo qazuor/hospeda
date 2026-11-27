@@ -13,10 +13,13 @@
 
 import type { PromotionListingResponse } from '@repo/schemas';
 import { useCallback, useEffect, useState } from 'react';
+import { useSession } from '@/lib/auth-client';
+import { buildLoginRedirect } from '@/lib/auth-redirect';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { getPromotionSeed } from '@/lib/promotions/promotion-seed';
 import { fetchListingPromotions } from '@/lib/promotions/visible-promotions-api';
+import { buildUrl } from '@/lib/urls';
 import { PromotionCards } from './PromotionCards';
 import styles from './PromotionCards.module.css';
 import { useVipPlanName } from './use-promotion-policy';
@@ -42,8 +45,10 @@ type ListingState =
  * @returns The list region.
  */
 export function PromotionsListing({ locale, apiUrl }: PromotionsListingProps) {
-    const { t } = createTranslations(locale);
+    const { t, tPlural } = createTranslations(locale);
     const [page, setPage] = useState(1);
+    const [onlyExclusive, setOnlyExclusive] = useState(false);
+    const { data: session, isPending: sessionPending } = useSession();
     const [state, setState] = useState<ListingState>({ kind: 'loading' });
 
     const load = useCallback(
@@ -70,7 +75,7 @@ export function PromotionsListing({ locale, apiUrl }: PromotionsListingProps) {
         state.data.items.some((item) => item.kind === 'locked' || item.audience === 'vip');
     const { vipPlanName } = useVipPlanName({ apiUrl, enabled: hasLocked });
 
-    if (state.kind === 'loading') {
+    if (state.kind === 'loading' || sessionPending) {
         return (
             <p
                 className={styles.status}
@@ -105,14 +110,70 @@ export function PromotionsListing({ locale, apiUrl }: PromotionsListingProps) {
         return <p className={styles.status}>{t('common.promotions.page.empty')}</p>;
     }
 
+    const guest = !session?.user && !meta.isVip;
+    const currentUrl = buildUrl({ locale, path: 'promociones' });
+    const visible = items.filter((item) => item.kind === 'visible').length;
     return (
         <div
             className={styles.section}
             data-testid="promotions-listing"
         >
+            <div className={styles.status}>
+                <p>
+                    {meta.isVip
+                        ? tPlural('common.promotions.allAccess', pagination.total, {
+                              total: pagination.total
+                          })
+                        : tPlural('common.promotions.visibleStatus', items.length, {
+                              visible,
+                              total: items.length
+                          })}
+                </p>
+                {guest ? (
+                    <>
+                        <p>{t('common.promotions.guestPrompt')}</p>
+                        <a
+                            className={styles.placeLink}
+                            href={`${buildUrl({ locale, path: 'auth/signup' })}?returnUrl=${encodeURIComponent(currentUrl)}`}
+                        >
+                            {t('common.auth.signUp')}
+                        </a>{' '}
+                        <a
+                            className={styles.placeLink}
+                            href={buildLoginRedirect({ locale, currentUrl })}
+                        >
+                            {t('common.auth.signIn')}
+                        </a>
+                    </>
+                ) : meta.isVip ? (
+                    vipPlanName && (
+                        <label>
+                            <input
+                                type="checkbox"
+                                checked={onlyExclusive}
+                                onChange={(event) => setOnlyExclusive(event.currentTarget.checked)}
+                            />{' '}
+                            {t('common.promotions.onlyExclusive', undefined, { plan: vipPlanName })}
+                        </label>
+                    )
+                ) : (
+                    <a
+                        className={styles.placeLink}
+                        href={buildUrl({ locale, path: 'planes/turistas/precios' })}
+                    >
+                        {vipPlanName
+                            ? t('common.promotions.explorePlan', undefined, { plan: vipPlanName })
+                            : t('common.promotions.viewPlans')}
+                    </a>
+                )}
+            </div>
             <PromotionCards
                 locale={locale}
-                items={items}
+                items={
+                    meta.isVip && onlyExclusive
+                        ? items.filter((item) => item.audience === 'vip')
+                        : items
+                }
                 freeQuota={meta.freeQuota}
                 vipPlanName={vipPlanName}
                 showPlace

@@ -38,6 +38,7 @@ import type { SupportedLocale } from '@/lib/i18n';
 import type { ContactOrigin } from '@/lib/listing-contact/listing-contact-events';
 import { resolvePartnerContactLink } from '@/lib/listing-contact/partner-contact-link';
 import { resolveSafeExternalUrl } from '@/lib/safe-external-url';
+import { ExternalLinkIcon } from '@repo/icons';
 import { evaluatePartnerIndexability } from '@/lib/seo/partner-indexable';
 import { buildUrl } from '@/lib/urls';
 
@@ -173,8 +174,9 @@ const contactRows = Object.entries(partner.contactInfo ?? {})
 
         {websiteHref && (
             <p class="partner__website">
-                <a href={websiteHref} target="_blank" rel="noopener noreferrer">
-                    {t('partners.detail.websiteLabel', 'Sitio web')}
+                <a href={websiteHref} target="_blank" rel="noopener noreferrer" class="btn-gradient btn-gradient--primary">
+                    {t('partners.detail.websiteLabel', 'Sitio web')} <ExternalLinkIcon size="sm" aria-hidden="true" />
+                    <span class="sr-only">{t('partners.detail.newTab')}</span>
                 </a>
             </p>
         )}

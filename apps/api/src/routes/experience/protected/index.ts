@@ -19,6 +19,7 @@
  * not verified — do not read them as proven.
  */
 import { createRouter } from '../../../utils/create-app';
+import { ownerExperienceTranslationRoutes } from '../../listing-translations/index';
 import { protectedAddExperienceFaqRoute } from './addFaq';
 import { protectedAddExperienceFeaturedMediaRoute } from './addFeaturedMedia';
 import { protectedAddExperienceMediaRoute } from './addMedia';
@@ -32,6 +33,7 @@ import { protectedCreateExperienceListingRoute } from './create';
 import { protectedCreateExperienceReviewRoute } from './createReview';
 import { protectedGetExperienceByIdRoute } from './getById';
 import { protectedGetExperienceMediaRoute } from './getMedia';
+import { protectedGetExperiencePhotoAllowanceRoute } from './getPhotoAllowance';
 import { protectedListMyExperienceRoute } from './listMine';
 import { protectedExperienceMineStatsRoute } from './mineStats';
 import { protectedPatchExperienceRoute } from './patch';
@@ -82,6 +84,7 @@ app.route('/', protectedExperienceViewStatsDailySeriesRoute);
 // order, so this ordering is belt-and-braces, not load-bearing.
 app.route('/', protectedGetExperienceBrochureRoute);
 app.route('/', protectedGetExperienceSectionStatesRoute);
+app.route('/', protectedGetExperiencePhotoAllowanceRoute);
 
 // GET /{id}/qr-sheet — Printable QR sheet for the door (HOS-982). A third,
 // distinct code for the same experience: `purpose: LISTING`, alongside the
@@ -108,6 +111,10 @@ app.route('/', protectedGetExperienceByIdRoute);
 
 // PATCH /{id} — Owner operational update.
 app.route('/', protectedPatchExperienceRoute);
+// GET/PUT /{id}/translations + POST /{id}/translations/ai - owner translations (HOS-2658)
+app.route('/', ownerExperienceTranslationRoutes.get);
+app.route('/', ownerExperienceTranslationRoutes.putManual);
+app.route('/', ownerExperienceTranslationRoutes.postAi);
 
 // POST /{id}/faqs — Add FAQ.
 app.route('/', protectedAddExperienceFaqRoute);

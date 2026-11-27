@@ -1,7 +1,8 @@
 import {
     type PartnerBillingSetupOptionSchema,
     type PartnerBillingSetupPreviewResponse,
-    PermissionEnum
+    PermissionEnum,
+    type PlanPaymentMethod
 } from '@repo/schemas';
 import { useState } from 'react';
 import type { z } from 'zod';
@@ -24,12 +25,15 @@ export interface PartnerBillingSetupConfirmationProps {
     readonly preview: PartnerBillingSetupPreviewResponse;
     /** Selected sellable billing option. AC:V7:17; ACC:6. */
     readonly option: BillingOption;
+    /** Payment method the team chose among those the plan accepts. HOS-2196. */
+    readonly method: PlanPaymentMethod;
 }
 
 /** Displays the exact action 6 write effect before confirmation. AC:V7:17; ACC:6. */
 export function PartnerBillingSetupConfirmation({
     preview,
-    option
+    option,
+    method
 }: PartnerBillingSetupConfirmationProps) {
     const { t, locale } = useTranslations();
     return (
@@ -37,7 +41,13 @@ export function PartnerBillingSetupConfirmation({
             className="space-y-2 rounded-md border p-3"
             data-testid="partner-billing-setup-confirmation"
         >
-            <p>{t('admin-entities.partnerBillingSetup.confirmationTitle')}</p>
+            <p>
+                {t(
+                    method === 'CARD'
+                        ? 'admin-entities.partnerBillingSetup.confirmationTitleCard'
+                        : 'admin-entities.partnerBillingSetup.confirmationTitle'
+                )}
+            </p>
             <p>
                 {t('admin-entities.partnerBillingSetup.partner')}: {preview.partner.name}
             </p>
@@ -55,7 +65,11 @@ export function PartnerBillingSetupConfirmation({
             </p>
             <p>
                 {t('admin-entities.partnerBillingSetup.method')}:{' '}
-                {t('admin-entities.partnerBillingSetup.manual')}
+                {t(
+                    method === 'CARD'
+                        ? 'admin-entities.partnerBillingSetup.card'
+                        : 'admin-entities.partnerBillingSetup.manual'
+                )}
             </p>
         </div>
     );

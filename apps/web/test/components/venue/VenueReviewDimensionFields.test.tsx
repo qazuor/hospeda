@@ -23,6 +23,8 @@ vi.mock('@/lib/i18n', () => ({
         t: (key: string, fallback?: string) =>
             (
                 ({
+                    // CARD-052 H-8: the CTA is supplied by the shared review card.
+                    'review.venueSidebar.cta': 'Dejar reseña',
                     'review.dimensions.food': 'Comida',
                     'review.dimensions.service': 'Servicio',
                     'review.dimensions.ambiance': 'Ambiente',

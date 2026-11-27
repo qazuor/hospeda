@@ -385,7 +385,7 @@ describe('detector: reaching the marker', () => {
     });
 
     it('a CONDITIONAL marker in a component does not certify the page that renders it', () => {
-        // `components/ErrorBanner.astro` marks behind `if (variant === 'error')`.
+        // A hypothetical banner might mark behind `if (variant === 'error')`.
         // That is right at runtime — `info`/`warning` are advisory notes on
         // content that rendered fine — but rendering it is not proof anything
         // was marked, so it cannot vouch for a caller that draws its real
@@ -559,18 +559,12 @@ describe('detector: which marker calls certify a component', () => {
         expect(marksDegradedResponseUnconditionally({ source })).toBe(true);
     });
 
-    it('the real banner certifies; the real variant-gated one does not', () => {
+    it('the shared banner unconditionally certifies its callers', () => {
         const banner = fs.readFileSync(
             path.join(WEB_SRC, 'components/shared/feedback/ErrorBanner.astro'),
             'utf8'
         );
-        const generic = fs.readFileSync(path.join(WEB_SRC, 'components/ErrorBanner.astro'), 'utf8');
-
         expect(marksDegradedResponseUnconditionally({ source: banner })).toBe(true);
-        // Marks only for `variant === 'error'`, so it protects itself but
-        // cannot vouch for a caller.
-        expect(marksDegradedResponse({ source: generic })).toBe(true);
-        expect(marksDegradedResponseUnconditionally({ source: generic })).toBe(false);
     });
 });
 

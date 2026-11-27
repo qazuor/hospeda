@@ -29,7 +29,7 @@ export const publicGetDestinationAccommodationsRoute = createPublicRoute({
         id: DestinationIdSchema
     },
     responseSchema: z.array(AccommodationPublicSchema),
-    handler: async (_ctx: Context, params: Record<string, unknown>) => {
+    handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = createGuestActor();
         const result = await destinationService.getAccommodations(actor, {
             destinationId: params.id as string,
@@ -41,7 +41,8 @@ export const publicGetDestinationAccommodationsRoute = createPublicRoute({
         // fields from each row owner before returning the bare response array.
         const rawAccommodations = result.data?.accommodations ?? [];
         const strippedAccommodations = await projectPublicAccommodations({
-            listings: rawAccommodations
+            listings: rawAccommodations,
+            onEffectiveSetFailure: () => ctx.header('Cache-Control', 'no-store')
         });
 
         return strippedAccommodations as AccommodationData[];

@@ -149,7 +149,7 @@ export const LISTING_SUPPORT_EDIT_CONTENT_FIELDS = [
     'summaryI18n', // [BLANK]
     'descriptionI18n', // [BLANK]
     'richDescriptionI18n', // [BLANK]
-    'translationMeta', // [BLANK] accommodation
+    'translationMeta', // [BLANK] accommodation, venue, experience (HOS-2658)
     'seo', // [BLANK] (SeoSchema: title, description only)
     'contactInfo', // [BLANK] (ContactInfoSchema: emails, phones, website only)
     'socialNetworks', // [BLANK] (SocialNetworkSchema: profile links only)

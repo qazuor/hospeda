@@ -41,8 +41,8 @@ const ISLANDS: Readonly<Record<string, string>> = {
     FaqSection: 'src/components/account/editor/FaqSection.client.tsx',
     AiQuestionsPanel: 'src/components/listing/ai-questions/AiQuestionsPanel.client.tsx',
     ExternalReputationSection: 'src/components/host/ExternalReputationSection.client.tsx',
-    TranslationPanel: 'src/components/host/editor/TranslationPanel.client.tsx',
-    MediaSection: 'src/components/listing/editor/MediaSection.client.tsx',
+    ListingTranslationsSection:
+        'src/components/account/editor/ListingTranslationsSection.client.tsx',
     VenuePromotionsManager: 'src/components/venue/VenuePromotionsManager.client.tsx',
     VenueMenuManager: 'src/components/venue/VenueMenuManager.client.tsx',
     VenueDailySpecialsManager: 'src/components/venue/VenueDailySpecialsManager.client.tsx',

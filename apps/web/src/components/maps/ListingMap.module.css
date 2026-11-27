@@ -1,4 +1,6 @@
 .root {
+    display: flex;
+    flex-direction: column;
     position: relative;
     width: 100%;
     height: 100%;
@@ -15,13 +17,22 @@
 
 .container {
     width: 100%;
-    height: 100%;
+    flex: 1 1 auto;
     min-height: 480px;
 }
 
 @media (max-width: 768px) {
     .container {
         min-height: 360px;
+    }
+    .hasDisclaimer .container {
+        min-height: 0;
+    }
+
+    .container :global(.leaflet-control-zoom a) {
+        width: 44px;
+        height: 44px;
+        line-height: 44px;
     }
 }
 
@@ -43,6 +54,7 @@
 }
 
 .disclaimer {
+    flex: none;
     margin: 0;
     padding: var(--space-3, 12px) var(--space-4, 16px);
     font-family: var(--font-sans, sans-serif);
@@ -52,72 +64,6 @@
     border-top: 1px solid var(--border, #e5e5e5);
 }
 
-/* ---- Popup styling ---- */
-/*
- * Override Leaflet popup chrome for a card-like appearance. Selectors are
- * scoped under `.popup` (a className we set on each <Popup>) and use :global()
- * because Leaflet generates the surrounding markup.
- *
- * Width strategy: Leaflet sizes the popup based on its content, so we set
- * `width` on `.popupCard` (the inner card) and let the wrapper match. We also
- * force the content container to drop its default 12px padding/min-width so
- * our card image bleeds edge-to-edge.
- */
-.popup :global(.leaflet-popup-content-wrapper) {
-    padding: 0;
-    border-radius: var(--radius-card, 14px);
-    box-shadow: var(--shadow-card, 0 8px 30px rgb(0 0 0 / 0.18));
-    overflow: hidden;
-}
-
-.popup :global(.leaflet-popup-content) {
-    margin: 0 !important;
-    padding: 0 !important;
-    width: auto !important;
-    min-width: 0 !important;
-    line-height: 1.4;
-    font-family: var(--font-sans, sans-serif);
-}
-
-.popup :global(.leaflet-popup-tip) {
-    box-shadow: var(--shadow-card, 0 4px 14px rgb(0 0 0 / 0.18));
-}
-
-/* Beefier close button so it's tappable and doesn't disappear behind the
- * FavoriteButton in the popup header. We re-anchor it (top:6/right:6) and
- * give it a translucent disc background so it reads against any popup
- * content. */
-/* Anchor the close button on the same 32px-tall baseline as the chips,
- * the featured badge and the favorite button so the entire header row
- * reads as one strip of equal-height pills.
- * top:16 = body padding-top, matching the header row's own top edge. */
-.popup :global(.leaflet-popup-close-button) {
-    position: absolute;
-    top: 16px !important;
-    right: 8px !important;
-    width: 32px !important;
-    height: 32px !important;
-    padding: 0 !important;
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    color: var(--core-foreground) !important;
-    font-size: 1.5rem !important;
-    line-height: 1 !important;
-    border-radius: 9999px !important;
-    background-color: rgb(255 255 255 / 0.95) !important;
-    box-shadow: 0 1px 3px oklch(0 0 0 / 0.18);
-    z-index: 3;
-    transition:
-        background-color 150ms ease-out,
-        transform 150ms ease-out;
-}
-
-.popup :global(.leaflet-popup-close-button:hover) {
-    background-color: #fff;
-    transform: scale(1.05);
-}
-
 .popupCard {
     /* Fixed width so the wrapper expands and the body doesn't get clipped
      * by Leaflet's default min-width / auto-sizing. */
@@ -125,30 +71,6 @@
     display: flex;
     flex-direction: column;
     background-color: var(--core-card);
-}
-
-/*
- * Destination-popup thumbnail. `aspect-ratio` on the WRAPPER reserves the
- * image's height BEFORE the (async) image loads, so the popup has its final
- * height at render time. Without this the popup opened short, Leaflet's autoPan
- * fired on the short height, then the image loaded and grew the popup upward —
- * pushing its top back out of view (HOS-95: "not always 100% visible"). With
- * the space reserved, autoPan computes the correct height once and the image
- * loads into the fixed box with no reflow.
- */
-.popupImageWrapper {
-    width: 100%;
-    aspect-ratio: 16 / 9;
-    overflow: hidden;
-    background-color: var(--surface-warm, #faf6f0);
-    flex-shrink: 0;
-}
-
-.popupImage {
-    display: block;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
 }
 
 /* Header row inside the body: type chip + featured badge on the left,
@@ -161,8 +83,8 @@
     align-items: center;
     justify-content: space-between;
     gap: var(--space-2, 8px);
-    min-height: 32px;
-    padding-right: 40px;
+    min-height: 44px;
+    padding-right: 44px;
 }
 
 .popupHeaderChips {
@@ -256,12 +178,6 @@
     overflow: hidden;
 }
 
-.popupCount {
-    margin: 0;
-    font-size: 0.8125rem;
-    color: var(--core-muted-foreground);
-}
-
 /* Footer row: price aligned left, "Ver más →" CTA aligned right, on the
  * same baseline. Rating (when present) renders ABOVE this row as its own
  * line. */
@@ -311,6 +227,7 @@
 .popupCta:visited {
     display: inline-flex;
     align-items: center;
+    min-block-size: 44px;
     gap: 6px;
     padding: 8px 16px;
     border-radius: 9999px;
@@ -479,43 +396,16 @@
     border-color: var(--brand-accent-a40);
 }
 
-/* ----- Cluster icon sizing override -----
- * `leaflet.markercluster` hard-codes 40x40 outer / 30x30 inner / 12px font for
- * its cluster divIcon. Bump everything ~40% so the count circles read better
- * on both desktop and mobile, without losing the library's color buckets
- * (small/medium/large stay differentiated via the existing background fills).
- *
- * The library writes width/height and the centering margin INLINE on the
- * outer element (driven by the divIcon's iconSize=[40,40]), so we need
- * `!important` to win against those inline styles. The library also fixes
- * the anchor at -20px from the lat/lng pixel; when the outer grows to 56px
- * the new visual center sits 28px from the top-left, which would shift
- * +8px down/right. We compensate with -28px margins (instead of the -20px
- * the library writes), re-anchoring the visual center on the cluster point.
- *
- * The inner div + span are left to CSS (no inline styles from the library),
- * so they don't need `!important`.
- */
-:global(.marker-cluster) {
-    width: 64px !important;
-    height: 64px !important;
-    margin-left: -32px !important;
-    margin-top: -32px !important;
-    border-radius: 32px;
-}
-
-:global(.marker-cluster div) {
-    width: 50px;
-    height: 50px;
-    margin-left: 7px;
-    margin-top: 7px;
-    font-size: 16px;
-    border-radius: 25px;
+.cluster {
+    display: grid;
+    place-items: center;
+    border-radius: var(--radius-pill);
+    background: var(--brand-primary);
+    color: var(--primary-foreground);
+    border: 2px solid var(--core-card);
+    box-shadow: var(--shadow-card);
+    font-size: var(--text-body);
     font-weight: 600;
-}
-
-:global(.marker-cluster span) {
-    line-height: 50px;
 }
 
 /*
@@ -562,8 +452,8 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 32px;
-    height: 32px;
+    inline-size: 44px;
+    block-size: 44px;
     padding: 0;
     border: 0;
     border-radius: 9999px;

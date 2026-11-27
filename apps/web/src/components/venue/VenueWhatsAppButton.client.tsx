@@ -51,6 +51,7 @@ function WhatsAppGlyph({ size }: { readonly size: number }) {
 
 /** GradientButton geometry with the WhatsApp brand colours from the module. */
 const WHATSAPP_CLASS = `btn-gradient btn-gradient--md ${styles.whatsapp}`;
+const INLINE_CHANNEL_CLASS = 'listing-contact__channel';
 
 /** What the page payload says about the button. Mirrors `VenueWhatsappState`. */
 export type VenueWhatsAppButtonMode =
@@ -68,6 +69,8 @@ export interface VenueWhatsAppButtonProps {
     /** Sign-in URL that returns to this page, for anonymous visitors. */
     readonly signInHref: string;
     readonly locale: SupportedLocale;
+    /** Use the same outline treatment as the other links in the contact block. */
+    readonly inlineChannel?: boolean;
 }
 
 /** Where the signed-in visitor's lookup stands. */
@@ -86,7 +89,8 @@ export function VenueWhatsAppButton({
     venueName,
     whatsapp,
     signInHref,
-    locale
+    locale,
+    inlineChannel = false
 }: VenueWhatsAppButtonProps) {
     const { t } = createTranslations(locale);
     // Simple mode (no `initialUser`): `user` starts `null` for everyone, so the
@@ -125,6 +129,20 @@ export function VenueWhatsAppButton({
     const renderLink = (number: string) => {
         const { url } = buildWhatsAppLink({ phone: number, message });
         if (!url) return null;
+        if (inlineChannel)
+            return (
+                <GradientButton
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    variant="outline-primary"
+                    size="sm"
+                    className={INLINE_CHANNEL_CLASS}
+                    leadingIcon={<WhatsAppGlyph size={16} />}
+                    label={cta}
+                    dataAttributes={{ 'data-interaction-kind': 'WHATSAPP_CLICK' }}
+                />
+            );
         return (
             <a
                 href={url}
@@ -153,8 +171,9 @@ export function VenueWhatsAppButton({
                 as="a"
                 href={signInHref}
                 variant="outline-primary"
-                size="md"
-                leadingIcon={<WhatsAppGlyph size={20} />}
+                size={inlineChannel ? 'sm' : 'md'}
+                className={inlineChannel ? INLINE_CHANNEL_CLASS : undefined}
+                leadingIcon={<WhatsAppGlyph size={inlineChannel ? 16 : 20} />}
                 label={t(
                     'venue.detail.whatsapp.signInCta',
                     'Iniciá sesión para escribir por WhatsApp'
@@ -165,7 +184,11 @@ export function VenueWhatsAppButton({
     if (lookup.status === 'loading') {
         return (
             <span
-                className={WHATSAPP_CLASS}
+                className={
+                    inlineChannel
+                        ? `btn-gradient btn-gradient--sm btn-gradient--outline-primary ${INLINE_CHANNEL_CLASS}`
+                        : WHATSAPP_CLASS
+                }
                 aria-disabled="true"
                 role="status"
             >
@@ -173,7 +196,7 @@ export function VenueWhatsAppButton({
                     className="gradient-btn__icon gradient-btn__icon--leading"
                     aria-hidden="true"
                 >
-                    <WhatsAppGlyph size={20} />
+                    <WhatsAppGlyph size={inlineChannel ? 16 : 20} />
                 </span>
                 <span className="gradient-btn__label">
                     {t('venue.detail.whatsapp.loading', 'Cargando WhatsApp')}

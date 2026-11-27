@@ -49,8 +49,11 @@ const VenueRatingSchema = z
  * page, not in the description. The 200-character ceiling is a product call
  * (HOS-1846 orchestration note), not a database constraint — the column is
  * plain JSONB.
+ *
+ * Exported (HOS-2658) so the single translation writer gates every
+ * `entryNoteI18n` write with the same per-locale ceiling.
  */
-const VenueNightNoteSchema = I18nTextSchema.extend({
+export const VenueEntryNoteI18nSchema = I18nTextSchema.extend({
     es: z.string().max(200, { message: 'zodError.venue.entryNote.tooLong' }),
     en: z.string().max(200, { message: 'zodError.venue.entryNote.tooLong' }),
     pt: z.string().max(200, { message: 'zodError.venue.entryNote.tooLong' })
@@ -111,7 +114,7 @@ export const VenueSchema = z.object({
     whatsappVisibility: VenueWhatsappVisibilityEnumSchema.nullish(),
 
     /** Short localized note about the entry (e.g. "free until 1am"). */
-    entryNoteI18n: VenueNightNoteSchema.nullish(),
+    entryNoteI18n: VenueEntryNoteI18nSchema.nullish(),
 
     /**
      * Cover-charge floor in cents. Only valid while {@link entryKind} is

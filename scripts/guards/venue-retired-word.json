@@ -15,12 +15,10 @@
                 "apps/web/src/components/event/editor/BasicInfoSection.client.tsx": 2,
                 "apps/web/src/components/shared/cards/utils/postCategoryIcon.ts": 3,
                 "apps/web/src/lib/colors.ts": 5,
-                "apps/web/src/lib/event-listing-summary/summary.catalogs.ts": 2,
                 "apps/web/src/lib/facet-slugs.ts": 3,
                 "apps/web/src/lib/filters/events-filter-groups.ts": 2,
                 "apps/web/src/lib/filters/facet-config.ts": 1,
                 "apps/web/src/lib/filters/toggle-query-param.ts": 2,
-                "apps/web/src/lib/post-listing-summary/summary.catalogs.ts": 2,
                 "apps/web/src/pages/[lang]/eventos/index.astro": 2,
                 "apps/web/src/pages/[lang]/publicaciones/index.astro": 5,
                 "apps/web/src/styles/css-var-themes.css": 2,
@@ -259,7 +257,6 @@
                 "packages/i18n/src/locales/pt/footer.json": 1,
                 "docs/architecture/entity-model-reference.md": 4,
                 "apps/web/src/lib/api/endpoints.ts": 1,
-                "apps/web/src/lib/post-listing-summary/summary.types.ts": 1,
                 "apps/web/test/components/FilterSidebar.test.tsx": 1,
                 "apps/web/test/components/shared/cards/utils/eventCategoryIcon.test.ts": 2,
                 "apps/web/test/components/shared/filters/filter-reducer.test.ts": 1,
@@ -269,7 +266,7 @@
                 "apps/web/test/pages/publicaciones-category-chips-active.test.ts": 5,
                 "apps/web/test/pages/publicaciones-facet-seo.test.ts": 5,
                 "apps/web/test/pages/publicaciones-multiselect-wiring.test.ts": 7,
-                "apps/web/src/components/venue/VenueReviewForm.client.tsx": 8,
+                "apps/web/src/components/venue/VenueReviewForm.client.tsx": 7,
                 "apps/web/src/components/venue/VenueReviewForm.module.css": 5,
                 "apps/web/test/middleware.test.ts": 5,
                 "apps/web/test/components/account/UserReviewsList.test.tsx": 1
@@ -346,10 +343,6 @@
                 "packages/i18n/src/locales/pt/blog.json#listPage.description": 1,
                 "packages/i18n/src/locales/pt/event.json#categoryPage.categories.WORKSHOP.description": 1,
                 "packages/i18n/src/locales/es/common.json#qrSheet.brandTagline": 1,
-                "packages/i18n/src/locales/es/faq.json#categories.about.items.different.answer": 1,
-                "packages/i18n/src/locales/es/faq.json#categories.contributors.items.placeReviews.answer": 1,
-                "packages/i18n/src/locales/es/faq.json#categories.contributors.items.submitPhotos.answer": 1,
-                "packages/i18n/src/locales/es/faq.json#categories.partners.items.officialPartner.answer": 1,
                 "packages/i18n/src/locales/es/features.json#gastro.title": 1,
                 "packages/i18n/src/locales/es/features.json#hero.stats.worlds.label": 1,
                 "packages/i18n/src/locales/es/features.json#meta.description": 1,
@@ -359,10 +352,6 @@
                 "packages/i18n/src/locales/es/features.json#vistazo.pillars.descubrir.description": 1,
                 "packages/i18n/src/locales/es/pricing.json#tourist.steps.1.desc": 1,
                 "packages/i18n/src/locales/pt/common.json#qrSheet.brandTagline": 1,
-                "packages/i18n/src/locales/pt/faq.json#categories.about.items.different.answer": 1,
-                "packages/i18n/src/locales/pt/faq.json#categories.contributors.items.placeReviews.answer": 1,
-                "packages/i18n/src/locales/pt/faq.json#categories.contributors.items.submitPhotos.answer": 1,
-                "packages/i18n/src/locales/pt/faq.json#categories.partners.items.officialPartner.answer": 1,
                 "packages/i18n/src/locales/pt/features.json#gastro.title": 1,
                 "packages/i18n/src/locales/pt/features.json#hero.stats.worlds.label": 1,
                 "packages/i18n/src/locales/pt/features.json#meta.description": 1,
@@ -411,5 +400,5 @@
         }
     },
     "historyWordFiles": 14,
-    "ledgerFingerprint": "310fee7025a058facac2f5d6de020cb1f446d58b233ecf994abd6f5f129f3417"
+    "ledgerFingerprint": "9546370c041f5d62e82bce7de22f72c9b90d4e08127cc1b823078cc13242cc86"
 }

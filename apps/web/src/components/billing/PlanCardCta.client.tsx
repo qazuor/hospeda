@@ -18,6 +18,7 @@ import {
 } from '@/lib/billing/pricing-situation';
 import { SIGNUP_CYCLE_LABEL_KEY, SIGNUP_VERTICAL_LABEL_KEY } from '@/lib/billing/signup-checkout';
 import { createTranslations, type SupportedLocale } from '@/lib/i18n';
+import { buildUrlWithParams } from '@/lib/urls';
 import styles from './PlanCardCta.module.css';
 
 /** Per-card action derived from the API's shared pricing situation. */
@@ -25,11 +26,15 @@ export function PlanCardCta({
     locale,
     vertical,
     planVersionId,
-    billingOptions
+    billingOptions,
+    planName,
+    inheritedPlanVersionId
 }: {
     readonly locale: SupportedLocale;
     readonly vertical: PricingSituationVertical;
     readonly planVersionId: string;
+    readonly planName?: string;
+    readonly inheritedPlanVersionId?: string;
     readonly billingOptions: { readonly monthly: string; readonly annual: string | null };
 }) {
     const [result, setResult] = useState<Awaited<ReturnType<typeof loadPricingSituation>> | null>(
@@ -152,6 +157,7 @@ export function PlanCardCta({
               : [];
     const blockedStatus =
         result?.ok && result.data.situation === 'SUBSCRIBED' ? result.data.status : null;
+    const isCurrentTouristPlan = vertical === 'tourist' && view.kind === 'current';
     return (
         <div
             data-testid="pricing-card-cta"
@@ -177,6 +183,16 @@ export function PlanCardCta({
                                   ? 'publish.subscribe.checkoutMonthly'
                                   : 'publish.subscribe.checkoutAnnual'
                         )}
+                        {vertical === 'tourist' &&
+                            result?.ok &&
+                            result.data.situation === 'CHECKOUT' &&
+                            planName && (
+                                <>
+                                    {' '}
+                                    ·{' '}
+                                    {t('pricing.planStatus.upgrade', undefined, { plan: planName })}
+                                </>
+                            )}
                     </LinkButton>
                 ))}
             {view.kind === 'republish' && (
@@ -195,8 +211,26 @@ export function PlanCardCta({
                     tone="success"
                     className={styles.currentPlan}
                 >
-                    {t('publish.subscribe.currentPlan', undefined, { vertical: label })}
+                    {vertical === 'tourist'
+                        ? t('pricing.planStatus.current')
+                        : t('publish.subscribe.currentPlan', undefined, { vertical: label })}
                 </StatusPill>
+            )}
+            {isCurrentTouristPlan && (
+                <LinkButton
+                    href={buildUrlWithParams({
+                        locale,
+                        path: 'mi-cuenta/suscripcion',
+                        params: { domain: 'tourist' }
+                    })}
+                    variant="accent"
+                    fullWidth
+                >
+                    {t('pricing.planStatus.manage')}
+                </LinkButton>
+            )}
+            {view.kind === 'vipInherited' && planVersionId === inheritedPlanVersionId && (
+                <p>{t('publish.subscribe.touristVipInherited')}</p>
             )}
             {blockedStatus === 'PAUSED' && (
                 <p data-testid="pricing-plan-change-paused">
@@ -305,7 +339,6 @@ export function PlanCardCta({
                 </div>
             )}
             {changeMessage && <p role="status">{changeMessage}</p>}
-            {view.kind === 'vipInherited' && <p>{t('publish.subscribe.touristVipInherited')}</p>}
         </div>
     );
 }

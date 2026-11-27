@@ -87,7 +87,8 @@ const getTopRatedByDestinationHandler = async (c: Context) => {
     // Apply each listing owner's effective paid-field grants before serialization.
     const sourceAccommodations = result.data?.accommodations ?? [];
     const gatedAccommodations = await projectPublicAccommodations({
-        listings: sourceAccommodations
+        listings: sourceAccommodations,
+        onEffectiveSetFailure: () => c.header('Cache-Control', 'no-store')
     });
     const rawAccommodations = sourceAccommodations.map((accommodation, index) => ({
         ...gatedAccommodations[index],

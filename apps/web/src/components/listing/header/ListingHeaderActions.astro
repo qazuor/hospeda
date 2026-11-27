@@ -14,11 +14,10 @@
  * - Below 768px, with the gallery opt-in, favorite and share are hidden: the
  *   gallery overlay (and the action bar) already carry them.
  */
-import { EntitlementKeyEnum } from '@repo/schemas';
 import { DetailCompareButton } from '@/components/accommodation/DetailCompareButton.client';
 import { ShareButtons } from '@/components/ShareButtons.client';
 import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
-import { getGatePlanNames } from '@/lib/billing/gate-plan-names';
+import { readComparePlan } from '@/lib/billing/compare-plan';
 import type { SupportedLocale } from '@/lib/i18n';
 import type { ListingHeaderProps } from './listing-header.types';
 
@@ -39,9 +38,7 @@ const FAVORITE_ENTITY_TYPES = {
     experience: 'EXPERIENCE'
 } as const;
 
-const compareGatePlanNames = compare
-    ? await getGatePlanNames({ entitlement: EntitlementKeyEnum.CAN_COMPARE_ACCOMMODATIONS })
-    : [];
+const comparePlan = compare ? await readComparePlan() : undefined;
 ---
 
 <div class="listing-header__actions">
@@ -52,7 +49,7 @@ const compareGatePlanNames = compare
             accommodationName={title}
             accommodationThumbnailUrl={compare.thumbnailUrl}
             locale={locale}
-            gatePlanNames={compareGatePlanNames}
+            {...comparePlan}
             className="listing-header__compare-btn"
         />
     )}

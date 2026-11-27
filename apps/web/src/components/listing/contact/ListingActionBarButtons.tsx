@@ -59,7 +59,8 @@ export type ListingActionBarVenueWhatsapp =
 export interface ListingActionBarCompare {
     readonly thumbnailUrl?: string;
     /** Public catalog names of the plans carrying the entitlement (HOS-2554). */
-    readonly gatePlanNames: readonly string[];
+    readonly planName?: string | null;
+    readonly planCapacity?: number;
 }
 
 /** Public, session-blind inputs of the action row. */
@@ -195,6 +196,9 @@ export function ListingActionBarButtons({
                             aria-hidden="true"
                         />
                     )}
+                    <span className={styles.label}>
+                        {t('accommodations.detail.listingContact.bar.dockMenu')}
+                    </span>
                 </a>
             )}
             {primary?.kind === 'inquire' && (
@@ -219,6 +223,12 @@ export function ListingActionBarButtons({
                         weight="bold"
                         aria-hidden="true"
                     />
+                    <span
+                        className={styles.label}
+                        aria-hidden="true"
+                    >
+                        {t('accommodations.detail.listingContact.bar.dockChat')}
+                    </span>
                 </a>
             )}
             {venueWhatsappHref && (
@@ -237,6 +247,9 @@ export function ListingActionBarButtons({
                         size={22}
                         aria-hidden="true"
                     />
+                    <span className={styles.label}>
+                        {t('accommodations.detail.listingContact.panel.shortcuts.whatsapp')}
+                    </span>
                 </a>
             )}
             {opensWhatsappPanel && (
@@ -252,6 +265,9 @@ export function ListingActionBarButtons({
                         size={22}
                         aria-hidden="true"
                     />
+                    <span className={styles.label}>
+                        {t('accommodations.detail.listingContact.panel.shortcuts.whatsapp')}
+                    </span>
                 </a>
             )}
             {phoneHref && (
@@ -273,6 +289,9 @@ export function ListingActionBarButtons({
                         weight="regular"
                         aria-hidden="true"
                     />
+                    <span className={styles.label}>
+                        {t('accommodations.detail.listingContact.bar.actions.call')}
+                    </span>
                 </a>
             )}
             <span
@@ -291,6 +310,12 @@ export function ListingActionBarButtons({
                     }}
                     className={styles.favorite}
                 />
+                <span
+                    className={styles.label}
+                    aria-hidden="true"
+                >
+                    {t('accommodations.detail.listingContact.bar.dockSave')}
+                </span>
             </span>
             <span
                 className={styles.island}
@@ -307,6 +332,12 @@ export function ListingActionBarButtons({
                     analytics={{ listingId, vertical, origin: 'bar' }}
                     className={styles.share}
                 />
+                <span
+                    className={styles.label}
+                    aria-hidden="true"
+                >
+                    {t('accommodations.detail.listingContact.bar.dockShare')}
+                </span>
             </span>
             {vertical === 'accommodation' && compare && (
                 <span
@@ -318,7 +349,9 @@ export function ListingActionBarButtons({
                         accommodationName={listingName}
                         accommodationThumbnailUrl={compare.thumbnailUrl}
                         locale={locale}
-                        gatePlanNames={compare.gatePlanNames}
+                        planName={compare.planName}
+                        planCapacity={compare.planCapacity}
+                        compact
                         labels={{
                             add: t('accommodations.detail.listingContact.bar.actions.compareAdd'),
                             remove: t(
@@ -327,6 +360,12 @@ export function ListingActionBarButtons({
                         }}
                         className={styles.compare}
                     />
+                    <span
+                        className={styles.label}
+                        aria-hidden="true"
+                    >
+                        {t('accommodations.detail.listingContact.bar.dockCompare')}
+                    </span>
                 </span>
             )}
         </div>
