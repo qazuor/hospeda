@@ -45,7 +45,7 @@ async function fingerprints(): Promise<Record<string, Fingerprint>> {
         // with the catalog work, and `users.role` is the nullable better-auth placeholder
         // re-added by 0182 (HOS-1932), so both are excluded from the fingerprint. So is
         // `plan_version.payment_methods`, added by 0255 (HOS-2196), and
-        // `users.last_successful_payer_email`, added by 0256 (HOS-2616).
+        // `users.last_successful_payer_email`, added by 0257 (HOS-2616).
         const row =
             table === 'users'
                 ? "(row_to_json(t)::jsonb - 'role' - 'last_successful_payer_email')::text"
@@ -148,7 +148,7 @@ describe('TEST:B3:32 — B3 migration over existing rows', () => {
              WHERE plan_id = (SELECT id FROM plan WHERE slug = 'b3-over-data')`
         );
         expect(methods.rows).toEqual([{ payment_methods: ['CARD'] }]);
-        // HOS-2616: same for the column added by 0256. The migration only adds it, so every
+        // HOS-2616: same for the column added by 0257. The migration only adds it, so every
         // preexisting account keeps it NULL: it never touches live data.
         const remembered = await db.query<{ last_successful_payer_email: string | null }>(
             'SELECT last_successful_payer_email FROM users'

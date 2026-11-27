@@ -1,0 +1,1 @@
+ALTER TABLE "users" ADD COLUMN "last_successful_payer_email" varchar(255);
