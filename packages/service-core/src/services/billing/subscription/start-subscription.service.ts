@@ -25,6 +25,7 @@ import { getCurrentBillingDeadlines } from '../deadlines/billing-deadlines.servi
 import { buildProviderReason } from '../plan-display-name';
 import { readAnchoredBillingOption } from '../read-anchored-billing-option';
 import type { ArrearsSuspensionNoticeContent } from './arrears-suspension-notice';
+import { assertPlanNotAlreadyGranted } from './assert-plan-not-already-granted';
 import { buildAuthorizationReturnUrl } from './authorization-return-url';
 import type { BeforeCancelNoticeKind } from './before-cancel-notice-kinds';
 import type { TouristVipInheritancePort } from './cancel-inherited-tourist-vip.service';
@@ -122,6 +123,7 @@ export type BillingChoice = {
     readonly id: string;
     readonly planVersionId: string;
     readonly vertical: string;
+    readonly planId: string;
     readonly planName: string;
     readonly planSlug: string;
     /** Payment methods the plan version accepts (HOS-2196). */
@@ -139,6 +141,7 @@ export async function readBillingChoice(input: {
             id: billingOptions.id,
             planVersionId: billingOptions.planVersionId,
             vertical: planVersions.vertical,
+            planId: plans.id,
             planName: plans.name,
             planSlug: plans.slug,
             paymentMethods: planVersions.paymentMethods
@@ -325,6 +328,7 @@ export async function startSubscription(
 ): Promise<StartSubscriptionResult> {
     const choice = await readBillingChoice({ billingOptionId: input.billingOptionId });
     assertSelfServiceCardCheckout({ paymentMethods: choice.paymentMethods });
+    await assertPlanNotAlreadyGranted({ userId: input.userId, choice });
     return startCardSubscription({ input, choice }, ports);
 }
 
