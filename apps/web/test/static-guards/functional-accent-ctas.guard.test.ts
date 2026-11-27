@@ -23,12 +23,11 @@ describe('functional accent CTAs', () => {
         );
     });
 
-    it('keeps the header guest «Iniciar sesión» flat (HOS-2664)', () => {
-        expect(source('components/shared/navigation/UserMenu.client.tsx')).toContain(
-            'btn-gradient btn-gradient--primary btn-gradient--flat btn-gradient--sm'
-        );
-        expect(source('styles/components.css')).toMatch(
-            /\.btn-gradient--flat\.btn-gradient--primary\s*\{[^}]*background-image: none;[^}]*box-shadow: none/
+    it('keeps the header guest «Iniciar sesión» a secondary outline action (HOS-2666)', () => {
+        const menu = source('components/shared/navigation/UserMenu.client.tsx');
+        expect(menu).not.toContain('btn-gradient');
+        expect(source('components/shared/navigation/UserMenu.module.css')).toMatch(
+            /\.signInLink\s*\{[^}]*border: 1\.5px solid var\(--brand-primary\);[^}]*background-color: transparent/
         );
     });
 
