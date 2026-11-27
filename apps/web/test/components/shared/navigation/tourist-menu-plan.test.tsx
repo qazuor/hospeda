@@ -18,6 +18,7 @@ vi.mock('@/lib/api/endpoints-protected', () => ({
 
 const floor = { name: 'Free floor', vertical: 'tourist', entitlements: [], limits: {} };
 const paid = {
+    id: 'plan-traveler-paid',
     name: 'Renamed traveler tier',
     slug: 'traveler-paid',
     vertical: 'tourist',
@@ -66,6 +67,30 @@ it.each([
         { situation: 'TOURIST_VIP_INHERITED' },
         true,
         { name: paid.name, paid: true, until: null, upgrade: null }
+    ],
+    [
+        'HOS-2665 granted',
+        {
+            situation: 'GRANTED',
+            planId: 'plan-traveler-paid',
+            planVersionId: 'floor-version',
+            planName: 'Stored plan name',
+            since: '2026-11-01T10:00:00.000Z'
+        },
+        true,
+        { name: paid.name, paid: true, until: null, upgrade: null }
+    ],
+    [
+        'HOS-2665 granted plan outside the sellable catalog',
+        {
+            situation: 'GRANTED',
+            planId: 'plan-retired',
+            planVersionId: 'floor-version',
+            planName: 'Stored plan name',
+            since: '2026-11-01T10:00:00.000Z'
+        },
+        true,
+        { name: 'Stored plan name', paid: true, until: null, upgrade: null }
     ],
     ['missing catalog', { situation: 'CHECKOUT' }, false, null],
     ['failed situation read', null, true, null]

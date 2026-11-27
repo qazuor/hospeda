@@ -2,6 +2,7 @@ import { type PricingSituationResponse, PublicationStatusEnum } from '@repo/sche
 import { describe, expect, it } from 'vitest';
 import {
     hasBillingUnpublishedListing,
+    isGrantedPlan,
     PRICING_PLAN_CHANGE_OFFER,
     resolvePlanCardCta,
     resolvePlanCardTrialOffer
@@ -196,6 +197,7 @@ describe('TEST:1758:2 HOS-1967 pricing card trial offer', () => {
             CHECKOUT: false,
             SUBSCRIBED: false,
             COVERED: false,
+            GRANTED: false,
             NO_PLANS: false,
             TOURIST_VIP_INHERITED: false
         };
@@ -216,6 +218,45 @@ describe('TEST:1758:2 HOS-1967 pricing card trial offer', () => {
                 eligible
             );
         }
+    });
+});
+
+describe('HOS-2665 GRANTED pricing card CTA', () => {
+    const granted: PricingSituationResponse = {
+        situation: 'GRANTED',
+        planId: 'plan-a',
+        planVersionId: 'older-floor',
+        planName: 'Turista VIP',
+        since: '2026-11-01T10:00:00.000Z'
+    };
+    const cta = (planId: string | undefined, planVersionId = 'version-a') =>
+        resolvePlanCardCta({
+            locale: 'es',
+            vertical: 'tourist',
+            plan: { planId, planVersionId, billingOptions: plan.billingOptions },
+            result: { ok: true, data: granted }
+        });
+
+    it('marks the granted plan as granted, never as a checkout', () => {
+        expect(cta('plan-a')).toEqual({ kind: 'granted' });
+    });
+
+    it('offers nothing on any other card, as COVERED did', () => {
+        expect(cta('plan-b')).toEqual({ kind: 'none' });
+    });
+
+    it('falls back to the floor version when the card carries no plan id', () => {
+        expect(cta(undefined, 'older-floor')).toEqual({ kind: 'granted' });
+        expect(cta(undefined, 'version-a')).toEqual({ kind: 'none' });
+    });
+
+    it('prefers the plan id over the version: a newer catalog version is still the granted plan', () => {
+        expect(
+            isGrantedPlan({
+                plan: { planId: 'plan-a', planVersionId: 'current-version' },
+                granted: granted as Extract<PricingSituationResponse, { situation: 'GRANTED' }>
+            })
+        ).toBe(true);
     });
 });
 

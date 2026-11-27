@@ -653,6 +653,7 @@
                 "SELF_USAGE_FORBIDDEN": "Você não pode registrar um uso com você mesmo.",
                 "REVIEW_ALREADY_EXISTS": "Essa avaliação já existia.",
                 "PROVIDER_REVOKED": "Esse fornecedor não está mais no diretório.",
+                "PRICE_ALERT_NO_PRICE": "Essa ficha não tem preço publicado.",
                 "NEW_PAID_SIGNUPS_FROZEN": "As novas assinaturas pagas estão pausadas por enquanto.",
                 "ADDON_PURCHASES_FROZEN": "A compra de complementos está pausada por enquanto.",
                 "FAQ_DRAFT_NOT_ELIGIBLE": "Essa pergunta não aceita um rascunho de resposta.",

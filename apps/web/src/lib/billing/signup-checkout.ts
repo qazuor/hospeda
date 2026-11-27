@@ -252,6 +252,11 @@ const REJECTION_BY_REASON: Record<
         retryable: false,
         showPlansLink: false
     },
+    PLAN_ALREADY_GRANTED: {
+        messageKey: 'billing.checkout.signup.rejection.planAlreadyGranted',
+        retryable: false,
+        showPlansLink: false
+    },
     CREATION_NOT_APPLIED: {
         messageKey: 'billing.checkout.signup.rejection.generic',
         retryable: true,

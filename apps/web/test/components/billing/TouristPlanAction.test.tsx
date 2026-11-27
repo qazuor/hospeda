@@ -4,11 +4,15 @@ import { describe, expect, it, vi } from 'vitest';
 import { TouristPlanAction } from '@/components/billing/TouristPlanAction.client';
 
 const load = vi.hoisted(() => vi.fn());
-vi.mock('@/lib/billing/pricing-situation', () => ({ loadPricingSituation: load }));
+vi.mock('@/lib/billing/pricing-situation', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@/lib/billing/pricing-situation')>()),
+    loadPricingSituation: load
+}));
 
 const plans = [
-    { name: 'Base', monthlyPriceArs: 0, sortOrder: 0, isActive: true },
+    { id: 'plan-base', name: 'Base', monthlyPriceArs: 0, sortOrder: 0, isActive: true },
     {
+        id: 'plan-plus',
         name: 'Travel Plus',
         monthlyPriceArs: 1_500_000,
         planVersionId: 'plus',
@@ -19,6 +23,16 @@ const plans = [
 ];
 const props = { locale: 'es', plans, href: '/es/planes/turistas/', label: 'Ver planes' } as const;
 const inherited = { ok: true, data: { situation: 'TOURIST_VIP_INHERITED' } } as const;
+const granted = {
+    ok: true,
+    data: {
+        situation: 'GRANTED',
+        planId: 'plan-plus',
+        planVersionId: 'older-floor-version',
+        planName: 'Travel Plus',
+        since: '2026-11-01T10:00:00.000Z'
+    }
+} as const;
 
 describe('tourist commercial action', () => {
     it('renders the catalog offer without a session in public HTML', () => {
@@ -145,5 +159,52 @@ describe('tourist commercial action', () => {
         expect(marker).toHaveAttribute('data-current-tourist-plan');
         expect(within(screen.getByTestId('free-card')).queryByText('Tu plan actual')).toBeNull();
         expect(within(screen.getByTestId('free-column')).queryByText('Tu plan actual')).toBeNull();
+    });
+
+    it('HOS-2665 shows the granted plan as current with no purchase, management or renewal', async () => {
+        for (const mode of ['offer', 'compare', 'closing'] as const) {
+            load.mockResolvedValueOnce(granted);
+            const { unmount } = render(
+                <TouristPlanAction
+                    {...props}
+                    mode={mode}
+                />
+            );
+
+            expect(await screen.findByText('Tu plan actual: Travel Plus')).toBeInTheDocument();
+            expect(screen.getByText('Plan cedido, sin vencimiento')).toBeInTheDocument();
+            expect(screen.queryByRole('link')).not.toBeInTheDocument();
+            expect(screen.queryByText(/Pasate a|desde|Tu plan actual: Base|hasta/)).toBeNull();
+            unmount();
+        }
+    });
+
+    it('HOS-2665 marks the granted comparison column and leaves the free card unmarked', async () => {
+        load.mockResolvedValue(granted);
+
+        render(
+            <>
+                <div data-testid="free-card">
+                    <TouristPlanAction
+                        {...props}
+                        plans={plans.slice(0, 1)}
+                        mode="freeCard"
+                    />
+                </div>
+                <div data-testid="paid-column">
+                    <TouristPlanAction
+                        {...props}
+                        mode="column"
+                        planVersionId="plus"
+                    />
+                </div>
+            </>
+        );
+
+        const marker = await within(screen.getByTestId('paid-column')).findByText('Tu plan actual');
+        expect(marker).toHaveAttribute('data-current-tourist-plan');
+        const freeCard = screen.getByTestId('free-card');
+        expect(within(freeCard).queryByText('Tu plan actual')).toBeNull();
+        expect(within(freeCard).queryByRole('link')).toBeNull();
     });
 });

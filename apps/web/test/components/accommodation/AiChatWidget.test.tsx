@@ -150,6 +150,7 @@ describe('AiChatWidget', () => {
             plans: [
                 { vertical: 'tourist', limits: { max_ai_chat_consumer_per_month: 17 } },
                 {
+                    id: 'plan-gold',
                     vertical: 'tourist',
                     slug: 'paid',
                     isActive: true,
@@ -453,6 +454,31 @@ describe('AiChatWidget', () => {
         await user.click(screen.getByRole('button', { name: 'Ask AI about this accommodation' }));
 
         expect(await screen.findByText('Tourist VIP')).toBeInTheDocument();
+    });
+
+    it('HOS-2665 shows the VIP plan chip and the granted allowance for a permanent grant (CARD-037 H-1)', async () => {
+        mockPricingSituation.mockResolvedValue({
+            ok: true,
+            data: {
+                situation: 'GRANTED',
+                planId: 'plan-gold',
+                planVersionId: 'floor-gold',
+                planName: 'Stored Gold',
+                since: '2026-11-01T10:00:00.000Z'
+            }
+        });
+        mockEffectiveSet.mockResolvedValue({
+            ok: true,
+            data: { limits: { max_ai_chat_consumer_per_month: 83 } }
+        });
+        const user = userEvent.setup();
+        render(<AiChatWidget {...defaultProps} />);
+        await user.click(screen.getByRole('button', { name: 'Ask AI about this accommodation' }));
+
+        expect(await screen.findByText('Catalog Gold')).toBeInTheDocument();
+        expect(screen.getByText('83 monthly questions')).toBeInTheDocument();
+        expect(screen.queryByText('Stored Gold')).not.toBeInTheDocument();
+        expect(mockSubscriptions).not.toHaveBeenCalled();
     });
 
     it('shows the effective allowance for a grant without inventing a paid plan name', async () => {

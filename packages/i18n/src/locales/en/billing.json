@@ -281,6 +281,7 @@
                 "previousAttemptClosing": "We are closing your previous attempt. Please try again in a few minutes.",
                 "previousAttemptInProgress": "We are still preparing your previous attempt with Mercado Pago. Please try again in a few minutes.",
                 "touristVipInherited": "Your current plan already includes Turista VIP benefits",
+                "planAlreadyGranted": "You already have this plan granted with no expiry: there is no need to pay for it",
                 "commitmentTaken": "You already have an active subscription in this vertical.",
                 "generic": "We could not start your subscription. Please try again in a few minutes.",
                 "providerRejected": "Mercado Pago didn't accept the payment details. Check that the email is the one on your Mercado Pago account and try again.",
