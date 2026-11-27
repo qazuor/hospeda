@@ -76,7 +76,8 @@ describe('MobileMenu site navigation', () => {
 
         const signIn = screen.getByRole('link', { name: 'Iniciar sesión' });
         const signUp = screen.getByRole('link', { name: 'Crear cuenta' });
-        expect(signIn).toHaveClass('btn-gradient--primary');
+        expect(signIn).not.toHaveClass('btn-gradient--primary');
+        expect(signIn.className).toMatch(/authSignIn/);
         expect(signUp).toHaveClass('btn-gradient--outline-primary');
         expect(signIn.parentElement).toBe(signUp.parentElement);
         expect(signIn.parentElement?.className).toMatch(/authActions/);
