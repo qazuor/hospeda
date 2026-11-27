@@ -122,18 +122,18 @@
             "blockedBy": ["T-003"],
             "tags": ["service-core"],
             "description": "packages/service-core/src/services/newsletter/dynamic/: dynamic-source.port.ts (interface F1 §4.5), predicate deleted_at IS NULL AND publication_status='PUBLISHED' (+destinationId), SOURCE_RESOLVERS Record<entityType, Partial<Record<source, SourceResolver>>> and CARD_LOADERS Record<entityType, ...|null> (only ACCOMMODATION filled). Tests: static guard source-predicate.guard.test.ts (every resolver and revalidate use the shared predicate) and registry-completeness guard (every enum value has an entry; every enabled type has a source and a card).",
-            "status": "pending",
+            "status": "completed",
             "blocks": ["T-007", "T-008", "T-009", "T-010", "T-011", "T-013"],
             "subtasks": [],
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-11-26T18:39:36.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-26T19:14:41.000Z",
+                "completed": "2026-11-26T19:14:41.000Z"
             }
         },
         {
@@ -144,18 +144,18 @@
             "blockedBy": ["T-006"],
             "tags": ["service-core", "db"],
             "description": "sources/newest.source.ts: created_at desc, id asc, excludeIds, limit. Integration test in packages/service-core/test/integration/services/newsletter-dynamic-sources.integration.test.ts against real Postgres; assert test count > 0 (isDbAvailable skips silently).",
-            "status": "pending",
+            "status": "completed",
             "blocks": [],
             "subtasks": [],
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-11-26T18:39:36.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-26T19:14:41.000Z",
+                "completed": "2026-11-26T19:14:41.000Z"
             }
         },
         {
@@ -166,18 +166,18 @@
             "blockedBy": ["T-006"],
             "tags": ["service-core", "db"],
             "description": "sources/most-viewed.source.ts: COUNT(entity_views) with viewed_at >= now()-windowDays, desc, id asc, uses idx_entity_views_entity_time. Integration test AC-F1-4 and AC-F1-5 (tie broken by id asc).",
-            "status": "pending",
+            "status": "completed",
             "blocks": [],
             "subtasks": [],
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-11-26T18:39:36.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-26T19:14:41.000Z",
+                "completed": "2026-11-26T19:14:41.000Z"
             }
         },
         {
@@ -188,18 +188,18 @@
             "blockedBy": ["T-006"],
             "tags": ["service-core", "db"],
             "description": "sources/top-rated.source.ts: average_rating desc, reviews_count desc, id asc, filter reviews_count >= minReviews. Integration test AC-F1-6.",
-            "status": "pending",
+            "status": "completed",
             "blocks": [],
             "subtasks": [],
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-11-26T18:39:36.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-26T19:14:41.000Z",
+                "completed": "2026-11-26T19:14:41.000Z"
             }
         },
         {
@@ -210,18 +210,18 @@
             "blockedBy": ["T-006"],
             "tags": ["service-core", "db"],
             "description": "drizzle-dynamic-source.ts revalidate(ids) through the shared predicate plus minReviews for top_rated; returns validIds and dropped with reason not_published|deleted|below_min_reviews. Integration test: unpublished item reported as not_published.",
-            "status": "pending",
+            "status": "completed",
             "blocks": [],
             "subtasks": [],
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-11-26T18:39:36.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-26T19:14:41.000Z",
+                "completed": "2026-11-26T19:14:41.000Z"
             }
         },
         {
@@ -232,18 +232,18 @@
             "blockedBy": ["T-006"],
             "tags": ["service-core"],
             "description": "resolve-blocks.ts (RO-RO, F1 §4.5): deterministic order, exclude history ids (excludeRecentEditions; empty history in manual campaigns), fillWithRepeats least-recently-shown first. Unit tests with fake port in packages/service-core/test/services/newsletter/dynamic/resolve-blocks.test.ts: AC-F1-5, dedup, repeats.",
-            "status": "pending",
+            "status": "completed",
             "blocks": ["T-012"],
             "subtasks": [],
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-11-26T18:39:36.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-26T19:14:41.000Z",
+                "completed": "2026-11-26T19:14:41.000Z"
             }
         },
         {
@@ -254,18 +254,18 @@
             "blockedBy": ["T-011"],
             "tags": ["service-core"],
             "description": "Phase send revalidates and refills; manuallyEdited only removes invalid. Decision skip_run|send; hide_block hides; send_anyway keeps. Report per block (candidates, dropped, repeatsUsed, belowMin, action). Unit tests AC-F1-7, AC-F1-8, AC-F1-9.",
-            "status": "pending",
+            "status": "completed",
             "blocks": ["T-016"],
             "subtasks": [],
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-11-26T18:39:36.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-26T19:14:41.000Z",
+                "completed": "2026-11-26T19:14:41.000Z"
             }
         },
         {
@@ -276,18 +276,18 @@
             "blockedBy": ["T-006"],
             "tags": ["service-core", "db"],
             "description": "name_i18n/summary_i18n with fallback to name/summary (es), cover from accommodation_media.is_featured, URL ${HOSPEDA_SITE_URL}/{locale}/alojamientos/{slug}/, https-only images. Integration test AC-F1-14.",
-            "status": "pending",
+            "status": "completed",
             "blocks": ["T-014"],
             "subtasks": [],
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-11-26T18:39:36.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-26T19:14:41.000Z",
+                "completed": "2026-11-26T19:14:41.000Z"
             }
         },
         {
@@ -298,18 +298,18 @@
             "blockedBy": ["T-013"],
             "tags": ["notifications"],
             "description": "packages/notifications/src/templates/newsletter/dynamic-block-cards.tsx on @repo/email Button + emailPalette, td-inline styles like OptionCard; CTA i18n 'Ver alojamiento' in es/en/pt. Never receives user HTML. Tests in newsletter.templates.test.tsx: renders N cards, escapes text, no image for non-https.",
-            "status": "pending",
+            "status": "completed",
             "blocks": ["T-015"],
             "subtasks": [],
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-11-26T18:39:36.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-11-27T00:00:12.000Z"
             }
         },
         {
@@ -320,18 +320,18 @@
             "blockedBy": ["T-014"],
             "tags": ["notifications"],
             "description": "packages/notifications/src/utils/render-newsletter-email.ts splits doc at root dynamicBlock nodes; TipTap segments via renderTiptapEmailContent with sanitizeEmailHtml intact; NewsletterCampaign accepts optional segments (backward compatible); TiptapNode.attrs admits boolean in packages/utils. Tests AC-F1-15 (no script/javascript:) and AC-F1-16 (campaign without blocks byte-identical HTML); utils renderer behaviour unchanged.",
-            "status": "pending",
+            "status": "completed",
             "blocks": ["T-016", "T-018"],
             "subtasks": [],
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-11-26T18:39:36.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-11-27T00:00:12.000Z"
             }
         },
         {
@@ -430,18 +430,18 @@
             "blockedBy": ["T-003"],
             "tags": ["admin"],
             "description": "apps/admin/src/components/newsletter/dynamic-block/ extension (root-level atomic node, attrs blockKey + config JSON string) registered in NEWSLETTER_EDITOR_EXTENSIONS. Tests: RichTextEditor.test.tsx and RichTextEditor.v3-roundtrip.test.ts node survives JSON roundtrip.",
-            "status": "pending",
+            "status": "completed",
             "blocks": ["T-021"],
             "subtasks": [],
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-11-26T18:39:36.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-26T19:14:41.000Z",
+                "completed": "2026-11-26T19:14:41.000Z"
             }
         },
         {
@@ -513,9 +513,9 @@
     ],
     "summary": {
         "total": 23,
-        "pending": 18,
+        "pending": 7,
         "inProgress": 0,
-        "completed": 5,
+        "completed": 16,
         "blocked": 0,
         "averageComplexity": 2.5
     }

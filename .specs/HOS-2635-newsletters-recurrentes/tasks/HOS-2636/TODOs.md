@@ -1,6 +1,6 @@
 # HOS-2636: F1. Bloques dinámicos y resolver
 
-## Progress: 5/23 tasks (22%)
+## Progress: 16/23 tasks (70%)
 
 **Average Complexity:** 2.5/10
 **Critical Path:** T-001 -> T-003 -> T-006 -> T-013 -> T-014 -> T-015 -> T-016 -> T-019 -> T-021 -> T-023 (10 steps)
@@ -37,52 +37,52 @@
   - Blocked by: T-003
   - Blocks: T-021
 
-- [ ] **T-006** (complexity: 3) - Create DynamicSourcePort, eligibleAccommodationPredicate and typed registries
+- [x] **T-006** (complexity: 3) - Create DynamicSourcePort, eligibleAccommodationPredicate and typed registries
   - packages/service-core/src/services/newsletter/dynamic/: dynamic-source.port.ts (interface F1 §4.5),
   - Blocked by: T-003
   - Blocks: T-007, T-008, T-009, T-010, T-011, T-013
 
-- [ ] **T-007** (complexity: 2) - Implement newest accommodation resolver
+- [x] **T-007** (complexity: 2) - Implement newest accommodation resolver
   - sources/newest.source.ts: created_at desc, id asc, excludeIds, limit. Integration test in packages/s
   - Blocked by: T-006
   - Blocks: none
 
-- [ ] **T-008** (complexity: 3) - Implement most_viewed accommodation resolver
+- [x] **T-008** (complexity: 3) - Implement most_viewed accommodation resolver
   - sources/most-viewed.source.ts: COUNT(entity_views) with viewed_at >= now()-windowDays, desc, id asc,
   - Blocked by: T-006
   - Blocks: none
 
-- [ ] **T-009** (complexity: 2) - Implement top_rated accommodation resolver
+- [x] **T-009** (complexity: 2) - Implement top_rated accommodation resolver
   - sources/top-rated.source.ts: average_rating desc, reviews_count desc, id asc, filter reviews_count >
   - Blocked by: T-006
   - Blocks: none
 
-- [ ] **T-010** (complexity: 2) - Implement DrizzleDynamicSource.revalidate
+- [x] **T-010** (complexity: 2) - Implement DrizzleDynamicSource.revalidate
   - drizzle-dynamic-source.ts revalidate(ids) through the shared predicate plus minReviews for top_rated
   - Blocked by: T-006
   - Blocks: none
 
-- [ ] **T-011** (complexity: 3) - Implement resolveBlocks ordering, dedup and fillWithRepeats
+- [x] **T-011** (complexity: 3) - Implement resolveBlocks ordering, dedup and fillWithRepeats
   - resolve-blocks.ts (RO-RO, F1 §4.5): deterministic order, exclude history ids (excludeRecentEditions;
   - Blocked by: T-006
   - Blocks: T-012
 
-- [ ] **T-012** (complexity: 3) - Add revalidation and minItems/ifBelowMin to resolveBlocks
+- [x] **T-012** (complexity: 3) - Add revalidation and minItems/ifBelowMin to resolveBlocks
   - Phase send revalidates and refills; manuallyEdited only removes invalid. Decision skip_run|send; hid
   - Blocked by: T-011
   - Blocks: T-016
 
-- [ ] **T-013** (complexity: 2) - Implement accommodation loadCards with i18n fallback
+- [x] **T-013** (complexity: 2) - Implement accommodation loadCards with i18n fallback
   - name_i18n/summary_i18n with fallback to name/summary (es), cover from accommodation_media.is_feature
   - Blocked by: T-006
   - Blocks: T-014
 
-- [ ] **T-014** (complexity: 2) - Create DynamicBlockCards email component
+- [x] **T-014** (complexity: 2) - Create DynamicBlockCards email component
   - packages/notifications/src/templates/newsletter/dynamic-block-cards.tsx on @repo/email Button + emai
   - Blocked by: T-013
   - Blocks: T-015
 
-- [ ] **T-015** (complexity: 3) - Implement renderNewsletterEmail by segments
+- [x] **T-015** (complexity: 3) - Implement renderNewsletterEmail by segments
   - packages/notifications/src/utils/render-newsletter-email.ts splits doc at root dynamicBlock nodes; T
   - Blocked by: T-014
   - Blocks: T-016, T-018
@@ -109,7 +109,7 @@
   - Blocked by: T-016, T-018
   - Blocks: T-021, T-022
 
-- [ ] **T-020** (complexity: 3) - Add TipTap dynamicBlock extension to the admin editor
+- [x] **T-020** (complexity: 3) - Add TipTap dynamicBlock extension to the admin editor
   - apps/admin/src/components/newsletter/dynamic-block/ extension (root-level atomic node, attrs blockKe
   - Blocked by: T-003
   - Blocks: T-021
