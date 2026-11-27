@@ -188,6 +188,24 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         },
         translations: { en: 'machine', pt: 'machine' }
     },
+    // origin: #4821
+    {
+        id: '2026-11-26-listing-photos-one-editor',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
+        title: {
+            es: 'Las fotos de tus fichas se manejan igual en todas las verticales',
+            en: 'The photos of your listings work the same across all verticals',
+            pt: 'As fotos das suas fichas funcionam da mesma forma em todas as verticais'
+        },
+        body: {
+            es: 'Alojamientos, comercios y experiencias usan el mismo editor de fotos: podés subir, reordenar, elegir la portada y escribir el texto alternativo. El editor muestra cuántas fotos te permite tu plan y cuántas suman tus packs de fotos; si tenés más fotos que tu tope, te avisa cuáles no se muestran y podés reordenar para elegirlas.',
+            en: 'Accommodations, venues and experiences use the same photo editor: you can upload, reorder, choose the cover photo and write the alt text. The editor shows how many photos your plan allows and how many your photo packs add; if you have more photos than your limit, it tells you which ones are not shown and you can reorder to choose them.',
+            pt: 'Hospedagens, comércios e experiências usam o mesmo editor de fotos: você pode enviar, reordenar, escolher a capa e escrever o texto alternativo. O editor mostra quantas fotos o seu plano permite e quantas os seus pacotes de fotos somam; se você tiver mais fotos do que o seu limite, ele avisa quais não são exibidas e você pode reordenar para escolhê-las.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4810
     {
         id: '2026-11-26-destination-page-sticky-side-column',
