@@ -298,8 +298,8 @@ export function AuthRequiredPopover({
                 className={styles.closeButton}
             >
                 <svg
-                    width="12"
-                    height="12"
+                    width="16"
+                    height="16"
                     viewBox="0 0 12 12"
                     fill="none"
                     aria-hidden="true"

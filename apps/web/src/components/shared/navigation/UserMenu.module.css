@@ -21,23 +21,16 @@
         border-color var(--duration-normal, 0.4s) ease;
 }
 
-/* Both variants render the same filled primary CTA. The original "hero"
-   variant assumed the header sat over a dark hero image, but in this
-   design the hero section uses --brand-secondary (a near-white peach
-   tint in light mode) and sits BELOW where the transparent navbar
-   actually paints, so the ghost-button look reduced to white-on-white.
-   Unify both variants to the filled brand-primary button so the CTA
-   stays readable on hero top, hero scrolled, and every non-hero route. */
-.signInLinkHero,
-.signInLinkScrolled {
-    border: 1px solid transparent;
-    color: var(--primary-foreground, #fff);
-    background-color: var(--brand-primary);
+/* HOS-2666 (CARD-001 H-8): sign-in is the SECONDARY header action. It is an
+   outline pill so the flat accent "Publicar" stays the single filled CTA. */
+.signInLink {
+    border: 1.5px solid var(--brand-primary);
+    color: var(--brand-primary);
+    background-color: transparent;
 }
 
-.signInLinkHero:hover,
-.signInLinkScrolled:hover {
-    background-color: var(--brand-primary-lm05);
+.signInLink:hover {
+    background-color: color-mix(in srgb, var(--brand-primary) 10%, transparent);
 }
 
 .signInLink:focus-visible {

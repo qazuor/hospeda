@@ -979,7 +979,7 @@ describe('FavoriteButton — client-side resolution (WB0-3)', () => {
 describe('FavoriteButton — success toasts on toggle', () => {
     it.each([
         [7, 'Guardado · 4 de 7 favoritos'],
-        [2147483647, 'Guardado · Favoritos ilimitados']
+        [2147483647, 'Guardado · favoritos ilimitados con Turista VIP']
     ])('announces confirmed usage for effective limit %i even without a tooltip', async (max, message) => {
         mockLimit.mockReturnValue(max);
         mockList.mockResolvedValue({ ok: true, data: { total: 4 } });
@@ -1038,6 +1038,24 @@ describe('FavoriteButton — success toasts on toggle', () => {
                 })
             );
         });
+    });
+
+    it('shows the "N de 5" counter in the removed toast for a limited plan (CARD-039 H-2)', async () => {
+        mockLimit.mockReturnValue(5);
+        mockList.mockResolvedValue({ ok: true, data: { total: 2 } });
+        mockToggle.mockResolvedValue({ ok: true, data: { toggled: false, bookmark: null } });
+        await renderButton(arrangeFavoritedUser());
+
+        fireEvent.click(screen.getByRole('button'));
+
+        await waitFor(() =>
+            expect(mockAddToast).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    type: 'success',
+                    message: 'Eliminado de favoritos · 2 de 5 favoritos'
+                })
+            )
+        );
     });
 
     it('does NOT call addToast with success on error response', async () => {
