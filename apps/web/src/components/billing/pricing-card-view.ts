@@ -68,6 +68,8 @@ import type { TranslationFn } from '@/lib/i18n';
  * endpoint returns — not `LimitDefinition[]`.
  */
 export interface PricingPlan {
+    /** Catalog plan id, matched against a permanent grant (HOS-2665). */
+    readonly id?: string;
     readonly planVersionId?: string;
     readonly billingOptions?: { readonly monthly: string; readonly annual: string | null };
     readonly slug: string;

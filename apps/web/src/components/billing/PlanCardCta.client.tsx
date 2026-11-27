@@ -26,6 +26,7 @@ import styles from './PlanCardCta.module.css';
 export function PlanCardCta({
     locale,
     vertical,
+    planId,
     planVersionId,
     billingOptions,
     planName,
@@ -33,6 +34,8 @@ export function PlanCardCta({
 }: {
     readonly locale: SupportedLocale;
     readonly vertical: PricingSituationVertical;
+    /** The catalog plan id, matched against a permanent grant (HOS-2665). */
+    readonly planId?: string;
     readonly planVersionId: string;
     readonly planName?: string;
     readonly inheritedPlanVersionId?: string;
@@ -106,7 +109,7 @@ export function PlanCardCta({
         ? resolvePlanCardCta({
               locale,
               vertical,
-              plan: { planVersionId, billingOptions },
+              plan: { planId, planVersionId, billingOptions },
               result,
               ownsBillingUnpublishedListing: ownsBillingUnpublished
           })
@@ -233,6 +236,19 @@ export function PlanCardCta({
                 >
                     {t('pricing.planStatus.manage')}
                 </LinkButton>
+            )}
+            {view.kind === 'granted' && (
+                <>
+                    <StatusPill
+                        tone="success"
+                        className={styles.currentPlan}
+                    >
+                        {vertical === 'tourist'
+                            ? t('pricing.planStatus.current')
+                            : t('publish.subscribe.currentPlan', undefined, { vertical: label })}
+                    </StatusPill>
+                    <p data-testid="pricing-plan-granted">{t('pricing.planStatus.granted')}</p>
+                </>
             )}
             {view.kind === 'vipInherited' && planVersionId === inheritedPlanVersionId && (
                 <p>{t('publish.subscribe.touristVipInherited')}</p>
