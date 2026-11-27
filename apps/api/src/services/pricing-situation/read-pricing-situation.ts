@@ -5,7 +5,7 @@ import {
     ServiceErrorCode,
     VerticalEnum
 } from '@repo/schemas';
-import { ServiceError } from '@repo/service-core';
+import { readLivePermanentGrantPlan, ServiceError } from '@repo/service-core';
 import type { PublicationVertical } from '../../../../../packages/verticals/src/publication/publication-types';
 import { touristVipInheritance } from '../../routes/billing-subscription/tourist-vip-inheritance';
 import { getClock } from '../../utils/clock';
@@ -14,7 +14,14 @@ import { resolveSubscribeDestinationForUser } from '../listing-publication/subsc
 
 type Vertical = PricingSituationVertical;
 
-/** Resolve the same pricing gates and in the same order as S1 and PB1. */
+/**
+ * Resolve the same pricing gates and in the same order as S1 and PB1.
+ *
+ * Order: inherited tourist VIP (tourist only), then a live subscription (the
+ * person is paying, so it wins over a grant), then a live permanent grant
+ * (HOS-2665: `GRANTED`, which replaces the grant's `COVERED`/`TRIAL` for the
+ * host verticals and the tourist `CHECKOUT`), then the vertical's own question.
+ */
 export async function readPricingSituation(input: {
     readonly userId: string;
     readonly vertical: Vertical;
@@ -51,6 +58,17 @@ export async function readPricingSituation(input: {
             >['status'],
             planVersionId: row.planVersionId,
             billingOptionId: row.billingOptionId
+        };
+    }
+
+    const { plan: granted } = await readLivePermanentGrantPlan(input);
+    if (granted) {
+        return {
+            situation: 'GRANTED',
+            planId: granted.planId,
+            planVersionId: granted.planVersionId,
+            planName: granted.planName,
+            since: granted.since.toISOString()
         };
     }
 
