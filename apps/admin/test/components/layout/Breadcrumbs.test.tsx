@@ -208,6 +208,18 @@ describe('HOS-2081 CA-3 el breadcrumb de las acciones enlaza al detalle', () => 
     });
 });
 
+describe('platform configuration crumbs are translated (HOS-2664)', () => {
+    it('labels /platform and /platform/configuration with i18n keys, not raw segments', () => {
+        routerState.pathname.current = '/platform/configuration/seo';
+        routerState.routesByPath.current = undefined;
+        render(<Breadcrumbs />);
+        expect(screen.getByText('admin-menu.platform.title')).toBeInTheDocument();
+        expect(screen.getByText('admin-menu.platform.configuration')).toBeInTheDocument();
+        expect(screen.queryByText('Platform')).toBeNull();
+        expect(screen.queryByText('Configuration')).toBeNull();
+    });
+});
+
 describe('breadcrumb semantics and overflow', () => {
     it.each([
         'gallery',
