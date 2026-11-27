@@ -46,7 +46,15 @@ import type { Actor, ServiceConfig, ServiceContext, ServiceOutput } from '../../
 import { ServiceError } from '../../types/index.js';
 import { createSystemActor } from '../../utils/system-actor.js';
 import {
-    buildCampaignTestSendAttribution,
+    type RenderNewsletterEmailFn,
+    renderCampaignContent
+} from './dynamic/render-campaign-content.js';
+import {
+    type SendTestEmailFromContentInput,
+    SendTestEmailFromContentSchema,
+    sendContentTestEmail
+} from './dynamic/test-email-content.js';
+import {
     type CampaignEmailAttribution,
     resolveCampaignEmailAttribution
 } from './newsletter-attribution.js';
@@ -151,6 +159,7 @@ export type RenderTiptapEmailFn = (input: { content: unknown }) => string;
 export type RenderCampaignEmailFn = (input: {
     subject: string;
     bodyHtml: string;
+    segments?: readonly string[];
     unsubscribeUrl: string;
     isTest?: boolean;
     /**
@@ -190,6 +199,7 @@ export type OpaqueReactElement = Record<string, any>;
 export type BuildCampaignReactElementFn = (input: {
     subject: string;
     bodyHtml: string;
+    segments?: readonly string[];
     unsubscribeUrl: string;
     isTest?: boolean;
 }) => OpaqueReactElement;
@@ -218,6 +228,8 @@ export interface SingleEmailTransport {
  * Constructor options for `NewsletterDeliveryService`.
  */
 export interface NewsletterDeliveryServiceOptions {
+    /** Segment renderer supplied by the notifications composition root. */
+    renderNewsletterEmailFn?: RenderNewsletterEmailFn;
     /** Logger from the parent context. */
     logger?: ServiceConfig['logger'];
     /**
@@ -414,6 +426,7 @@ export class NewsletterDeliveryService extends BaseService implements INewslette
           }) => Promise<DeliveryBatchResult>)
         | undefined;
     private readonly renderTiptapEmailFn: RenderTiptapEmailFn;
+    private readonly renderNewsletterEmailFn: RenderNewsletterEmailFn | undefined;
     private readonly renderCampaignEmailFn: RenderCampaignEmailFn;
     private readonly buildCampaignReactElementFn: BuildCampaignReactElementFn | undefined;
     private readonly attributeCampaignHtmlFn: AttributeCampaignHtmlFn;
@@ -430,6 +443,7 @@ export class NewsletterDeliveryService extends BaseService implements INewslette
         this.emailTransport = options.emailTransport;
         this.sendBatchFn = options.sendBatchFn;
         this.renderTiptapEmailFn = options.renderTiptapEmailFn ?? DEFAULT_RENDER_TIPTAP;
+        this.renderNewsletterEmailFn = options.renderNewsletterEmailFn;
         this.renderCampaignEmailFn = options.renderCampaignEmailFn ?? DEFAULT_RENDER_CAMPAIGN;
         this.buildCampaignReactElementFn = options.buildCampaignReactElementFn;
         this.attributeCampaignHtmlFn =
@@ -654,7 +668,65 @@ export class NewsletterDeliveryService extends BaseService implements INewslette
                 // ----------------------------------------------------------------
                 // Step 4: Render campaign bodyJson to email HTML once per batch.
                 // ----------------------------------------------------------------
-                const bodyHtml = this.renderTiptapEmailFn({ content: campaign.bodyJson });
+                const renderedByLocale = new Map<
+                    string,
+                    Awaited<ReturnType<typeof renderCampaignContent>>
+                >();
+                try {
+                    for (const delivery of eligibleDeliveries) {
+                        const locale =
+                            activeSubscriberMap.get(delivery.subscriberId)?.locale ?? 'es';
+                        if (renderedByLocale.has(locale)) continue;
+                        renderedByLocale.set(
+                            locale,
+                            await renderCampaignContent({
+                                bodyJson: campaign.bodyJson,
+                                resolvedBodyJson: campaign.resolvedBodyJson,
+                                locale: locale === 'en' || locale === 'pt' ? locale : 'es',
+                                renderNewsletterEmailFn: this.renderNewsletterEmailFn,
+                                renderTiptapEmailFn: this.renderTiptapEmailFn
+                            })
+                        );
+                    }
+                } catch (error) {
+                    if (
+                        !(error instanceof ServiceError) ||
+                        error.reason !== 'DYNAMIC_BLOCK_UNRESOLVED'
+                    )
+                        throw error;
+                    await db
+                        .update(newsletterCampaignDeliveries)
+                        .set({
+                            status: 'failed',
+                            errorMessage: 'DYNAMIC_BLOCK_UNRESOLVED',
+                            updatedAt: new Date()
+                        })
+                        .where(
+                            and(
+                                eq(newsletterCampaignDeliveries.campaignId, validated.campaignId),
+                                inArray(
+                                    newsletterCampaignDeliveries.id,
+                                    eligibleDeliveries.map((d) => d.id)
+                                ),
+                                eq(newsletterCampaignDeliveries.status, 'pending')
+                            )
+                        );
+                    await this._bulkUpdateStatus(
+                        db,
+                        inactiveDeliveries.map((d) => d.id),
+                        'skipped'
+                    );
+                    return {
+                        delivered: 0,
+                        failed: eligibleDeliveries.length,
+                        skipped:
+                            preSkippedCount +
+                            inactiveDeliveries.length +
+                            validated.deliveryIds.length -
+                            deliveryRows.length
+                    };
+                }
+                const bodyHtml = renderedByLocale.values().next().value?.bodyHtml ?? '';
                 // HOS-2359: one attribution for the whole campaign (slugs stored at
                 // dispatch; a pre-HOS-2359 campaign recomputes the slug).
                 const attribution = resolveCampaignEmailAttribution({ campaign });
@@ -701,7 +773,8 @@ export class NewsletterDeliveryService extends BaseService implements INewslette
 
                         const recipientHtml = await this.renderCampaignEmailFn({
                             subject: campaign.subject,
-                            bodyHtml,
+                            ...renderedByLocale.get(locale),
+                            bodyHtml: renderedByLocale.get(locale)?.bodyHtml ?? bodyHtml,
                             unsubscribeUrl,
                             attribution
                         });
@@ -1016,29 +1089,45 @@ export class NewsletterDeliveryService extends BaseService implements INewslette
                     );
                 }
 
-                const bodyHtml = this.renderTiptapEmailFn({ content: campaign.bodyJson });
-                const unsubscribeUrl = buildNewsletterUnsubscribePageUrl({
+                return sendContentTestEmail({
+                    content: {
+                        campaign,
+                        toEmail: validated.toEmail,
+                        locale: 'es',
+                        resolvedBodyJson: campaign.resolvedBodyJson
+                    },
                     siteUrl: this.siteUrl,
-                    locale: 'es'
+                    emailTransport: this.emailTransport,
+                    buildCampaignReactElementFn: this.buildCampaignReactElementFn,
+                    renderNewsletterEmailFn: this.renderNewsletterEmailFn,
+                    renderTiptapEmailFn: this.renderTiptapEmailFn
                 });
+            }
+        });
+    }
 
-                // Build the ReactElement and send via single-recipient transport
-                const emailElement = this.buildCampaignReactElementFn({
-                    subject: campaign.subject,
-                    bodyHtml,
-                    unsubscribeUrl,
-                    isTest: true
+    /** Send supplied resolved content without loading or updating any campaign row. */
+    public async sendTestEmailFromContent(
+        input: SendTestEmailFromContentInput,
+        actor?: Actor,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ sentTo: string }>> {
+        const effectiveActor = actor ?? SYSTEM_ACTOR;
+        return this.runWithLoggingAndValidation({
+            methodName: 'sendTestEmailFromContent',
+            input: { actor: effectiveActor, ...input },
+            schema: SendTestEmailFromContentSchema,
+            ctx,
+            execute: async (content) => {
+                checkCanSendCampaign(effectiveActor);
+                return sendContentTestEmail({
+                    content,
+                    siteUrl: this.siteUrl,
+                    emailTransport: this.emailTransport,
+                    buildCampaignReactElementFn: this.buildCampaignReactElementFn,
+                    renderNewsletterEmailFn: this.renderNewsletterEmailFn,
+                    renderTiptapEmailFn: this.renderTiptapEmailFn
                 });
-
-                await this.emailTransport.send({
-                    to: validated.toEmail,
-                    subject: `[PRUEBA] ${campaign.subject}`,
-                    react: emailElement,
-                    // HOS-2359: campaign UTMs.
-                    attribution: buildCampaignTestSendAttribution({ campaign })
-                });
-
-                return { sentTo: validated.toEmail };
             }
         });
     }
