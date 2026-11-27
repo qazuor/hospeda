@@ -24,10 +24,12 @@ import type {
     NewsletterCampaign,
     NewsletterCampaignLocaleFilterEnum,
     NewsletterCampaignStatusEnum,
+    NewsletterPreviewSelection,
     UpdateNewsletterCampaign
 } from '@repo/schemas';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchApi } from '@/lib/api/client';
+import type { CampaignResolutionReport } from './use-campaign-resolution';
 
 // ---------------------------------------------------------------------------
 // Query key factory
@@ -71,6 +73,8 @@ interface SendResponse {
         readonly enqueued?: number;
         readonly softcapped?: number;
         readonly reason?: string;
+        /** Dynamic resolution diagnostics, present when the campaign has dynamic blocks. */
+        readonly report?: CampaignResolutionReport;
     };
 }
 
@@ -191,11 +195,20 @@ async function fetchCampaignAudienceCount(id: string, ignoreSoftCap: boolean) {
     return result.data.data;
 }
 
-async function sendCampaignRequest(id: string, ignoreSoftCap = false) {
+/** Options of a send: the soft-cap override and the selection the admin previewed. */
+export interface SendCampaignInput {
+    readonly ignoreSoftCap?: boolean;
+    readonly previewSelection?: NewsletterPreviewSelection;
+}
+
+async function sendCampaignRequest(id: string, input: SendCampaignInput = {}) {
     const result = await fetchApi<SendResponse>({
         path: `/api/v1/admin/newsletter/campaigns/${id}/send`,
         method: 'POST',
-        body: { ignoreSoftCap }
+        body: {
+            ignoreSoftCap: input.ignoreSoftCap ?? false,
+            ...(input.previewSelection ? { previewSelection: input.previewSelection } : {})
+        }
     });
     return result.data.data;
 }
@@ -311,7 +324,7 @@ export function useTestSendCampaign(id: string) {
 export function useSendCampaign(id: string) {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: (ignoreSoftCap?: boolean) => sendCampaignRequest(id, ignoreSoftCap ?? false),
+        mutationFn: (input?: SendCampaignInput) => sendCampaignRequest(id, input),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: newsletterCampaignQueryKeys.detail(id) });
             queryClient.invalidateQueries({ queryKey: newsletterCampaignQueryKeys.lists() });

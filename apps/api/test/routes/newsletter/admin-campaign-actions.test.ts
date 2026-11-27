@@ -150,6 +150,55 @@ describe('send and cancel', () => {
         expect(await response.json()).toEqual({ dispatched: true, enqueued: 1500, softcapped: 42 });
         expect(mocks.send.mock.calls).toEqual([[actor, { id: campaignId }]]);
     });
+    it('forwards previewSelection to the service and returns the resolution report', async () => {
+        const itemA = 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee';
+        const itemB = 'ffffffff-ffff-4fff-8fff-ffffffffffff';
+        const resolutionReport = {
+            blocks: [
+                {
+                    blockKey: 'newest-01',
+                    candidates: [itemA, itemB],
+                    dropped: [{ id: itemA, reason: 'not_published' }],
+                    repeatsUsed: 0,
+                    belowMin: false,
+                    action: 'send'
+                }
+            ]
+        };
+        mocks.send.mockResolvedValue({
+            data: { enqueued: 3, softcapped: 0, resolutionReport },
+            error: null
+        });
+        const previewSelection = [{ blockKey: 'newest-01', itemIds: [itemA, itemB] }];
+        const response = await post({
+            path: `${base}/send`,
+            body: { ignoreSoftCap: false, previewSelection }
+        });
+        expect(response.status).toBe(202);
+        expect(await response.json()).toEqual({
+            dispatched: true,
+            enqueued: 3,
+            softcapped: 0,
+            report: resolutionReport
+        });
+        expect(mocks.send.mock.calls).toEqual([[actor, { id: campaignId, previewSelection }]]);
+    });
+    it.each([
+        ['a non-uuid item id', [{ blockKey: 'b', itemIds: ['not-a-uuid'] }]],
+        [
+            'duplicate block keys',
+            [
+                { blockKey: 'b', itemIds: [] },
+                { blockKey: 'b', itemIds: [] }
+            ]
+        ],
+        ['more than 50 ids in a block', [{ blockKey: 'b', itemIds: Array(51).fill(campaignId) }]],
+        ['an unknown property', [{ blockKey: 'b', itemIds: [], extra: true }]]
+    ])('rejects a previewSelection with %s before the service', async (_label, previewSelection) => {
+        const response = await post({ path: `${base}/send`, body: { previewSelection } });
+        expect(response.status).toBe(400);
+        expect(mocks.send).not.toHaveBeenCalled();
+    });
     it('returns 200 for an empty audience', async () => {
         mocks.send.mockResolvedValue({ data: { enqueued: 0, softcapped: 200 }, error: null });
         const response = await post({ path: `${base}/send` });
@@ -211,7 +260,8 @@ describe('dynamic campaign actions', () => {
         const preview = {
             html: '<p>Resolved</p>',
             segments: ['<p>Resolved</p>'],
-            report: { blocks: [] }
+            report: { blocks: [] },
+            blocks: [{ blockKey: 'newest-01', itemIds: ['eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee'] }]
         };
         mocks.preview.mockResolvedValue(preview);
         const response = await post({ path: `${base}/resolve-preview` });

@@ -225,4 +225,67 @@ describe('SendConfirmDialog dynamic resolution', () => {
         expect(mockNavigate).not.toHaveBeenCalled();
         expect(mockToast).not.toHaveBeenCalled();
     });
+    it('sends the previewed itemIds with the confirmation and toasts the dropped count (AC-F1-7)', async () => {
+        const [a, b] = [
+            'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',
+            'ffffffff-ffff-4fff-8fff-ffffffffffff'
+        ];
+        mockToast.mockReset();
+        mockResolution.mockReturnValue({
+            data: { report, blocks: [{ blockKey: 'block-one', itemIds: [a, b] }] }
+        });
+        mockSend.mockResolvedValue({
+            dispatched: true,
+            enqueued: 2,
+            report: {
+                blocks: [
+                    {
+                        ...report.blocks[0],
+                        belowMin: false,
+                        dropped: [{ id: a, reason: 'not_published' }]
+                    }
+                ]
+            }
+        });
+        render(
+            <SendConfirmDialog
+                open
+                onOpenChange={vi.fn()}
+                campaign={dynamicCampaign}
+            />
+        );
+        fireEvent.click(
+            screen.getByRole('button', { name: 'admin-newsletter.campaigns.confirmSendButton' })
+        );
+        await waitFor(() => expect(mockSend).toHaveBeenCalled());
+        expect(mockSend.mock.calls).toEqual([
+            [
+                {
+                    ignoreSoftCap: false,
+                    previewSelection: [{ blockKey: 'block-one', itemIds: [a, b] }]
+                }
+            ]
+        ]);
+        await waitFor(() =>
+            expect(mockToast.mock.calls.map(([toast]) => toast.message)).toContain(
+                'admin-newsletter.dynamicBlock.droppedAtSend:{"count":"1"}'
+            )
+        );
+    });
+    it('sends no previewSelection for a static campaign', async () => {
+        mockResolution.mockReturnValue({ data: undefined });
+        mockSend.mockResolvedValue({ dispatched: true, enqueued: 1 });
+        render(
+            <SendConfirmDialog
+                open
+                onOpenChange={vi.fn()}
+                campaign={campaign}
+            />
+        );
+        fireEvent.click(
+            screen.getByRole('button', { name: 'admin-newsletter.campaigns.confirmSendButton' })
+        );
+        await waitFor(() => expect(mockSend).toHaveBeenCalled());
+        expect(mockSend.mock.calls).toEqual([[{ ignoreSoftCap: false }]]);
+    });
 });

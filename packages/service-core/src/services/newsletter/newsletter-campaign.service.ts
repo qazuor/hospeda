@@ -29,10 +29,15 @@
 
 import type { SelectNewsletterCampaign } from '@repo/db';
 import { getDb, newsletterCampaignDeliveries, newsletterCampaigns } from '@repo/db';
-import type { CreateNewsletterCampaign, UpdateNewsletterCampaign } from '@repo/schemas';
+import type {
+    CreateNewsletterCampaign,
+    NewsletterPreviewSelection,
+    UpdateNewsletterCampaign
+} from '@repo/schemas';
 import {
     NewsletterCampaignStatusEnum,
     NewsletterContentTypeEnum,
+    NewsletterPreviewSelectionSchema,
     ServiceErrorCode
 } from '@repo/schemas';
 import { and, count, eq, isNull, sql } from 'drizzle-orm';
@@ -41,9 +46,10 @@ import { BaseService } from '../../base/base.service.js';
 import type { Actor, ServiceConfig, ServiceContext, ServiceOutput } from '../../types/index.js';
 import { ServiceError } from '../../types/index.js';
 import { createSystemActor } from '../../utils/system-actor.js';
-import { resolveCampaignContent } from './dynamic/campaign-content.js';
+import { resolveCampaignContentWithReport } from './dynamic/campaign-content.js';
 import type { DynamicSourcePort } from './dynamic/dynamic-source.port.js';
 import { persistCampaignDispatch } from './dynamic/persist-campaign-dispatch.js';
+import type { ResolutionReport } from './dynamic/resolution.types.js';
 import {
     resolveAndSendCampaignTest,
     type SendTestEmailFromContentInput
@@ -160,7 +166,8 @@ const AudienceEstimateInputSchema = z.object({
 
 const SendInputSchema = z.object({
     id: z.string().uuid(),
-    ignoreSoftCap: z.boolean().default(false)
+    ignoreSoftCap: z.boolean().default(false),
+    previewSelection: NewsletterPreviewSelectionSchema.optional()
 });
 
 const TestSendInputSchema = z.object({
@@ -204,6 +211,8 @@ export interface SendCampaignResult {
     readonly enqueued: number;
     /** Number of subscribers excluded by the rolling soft-cap window. */
     readonly softcapped: number;
+    /** Per-block dynamic resolution diagnostics (dropped ids and reasons); dynamic campaigns only. */
+    readonly resolutionReport?: ResolutionReport;
 }
 
 /** Result returned by `cancel()`. */
@@ -675,7 +684,11 @@ export class NewsletterCampaignService extends BaseService {
      */
     public async send(
         actor: Actor,
-        input: { id: string; ignoreSoftCap?: boolean },
+        input: {
+            id: string;
+            ignoreSoftCap?: boolean;
+            previewSelection?: NewsletterPreviewSelection;
+        },
         _ctx?: ServiceContext
     ): Promise<ServiceOutput<SendCampaignResult>> {
         return this.runWithLoggingAndValidation({
@@ -721,11 +734,14 @@ export class NewsletterCampaignService extends BaseService {
                 }
 
                 const resolvedAt = new Date();
-                const resolvedBodyJson = await resolveCampaignContent({
-                    doc: campaign.bodyJson,
-                    port: this.dynamicSourcePort,
-                    now: resolvedAt
-                });
+                const { content: resolvedBodyJson, report: resolutionReport } =
+                    await resolveCampaignContentWithReport({
+                        doc: campaign.bodyJson,
+                        port: this.dynamicSourcePort,
+                        now: resolvedAt,
+                        previewSelection: validated.previewSelection
+                    });
+                const reportField = resolvedBodyJson ? { resolutionReport } : {};
 
                 // Step 2 — Resolve eligible subscribers (shared with getAudienceEstimate)
                 const { eligibleIds, softCappedCount } = await this.resolveEligibleForCampaign({
@@ -735,7 +751,7 @@ export class NewsletterCampaignService extends BaseService {
 
                 // Step 3 — No eligible subscribers → early return without status change
                 if (eligibleIds.length === 0) {
-                    return { enqueued: 0, softcapped: softCappedCount };
+                    return { enqueued: 0, softcapped: softCappedCount, ...reportField };
                 }
 
                 // Step 3b — Attribution (HOS-2359): the campaign's utm_campaign slug.
@@ -769,7 +785,8 @@ export class NewsletterCampaignService extends BaseService {
 
                 return {
                     enqueued: insertedDeliveryIds.length,
-                    softcapped: softCappedCount
+                    softcapped: softCappedCount,
+                    ...reportField
                 };
             }
         });

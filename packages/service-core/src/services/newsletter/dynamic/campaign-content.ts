@@ -1,4 +1,4 @@
-import type { ResolvedNewsletterContent } from '@repo/schemas';
+import type { NewsletterPreviewSelection, ResolvedNewsletterContent } from '@repo/schemas';
 import {
     DynamicBlockConfigSchema,
     NewsletterDocumentSchema,
@@ -9,6 +9,7 @@ import { z } from 'zod';
 import { ServiceError } from '../../../types/index.js';
 import { DynamicResolutionError } from './dynamic-resolution.error.js';
 import type { DynamicSourcePort } from './dynamic-source.port.js';
+import { buildCurrentFromPreviewSelection } from './preview-selection.js';
 import type { ResolutionReport } from './resolution.types.js';
 import { resolveBlocks } from './resolve-blocks.js';
 
@@ -31,6 +32,7 @@ export async function resolveCampaignContent(input: {
     readonly doc: unknown;
     readonly port?: DynamicSourcePort;
     readonly now: Date;
+    readonly previewSelection?: NewsletterPreviewSelection;
 }): Promise<ResolvedNewsletterContent | null> {
     return (await resolveCampaignContentWithReport(input)).content;
 }
@@ -40,6 +42,7 @@ export async function resolveCampaignContentWithReport(input: {
     readonly doc: unknown;
     readonly port?: DynamicSourcePort;
     readonly now: Date;
+    readonly previewSelection?: NewsletterPreviewSelection;
 }): Promise<{
     readonly content: ResolvedNewsletterContent | null;
     readonly report: ResolutionReport;
@@ -69,6 +72,7 @@ async function resolveDynamicContent(input: {
     readonly doc: unknown;
     readonly port?: DynamicSourcePort;
     readonly now: Date;
+    readonly previewSelection?: NewsletterPreviewSelection;
 }): Promise<{ readonly content: ResolvedNewsletterContent; readonly report: ResolutionReport }> {
     const doc = NewsletterDocumentSchema.parse(input.doc);
     const blocks = doc.content
@@ -110,6 +114,10 @@ async function resolveDynamicContent(input: {
         phase: 'send',
         now: input.now,
         history: [],
+        current: buildCurrentFromPreviewSelection({
+            previewSelection: input.previewSelection,
+            blockKeys: blocks.map((block) => block.blockKey)
+        }),
         locales: ['es', 'en', 'pt'],
         port: input.port
     });

@@ -109,7 +109,13 @@ export function SendConfirmDialog({ open, onOpenChange, campaign }: SendConfirmD
         setFailedReport(null);
 
         try {
-            const result = await sendMutation.mutateAsync(ignoreSoftCap);
+            // Send the exact selection the admin previewed; the server revalidates
+            // every id, drops what is no longer eligible and refills.
+            const previewSelection = dynamic ? resolution.data?.blocks : undefined;
+            const result = await sendMutation.mutateAsync({
+                ignoreSoftCap,
+                ...(previewSelection?.length ? { previewSelection } : {})
+            });
 
             if (!result.dispatched) {
                 addToast({
@@ -118,6 +124,19 @@ export function SendConfirmDialog({ open, onOpenChange, campaign }: SendConfirmD
                 });
                 onOpenChange(false);
                 return;
+            }
+
+            const droppedCount = (result.report?.blocks ?? []).reduce(
+                (total, block) => total + block.dropped.length,
+                0
+            );
+            if (droppedCount > 0) {
+                addToast({
+                    message: t('admin-newsletter.dynamicBlock.droppedAtSend', {
+                        count: String(droppedCount)
+                    }),
+                    variant: 'warning'
+                });
             }
 
             addToast({

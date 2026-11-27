@@ -34,7 +34,9 @@ export type CampaignResolutionReport = z.infer<typeof campaignResolutionReportSc
 const previewSchema = z.object({
     html: z.string(),
     segments: z.array(z.string()).optional(),
-    report: campaignResolutionReportSchema
+    report: campaignResolutionReportSchema,
+    /** Selected item ids per block, sent back at confirmation as `previewSelection`. */
+    blocks: z.array(z.object({ blockKey: z.string(), itemIds: z.array(z.string()) })).default([])
 });
 const documentSchema = z.object({ content: z.array(z.object({ type: z.string() })).optional() });
 

@@ -1,5 +1,6 @@
 /** Admin campaign delivery actions and read-only metrics. */
-import { PermissionEnum } from '@repo/schemas';
+import type { NewsletterPreviewSelection as PreviewSelection } from '@repo/schemas';
+import { PermissionEnum, SendNewsletterCampaignRequestSchema } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
 import { HTTPException } from 'hono/http-exception';
 import { getActorFromContext } from '../../../utils/actor';
@@ -8,6 +9,7 @@ import { createAdminListRoute, createAdminRoute } from '../../../utils/route-fac
 import { z } from '../../../utils/zod';
 import { getDefaultUserService } from '../protected/_singletons';
 import { getDefaultCampaignService } from './_singletons';
+import { CampaignResolutionReportSchema } from './campaign-dynamic.schemas';
 import { handleCampaignError } from './campaign-errors';
 
 const TestSendBodySchema = z.object({ toEmail: z.string().email().optional() });
@@ -15,7 +17,8 @@ const SendResponseSchema = z.union([
     z.object({
         dispatched: z.literal(true),
         enqueued: z.number().int().min(0),
-        softcapped: z.number().int().min(0)
+        softcapped: z.number().int().min(0),
+        report: CampaignResolutionReportSchema.optional()
     }),
     z.object({ dispatched: z.literal(false), reason: z.literal('no_eligible_subscribers') })
 ]);
@@ -82,13 +85,18 @@ export const adminSendCampaignRoute = createAdminRoute({
     tags: ['Newsletter'],
     requiredPermissions: [PermissionEnum.NEWSLETTER_CAMPAIGN_SEND],
     requestParams: { id: z.string().uuid('Campaign ID must be a valid UUID') },
+    requestBody: SendNewsletterCampaignRequestSchema,
+    requestBodyRequired: false,
     responseSchema: SendResponseSchema,
     options: { customRateLimit: { requests: 1, windowMs: 60_000 } },
-    handler: async (ctx, params) => {
+    handler: async (ctx, params, body) => {
         const campaignSvc = await getDefaultCampaignService();
+        const previewSelection = (body as { previewSelection?: PreviewSelection } | undefined)
+            ?.previewSelection;
         try {
             const result = await campaignSvc.send(getActorFromContext(ctx), {
-                id: params.id as string
+                id: params.id as string,
+                ...(previewSelection ? { previewSelection } : {})
             });
             if (result.error)
                 throw new ServiceError(
@@ -97,14 +105,22 @@ export const adminSendCampaignRoute = createAdminRoute({
                     result.error.details,
                     result.error.reason
                 );
-            const { enqueued, softcapped } = result.data;
+            const { enqueued, softcapped, resolutionReport } = result.data;
             // Preserve the existing action response (not an envelope).
             if (enqueued === 0)
                 return ctx.json(
                     { dispatched: false as const, reason: 'no_eligible_subscribers' as const },
                     200
                 );
-            return ctx.json({ dispatched: true as const, enqueued, softcapped }, 202);
+            return ctx.json(
+                {
+                    dispatched: true as const,
+                    enqueued,
+                    softcapped,
+                    ...(resolutionReport ? { report: resolutionReport } : {})
+                },
+                202
+            );
         } catch (error) {
             return handleCampaignError({ error, ctx });
         }

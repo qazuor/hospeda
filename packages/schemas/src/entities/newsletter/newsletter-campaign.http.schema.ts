@@ -33,6 +33,24 @@ export type TestSendNewsletterCampaignRequest = z.infer<
 // SendNewsletterCampaignRequestSchema
 // ============================================================================
 
+/** Per-block selection the admin previewed; bounded, unique block keys, UUID item ids. */
+export const NewsletterPreviewSelectionSchema = z
+    .array(
+        z
+            .object({
+                blockKey: z.string().min(1).max(100),
+                itemIds: z.array(z.string().uuid()).max(50)
+            })
+            .strict()
+    )
+    .max(20)
+    .refine((blocks) => new Set(blocks.map((block) => block.blockKey)).size === blocks.length, {
+        message: 'Duplicate blockKey in previewSelection'
+    });
+
+/** TypeScript type inferred from {@link NewsletterPreviewSelectionSchema}. */
+export type NewsletterPreviewSelection = z.infer<typeof NewsletterPreviewSelectionSchema>;
+
 /**
  * Request body for `POST /api/v1/admin/newsletter/campaigns/:id/send`.
  *
@@ -40,6 +58,7 @@ export type TestSendNewsletterCampaignRequest = z.infer<
  * `ignoreSoftCap` bypasses the rolling-window cap that prevents sending a
  * newsletter to the same subscriber more than once per
  * `HOSPEDA_NEWSLETTER_SOFTCAP_DAYS` days. Use with caution.
+ * `previewSelection` is the untrusted per-block selection the admin previewed.
  * `.strict()` rejects unknown fields.
  *
  * @example
@@ -54,7 +73,12 @@ export const SendNewsletterCampaignRequestSchema = z
          * active subscribers regardless of recent delivery history.
          * Defaults to `false`.
          */
-        ignoreSoftCap: z.boolean().optional().default(false)
+        ignoreSoftCap: z.boolean().optional().default(false),
+        /**
+         * Selection the admin previewed, per dynamic block. Untrusted: send
+         * revalidates every id, drops the ineligible ones and refills.
+         */
+        previewSelection: NewsletterPreviewSelectionSchema.optional()
     })
     .strict();
 

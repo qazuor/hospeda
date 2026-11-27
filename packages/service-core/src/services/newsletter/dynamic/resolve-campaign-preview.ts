@@ -22,6 +22,8 @@ export async function resolveCampaignPreview(input: {
     readonly html: string;
     readonly segments?: readonly string[];
     readonly report: ResolutionReport;
+    /** Selected item ids per block, sent back by the admin as `previewSelection`. */
+    readonly blocks: readonly { readonly blockKey: string; readonly itemIds: readonly string[] }[];
 }> {
     checkCanSendCampaign(input.actor);
     const id = z.string().uuid().parse(input.id);
@@ -52,5 +54,10 @@ export async function resolveCampaignPreview(input: {
         renderNewsletterEmailFn: input.renderNewsletterEmailFn,
         renderTiptapEmailFn: input.renderTiptapEmailFn
     });
-    return { html: rendered.bodyHtml, segments: rendered.segments, report };
+    return {
+        html: rendered.bodyHtml,
+        segments: rendered.segments,
+        report,
+        blocks: (content?.blocks ?? []).map(({ blockKey, itemIds }) => ({ blockKey, itemIds }))
+    };
 }

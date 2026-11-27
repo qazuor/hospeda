@@ -28,5 +28,7 @@ export const CampaignResolutionReportSchema = z.object({
 export const CampaignResolvePreviewSchema = z.object({
     html: z.string(),
     segments: z.array(z.string()).optional(),
-    report: CampaignResolutionReportSchema
+    report: CampaignResolutionReportSchema,
+    /** Selected item ids per block; the admin sends them back as `previewSelection`. */
+    blocks: z.array(z.object({ blockKey: z.string(), itemIds: z.array(z.string()) }))
 });

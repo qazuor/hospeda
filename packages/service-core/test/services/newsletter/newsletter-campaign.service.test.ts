@@ -398,7 +398,24 @@ describe('dynamic campaign content (HOS-2636)', () => {
         const { svc, set, values } = arrangeSend();
         enqueueQueryResponse([{ ...makeCampaignRow(), bodyJson: dynamicDocument() }]);
         const result = await svc.send(makeAdminActor(), { id: CAMPAIGN_ID });
-        expect(result).toEqual({ data: { enqueued: 2, softcapped: 2 } });
+        expect(result).toEqual({
+            data: {
+                enqueued: 2,
+                softcapped: 2,
+                resolutionReport: {
+                    blocks: [
+                        {
+                            action: 'send',
+                            belowMin: false,
+                            blockKey: 'newest-block',
+                            candidates: ['item-b', 'item-a'],
+                            dropped: [],
+                            repeatsUsed: 0
+                        }
+                    ]
+                }
+            }
+        });
         expect(values.mock.calls[0]).toEqual([
             [
                 {
