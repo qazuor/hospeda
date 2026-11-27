@@ -382,7 +382,17 @@ export async function listExperienceFaqs(
 
         // TYPE-WORKAROUND: Drizzle widens the entity type when loading relations;
         // `faqs` is not part of the base Experience type.
-        const faqs = (experience as unknown as { faqs?: unknown[] }).faqs ?? [];
+        const faqs = (experience as unknown as { faqs?: unknown }).faqs;
+        // HOS-2670: a missing `faqs` means the model did not load the relation.
+        // Answering `[]` here hid exactly that bug for every experience; fail loudly instead.
+        if (!Array.isArray(faqs)) {
+            return {
+                error: {
+                    code: ServiceErrorCode.INTERNAL_ERROR,
+                    message: 'Experience FAQs relation was not loaded'
+                }
+            };
+        }
         return { data: { faqs: faqs as ExperienceFaq[] } };
     } catch (err) {
         if (err instanceof ServiceError) {

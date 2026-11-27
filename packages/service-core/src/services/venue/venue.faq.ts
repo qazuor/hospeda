@@ -374,7 +374,17 @@ export async function listVenueFaqs(
 
         // TYPE-WORKAROUND: Drizzle widens the entity type when loading relations;
         // `faqs` is not part of the base venue type.
-        const faqs = (venue as unknown as { faqs?: unknown[] }).faqs ?? [];
+        const faqs = (venue as unknown as { faqs?: unknown }).faqs;
+        // HOS-2670: a missing `faqs` means the model did not load the relation.
+        // Answering `[]` here hid exactly that bug for every venue; fail loudly instead.
+        if (!Array.isArray(faqs)) {
+            return {
+                error: {
+                    code: ServiceErrorCode.INTERNAL_ERROR,
+                    message: 'Venue FAQs relation was not loaded'
+                }
+            };
+        }
         return { data: { faqs: faqs as VenueFaq[] } };
     } catch (err) {
         if (err instanceof ServiceError) {
