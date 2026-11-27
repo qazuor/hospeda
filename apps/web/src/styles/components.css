@@ -293,6 +293,21 @@
     transform: none;
 }
 
+/* Flat primary: the header «Iniciar sesión» (HOS-2664), same shape as the flat accent. */
+.btn-gradient--flat.btn-gradient--primary {
+    color: var(--primary-foreground, #fff);
+    background-image: none;
+    background-color: var(--brand-primary);
+    box-shadow: none;
+    transform: none;
+}
+
+.btn-gradient--flat.btn-gradient--primary:hover:not(:disabled):not([aria-disabled="true"]) {
+    background-color: var(--brand-primary-lm05);
+    box-shadow: none;
+    transform: none;
+}
+
 .btn-gradient--primary {
     color: var(--primary-foreground, #fff);
     background-image: linear-gradient(
