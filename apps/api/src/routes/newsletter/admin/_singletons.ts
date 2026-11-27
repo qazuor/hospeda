@@ -9,7 +9,7 @@
  */
 
 import { ServiceErrorCode } from '@repo/schemas';
-import { NewsletterCampaignService, ServiceError } from '@repo/service-core';
+import { DrizzleDynamicSource, NewsletterCampaignService, ServiceError } from '@repo/service-core';
 import type { INewsletterDeliveryService } from '@repo/service-core/services/newsletter/newsletter-campaign.service';
 import { getNewsletterDeliveryService } from '../../../services/newsletter/delivery-factory';
 import { env } from '../../../utils/env';
@@ -27,6 +27,16 @@ let cachedCampaignService: NewsletterCampaignService | null = null;
  * instead of silently dropping work.
  */
 const stubDeliveryService: INewsletterDeliveryService = {
+    async sendTestEmailFromContent(_input) {
+        throw new ServiceError(
+            ServiceErrorCode.SERVICE_UNAVAILABLE,
+            getDeliveryUnavailableMessage({
+                emailApiKeyConfigured: Boolean(env.HOSPEDA_EMAIL_API_KEY)
+            }),
+            undefined,
+            'DELIVERY_SERVICE_NOT_CONFIGURED'
+        );
+    },
     async enqueueBatches(_input) {
         throw new ServiceError(
             ServiceErrorCode.SERVICE_UNAVAILABLE,
@@ -120,10 +130,10 @@ export async function getDefaultCampaignService(): Promise<NewsletterCampaignSer
             batchSize: env.HOSPEDA_NEWSLETTER_BATCH_SIZE,
             softCapDays: env.HOSPEDA_NEWSLETTER_SOFTCAP_DAYS,
             deliveryService,
-            // Cast: getDefaultNewsletterService() returns NewsletterSubscriberService
-            // which is exactly the type expected by the campaign service options.
-            // biome-ignore lint/suspicious/noExplicitAny: subscriber service singleton shares the concrete class
-            subscriberService: subscriberService as any
+            dynamicSourcePort: new DrizzleDynamicSource({
+                siteUrl: env.HOSPEDA_SITE_URL
+            }),
+            subscriberService
         }
     );
     return cachedCampaignService;

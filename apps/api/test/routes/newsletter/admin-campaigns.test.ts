@@ -103,6 +103,8 @@ const draftCampaign: SelectNewsletterCampaign = {
     title: 'Mayo 2025',
     subject: 'Novedades de mayo',
     bodyJson: { type: 'doc', content: [] },
+    resolvedBodyJson: null,
+    resolvedAt: null,
     status: 'draft',
     localeFilter: 'all',
     contentType: null,

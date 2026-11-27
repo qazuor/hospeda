@@ -12,7 +12,7 @@
  */
 
 import { NotificationType } from '@repo/notifications';
-import { NewsletterCampaignService } from '@repo/service-core';
+import { DrizzleDynamicSource, NewsletterCampaignService } from '@repo/service-core';
 import { env } from '../../utils/env.js';
 import { apiLogger } from '../../utils/logger.js';
 import { sendNotification } from '../../utils/notification-helper.js';
@@ -69,6 +69,9 @@ export const newsletterCloseCampaignsJob: CronJobDefinition = {
             const campaignService = new NewsletterCampaignService(
                 { logger: apiLogger },
                 {
+                    dynamicSourcePort: new DrizzleDynamicSource({
+                        siteUrl: env.HOSPEDA_SITE_URL
+                    }),
                     notifyCampaignClosedWithFailuresFn:
                         adminEmails.length > 0
                             ? async (event) => {

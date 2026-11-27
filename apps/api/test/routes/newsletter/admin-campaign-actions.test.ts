@@ -1,580 +1,366 @@
-/**
- * Integration tests for the admin newsletter campaign action and metrics endpoints
- * (SPEC-101 T-101-28).
- *
- * Tests the 5 action/metrics endpoints:
- *   POST /api/v1/admin/newsletter/campaigns/:id/test-send
- *   POST /api/v1/admin/newsletter/campaigns/:id/send       (202, 200 no-eligible, 409)
- *   POST /api/v1/admin/newsletter/campaigns/:id/cancel     (200, 409)
- *   GET  /api/v1/admin/newsletter/campaigns/:id/metrics    (200 + no-cache header)
- *   GET  /api/v1/admin/newsletter/campaigns/:id/errors     (200 paginated + masked email)
- *
- * The `NewsletterCampaignService` is mocked at the lazy-singleton boundary.
- * `UserService` (for test-send actor email resolution) is also mocked.
- *
- * Error shape notes:
- * - 409 conflict errors: duck-typed Error objects with `.code` and `.reason` fields
- *   (resilient to the test mock ServiceError that lacks `reason`).
- * - 404 / 503 service errors: duck-typed Error objects using the `CODE: message`
- *   format so `handleRouteError`'s string-parse path maps them correctly.
- * - send / cancel use result.error plumbing — the handler throws `new ServiceError()`
- *   which is re-caught. We use duck-typed objects so the error reaches the
- *   `instanceof Error` path in handleRouteError rather than failing instanceof checks.
- */
-
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
-// ---------------------------------------------------------------------------
-// Mocks (declare BEFORE importing routes)
-// ---------------------------------------------------------------------------
-
-const mockSend = vi.fn();
-const mockTestSend = vi.fn();
-const mockCancel = vi.fn();
-const mockComputeMetrics = vi.fn();
-const mockGetAudienceEstimate = vi.fn();
-const mockGetFailedDeliveries = vi.fn();
-const mockUserGetById = vi.fn();
-
-vi.mock('../../../src/routes/newsletter/admin/_singletons', () => ({
-    getDefaultCampaignService: vi.fn(() => ({
-        create: vi.fn(),
-        update: vi.fn(),
-        softDelete: vi.fn(),
-        send: mockSend,
-        testSend: mockTestSend,
-        cancel: mockCancel,
-        computeMetrics: mockComputeMetrics,
-        getAudienceEstimate: mockGetAudienceEstimate,
-        getFailedDeliveries: mockGetFailedDeliveries
-    })),
-    _resetCampaignRouteSingletons: vi.fn()
-}));
-
-vi.mock('../../../src/routes/newsletter/protected/_singletons', () => ({
-    getDefaultNewsletterService: vi.fn(() => ({})),
-    getDefaultUserService: vi.fn(() => ({ getById: mockUserGetById })),
-    _resetNewsletterRouteSingletons: vi.fn()
-}));
-
-vi.mock('../../../src/middlewares/rate-limit', async (importOriginal) => {
-    const original = await importOriginal<typeof import('../../../src/middlewares/rate-limit')>();
-    return {
-        ...original,
-        createPerRouteRateLimitMiddleware: () => async (_c: unknown, next: () => Promise<void>) => {
-            await next();
-        }
-    };
-});
-
-const ACTOR_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
-const ACTOR_EMAIL = 'admin@hospeda.com.ar';
-
-vi.mock('../../../src/middlewares/authorization', () => ({
-    publicAuthMiddleware: () => async (_c: unknown, next: () => Promise<void>) => {
-        await next();
-    },
-    protectedAuthMiddleware: () => async (_c: unknown, next: () => Promise<void>) => {
-        await next();
-    },
-    adminAuthMiddleware:
-        () => async (c: { set: (k: string, v: unknown) => void }, next: () => Promise<void>) => {
-            c.set('actor', {
-                id: ACTOR_ID,
-                roles: ['ADMIN'],
-                permissions: [
-                    'newsletter.campaign.view',
-                    'newsletter.campaign.write',
-                    'newsletter.campaign.send'
-                ]
-            });
-            await next();
-        }
-}));
-
+/** Campaign action contracts: real authorization, service arguments and domain errors. */
+import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
+import { ServiceError } from '@repo/service-core';
 import { Hono } from 'hono';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { AppBindings } from '../../../src/types';
+
+const mocks = vi.hoisted(() => ({
+    send: vi.fn(),
+    testSend: vi.fn(),
+    cancel: vi.fn(),
+    computeMetrics: vi.fn(),
+    getAudienceEstimate: vi.fn(),
+    getFailedDeliveries: vi.fn(),
+    preview: vi.fn(),
+    user: vi.fn()
+}));
+vi.mock('@repo/service-core', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@repo/service-core')>()),
+    resolveCampaignPreview: mocks.preview
+}));
+vi.mock('../../../src/routes/newsletter/admin/_singletons', () => ({
+    getDefaultCampaignService: vi.fn(() => mocks)
+}));
+vi.mock('../../../src/routes/newsletter/protected/_singletons', () => ({
+    getDefaultUserService: vi.fn(() => ({ getById: mocks.user }))
+}));
+vi.mock('../../../src/middlewares/rate-limit', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('../../../src/middlewares/rate-limit')>()),
+    createPerRouteRateLimitMiddleware: () => async (_c: unknown, next: () => Promise<void>) =>
+        next()
+}));
+
 import {
     adminCampaignAudienceCountRoute,
     adminCampaignErrorsRoute,
     adminCampaignMetricsRoute,
     adminCancelCampaignRoute,
+    adminResolvePreviewCampaignRoute,
     adminSendCampaignRoute,
     adminTestSendCampaignRoute
 } from '../../../src/routes/newsletter/admin/campaigns';
 
-// ---------------------------------------------------------------------------
-// Fixtures
-// ---------------------------------------------------------------------------
-
 const campaignId = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd';
-
-const campaignMetrics = {
-    campaignId,
-    totalRecipients: 1500,
-    totalSoftcapped: 42,
-    pending: 0,
-    delivered: 1450,
-    failed: 8,
-    skipped: 0,
-    opened: 900,
-    clicked: 250
+const actor = {
+    id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+    roles: [RoleEnum.ADMIN],
+    emailVerified: true,
+    permissions: [
+        PermissionEnum.ACCESS_PANEL_ADMIN,
+        PermissionEnum.NEWSLETTER_CAMPAIGN_VIEW,
+        PermissionEnum.NEWSLETTER_CAMPAIGN_SEND
+    ]
+};
+const email = 'admin@example.com';
+const base = `/api/v1/admin/newsletter/campaigns/${campaignId}`;
+const report = {
+    blocks: [
+        {
+            blockKey: 'newest-01',
+            candidates: ['a', 'b'],
+            dropped: [],
+            repeatsUsed: 0,
+            belowMin: true,
+            action: 'skip_run'
+        }
+    ]
 };
 
-const failedDelivery = {
-    id: 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',
-    subscriberId: 'ffffffff-ffff-4fff-8fff-ffffffffffff',
-    channel: 'email',
-    errorMessage: 'SMTP timeout',
-    retryCount: 3,
-    createdAt: new Date('2025-05-01T00:00:00Z'),
-    updatedAt: new Date('2025-05-01T12:00:00Z')
-};
-
-function buildApp() {
-    const app = new Hono();
-    app.route('/api/v1/admin/newsletter', adminTestSendCampaignRoute);
-    app.route('/api/v1/admin/newsletter', adminSendCampaignRoute);
-    app.route('/api/v1/admin/newsletter', adminCancelCampaignRoute);
-    app.route('/api/v1/admin/newsletter', adminCampaignMetricsRoute);
-    app.route('/api/v1/admin/newsletter', adminCampaignAudienceCountRoute);
-    app.route('/api/v1/admin/newsletter', adminCampaignErrorsRoute);
+function buildApp(input: { permissions?: PermissionEnum[] } = {}) {
+    const app = new Hono<AppBindings>();
+    app.use('*', async (c, next) => {
+        c.set('actor', { ...actor, permissions: input.permissions ?? actor.permissions });
+        await next();
+    });
+    for (const route of [
+        adminCampaignAudienceCountRoute,
+        adminCampaignErrorsRoute,
+        adminCampaignMetricsRoute,
+        adminCancelCampaignRoute,
+        adminResolvePreviewCampaignRoute,
+        adminSendCampaignRoute,
+        adminTestSendCampaignRoute
+    ]) {
+        app.route('/api/v1/admin/newsletter', route);
+    }
     return app;
 }
 
-// ---------------------------------------------------------------------------
-// Setup
-// ---------------------------------------------------------------------------
+function post(input: { path: string; body?: unknown; permissions?: PermissionEnum[] }) {
+    return buildApp({ permissions: input.permissions }).request(input.path, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'user-agent': 'vitest' },
+        ...(input.body === undefined ? {} : { body: JSON.stringify(input.body) })
+    });
+}
 
 beforeEach(() => {
-    mockSend.mockReset();
-    mockTestSend.mockReset();
-    mockCancel.mockReset();
-    mockComputeMetrics.mockReset();
-    mockGetAudienceEstimate.mockReset();
-    mockGetFailedDeliveries.mockReset();
-    mockUserGetById.mockReset();
-
-    // Default: user has an email on file
-    mockUserGetById.mockResolvedValue({
-        data: { id: ACTOR_ID, email: ACTOR_EMAIL },
-        error: null
-    });
+    for (const mock of Object.values(mocks)) mock.mockReset();
+    mocks.user.mockResolvedValue({ data: { email }, error: null });
 });
 
-// ---------------------------------------------------------------------------
-// POST /:id/test-send
-// ---------------------------------------------------------------------------
-
-describe('POST /api/v1/admin/newsletter/campaigns/:id/test-send', () => {
-    it('sends to actor email when toEmail is not provided', async () => {
-        mockTestSend.mockResolvedValue({ data: { sentTo: ACTOR_EMAIL }, error: null });
-
-        const app = buildApp();
-        const res = await app.request(
-            `/api/v1/admin/newsletter/campaigns/${campaignId}/test-send`,
-            {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({})
-            }
-        );
-
-        expect(res.status).toBe(200);
-        const body = await res.json();
-        expect(body.success).toBe(true);
-        expect(body.data.sent).toBe(true);
-        expect(body.data.sentTo).toBe(ACTOR_EMAIL);
-        expect(mockTestSend).toHaveBeenCalledWith(expect.objectContaining({ id: ACTOR_ID }), {
-            id: campaignId,
-            toEmail: ACTOR_EMAIL
+describe('test-send', () => {
+    it('resolves the actor email and forwards the actor and campaign', async () => {
+        mocks.testSend.mockResolvedValue({ data: { sentTo: email }, error: null });
+        const response = await post({ path: `${base}/test-send`, body: {} });
+        expect(response.status).toBe(200);
+        expect((await response.json()).data).toEqual({ sent: true, sentTo: email });
+        expect(mocks.testSend.mock.calls).toEqual([[actor, { id: campaignId, toEmail: email }]]);
+        expect(mocks.user.mock.calls).toEqual([[actor, actor.id]]);
+    });
+    it('forwards an override without reading the user', async () => {
+        mocks.testSend.mockResolvedValue({ data: { sentTo: 'override@example.com' }, error: null });
+        const response = await post({
+            path: `${base}/test-send`,
+            body: { toEmail: 'override@example.com' }
         });
+        expect(response.status).toBe(200);
+        expect(mocks.testSend.mock.calls).toEqual([
+            [actor, { id: campaignId, toEmail: 'override@example.com' }]
+        ]);
+        expect(mocks.user).not.toHaveBeenCalled();
     });
-
-    it('sends to override email when toEmail is provided', async () => {
-        const overrideEmail = 'override@example.com';
-        mockTestSend.mockResolvedValue({ data: { sentTo: overrideEmail }, error: null });
-
-        const app = buildApp();
-        const res = await app.request(
-            `/api/v1/admin/newsletter/campaigns/${campaignId}/test-send`,
-            {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ toEmail: overrideEmail })
-            }
-        );
-
-        expect(res.status).toBe(200);
-        const body = await res.json();
-        expect(body.data.sentTo).toBe(overrideEmail);
-        // UserService should NOT be called when toEmail is provided
-        expect(mockUserGetById).not.toHaveBeenCalled();
+    it('rejects an invalid email before the service', async () => {
+        expect(
+            (await post({ path: `${base}/test-send`, body: { toEmail: 'invalid' } })).status
+        ).toBe(400);
+        expect(mocks.testSend).not.toHaveBeenCalled();
     });
-
-    it('returns 400 when toEmail is not a valid email', async () => {
-        const app = buildApp();
-        const res = await app.request(
-            `/api/v1/admin/newsletter/campaigns/${campaignId}/test-send`,
-            {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ toEmail: 'not-an-email' })
-            }
-        );
-        expect(res.status).toBe(400);
+    it('rejects an actor with no email', async () => {
+        mocks.user.mockResolvedValue({ data: { email: null }, error: null });
+        expect((await post({ path: `${base}/test-send`, body: {} })).status).toBe(400);
+        expect(mocks.testSend).not.toHaveBeenCalled();
     });
-
-    it('returns 400 when actor has no email on file', async () => {
-        mockUserGetById.mockResolvedValue({
-            data: { id: ACTOR_ID, email: null },
-            error: null
-        });
-
-        const app = buildApp();
-        const res = await app.request(
-            `/api/v1/admin/newsletter/campaigns/${campaignId}/test-send`,
-            {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({})
-            }
-        );
-        // VALIDATION_ERROR → 400
-        expect(res.status).toBe(400);
-    });
-
-    it('returns 503 when testSend service returns SERVICE_UNAVAILABLE', async () => {
-        mockTestSend.mockResolvedValue({
+    it('maps returned service-unavailable errors to 503', async () => {
+        mocks.testSend.mockResolvedValue({
             data: null,
-            error: { code: 'SERVICE_UNAVAILABLE', message: 'Email not configured' }
+            error: { code: ServiceErrorCode.SERVICE_UNAVAILABLE, message: 'Unavailable' }
         });
-
-        const app = buildApp();
-        const res = await app.request(
-            `/api/v1/admin/newsletter/campaigns/${campaignId}/test-send`,
-            {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({})
-            }
-        );
-        expect(res.status).toBe(503);
+        expect((await post({ path: `${base}/test-send`, body: {} })).status).toBe(503);
+        expect(mocks.testSend.mock.calls).toEqual([[actor, { id: campaignId, toEmail: email }]]);
     });
 });
 
-// ---------------------------------------------------------------------------
-// POST /:id/send
-// ---------------------------------------------------------------------------
-
-describe('POST /api/v1/admin/newsletter/campaigns/:id/send', () => {
-    it('returns 202 with dispatched result when subscribers are enqueued', async () => {
-        mockSend.mockResolvedValue({
-            data: { enqueued: 1500, softcapped: 42 },
-            error: null
-        });
-
-        const app = buildApp();
-        const res = await app.request(`/api/v1/admin/newsletter/campaigns/${campaignId}/send`, {
-            method: 'POST'
-        });
-
-        expect(res.status).toBe(202);
-        // send bypasses the factory wrapper and returns ctx.json() directly
-        const body = await res.json();
-        expect(body.dispatched).toBe(true);
-        expect(body.enqueued).toBe(1500);
-        expect(body.softcapped).toBe(42);
+describe('send and cancel', () => {
+    it('returns 202 with the dispatched count', async () => {
+        mocks.send.mockResolvedValue({ data: { enqueued: 1500, softcapped: 42 }, error: null });
+        const response = await post({ path: `${base}/send` });
+        expect(response.status).toBe(202);
+        expect(await response.json()).toEqual({ dispatched: true, enqueued: 1500, softcapped: 42 });
+        expect(mocks.send.mock.calls).toEqual([[actor, { id: campaignId }]]);
     });
-
-    it('returns 200 with no_eligible_subscribers when 0 eligible', async () => {
-        mockSend.mockResolvedValue({
-            data: { enqueued: 0, softcapped: 200 },
-            error: null
+    it('returns 200 for an empty audience', async () => {
+        mocks.send.mockResolvedValue({ data: { enqueued: 0, softcapped: 200 }, error: null });
+        const response = await post({ path: `${base}/send` });
+        expect(response.status).toBe(200);
+        expect(await response.json()).toEqual({
+            dispatched: false,
+            reason: 'no_eligible_subscribers'
         });
-
-        const app = buildApp();
-        const res = await app.request(`/api/v1/admin/newsletter/campaigns/${campaignId}/send`, {
-            method: 'POST'
-        });
-
-        expect(res.status).toBe(200);
-        // send bypasses the factory wrapper
-        const body = await res.json();
-        expect(body.dispatched).toBe(false);
-        expect(body.reason).toBe('no_eligible_subscribers');
     });
-
-    it('returns 409 when campaign is not in a sendable status', async () => {
-        // Duck-typed error: rethrowConflictAsHttp409 checks .code + .reason duck-typed
-        const conflictErr = Object.assign(
-            new Error('Campaign is not sendable. Current status: sent'),
-            { code: 'ALREADY_EXISTS', reason: 'CAMPAIGN_NOT_SENDABLE' }
+    it('returns skipped deliveries on cancellation', async () => {
+        mocks.cancel.mockResolvedValue({ data: { skipped: 1450 }, error: null });
+        const response = await post({ path: `${base}/cancel` });
+        expect(response.status).toBe(200);
+        expect((await response.json()).data).toEqual({ cancelled: true, skipped: 1450 });
+        expect(mocks.cancel.mock.calls).toEqual([[actor, { id: campaignId }]]);
+    });
+    it.each(['send', 'cancel'] as const)('%s maps state conflicts to 409', async (action) => {
+        mocks[action].mockRejectedValue(
+            new ServiceError(
+                ServiceErrorCode.ALREADY_EXISTS,
+                'State conflict',
+                undefined,
+                action === 'send' ? 'CAMPAIGN_NOT_SENDABLE' : 'CAMPAIGN_NOT_CANCELLABLE'
+            )
         );
-        mockSend.mockRejectedValue(conflictErr);
-
-        const app = buildApp();
-        const res = await app.request(`/api/v1/admin/newsletter/campaigns/${campaignId}/send`, {
-            method: 'POST'
-        });
-
-        expect(res.status).toBe(409);
+        expect((await post({ path: `${base}/${action}` })).status).toBe(409);
+        expect(mocks[action].mock.calls).toEqual([[actor, { id: campaignId }]]);
     });
-
-    it('returns 404 when campaign not found (result.error)', async () => {
-        // When result.error is set, the handler throws new ServiceError(code, msg).
-        // Use a duck-typed error via mockRejectedValue so handleRouteError's
-        // string-parse path (`NOT_FOUND: message`) maps it to 404.
-        const notFoundErr = Object.assign(new Error('NOT_FOUND: Campaign not found'), {
-            code: 'NOT_FOUND'
-        });
-        mockSend.mockRejectedValue(notFoundErr);
-
-        const app = buildApp();
-        const res = await app.request(`/api/v1/admin/newsletter/campaigns/${campaignId}/send`, {
-            method: 'POST'
-        });
-
-        expect(res.status).toBe(404);
+    it.each(['send', 'cancel'] as const)('%s maps not-found to 404', async (action) => {
+        mocks[action].mockRejectedValue(
+            new ServiceError(ServiceErrorCode.NOT_FOUND, 'Campaign not found')
+        );
+        expect((await post({ path: `${base}/${action}` })).status).toBe(404);
     });
 });
 
-// ---------------------------------------------------------------------------
-// POST /:id/cancel
-// ---------------------------------------------------------------------------
-
-describe('POST /api/v1/admin/newsletter/campaigns/:id/cancel', () => {
-    it('returns 200 with cancelled result on success', async () => {
-        mockCancel.mockResolvedValue({
-            data: { skipped: 1450 },
-            error: null
-        });
-
-        const app = buildApp();
-        const res = await app.request(`/api/v1/admin/newsletter/campaigns/${campaignId}/cancel`, {
-            method: 'POST'
-        });
-
-        expect(res.status).toBe(200);
-        const body = await res.json();
-        // createAdminRoute wraps as { success, data: { cancelled, skipped } }
-        expect(body.success).toBe(true);
-        expect(body.data.cancelled).toBe(true);
-        expect(body.data.skipped).toBe(1450);
-    });
-
-    it('returns 409 when campaign is not in a cancellable status', async () => {
-        const conflictErr = Object.assign(
-            new Error('Campaign cannot be cancelled. Current status: sent'),
-            { code: 'ALREADY_EXISTS', reason: 'CAMPAIGN_NOT_CANCELLABLE' }
+describe('dynamic campaign actions', () => {
+    it.each([
+        'thrown',
+        'returned'
+    ] as const)('preserves the 422 code and report for a %s send rejection', async (mode) => {
+        const error = new ServiceError(
+            ServiceErrorCode.VALIDATION_ERROR,
+            'Below minimum',
+            { statusCode: 422, report },
+            'DYNAMIC_BLOCK_BELOW_MIN'
         );
-        mockCancel.mockRejectedValue(conflictErr);
-
-        const app = buildApp();
-        const res = await app.request(`/api/v1/admin/newsletter/campaigns/${campaignId}/cancel`, {
-            method: 'POST'
+        if (mode === 'thrown') mocks.send.mockRejectedValue(error);
+        else mocks.send.mockResolvedValue({ data: null, error });
+        const response = await post({ path: `${base}/send` });
+        expect(response.status).toBe(422);
+        expect((await response.json()).error).toMatchObject({
+            code: 'DYNAMIC_BLOCK_BELOW_MIN',
+            details: { report }
         });
-
-        expect(res.status).toBe(409);
+        expect(mocks.send.mock.calls).toEqual([[actor, { id: campaignId }]]);
     });
-
-    it('returns 404 when campaign not found (result.error)', async () => {
-        const notFoundErr = Object.assign(new Error('NOT_FOUND: Campaign not found'), {
-            code: 'NOT_FOUND'
+    it('forwards preview dependencies and returns HTML and the report without dispatch', async () => {
+        const preview = {
+            html: '<p>Resolved</p>',
+            segments: ['<p>Resolved</p>'],
+            report: { blocks: [] }
+        };
+        mocks.preview.mockResolvedValue(preview);
+        const response = await post({ path: `${base}/resolve-preview` });
+        expect(response.status).toBe(200);
+        expect(response.headers.get('cache-control')).toBe('no-store');
+        expect((await response.json()).data).toEqual(preview);
+        expect(mocks.preview.mock.calls).toEqual([
+            [
+                {
+                    actor,
+                    id: campaignId,
+                    port: expect.objectContaining({ fetchCandidates: expect.any(Function) }),
+                    renderNewsletterEmailFn: expect.any(Function),
+                    renderTiptapEmailFn: expect.any(Function)
+                }
+            ]
+        ]);
+        expect(mocks.send).not.toHaveBeenCalled();
+        expect(mocks.testSend).not.toHaveBeenCalled();
+    });
+    it.each([
+        'resolve-preview',
+        'test-send',
+        'send'
+    ])('%s maps INVALID_DYNAMIC_BLOCK to 400', async (action) => {
+        const mock =
+            action === 'resolve-preview'
+                ? mocks.preview
+                : action === 'test-send'
+                  ? mocks.testSend
+                  : mocks.send;
+        mock.mockRejectedValue(
+            new ServiceError(
+                ServiceErrorCode.VALIDATION_ERROR,
+                'Invalid configuration',
+                undefined,
+                'INVALID_DYNAMIC_BLOCK'
+            )
+        );
+        const response = await post({
+            path: `${base}/${action}`,
+            body: action === 'test-send' ? {} : undefined
         });
-        mockCancel.mockRejectedValue(notFoundErr);
-
-        const app = buildApp();
-        const res = await app.request(`/api/v1/admin/newsletter/campaigns/${campaignId}/cancel`, {
-            method: 'POST'
+        expect(response.status).toBe(400);
+        expect((await response.json()).error.code).toBe('INVALID_DYNAMIC_BLOCK');
+        expect(mock).toHaveBeenCalledOnce();
+    });
+    it('rejects a malformed preview id before calling the service', async () => {
+        expect(
+            (await post({ path: '/api/v1/admin/newsletter/campaigns/invalid/resolve-preview' }))
+                .status
+        ).toBe(400);
+        expect(mocks.preview).not.toHaveBeenCalled();
+    });
+    it('returns 403 without send permission, before validating the id', async () => {
+        const response = await post({
+            path: '/api/v1/admin/newsletter/campaigns/invalid/resolve-preview',
+            permissions: [
+                PermissionEnum.ACCESS_PANEL_ADMIN,
+                PermissionEnum.NEWSLETTER_CAMPAIGN_VIEW
+            ]
         });
-
-        expect(res.status).toBe(404);
+        expect(response.status).toBe(403);
+        expect(mocks.preview).not.toHaveBeenCalled();
     });
 });
 
-// ---------------------------------------------------------------------------
-// GET /:id/metrics
-// ---------------------------------------------------------------------------
-
-describe('GET /api/v1/admin/newsletter/campaigns/:id/metrics', () => {
-    it('returns 200 with metrics and Cache-Control: no-store header', async () => {
-        mockComputeMetrics.mockResolvedValue({
-            data: campaignMetrics,
+describe('metrics and audience reads', () => {
+    it('returns fresh metrics', async () => {
+        const data = {
+            campaignId,
+            totalRecipients: 1500,
+            totalSoftcapped: 42,
+            pending: 0,
+            delivered: 1450,
+            failed: 8,
+            skipped: 0,
+            opened: 900,
+            clicked: 250
+        };
+        mocks.computeMetrics.mockResolvedValue({ data, error: null });
+        const response = await buildApp().request(`${base}/metrics`);
+        expect(response.status).toBe(200);
+        expect(response.headers.get('cache-control')).toBe('no-store');
+        expect((await response.json()).data).toEqual(data);
+        expect(mocks.computeMetrics.mock.calls).toEqual([[actor, { id: campaignId }]]);
+    });
+    it.each([false, true])('forwards ignoreSoftCap=%s', async (ignoreSoftCap) => {
+        const data = { eligible: 7, softCapped: 2, totalCandidates: 9 };
+        mocks.getAudienceEstimate.mockResolvedValue({ data, error: null });
+        const response = await buildApp().request(
+            `${base}/audience-count${ignoreSoftCap ? '?ignoreSoftCap=true' : ''}`
+        );
+        expect(response.status).toBe(200);
+        expect(response.headers.get('cache-control')).toBe('no-store');
+        expect((await response.json()).data).toEqual(data);
+        expect(mocks.getAudienceEstimate.mock.calls).toEqual([
+            [actor, { id: campaignId, ignoreSoftCap }]
+        ]);
+    });
+    it('rejects invalid audience campaign ids', async () => {
+        expect(
+            (await buildApp().request('/api/v1/admin/newsletter/campaigns/invalid/audience-count'))
+                .status
+        ).toBe(400);
+        expect(mocks.getAudienceEstimate).not.toHaveBeenCalled();
+    });
+    it.each([
+        ['metrics', 'computeMetrics'],
+        ['errors', 'getFailedDeliveries'],
+        ['audience-count', 'getAudienceEstimate']
+    ] as const)('%s maps missing campaigns to 404', async (path, method) => {
+        mocks[method].mockRejectedValue(
+            new ServiceError(ServiceErrorCode.NOT_FOUND, 'Campaign not found')
+        );
+        expect((await buildApp().request(`${base}/${path}`)).status).toBe(404);
+    });
+    it('returns masked failure details', async () => {
+        const item = {
+            id: 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',
+            subscriberId: 'ffffffff-ffff-4fff-8fff-ffffffffffff',
+            channel: 'email',
+            errorMessage: 'SMTP timeout',
+            retryCount: 3,
+            createdAt: new Date(),
+            updatedAt: new Date()
+        };
+        mocks.getFailedDeliveries.mockResolvedValue({
+            data: { items: [item], total: 1 },
             error: null
         });
-
-        const app = buildApp();
-        const res = await app.request(`/api/v1/admin/newsletter/campaigns/${campaignId}/metrics`);
-
-        expect(res.status).toBe(200);
-        expect(res.headers.get('Cache-Control')).toBe('no-store');
-        const body = await res.json();
-        expect(body.success).toBe(true);
-        expect(body.data.campaignId).toBe(campaignId);
-        expect(body.data.delivered).toBe(1450);
-        expect(body.data.opened).toBe(900);
-    });
-
-    it('returns 404 when campaign not found (result.error)', async () => {
-        const notFoundErr = Object.assign(new Error('NOT_FOUND: Campaign not found'), {
-            code: 'NOT_FOUND'
-        });
-        mockComputeMetrics.mockRejectedValue(notFoundErr);
-
-        const app = buildApp();
-        const res = await app.request(`/api/v1/admin/newsletter/campaigns/${campaignId}/metrics`);
-
-        expect(res.status).toBe(404);
-    });
-});
-
-// ---------------------------------------------------------------------------
-// GET /:id/errors
-// ---------------------------------------------------------------------------
-
-describe('GET /api/v1/admin/newsletter/campaigns/:id/errors', () => {
-    it('returns 200 with paginated failed deliveries and masked email', async () => {
-        mockGetFailedDeliveries.mockResolvedValue({
-            data: {
-                items: [failedDelivery],
-                total: 1,
-                page: 1,
-                pageSize: 20
-            },
-            error: null
-        });
-
-        const app = buildApp();
-        const res = await app.request(`/api/v1/admin/newsletter/campaigns/${campaignId}/errors`);
-
-        expect(res.status).toBe(200);
-        const body = await res.json();
-        expect(body.success).toBe(true);
-        // createAdminListRoute wraps as { data: { items, pagination } }
-        expect(body.data.items).toHaveLength(1);
-
-        const item = body.data.items[0];
-        expect(item.subscriberId).toBe(failedDelivery.subscriberId);
-        expect(item.errorMessage).toBe('SMTP timeout');
-        expect(item.retryCount).toBe(3);
-
-        // maskedEmail must contain '***' and '@'
-        expect(item.maskedEmail).toContain('***');
-        expect(item.maskedEmail).toContain('@');
-    });
-
-    it('returns 200 with empty items when no failures exist', async () => {
-        mockGetFailedDeliveries.mockResolvedValue({
-            data: { items: [], total: 0, page: 1, pageSize: 20 },
-            error: null
-        });
-
-        const app = buildApp();
-        const res = await app.request(`/api/v1/admin/newsletter/campaigns/${campaignId}/errors`);
-
-        expect(res.status).toBe(200);
-        const body = await res.json();
-        expect(body.data.items).toHaveLength(0);
-        expect(body.data.pagination.total).toBe(0);
-    });
-
-    it('returns 404 when campaign not found (result.error)', async () => {
-        const notFoundErr = Object.assign(new Error('NOT_FOUND: Campaign not found'), {
-            code: 'NOT_FOUND'
-        });
-        mockGetFailedDeliveries.mockRejectedValue(notFoundErr);
-
-        const app = buildApp();
-        const res = await app.request(`/api/v1/admin/newsletter/campaigns/${campaignId}/errors`);
-
-        expect(res.status).toBe(404);
-    });
-
-    it('accepts page and pageSize query params', async () => {
-        mockGetFailedDeliveries.mockResolvedValue({
-            data: { items: [], total: 0, page: 2, pageSize: 10 },
-            error: null
-        });
-
-        const app = buildApp();
-        const res = await app.request(
-            `/api/v1/admin/newsletter/campaigns/${campaignId}/errors?page=2&pageSize=10`
-        );
-
-        expect(res.status).toBe(200);
-        expect(mockGetFailedDeliveries).toHaveBeenCalledWith(expect.anything(), {
-            id: campaignId,
-            page: 2,
-            pageSize: 10
+        const response = await buildApp().request(`${base}/errors`);
+        expect(response.status).toBe(200);
+        const data = (await response.json()).data;
+        expect(data.items).toHaveLength(1);
+        expect(data.items[0]).toMatchObject({
+            subscriberId: item.subscriberId,
+            maskedEmail: 'su***@masked.invalid',
+            errorMessage: 'SMTP timeout',
+            retryCount: 3
         });
     });
-});
-
-// ---------------------------------------------------------------------------
-// GET /:id/audience-count (HOS-2586)
-// ---------------------------------------------------------------------------
-
-describe('GET /api/v1/admin/newsletter/campaigns/:id/audience-count', () => {
-    it('returns 200 with the estimate and Cache-Control: no-store', async () => {
-        mockGetAudienceEstimate.mockResolvedValue({
-            data: { eligible: 7, softCapped: 2, totalCandidates: 9 },
-            error: null
-        });
-
-        const app = buildApp();
-        const res = await app.request(
-            `/api/v1/admin/newsletter/campaigns/${campaignId}/audience-count`
-        );
-
-        expect(res.status).toBe(200);
-        expect(res.headers.get('Cache-Control')).toBe('no-store');
-        const body = await res.json();
-        expect(body.data).toEqual({ eligible: 7, softCapped: 2, totalCandidates: 9 });
-        expect(mockGetAudienceEstimate).toHaveBeenCalledWith(
-            expect.objectContaining({ id: ACTOR_ID }),
-            { id: campaignId, ignoreSoftCap: false }
-        );
-    });
-
-    it('forwards ignoreSoftCap=true to the service', async () => {
-        mockGetAudienceEstimate.mockResolvedValue({
-            data: { eligible: 9, softCapped: 0, totalCandidates: 9 },
-            error: null
-        });
-
-        const app = buildApp();
-        const res = await app.request(
-            `/api/v1/admin/newsletter/campaigns/${campaignId}/audience-count?ignoreSoftCap=true`
-        );
-
-        expect(res.status).toBe(200);
-        expect(mockGetAudienceEstimate).toHaveBeenCalledWith(expect.anything(), {
-            id: campaignId,
-            ignoreSoftCap: true
-        });
-    });
-
-    it('returns 400 for a non-UUID id', async () => {
-        const app = buildApp();
-        const res = await app.request(
-            '/api/v1/admin/newsletter/campaigns/not-a-uuid/audience-count'
-        );
-
-        expect(res.status).toBe(400);
-        expect(mockGetAudienceEstimate).not.toHaveBeenCalled();
-    });
-
-    it('returns 404 when the campaign does not exist', async () => {
-        mockGetAudienceEstimate.mockResolvedValue({
-            data: null,
-            error: { code: 'NOT_FOUND', message: 'Campaign not found' }
-        });
-
-        const app = buildApp();
-        const res = await app.request(
-            `/api/v1/admin/newsletter/campaigns/${campaignId}/audience-count`
-        );
-
-        expect(res.status).toBe(404);
+    it('returns empty failures and forwards pagination', async () => {
+        mocks.getFailedDeliveries.mockResolvedValue({ data: { items: [], total: 0 }, error: null });
+        const response = await buildApp().request(`${base}/errors?page=2&pageSize=10`);
+        expect(response.status).toBe(200);
+        expect((await response.json()).data).toMatchObject({ items: [], pagination: { total: 0 } });
+        expect(mocks.getFailedDeliveries.mock.calls).toEqual([
+            [actor, { id: campaignId, page: 2, pageSize: 10 }]
+        ]);
     });
 });
