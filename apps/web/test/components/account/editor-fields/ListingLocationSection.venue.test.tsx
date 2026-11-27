@@ -74,7 +74,6 @@ function VenueLocationSection({
         onToggleAmenity: vi.fn(),
         onToggleFeature: vi.fn(),
         onChangeAmenityAttribute: vi.fn(),
-        onI18nChange: vi.fn(),
         shouldOfferSlugRefresh: false,
         listingId: 'listing-1'
     };

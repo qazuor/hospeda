@@ -487,7 +487,11 @@ export interface I18nFieldValues {
 }
 
 /**
- * Translation data for the host-facing TranslationPanel.
+ * Translation data of an accommodation editor page.
+ *
+ * HOS-2658: the read-only TranslationPanel that used to render it is gone (the
+ * shared ListingTranslationsSection reads the translations endpoint instead);
+ * the translations page still uses this to decide whether it redirects to the hub.
  *
  * Carries the raw i18n content for each translatable field so the panel can
  * determine which locales already have content and which are missing without
@@ -512,8 +516,8 @@ export interface AccommodationTranslationData {
 }
 
 /**
- * One translatable field's state, as the TranslationPanel needs to reason about
- * it (BETA-199).
+ * One translatable field's state, as the accommodation editor reasons about it
+ * (BETA-199).
  *
  * The i18n values alone are not enough to decide whether a field is missing a
  * translation. An accommodation that was never translated has NO `*I18n` content

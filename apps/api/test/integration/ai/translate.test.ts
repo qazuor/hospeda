@@ -81,6 +81,20 @@ const { nextPersistThrow } = vi.hoisted(() => ({
     nextPersistThrow: { current: undefined as unknown }
 }));
 
+/**
+ * HOS-2658 AC-32: drives the quota gate. `monthlyCount` is what the stubbed
+ * `getMonthlyCallCount` answers; `hasEntitlement` toggles `ai_translate` in
+ * the stubbed effective set (limit stays 50); `quotaVerticals` records the
+ * vertical every effective-set lookup was asked for.
+ */
+const { quotaState } = vi.hoisted(() => ({
+    quotaState: {
+        monthlyCount: 0,
+        hasEntitlement: true,
+        quotaVerticals: [] as unknown[]
+    }
+}));
+
 vi.mock('../../../src/services/ai-translate.service', async (importOriginal) => {
     const actual =
         await importOriginal<typeof import('../../../src/services/ai-translate.service')>();
@@ -116,6 +130,11 @@ vi.mock('@repo/ai-core', () => {
             this.providerId = providerId;
         }
     }
+    // ai-translate.service checks `instanceof AiModerationBlockedError` to keep
+    // the spend of an output-moderation block (HOS-2658 AC-19). A whole-module
+    // mock that omits it leaves the export `undefined`, so that `instanceof`
+    // throws and turns a partial success into a 500.
+    class AiModerationBlockedError extends Error {}
 
     return {
         StubProvider,
@@ -123,6 +142,7 @@ vi.mock('@repo/ai-core', () => {
         AnthropicAdapter,
         AiEngineError,
         AiFeatureNotConfiguredError,
+        AiModerationBlockedError,
         createAiService: vi.fn(() => ({
             generateText: vi.fn(async (req: Record<string, unknown>) => {
                 generateTextCalls.push({
@@ -158,21 +178,25 @@ vi.mock('@repo/ai-core', () => {
         // calling it throws inside the handler — surfacing as a bare 500 rather
         // than a missing-export message. Empty = nothing to alert about.
         findUnconfiguredFeatures: vi.fn(() => []),
-        getMonthlyCallCount: vi.fn(async () => 0)
+        getMonthlyCallCount: vi.fn(async () => quotaState.monthlyCount)
     };
 });
 
 vi.mock('../../../src/utils/listing-access/ports', () => ({
     getListingAccessPorts: () => ({
-        effectiveSet: async () => ({
-            entitlements: {
-                get: ({ key }: { key: string }) => (key === 'ai_translate' ? 1 : undefined)
-            },
-            limits: {
-                get: ({ key }: { key: string }) =>
-                    key === 'max_ai_translate_per_month' ? 50 : undefined
-            }
-        })
+        effectiveSet: async (input: unknown) => {
+            quotaState.quotaVerticals.push((input as { vertical?: unknown } | undefined)?.vertical);
+            return {
+                entitlements: {
+                    get: ({ key }: { key: string }) =>
+                        key === 'ai_translate' && quotaState.hasEntitlement ? 1 : undefined
+                },
+                limits: {
+                    get: ({ key }: { key: string }) =>
+                        key === 'max_ai_translate_per_month' ? 50 : undefined
+                }
+            };
+        }
     })
 }));
 
@@ -240,10 +264,15 @@ vi.mock('@repo/db', async () => {
             'set',
             'insert',
             'values',
-            'delete'
+            'delete',
+            // HOS-2658: the single writer locks the row (`.for('update')`).
+            'for'
         ]) {
             chain[method] = self;
         }
+        // HOS-2658: `writeTranslationPairs` runs inside `getDb().transaction`;
+        // the callback receives the same awaitable chain as its `tx`.
+        chain.transaction = (fn: (tx: unknown) => unknown) => fn(chain);
         chain.from = (table: unknown) => {
             fromTable = table;
             return chain;
@@ -270,7 +299,7 @@ vi.mock('@repo/db', async () => {
 // ---------------------------------------------------------------------------
 
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { PermissionEnum, RoleEnum } from '@repo/schemas';
+import { PermissionEnum, RoleEnum, VerticalEnum } from '@repo/schemas';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { actorMiddleware } from '../../../src/middlewares/actor';
 import { createErrorHandler } from '../../../src/middlewares/response';
@@ -359,6 +388,9 @@ function resetMockState() {
     nextGenerateTextThrow.current = undefined;
     nextGenerateTextThrowForLocale.current = undefined;
     nextPersistThrow.current = undefined;
+    quotaState.monthlyCount = 0;
+    quotaState.hasEntitlement = true;
+    quotaState.quotaVerticals.length = 0;
     mockRecordAiUsage.mockClear();
 }
 
@@ -934,6 +966,110 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/translate (integration)', () => {
             });
             // Real, non-zero spend — this is the whole reason the row exists.
             expect(recorded?.promptTokens).toBe(50 * generateTextCalls.length);
+        });
+    });
+    // -----------------------------------------------------------------------
+    // HOS-2658 AC-32 — a gate refusal is a 403, never a 500 TRANSLATION_FAILED
+    // -----------------------------------------------------------------------
+
+    describe('HOS-2658 AC-32 — quota gate errors', () => {
+        const body = JSON.stringify({
+            entityType: 'accommodation',
+            entityId: '00000000-0000-4000-8000-000000000001'
+        });
+
+        it('answers 403 LIMIT_REACHED when the owner is out of quota', async () => {
+            // Arrange
+            quotaState.monthlyCount = 50;
+
+            // Act
+            const res = await testApp.request(TEST_PATH, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body
+            });
+            const json = (await res.json()) as {
+                success: boolean;
+                error: { code: string; details?: unknown };
+            };
+
+            // Assert
+            expect(res.status).toBe(403);
+            expect(json.success).toBe(false);
+            expect(json.error.code).toBe('LIMIT_REACHED');
+            expect(json.error.details).toEqual({
+                limitKey: 'max_ai_translate_per_month',
+                currentCount: 50,
+                maxAllowed: 50
+            });
+            expect(generateTextCalls).toHaveLength(0);
+            expect(mockRecordAiUsage).toHaveBeenCalledTimes(1);
+            expect(mockRecordAiUsage.mock.calls[0]?.[0]).toEqual({
+                userId: UNIQUE_USER_ID,
+                feature: 'translate',
+                provider: 'none',
+                model: 'none',
+                promptTokens: 0,
+                completionTokens: 0,
+                latencyMs: 0,
+                status: 'quota_exceeded'
+            });
+        });
+
+        it('answers 403 ENTITLEMENT_REQUIRED without the ai_translate entitlement', async () => {
+            // Arrange
+            quotaState.hasEntitlement = false;
+
+            // Act
+            const res = await testApp.request(TEST_PATH, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body
+            });
+            const json = (await res.json()) as {
+                success: boolean;
+                error: { code: string; details?: unknown };
+            };
+
+            // Assert
+            expect(res.status).toBe(403);
+            expect(json.error.code).toBe('ENTITLEMENT_REQUIRED');
+            expect(json.error.details).toEqual({ entitlementKey: 'ai_translate' });
+            expect(generateTextCalls).toHaveLength(0);
+            expect(mockRecordAiUsage).not.toHaveBeenCalled();
+        });
+
+        it('resolves the quota under the vertical of TRANSLATE_QUOTA_VERTICAL', async () => {
+            // Act
+            const res = await testApp.request(TEST_PATH, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body
+            });
+
+            // Assert
+            expect(res.status).toBe(200);
+            expect(quotaState.quotaVerticals.length).toBeGreaterThan(0);
+            expect(new Set(quotaState.quotaVerticals)).toEqual(
+                new Set([VerticalEnum.ACCOMMODATION])
+            );
+        });
+
+        it('still answers 500 TRANSLATION_FAILED when every provider call fails', async () => {
+            // Arrange
+            nextGenerateTextThrow.current = new Error('provider down');
+
+            // Act
+            const res = await testApp.request(TEST_PATH, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body
+            });
+            const json = (await res.json()) as { error: { code: string } };
+
+            // Assert
+            expect(res.status).toBe(500);
+            expect(json.error.code).toBe('TRANSLATION_FAILED');
         });
     });
 });

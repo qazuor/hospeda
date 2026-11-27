@@ -201,6 +201,53 @@ export const PRODUCTION_PLAN_AI_ASSISTANT_ACCESS_GRANTS = [
 ] as const;
 
 /**
+ * HOS-2658 (owner decision, 2026-11-26): AI translation on venue and experience
+ * plans, same values as accommodation (`0144_production_plan_catalog.sql`). Read
+ * by data-migration 0195, which grants `ai_translate` (plan and trial quota) and
+ * `max_ai_translate_per_month` to EVERY version of these plans through the bounded
+ * additive-grant lane, so live subscribers (pinned to their version) receive it
+ * too. A version that already holds a key is left untouched.
+ */
+export const PRODUCTION_PLAN_AI_TRANSLATE_GRANTS = [
+    {
+        vertical: 'venue',
+        slug: 'venue-basico',
+        entitlement: { key: 'ai_translate', planQuota: 200, trialQuota: 200 },
+        limit: { key: 'max_ai_translate_per_month', value: 200 }
+    },
+    {
+        vertical: 'venue',
+        slug: 'venue-pro',
+        entitlement: { key: 'ai_translate', planQuota: 1000, trialQuota: 200 },
+        limit: { key: 'max_ai_translate_per_month', value: 1000 }
+    },
+    {
+        vertical: 'venue',
+        slug: 'venue-premium',
+        entitlement: { key: 'ai_translate', planQuota: 5000, trialQuota: 200 },
+        limit: { key: 'max_ai_translate_per_month', value: 5000 }
+    },
+    {
+        vertical: 'experience',
+        slug: 'experience-basico',
+        entitlement: { key: 'ai_translate', planQuota: 200, trialQuota: 200 },
+        limit: { key: 'max_ai_translate_per_month', value: 200 }
+    },
+    {
+        vertical: 'experience',
+        slug: 'experience-pro',
+        entitlement: { key: 'ai_translate', planQuota: 1000, trialQuota: 200 },
+        limit: { key: 'max_ai_translate_per_month', value: 1000 }
+    },
+    {
+        vertical: 'experience',
+        slug: 'experience-premium',
+        entitlement: { key: 'ai_translate', planQuota: 5000, trialQuota: 200 },
+        limit: { key: 'max_ai_translate_per_month', value: 5000 }
+    }
+] as const;
+
+/**
  * HOS-2180 (owner decision PM-641 of 2026-11-13): the venue and experience Pro and
  * Premium plans feature listings on day one. Read by data-migration 0194, which
  * grants the global `featured_listing` key to EVERY version of these plans through

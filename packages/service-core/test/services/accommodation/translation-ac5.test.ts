@@ -123,7 +123,13 @@ describe('AccommodationService — SPEC-212 AC-5: translation diff on update', (
         const firstCall = translateMock.mock.calls[0];
         expect(firstCall).toBeDefined();
         const call = (firstCall as [{ fields: Record<string, string> }])[0];
-        expect(call.fields).toEqual({ name: 'Hotel Luna' });
+        expect(call).toEqual({
+            entityType: 'accommodation',
+            entityId: before.id,
+            fields: { name: 'Hotel Luna' },
+            // HOS-2658: the on-save run is billed to the listing owner.
+            billing: { vertical: 'accommodation', ownerId: before.ownerId }
+        });
         // summary and description should NOT be included
         expect(call.fields).not.toHaveProperty('summary');
         expect(call.fields).not.toHaveProperty('description');

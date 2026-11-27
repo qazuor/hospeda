@@ -37,7 +37,7 @@ const SECTION_COMPONENTS: Readonly<Record<string, string>> = {
     VideoSection: 'fotos.astro',
     FaqSection: 'preguntas.astro',
     CalendarSectionGate: 'calendario.astro',
-    TranslationPanel: 'traducciones.astro',
+    ListingTranslationsSection: 'traducciones.astro',
     ExternalReputationSection: 'reputacion.astro',
     BasicsForm: 'datos.astro',
     CapacityPricingForm: 'capacidad-precio.astro',
@@ -152,7 +152,7 @@ describe('editor routes — section isolation (AC-7)', () => {
             'CalendarSection',
             'ExternalReputationSection',
             'FaqSection',
-            'TranslationPanel'
+            'ListingTranslationsSection'
         ];
 
         for (const component of heavy) {

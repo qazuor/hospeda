@@ -2850,6 +2850,18 @@
             "path": "/api/v1/protected/accommodations/:id/support-edits"
         },
         {
+            "method": "GET",
+            "path": "/api/v1/protected/accommodations/:id/translations"
+        },
+        {
+            "method": "PUT",
+            "path": "/api/v1/protected/accommodations/:id/translations"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/protected/accommodations/:id/translations/ai"
+        },
+        {
             "method": "POST",
             "path": "/api/v1/protected/accommodations/:id/unpublish"
         },
@@ -3356,6 +3368,18 @@
         {
             "method": "GET",
             "path": "/api/v1/protected/experiences/:id/support-edits"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/protected/experiences/:id/translations"
+        },
+        {
+            "method": "PUT",
+            "path": "/api/v1/protected/experiences/:id/translations"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/protected/experiences/:id/translations/ai"
         },
         {
             "method": "POST",
@@ -4028,6 +4052,18 @@
         {
             "method": "GET",
             "path": "/api/v1/protected/venues/:id/support-edits"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/protected/venues/:id/translations"
+        },
+        {
+            "method": "PUT",
+            "path": "/api/v1/protected/venues/:id/translations"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/protected/venues/:id/translations/ai"
         },
         {
             "method": "POST",

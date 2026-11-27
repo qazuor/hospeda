@@ -1,0 +1,23 @@
+.pair {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    min-inline-size: 0;
+}
+
+.pair[aria-busy="true"] {
+    opacity: 0.7;
+}
+
+.hint {
+    margin: 0;
+    font: var(--app-body);
+    color: var(--core-muted-foreground);
+}
+
+.refresh {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+}

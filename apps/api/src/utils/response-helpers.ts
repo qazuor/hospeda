@@ -17,6 +17,7 @@ import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import type { ZodIssue, ZodTypeAny } from 'zod';
 import { PARTNER_APPLICATION_WAIT_ACTIVE } from '../services/partner-application/partner-application-errors';
+import { NO_SOURCE_TEXT_REASON } from '../services/translation/listing-translation-errors';
 import {
     buildConstraintViolationResponse,
     buildUniqueViolationErrorPayload
@@ -528,7 +529,8 @@ const logRouteError = (
  * Provides consistent error handling across all endpoints. `error.details` is
  * debug-only except for the narrow public contract cases: the codes in
  * {@link PUBLIC_DETAILS_ERROR_CODES}, the `SECTION_ABSENT`, `DUPLICATE_LOCATION` and
- * `PARTNER_APPLICATION_WAIT_ACTIVE` (the public form shows its `reapplyAfter` date) reasons, and the
+ * `PARTNER_APPLICATION_WAIT_ACTIVE` (the public form shows its `reapplyAfter` date) reasons, the
+ * `VALIDATION_ERROR` + `NO_SOURCE_TEXT` reason of "Traducir con IA" (HOS-2658 AC-20), and the
  * business-lines invalid reason, whose `{ field, reason }` payload the owner
  * form needs to render the cause of the rejection in production. The
  * business-line case is gated on the propagated top-level `reason` alone; the
@@ -718,7 +720,9 @@ export const handleRouteError = (error: unknown, c: Context) => {
                     error.reason === DUPLICATE_LOCATION_REASON ||
                     error.reason === LOCATION_EXCEPTION_REASONS.REVOKE_CONFLICT ||
                     error.reason === BUSINESS_LINES_INVALID_REASON ||
-                    error.reason === PARTNER_APPLICATION_WAIT_ACTIVE
+                    error.reason === PARTNER_APPLICATION_WAIT_ACTIVE ||
+                    (error.code === ServiceErrorCode.VALIDATION_ERROR &&
+                        error.reason === NO_SOURCE_TEXT_REASON)
                         ? error.details
                         : undefined
             }

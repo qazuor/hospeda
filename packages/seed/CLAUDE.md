@@ -71,6 +71,17 @@ flag on any migration you write whose content no fixture reproduces; it is decla
 migration precisely so no external list of names has to be kept in sync. Full explanation in
 the [author guide](../../docs/guides/seed-data-migrations.md#the-contentonly-flag-migrations-with-no-fixture-baseline).
 
+**HOS-2658 examples of `contentOnly`.** `0197-hos-2658-venue-experience-translation-meta`
+backfills `translation_meta` of venues and experiences (every non-empty `en`/`pt` pair over a
+non-empty Spanish becomes AUTOMATIC with `computeTranslationSourceHash` from
+`@repo/service-core`; an existing entry is never changed; `requiresColumns` names both
+`translation_meta` columns). `0195-hos-2658-ai-translate-venue-experience-grant` grants
+`ai_translate` and `max_ai_translate_per_month` to every version of the six venue and
+experience plans through the bounded additive-grant lane (extras 041, like 0191); its values
+live in `PRODUCTION_PLAN_AI_TRANSLATE_GRANTS` (`src/catalog/next-version-entitlements.ts`,
+re-exported by `scripts/production-catalog/catalog.ts`), never in `PRODUCTION_PLAN_CATALOG`
+(G18). Neither has a fixture under `src/data/**`, so neither is subject to the dual-write rule.
+
 ### The dual-write rule (MANDATORY)
 
 Editing baseline seed data that already lives on a deployed environment (a `required`

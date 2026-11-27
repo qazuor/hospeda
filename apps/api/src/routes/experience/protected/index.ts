@@ -19,6 +19,7 @@
  * not verified — do not read them as proven.
  */
 import { createRouter } from '../../../utils/create-app';
+import { ownerExperienceTranslationRoutes } from '../../listing-translations/index';
 import { protectedAddExperienceFaqRoute } from './addFaq';
 import { protectedAddExperienceFeaturedMediaRoute } from './addFeaturedMedia';
 import { protectedAddExperienceMediaRoute } from './addMedia';
@@ -110,6 +111,10 @@ app.route('/', protectedGetExperienceByIdRoute);
 
 // PATCH /{id} — Owner operational update.
 app.route('/', protectedPatchExperienceRoute);
+// GET/PUT /{id}/translations + POST /{id}/translations/ai - owner translations (HOS-2658)
+app.route('/', ownerExperienceTranslationRoutes.get);
+app.route('/', ownerExperienceTranslationRoutes.putManual);
+app.route('/', ownerExperienceTranslationRoutes.postAi);
 
 // POST /{id}/faqs — Add FAQ.
 app.route('/', protectedAddExperienceFaqRoute);

@@ -153,6 +153,8 @@ export function requirePriceUnitWhenPriced(
  * These are **write-only inputs** and do not appear in read responses.
  */
 export const ExperienceAdminCreateInputSchema = ExperienceSchema.omit({
+    // Written only by writeTranslationPairs (HOS-2658).
+    translationMeta: true,
     id: true,
     createdAt: true,
     updatedAt: true,
@@ -287,10 +289,11 @@ export type ExperienceAdminCreateOutput = z.infer<typeof ExperienceAdminCreateOu
  * - `priceFrom`        — starting price in integer centavos (experience-only;
  *                        `null` when `isPriceOnRequest` is true, HOS-1943)
  * - `priceUnit`        — billing unit (per_day/per_hour/per_person/per_group)
- * - `nameI18n`         — localized name translations (SPEC-212 pattern)
- * - `summaryI18n`      — localized summary translations
- * - `descriptionI18n`  — localized description translations
- * - `richDescriptionI18n` — localized rich-text translations
+ *
+ * **Translations are NOT part of this PATCH (HOS-2658 DL-4, AC-22):**
+ * `nameI18n`, `summaryI18n`, `descriptionI18n` and `richDescriptionI18n` are
+ * written per pair through `PUT /experiences/{id}/translations` only. Any of
+ * these keys in an owner PATCH body is silently stripped.
  *
  * Previously-permitted operational sections (unchanged):
  * - `openingHours`    — schedule (gated by `the vertical's EDIT_OWN`)
@@ -364,11 +367,7 @@ export const ExperienceOwnerUpdateInputSchema = z
                 // HOS-2060: structured house rules. Owner-declared, no
                 // entitlement, validated whole by `ExperiencePoliciesSchema`.
                 policies: true,
-                richDescription: true,
-                nameI18n: true,
-                summaryI18n: true,
-                descriptionI18n: true,
-                richDescriptionI18n: true
+                richDescription: true
             }).shape
         )
     )
@@ -550,6 +549,8 @@ export const ExperienceUpdateInputSchema = z
         // PATCH semantics. See `stripShapeDefaults`.
         stripShapeDefaults(
             ExperienceSchema.omit({
+                // Written only by writeTranslationPairs (HOS-2658).
+                translationMeta: true,
                 id: true,
                 createdAt: true,
                 updatedAt: true,

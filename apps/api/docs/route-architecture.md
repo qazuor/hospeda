@@ -563,6 +563,41 @@ for accommodations only, the contact funnel. Source: `apps/api/src/routes/views/
 
 ---
 
+## Listing Translation Routes (HOS-2658)
+
+One route shape, mounted on the protected tier of each listing vertical (`accommodations`,
+`venues`, `experiences`). Built once in `src/routes/listing-translations/listing-translation-routes.ts`;
+each vertical names its `VerticalEnum` member literally (one-vertical guard, G2).
+
+| Method | Path | Access | What it does |
+|---|---|---|---|
+| `GET` | `/api/v1/protected/{vertical}/{id}/translations` | `READ_OWN` | The per-pair state projection: `en`/`pt` value and state (`auto`, `manual`, `stale`, `pending`, `noQuota`, `noEntitlement`, `noSource`) of every translatable field, plus the owner's AI status. |
+| `PUT` | `/api/v1/protected/{vertical}/{id}/translations` | `EDIT` | Writes one `(field, locale)` pair by hand. It becomes MANUAL and stores the hash of the current Spanish. Never needs `ai_translate`. An empty value is a valid manual edit. |
+| `POST` | `/api/v1/protected/{vertical}/{id}/translations/ai` | `EDIT` + AI gate | Regenerates the requested locales of one field from the current Spanish. The pairs return to AUTOMATIC even when they were MANUAL. Answers 200 with the updated state. |
+
+- **Fields** are per vertical (`LISTING_TRANSLATION_FIELDS` in `@repo/schemas`): `name`,
+  `summary`, `description`, `richDescription`, plus `entryNote` on venues only.
+- **`richDescription`** is premium: a write naming it demands `can_use_rich_description`
+  through `listingAccess.capabilities` (403 `ENTITLEMENT_REQUIRED`), and the GET omits the
+  field when the plan lacks the key.
+- **Errors**: 401 without a session; 400 `VALIDATION_ERROR` for a non-UUID id, `locale: 'es'`,
+  a field outside the vertical's list or a value over the field max; 404 for a listing of
+  somebody else (never 403); on the AI route, 403 `ENTITLEMENT_REQUIRED`
+  (`details.entitlementKey = 'ai_translate'`), 403 `LIMIT_REACHED`
+  (`details = { limitKey, currentCount, maxAllowed }`, plus one `quota_exceeded` `ai_usage`
+  row), 400 `VALIDATION_ERROR` with `details.reason = 'NO_SOURCE_TEXT'` (also the top-level
+  `error.reason`; public with debug errors off, see `error-contract.md`) when the
+  Spanish is empty, and 502 `PROVIDER_ERROR` when every provider call failed.
+- **Metering**: the AI route and the on-save run bill the listing OWNER on the listing's
+  vertical (`ai_usage.user_id = ownerId`, feature `translate`).
+- The owner PATCH routes no longer accept `*I18n` translation keys (AC-22); translations
+  change only through these routes or the on-save run.
+- The legacy `POST /api/v1/protected/ai/translate` now answers the gate's 403
+  (`ENTITLEMENT_REQUIRED` / `LIMIT_REACHED`) instead of a 500 (AC-32), and the admin
+  `POST /api/v1/admin/ai/translate` and `/override` accept `venue` and `experience`.
+
+---
+
 ## Venue Routes (SPEC-239)
 
 Venue listings follow the standard three-tier structure mounted at:

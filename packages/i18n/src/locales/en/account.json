@@ -46,6 +46,49 @@
         "translationTitle": "Content by language",
         "missingHint": "Missing translations: {{locales}}. Open each language tab to review the pending fields."
     },
+    "editorTranslations": {
+        "title": "Translations",
+        "description": "When you save a text in Spanish, we translate it into English and Portuguese. You can correct any translation: yours is never overwritten.",
+        "sourceHint": "This text is edited in the «{{section}}» section.",
+        "field": {
+            "name": "Name",
+            "summary": "Summary",
+            "description": "Description",
+            "richDescription": "Extended description",
+            "entryNote": "Entry note"
+        },
+        "state": {
+            "auto": "Automatic translation",
+            "manual": "Corrected by you",
+            "manualEmpty": "No translation: the Spanish text is shown",
+            "stale": "The Spanish text changed, this translation may be out of date",
+            "pending": "Translation pending",
+            "noQuota": "No automatic translation: you reached this month’s quota",
+            "noEntitlement": "No automatic translation: your plan does not include it",
+            "noSource": "There is no Spanish text yet"
+        },
+        "action": {
+            "save": "Save",
+            "translateAi": "Translate with AI",
+            "translateAiDisabled": {
+                "noQuota": "You reached this month’s translation quota",
+                "noEntitlement": "Your plan does not include AI translation",
+                "noSource": "Write the Spanish text first"
+            },
+            "refresh": "Refresh",
+            "retry": "Retry"
+        },
+        "toast": {
+            "saved": "Translation saved",
+            "aiDone": "Translation generated",
+            "aiFailed": "We could not translate right now. Please try again in a while.",
+            "loadFailed": "We could not load the translations"
+        },
+        "manualHint": "If you edit it, it becomes yours and AI will not change it again.",
+        "pendingHint": "Some translations are in progress. Press «Refresh» to see whether they are ready.",
+        "reviewCount": "{{count}} to review",
+        "loading": "Loading translations…"
+    },
     "whatsNewModal": {
         "title": "What's New",
         "close": "Close",

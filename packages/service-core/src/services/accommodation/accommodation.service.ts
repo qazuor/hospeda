@@ -1113,7 +1113,9 @@ export class AccommodationService extends BaseCrudService<
                     .translate({
                         entityType: 'accommodation',
                         entityId: entity.id,
-                        fields
+                        fields,
+                        // HOS-2658: gated + metered against the owner's plan.
+                        billing: { vertical: 'accommodation', ownerId: entity.ownerId }
                     })
                     .catch(() => {});
             }
@@ -1463,7 +1465,9 @@ export class AccommodationService extends BaseCrudService<
                     .translate({
                         entityType: 'accommodation',
                         entityId: entity.id,
-                        fields
+                        fields,
+                        // HOS-2658: gated + metered against the owner's plan.
+                        billing: { vertical: 'accommodation', ownerId: entity.ownerId }
                     })
                     .catch(() => {});
             }

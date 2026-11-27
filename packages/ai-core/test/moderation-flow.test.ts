@@ -214,6 +214,25 @@ describe('when generateText input is flagged by moderation', () => {
         expect(caught?.direction).toBe('input');
         expect(caught?.feature).toBe('chat');
         expect(caught?.categories).toEqual({ test: true });
+        // HOS-2658 AC-19: nothing was generated, so an input block carries no spend.
+        expect(caught?.spend).toBeUndefined();
+    });
+
+    it('never attaches spend to an input block, even when one is offered (HOS-2658 AC-19)', () => {
+        // Arrange / Act
+        const error = new AiModerationBlockedError({
+            feature: 'translate',
+            direction: 'input',
+            categories: { test: true },
+            spend: {
+                usage: { promptTokens: 1, completionTokens: 1, totalTokens: 2 },
+                provider: 'stub',
+                model: 'stub-model-v1'
+            }
+        });
+
+        // Assert
+        expect(error.spend).toBeUndefined();
     });
 });
 
@@ -259,6 +278,39 @@ describe('when generateText output is flagged by moderation', () => {
         expect(blocked).toMatchObject({
             type: 'moderation_blocked',
             direction: 'output'
+        });
+    });
+
+    it('carries the paid generation spend on the output block (HOS-2658 AC-19)', async () => {
+        // Arrange
+        const generationProvider: AiProvider = {
+            ...new StubProvider(),
+            id: 'stub',
+            generateText: vi.fn().mockResolvedValue({
+                text: 'result with [stub:flagged] content',
+                usage: { promptTokens: 11, completionTokens: 22, totalTokens: 33 },
+                provider: 'stub',
+                model: 'stub-model-v1',
+                finishReason: 'stop'
+            })
+        };
+        const engine = makeEngine({ generationProvider, moderationProvider: new StubProvider() });
+
+        // Act
+        let caught: AiModerationBlockedError | undefined;
+        try {
+            await engine.generateText({ feature: 'translate', locale: 'en', prompt: 'clean' });
+        } catch (err) {
+            caught = err as AiModerationBlockedError;
+        }
+
+        // Assert
+        expect(caught).toBeInstanceOf(AiModerationBlockedError);
+        expect(caught?.direction).toBe('output');
+        expect(caught?.spend).toEqual({
+            usage: { promptTokens: 11, completionTokens: 22, totalTokens: 33 },
+            provider: 'stub',
+            model: 'stub-model-v1'
         });
     });
 });
@@ -369,6 +421,11 @@ describe('when generateObject output is flagged by moderation', () => {
         // Assert
         expect(caught).toBeInstanceOf(AiModerationBlockedError);
         expect(caught?.direction).toBe('output');
+        expect(caught?.spend).toEqual({
+            usage: { promptTokens: 10, completionTokens: 20, totalTokens: 30 },
+            provider: 'stub',
+            model: 'stub-model-v1'
+        });
 
         const blocked = events.find((e) => e.type === 'moderation_blocked');
         expect(blocked).toMatchObject({ direction: 'output' });

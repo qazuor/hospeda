@@ -155,6 +155,23 @@ const INVENTORY: readonly Site[] = [
         writer: 'meterAiUsage',
         count: 2,
         kind: 'not-chat'
+    },
+    {
+        // HOS-2658: the listing translation runner gates and meters the
+        // owner's `translate` feature; no visitor is involved.
+        file: 'apps/api/src/services/translation/metered-translation.ts',
+        writer: 'enforceAiQuota',
+        count: 1,
+        kind: 'not-chat'
+    },
+    {
+        // HOS-2658: a paid attempt that delivered nothing (error), a
+        // persistence throw (error) and the success row, all billed to the
+        // listing owner.
+        file: 'apps/api/src/services/translation/metered-translation.ts',
+        writer: 'meterAiUsage',
+        count: 3,
+        kind: 'not-chat'
     }
 ];
 

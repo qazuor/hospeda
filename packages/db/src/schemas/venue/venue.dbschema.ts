@@ -5,6 +5,7 @@ import type {
     PostalAddressType,
     Seo,
     SocialNetwork,
+    TranslationMeta,
     VenuePolicies,
     Video
 } from '@repo/schemas';
@@ -79,6 +80,8 @@ export const venues = pgTable(
         summaryI18n: jsonb('summary_i18n').$type<I18nText>(),
         descriptionI18n: jsonb('description_i18n').$type<I18nText>(),
         richDescriptionI18n: jsonb('rich_description_i18n').$type<I18nText>(),
+        /** Per (field, locale) translation provenance; written only by writeTranslationPairs (HOS-2658). */
+        translationMeta: jsonb('translation_meta').$type<TranslationMeta>().default({}),
         /** Venue sub-category (RESTAURANT, BAR, CAFE, PARRILLA, etc.). */
         type: VenueTypePgEnum('type').notNull(),
         businessLines: text('business_lines').array().notNull(),

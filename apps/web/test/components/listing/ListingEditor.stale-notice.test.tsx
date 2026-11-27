@@ -31,16 +31,6 @@ vi.mock('../../../src/components/listing/ListingEditor.module.css', () => ({
     default: new Proxy({} as Record<string, string>, { get: (_t, prop) => String(prop) })
 }));
 
-vi.mock('../../../src/components/listing/ListingTranslationPanel.client', () => ({
-    ListingTranslationPanel: () => null,
-    parseListingI18nValues: () => ({
-        nameI18n: { es: '', en: '', pt: '' },
-        summaryI18n: { es: '', en: '', pt: '' },
-        descriptionI18n: { es: '', en: '', pt: '' },
-        richDescriptionI18n: { es: '', en: '', pt: '' }
-    })
-}));
-
 vi.mock('../../../src/lib/i18n', async (importOriginal) => ({
     // The kit save bar (HOS-2487) reads its copy through the real `createT`.
     ...(await importOriginal<typeof import('../../../src/lib/i18n')>()),
