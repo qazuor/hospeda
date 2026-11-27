@@ -11,6 +11,7 @@ import {
 } from '@/lib/billing/addon-purchase';
 import { formatPrice } from '@/lib/format-utils';
 import type { createTranslations, SupportedLocale } from '@/lib/i18n';
+import { RememberedPayerEmailNote } from '../RememberedPayerEmailNote';
 import styles from './AddonPurchase.module.css';
 import type { AddonTarget } from './AddonTargetPicker';
 
@@ -49,6 +50,10 @@ export function AddonPurchaseSummary(input: {
     readonly free: boolean;
     readonly payerEmail: string;
     readonly onPayerEmailChange: (value: string) => void;
+    /** HOS-2616: the payer email is the remembered one, shown as a note instead of a field. */
+    readonly usingRememberedEmail: boolean;
+    /** Opens the editable payer email field. */
+    readonly onUseAnotherEmail: () => void;
     readonly busy: boolean;
     readonly locale: SupportedLocale;
     readonly onConfirm: () => void;
@@ -119,7 +124,14 @@ export function AddonPurchaseSummary(input: {
                     </p>
                 </div>
             )}
-            {!free && offer.chargeKind === 'PERIODICO' && (
+            {!free && offer.chargeKind === 'PERIODICO' && input.usingRememberedEmail && (
+                <RememberedPayerEmailNote
+                    locale={input.locale}
+                    email={input.payerEmail}
+                    onChange={input.onUseAnotherEmail}
+                />
+            )}
+            {!free && offer.chargeKind === 'PERIODICO' && !input.usingRememberedEmail && (
                 <Field
                     label={t('billing.addonPurchase.payerEmailLabel')}
                     hint={t('billing.addonPurchase.payerEmailHint')}

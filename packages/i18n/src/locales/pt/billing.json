@@ -1,5 +1,7 @@
 {
     "common": {
+        "rememberedPayerEmail": "Vamos usar {{email}}, o e-mail da conta do Mercado Pago com a qual você pagou da última vez. Se o Mercado Pago disser que o seu e-mail não confere, você entrou com outra conta: troque de conta no Mercado Pago ou informe aqui o e-mail da conta que quer usar.",
+        "rememberedPayerEmailChange": "Usar outro e-mail",
         "retry": "Tentar novamente",
         "cancel": "Cancelar",
         "close": "Fechar",

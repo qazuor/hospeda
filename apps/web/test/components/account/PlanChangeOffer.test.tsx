@@ -112,6 +112,59 @@ async function choose(id: string) {
     return list;
 }
 
+async function openConfirm({
+    declaredPayerEmail,
+    rememberedPayerEmail
+}: {
+    readonly declaredPayerEmail: string | null;
+    readonly rememberedPayerEmail: string | null;
+}) {
+    fetchMock.mockImplementation(async (url: string) => {
+        if (url.includes('/api/v1/public/plan-catalog'))
+            return response({ success: true, data: catalog });
+        if (url.includes('/billing-subscription/payer-email'))
+            return response({ success: true, data: { rememberedPayerEmail } });
+        return response({
+            success: true,
+            data: { status: 'ACTIVE', billingOptionId: currentId, declaredPayerEmail }
+        });
+    });
+    render(
+        <PlanChangeOffer
+            subscriptionId={subscriptionId}
+            vertical="accommodation"
+            locale="es"
+        />
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Cambiar de plan' }));
+    const list = await screen.findByTestId('plan-change-options');
+    fireEvent.click(within(list).getAllByRole('button')[0]);
+}
+
+describe('HOS-2616 plan change shows the remembered-email note only on the fallback', () => {
+    it('shows the note when the subscription declared none and the field fell back', async () => {
+        await openConfirm({ declaredPayerEmail: null, rememberedPayerEmail: 'mp@example.test' });
+        expect(screen.getByTestId('remembered-payer-email-note').textContent).toContain(
+            'mp@example.test'
+        );
+        expect(screen.queryByTestId('plan-change-payer-email')).toBeNull();
+        fireEvent.click(screen.getByTestId('remembered-payer-email-change'));
+        expect((screen.getByTestId('plan-change-payer-email') as HTMLInputElement).value).toBe(
+            'mp@example.test'
+        );
+    });
+    it('keeps the plain field when the email comes from the subscription', async () => {
+        await openConfirm({
+            declaredPayerEmail: 'declared@example.test',
+            rememberedPayerEmail: 'mp@example.test'
+        });
+        expect(screen.queryByTestId('remembered-payer-email-note')).toBeNull();
+        expect((screen.getByTestId('plan-change-payer-email') as HTMLInputElement).value).toBe(
+            'declared@example.test'
+        );
+    });
+});
+
 describe('TEST:B8b:14 PlanChangeOffer', () => {
     it('TEST:B8b:25 shows the complete promo loss before confirming', async () => {
         render(

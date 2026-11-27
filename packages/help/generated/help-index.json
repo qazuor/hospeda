@@ -1,5 +1,5 @@
 {
-  "contentHash": "ca7105931b7402f44acaec843a256e531f17ef2718c7b6f57bde0dc64a6afc6d",
+  "contentHash": "a57412d01bc510bf3825b83f617e115294d560eb2205401dd15a64cf0d1483e1",
   "locales": {
     "es": [
       {
@@ -484,7 +484,7 @@
         "reviewedAt": "2026-11-26",
         "sections": {
           "canDo": "Cambiar el plan o la frecuencia de cobro de una suscripción activa desde {{link:subscription|Suscripción}}.\n\nComparar los planes en {{link:plans:accommodation|planes para alojamientos}}, {{link:plans:venue|planes para comercios}} o {{link:plans:experience|planes para experiencias}}.",
-          "expect": "- Si el cambio requiere autorización, pasás por el checkout de Mercado Pago y tu plan actual sigue hasta que autorices.\n- Si el cambio se programa, ves la fecha exacta desde la que rige.\n- Los importes se ven en la lista de opciones y en la página de planes.\n- Debajo de tus suscripciones, «Suscripción» lista tus recibos, cada uno con el botón «Ver recibo». El comprobante se abre en PDF solo con la cuenta que hizo el pago, y no es una factura.",
+          "expect": "- Si el cambio requiere autorización, pasás por el checkout de Mercado Pago y tu plan actual sigue hasta que autorices.\n- Si el cambio se programa, ves la fecha exacta desde la que rige.\n- Si ya pagaste antes, el formulario puede mostrarte el correo de la cuenta de Mercado Pago con la que pagaste la última vez. Si Mercado Pago te dice que tu e-mail no coincide, entraste con otra cuenta: usá «Usar otro email» y cargá el de la cuenta que querés usar.\n- Los importes se ven en la lista de opciones y en la página de planes.\n- Debajo de tus suscripciones, «Suscripción» lista tus recibos, cada uno con el botón «Ver recibo». El comprobante se abre en PDF solo con la cuenta que hizo el pago, y no es una factura.",
           "howTo": {
             "after": "",
             "steps": [
