@@ -653,6 +653,7 @@
                 "SELF_USAGE_FORBIDDEN": "You can’t record a use with yourself.",
                 "REVIEW_ALREADY_EXISTS": "That review already existed.",
                 "PROVIDER_REVOKED": "That provider is no longer in the directory.",
+                "PRICE_ALERT_NO_PRICE": "That listing has no published price.",
                 "NEW_PAID_SIGNUPS_FROZEN": "New paid plan signups are paused for now.",
                 "ADDON_PURCHASES_FROZEN": "Add-on purchases are paused for now.",
                 "FAQ_DRAFT_NOT_ELIGIBLE": "That question doesn’t allow a draft answer.",

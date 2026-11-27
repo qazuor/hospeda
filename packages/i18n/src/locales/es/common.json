@@ -94,6 +94,7 @@
         "SELF_USAGE_FORBIDDEN": "No podés registrar un uso del beneficio de tu propia ficha.",
         "REVIEW_ALREADY_EXISTS": "Ya valoraste a este proveedor. Podés editar tu valoración.",
         "PROVIDER_REVOKED": "Este proveedor ya no forma parte del directorio.",
+        "PRICE_ALERT_NO_PRICE": "Esta ficha no tiene precio publicado, así que no podés crear una alerta.",
         "ALREADY_EXISTS": "Ese recurso ya existe.",
         "ALREADY_SUBSCRIBED": "Ya tenés una suscripción activa. En Mi cuenta → Suscripción podés cambiar de plan dentro de la que tenés, o darla de baja para contratar una distinta.",
         "TRIAL_REQUIRES_CHECKOUT": "Estás en tu prueba gratis, así que todavía no hay una suscripción que cambiar. Elegí el plan que quieras y activá tu suscripción: tu prueba se cierra sola cuando se confirma el pago.",

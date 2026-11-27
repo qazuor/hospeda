@@ -144,6 +144,15 @@ export enum ServiceErrorCode {
     PROVIDER_REVOKED = 'PROVIDER_REVOKED',
 
     /**
+     * A price alert was requested for an accommodation that has no price
+     * («Precio a consultar»), so there is nothing to drop (HOS-2671). Maps to
+     * HTTP 422: the request is well-formed and the listing exists, but its state
+     * makes the action meaningless. Not `VALIDATION_ERROR` (400), which is
+     * reserved for malformed input.
+     */
+    PRICE_ALERT_NO_PRICE = 'PRICE_ALERT_NO_PRICE',
+
+    /**
      * New self-service paid signups are paused platform-wide by an admin
      * (`platform_settings['billing.paidSignupsFreeze']`, HOS-1749). Maps to HTTP 409 — the request
      * is well-formed and the caller is allowed to make it; it conflicts with

@@ -1,5 +1,5 @@
 /** Price-alert route regression for effective key and active-count gates. */
-import { RoleEnum, type VerticalEnum } from '@repo/schemas';
+import { RoleEnum, ServiceErrorCode, type VerticalEnum } from '@repo/schemas';
 import { rehydrateEffectiveSet } from '@repo/verticals';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -116,6 +116,26 @@ describe('POST /api/v1/protected/price-alerts — effective set gate', () => {
         expect(createAlertMock).toHaveBeenCalledTimes(1);
         const body = await res.json();
         expect(body.data.accommodationName).toBe('Test Accommodation');
+    });
+
+    it('answers 422 PRICE_ALERT_NO_PRICE, not a generic 400, for an accommodation with no price (HOS-2671)', async () => {
+        createAlertMock.mockResolvedValue({
+            error: {
+                code: ServiceErrorCode.PRICE_ALERT_NO_PRICE,
+                message: 'Cannot subscribe to price alerts for an accommodation with no price set'
+            }
+        });
+
+        const res = await app.request(BASE, {
+            method: 'POST',
+            headers: makeHeaders(),
+            body: JSON.stringify({ accommodationId: ACCOMMODATION_ID, targetPercentDrop: 10 })
+        });
+
+        expect(res.status).toBe(422);
+        const body = await res.json();
+        expect(body.success).toBe(false);
+        expect(body.error.code).toBe('PRICE_ALERT_NO_PRICE');
     });
 
     it('still requires a valid accommodation id', async () => {

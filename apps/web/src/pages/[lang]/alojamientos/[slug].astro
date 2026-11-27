@@ -721,7 +721,7 @@ const { sections: faqSections, inLanguage: faqInLanguage } = buildFaqJsonLdSecti
              them; the island reads the per-actor endpoint in the browser. -->
         <ListingDetailSlot name="promotions">
             <PlacePromotions client:idle locale={locale} apiUrl={getApiUrl()} entityType="accommodation" entityId={accommodation.id} />
-            <ListingPriceAlert accommodationId={accommodation.id} apiUrl={getApiUrl()} locale={locale} placement="summary" />
+            <ListingPriceAlert accommodationId={accommodation.id} apiUrl={getApiUrl()} locale={locale} placement="summary" price={contactPrice} />
         </ListingDetailSlot>
         <!-- Slot 7: location, then what's nearby. -->
         <ListingDetailSlot name="location">
@@ -909,7 +909,7 @@ const { sections: faqSections, inLanguage: faqInLanguage } = buildFaqJsonLdSecti
     <Fragment slot="sidebar">
         <div class="acc-sidebar">
             <PricingSidebar accommodationId={accommodation.id} panelId={panelId} hasWhatsapp={accommodation.hasWhatsapp} price={accommodation.price} contactPrice={contactPrice} extraInfo={accommodation.extraInfo} policies={accommodation.policies} lang={locale} />
-            <ListingPriceAlert accommodationId={accommodation.id} apiUrl={getApiUrl()} locale={locale} placement="sidebar" />
+            <ListingPriceAlert accommodationId={accommodation.id} apiUrl={getApiUrl()} locale={locale} placement="sidebar" price={contactPrice} />
             <!-- client:idle, NOT client:visible (which it used to be). The
                  island now SSRs the anonymous sign-in CTA and swaps itself in
                  after resolving a session; with client:visible a signed-in

@@ -135,7 +135,7 @@ describe('AlertSubscriptionService.create', () => {
         expect(modelMock.create).not.toHaveBeenCalled();
     });
 
-    it('returns VALIDATION_ERROR when the accommodation has no price set', async () => {
+    it('returns PRICE_ALERT_NO_PRICE when the accommodation has no price set', async () => {
         // Arrange
         const { service, modelMock, accommodationModelMock } = makeService();
         const actor = createActor({ id: OWNER_ID });
@@ -145,7 +145,7 @@ describe('AlertSubscriptionService.create', () => {
         const result = await service.create(actor, { accommodationId: ACCOMMODATION_ID });
 
         // Assert
-        expect(result.error?.code).toBe('VALIDATION_ERROR');
+        expect(result.error?.code).toBe('PRICE_ALERT_NO_PRICE');
         expect(modelMock.create).not.toHaveBeenCalled();
     });
 
