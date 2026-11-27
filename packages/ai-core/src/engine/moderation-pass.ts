@@ -47,7 +47,11 @@
 import type { AiFeature, AiProviderId, StreamTextChunk } from '@repo/schemas';
 import type { AiProvider, StreamTextResult } from '../providers/ai-provider.interface.js';
 import type { AiEngineEvent } from './engine.js';
-import { AiModerationBlockedError, AiProviderUnconfiguredError } from './errors.js';
+import {
+    AiModerationBlockedError,
+    type AiModerationBlockedSpend,
+    AiProviderUnconfiguredError
+} from './errors.js';
 
 // ---------------------------------------------------------------------------
 // runModerationPass — Input type
@@ -68,6 +72,13 @@ export interface RunModerationPassInput {
      * or an output check (model-generated text, after generation).
      */
     readonly direction: 'input' | 'output';
+
+    /**
+     * Output passes only: the spend of the generation being moderated. Carried
+     * on the thrown {@link AiModerationBlockedError} so the caller can still
+     * meter a paid generation whose output was blocked (HOS-2658 AC-19).
+     */
+    readonly spend?: AiModerationBlockedSpend;
 
     /**
      * The text to evaluate.
@@ -146,7 +157,8 @@ export interface RunModerationPassInput {
  *   missing; this is a real misconfiguration, not an opt-in absence).
  */
 export async function runModerationPass(input: RunModerationPassInput): Promise<void> {
-    const { feature, direction, text, moderationProviderId, getProvider, recordEvent } = input;
+    const { feature, direction, text, moderationProviderId, getProvider, recordEvent, spend } =
+        input;
 
     // 0. Opt-in skip: no provider configured → moderation disabled, return normally.
     if (!moderationProviderId) {
@@ -176,7 +188,8 @@ export async function runModerationPass(input: RunModerationPassInput): Promise<
             throw new AiModerationBlockedError({
                 feature,
                 direction,
-                categories: result.categories
+                categories: result.categories,
+                ...(direction === 'output' && spend ? { spend } : {})
             });
         }
 

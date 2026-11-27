@@ -7,11 +7,16 @@ export function TranslationTextControl({
     singleLine,
     value,
     placeholder,
+    describedBy,
+    readOnly,
     onChange
 }: {
     readonly singleLine: boolean;
     readonly value: string;
     readonly placeholder: string;
+    /** Extra `aria-describedby` ids, merged with the surrounding Field's. */
+    readonly describedBy?: string;
+    readonly readOnly?: boolean;
     readonly onChange: (value: string) => void;
 }) {
     const ref = useRef<HTMLTextAreaElement>(null);
@@ -41,6 +46,8 @@ export function TranslationTextControl({
         <TextInput
             value={value}
             placeholder={placeholder}
+            aria-describedby={describedBy}
+            readOnly={readOnly}
             onChange={(event) => onChange(event.target.value)}
         />
     ) : (
@@ -49,6 +56,8 @@ export function TranslationTextControl({
             rows={3}
             value={value}
             placeholder={placeholder}
+            aria-describedby={describedBy}
+            readOnly={readOnly}
             style={{ overflow: 'hidden', resize: 'none' }}
             onChange={(event) => onChange(event.target.value)}
         />

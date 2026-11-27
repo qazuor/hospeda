@@ -14,122 +14,34 @@
  * @module services/ai-translate
  */
 
+import { AiModerationBlockedError } from '@repo/ai-core';
 import { getDb } from '@repo/db';
-import { accommodations, destinations, events, pointsOfInterest, posts } from '@repo/db/schemas';
 import type { AiFeature, I18nText, TranslationMeta } from '@repo/schemas';
-import { I18nTextSchema, TranslationMetaSchema } from '@repo/schemas';
+import { computeTranslationSourceHash } from '@repo/service-core';
 import { and, eq, gt, isNull } from 'drizzle-orm';
-import type { PgColumn, PgTable } from 'drizzle-orm/pg-core';
+import type { PgColumn } from 'drizzle-orm/pg-core';
 import { apiLogger } from '../utils/logger.js';
 import { createConfiguredAiService } from './ai-service.factory.js';
+import { readSourceText } from './translation/read-source-text.js';
+import {
+    type ContentLocale,
+    ENTITY_FIELDS,
+    getEntityTable,
+    I18N_COLUMN_MAP,
+    i18nColumn,
+    type TranslatableEntityType
+} from './translation/translatable-entities.js';
+import {
+    type TranslationPairWrite,
+    type WriteTranslationPairsResult,
+    writeTranslationPairs
+} from './translation/translation-pair-writer.js';
+
+export type { ContentLocale, TranslatableEntityType };
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
-
-/** Entity types that can be translated. */
-export type TranslatableEntityType =
-    | 'accommodation'
-    | 'destination'
-    | 'event'
-    | 'post'
-    | 'pointOfInterest';
-
-/** Fields to translate per entity type. */
-const ENTITY_FIELDS: Readonly<Record<TranslatableEntityType, readonly string[]>> = {
-    accommodation: ['name', 'summary', 'description', 'richDescription'],
-    destination: ['name', 'summary', 'description'],
-    event: ['name', 'summary', 'description'],
-    post: ['title', 'summary', 'content'],
-    // HOS-143 G-6: POI (HOS-138 v2 model) only ever had `nameI18n` /
-    // `descriptionI18n` — there is no plain `name` column (see the
-    // `loadTranslatableFields` fallback below for how the Spanish source
-    // value is still resolved for `name`).
-    pointOfInterest: ['name', 'description']
-} as const;
-
-/**
- * Structural view of a translatable entity table.
- *
- * The four content tables share the `id`, `deletedAt` and `translationMeta`
- * columns (typed here so they stay strongly typed) plus the per-field `*I18n`
- * columns that are accessed dynamically by name via {@link i18nColumn}. This
- * keeps the dynamic-column ergonomics without resorting to `any`.
- */
-type TranslatableTable = PgTable & {
-    id: PgColumn;
-    deletedAt: PgColumn;
-    translationMeta: PgColumn;
-};
-
-/**
- * Resolves a dynamic per-field i18n column (e.g. `nameI18n`) by name. The
- * column is guaranteed to exist because the names come from {@link I18N_COLUMN_MAP}.
- */
-function i18nColumn(table: TranslatableTable, columnName: string): PgColumn {
-    // TYPE-WORKAROUND: Drizzle exposes table columns under an internal symbol, so
-    // dynamic by-name access needs a structural cast. The name always comes from
-    // I18N_COLUMN_MAP, so the column is guaranteed to exist.
-    return (table as unknown as Record<string, PgColumn>)[columnName] as PgColumn;
-}
-
-/**
- * Resolves the Drizzle table for a translatable entity type.
- *
- * Resolution is lazy (inside a function, never a module-level constant) so that
- * importing this module does NOT touch the `@repo/db/schemas` table bindings at
- * load time. The AI translate routes are registered in the global API route
- * tree, so a top-level table reference would crash every route test that
- * partially mocks `@repo/db/schemas`.
- */
-function getEntityTable(entityType: TranslatableEntityType): TranslatableTable {
-    // Built lazily inside the function (never a top-level const) so importing this
-    // module does not access the bindings — the table objects are `unknown` here
-    // and narrowed by the single documented cast below.
-    const tables: Record<TranslatableEntityType, unknown> = {
-        accommodation: accommodations,
-        destination: destinations,
-        event: events,
-        post: posts,
-        pointOfInterest: pointsOfInterest
-    };
-    // TYPE-WORKAROUND: a Drizzle table's structural shape does not overlap the
-    // narrow `TranslatableTable` view (columns live under an internal symbol), so
-    // the projection requires an explicit cast from `unknown`.
-    return tables[entityType] as TranslatableTable;
-}
-
-/** Map entity type to its i18n column suffixes. */
-const I18N_COLUMN_MAP: Record<TranslatableEntityType, Record<string, string>> = {
-    accommodation: {
-        name: 'nameI18n',
-        summary: 'summaryI18n',
-        description: 'descriptionI18n',
-        richDescription: 'richDescriptionI18n'
-    },
-    destination: {
-        name: 'nameI18n',
-        summary: 'summaryI18n',
-        description: 'descriptionI18n'
-    },
-    event: {
-        name: 'nameI18n',
-        summary: 'summaryI18n',
-        description: 'descriptionI18n'
-    },
-    post: {
-        title: 'titleI18n',
-        summary: 'summaryI18n',
-        content: 'contentI18n'
-    },
-    pointOfInterest: {
-        name: 'nameI18n',
-        description: 'descriptionI18n'
-    }
-};
-
-/** Content locales that participate in translation. */
-export type ContentLocale = 'es' | 'en' | 'pt';
 
 /** All content locales, used to derive target locales from a source locale. */
 const CONTENT_LOCALES: readonly ContentLocale[] = ['es', 'en', 'pt'] as const;
@@ -170,10 +82,19 @@ export interface TranslateEntityInput {
     targetLocales?: ContentLocale[];
     /**
      * When `true`, skip any (field, locale) pair that already has a non-empty
-     * value — translate only the missing locales. Requires a DB read, so it is
-     * `false` by default (the batch / auto paths manage idempotency themselves).
+     * value, or that is MANUAL in `translationMeta` even when empty (HOS-2658
+     * AC-9/AC-31: an owner's or staff's manual value is never re-translated, so
+     * it is skipped BEFORE any provider call) — translate only the missing
+     * locales. Requires a DB read, so it is `false` by default (the batch / auto
+     * paths manage idempotency themselves).
      */
     onlyMissing?: boolean;
+    /**
+     * `"field:locale"` pairs never sent to the provider (HOS-2658). The metered
+     * runner fills it with the MANUAL pairs so no paid call is made for a
+     * translation the writer would throw away.
+     */
+    skipPairs?: ReadonlySet<string>;
 }
 
 export interface TranslateResult {
@@ -200,6 +121,19 @@ export interface TranslateEntityResult {
     completionTokens: number;
     provider: string;
     model: string;
+    /**
+     * Spend of provider calls that answered (and were billed) but whose output
+     * was rejected afterwards, e.g. a URL placeholder that did not round-trip
+     * (HOS-2658 AC-19). Kept apart from the success totals above so callers
+     * that bill only delivered translations keep their behaviour; absent when
+     * no such call happened.
+     */
+    failedSpend?: {
+        promptTokens: number;
+        completionTokens: number;
+        provider: string;
+        model: string;
+    };
 }
 
 export interface BatchTranslateInput {
@@ -473,6 +407,35 @@ function restoreUrls(text: string, urls: string[]): { restored: string; ok: bool
 }
 
 /**
+ * A provider call that answered — and was therefore billed — but whose output
+ * could not be used (HOS-2658 AC-19). Carries the call's usage so the spend can
+ * be metered as `error` instead of being dropped.
+ */
+class PaidTranslationOutputError extends Error {
+    readonly usage: { promptTokens: number; completionTokens: number };
+    readonly provider: string;
+    readonly model: string;
+
+    constructor({
+        message,
+        usage,
+        provider,
+        model
+    }: {
+        readonly message: string;
+        readonly usage: { promptTokens: number; completionTokens: number };
+        readonly provider: string;
+        readonly model: string;
+    }) {
+        super(message);
+        this.name = 'PaidTranslationOutputError';
+        this.usage = usage;
+        this.provider = provider;
+        this.model = model;
+    }
+}
+
+/**
  * Translates a single text field to a target locale using the AI engine.
  * Returns the translated text or the original on failure.
  */
@@ -508,9 +471,15 @@ async function translateField(
         // `translateFieldWithRetry`'s catch block treat it as an ordinary
         // translation failure: logged, and the source-locale value is kept
         // untouched instead of persisting anything corrupted.
-        throw new Error(
-            `ai-translate: URL placeholder mismatch translating field "${fieldType}" to ${targetLocale} — expected ${urls.length} URL(s) to round-trip intact, refusing to persist a corrupted translation`
-        );
+        throw new PaidTranslationOutputError({
+            message: `ai-translate: URL placeholder mismatch translating field "${fieldType}" to ${targetLocale} — expected ${urls.length} URL(s) to round-trip intact, refusing to persist a corrupted translation`,
+            usage: {
+                promptTokens: result.usage.promptTokens,
+                completionTokens: result.usage.completionTokens
+            },
+            provider: result.provider,
+            model: result.model
+        });
     }
 
     return {
@@ -531,6 +500,47 @@ interface FieldTranslationOutcome {
     completionTokens: number;
     provider: string | null;
     model: string | null;
+    /** Usage of a call that was billed but whose output was rejected (AC-19). */
+    paidFailure?: {
+        promptTokens: number;
+        completionTokens: number;
+        provider: string;
+        model: string;
+    };
+}
+
+/**
+ * The spend of a failed call that the provider already charged for (HOS-2658
+ * AC-19): an answer refused after `generateText` returned
+ * ({@link PaidTranslationOutputError}), or a generation whose OUTPUT the engine's
+ * moderation blocked (`AiModerationBlockedError` carrying `spend`). An input
+ * moderation block never reached the provider and yields nothing.
+ *
+ * @param error - The error the translation call threw.
+ * @returns `{ paidFailure }` when the call was paid, otherwise `{}`.
+ */
+function resolvePaidFailure(error: unknown): Pick<FieldTranslationOutcome, 'paidFailure'> {
+    if (error instanceof PaidTranslationOutputError) {
+        return {
+            paidFailure: {
+                promptTokens: error.usage.promptTokens,
+                completionTokens: error.usage.completionTokens,
+                provider: error.provider,
+                model: error.model
+            }
+        };
+    }
+    if (error instanceof AiModerationBlockedError && error.direction === 'output' && error.spend) {
+        return {
+            paidFailure: {
+                promptTokens: error.spend.usage.promptTokens,
+                completionTokens: error.spend.usage.completionTokens,
+                provider: error.spend.provider,
+                model: error.spend.model
+            }
+        };
+    }
+    return {};
 }
 
 /**
@@ -584,7 +594,8 @@ async function translateFieldWithRetry(
             promptTokens: 0,
             completionTokens: 0,
             provider: null,
-            model: null
+            model: null,
+            ...resolvePaidFailure(error)
         };
     }
 }
@@ -615,6 +626,7 @@ export async function translateEntity(input: TranslateEntityInput): Promise<Tran
     let completionTokens = 0;
     let provider = '';
     let model = '';
+    let failedSpend: TranslateEntityResult['failedSpend'];
 
     for (const [fieldType, fieldValue] of Object.entries(fields)) {
         if (!fieldValue || fieldValue.trim().length === 0) {
@@ -628,7 +640,15 @@ export async function translateEntity(input: TranslateEntityInput): Promise<Tran
             }
             // Skip locales already filled when translating only the gaps.
             // Trim guards against whitespace-only values counting as "filled".
-            if (existing?.[fieldType]?.[locale]?.trim()) {
+            if (existing?.values[fieldType]?.[locale]?.trim()) {
+                continue;
+            }
+            // ...and MANUAL pairs, empty ones included (AC-31).
+            if (existing?.manualPairs.has(`${fieldType}:${locale}`)) {
+                continue;
+            }
+            // Skip pairs the caller excluded (MANUAL pairs) before any provider call.
+            if (input.skipPairs?.has(`${fieldType}:${locale}`)) {
                 continue;
             }
 
@@ -655,6 +675,15 @@ export async function translateEntity(input: TranslateEntityInput): Promise<Tran
                 if (outcome.model) {
                     model = outcome.model;
                 }
+            } else if (outcome.paidFailure) {
+                failedSpend = {
+                    promptTokens:
+                        (failedSpend?.promptTokens ?? 0) + outcome.paidFailure.promptTokens,
+                    completionTokens:
+                        (failedSpend?.completionTokens ?? 0) + outcome.paidFailure.completionTokens,
+                    provider: outcome.paidFailure.provider,
+                    model: outcome.paidFailure.model
+                };
             }
         }
     }
@@ -666,27 +695,33 @@ export async function translateEntity(input: TranslateEntityInput): Promise<Tran
         promptTokens,
         completionTokens,
         provider,
-        model
+        model,
+        ...(failedSpend ? { failedSpend } : {})
     };
 }
 
 /**
- * Reads the current i18n values for every translatable field of an entity.
+ * Reads the current i18n values and the MANUAL pairs of an entity.
  *
  * Used by {@link translateEntity} when `onlyMissing` is set, to decide which
- * (field, locale) pairs already have content and can be skipped.
+ * (field, locale) pairs already have content, or are MANUAL, and can be skipped.
  *
- * @returns A map of fieldType → { locale → value } for non-empty i18n columns.
+ * @returns Object with `values` (fieldType → { locale → value } for non-empty
+ *   i18n columns) and `manualPairs` (`"field:locale"` keys whose
+ *   `translationMeta` says `autoTranslated: false`).
  */
 async function loadExistingTranslations(
     entityType: TranslatableEntityType,
     entityId: string
-): Promise<Record<string, Partial<Record<ContentLocale, string>>>> {
+): Promise<{
+    values: Record<string, Partial<Record<ContentLocale, string>>>;
+    manualPairs: ReadonlySet<string>;
+}> {
     const table = getEntityTable(entityType);
     const i18nColumnMap = I18N_COLUMN_MAP[entityType];
     const db = getDb();
 
-    const selection: Record<string, PgColumn> = {};
+    const selection: Record<string, PgColumn> = { translationMeta: table.translationMeta };
     for (const column of Object.values(i18nColumnMap)) {
         selection[column] = i18nColumn(table, column);
     }
@@ -694,19 +729,36 @@ async function loadExistingTranslations(
     const [row] = await db.select(selection).from(table).where(eq(table.id, entityId)).limit(1);
     const existingRow = (row ?? {}) as Record<string, unknown>;
 
-    const result: Record<string, Partial<Record<ContentLocale, string>>> = {};
+    const values: Record<string, Partial<Record<ContentLocale, string>>> = {};
     for (const [fieldType, column] of Object.entries(i18nColumnMap)) {
         const value = existingRow[column] as I18nText | null;
         if (value) {
-            result[fieldType] = { es: value.es, en: value.en, pt: value.pt };
+            values[fieldType] = { es: value.es, en: value.en, pt: value.pt };
         }
     }
-    return result;
+    const meta = (existingRow.translationMeta ?? null) as TranslationMeta | null;
+    const manualPairs = new Set<string>();
+    for (const [fieldType, locales] of Object.entries(meta ?? {})) {
+        for (const [locale, pair] of Object.entries(locales ?? {})) {
+            if (pair?.autoTranslated === false) manualPairs.add(`${fieldType}:${locale}`);
+        }
+    }
+    return { values, manualPairs };
 }
 
 /**
  * Persists translation results to the database.
- * Updates the I18nText columns and translation_meta for the entity.
+ *
+ * Builds one `ai` pair write per successful result (its `sourceHash` is the
+ * hash of the source value it was translated from) and delegates to the single
+ * writer, which merges under a row lock, never overwrites a MANUAL pair unless
+ * it is listed in `overrideManualPairs`, and gates every value with Zod.
+ * Failed results are never written, so the renderer falls back to Spanish and a
+ * later run can retry them.
+ *
+ * @param overrideManualPairs - `"field:locale"` keys that may be written even
+ *   onto a MANUAL pair ("Traducir con IA", HOS-2658).
+ * @returns The writer result (written / skipped pairs, whether the row exists).
  */
 export async function persistTranslations(
     entityType: TranslatableEntityType,
@@ -715,122 +767,37 @@ export async function persistTranslations(
     results: readonly TranslateResult[],
     provider: string,
     model: string,
-    sourceLocale: ContentLocale = 'es'
-): Promise<void> {
-    const table = getEntityTable(entityType);
+    sourceLocale: ContentLocale = 'es',
+    overrideManualPairs?: ReadonlySet<string>
+): Promise<WriteTranslationPairsResult> {
     const i18nColumnMap = I18N_COLUMN_MAP[entityType];
-
-    // Group successful results by field so each i18n column is written once.
-    const resultsByField = new Map<string, TranslateResult[]>();
+    const writes: TranslationPairWrite[] = [];
     for (const result of results) {
-        if (!i18nColumnMap[result.fieldType]) continue;
-        const bucket = resultsByField.get(result.fieldType) ?? [];
-        bucket.push(result);
-        resultsByField.set(result.fieldType, bucket);
+        if (!result.success || !i18nColumnMap[result.fieldType]) continue;
+        if (result.locale === sourceLocale) continue;
+        const { hash } = computeTranslationSourceHash({
+            text: fieldValues[result.fieldType] ?? ''
+        });
+        writes.push({
+            field: result.fieldType,
+            locale: result.locale,
+            value: result.translatedText,
+            origin: 'ai',
+            sourceHash: hash,
+            provider,
+            model,
+            overrideManual:
+                overrideManualPairs?.has(`${result.fieldType}:${result.locale}`) ?? false
+        });
     }
 
-    if (resultsByField.size === 0) {
-        return;
-    }
-
-    // Read the CURRENT i18n columns + meta so we MERGE rather than clobber.
-    // This preserves previously-translated locales and admin manual overrides
-    // (locales flagged `autoTranslated: false` are never overwritten).
-    const selection: Record<string, PgColumn> = { translationMeta: table.translationMeta };
-    for (const column of Object.values(i18nColumnMap)) {
-        selection[column] = i18nColumn(table, column);
-    }
-
-    const db = getDb();
-    const [existing] = await db
-        .select(selection)
-        .from(table)
-        .where(eq(table.id, entityId))
-        .limit(1);
-
-    const existingRow = (existing ?? {}) as Record<string, unknown>;
-    const existingMeta = (existingRow.translationMeta as TranslationMeta | null) ?? {};
-
-    const updateSet: Record<string, unknown> = {};
-    const mergedMeta: TranslationMeta = { ...existingMeta };
-    const fieldsUpdated: string[] = [];
-
-    for (const [fieldType, fieldResults] of resultsByField) {
-        const column = i18nColumnMap[fieldType];
-        if (!column) continue;
-        const existingValue = (existingRow[column] as I18nText | null) ?? {
-            es: '',
-            en: '',
-            pt: ''
-        };
-
-        // Start from the existing localized value, refresh the source locale
-        // from the provided source field value (Spanish by default).
-        const nextValue: I18nText = {
-            es: existingValue.es ?? '',
-            en: existingValue.en ?? '',
-            pt: existingValue.pt ?? ''
-        };
-        nextValue[sourceLocale] = fieldValues[fieldType] ?? existingValue[sourceLocale] ?? '';
-        const fieldMeta: TranslationMeta[string] = { ...(existingMeta[fieldType] ?? {}) };
-
-        for (const result of fieldResults) {
-            // Failed translations leave the locale untouched so the renderer
-            // can fall back to Spanish; they are not recorded as overrides.
-            if (!result.success) continue;
-
-            // `result.locale` is a target locale (es/en/pt), never the source.
-            const locale = result.locale;
-            // Never overwrite a human-curated manual override.
-            if (existingMeta[fieldType]?.[locale]?.autoTranslated === false) continue;
-
-            nextValue[locale] = result.translatedText;
-            fieldMeta[locale] = {
-                autoTranslated: true,
-                translatedAt: new Date().toISOString(),
-                provider,
-                model
-            };
-        }
-
-        updateSet[column] = nextValue;
-        mergedMeta[fieldType] = fieldMeta;
-        fieldsUpdated.push(fieldType);
-    }
-
-    updateSet.translationMeta = mergedMeta;
-
-    // HOS-190 slice 3: gate the write with Zod. This function previously built
-    // `updateSet` from AI-provider output (`result.translatedText`) and wrote
-    // it straight to the DB via `db.update()` with no runtime validation — a
-    // malformed provider response (wrong type, unexpected shape) would persist
-    // ungated. Validate every i18n column against the same `I18nTextSchema`
-    // the domain entity schemas use for `nameI18n`/`summaryI18n`/etc., and the
-    // merged metadata against `TranslationMetaSchema`, before the write. A
-    // failure here throws — the caller (the AI translate routes) already
-    // wraps this call in a try/catch and reports the error, so no invalid
-    // data ever reaches the table.
-    for (const column of Object.keys(updateSet)) {
-        if (column === 'translationMeta') continue;
-        const parsedValue = I18nTextSchema.safeParse(updateSet[column]);
-        if (!parsedValue.success) {
-            throw new Error(
-                `ai-translate: refusing to persist malformed i18n value for column "${column}" (${entityType}/${entityId}): ${parsedValue.error.message}`
-            );
-        }
-        updateSet[column] = parsedValue.data;
-    }
-    const parsedMeta = TranslationMetaSchema.safeParse(mergedMeta);
-    if (!parsedMeta.success) {
-        throw new Error(
-            `ai-translate: refusing to persist malformed translationMeta (${entityType}/${entityId}): ${parsedMeta.error.message}`
-        );
-    }
-    updateSet.translationMeta = parsedMeta.data;
-
-    await db.update(table).set(updateSet).where(eq(table.id, entityId));
-
-    apiLogger.info({ entityType, entityId, fieldsUpdated }, 'ai-translate: translations persisted');
+    return writeTranslationPairs({
+        entityType,
+        entityId,
+        writes,
+        sourceMirror: fieldValues,
+        sourceLocale
+    });
 }
 
 /**
@@ -862,18 +829,10 @@ export async function loadTranslatableFields(
         // locales read the value from the per-field i18n column.
         let value: unknown;
         if (sourceLocale === 'es') {
-            value = data[field];
-            // HOS-143 G-6: `pointOfInterest.name` has no plain column (HOS-138 —
-            // `nameI18n` is the sole name source), so `data[field]` is always
-            // `undefined` for it. Fall back to the field's i18n column `es` key
-            // in that case. This branch is unreachable for the other four
-            // entity types, whose plain columns always exist (value is `null`
-            // or a string there, never `undefined`).
-            if (value === undefined) {
-                const i18nCol = i18nColumnMap[field];
-                const i18nValue = i18nCol ? (data[i18nCol] as I18nText | null) : null;
-                value = i18nValue?.es;
-            }
+            // HOS-143 G-6 / HOS-2658: fields with no plain column
+            // (`pointOfInterest.name`, `venue.entryNote`) fall back to the
+            // i18n column's `es` key inside `readSourceText`.
+            value = readSourceText({ entityType, row: data, field }).text;
         } else {
             const i18nCol = i18nColumnMap[field];
             const i18nValue = i18nCol ? (data[i18nCol] as I18nText | null) : null;
@@ -959,75 +918,39 @@ export type ManualOverrideResult =
 /**
  * Applies an admin manual translation override for a single field/locale.
  *
- * Reads the current i18n value + meta, sets only the targeted locale, and flags
- * it as `autoTranslated: false` so future auto-translation never overwrites it.
+ * Reads the field's current Spanish source and delegates ONE `manual` pair
+ * write (with the source's hash, HOS-2658 DL-6) to the single writer, so the
+ * pair is flagged `autoTranslated: false` and future auto-translation never
+ * overwrites it, while the editor can still tell when the Spanish changed.
  */
 export async function applyManualOverride(
     input: ManualOverrideInput
 ): Promise<ManualOverrideResult> {
     const { entityType, entityId, fieldType, locale, value } = input;
 
-    const column = I18N_COLUMN_MAP[entityType][fieldType];
-    if (!column) {
+    if (!I18N_COLUMN_MAP[entityType][fieldType]) {
         return { ok: false, code: 'INVALID_FIELD' };
     }
 
     const table = getEntityTable(entityType);
-    const db = getDb();
-    const [existing] = await db
-        .select({ value: i18nColumn(table, column), translationMeta: table.translationMeta })
-        .from(table)
-        .where(eq(table.id, entityId))
-        .limit(1);
-
-    if (!existing) {
+    const [row] = await getDb().select().from(table).where(eq(table.id, entityId)).limit(1);
+    if (!row) {
         return { ok: false, code: 'NOT_FOUND' };
     }
 
-    const existingRow = existing as Record<string, unknown>;
-    const existingValue = (existingRow.value as I18nText | null) ?? { es: '', en: '', pt: '' };
-    const nextValue: I18nText = {
-        es: existingValue.es ?? '',
-        en: existingValue.en ?? '',
-        pt: existingValue.pt ?? ''
-    };
-    nextValue[locale] = value;
+    const { text } = readSourceText({
+        entityType,
+        row: row as Record<string, unknown>,
+        field: fieldType
+    });
+    const { hash } = computeTranslationSourceHash({ text });
+    const result = await writeTranslationPairs({
+        entityType,
+        entityId,
+        writes: [{ field: fieldType, locale, value, origin: 'manual', sourceHash: hash }]
+    });
 
-    const existingMeta = (existingRow.translationMeta as TranslationMeta | null) ?? {};
-    const nextMeta: TranslationMeta = {
-        ...existingMeta,
-        [fieldType]: {
-            ...(existingMeta[fieldType] ?? {}),
-            [locale]: {
-                autoTranslated: false,
-                translatedAt: new Date().toISOString()
-            }
-        }
-    };
-
-    // HOS-190 slice 3: gate the write with Zod, mirroring `persistTranslations`.
-    // This is a raw `db.update()` that writes an I18nText column + translation
-    // meta; validate both against the same schemas the domain entities use so a
-    // malformed shape can never persist ungated.
-    const parsedValue = I18nTextSchema.safeParse(nextValue);
-    if (!parsedValue.success) {
-        throw new Error(
-            `ai-translate: refusing to persist malformed manual override for column "${column}" (${entityType}/${entityId}): ${parsedValue.error.message}`
-        );
-    }
-    const parsedMeta = TranslationMetaSchema.safeParse(nextMeta);
-    if (!parsedMeta.success) {
-        throw new Error(
-            `ai-translate: refusing to persist malformed translationMeta on manual override (${entityType}/${entityId}): ${parsedMeta.error.message}`
-        );
-    }
-
-    await db
-        .update(table)
-        .set({ [column]: parsedValue.data, translationMeta: parsedMeta.data })
-        .where(eq(table.id, entityId));
-
-    return { ok: true };
+    return result.found ? { ok: true } : { ok: false, code: 'NOT_FOUND' };
 }
 
 /**
@@ -1094,8 +1017,8 @@ export async function batchTranslate(input: BatchTranslateInput): Promise<BatchT
                 // Extract field values
                 const fieldValues: Record<string, string> = {};
                 for (const field of fields) {
-                    const value = row[field];
-                    if (typeof value === 'string' && value.trim().length > 0) {
+                    const value = readSourceText({ entityType, row, field }).text;
+                    if (value.trim().length > 0) {
                         fieldValues[field] = value;
                     }
                 }

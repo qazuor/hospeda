@@ -385,6 +385,7 @@ Adding a theme is just a new CSS block. No code changes needed:
 - Primary locale is `es`. Other locales (`en`, `pt`) will be translated later
 - Until translated, `en` and `pt` fall back to `es` strings
 - URL structure: `/{locale}/rest/of/path/` with trailing slash enforced
+- **Listing content translations (HOS-2658)**: the `en`/`pt` versions of a listing's name, summary, description, rich description and venue entry note are edited ONLY in the editor's translations section, through `GET`/`PUT /api/v1/protected/{vertical}/{id}/translations` and `POST .../translations/ai`. The owner PATCH of the save bar never carries `*I18n` keys: the schema strips them
 
 ```astro
 ---

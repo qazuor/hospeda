@@ -24,16 +24,6 @@ vi.mock('@/store/toast-store', () => ({ addToast: vi.fn() }));
 // them and read as if it still mattered. Nothing in this file asserts on class
 // names, and the `.ProseMirror` gate comes from ProseMirror core, not a module.
 
-vi.mock('../../../src/components/listing/ListingTranslationPanel.client', () => ({
-    ListingTranslationPanel: () => null,
-    parseListingI18nValues: () => ({
-        nameI18n: { es: '', en: '', pt: '' },
-        summaryI18n: { es: '', en: '', pt: '' },
-        descriptionI18n: { es: '', en: '', pt: '' },
-        richDescriptionI18n: { es: '', en: '', pt: '' }
-    })
-}));
-
 vi.mock('../../../src/lib/i18n', async (importOriginal) => ({
     // The kit save bar (HOS-2487) reads its copy through the real `createT`.
     ...(await importOriginal<typeof import('../../../src/lib/i18n')>()),

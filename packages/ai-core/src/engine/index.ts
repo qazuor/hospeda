@@ -34,7 +34,7 @@ export type {
     ProviderOrderStrategyInput
 } from './engine.js';
 export { createAiEngine, defaultProviderOrderStrategy } from './engine.js';
-export type { ProviderAttempt } from './errors.js';
+export type { AiModerationBlockedSpend, ProviderAttempt } from './errors.js';
 export {
     AiCeilingHitError,
     AiEngineError,

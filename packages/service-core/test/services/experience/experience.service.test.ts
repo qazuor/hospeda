@@ -328,7 +328,7 @@ describe('ExperienceService.updateOwn — single EXPERIENCE_EDIT_OWN gate (SPEC-
         expect(updatePayload.summary).toBe('Resumen actualizado con diez o más caracteres.');
     });
 
-    it('should persist i18n fields when owner updates them (SPEC-253 AC-1)', async () => {
+    it('strips nameI18n/summaryI18n/descriptionI18n/richDescriptionI18n from an owner update (HOS-2658 AC-22)', async () => {
         const entity = makeExperienceEntity();
         const service = makeService(entity);
         const mockUpdate = (service as AnyService).model.update;
@@ -336,22 +336,27 @@ describe('ExperienceService.updateOwn — single EXPERIENCE_EDIT_OWN gate (SPEC-
 
         const result = await service.updateOwn(
             ENTITY_ID,
+            // Translations moved to their own endpoints (HOS-2658): a body that
+            // still sends them reaches the service and the schema strips them.
             {
+                summary: 'Un resumen con mas de diez caracteres.',
                 nameI18n: i18nValue,
                 summaryI18n: i18nValue,
                 descriptionI18n: i18nValue,
                 richDescriptionI18n: i18nValue
-            },
+            } as Parameters<typeof service.updateOwn>[1],
             ownerActor
         );
 
         expect(result.error).toBeUndefined();
         expect(mockUpdate).toHaveBeenCalledTimes(1);
         const updatePayload = (mockUpdate.mock.calls[0]?.[1] ?? {}) as Record<string, unknown>;
-        expect(updatePayload.nameI18n).toEqual(i18nValue);
-        expect(updatePayload.summaryI18n).toEqual(i18nValue);
-        expect(updatePayload.descriptionI18n).toEqual(i18nValue);
-        expect(updatePayload.richDescriptionI18n).toEqual(i18nValue);
+        expect(updatePayload.summary).toBe('Un resumen con mas de diez caracteres.');
+        expect(
+            ['nameI18n', 'summaryI18n', 'descriptionI18n', 'richDescriptionI18n'].filter(
+                (key) => key in updatePayload
+            )
+        ).toEqual([]);
     });
 
     it('should bypass per-section gates for staff with EXPERIENCE_EDIT_ALL', async () => {

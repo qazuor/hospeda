@@ -34,6 +34,7 @@ export * from './services';
  * Exports translation service interface and singleton management (SPEC-212).
  */
 export * from './translation/translation-init';
+export * from './translation/translation-source-hash';
 /**
  * --- TYPES ---
  * Exports all shared types for the service layer, including `Actor`, `ServiceError`,

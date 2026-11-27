@@ -11,6 +11,8 @@
  */
 
 import type { JSX } from 'react';
+import { ListingTranslationsSection } from '@/components/account/editor/ListingTranslationsSection.client';
+import { sourceSectionLabelKeysFor } from '@/components/account/editor/listing-translations-section.helpers';
 import { EditorSocialLinksSection } from '@/components/account/editor-fields/EditorSocialLinksSection';
 import { ListingContactSection } from '@/components/account/editor-fields/ListingContactSection';
 import { ListingLocationSection } from '@/components/account/editor-fields/ListingLocationSection';
@@ -35,10 +37,6 @@ import {
 } from '@/components/listing/editor/PoliciesPanel.client';
 import { PracticalInfoSection } from '@/components/listing/editor/PracticalInfoSection.client';
 import { PriceSection } from '@/components/listing/editor/PriceSection.client';
-import {
-    type ListingI18nValues,
-    ListingTranslationPanel
-} from '@/components/listing/ListingTranslationPanel.client';
 import type { AmenityAttributeChange } from '@/components/shared/catalog-picker/AmenityAttributeControls.client';
 import { CatalogPicker } from '@/components/shared/catalog-picker/CatalogPicker.client';
 import type { AmenityData } from '@/lib/api/types';
@@ -50,6 +48,21 @@ import { createT, createTranslations } from '@/lib/i18n';
 import { LISTING_BASE_POLICY_KEYS, type ListingPolicyKey } from '@/lib/listing/listing-policies';
 import type { VenueOrExperience } from '@/lib/listing/owner-listings';
 import { LISTING_FIELD_ID_SUFFIXES, LISTING_FIELD_PREFIX } from './field-ids';
+
+/** Resolved names of the editor sections holding each translatable Spanish source. */
+function translationSourceLabels({
+    locale,
+    vertical
+}: {
+    readonly locale: SupportedLocale;
+    readonly vertical: VenueOrExperience;
+}): Readonly<Record<string, string>> {
+    const t = createT(locale);
+    const { labelKeys } = sourceSectionLabelKeysFor({ vertical });
+    return Object.fromEntries(
+        Object.entries(labelKeys).map(([field, labelKey]) => [field, t(labelKey)])
+    );
+}
 
 /** Resolves one key for a renderer that has only the locale in hand. */
 function translate(locale: SupportedLocale, key: string, fallback: string): string {
@@ -77,7 +90,6 @@ export interface ListingSectionRenderContext {
     readonly onToggleFeature: (id: string) => void;
     /** Sets one declared scope/availability of a checked amenity (HOS-2061). */
     readonly onChangeAmenityAttribute: AmenityAttributeChange;
-    readonly onI18nChange: (values: ListingI18nValues) => void;
     readonly shouldOfferSlugRefresh: boolean;
     /** UUID of the listing, forwarded to sections that read listing-scoped data. */
     readonly listingId: string;
@@ -412,18 +424,14 @@ export const LISTING_SECTION_RENDERERS: Readonly<
             onPolicyChange={context.onPolicyChange}
         />
     ),
+    // HOS-2658: the section reads and writes its own state through the
+    // translations endpoints; it is no part of the save-bar PATCH.
     translations: (context) => (
-        <ListingTranslationPanel
+        <ListingTranslationsSection
             locale={context.locale}
             vertical={context.vertical}
-            initialValues={context.data.i18nValues}
-            plainTextValues={{
-                name: context.data.name,
-                summary: context.data.summary,
-                description: context.data.description,
-                richDescription: context.data.richDescription
-            }}
-            onChange={context.onI18nChange}
+            listingId={context.listingId}
+            sourceSectionLabels={translationSourceLabels(context)}
         />
     )
 };

@@ -16,29 +16,22 @@ import {
 import { useToast } from '@/components/ui/ToastProvider';
 import { useTranslations } from '@/hooks/use-translations';
 import { fetchApi } from '@/lib/api/client';
-import { type TranslationFieldState, TranslationStatus } from './TranslationStatus';
+import { TranslationStatus } from './TranslationStatus';
+import {
+    deriveTranslationFieldStates,
+    type TranslationSectionEntityType
+} from './translation-section.fields';
 
 // ---------------------------------------------------------------------------
 // Props
 // ---------------------------------------------------------------------------
 
 export interface TranslationSectionProps {
-    entityType: 'accommodation' | 'destination' | 'event' | 'post' | 'pointOfInterest';
+    /** HOS-2658: venue and experience added (venue also carries `entryNote`). */
+    entityType: TranslationSectionEntityType;
     entityId: string;
     entity: Record<string, unknown>;
 }
-
-// ---------------------------------------------------------------------------
-// Field config per entity type
-// ---------------------------------------------------------------------------
-
-const TRANSLATABLE_FIELDS: Record<string, string[]> = {
-    accommodation: ['name', 'summary', 'description', 'richDescription'],
-    destination: ['name', 'summary', 'description'],
-    event: ['name', 'summary', 'description'],
-    post: ['title', 'summary', 'content'],
-    pointOfInterest: ['name', 'description']
-};
 
 // ---------------------------------------------------------------------------
 // Component
@@ -49,37 +42,10 @@ export function TranslationSection({ entityType, entityId, entity }: Translation
     const { addToast } = useToast();
 
     // Derive translation states from entity data
-    const fieldStates = useMemo(() => {
-        const fields = TRANSLATABLE_FIELDS[entityType] ?? [];
-        const meta =
-            (entity.translationMeta as Record<
-                string,
-                Record<string, { autoTranslated?: boolean; translatedAt?: string }>
-            > | null) ?? {};
-
-        return fields.map((fieldType): TranslationFieldState => {
-            const i18nValue = entity[`${fieldType}I18n`] as Record<string, string> | null;
-            const fieldMeta = meta[fieldType] ?? {};
-
-            const locales: Record<
-                string,
-                { value: string; autoTranslated: boolean; translatedAt?: string }
-            > = {};
-
-            for (const locale of ['en', 'pt'] as const) {
-                const localeMeta = fieldMeta[locale];
-                const value = i18nValue?.[locale] ?? '';
-
-                locales[locale] = {
-                    value,
-                    autoTranslated: localeMeta?.autoTranslated ?? value.length > 0,
-                    translatedAt: localeMeta?.translatedAt
-                };
-            }
-
-            return { fieldType, locales };
-        });
-    }, [entity, entityType]);
+    const fieldStates = useMemo(
+        () => deriveTranslationFieldStates({ entityType, entity }),
+        [entity, entityType]
+    );
 
     const handleTranslateNow = useCallback(
         async (fieldType: string) => {

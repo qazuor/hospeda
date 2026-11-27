@@ -128,9 +128,11 @@ const INVENTORY = [
         'listingAccess|paidFieldsFilter'
     ],
     [
+        // HOS-2658: the effectiveSet read moved into ownerHasEntitlement
+        // (utils/listing-access/owner-has-entitlement.ts), which this route calls.
         'apps/api/src/routes/accommodation/protected/getById.ts',
         'restored',
-        'effectiveSet|paidFieldsFilter'
+        'ownerHasEntitlement|paidFieldsFilter'
     ],
     ['apps/api/src/routes/accommodation/protected/getWhatsApp.ts', 'restored', 'readEffectiveKeys'],
     [

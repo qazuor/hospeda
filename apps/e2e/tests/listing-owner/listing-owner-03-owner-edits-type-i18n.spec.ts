@@ -1,6 +1,6 @@
 /**
- * LISTING-OWNER-03 — Owner edits type select and i18n fields (TranslationPanel),
- * saves, and changes persist on the public ficha (SPEC-253 T-028).
+ * LISTING-OWNER-03 — Owner edits type select and a translation, saves, and
+ * changes persist (SPEC-253 T-028; translations reworked by HOS-2658).
  *
  * Actor: venue-owner-julieta@local.test (role VENUE_OWNER).
  *
@@ -11,11 +11,10 @@
  * What this validates (AC-1 + AC-3):
  *   1. Owner can change the `type` select on a venue listing; the value
  *      persists via PATCH and is reflected in the public ficha type badge.
- *   2. Owner can edit the es-locale `nameI18n` via the TranslationPanel;
- *      the value persists via PATCH.
- *      (Public ficha renders the primary `name` field, not nameI18n — we
- *      assert persistence by re-opening the editor and checking the input
- *      is pre-filled with the new value.)
+ *   2. Owner corrects «Nombre (EN)» in the shared translations section and
+ *      presses its own «Guardar» (HOS-2658): the value persists through
+ *      `PUT …/translations`, comes back after a reload with the «Corregida
+ *      por vos» pill, and the save-bar PATCH never carries `nameI18n`.
  *   3. Owner can change the `type` select on an experience listing; same
  *      persistence check via PATCH and public ficha type badge.
  *
@@ -30,7 +29,7 @@
  *
  * @see SPEC-253 spec.md § AC-1, AC-3
  * @see apps/web/src/components/listing/ListingEditor.client.tsx
- * @see apps/web/src/components/listing/ListingTranslationPanel.client.tsx
+ * @see apps/web/src/components/account/editor/ListingTranslationsSection.client.tsx
  * @see apps/e2e/fixtures/react19-input-helpers.ts
  */
 
@@ -109,7 +108,8 @@ test.describe('LISTING-OWNER-03: owner edits type + i18n fields — persist on p
     let experienceId: string;
     let originalVenueType: string;
     let originalExperienceType: string;
-    let originalVenueNameI18nEs: string | null;
+    let originalVenueNameI18n: Record<string, string> | null;
+    let originalVenueTranslationMeta: Record<string, unknown> | null;
 
     test.beforeAll(async () => {
         // Resolve listing IDs from slug.
@@ -135,13 +135,13 @@ test.describe('LISTING-OWNER-03: owner edits type + i18n fields — persist on p
         experienceId = expRow.id;
         originalExperienceType = expRow.type;
 
-        // Read the current nameI18n es value so we can restore it.
-        const nameI18nRows = await execSQL<{ name_i18n: Record<string, string> | null }>(
-            'SELECT name_i18n FROM venues WHERE slug = $1 LIMIT 1',
-            [VENUE_SLUG]
-        );
-        const nameI18nVal = nameI18nRows[0]?.name_i18n;
-        originalVenueNameI18nEs = nameI18nVal?.es ?? null;
+        // Read the translation columns so the manual correction can be undone.
+        const nameI18nRows = await execSQL<{
+            name_i18n: Record<string, string> | null;
+            translation_meta: Record<string, unknown> | null;
+        }>('SELECT name_i18n, translation_meta FROM venues WHERE slug = $1 LIMIT 1', [VENUE_SLUG]);
+        originalVenueNameI18n = nameI18nRows[0]?.name_i18n ?? null;
+        originalVenueTranslationMeta = nameI18nRows[0]?.translation_meta ?? null;
     });
 
     test.afterAll(async () => {
@@ -159,10 +159,15 @@ test.describe('LISTING-OWNER-03: owner edits type + i18n fields — persist on p
                 EXPERIENCE_SLUG
             ]);
         }
-        // Restore venue nameI18n.es to the original value (NULL or string).
+        // Restore both translation columns: a manual save writes the value AND
+        // its `translation_meta` entry (HOS-2658).
         await execSQL(
-            "UPDATE venues SET name_i18n = jsonb_set(COALESCE(name_i18n, '{}'::jsonb), '{es}', $1::jsonb) WHERE slug = $2",
-            [JSON.stringify(originalVenueNameI18nEs ?? null), VENUE_SLUG]
+            'UPDATE venues SET name_i18n = $1::jsonb, translation_meta = $2::jsonb WHERE slug = $3',
+            [
+                JSON.stringify(originalVenueNameI18n),
+                JSON.stringify(originalVenueTranslationMeta ?? {}),
+                VENUE_SLUG
+            ]
         );
     });
 
@@ -243,10 +248,12 @@ test.describe('LISTING-OWNER-03: owner edits type + i18n fields — persist on p
         expect(badgeText?.trim().length).toBeGreaterThan(0);
     });
 
-    test('owner fills nameI18n.es in TranslationPanel, persists via PATCH, re-opening editor shows pre-filled value', async ({
+    test('owner corrects Nombre (EN) in the translations section, it persists as manual and the PATCH never carries nameI18n', async ({
         page,
         context
     }) => {
+        test.setTimeout(90_000);
+
         // ── Sign in as Julieta (VENUE_OWNER) ─────────────────────────────
         const sessionCookie = await signInExistingUser(
             { email: JULIETA.email, password: JULIETA.password },
@@ -254,76 +261,75 @@ test.describe('LISTING-OWNER-03: owner edits type + i18n fields — persist on p
         );
         await authenticateContext(context, sessionCookie);
 
-        // ── Navigate to the venue editor's translations section ─────────
-        // HOS-1080: the translation panel has its own page now.
-        await page.goto(
-            listingEditorUrl({
-                webUrl: WEB_URL,
-                vertical: 'venue',
-                listingId: venueId,
-                section: 'traducciones'
-            }),
-            { waitUntil: 'load' }
-        );
+        // Every PATCH the page sends is recorded: the translations section must
+        // never route through the save bar (HOS-2658 AC-22).
+        const patchBodies: Record<string, unknown>[] = [];
+        page.on('request', (request) => {
+            if (
+                request.method() === 'PATCH' &&
+                request.url().includes(`/api/v1/protected/venues/${venueId}`)
+            ) {
+                patchBodies.push((request.postDataJSON() ?? {}) as Record<string, unknown>);
+            }
+        });
 
-        // Wait for real island hydration first (HOS-371): everything asserted
-        // below — the panel fieldset, the textarea being visible and editable —
-        // is server-rendered and therefore true before React attaches, so none
-        // of it gates the `setReactInputValue` call further down.
+        const translationsUrl = listingEditorUrl({
+            webUrl: WEB_URL,
+            vertical: 'venue',
+            listingId: venueId,
+            section: 'traducciones'
+        });
+        await page.goto(translationsUrl, { waitUntil: 'load' });
         await waitForListingEditorHydration({ page });
 
-        // The panel is a kit Section (a labelled region) titled 'Contenido por
-        // idioma'. The active locale tab is 'es' by default (matches the page
-        // locale 'es').
-        const translationPanelLegend = page.getByRole('region', { name: /contenido por idioma/i });
-        await expect(translationPanelLegend).toBeVisible({ timeout: 15_000 });
+        const section = page.getByRole('region', { name: /contenido por idioma/i });
+        await expect(section).toBeVisible({ timeout: 15_000 });
 
-        // The es tab is the default active tab (locale='es'). The nameI18n.es
-        // field has id `ctp-nameI18n-es` (built from `ctp-${field}-${activeLocale}`
-        // in ListingTranslationPanel.client.tsx).
-        const nameI18nEsTextarea = page.locator('#ctp-nameI18n-es');
-        await expect(nameI18nEsTextarea).toBeVisible({ timeout: 10_000 });
-        await expect(nameI18nEsTextarea).toBeEditable({ timeout: 10_000 });
+        // EN is the default tab. The control id is `lts-<field>-<locale>`, and
+        // its label reads «Nombre (EN)».
+        const nameEn = section.getByLabel(/^Nombre \(EN\)/);
+        await expect(nameEn).toBeEditable({ timeout: 15_000 });
 
-        const newI18nName = `E2E nombre es ${Date.now()}`;
+        const newEnName = `E2E name en ${Date.now()}`;
+        await setReactInputValue(nameEn, newEnName);
 
-        // Use the React 19 helper — ListingTranslationPanel textareas are also
-        // React-controlled and have the same dirty-tracking issue.
-        await setReactInputValue(nameI18nEsTextarea, newI18nName);
+        const pair = section.locator('[data-pair="name:en"]');
+        await expect(pair).toBeVisible({ timeout: 10_000 });
+        const put = page.waitForResponse(
+            (response) =>
+                response.url().includes(`/api/v1/protected/venues/${venueId}/translations`) &&
+                response.request().method() === 'PUT',
+            { timeout: 15_000 }
+        );
+        await pair.getByRole('button', { name: /^\s*guardar\s*$/i }).click();
+        const saved = await put;
+        expect(saved.ok(), `PUT failed: ${saved.status()} ${saved.url()}`).toBe(true);
 
-        const saved = await saveListingEditor({
-            page,
-            pathPattern: /\/protected\/venues\//
-        });
-        expect(saved.ok(), `PATCH failed: ${saved.status()} ${saved.url()}`).toBe(true);
-        expect(saved.url()).toContain(`/api/v1/protected/venues/${venueId}`);
-
-        const persistedRows = await execSQL<{ name_i18n: { es?: string } | null }>(
+        const persistedRows = await execSQL<{ name_i18n: { en?: string } | null }>(
             'SELECT name_i18n FROM venues WHERE id = $1 LIMIT 1',
             [venueId]
         );
-        expect(persistedRows[0]?.name_i18n?.es).toBe(newI18nName);
+        expect(persistedRows[0]?.name_i18n?.en).toBe(newEnName);
 
-        // ── Re-open editor: assert nameI18n.es textarea is pre-filled ────────
-        // Navigation to the same editor triggers a fresh SSR page with the
-        // updated DB data. The island reads initialData.nameI18n.es which the
-        // protected getById endpoint now returns.
-        await page.goto(
-            listingEditorUrl({
-                webUrl: WEB_URL,
-                vertical: 'venue',
-                listingId: venueId,
-                section: 'traducciones'
-            }),
-            { waitUntil: 'load' }
+        // ── Reload: the value and the manual pill come back from the API ───
+        await page.goto(translationsUrl, { waitUntil: 'load' });
+        await waitForListingEditorHydration({ page });
+        const sectionAfter = page.getByRole('region', { name: /contenido por idioma/i });
+        await expect(sectionAfter.getByLabel(/^Nombre \(EN\)/)).toHaveValue(newEnName, {
+            timeout: 15_000
+        });
+        const nameEnRow = sectionAfter
+            .locator('[data-translation-row]')
+            .filter({ has: page.locator('[data-pair="name:en"]') });
+        await expect(nameEnRow.locator('[data-pair-state="manual"]')).toHaveText(
+            'Corregida por vos',
+            { timeout: 10_000 }
         );
 
-        // Wait for the TranslationPanel to be ready again.
-        const nameI18nEsTextareaAfter = page.locator('#ctp-nameI18n-es');
-        await expect(nameI18nEsTextareaAfter).toBeVisible({ timeout: 15_000 });
-
-        // The textarea's value should now be the string we saved.
-        await expect(nameI18nEsTextareaAfter).toHaveValue(newI18nName, { timeout: 10_000 });
+        // No save-bar PATCH happened, and none could have carried a translation.
+        for (const body of patchBodies) {
+            expect(body).not.toHaveProperty('nameI18n');
+        }
     });
 
     test('owner changes experience type, persists via PATCH, public ficha reflects new type badge', async ({

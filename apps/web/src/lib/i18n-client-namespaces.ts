@@ -79,6 +79,7 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'account.editProfile',
     'account.editorFields',
     'account.editorPresentation',
+    'account.editorTranslations',
     'account.favorites',
     'account.help',
     // HOS-2495 — the shared photo editor island (`host/editor/PhotoSection`)

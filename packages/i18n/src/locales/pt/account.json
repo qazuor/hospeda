@@ -46,6 +46,49 @@
         "translationTitle": "Conteúdo por idioma",
         "missingHint": "Faltam traduções em {{locales}}. Abra cada aba de idioma para revisar os campos pendentes."
     },
+    "editorTranslations": {
+        "title": "Traduções",
+        "description": "Quando você salva um texto em espanhol, nós o traduzimos para o inglês e o português. Você pode corrigir qualquer tradução: a sua nunca é sobrescrita.",
+        "sourceHint": "Este texto é editado na seção «{{section}}».",
+        "field": {
+            "name": "Nome",
+            "summary": "Resumo",
+            "description": "Descrição",
+            "richDescription": "Descrição ampliada",
+            "entryNote": "Aviso de entrada"
+        },
+        "state": {
+            "auto": "Tradução automática",
+            "manual": "Corrigida por você",
+            "manualEmpty": "Sem tradução: o espanhol é exibido",
+            "stale": "O texto em espanhol mudou, esta tradução pode estar desatualizada",
+            "pending": "Tradução pendente",
+            "noQuota": "Sem tradução automática: você atingiu a cota do mês",
+            "noEntitlement": "Sem tradução automática: seu plano não a inclui",
+            "noSource": "Ainda não há texto em espanhol"
+        },
+        "action": {
+            "save": "Salvar",
+            "translateAi": "Traduzir com IA",
+            "translateAiDisabled": {
+                "noQuota": "Você atingiu a cota de traduções deste mês",
+                "noEntitlement": "Seu plano não inclui tradução com IA",
+                "noSource": "Escreva primeiro o texto em espanhol"
+            },
+            "refresh": "Atualizar",
+            "retry": "Tentar novamente"
+        },
+        "toast": {
+            "saved": "Tradução salva",
+            "aiDone": "Tradução gerada",
+            "aiFailed": "Não conseguimos traduzir agora. Tente novamente mais tarde.",
+            "loadFailed": "Não conseguimos carregar as traduções"
+        },
+        "manualHint": "Se você a editar, ela fica sendo sua e a IA não a altera mais.",
+        "pendingHint": "Há traduções em andamento. Toque em «Atualizar» para ver se já estão prontas.",
+        "reviewCount": "{{count}} a revisar",
+        "loading": "Carregando traduções…"
+    },
     "whatsNewModal": {
         "title": "Novidades",
         "close": "Fechar",

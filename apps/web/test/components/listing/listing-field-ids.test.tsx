@@ -73,6 +73,17 @@ vi.mock('@/lib/api/endpoints-protected', () => ({
     }
 }));
 
+// HOS-2658: the editor mounts the shared translations section, which reads its
+// pairs on mount. This suite checks field ids only, so the read never settles.
+vi.mock('@/lib/api/endpoints-protected-translations', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@/lib/api/endpoints-protected-translations')>()),
+    listingTranslationsApi: {
+        get: vi.fn(() => new Promise(() => undefined)),
+        saveManual: vi.fn(),
+        translateWithAi: vi.fn()
+    }
+}));
+
 vi.mock('@/lib/env', () => ({ getApiUrl: () => 'http://api.test' }));
 vi.mock('@/lib/logger', () => ({ webLogger: { warn: vi.fn() } }));
 

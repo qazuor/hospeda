@@ -7,9 +7,13 @@
  * exists, and this route redirects to the hub when it does not — rendering an
  * empty shell would be a dead end reached from a link that should not have been
  * shown in the first place.
+ *
+ * HOS-2658: the shared ListingTranslationsSection fetches the per-pair state
+ * client-side, so this frontmatter reads no session (session-blind guard).
  */
 
-import { TranslationPanel } from '@/components/host/editor/TranslationPanel.client';
+import { ListingTranslationsSection } from '@/components/account/editor/ListingTranslationsSection.client';
+import { sourceSectionLabelKeysFor } from '@/components/account/editor/listing-translations-section.helpers';
 import EditorSectionLayout from '@/layouts/EditorSectionLayout.astro';
 import { buildEditorHubUrl } from '@/lib/editor/accommodation-editor-sections';
 import { resolveEditorPage } from '@/lib/editor/resolve-editor-page';
@@ -36,6 +40,10 @@ if (data.translations === null) {
 }
 
 const { t } = createTranslations(locale);
+const { labelKeys } = sourceSectionLabelKeysFor({ vertical: 'accommodation' });
+const sourceSectionLabels = Object.fromEntries(
+	Object.entries(labelKeys).map(([field, labelKey]) => [field, t(labelKey)])
+);
 ---
 
 <EditorSectionLayout
@@ -47,10 +55,11 @@ const { t } = createTranslations(locale);
 	hasTranslations={true}
 	title={t('host.properties.editor.translation.sectionTitle', 'Traducciones')}
 >
-	<TranslationPanel
+	<ListingTranslationsSection
 		locale={locale}
-		accommodationId={accommodationId}
-		translations={data.translations}
+		vertical="accommodation"
+		listingId={accommodationId}
+		sourceSectionLabels={sourceSectionLabels}
 		client:load
 	/>
 </EditorSectionLayout>

@@ -15,7 +15,7 @@ import {
     VenueOwnerUpdateInputSchema,
     VenueUpdateInputSchema
 } from '../../../src/entities/venue/venue.crud.schema.js';
-import { VenueSchema } from '../../../src/entities/venue/venue.schema.js';
+import { VenueEntryNoteI18nSchema, VenueSchema } from '../../../src/entities/venue/venue.schema.js';
 import { PublicationStatusEnum } from '../../../src/enums/publication-status.enum.js';
 import {
     createInvalidVenue,
@@ -225,5 +225,24 @@ describe('VenueAdminSearchSchema.status filters by publicationStatus (H7)', () =
 
     it('rejects the old lifecycle value ACTIVE', () => {
         expect(VenueAdminSearchSchema.safeParse({ status: 'ACTIVE' }).success).toBe(false);
+    });
+});
+
+describe('VenueEntryNoteI18nSchema (HOS-2658)', () => {
+    it('accepts 200 characters per locale and rejects a 201-character en', () => {
+        // Arrange
+        const atLimit = { es: 'a'.repeat(200), en: 'b'.repeat(200), pt: 'c'.repeat(200) };
+        const overLimit = { ...atLimit, en: 'b'.repeat(201) };
+
+        // Act
+        const ok = VenueEntryNoteI18nSchema.safeParse(atLimit);
+        const tooLong = VenueEntryNoteI18nSchema.safeParse(overLimit);
+
+        // Assert
+        expect(ok.success).toBe(true);
+        expect(tooLong.success).toBe(false);
+        expect(tooLong.error?.issues.map((issue) => [issue.path.join('.'), issue.message])).toEqual(
+            [['en', 'zodError.venue.entryNote.tooLong']]
+        );
     });
 });

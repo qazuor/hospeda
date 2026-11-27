@@ -22,6 +22,7 @@ import { FaqManager } from '@/components/faqs/FaqManager';
 import { PageTabs, venueTabs } from '@/components/layout/PageTabs';
 import { RevalidateEntityButton } from '@/components/RevalidateEntityButton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui-wrapped';
+import { TranslationSection } from '@/features/content/components/TranslationSection';
 import { ListingLocationExceptionCard } from '@/features/location-exception-requests/components/ListingLocationExceptionCard';
 import { useVenuePage } from '@/features/venue';
 import { useTranslations } from '@/hooks/use-translations';
@@ -91,6 +92,16 @@ function VenueEditPage() {
                                     listingId={id}
                                 />
                             </div>
+                            {/* HOS-2658: staff corrections follow the owner model (AC-30). */}
+                            {entityData.entity && (
+                                <div className="mt-6">
+                                    <TranslationSection
+                                        entityType="venue"
+                                        entityId={id}
+                                        entity={entityData.entity as Record<string, unknown>}
+                                    />
+                                </div>
+                            )}
                         </TabsContent>
 
                         <TabsContent

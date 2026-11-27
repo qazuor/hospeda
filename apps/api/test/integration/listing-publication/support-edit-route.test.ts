@@ -416,6 +416,13 @@ describe('TEST:4.3:3 action 15 edits a BOLICHE nightInfo note (AC:4:10)', () => 
             sql`SELECT entry_note_i18n AS note FROM venues WHERE id = ${id}::uuid`
         );
         expect(stored.rows[0]).toMatchObject({ note });
+        // HOS-2658: the staff en/pt land through the single writer as MANUAL pairs.
+        const meta = await getDb().execute(
+            sql`SELECT translation_meta -> 'entryNote' AS meta FROM venues WHERE id = ${id}::uuid`
+        );
+        expect(meta.rows[0]).toMatchObject({
+            meta: { en: { autoTranslated: false }, pt: { autoTranslated: false } }
+        });
         const events = await adminEditedEvents(id);
         expect(events).toHaveLength(1);
         expect(events[0]).toMatchObject({ actorId: admin, reason: REASON });

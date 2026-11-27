@@ -2289,9 +2289,8 @@ function extractFieldStatus(rawI18n: unknown, rawPlain: unknown): TranslatableFi
 /**
  * Extracts translation status data from a raw accommodation API response.
  *
- * Returns an {@link AccommodationTranslationData} object that the host-facing
- * TranslationPanel uses to determine which locales already have content and
- * which ones are missing — WITHOUT touching or polluting
+ * Returns an {@link AccommodationTranslationData} object that the accommodation
+ * translations page uses (HOS-2658: only to decide its redirect to the hub) — WITHOUT touching or polluting
  * {@link AccommodationEditData}, which exclusively drives the PATCH diff.
  *
  * BETA-199: `richDescription` is the premium pair, so the protected GET omits BOTH

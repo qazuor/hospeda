@@ -21,20 +21,6 @@ vi.mock('../../../src/components/listing/ListingEditor.module.css', () => ({
     default: new Proxy({} as Record<string, string>, { get: (_t, prop) => String(prop) })
 }));
 
-// Stub out the TranslationPanel so its "Descripción ampliada" label does not
-// collide with the same label on the standalone richDescription textarea inside
-// the editor itself.  Integration between the two components is tested separately
-// in ListingTranslationPanel.test.tsx.
-vi.mock('../../../src/components/listing/ListingTranslationPanel.client', () => ({
-    ListingTranslationPanel: () => null,
-    parseListingI18nValues: () => ({
-        nameI18n: { es: '', en: '', pt: '' },
-        summaryI18n: { es: '', en: '', pt: '' },
-        descriptionI18n: { es: '', en: '', pt: '' },
-        richDescriptionI18n: { es: '', en: '', pt: '' }
-    })
-}));
-
 vi.mock('../../../src/lib/i18n', async (importOriginal) => ({
     // The kit save bar (HOS-2487) reads its copy through the real `createT`.
     ...(await importOriginal<typeof import('../../../src/lib/i18n')>()),

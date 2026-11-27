@@ -1,6 +1,6 @@
 import type { Venue } from '@repo/schemas';
 import { PublicationStatusEnum } from '@repo/schemas';
-import { and, count, desc, eq, isNull } from 'drizzle-orm';
+import { and, count, desc, eq, isNull, type SQL, sql } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { rVenueAmenity } from '../../schemas/venue/r_venue_amenity.dbschema.ts';
 import { rVenueFeature } from '../../schemas/venue/r_venue_feature.dbschema.ts';
@@ -95,6 +95,29 @@ export class VenueModel extends BaseModelImpl<Venue> {
 
     protected getTableName(): string {
         return 'venues';
+    }
+
+    /**
+     * Builds the update value that rewrites ONLY the Spanish source of
+     * `entryNoteI18n` (HOS-2658, AC-25 / DL-9).
+     *
+     * The `en` / `pt` pairs belong to the translation pair writer, which edits
+     * them under a row lock. A JSON object built from a snapshot read earlier in
+     * the request would put back the `en` / `pt` that snapshot held, erasing a
+     * manual correction committed in between. This expression reads `en` / `pt`
+     * from the row the UPDATE itself locks (re-evaluated on the latest committed
+     * version under READ COMMITTED), so a concurrent writer is either fully
+     * before it (its values are kept) or fully after it.
+     *
+     * @param input - Object with `es`, the new Spanish source.
+     * @returns Object with `entryNoteI18n`: the SQL expression to use as the column value.
+     */
+    buildEntryNoteSourceUpdate({ es }: { readonly es: string }): {
+        readonly entryNoteI18n: SQL;
+    } {
+        return {
+            entryNoteI18n: sql`jsonb_build_object('es', ${es}::text, 'en', COALESCE(${venues.entryNoteI18n} ->> 'en', ''), 'pt', COALESCE(${venues.entryNoteI18n} ->> 'pt', ''))`
+        };
     }
 
     /**
