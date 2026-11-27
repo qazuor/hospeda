@@ -19,8 +19,8 @@
  * Represents an inline mark (formatting) applied to text.
  */
 export interface TiptapMark {
-    readonly type: 'bold' | 'italic' | 'link' | 'code' | 'underline';
-    readonly attrs?: Record<string, string>;
+    readonly type: 'bold' | 'italic' | 'link' | 'code' | 'underline' | 'strike';
+    readonly attrs?: Record<string, string | null>;
 }
 
 /**
@@ -31,7 +31,7 @@ export interface TiptapNode {
     readonly content?: ReadonlyArray<TiptapNode>;
     readonly text?: string;
     readonly marks?: ReadonlyArray<TiptapMark>;
-    readonly attrs?: Record<string, string | number | boolean>;
+    readonly attrs?: Record<string, string | number | boolean | null>;
 }
 
 /**

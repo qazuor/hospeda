@@ -1,63 +1,19 @@
-import { DynamicBlockConfigSchema, ServiceErrorCode } from '@repo/schemas';
-import type { TiptapNode } from '@repo/utils';
+import type { ResolvedNewsletterContent } from '@repo/schemas';
+import {
+    DynamicBlockConfigSchema,
+    NewsletterDocumentSchema,
+    ResolvedNewsletterContentSchema,
+    ServiceErrorCode
+} from '@repo/schemas';
 import { z } from 'zod';
 import { ServiceError } from '../../../types/index.js';
+import { DynamicResolutionError } from './dynamic-resolution.error.js';
 import type { DynamicSourcePort } from './dynamic-source.port.js';
 import type { ResolutionReport } from './resolution.types.js';
 import { resolveBlocks } from './resolve-blocks.js';
 
-const nodeSchema: z.ZodType<TiptapNode> = z.lazy(() =>
-    z.object({
-        type: z.string(),
-        content: z.array(nodeSchema).optional(),
-        text: z.string().optional(),
-        attrs: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])).optional(),
-        marks: z
-            .array(
-                z.object({
-                    type: z.enum(['bold', 'italic', 'link', 'code', 'underline']),
-                    attrs: z.record(z.string(), z.string()).optional()
-                })
-            )
-            .optional()
-    })
-);
-
-/** Validated TipTap content used by the injected newsletter renderer. */
-export const NewsletterDocumentSchema = z.object({
-    type: z.literal('doc'),
-    content: z.array(nodeSchema).default([])
-});
-
-const cardSchema = z.object({
-    name: z.string(),
-    summary: z.string(),
-    imageUrl: z.string().nullable(),
-    url: z.string()
-});
-const blockSchema = z.object({
-    blockKey: z.string().min(1),
-    hidden: z.boolean(),
-    itemIds: z.array(z.string()),
-    cards: z.record(
-        z.string(),
-        z.object({
-            es: cardSchema.optional(),
-            en: cardSchema.optional(),
-            pt: cardSchema.optional()
-        })
-    )
-});
-
-/** Versioned JSONB contract; maps are deliberately projected to plain records. */
-export const ResolvedNewsletterContentSchema = z.object({
-    version: z.literal(1),
-    doc: NewsletterDocumentSchema,
-    blocks: z.array(blockSchema)
-});
-
-/** Frozen document and localized card data, independent of the notifications package. */
-export type ResolvedNewsletterContent = z.infer<typeof ResolvedNewsletterContentSchema>;
+export type { ResolvedNewsletterContent } from '@repo/schemas';
+export { NewsletterDocumentSchema, ResolvedNewsletterContentSchema } from '@repo/schemas';
 
 /** Detect dynamic nodes recursively so malformed nested blocks also fail closed. */
 export function hasDynamicBlocks({ doc }: { readonly doc: unknown }): boolean {
@@ -92,7 +48,12 @@ export async function resolveCampaignContentWithReport(input: {
     try {
         return await resolveDynamicContent(input);
     } catch (error) {
-        if (error instanceof z.ZodError || error instanceof SyntaxError) {
+        if (
+            error instanceof z.ZodError ||
+            error instanceof SyntaxError ||
+            (error instanceof DynamicResolutionError &&
+                error.code === 'DUPLICATE_DYNAMIC_BLOCK_KEY')
+        ) {
             throw new ServiceError(
                 ServiceErrorCode.VALIDATION_ERROR,
                 'Invalid dynamic block configuration',

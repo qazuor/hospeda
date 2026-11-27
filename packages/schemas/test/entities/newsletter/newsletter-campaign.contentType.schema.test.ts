@@ -56,8 +56,28 @@ describe('NewsletterCampaignSchema resolved content', () => {
         '2026-11-26T12:00:00Z'
     ])('preserves resolved documents and timestamp %s', (resolvedAt) => {
         const resolvedBodyJson = {
-            type: 'doc',
-            content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Resolved' }] }]
+            version: 1,
+            doc: {
+                type: 'doc',
+                content: [{ type: 'dynamicBlock', attrs: { blockKey: 'newest-block' } }]
+            },
+            blocks: [
+                {
+                    blockKey: 'newest-block',
+                    hidden: false,
+                    itemIds: ['item-one'],
+                    cards: {
+                        'item-one': {
+                            es: {
+                                name: 'House',
+                                summary: 'Stay',
+                                imageUrl: null,
+                                url: 'https://hospeda.test/house/'
+                            }
+                        }
+                    }
+                }
+            ]
         };
         const parsed = NewsletterCampaignSchema.parse({
             ...campaign,

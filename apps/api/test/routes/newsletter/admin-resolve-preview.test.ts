@@ -125,6 +125,23 @@ beforeEach(() => {
 });
 
 describe('real resolve-preview path', () => {
+    it('returns 400 for duplicate keys through the real resolver normalization', async () => {
+        const block = {
+            type: 'dynamicBlock',
+            attrs: { blockKey: config.blockKey, config: JSON.stringify(config) }
+        };
+        state.rows[0] = {
+            ...state.rows[0],
+            bodyJson: { type: 'doc', content: [block, block] }
+        };
+        const response = await request();
+        expect(state.preview).toHaveBeenCalledOnce();
+        expect(response.status).toBe(400);
+        expect((await response.json()).error.code).toBe('INVALID_DYNAMIC_BLOCK');
+        expect(state.fetchCandidates).not.toHaveBeenCalled();
+        expect(state.update).not.toHaveBeenCalled();
+        expect(state.insert).not.toHaveBeenCalled();
+    });
     it('renders cards and diagnostics while leaving the entire campaign row unchanged', async () => {
         const before = structuredClone(state.rows);
         const response = await request();

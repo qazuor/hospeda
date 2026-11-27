@@ -1,5 +1,8 @@
 import { Button } from '@/components/ui/button';
-import { useCampaignResolution } from '@/hooks/newsletter/use-campaign-resolution';
+import {
+    getBelowMinimumReport,
+    useCampaignResolution
+} from '@/hooks/newsletter/use-campaign-resolution';
 import { useTranslations } from '@/hooks/use-translations';
 import { ResolutionReport } from './ResolutionReport';
 
@@ -13,11 +16,20 @@ export function ResolvedCampaignPreview({
 }) {
     const { t } = useTranslations();
     const query = useCampaignResolution({ id: campaignId ?? '', revision });
+    const failedReport = getBelowMinimumReport({ error: query.error });
     if (!campaignId) return <p>{t('admin-newsletter.dynamicBlock.saveFirst')}</p>;
     if (query.isError)
         return (
             <div role="alert">
-                {t('admin-newsletter.dynamicBlock.previewError')}
+                {failedReport
+                    ? t('admin-newsletter.dynamicBlock.sendBlocked', {
+                          blocks: failedReport.blocks
+                              .filter((block) => block.belowMin)
+                              .map((block) => block.blockKey)
+                              .join(', ')
+                      })
+                    : t('admin-newsletter.dynamicBlock.previewError')}
+                {failedReport && <ResolutionReport report={failedReport} />}
                 <Button
                     type="button"
                     onClick={() => void query.refetch()}

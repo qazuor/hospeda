@@ -160,6 +160,32 @@ describe('SendConfirmDialog dynamic resolution', () => {
             expect.objectContaining({ enabled: true, id: campaign.id })
         );
     });
+    it('explains a below-minimum preview rejection and keeps confirmation disabled', () => {
+        mockResolution.mockReturnValue({
+            isError: true,
+            error: new ApiError('Blocked', {
+                status: 422,
+                body: { error: { code: 'DYNAMIC_BLOCK_BELOW_MIN', details: { report } } }
+            })
+        });
+        render(
+            <SendConfirmDialog
+                open
+                onOpenChange={vi.fn()}
+                campaign={dynamicCampaign}
+            />
+        );
+        expect(screen.getByRole('alert')).toHaveTextContent(/sendBlocked.*block-one/);
+        expect(screen.getByText('block-one')).toBeInTheDocument();
+        expect(screen.getByText('admin-newsletter.dynamicBlock.found: 1')).toBeInTheDocument();
+        expect(screen.getByText(/actions.skip_run/)).toBeInTheDocument();
+        const confirm = screen.getByRole('button', {
+            name: 'admin-newsletter.campaigns.confirmSendButton'
+        });
+        expect(confirm).toBeDisabled();
+        fireEvent.click(confirm);
+        expect(mockSend).not.toHaveBeenCalled();
+    });
     it('prevents confirmation before the report is available', () => {
         mockResolution.mockReturnValue({ isLoading: true });
         render(

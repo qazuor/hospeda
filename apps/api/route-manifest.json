@@ -1507,11 +1507,19 @@
         },
         {
             "method": "POST",
+            "path": "/api/v1/admin/newsletter/campaigns/:id/resolve-preview"
+        },
+        {
+            "method": "POST",
             "path": "/api/v1/admin/newsletter/campaigns/:id/send"
         },
         {
             "method": "POST",
             "path": "/api/v1/admin/newsletter/campaigns/:id/test-send"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/admin/newsletter/dynamic-sources"
         },
         {
             "method": "GET",

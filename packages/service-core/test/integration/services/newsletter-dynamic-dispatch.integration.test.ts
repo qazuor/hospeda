@@ -6,13 +6,14 @@ import {
     newsletterSubscribers,
     users
 } from '@repo/db';
-import { PermissionEnum, RoleEnum } from '@repo/schemas';
+import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { persistCampaignDispatch } from '../../../src/services/newsletter/dynamic/persist-campaign-dispatch.js';
 import { NewsletterCampaignService } from '../../../src/services/newsletter/newsletter-campaign.service.js';
 import {
     dynamicDocument,
     dynamicPort,
+    frozenCards,
     frozenContent
 } from '../../services/newsletter/dynamic/content.fixtures.js';
 import { closeServiceTestPool, getServiceTestDb } from './helpers.js';
@@ -35,6 +36,90 @@ async function createCampaign() {
 }
 
 describe('dynamic campaign dispatch transaction (real PostgreSQL)', () => {
+    it('allows exactly one concurrent send and preserves the winning snapshot and counters', async () => {
+        const campaign = await createCampaign();
+        let arrivals = 0;
+        let release: () => void = () => undefined;
+        const bothResolving = new Promise<void>((resolve) => {
+            release = resolve;
+        });
+        const enqueueBatches = vi.fn(async () => ({ data: { jobsEnqueued: 1 } }));
+        const makeService = ({ name }: { name: string }) => {
+            const port = dynamicPort();
+            return new NewsletterCampaignService(
+                {},
+                {
+                    dynamicSourcePort: {
+                        ...port,
+                        loadCards: async (input) => {
+                            arrivals += 1;
+                            if (arrivals === 2) release();
+                            await bothResolving;
+                            const cards = await port.loadCards(input);
+                            return new Map(
+                                [...cards].map(([id, localized]) => [
+                                    id,
+                                    {
+                                        ...localized,
+                                        es: { ...frozenCards.es, name }
+                                    }
+                                ])
+                            );
+                        }
+                    },
+                    deliveryService: {
+                        enqueueBatches,
+                        sendTestEmail: vi.fn(),
+                        sendTestEmailFromContent: vi.fn(),
+                        bulkSkipPending: vi.fn()
+                    }
+                }
+            );
+        };
+        const actor = {
+            id: creatorId,
+            roles: [RoleEnum.ADMIN],
+            permissions: [PermissionEnum.NEWSLETTER_CAMPAIGN_SEND]
+        };
+        const results = await Promise.all([
+            makeService({ name: 'First snapshot' }).send(actor, {
+                id: campaign.id,
+                ignoreSoftCap: true
+            }),
+            makeService({ name: 'Second snapshot' }).send(actor, {
+                id: campaign.id,
+                ignoreSoftCap: true
+            })
+        ]);
+        expect(results.filter((result) => result.data)).toHaveLength(1);
+        expect(results.filter((result) => result.error)).toHaveLength(1);
+        const loser = results.find((result) => result.error);
+        expect(loser?.error?.code).toBe(ServiceErrorCode.ALREADY_EXISTS);
+        expect(loser?.error?.reason).toBe('CAMPAIGN_NOT_SENDABLE');
+        expect(enqueueBatches).toHaveBeenCalledOnce();
+        const winnerName = results[0]?.data ? 'First snapshot' : 'Second snapshot';
+        const expected = structuredClone(frozenContent());
+        for (const block of expected.blocks) {
+            block.cards['item-a'].es.name = winnerName;
+            block.cards['item-b'].es.name = winnerName;
+        }
+        const [saved] = await getServiceTestDb()
+            .select()
+            .from(newsletterCampaigns)
+            .where(eq(newsletterCampaigns.id, campaign.id));
+        expect(saved?.resolvedBodyJson).toEqual(expected);
+        expect(saved?.totalRecipients).toBe(1);
+        expect(saved?.totalSoftcapped).toBe(0);
+        expect(saved?.status).toBe('sending');
+        const deliveries = await getServiceTestDb()
+            .select({
+                subscriberId: newsletterCampaignDeliveries.subscriberId,
+                status: newsletterCampaignDeliveries.status
+            })
+            .from(newsletterCampaignDeliveries)
+            .where(eq(newsletterCampaignDeliveries.campaignId, campaign.id));
+        expect(deliveries).toEqual([{ subscriberId, status: 'pending' }]);
+    });
     beforeAll(async () => {
         const db = getServiceTestDb();
         await db.insert(users).values({

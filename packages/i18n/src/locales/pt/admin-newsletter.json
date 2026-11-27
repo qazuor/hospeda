@@ -28,7 +28,7 @@
         "sendBlocked": "A campanha permanece como rascunho. Estes blocos estão abaixo do mínimo: {{blocks}}.",
         "entities": {
             "ACCOMMODATION": "Hospedagens",
-            "VENUE": "Gastronomia e vida noturna",
+            "VENUE": "Comer e sair",
             "POST": "Artigos",
             "EVENT": "Eventos",
             "EXPERIENCE": "Experiências",

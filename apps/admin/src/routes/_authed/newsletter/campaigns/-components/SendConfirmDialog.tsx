@@ -86,7 +86,11 @@ export function SendConfirmDialog({ open, onOpenChange, campaign }: SendConfirmD
     });
 
     const sendMutation = useSendCampaign(campaign.id);
-    const visibleReport = failedReport ?? (dynamic ? resolution.data?.report : undefined);
+    const previewFailureReport = dynamic
+        ? getBelowMinimumReport({ error: resolution.error })
+        : null;
+    const visibleReport =
+        failedReport ?? previewFailureReport ?? (dynamic ? resolution.data?.report : undefined);
 
     const audienceCount = audience?.eligible ?? null;
     const softcappedCount = audience?.softCapped ?? 0;
@@ -258,7 +262,14 @@ export function SendConfirmDialog({ open, onOpenChange, campaign }: SendConfirmD
                 )}
                 {dynamic && resolution.isError && (
                     <div role="alert">
-                        {t('admin-newsletter.dynamicBlock.previewError')}
+                        {previewFailureReport
+                            ? t('admin-newsletter.dynamicBlock.sendBlocked', {
+                                  blocks: previewFailureReport.blocks
+                                      .filter((block) => block.belowMin)
+                                      .map((block) => block.blockKey)
+                                      .join(', ')
+                              })
+                            : t('admin-newsletter.dynamicBlock.previewError')}
                         <Button
                             type="button"
                             onClick={() => void resolution.refetch()}

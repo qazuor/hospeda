@@ -328,6 +328,16 @@ afterEach(() => {
 // create
 // ===========================================================================
 
+/**
+ * Campaign UPDATE where() result: awaitable for the final status write and
+ * `.returning()`-able for the atomic draft claim in persistCampaignDispatch.
+ */
+function claimableWhere() {
+    return Object.assign(Promise.resolve([]), {
+        returning: vi.fn(async () => [{ id: CAMPAIGN_ID }])
+    });
+}
+
 describe('dynamic campaign content (HOS-2636)', () => {
     function arrangeSend() {
         const values = vi.fn(() => ({
@@ -335,7 +345,7 @@ describe('dynamic campaign content (HOS-2636)', () => {
                 returning: async () => [{ id: DELIVERY_ID_1 }, { id: DELIVERY_ID_2 }]
             })
         }));
-        const set = vi.fn(() => ({ where: vi.fn().mockResolvedValue([]) }));
+        const set = vi.fn(() => ({ where: vi.fn(() => claimableWhere()) }));
         txState.insert.mockReturnValue({ values });
         txState.update.mockReturnValue({ set });
         const deliveryService = makeDeliveryService();
@@ -405,7 +415,9 @@ describe('dynamic campaign content (HOS-2636)', () => {
                 }
             ]
         ]);
-        const saved = (set.mock.calls as unknown[][])[0]?.[0] as {
+        // First UPDATE is the atomic draft claim; the snapshot lands in the final one.
+        expect((set.mock.calls as unknown[][])[0]?.[0]).toEqual({ status: 'sending' });
+        const saved = (set.mock.calls as unknown[][]).at(-1)?.[0] as {
             resolvedBodyJson: unknown;
             resolvedAt: Date;
         };
@@ -420,7 +432,9 @@ describe('dynamic campaign content (HOS-2636)', () => {
         enqueueQueryResponse([makeCampaignRow()]);
         expect((await svc.send(makeAdminActor(), { id: CAMPAIGN_ID })).error).toBeUndefined();
         expect(fetch).not.toHaveBeenCalled();
-        const saved = (set.mock.calls as unknown[][])[0]?.[0] as Record<string, unknown>;
+        expect(set).toHaveBeenCalledTimes(2);
+        const saved = (set.mock.calls as unknown[][]).at(-1)?.[0] as Record<string, unknown>;
+        expect(saved.status).toBe('sending');
         expect(saved.resolvedBodyJson).toBeUndefined();
         expect(saved.resolvedAt).toBeUndefined();
     });
@@ -619,7 +633,7 @@ describe('NewsletterCampaignService.send', () => {
 
         // tx.update (campaign) → resolves to []
         {
-            const whereMock = Promise.resolve([]);
+            const whereMock = claimableWhere();
             const setMock = { where: vi.fn(() => whereMock) };
             txState.update.mockReturnValue({ set: vi.fn(() => setMock) });
         }
@@ -644,7 +658,7 @@ describe('NewsletterCampaignService.send', () => {
             onConflictDoNothing: vi.fn(() => ({ returning: vi.fn(() => returningMock) }))
         };
         txState.insert.mockReturnValue({ values: vi.fn(() => valuesMock) });
-        const set = vi.fn(() => ({ where: vi.fn(() => Promise.resolve([])) }));
+        const set = vi.fn(() => ({ where: vi.fn(() => claimableWhere()) }));
         txState.update.mockReturnValue({ set });
         return set;
     }
@@ -1259,7 +1273,7 @@ describe('NewsletterCampaignService — contentType segmentation', () => {
         const onConflictMock = { returning: vi.fn(() => returningMock) };
         const valuesMock = { onConflictDoNothing: vi.fn(() => onConflictMock) };
         txState.insert.mockReturnValue({ values: vi.fn(() => valuesMock) });
-        const whereMock = Promise.resolve([]);
+        const whereMock = claimableWhere();
         const setMock = { where: vi.fn(() => whereMock) };
         txState.update.mockReturnValue({ set: vi.fn(() => setMock) });
 
@@ -1293,7 +1307,7 @@ describe('NewsletterCampaignService — contentType segmentation', () => {
         const onConflictMock = { returning: vi.fn(() => returningMock) };
         const valuesMock = { onConflictDoNothing: vi.fn(() => onConflictMock) };
         txState.insert.mockReturnValue({ values: vi.fn(() => valuesMock) });
-        const whereMock = Promise.resolve([]);
+        const whereMock = claimableWhere();
         const setMock = { where: vi.fn(() => whereMock) };
         txState.update.mockReturnValue({ set: vi.fn(() => setMock) });
 

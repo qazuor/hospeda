@@ -1,5 +1,7 @@
 import { newsletterCampaignDeliveries, newsletterCampaigns } from '@repo/db';
-import { eq } from 'drizzle-orm';
+import { ServiceErrorCode } from '@repo/schemas';
+import { and, eq, isNull } from 'drizzle-orm';
+import { ServiceError } from '../../../types/index.js';
 import { withServiceTransaction } from '../../../utils/transaction.js';
 import type { ResolvedNewsletterContent } from './campaign-content.js';
 
@@ -14,6 +16,25 @@ export async function persistCampaignDispatch(input: {
 }): Promise<string[]> {
     return withServiceTransaction(async ({ tx }) => {
         if (!tx) throw new Error('Campaign dispatch requires a transaction');
+        const claimed = await tx
+            .update(newsletterCampaigns)
+            .set({ status: 'sending' })
+            .where(
+                and(
+                    eq(newsletterCampaigns.id, input.campaignId),
+                    eq(newsletterCampaigns.status, 'draft'),
+                    isNull(newsletterCampaigns.deletedAt)
+                )
+            )
+            .returning({ id: newsletterCampaigns.id });
+        if (claimed.length === 0) {
+            throw new ServiceError(
+                ServiceErrorCode.ALREADY_EXISTS,
+                'Campaign is not sendable',
+                undefined,
+                'CAMPAIGN_NOT_SENDABLE'
+            );
+        }
         const inserted = await tx
             .insert(newsletterCampaignDeliveries)
             .values(
