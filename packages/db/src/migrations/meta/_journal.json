@@ -1800,6 +1800,13 @@
       "when": 1795729729110,
       "tag": "0256_hos2658_venue_experience_translation_meta",
       "breakpoints": true
+    },
+    {
+      "idx": 257,
+      "version": "7",
+      "when": 1795742673773,
+      "tag": "0257_hos2636_newsletter_campaign_resolved_body",
+      "breakpoints": true
     }
   ]
 }
