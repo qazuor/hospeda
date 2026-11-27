@@ -152,6 +152,59 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4845, #4843, #4837
+    {
+        id: '2026-11-27-price-alert-target-price',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['USER'],
+        title: {
+            es: 'Elegí cuándo te avisamos si baja un precio',
+            en: 'Choose when we tell you a price drops',
+            pt: 'Escolha quando avisamos que um preço baixou'
+        },
+        body: {
+            es: 'Al crear una alerta de precio podés poner un porcentaje de baja o directamente el precio que querés pagar, y ves al instante a qué precio te vamos a avisar. La alerta activa muestra ese umbral. Además, el aviso para guardar favoritos sin cuenta ahora se lee mejor en el celular.',
+            en: 'When you create a price alert you can set a percentage drop or simply the price you want to pay, and you instantly see the price at which we will notify you. The active alert shows that threshold. Also, the notice about saving favorites without an account is now easier to read on your phone.',
+            pt: 'Ao criar um alerta de preço, você pode definir uma porcentagem de queda ou diretamente o preço que quer pagar, e vê na hora a que preço vamos avisar. O alerta ativo mostra esse limite. Além disso, o aviso para salvar favoritos sem conta agora se lê melhor no celular.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4846
+    {
+        id: '2026-11-27-granted-plan-shown-as-current',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['USER'],
+        title: {
+            es: 'Si te cedieron un plan, lo ves como tu plan actual',
+            en: 'If you were granted a plan, you see it as your current plan',
+            pt: 'Se cederam um plano a você, ele aparece como seu plano atual'
+        },
+        body: {
+            es: 'Si tenés Turista VIP cedido, el menú, las páginas de planes y el chat con IA lo muestran como tu plan actual, sin ofrecerte comprarlo de nuevo.',
+            en: 'If you have a granted Tourist VIP, the menu, the plans pages and the AI chat show it as your current plan, without offering you to buy it again.',
+            pt: 'Se você tem o Turista VIP cedido, o menu, as páginas de planos e o chat com IA o mostram como seu plano atual, sem oferecer a compra novamente.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4844
+    {
+        id: '2026-11-27-price-alert-hidden-without-price',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'La alerta de precio sólo aparece en fichas con precio',
+            en: 'The price alert only appears on listings with a price',
+            pt: 'O alerta de preço só aparece em fichas com preço'
+        },
+        body: {
+            es: 'En las fichas con «Precio a consultar» ya no se ofrece la alerta de precio, que no podía funcionar sin un precio publicado.',
+            en: 'Listings marked "Price on request" no longer offer the price alert, which could not work without a published price.',
+            pt: 'Nas fichas com «Preço a consultar» o alerta de preço não é mais oferecido, pois não podia funcionar sem um preço publicado.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4841
     {
         id: '2026-11-27-listing-faqs-visible-again',
