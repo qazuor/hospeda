@@ -152,6 +152,23 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4841
+    {
+        id: '2026-11-27-listing-faqs-visible-again',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'Las preguntas frecuentes de comercios y experiencias vuelven a verse',
+            en: 'Business and experience FAQs show up again',
+            pt: 'As perguntas frequentes de comércios e experiências voltam a aparecer'
+        },
+        body: {
+            es: 'La ficha de un comercio o de una experiencia muestra otra vez sus preguntas frecuentes, en el orden que eligió su dueño. Las preguntas ocultas o borradas siguen sin mostrarse.',
+            en: 'A business or experience page shows its FAQs again, in the order its owner chose. Hidden or deleted questions still stay out of sight.',
+            pt: 'A página de um comércio ou de uma experiência volta a mostrar as perguntas frequentes, na ordem escolhida pelo dono. As perguntas ocultas ou excluídas continuam sem aparecer.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4839
     {
         id: '2026-11-27-public-web-visual-polish',
