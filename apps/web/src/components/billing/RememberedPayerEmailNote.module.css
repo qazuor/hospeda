@@ -1,0 +1,30 @@
+.note {
+    display: grid;
+    gap: var(--space-2);
+    width: 100%;
+}
+
+.text {
+    margin: 0;
+    color: var(--core-muted-foreground);
+    font-size: var(--text-body-sm);
+    line-height: 1.6;
+}
+
+.change {
+    justify-self: start;
+    min-height: 44px;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--brand-primary);
+    font: inherit;
+    font-weight: 600;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.change:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 3px;
+}

@@ -95,10 +95,14 @@ export function useFavoriteUsage({
         counter: showUsage === true ? counter : undefined,
         afterToggle: async ({ saved }: { readonly saved: boolean }) => {
             const refreshed =
-                account && finite && (saved || totalSnapshot?.account === account)
-                    ? await readTotal({ account, refresh: true })
-                    : undefined;
-            if (!saved) return undefined;
+                account && finite ? await readTotal({ account, refresh: true }) : undefined;
+            if (!saved) {
+                // HOS-2666 (CARD-039 H-2): the remove toast carries the same
+                // "N de 5" counter as the add toast for a limited (Free) plan.
+                if (refreshed === undefined) return undefined;
+                const usage = tPlural('ui.favorite.audit.usage', max, { current: refreshed });
+                return t('ui.favorite.audit.removedUsage', undefined, { usage });
+            }
             if (unlimited) return t('ui.favorite.audit.savedUnlimited');
             if (refreshed !== undefined) {
                 const usage = tPlural('ui.favorite.audit.usage', max, { current: refreshed });

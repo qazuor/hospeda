@@ -1,5 +1,6 @@
 import type { PricingSituationVertical } from '@repo/schemas';
 import { useState } from 'react';
+import { RememberedPayerEmailNote } from '@/components/billing/RememberedPayerEmailNote';
 import {
     loadPlanChangeChoices,
     type PlanChangeChoice,
@@ -36,6 +37,8 @@ export function PlanChangeOffer({
     const [message, setMessage] = useState('');
     const [payerEmail, setPayerEmail] = useState('');
     const [payerEmailError, setPayerEmailError] = useState(false);
+    // HOS-2616: the field fell back to the remembered email, so a note explains it.
+    const [usingRememberedEmail, setUsingRememberedEmail] = useState(false);
 
     async function open() {
         setState('loading');
@@ -46,6 +49,7 @@ export function PlanChangeOffer({
         }
         setChoices(loaded.choices);
         setPayerEmail(loaded.declaredPayerEmail);
+        setUsingRememberedEmail(loaded.payerEmailRemembered);
         setState('choices');
     }
 
@@ -133,29 +137,39 @@ export function PlanChangeOffer({
                         <p>{t('account.subscription.mine.planChange.confirmCheckout')}</p>
                         <p>{t('account.subscription.mine.planChange.confirmScheduled')}</p>
                     </Alert>
-                    <Field
-                        label={t('account.subscription.mine.planChange.payerEmailLabel')}
-                        locale={locale}
-                        hint={t('account.subscription.mine.planChange.payerEmailHint')}
-                        error={
-                            payerEmailError ? (
-                                <span data-testid="plan-change-payer-email-error">
-                                    {t('account.subscription.mine.planChange.payerEmailInvalid')}
-                                </span>
-                            ) : undefined
-                        }
-                        className={styles.field}
-                        required
-                    >
-                        <TextInput
-                            type="email"
-                            name="payerEmail"
-                            autoComplete="email"
-                            value={payerEmail}
-                            data-testid="plan-change-payer-email"
-                            onChange={(event) => setPayerEmail(event.target.value)}
+                    {usingRememberedEmail ? (
+                        <RememberedPayerEmailNote
+                            locale={locale}
+                            email={payerEmail}
+                            onChange={() => setUsingRememberedEmail(false)}
                         />
-                    </Field>
+                    ) : (
+                        <Field
+                            label={t('account.subscription.mine.planChange.payerEmailLabel')}
+                            locale={locale}
+                            hint={t('account.subscription.mine.planChange.payerEmailHint')}
+                            error={
+                                payerEmailError ? (
+                                    <span data-testid="plan-change-payer-email-error">
+                                        {t(
+                                            'account.subscription.mine.planChange.payerEmailInvalid'
+                                        )}
+                                    </span>
+                                ) : undefined
+                            }
+                            className={styles.field}
+                            required
+                        >
+                            <TextInput
+                                type="email"
+                                name="payerEmail"
+                                autoComplete="email"
+                                value={payerEmail}
+                                data-testid="plan-change-payer-email"
+                                onChange={(event) => setPayerEmail(event.target.value)}
+                            />
+                        </Field>
+                    )}
                     {promo && (
                         <Alert
                             tone="warning"

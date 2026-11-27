@@ -294,24 +294,26 @@ export function PriceAlertButton({
     if (user && hasAlert) {
         return (
             <div className={styles.priceAlertWrapper}>
-                <p>
-                    {threshold === null
-                        ? t('accommodations.detail.priceAlert.defaultThreshold')
-                        : t('accommodations.detail.priceAlert.activeThreshold', undefined, {
-                              threshold
-                          })}
-                </p>
-                {createdAt && (
+                <div className={styles.priceAlertStatus}>
                     <p>
-                        {t('accommodations.detail.priceAlert.activeDate', undefined, {
-                            date: formatDate({
-                                date: createdAt,
-                                locale,
-                                options: { dateStyle: 'medium', timeZone: 'UTC' }
-                            })
-                        })}
+                        {threshold === null
+                            ? t('accommodations.detail.priceAlert.defaultThreshold')
+                            : t('accommodations.detail.priceAlert.activeThreshold', undefined, {
+                                  threshold
+                              })}
                     </p>
-                )}
+                    {createdAt && (
+                        <p>
+                            {t('accommodations.detail.priceAlert.activeDate', undefined, {
+                                date: formatDate({
+                                    date: createdAt,
+                                    locale,
+                                    options: { dateStyle: 'medium', timeZone: 'UTC' }
+                                })
+                            })}
+                        </p>
+                    )}
+                </div>
                 <button
                     type="button"
                     className={styles.priceAlertButtonActive}
@@ -379,6 +381,9 @@ export function PriceAlertButton({
                     {t('accommodations.detail.priceAlert.locked', 'Avisame si baja el precio')}
                     {entitledBadge}
                 </button>
+                <p className={styles.priceAlertLockedHint}>
+                    {t('accommodations.detail.priceAlert.lockedHint', 'Disponible con Turista VIP')}
+                </p>
                 {vipGateOpen && (
                     <CompareUpsellPopover
                         anchorRef={gateTrigger}

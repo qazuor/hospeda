@@ -7,6 +7,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
 import { EntityViewContent } from '@/components/entity-pages/EntityViewContent';
+import { Breadcrumbs } from '@/components/layout/Breadcrumbs';
 import { PageTabs, postTabs } from '@/components/layout/PageTabs';
 import { PostQualityScore } from '@/features/posts/components/PostQualityScore';
 import { usePostPage } from '@/features/posts/hooks/usePostPage';
@@ -26,6 +27,7 @@ function PostViewPage() {
 
     return (
         <div className="space-y-4">
+            <Breadcrumbs entityContext={{ name: entityData.entity?.title, type: 'post' }} />
             <PageTabs
                 tabs={postTabs}
                 basePath={`/posts/${id}`}

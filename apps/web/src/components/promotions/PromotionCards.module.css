@@ -142,8 +142,25 @@
 }
 
 .status {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2, 8px);
     margin: 0;
     color: var(--core-muted-foreground);
+}
+
+/* The status block holds a count, a prompt and actions: each gets its own
+   breathing room instead of sitting flush on the buttons (HOS-2667). */
+.status > p {
+    margin: 0;
+}
+
+.statusActions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2, 8px);
+    margin-block-start: var(--space-1, 4px);
 }
 
 .pagination {

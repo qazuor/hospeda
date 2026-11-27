@@ -271,6 +271,16 @@ const {
         display: none;
     }
 
+    /* HOS-2666 (CARD-011 H-7): on mobile the row must read as scrollable from the
+       first paint. Start with the end fade on so a chip cut at the edge ("Casa
+       de C…") dissolves instead of looking clipped; the script below overrides
+       this inline once it knows whether the row really overflows. */
+    @media (max-width: 767px) {
+        .filter-chips__list {
+            --filter-chips-fade-end: 64px;
+        }
+    }
+
     .filter-chips__chip {
         display: inline-flex;
         align-items: center;
@@ -438,7 +448,7 @@ const {
      * never a page-global selector, so multiple FilterChips instances on the
      * same page never collide.
      */
-    const FADE = '48px';
+    const FADE = '64px';
     /* Wider fade used on desktop when the floating arrows are shown, so the
        chip passing under an arrow dissolves into the page background across the
        whole arrow footprint instead of cutting hard against it (HOS-97 owner

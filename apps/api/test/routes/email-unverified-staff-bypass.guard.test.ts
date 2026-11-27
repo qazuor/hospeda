@@ -42,7 +42,9 @@ describe('TEST:1692:7 the staff bypass set covers every permission read on a clo
     // PermissionEnum value (listingAccess decides), so the six permissions hold.
     // HOS-2566 added one file, `billing-subscription/receipts.ts` (43): its two own-receipt
     // reads declare READ_OWN and gate on BILLING_VIEW_OWN, already in the six.
-    it('instruments the current 43 declarations and six route-read permissions', () => {
+    // HOS-2616 added one more, `billing-subscription/read-remembered-payer-email.ts` (44): it
+    // declares READ_OWN and gates on BILLING_VIEW_OWN, also already in the six.
+    it('instruments the current 44 declarations and six route-read permissions', () => {
         const permissions = [
             ...new Set(
                 closedListRows.flatMap(({ text }) =>
@@ -52,7 +54,7 @@ describe('TEST:1692:7 the staff bypass set covers every permission read on a clo
                 )
             )
         ].sort();
-        expect(closedListRows).toHaveLength(43);
+        expect(closedListRows).toHaveLength(44);
         expect(closedListRows.map(({ file }) => file)).toEqual(
             expect.arrayContaining([
                 'accommodation/protected/getPhotoAllowance.ts',

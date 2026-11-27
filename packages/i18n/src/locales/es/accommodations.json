@@ -1093,6 +1093,7 @@
             "cancelSuccess": "Alerta cancelada",
             "cancelError": "No se pudo cancelar la alerta",
             "locked": "Avisame si baja el precio",
+            "lockedHint": "Disponible con Turista VIP",
             "vipOnly": "Solo para turistas VIP",
             "maxReached": "Límite de alertas alcanzado",
             "signInTitle": "Alertas de precio",

@@ -1734,6 +1734,7 @@ export function CreatePropertyMiniForm({ locale, apiUrl, trialDays }: CreateProp
             <div className="form-actions">
                 <Button
                     type="submit"
+                    variant="accent"
                     loading={isSubmitting}
                 >
                     {isSubmitting

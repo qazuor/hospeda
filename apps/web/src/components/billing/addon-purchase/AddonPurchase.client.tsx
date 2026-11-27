@@ -25,6 +25,7 @@ import {
     processingCopyKey,
     purchaseStateFrom
 } from '@/lib/billing/addon-purchase';
+import { useRememberedPayerEmail } from '@/lib/billing/use-remembered-payer-email';
 import { createTranslations, type SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import stylesNotice from '../PaidSignupsPausedNotice.module.css';
@@ -78,6 +79,16 @@ export function AddonPurchase(input: {
     const [error, setError] = useState<string | null>(null);
     const [purchasesPaused, setPurchasesPaused] = useState(false);
     const [payerEmail, setPayerEmail] = useState(input.accountEmail);
+    // HOS-2616: the email declared on the last approved charge prefills the purchase until the
+    // payer types another one or asks to change it. It is declared, never confirmed.
+    const { rememberedEmail } = useRememberedPayerEmail();
+    const [usingRememberedEmail, setUsingRememberedEmail] = useState(false);
+    const [payerEmailEdited, setPayerEmailEdited] = useState(false);
+    useEffect(() => {
+        if (!rememberedEmail || payerEmailEdited) return;
+        setPayerEmail(rememberedEmail);
+        setUsingRememberedEmail(true);
+    }, [rememberedEmail, payerEmailEdited]);
     // The purchase the screen waits on: the one the owner came back for, or the one a replay
     // answered without a link. A purchase another screen holds is not ours to read.
     const [pollOrderRequestId, setPollOrderRequestId] = useState(input.returnOrderRequestId);
@@ -440,7 +451,15 @@ export function AddonPurchase(input: {
                     target={target}
                     subscriptionTarget={subscriptionTarget}
                     payerEmail={payerEmail}
-                    onPayerEmailChange={setPayerEmail}
+                    onPayerEmailChange={(value) => {
+                        setPayerEmailEdited(true);
+                        setPayerEmail(value);
+                    }}
+                    usingRememberedEmail={usingRememberedEmail}
+                    onUseAnotherEmail={() => {
+                        setPayerEmailEdited(true);
+                        setUsingRememberedEmail(false);
+                    }}
                     free={free}
                     busy={busy}
                     locale={input.locale}

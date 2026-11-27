@@ -29,10 +29,15 @@ const { path, carried, currentSort } = buildListingSortForm({ url: Astro.url, op
 	.listing-sort, label {
 		display: flex;
 		align-items: center;
-		flex-wrap: wrap;
 		gap: var(--space-2);
 		font-size: var(--text-body-sm);
 	}
+	/* One row at every width (HOS-2667): the select absorbs the slack instead of
+	   the «Aplicar orden» button wrapping to a row of its own. */
+	.listing-sort { flex-wrap: nowrap; }
+	label { flex: 1 1 auto; min-width: 0; white-space: nowrap; }
+	select { flex: 1 1 auto; min-width: 0; }
+	button { flex: none; white-space: nowrap; }
 	select, button {
 		font: inherit;
 		min-height: 44px;

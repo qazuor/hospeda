@@ -29,9 +29,16 @@ import {
 interface Props {
   readonly policies: ListingPolicyValues | undefined;
   readonly locale: SupportedLocale;
+  /**
+   * Standalone payment-methods block (HOS-2666 / CARD-052 H-8): the section is
+   * titled "Medios de pago" at the same scale as its neighbour "Horarios", and
+   * the per-row label is dropped because the heading already says it.
+   */
+  readonly variant?: 'rules' | 'payments';
 }
 
-const { policies, locale } = Astro.props;
+const { policies, locale, variant = 'rules' } = Astro.props;
+const isPayments = variant === 'payments';
 const { t } = createTranslations(locale);
 
 const rows = buildHouseRuleRows({ policies: policies ?? {}, t, locale });
@@ -50,9 +57,11 @@ const ICONS: Readonly<Record<HouseRuleRowId, typeof CheckInIcon>> = {
 };
 ---
 
-<section class="house-rules" aria-labelledby="house-rules-title">
-  <h2 class="house-rules__title" id="house-rules-title">
-    {t('listing.policies.houseRulesTitle', 'Normas y políticas')}
+<section class:list={['house-rules', { 'house-rules--payments': isPayments }]} aria-labelledby={isPayments ? 'payment-methods-title' : 'house-rules-title'}>
+  <h2 class="house-rules__title" id={isPayments ? 'payment-methods-title' : 'house-rules-title'}>
+    {isPayments
+      ? t('listing.policies.paymentMethods.label', 'Medios de pago')
+      : t('listing.policies.houseRulesTitle', 'Normas y políticas')}
   </h2>
   <ul class="house-rules__list">
     {rows.map((row) => {
@@ -61,7 +70,7 @@ const ICONS: Readonly<Record<HouseRuleRowId, typeof CheckInIcon>> = {
         <li class="house-rules__item" data-rule={row.id}>
           <Icon size="sm" weight="duotone" aria-hidden="true" />
           <div class="house-rules__content">
-            <span class="house-rules__label">{row.label}</span>
+            {!isPayments && <span class="house-rules__label">{row.label}</span>}
             <span class="house-rules__value">{row.value}</span>
             {row.note && <span class="house-rules__note">{row.note}</span>}
           </div>
@@ -107,6 +116,12 @@ const ICONS: Readonly<Record<HouseRuleRowId, typeof CheckInIcon>> = {
     font-family: var(--font-sans);
     font-size: 0.95rem;
     font-weight: 500;
+  }
+  .house-rules--payments {
+    margin-top: var(--space-6, 24px);
+  }
+  .house-rules--payments .house-rules__value {
+    font-size: 1rem;
   }
   .house-rules__note {
     font-family: var(--font-sans);

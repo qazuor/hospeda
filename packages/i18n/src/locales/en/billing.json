@@ -1,5 +1,7 @@
 {
     "common": {
+        "rememberedPayerEmail": "We will use {{email}}, the email of the Mercado Pago account you paid with last time. If Mercado Pago tells you your e-mail does not match, you signed in with a different account: switch accounts in Mercado Pago or enter here the email of the account you want to use.",
+        "rememberedPayerEmailChange": "Use another email",
         "retry": "Retry",
         "cancel": "Cancel",
         "close": "Close",

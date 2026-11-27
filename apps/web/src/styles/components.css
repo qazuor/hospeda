@@ -293,6 +293,21 @@
     transform: none;
 }
 
+/* Flat primary: the header «Iniciar sesión» (HOS-2664), same shape as the flat accent. */
+.btn-gradient--flat.btn-gradient--primary {
+    color: var(--primary-foreground, #fff);
+    background-image: none;
+    background-color: var(--brand-primary);
+    box-shadow: none;
+    transform: none;
+}
+
+.btn-gradient--flat.btn-gradient--primary:hover:not(:disabled):not([aria-disabled="true"]) {
+    background-color: var(--brand-primary-lm05);
+    box-shadow: none;
+    transform: none;
+}
+
 .btn-gradient--primary {
     color: var(--primary-foreground, #fff);
     background-image: linear-gradient(
@@ -1051,16 +1066,14 @@
 }
 
 /*
- * HOS-190: prominent invalid-field affordance — a tinted background plus the
- * destructive border, so an errored field reads at a glance and not only via
- * the inline <FieldError> text below it. The bare-element selectors also reach
- * the host-editor `.fieldInput` modules (hashed class names global CSS cannot
- * target by name). The `background-color` is the meaningful addition there; note
- * the bare multi-`:not()` selector's specificity (0,3,1) does out-rank a single
- * `.fieldInput[aria-invalid]` module rule (0,2,0), so this `border-color` also
- * wins over the module's own — the two reds are near-identical, so the visual
- * delta is nil, but the border is not purely additive. Checkbox/radio are
- * excluded — a tinted box on a toggle reads as a fill, not an error.
+ * HOS-190: invalid-field affordance — the destructive border, so an errored
+ * field reads at a glance and not only via the inline <FieldError> text below
+ * it. HOS-2666 (CARD-104 H-2): the pink tint that used to sit on top of the red
+ * border is gone; an invalid field keeps its normal background. The bare-element
+ * selectors also reach the host-editor `.fieldInput` modules (hashed class names
+ * global CSS cannot target by name), and their specificity (0,3,1) out-ranks a
+ * single module `[aria-invalid]` rule (0,2,0) — that is why the tint overrode
+ * the ContactForm and SignIn module backgrounds. Checkbox/radio are excluded.
  */
 .form-input[aria-invalid="true"],
 .form-select[aria-invalid="true"],
@@ -1069,7 +1082,6 @@ input:not([type="checkbox"]):not([type="radio"])[aria-invalid="true"],
 textarea[aria-invalid="true"],
 select[aria-invalid="true"] {
     border-color: var(--destructive, oklch(0.6 0.22 25));
-    background-color: var(--destructive-a10, oklch(0.6 0.22 25 / 0.1));
 }
 
 .form-input[aria-invalid="true"]:focus-visible,

@@ -152,6 +152,42 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4834
+    {
+        id: '2026-11-27-host-dashboard-plan-card',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST'],
+        title: {
+            es: 'Tu tablero muestra tu plan y cuándo es tu próximo cobro',
+            en: 'Your dashboard now shows your plan and your next charge',
+            pt: 'Seu painel agora mostra seu plano e sua próxima cobrança'
+        },
+        body: {
+            es: 'En el tablero de **Mi cuenta** hay una tarjeta **Plan** junto a tus propiedades y mensajes. Te muestra el plan que tenés y el próximo paso, como «Tu próximo cobro es en 4 días», con un link a **Mi suscripción**.',
+            en: 'The **My account** dashboard has a **Plan** card next to your properties and messages. It shows your current plan and the next step, such as «Your next charge is in 4 days», with a link to **My subscription**.',
+            pt: 'O painel de **Minha conta** tem um cartão **Plano** ao lado das suas propriedades e mensagens. Ele mostra o seu plano atual e o próximo passo, como «Sua próxima cobrança é em 4 dias», com um link para **Minha assinatura**.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4830
+    {
+        id: '2026-11-27-listing-translations-one-model',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
+        title: {
+            es: 'Las traducciones de tu ficha se hacen solas y podés corregirlas',
+            en: 'Your listing translations are now automatic, and you can correct them',
+            pt: 'As traduções do seu anúncio agora são automáticas, e você pode corrigi-las'
+        },
+        body: {
+            es: 'Cuando guardás un texto en español, lo traducimos al inglés y al portugués. Si corregís una traducción en la sección **Traducciones**, queda como tuya y no se pisa; si después cambiás el español, te avisamos que puede estar desactualizada y podés volver a generarla con **Traducir con IA**. Funciona igual en alojamientos, comercios y experiencias.',
+            en: 'When you save a text in Spanish, we translate it into English and Portuguese. If you correct a translation in the **Translations** section, it stays yours and is never overwritten; if you later change the Spanish, we warn you it may be outdated and you can regenerate it with **Translate with AI**. It works the same for accommodations, venues and experiences.',
+            pt: 'Quando você salva um texto em espanhol, nós o traduzimos para o inglês e o português. Se você corrigir uma tradução na seção **Traduções**, ela fica sua e nunca é sobrescrita; se depois você mudar o espanhol, avisamos que pode estar desatualizada e você pode gerá-la de novo com **Traduzir com IA**. Funciona igual para hospedagens, estabelecimentos e experiências.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4810
     {
         id: '2026-11-26-destination-page-sticky-side-column',

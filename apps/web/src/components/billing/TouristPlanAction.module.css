@@ -3,3 +3,27 @@
     white-space: normal;
     text-align: center;
 }
+
+/* `compare` mode closes a benefits section: a centred stack (HOS-2667). */
+.compare {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-3);
+    text-align: center;
+}
+
+.compare p {
+    margin: 0;
+}
+
+/* The benefit list is a plain stack: the default disc bullets used to hang off
+   the left edge, detached from the centred text. */
+.benefits {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}

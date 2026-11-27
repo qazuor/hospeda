@@ -132,18 +132,20 @@ export function PromotionsListing({ locale, apiUrl }: PromotionsListingProps) {
                 {guest ? (
                     <>
                         <p>{t('common.promotions.guestPrompt')}</p>
-                        <a
-                            className={styles.placeLink}
-                            href={`${buildUrl({ locale, path: 'auth/signup' })}?returnUrl=${encodeURIComponent(currentUrl)}`}
-                        >
-                            {t('common.auth.signUp')}
-                        </a>{' '}
-                        <a
-                            className={styles.placeLink}
-                            href={buildLoginRedirect({ locale, currentUrl })}
-                        >
-                            {t('common.auth.signIn')}
-                        </a>
+                        <div className={styles.statusActions}>
+                            <a
+                                className={styles.placeLink}
+                                href={`${buildUrl({ locale, path: 'auth/signup' })}?returnUrl=${encodeURIComponent(currentUrl)}`}
+                            >
+                                {t('common.auth.signUp')}
+                            </a>
+                            <a
+                                className={styles.placeLink}
+                                href={buildLoginRedirect({ locale, currentUrl })}
+                            >
+                                {t('common.auth.signIn')}
+                            </a>
+                        </div>
                     </>
                 ) : meta.isVip ? (
                     vipPlanName && (

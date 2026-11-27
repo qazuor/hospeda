@@ -57,27 +57,27 @@
             "body": "We use cookies for features such as signing in and remembering your privacy preferences. Language and theme are remembered in browser local storage. Optional analytics depend on your consent. We do not currently use marketing or advertising cookies."
         },
         "sessionRecording": {
-            "title": "Session recordings and heatmaps",
+            "title": "3. Session recordings and heatmaps",
             "body": "If you accept analytics cookies and the feature is enabled, Hospeda may record sessions and click and scroll heatmaps with Umami, a tool we host ourselves."
         },
         "cookieList": {
-            "title": "3. Cookie list",
+            "title": "4. Cookie list",
             "body": "These are the first-party cookies Hospeda uses. The asterisk represents a name prefix that can vary by environment. The session cache may be split across cookies with numbered suffixes. We do not use advertising tracking cookies or share data with ad networks."
         },
         "manageCookies": {
-            "title": "4. How to manage cookies",
+            "title": "5. How to manage cookies",
             "body": "Use the button in this section to change or withdraw your consent. You can also manage or delete cookies in your browser. Disabling necessary cookies may affect access to your account."
         },
         "thirdPartyCookies": {
-            "title": "5. Third-party cookies",
+            "title": "6. Third-party cookies",
             "body": "When you go to Mercado Pago to authorize a payment, that site may use its own cookies under its policy. Hospeda uses Cloudinary to deliver images and Sentry to monitor errors when monitoring is enabled with consent. These services have their own privacy policies."
         },
         "policyChanges": {
-            "title": "6. Changes to this policy",
+            "title": "7. Changes to this policy",
             "body": "We may update this Cookie Policy when the technology we use or applicable legislation changes. We will publish changes on this page with the date of the last update. We recommend reviewing it periodically."
         },
         "contact": {
-            "title": "7. Contact",
+            "title": "8. Contact",
             "body": "If you have questions about the use of cookies on Hospeda, you can write to us at info@hospeda.com.ar or through our contact form."
         }
     }

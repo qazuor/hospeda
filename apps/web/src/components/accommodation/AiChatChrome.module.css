@@ -18,8 +18,7 @@
     margin: 0;
 }
 
-.chip,
-.planChip {
+.chip {
     display: inline-block;
     color: var(--core-foreground);
     background-color: var(--core-card);
@@ -35,8 +34,9 @@
     text-align: start;
 }
 
-.planChip {
+/* Slot for the shared PlanBadge beside the panel title (HOS-2666 / CARD-037 H-1). */
+.planBadgeSlot {
+    display: inline-flex;
     margin-inline-start: var(--space-2);
-    padding: 0 var(--space-2);
-    font-size: 0.75rem;
+    vertical-align: middle;
 }

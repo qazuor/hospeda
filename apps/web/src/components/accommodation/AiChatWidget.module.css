@@ -56,6 +56,14 @@
 /* With the keyboard up, the FAB it normally clears is hidden behind it, and
    vertical space is exactly what is scarce — so the panel sits closer to the
    keyboard and reserves less room for browser chrome. */
+/* HOS-2667: the guest panel holds an invitation, not a conversation. The fixed
+   520px / 700px heights clipped its last button («Ingresar») below the fold, so
+   the guest panel sizes to its content and is only capped by `max-height`. */
+.panelGuest,
+.panelExpanded.panelGuest {
+    height: auto;
+}
+
 .panel[data-keyboard-open="true"] {
     --chat-bottom-gap: 12px;
     --chat-height-reserve: 24px;

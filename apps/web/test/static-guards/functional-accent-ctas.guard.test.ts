@@ -23,6 +23,19 @@ describe('functional accent CTAs', () => {
         );
     });
 
+    it('keeps the header guest «Iniciar sesión» a secondary outline action (HOS-2666)', () => {
+        const menu = source('components/shared/navigation/UserMenu.client.tsx');
+        expect(menu).not.toContain('btn-gradient');
+        expect(source('components/shared/navigation/UserMenu.module.css')).toMatch(
+            /\.signInLink\s*\{[^}]*border: 1\.5px solid var\(--brand-primary\);[^}]*background-color: transparent/
+        );
+    });
+
+    it('keeps the /publicar create-draft submit the flat accent kit button (HOS-2664)', () => {
+        const form = source('components/host/CreatePropertyMiniForm.client.tsx');
+        expect(form).toMatch(/<Button\s+type="submit"\s+variant="accent"/);
+    });
+
     it('uses the accent kit link for primary precheck actions', () => {
         expect(source('components/host/PublishPrecheckPanel.astro')).toMatch(
             /<LinkButton\s+variant="accent"\s+href=\{action.href\}/

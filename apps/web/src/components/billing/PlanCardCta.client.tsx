@@ -2,11 +2,12 @@ import type { PricingSituationVertical } from '@repo/schemas';
 import { useEffect, useMemo, useState } from 'react';
 import { LinkButton } from '@/components/account/ui/LinkButton';
 import { StatusPill } from '@/components/account/ui/StatusPill';
+import { RememberedPayerEmailNote } from '@/components/billing/RememberedPayerEmailNote';
 import { billingSubscriptionApi } from '@/lib/api/endpoints-protected';
 import { totalCourtesyMonths } from '@/lib/billing/my-subscription-notices';
 import {
     findActiveSubscriptionId,
-    loadDeclaredPayerEmail,
+    loadPayerEmailPrefill,
     parsePayerEmail,
     submitPlanChange
 } from '@/lib/billing/plan-change-offer';
@@ -48,6 +49,8 @@ export function PlanCardCta({
     const [payerEmail, setPayerEmail] = useState('');
     const [payerEmailTouched, setPayerEmailTouched] = useState(false);
     const [payerEmailError, setPayerEmailError] = useState(false);
+    // HOS-2616: the field fell back to the remembered email, so a note explains it.
+    const [usingRememberedEmail, setUsingRememberedEmail] = useState(false);
     const [ownerNotice, setOwnerNotice] = useState<{
         readonly promo: boolean;
         readonly checkoutOpen: boolean;
@@ -114,8 +117,10 @@ export function PlanCardCta({
         if (payerEmailTouched || payerEmail) return;
         const subscriptionId = await findActiveSubscriptionId({ vertical });
         if (!subscriptionId) return;
-        const declared = await loadDeclaredPayerEmail({ subscriptionId });
-        setPayerEmail((current) => current || declared);
+        const prefill = await loadPayerEmailPrefill({ subscriptionId });
+        if (!prefill.email) return;
+        setPayerEmail((current) => current || prefill.email);
+        setUsingRememberedEmail((current) => current || prefill.remembered);
     }
     async function confirmPlanChange() {
         if (!selectedOptionId) return;
@@ -287,23 +292,33 @@ export function PlanCardCta({
                 <div data-testid="pricing-plan-change-confirm">
                     <p>{t('account.subscription.mine.planChange.confirmCheckout')}</p>
                     <p>{t('account.subscription.mine.planChange.confirmScheduled')}</p>
-                    <label className={styles.field}>
-                        <span>{t('account.subscription.mine.planChange.payerEmailLabel')}</span>
-                        <input
-                            type="email"
-                            name="payerEmail"
-                            autoComplete="email"
-                            required
-                            value={payerEmail}
-                            aria-invalid={payerEmailError}
-                            data-testid="pricing-plan-change-payer-email"
-                            onChange={(event) => {
-                                setPayerEmailTouched(true);
-                                setPayerEmail(event.target.value);
-                            }}
+                    {usingRememberedEmail ? (
+                        <RememberedPayerEmailNote
+                            locale={locale}
+                            email={payerEmail}
+                            onChange={() => setUsingRememberedEmail(false)}
                         />
-                        <small>{t('account.subscription.mine.planChange.payerEmailHint')}</small>
-                    </label>
+                    ) : (
+                        <label className={styles.field}>
+                            <span>{t('account.subscription.mine.planChange.payerEmailLabel')}</span>
+                            <input
+                                type="email"
+                                name="payerEmail"
+                                autoComplete="email"
+                                required
+                                value={payerEmail}
+                                aria-invalid={payerEmailError}
+                                data-testid="pricing-plan-change-payer-email"
+                                onChange={(event) => {
+                                    setPayerEmailTouched(true);
+                                    setPayerEmail(event.target.value);
+                                }}
+                            />
+                            <small>
+                                {t('account.subscription.mine.planChange.payerEmailHint')}
+                            </small>
+                        </label>
+                    )}
                     {payerEmailError && (
                         <p
                             role="alert"

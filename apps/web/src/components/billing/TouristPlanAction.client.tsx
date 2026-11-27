@@ -130,7 +130,7 @@ export function TouristPlanAction({
           : label;
 
     return (
-        <div>
+        <div className={mode === 'compare' ? styles.compare : undefined}>
             {current && !inheritsVip && mode !== 'closing' && (
                 <p>
                     <strong>
@@ -145,7 +145,7 @@ export function TouristPlanAction({
             )}
             {copy && state !== 'paid' && <p>{copy}</p>}
             {mode === 'compare' && benefitLinks.length > 0 && (
-                <ul>
+                <ul className={styles.benefits}>
                     {benefitLinks.map(({ key, path }) => (
                         <li key={key}>
                             {state === 'paid' ? (

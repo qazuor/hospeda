@@ -1,5 +1,5 @@
 {
-  "id": "0f073024-bcb6-447e-9ba6-35a77c468ff2",
+  "id": "5345fd77-fce1-49d7-8110-3c493a593e52",
   "prevId": "e0b24eb2-83b1-4a23-b829-2684e6653446",
   "version": "7",
   "dialect": "postgresql",
@@ -15184,18 +15184,6 @@
           "primaryKey": false,
           "notNull": true
         },
-        "resolved_body_json": {
-          "name": "resolved_body_json",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "resolved_at": {
-          "name": "resolved_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
         "status": {
           "name": "status",
           "type": "newsletter_campaign_status_enum",
@@ -26500,6 +26488,12 @@
         "auth_provider_user_id": {
           "name": "auth_provider_user_id",
           "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_successful_payer_email": {
+          "name": "last_successful_payer_email",
+          "type": "varchar(255)",
           "primaryKey": false,
           "notNull": false
         },
