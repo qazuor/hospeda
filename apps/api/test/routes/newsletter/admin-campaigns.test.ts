@@ -84,6 +84,11 @@ vi.mock('../../../src/middlewares/authorization', () => ({
 import type { SelectNewsletterCampaign } from '@repo/db';
 // Import after mocks
 import { Hono } from 'hono';
+import { resolveCampaignContent } from '../../../../../packages/service-core/src/services/newsletter/dynamic/campaign-content';
+import {
+    dynamicDocument,
+    dynamicPort
+} from '../../../../../packages/service-core/test/services/newsletter/dynamic/content.fixtures';
 import {
     adminCreateCampaignRoute,
     adminDeleteCampaignRoute,
@@ -103,6 +108,8 @@ const draftCampaign: SelectNewsletterCampaign = {
     title: 'Mayo 2025',
     subject: 'Novedades de mayo',
     bodyJson: { type: 'doc', content: [] },
+    resolvedBodyJson: null,
+    resolvedAt: null,
     status: 'draft',
     localeFilter: 'all',
     contentType: null,
@@ -181,6 +188,31 @@ beforeEach(() => {
 // ---------------------------------------------------------------------------
 
 describe('GET /api/v1/admin/newsletter/campaigns', () => {
+    it('returns real frozen snapshots from detail and list without response validation failures', async () => {
+        const snapshot = await resolveCampaignContent({
+            doc: dynamicDocument(),
+            port: dynamicPort(),
+            now: new Date()
+        });
+        expect(snapshot).not.toBeNull();
+        const campaign: SelectNewsletterCampaign = {
+            ...draftCampaign,
+            status: 'sending',
+            resolvedBodyJson: snapshot,
+            resolvedAt: new Date()
+        };
+        const queryCampaigns = makeQueryCampaigns([campaign], 1);
+        const queryCampaignById = makeQueryCampaignById(campaign);
+        const app = buildApp({ queryCampaigns, queryCampaignById });
+        const list = await app.request('/api/v1/admin/newsletter/campaigns');
+        const detail = await app.request(`/api/v1/admin/newsletter/campaigns/${campaign.id}`);
+        expect(queryCampaigns).toHaveBeenCalledOnce();
+        expect(queryCampaignById).toHaveBeenCalledOnce();
+        expect(list.status).toBe(200);
+        expect(detail.status).toBe(200);
+        expect((await list.json()).data.items[0].resolvedBodyJson).toEqual(snapshot);
+        expect((await detail.json()).data.resolvedBodyJson).toEqual(snapshot);
+    });
     it('returns 200 with paginated items on success', async () => {
         const app = buildApp({ queryCampaigns: makeQueryCampaigns([draftCampaign], 1) });
         const res = await app.request('/api/v1/admin/newsletter/campaigns');

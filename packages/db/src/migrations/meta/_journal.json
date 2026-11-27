@@ -1807,6 +1807,13 @@
       "when": 1795739021937,
       "tag": "0257_hos2616_users_last_successful_payer_email",
       "breakpoints": true
+    },
+    {
+      "idx": 258,
+      "version": "7",
+      "when": 1795768455470,
+      "tag": "0258_hos2636_newsletter_campaign_resolved_body",
+      "breakpoints": true
     }
   ]
 }

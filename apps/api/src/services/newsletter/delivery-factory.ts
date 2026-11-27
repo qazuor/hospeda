@@ -29,6 +29,7 @@ import {
     BrevoEmailTransport,
     createEmailClient,
     NewsletterCampaign,
+    renderNewsletterEmail,
     renderTiptapEmailContent,
     sendBatch
 } from '@repo/notifications';
@@ -51,11 +52,11 @@ type CampaignRenderInput = Parameters<RenderCampaignEmailFn>[0];
  * @returns The attributed HTML
  */
 export async function renderAttributedCampaignEmail(input: CampaignRenderInput): Promise<string> {
-    const { subject, bodyHtml, unsubscribeUrl, isTest, attribution } = input;
+    const { subject, bodyHtml, segments, unsubscribeUrl, isTest, attribution } = input;
     // Async render through `@react-email/render` so the template gets the CSS
     // inlining + Tailwind passes that the sync `renderToStaticMarkup` path
     // skipped (SPEC-108 T-108-01).
-    const element = NewsletterCampaign({ subject, bodyHtml, unsubscribeUrl, isTest });
+    const element = NewsletterCampaign({ subject, bodyHtml, segments, unsubscribeUrl, isTest });
     return applyEmailAttribution({ html: await render(element), attribution }).html;
 }
 
@@ -185,11 +186,19 @@ export function getNewsletterDeliveryService(): NewsletterDeliveryService | null
             renderTiptapEmailFn: ({ content }) =>
                 renderTiptapEmailContent({ content: content as never }),
             renderCampaignEmailFn: renderAttributedCampaignEmail,
+            renderNewsletterEmailFn: renderNewsletterEmail,
             attributeCampaignHtmlFn: attributeCampaignHtml,
-            buildCampaignReactElementFn: ({ subject, bodyHtml, unsubscribeUrl, isTest }) =>
+            buildCampaignReactElementFn: ({
+                subject,
+                bodyHtml,
+                segments,
+                unsubscribeUrl,
+                isTest
+            }) =>
                 NewsletterCampaign({
                     subject,
                     bodyHtml,
+                    segments,
                     unsubscribeUrl,
                     isTest
                     // TYPE-WORKAROUND: service-core declares OpaqueReactElement (Record<string, unknown>) on its DI seam so it never has to import react; the runtime value IS a real React element.

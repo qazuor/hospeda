@@ -20,7 +20,8 @@ una sola vez por campaña, con las mismas reglas que después usará el motor de
 
 ## 2. Alcance
 
-**Incluye**
+### Incluye
+
 - Enums `NewsletterDynamicSourceEnum`, `NewsletterIfBelowMinEnum` y `DynamicBlockConfigSchema` (§4.5).
 - Extensión TipTap `dynamicBlock` en el editor del admin (nodo atómico de raíz, panel de config).
 - Resolvers `most_viewed`, `newest`, `top_rated`; `featured` declarado y rechazado (`FEATURED_SOURCE_DISABLED`).
@@ -30,7 +31,8 @@ una sola vez por campaña, con las mismas reglas que después usará el motor de
 - Integración en campañas manuales: `send()` resuelve y guarda `resolved_body_json`; `testSend` y el preview usan el mismo camino.
 - `sendTestEmailFromContent` en el servicio de entregas (H-18).
 
-**No incluye**
+### No incluye
+
 - Plantillas, corridas, dedup entre ediciones (`excludeRecentEditions` se ignora en campañas manuales, no hay historial), soft-cap por plantilla. Todo eso es F2.
 - `featured` operativo (HOS-1357).
 - Resolvers y tarjetas de `VENUE` (comer y salir), `POST` (notas), `EVENT`, `EXPERIENCE`
@@ -65,7 +67,7 @@ Predicado base de elegibilidad, compartido por candidatos y revalidación:
 
 | Fuente | Orden | Parámetros | Notas |
 |---|---|---|---|
-| `most_viewed` | `COUNT(entity_views)` en `viewed_at >= now() - windowDays` desc, `id` asc | `windowDays` 1..90, default 30 | usa `idx_entity_views_entity_time`; 120 días de retención (H-14) |
+| `most_viewed` | `COUNT(entity_views)` en `viewed_at >= now() - windowDays` desc, `id` asc | `windowDays` 1..90, default 30 | usa `idx_entity_views_entity_time`; 120 días de retención (H-14); excluye los de 0 vistas en la ventana (owner, 2026-11-26) |
 | `newest` | `created_at` desc, `id` asc | ninguno | no hay `published_at` (H-15) |
 | `top_rated` | `average_rating` desc, `reviews_count` desc, `id` asc | `minReviews` 1..100, default 3 | filtro extra `reviews_count >= minReviews`, también en revalidación |
 | `featured` | n/a | n/a | rechazado por el schema |

@@ -17,9 +17,16 @@
  * Coverage target: >= 70% lines on RichTextEditor.tsx.
  */
 
+import { NewsletterDynamicEntityTypeEnum, NewsletterDynamicSourceEnum } from '@repo/schemas';
 import { act, fireEvent, render, screen } from '@testing-library/react';
+import { Editor, EditorContent } from '@tiptap/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { RichTextEditor, type TiptapDocument } from './RichTextEditor';
+import { DynamicBlock } from './dynamic-block/dynamic-block.extension';
+import {
+    NEWSLETTER_EDITOR_EXTENSIONS,
+    RichTextEditor,
+    type TiptapDocument
+} from './RichTextEditor';
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
 
@@ -43,6 +50,78 @@ const paragraphDoc: TiptapDocument = {
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
 describe('RichTextEditor', () => {
+    describe('Dynamic block summary', () => {
+        it('shows the summary and dispatches the edit callback without editing content', () => {
+            const onEdit = vi.fn();
+            const editor = new Editor({
+                extensions: NEWSLETTER_EDITOR_EXTENSIONS.map((extension) =>
+                    extension.name === 'dynamicBlock'
+                        ? DynamicBlock.configure({ onEdit })
+                        : extension
+                )
+            });
+            editor.commands.insertDynamicBlock({
+                config: {
+                    entityType: NewsletterDynamicEntityTypeEnum.ACCOMMODATION,
+                    source: NewsletterDynamicSourceEnum.NEWEST,
+                    count: 4
+                }
+            });
+            const { unmount, container } = render(<EditorContent editor={editor} />);
+            try {
+                expect(
+                    screen.getByText('admin-newsletter.dynamicBlock.accommodation')
+                ).toBeInTheDocument();
+                expect(
+                    screen.getByText('admin-newsletter.dynamicBlock.sources.newest')
+                ).toBeInTheDocument();
+                expect(screen.getByText('4')).toBeInTheDocument();
+                expect(container.querySelector('[data-dynamic-block]')).toHaveAttribute(
+                    'contenteditable',
+                    'false'
+                );
+                const before = editor.getJSON();
+                const button = screen.getByRole('button', {
+                    name: 'admin-newsletter.dynamicBlock.edit'
+                });
+                fireEvent.click(button);
+                const attrs = before.content?.find((node) => node.type === 'dynamicBlock')?.attrs;
+                expect(onEdit).toHaveBeenCalledExactlyOnceWith({
+                    blockKey: attrs?.blockKey,
+                    config: JSON.parse(attrs?.config),
+                    ifBelowMinManual: false
+                });
+                expect(editor.getJSON()).toEqual(before);
+                act(() => editor.setEditable(false));
+                expect(button).toBeDisabled();
+                fireEvent.click(button);
+                expect(onEdit).toHaveBeenCalledTimes(1);
+            } finally {
+                unmount();
+                editor.destroy();
+            }
+        });
+
+        it('renders an invalid-config notice rather than crashing on malformed JSON', () => {
+            render(
+                <RichTextEditor
+                    value={{
+                        type: 'doc',
+                        content: [
+                            {
+                                type: 'dynamicBlock',
+                                attrs: { blockKey: 'invalid-block', config: '{broken' }
+                            }
+                        ]
+                    }}
+                    onChange={vi.fn()}
+                />
+            );
+            expect(screen.getByRole('alert')).toHaveTextContent(
+                'admin-newsletter.dynamicBlock.invalidConfig'
+            );
+        });
+    });
     describe('Rendering', () => {
         it('renders the outer wrapper without throwing', () => {
             const { container } = render(

@@ -27,12 +27,17 @@
  * @see {@link NewsletterSubscriberService}
  */
 
-import type { InsertNewsletterCampaignDelivery, SelectNewsletterCampaign } from '@repo/db';
+import type { SelectNewsletterCampaign } from '@repo/db';
 import { getDb, newsletterCampaignDeliveries, newsletterCampaigns } from '@repo/db';
-import type { CreateNewsletterCampaign, UpdateNewsletterCampaign } from '@repo/schemas';
+import type {
+    CreateNewsletterCampaign,
+    NewsletterPreviewSelection,
+    UpdateNewsletterCampaign
+} from '@repo/schemas';
 import {
     NewsletterCampaignStatusEnum,
     NewsletterContentTypeEnum,
+    NewsletterPreviewSelectionSchema,
     ServiceErrorCode
 } from '@repo/schemas';
 import { and, count, eq, isNull, sql } from 'drizzle-orm';
@@ -41,7 +46,14 @@ import { BaseService } from '../../base/base.service.js';
 import type { Actor, ServiceConfig, ServiceContext, ServiceOutput } from '../../types/index.js';
 import { ServiceError } from '../../types/index.js';
 import { createSystemActor } from '../../utils/system-actor.js';
-import { withServiceTransaction } from '../../utils/transaction.js';
+import { resolveCampaignContentWithReport } from './dynamic/campaign-content.js';
+import type { DynamicSourcePort } from './dynamic/dynamic-source.port.js';
+import { persistCampaignDispatch } from './dynamic/persist-campaign-dispatch.js';
+import type { ResolutionReport } from './dynamic/resolution.types.js';
+import {
+    resolveAndSendCampaignTest,
+    type SendTestEmailFromContentInput
+} from './dynamic/test-email-content.js';
 import { computeCampaignAttributionSlug } from './newsletter-attribution.js';
 import {
     checkCanSendCampaign,
@@ -71,6 +83,10 @@ import { NewsletterSubscriberService } from './newsletter-subscriber.service.js'
  *   Does NOT create delivery rows. Used by `testSend()`.
  */
 export interface INewsletterDeliveryService {
+    /** Send already resolved preview content without reading or writing a campaign. */
+    sendTestEmailFromContent(
+        input: SendTestEmailFromContentInput
+    ): Promise<ServiceOutput<{ sentTo: string }>>;
     /**
      * Groups delivery IDs into batches of `batchSize` and enqueues each batch
      * as a BullMQ job on the `hospeda-newsletter-dispatch` queue.
@@ -150,7 +166,8 @@ const AudienceEstimateInputSchema = z.object({
 
 const SendInputSchema = z.object({
     id: z.string().uuid(),
-    ignoreSoftCap: z.boolean().default(false)
+    ignoreSoftCap: z.boolean().default(false),
+    previewSelection: NewsletterPreviewSelectionSchema.optional()
 });
 
 const TestSendInputSchema = z.object({
@@ -194,6 +211,8 @@ export interface SendCampaignResult {
     readonly enqueued: number;
     /** Number of subscribers excluded by the rolling soft-cap window. */
     readonly softcapped: number;
+    /** Per-block dynamic resolution diagnostics (dropped ids and reasons); dynamic campaigns only. */
+    readonly resolutionReport?: ResolutionReport;
 }
 
 /** Result returned by `cancel()`. */
@@ -242,6 +261,8 @@ export interface FailedDeliveriesResult {
  * Constructor options for `NewsletterCampaignService`.
  */
 export interface NewsletterCampaignServiceOptions {
+    /** Read-only dynamic source adapter, wired by the host application. */
+    dynamicSourcePort?: DynamicSourcePort;
     /** Logger from the parent context. */
     logger?: ServiceConfig['logger'];
     /**
@@ -332,6 +353,7 @@ export class NewsletterCampaignService extends BaseService {
     protected override readonly entityName = NewsletterCampaignService.ENTITY_NAME;
 
     private readonly batchSize: number;
+    private readonly dynamicSourcePort: DynamicSourcePort | undefined;
     private readonly softCapDays: number;
     private readonly deliveryService: INewsletterDeliveryService | undefined;
     private readonly subscriberService: NewsletterSubscriberService;
@@ -348,6 +370,7 @@ export class NewsletterCampaignService extends BaseService {
     constructor(config: ServiceConfig, options: NewsletterCampaignServiceOptions = {}) {
         super(config, NewsletterCampaignService.ENTITY_NAME);
         this.batchSize = options.batchSize ?? 100;
+        this.dynamicSourcePort = options.dynamicSourcePort;
         this.softCapDays = options.softCapDays ?? 7;
         this.deliveryService = options.deliveryService;
         this.subscriberService =
@@ -661,7 +684,11 @@ export class NewsletterCampaignService extends BaseService {
      */
     public async send(
         actor: Actor,
-        input: { id: string; ignoreSoftCap?: boolean },
+        input: {
+            id: string;
+            ignoreSoftCap?: boolean;
+            previewSelection?: NewsletterPreviewSelection;
+        },
         _ctx?: ServiceContext
     ): Promise<ServiceOutput<SendCampaignResult>> {
         return this.runWithLoggingAndValidation({
@@ -706,6 +733,16 @@ export class NewsletterCampaignService extends BaseService {
                     );
                 }
 
+                const resolvedAt = new Date();
+                const { content: resolvedBodyJson, report: resolutionReport } =
+                    await resolveCampaignContentWithReport({
+                        doc: campaign.bodyJson,
+                        port: this.dynamicSourcePort,
+                        now: resolvedAt,
+                        previewSelection: validated.previewSelection
+                    });
+                const reportField = resolvedBodyJson ? { resolutionReport } : {};
+
                 // Step 2 — Resolve eligible subscribers (shared with getAudienceEstimate)
                 const { eligibleIds, softCappedCount } = await this.resolveEligibleForCampaign({
                     campaign,
@@ -714,7 +751,7 @@ export class NewsletterCampaignService extends BaseService {
 
                 // Step 3 — No eligible subscribers → early return without status change
                 if (eligibleIds.length === 0) {
-                    return { enqueued: 0, softcapped: softCappedCount };
+                    return { enqueued: 0, softcapped: softCappedCount, ...reportField };
                 }
 
                 // Step 3b — Attribution (HOS-2359): the campaign's utm_campaign slug.
@@ -722,43 +759,13 @@ export class NewsletterCampaignService extends BaseService {
                     campaign: { id: campaign.id, title: campaign.title }
                 });
 
-                // Steps 4 + 5 inside a single transaction
-                let insertedDeliveryIds: string[] = [];
-
-                await withServiceTransaction(async (txCtx) => {
-                    // Step 4 — Bulk INSERT delivery rows
-                    const deliveryRows: InsertNewsletterCampaignDelivery[] = eligibleIds.map(
-                        (subscriberId) => ({
-                            campaignId: validated.id,
-                            subscriberId,
-                            channel: 'email',
-                            status: 'pending' as const
-                        })
-                    );
-
-                    // biome-ignore lint/style/noNonNullAssertion: txCtx.tx is always defined inside withServiceTransaction
-                    const tx = txCtx.tx!;
-
-                    const inserted = await tx
-                        .insert(newsletterCampaignDeliveries)
-                        .values(deliveryRows)
-                        .onConflictDoNothing()
-                        .returning({ id: newsletterCampaignDeliveries.id });
-
-                    insertedDeliveryIds = inserted.map((r) => r.id);
-
-                    // Step 5 — Update campaign status
-                    await tx
-                        .update(newsletterCampaigns)
-                        .set({
-                            status: NewsletterCampaignStatusEnum.SENDING,
-                            sentAt: new Date(),
-                            totalRecipients: insertedDeliveryIds.length,
-                            totalSoftcapped: softCappedCount,
-                            attributionSlug,
-                            updatedAt: new Date()
-                        })
-                        .where(eq(newsletterCampaigns.id, validated.id));
+                const insertedDeliveryIds = await persistCampaignDispatch({
+                    campaignId: validated.id,
+                    eligibleIds,
+                    softCappedCount,
+                    attributionSlug,
+                    resolvedBodyJson,
+                    resolvedAt
                 });
 
                 // Step 7 — Enqueue BullMQ batches AFTER transaction commits
@@ -778,7 +785,8 @@ export class NewsletterCampaignService extends BaseService {
 
                 return {
                     enqueued: insertedDeliveryIds.length,
-                    softcapped: softCappedCount
+                    softcapped: softCappedCount,
+                    ...reportField
                 };
             }
         });
@@ -958,9 +966,11 @@ export class NewsletterCampaignService extends BaseService {
                     );
                 }
 
-                const testResult = await deliverySvc.sendTestEmail({
-                    campaignId: validated.id,
-                    toEmail: validated.toEmail
+                const testResult = await resolveAndSendCampaignTest({
+                    campaign: existing[0],
+                    port: this.dynamicSourcePort,
+                    toEmail: validated.toEmail,
+                    deliveryService: deliverySvc
                 });
 
                 if (testResult.error) {

@@ -8,6 +8,7 @@ import { z } from 'zod';
 import { NewsletterCampaignLocaleFilterEnum } from '../../enums/newsletter-campaign-locale-filter.enum.js';
 import { NewsletterCampaignStatusEnum } from '../../enums/newsletter-campaign-status.enum.js';
 import { NewsletterContentTypeEnum } from '../../enums/newsletter-content-type.enum.js';
+import { ResolvedNewsletterContentResponseSchema } from './newsletter-resolved-content.schema.js';
 
 // ============================================================================
 // TiptapDocumentSchema
@@ -76,6 +77,12 @@ export const NewsletterCampaignSchema = z.object({
 
     /** TipTap document JSON. Rendered to HTML at send time. */
     bodyJson: TiptapDocumentSchema,
+
+    /** Frozen document resolved at dispatch. Absent on historical payloads. */
+    resolvedBodyJson: ResolvedNewsletterContentResponseSchema.nullable().optional(),
+
+    /** Resolution timestamp. NULL until dispatch; absent on historical payloads. */
+    resolvedAt: z.union([z.string().datetime(), z.date()]).nullable().optional(),
 
     /** Lifecycle state. */
     status: z.nativeEnum(NewsletterCampaignStatusEnum),
