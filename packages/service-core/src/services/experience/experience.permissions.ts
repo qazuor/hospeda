@@ -19,10 +19,15 @@
  *   SPEC-253 D2=b).
  */
 
-import { ServiceErrorCode } from '@repo/schemas';
+import type { Experience } from '@repo/schemas';
+import { PermissionEnum, PublicationStatusEnum, ServiceErrorCode } from '@repo/schemas';
 import type { Actor } from '../../types';
 import { ServiceError } from '../../types';
 import { isAction15AuthorizedFor } from '../../utils/administrative-authorization';
+import { assertListingReadable } from '../../utils/listing-readable';
+import { entityNotFoundError } from '../../utils/not-found';
+import { hasPermission } from '../../utils/permission';
+import { EXPERIENCE_ENTITY_NAME } from '../entity-names';
 import type { VenueOrExperience } from '../listing/listing.permissions';
 import {
     checkCanAdminListListings,
@@ -230,6 +235,45 @@ export function checkExperienceCanEditFaqEntries(
 export function checkExperienceCanView(_actor: Actor): void {
     // Public listings are viewable by all. The service enforces publication status.
     return;
+}
+
+/**
+ * Checks if the actor may view ONE experience listing — the public detail read's
+ * visibility rule (`ExperienceService._canView`), extracted unchanged for HOS-2670 so
+ * the public FAQ read can gate its parent listing with the same predicate.
+ *
+ * - Soft-deleted: staff with `EXPERIENCE_VIEW_ALL` pass; otherwise a listing that was
+ *   PUBLISHED answers GONE (410) and any other answers NOT_FOUND (404).
+ * - Staff with `EXPERIENCE_VIEW_ALL` pass.
+ * - Everyone else: `assertListingReadable` (`READ_PUBLIC`): the owner sees
+ *   their own non-purged listing, a stranger only a PUBLISHED one (404 otherwise).
+ *
+ * @param actor - The actor performing the action.
+ * @param entity - The experience listing row.
+ * @throws {ServiceError} GONE or NOT_FOUND when the listing is not viewable.
+ */
+export function checkExperienceCanViewEntity(actor: Actor, entity: Experience): void {
+    checkExperienceCanView(actor);
+
+    // Soft-deleted listings existed but are permanently gone. Only those that
+    // were PUBLISHED (indexable) surface as GONE (410) so crawlers/LLM fetchers
+    // deindex the URL fast; deleted content that was never public
+    // returns NOT_FOUND (404, uniform) to preserve the anti-enumeration
+    // contract (SPEC-092 T-087). Staff with EXPERIENCE_VIEW_ALL still see it
+    // for management (HOS-117 T-022).
+    if (
+        entity.deletedAt !== null &&
+        entity.deletedAt !== undefined &&
+        !hasPermission(actor, PermissionEnum.EXPERIENCE_VIEW_ALL)
+    ) {
+        if (entity.publicationStatus === PublicationStatusEnum.PUBLISHED) {
+            throw new ServiceError(ServiceErrorCode.GONE, 'Experience is gone');
+        }
+        throw entityNotFoundError({ entityName: EXPERIENCE_ENTITY_NAME });
+    }
+
+    if (hasPermission(actor, PermissionEnum.EXPERIENCE_VIEW_ALL)) return;
+    assertListingReadable({ actor, entity, entityName: EXPERIENCE_ENTITY_NAME });
 }
 
 /**

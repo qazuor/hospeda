@@ -2,7 +2,10 @@
  * Public experience FAQs endpoint (T-019)
  * Returns FAQs for a specific experience listing ordered by display_order ASC NULLS LAST.
  *
- * Uses listExperienceFaqs() which loads the listing with its `faqs` relation
+ * Uses listPublicExperienceFaqs(), which first gates the parent listing with the public
+ * detail read's visibility rule (HOS-2670: 404 for a draft/unpublished or
+ * soft-deleted listing, 410 for one that was published and then deleted), then
+ * listExperienceFaqs(), which loads the listing with its `faqs` relation
  * and returns active, non-deleted FAQs. Any authenticated or anonymous actor
  * that can view the listing can read its FAQs (open public).
  *
@@ -13,7 +16,7 @@
  * still ship the private FAQ in the page's payload.
  */
 import { ExperienceFaqPublicListOutputSchema } from '@repo/schemas';
-import { ExperienceService, listExperienceFaqs, ServiceError } from '@repo/service-core';
+import { ExperienceService, listPublicExperienceFaqs, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { getActorFromContext } from '../../../utils/actor';
@@ -49,10 +52,12 @@ export const publicGetExperienceFaqsRoute = createPublicRoute({
         // to pass to the standalone FAQ helper. The service exposes it via protected
         // `model` — we cast through unknown to satisfy TypeScript without `any`.
         const model = (
-            experienceService as unknown as { model: Parameters<typeof listExperienceFaqs>[0] }
+            experienceService as unknown as {
+                model: Parameters<typeof listPublicExperienceFaqs>[0];
+            }
         ).model;
 
-        const result = await listExperienceFaqs(model, actor, {
+        const result = await listPublicExperienceFaqs(model, actor, {
             experienceId: params.experienceId as string
         });
 

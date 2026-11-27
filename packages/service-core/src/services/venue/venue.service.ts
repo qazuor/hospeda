@@ -71,10 +71,9 @@ import type {
     ServiceOutput
 } from '../../types';
 import { ServiceError } from '../../types';
-import { assertListingReadable, entityNotFoundError, normalizeContactInfo } from '../../utils';
+import { normalizeContactInfo } from '../../utils';
 import { hasPermission } from '../../utils/permission';
 import { filterSoftDeletedRelations } from '../../utils/relations';
-import { VENUE_ENTITY_NAME } from '../entity-names';
 import { resolveSiteUrlFromTargetUrl } from '../hostTrade/host-trade-qr';
 import type { ListingCatalogModel, ListingJunctionModel } from '../listing/base-listing.service';
 import { BaseListingService } from '../listing/base-listing.service';
@@ -98,7 +97,8 @@ import {
     checkVenueCanEditOwnOrAll,
     checkVenueCanHardDelete,
     checkVenueCanRestore,
-    checkVenueCanView
+    checkVenueCanView,
+    checkVenueCanViewEntity
 } from './venue.permissions';
 import { projectVenueOwnerAvatar, projectVenuePublic } from './venue.projections';
 import type { VenueHookState } from './venue.types';
@@ -384,27 +384,9 @@ export class VenueService extends BaseListingService<
     }
 
     protected _canView(actor: Actor, entity: Venue): void {
-        checkVenueCanView(actor);
-
-        // Soft-deleted listings existed but are permanently gone. Only those that
-        // were PUBLISHED (indexable) surface as GONE (410) so crawlers/LLM fetchers
-        // deindex the URL fast; deleted content that was never public
-        // returns NOT_FOUND (404, uniform) to preserve the anti-enumeration
-        // contract (SPEC-092 T-087). Staff with VENUE_VIEW_ALL still see it
-        // for management (HOS-117 T-022).
-        if (
-            entity.deletedAt !== null &&
-            entity.deletedAt !== undefined &&
-            !hasPermission(actor, PermissionEnum.VENUE_VIEW_ALL)
-        ) {
-            if (entity.publicationStatus === PublicationStatusEnum.PUBLISHED) {
-                throw new ServiceError(ServiceErrorCode.GONE, 'venue is gone');
-            }
-            throw entityNotFoundError({ entityName: VENUE_ENTITY_NAME });
-        }
-
-        if (hasPermission(actor, PermissionEnum.VENUE_VIEW_ALL)) return;
-        assertListingReadable({ actor, entity, entityName: VENUE_ENTITY_NAME });
+        // HOS-2670: the predicate lives in `checkVenueCanViewEntity` so the public FAQ
+        // read gates its parent listing with exactly this rule.
+        checkVenueCanViewEntity(actor, entity);
     }
 
     protected _canList(actor: Actor): void {

@@ -30,6 +30,7 @@ export {
     reorderExperienceFaqs,
     updateExperienceFaq
 } from './experience.faq';
+export { listPublicExperienceFaqs } from './experience.faq-public';
 // Media helpers (HOS-372); the born-featured cover upload is HOS-803
 export {
     addExperienceFeaturedMedia,
