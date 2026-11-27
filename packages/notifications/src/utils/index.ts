@@ -8,6 +8,11 @@ export {
     type TrialSeriesVerticalCopy
 } from './product-domain-copy.js';
 export {
+    type RenderNewsletterEmailInput,
+    type RenderNewsletterEmailOutput,
+    renderNewsletterEmail
+} from './render-newsletter-email.js';
+export {
     findUnresolvedPlaceholders,
     getSubject,
     getSubjectPlaceholders,

@@ -31,7 +31,7 @@ export interface TiptapNode {
     readonly content?: ReadonlyArray<TiptapNode>;
     readonly text?: string;
     readonly marks?: ReadonlyArray<TiptapMark>;
-    readonly attrs?: Record<string, string | number>;
+    readonly attrs?: Record<string, string | number | boolean>;
 }
 
 /**
