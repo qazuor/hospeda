@@ -152,6 +152,24 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4830
+    {
+        id: '2026-11-27-listing-translations-one-model',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
+        title: {
+            es: 'Las traducciones de tu ficha se hacen solas y podés corregirlas',
+            en: 'Your listing translations are now automatic, and you can correct them',
+            pt: 'As traduções do seu anúncio agora são automáticas, e você pode corrigi-las'
+        },
+        body: {
+            es: 'Cuando guardás un texto en español, lo traducimos al inglés y al portugués. Si corregís una traducción en la sección **Traducciones**, queda como tuya y no se pisa; si después cambiás el español, te avisamos que puede estar desactualizada y podés volver a generarla con **Traducir con IA**. Funciona igual en alojamientos, comercios y experiencias.',
+            en: 'When you save a text in Spanish, we translate it into English and Portuguese. If you correct a translation in the **Translations** section, it stays yours and is never overwritten; if you later change the Spanish, we warn you it may be outdated and you can regenerate it with **Translate with AI**. It works the same for accommodations, venues and experiences.',
+            pt: 'Quando você salva um texto em espanhol, nós o traduzimos para o inglês e o português. Se você corrigir uma tradução na seção **Traduções**, ela fica sua e nunca é sobrescrita; se depois você mudar o espanhol, avisamos que pode estar desatualizada e você pode gerá-la de novo com **Traduzir com IA**. Funciona igual para hospedagens, estabelecimentos e experiências.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4821
     {
         id: '2026-11-26-listing-photos-one-editor',
