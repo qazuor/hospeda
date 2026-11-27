@@ -10,7 +10,7 @@
  */
 
 import { CreditCardIcon, FavoriteIcon, StarIcon } from '@repo/icons';
-import type { TrialSummaryResponse, UserStatsResponse } from '@repo/schemas';
+import type { UserStatsResponse } from '@repo/schemas';
 import { useCallback, useEffect, useState } from 'react';
 import {
     type AsyncResult,
@@ -20,11 +20,10 @@ import {
     settleAsync
 } from '@/components/account/ui';
 import { resolveDashboardNextStep } from '@/lib/account/dashboard-next-step';
-import { resolveSubscriptionStatText } from '@/lib/account/general-dashboard';
-import { publishApi, userApi } from '@/lib/api/endpoints-protected';
+import { userApi } from '@/lib/api/endpoints-protected';
 import { createT, type SupportedLocale } from '@/lib/i18n';
-import { formatNoticeInstant } from '@/lib/listing/listing-notices';
 import { buildUrl } from '@/lib/urls';
+import { resolvePlanStat } from './plan-stat';
 
 /** Props of {@link GeneralDashboardStats}. */
 export interface GeneralDashboardStatsProps {
@@ -32,29 +31,6 @@ export interface GeneralDashboardStatsProps {
     readonly locale: SupportedLocale;
     /** Translated plan names by catalog slug, read on the server. */
     readonly planNames: Readonly<Record<string, string>>;
-}
-
-/** A trial read that takes longer than this is left out (the card keeps the free label). */
-const TRIAL_READ_TIMEOUT_MS = 3000;
-
-/** Reads every vertical's trial; a failure or timeout leaves that vertical out. Never rejects. */
-async function readTrialSummaries(): Promise<readonly TrialSummaryResponse[]> {
-    const reads = await Promise.all(
-        (['accommodation', 'venue', 'experience'] as const).map(async (vertical) => {
-            try {
-                const result = await Promise.race([
-                    publishApi.trialSummary({ vertical }),
-                    new Promise<null>((resolve) => {
-                        setTimeout(() => resolve(null), TRIAL_READ_TIMEOUT_MS);
-                    })
-                ]);
-                return result?.ok ? [result.data] : [];
-            } catch {
-                return [];
-            }
-        })
-    );
-    return reads.flat();
 }
 
 /** Unwraps an API result, turning a refusal into a rejection `settleAsync` reports as error. */
@@ -91,40 +67,9 @@ export function GeneralDashboardStats({ locale, planNames }: GeneralDashboardSta
             setPlanState({ status: 'error', retry });
             return;
         }
-        const needsTrial =
-            stats.data.plan === null &&
-            stats.data.activeSubscriptionsCount < 2 &&
-            (stats.data.subscriptions?.length ?? 0) < 2;
-        const trialSummaries = needsTrial ? await readTrialSummaries() : [];
-        const text = resolveSubscriptionStatText({
-            stats: stats.data,
-            planNames,
-            trialSummaries,
-            t,
-            formatDate: (iso) => formatNoticeInstant({ iso, locale })
-        });
-        setPlanViewAll(text.viewAll);
-        setPlanState({
-            status: 'ready',
-            data: {
-                value: text.value,
-                nextStep: resolveDashboardNextStep({
-                    kind: 'subscription',
-                    locale,
-                    text,
-                    trialSummaries,
-                    now: Date.now()
-                }),
-                detail:
-                    [
-                        text.hint,
-                        ...text.rows.map((row) => `${row.plan} · ${row.status}`),
-                        text.action
-                    ]
-                        .filter(Boolean)
-                        .join('; ') || undefined
-            }
-        });
+        const plan = await resolvePlanStat({ stats: stats.data, planNames, locale, t });
+        setPlanViewAll(plan.viewAll);
+        setPlanState({ status: 'ready', data: plan.stat });
     }, [planNames, locale, t]);
 
     const loadReviews = useCallback(async () => {
