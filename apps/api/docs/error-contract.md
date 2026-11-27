@@ -46,6 +46,7 @@ check answers 403 to someone the server never identified.
 | Resource exists but belongs to somebody else | **404** | `NOT_FOUND` |
 | Well-formed but unprocessable | **422** | `VALIDATION_ERROR` |
 | Provisioning retry on a lead that is not a `service_provider` (`POST /admin/alliance/leads/:id/provision`, `details.reason = NOT_A_SERVICE_PROVIDER`) | **422** | `VALIDATION_ERROR` |
+| Price alert requested for an accommodation with no price («Precio a consultar», HOS-2671) | **422** | `PRICE_ALERT_NO_PRICE` |
 | State conflict | **409** | `ALREADY_EXISTS` |
 | Provisioning retry on a lead that is not `approved` (`details.reason = LEAD_NOT_APPROVED`) | **409** | `ALREADY_EXISTS` |
 | New self-service paid signups paused (S1 checkout; first publish that would start a trial: reason FIRST_PUBLISH_PAUSED) | **409** | `NEW_PAID_SIGNUPS_FROZEN` |

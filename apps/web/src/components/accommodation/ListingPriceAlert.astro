@@ -4,17 +4,23 @@ import { PriceAlertButton } from './PriceAlertButton';
 import { fetchPublicPlans } from '@/lib/billing/fetch-plans';
 import { resolvePlanBadge } from '@/lib/billing/plan-badge';
 import type { SupportedLocale } from '@/lib/i18n';
+import { canOfferPriceAlert } from '@/lib/listing-contact/listing-contact-price';
+import type { ListingContactPrice } from '@/lib/listing-contact/listing-contact-price';
 
 interface Props {
     readonly accommodationId: string;
     readonly apiUrl: string;
     readonly locale: SupportedLocale;
     readonly placement: 'summary' | 'sidebar';
+    /** Public price of the listing. Without one («Precio a consultar») nothing is rendered. */
+    readonly price: ListingContactPrice;
 }
-const { accommodationId, apiUrl, locale, placement } = Astro.props;
-const result = await fetchPublicPlans({ vertical: 'tourist' });
-const planName = resolvePlanBadge({ result, entitlement: 'price_alerts' });
+const { accommodationId, apiUrl, locale, placement, price } = Astro.props;
+const offered = canOfferPriceAlert({ price });
+const result = offered ? await fetchPublicPlans({ vertical: 'tourist' }) : null;
+const planName = result ? resolvePlanBadge({ result, entitlement: 'price_alerts' }) : null;
 ---
+{offered && (
 <div class:list={['listing-price-alert', `listing-price-alert--${placement}`]}>
     <PriceAlertButton
         client:media={placement === 'summary' ? '(max-width: 1024px)' : '(min-width: 1025px)'}
@@ -24,6 +30,7 @@ const planName = resolvePlanBadge({ result, entitlement: 'price_alerts' });
         planName={planName}
     />
 </div>
+)}
 <style>
     .listing-price-alert--summary { display: none; flex-basis: 100%; }
     @media (max-width: 1024px) {

@@ -94,6 +94,7 @@
         "SELF_USAGE_FORBIDDEN": "Voce não pode registrar um uso do benefício da sua própria ficha.",
         "REVIEW_ALREADY_EXISTS": "Voce já avaliou este fornecedor. Voce pode editar a sua avaliação.",
         "PROVIDER_REVOKED": "Este fornecedor não faz mais parte do diretório.",
+        "PRICE_ALERT_NO_PRICE": "Esta ficha não tem preço publicado, então você não pode criar um alerta.",
         "ALREADY_EXISTS": "Esse recurso já existe.",
         "ALREADY_SUBSCRIBED": "Você já tem uma assinatura ativa. Em Minha conta → Assinatura você pode mudar de plano dentro dela, ou cancelá-la para contratar uma diferente.",
         "TRIAL_REQUIRES_CHECKOUT": "Você está no seu período de teste gratuito, então ainda não há uma assinatura para mudar. Escolha o plano que quiser e ative a sua assinatura: o teste se encerra sozinho quando o pagamento for confirmado.",

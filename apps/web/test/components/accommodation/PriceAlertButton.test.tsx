@@ -35,7 +35,9 @@ vi.mock('@/lib/i18n', () => ({
     createT: () => (key: string, fallback?: string) =>
         key === 'common.apiError.ENTITLEMENT_REQUIRED'
             ? 'Tu plan no incluye esta función. Actualizalo para continuar.'
-            : (fallback ?? key)
+            : key === 'common.apiError.PRICE_ALERT_NO_PRICE'
+              ? tFromCatalog(key)
+              : (fallback ?? key)
 }));
 
 vi.mock('@/components/accommodation/PriceAlertButton.module.css', () => ({
@@ -312,5 +314,35 @@ describe('TEST:B13a:25 PriceAlertButton effective-set gate', () => {
             'Tu plan no incluye esta función. Actualizalo para continuar.'
         );
         expect(screen.queryByText('English API refusal')).not.toBeInTheDocument();
+    });
+
+    it('maps PRICE_ALERT_NO_PRICE to its own message, not the generic validation text (HOS-2671)', async () => {
+        const user = userEvent.setup();
+        mockAlertsList.mockResolvedValue({ ok: true, data: { items: [] } });
+        vi.stubGlobal(
+            'fetch',
+            vi.fn().mockResolvedValue(
+                new Response(
+                    JSON.stringify({
+                        success: false,
+                        error: {
+                            code: 'PRICE_ALERT_NO_PRICE',
+                            message:
+                                'Cannot subscribe to price alerts for an accommodation with no price set',
+                            status: 422
+                        }
+                    }),
+                    { status: 422, headers: { 'Content-Type': 'application/json' } }
+                )
+            )
+        );
+        render(<PriceAlertButton {...PROPS} />);
+        await user.click(await screen.findByRole('button', { name: /avisame si baja el precio/i }));
+        await user.type(screen.getByRole('spinbutton'), '10');
+        await user.click(screen.getByRole('button', { name: 'Crear alerta' }));
+        expect(await screen.findByRole('alert')).toHaveTextContent(
+            'Esta ficha no tiene precio publicado, así que no podés crear una alerta.'
+        );
+        expect(screen.queryByText(/Los datos enviados no son válidos/)).not.toBeInTheDocument();
     });
 });

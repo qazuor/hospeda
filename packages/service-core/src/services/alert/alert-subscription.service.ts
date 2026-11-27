@@ -184,7 +184,7 @@ export class AlertSubscriptionService extends BaseCrudService<
         const priceInDecimalCurrency = accommodation.price?.price;
         if (priceInDecimalCurrency === null || priceInDecimalCurrency === undefined) {
             throw new ServiceError(
-                ServiceErrorCode.VALIDATION_ERROR,
+                ServiceErrorCode.PRICE_ALERT_NO_PRICE,
                 'Cannot subscribe to price alerts for an accommodation with no price set'
             );
         }

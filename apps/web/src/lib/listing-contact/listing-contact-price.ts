@@ -32,6 +32,17 @@ export interface ListingContactPriceDisplay {
     readonly onRequest?: true;
 }
 
+/**
+ * Whether a price alert can be offered for a listing with this public price.
+ * A listing shown as «Precio a consultar» (no price, zero, or flagged `onRequest`)
+ * has nothing to drop, and the API refuses the subscription, so the control must
+ * not be offered to any viewer kind (HOS-2671).
+ */
+export function canOfferPriceAlert({ price }: { readonly price: ListingContactPrice }): boolean {
+    if (!price || price.onRequest) return false;
+    return price.amount !== null && Number.isFinite(price.amount) && price.amount > 0;
+}
+
 /** Formats the public nightly price using the same currency fallback as the sidebar. */
 export function getListingContactPrice({
     price,
