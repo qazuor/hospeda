@@ -62,7 +62,7 @@ Comparar los planes en {{link:plans:accommodation|planes para alojamientos}}, {{
 2. En la suscripción activa, tocá «Cambiar de plan».
 3. Elegí otro plan u otra frecuencia de cobro entre las opciones que se listan. Los importes los ves en esa lista y en la página de planes.
 4. Leé cómo funciona el cambio: si requiere autorización, vas al checkout de Mercado Pago y tu plan actual sigue hasta que autorices; si se programa, ves la fecha exacta desde la que rige el plan nuevo.
-5. Ingresá el correo con el que vas a pagar en Mercado Pago y tocá «Confirmar cambio». Si ya pagaste antes, podemos mostrarte el correo de la cuenta de Mercado Pago con la que pagaste la última vez: si Mercado Pago te dice que tu e-mail no coincide, usá «Usar otro email» y cargá el de la cuenta que querés usar.
+5. Ingresá el correo con el que vas a pagar en Mercado Pago y tocá «Confirmar cambio».
 6. Si «Cambiar de plan» no aparece o el sitio dice que no se puede, te explica el motivo: un pago pendiente, la suscripción pausada, un cambio ya programado o que todavía no llegó la fecha en que podés cambiar.
 7. Para dejar de pagar, usá «Dar de baja» en la misma suscripción: se corta el cobro automático y seguís con el servicio hasta el final del período pago.
 
@@ -70,6 +70,7 @@ Comparar los planes en {{link:plans:accommodation|planes para alojamientos}}, {{
 
 - Si el cambio requiere autorización, pasás por el checkout de Mercado Pago y tu plan actual sigue hasta que autorices.
 - Si el cambio se programa, ves la fecha exacta desde la que rige.
+- Si ya pagaste antes, el formulario puede mostrarte el correo de la cuenta de Mercado Pago con la que pagaste la última vez. Si Mercado Pago te dice que tu e-mail no coincide, entraste con otra cuenta: usá «Usar otro email» y cargá el de la cuenta que querés usar.
 - Los importes se ven en la lista de opciones y en la página de planes.
 - Debajo de tus suscripciones, «Suscripción» lista tus recibos, cada uno con el botón «Ver recibo». El comprobante se abre en PDF solo con la cuenta que hizo el pago, y no es una factura.
 
