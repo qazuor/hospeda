@@ -25,13 +25,19 @@ const CASES = [
         writers: ['TRANS:B:P0', 'TRANS:B:A2'],
         readers: ['TRANS:B:P1', 'TRANS:B:P3', 'TRANS:B:P4', 'TRANS:B:P5']
     },
-    { column: 'payment.subscription_id', writers: ['TRANS:B:P0'], readers: ['TRANS:B:P1'] },
+    {
+        column: 'payment.subscription_id',
+        writers: ['TRANS:B:P0'],
+        // HOS-2668: A8 and A9 look for a credited payment of the COMPLEMENTO by this column.
+        readers: ['TRANS:B:P1', 'TRANS:B:A8', 'TRANS:B:A9']
+    },
     { column: 'payment.addon_instance_id', writers: ['TRANS:B:A2'], readers: ['TRANS:B:P1'] },
     { column: 'addon_instance.ends_at', writers: ['TRANS:B:A2'], readers: ['TRANS:B:A4'] },
     {
         column: 'addon_instance.complement_subscription_id',
         writers: ['TRANS:B:A1'],
-        readers: ['TRANS:B:A5']
+        // HOS-2668: A8 and A9 find the pending pair to release by this column.
+        readers: ['TRANS:B:A5', 'TRANS:B:A8', 'TRANS:B:A9']
     }
 ] as const;
 const dirs: string[] = [];
@@ -113,7 +119,9 @@ describe('TEST:1715:3 AC:1715:3 — each writer is required', () => {
             exitCode: 0,
             // 2026-11-18, HOS-2344: 183 (S40 reads subscription.succeeds_id).
             // 2026-11-19, HOS-2351: still 183 (S40 stops writing succeeded_by_id; reads unchanged).
-            output: 'OK GUARD:G-R6: verified 179 read columns.'
+            // 2026-11-27, HOS-2668: 181 (A8 reads addon_instance.status and complement_subscription_id).
+            // 2026-11-27, HOS-2668 final round: 193 (A8 declares all eight reads; A9 adds six).
+            output: 'OK GUARD:G-R6: verified 193 read columns.'
         });
     });
 

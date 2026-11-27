@@ -390,20 +390,20 @@
         "reason": "A3 abandons a still pending recurring addon; pending instances emit no ADDON coverage source."
     },
     {
-        "file": "packages/service-core/src/services/billing/addon/purchase-addon-rejection.ts",
-        "symbol": "abandonRefusedComplement",
+        "file": "packages/service-core/src/services/billing/addon/release-pending-complement.ts",
+        "symbol": "abandonPairInTransaction",
         "table": "subscriptions",
         "effect": "neutral",
         "via": null,
-        "reason": "HOS-2321 abandons a never-linked pending COMPLEMENTO after the provider refused its creation; only PRINCIPAL rows emit subscription coverage."
+        "reason": "HOS-2321/HOS-2668 abandon a pending COMPLEMENTO (provider-refused creation, owner retry over a stuck checkout, declined first charge); only PRINCIPAL rows emit subscription coverage."
     },
     {
-        "file": "packages/service-core/src/services/billing/addon/purchase-addon-rejection.ts",
-        "symbol": "abandonRefusedComplement",
+        "file": "packages/service-core/src/services/billing/addon/release-pending-complement.ts",
+        "symbol": "abandonPairInTransaction",
         "table": "addonInstances",
         "effect": "neutral",
         "via": null,
-        "reason": "HOS-2321 abandons a still pending recurring addon after the provider refused its creation; pending instances emit no ADDON coverage source."
+        "reason": "HOS-2321/HOS-2668 abandon a still pending recurring addon (provider-refused creation, owner retry over a stuck checkout, declined first charge); pending instances emit no ADDON coverage source."
     },
     {
         "file": "packages/service-core/src/services/billing/subscription/complement-s21.ts",

@@ -1459,6 +1459,44 @@
             "reads": ["addon_instance.status", "addon_instance.target_id"],
             "inputs": ["contract:listing_purged", "provider:read_by_id"],
             "writes": ["addon_instance.status", "domain_event.changes"]
+        },
+        {
+            "id": "TRANS:B:A8",
+            "machine": "addon_instance",
+            "from": ["PENDING_AUTHORIZATION"],
+            "events": ["addon_purchase_replaced_by_owner"],
+            "to": ["ABANDONED"],
+            "guard": {},
+            "reads": [
+                "addon_instance.status",
+                "addon_instance.complement_subscription_id",
+                "subscription.status",
+                "subscription.class",
+                "subscription.declared_payer_email",
+                "subscription.authorization_window_ends_at",
+                "payment.status",
+                "payment.subscription_id"
+            ],
+            "inputs": ["provider:read_by_id", "clock:now"],
+            "writes": ["addon_instance.status", "domain_event.changes"]
+        },
+        {
+            "id": "TRANS:B:A9",
+            "machine": "addon_instance",
+            "from": ["PENDING_AUTHORIZATION"],
+            "events": ["addon_first_charge_declined_authorization_cancelled"],
+            "to": ["ABANDONED"],
+            "guard": {},
+            "reads": [
+                "addon_instance.status",
+                "addon_instance.complement_subscription_id",
+                "subscription.status",
+                "subscription.class",
+                "payment.status",
+                "payment.subscription_id"
+            ],
+            "inputs": ["provider:payment_fact", "provider:read_by_id"],
+            "writes": ["addon_instance.status", "domain_event.changes"]
         }
     ]
 }

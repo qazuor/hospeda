@@ -2,7 +2,6 @@ import { randomUUID } from 'node:crypto';
 import {
     addonInstances,
     addonProducts,
-    and,
     type DrizzleClient,
     domainEventModel,
     eq,
@@ -19,6 +18,10 @@ import { getCurrentBillingDeadlines } from '../deadlines/billing-deadlines.servi
 import { assertAddonPurchasesOpen, platformAddonPurchasesFreeze } from './addon-purchases-freeze';
 import { findIncludesAddonsAnchor } from './includes-addons-anchor';
 import { decideOccupiedPagePurchase } from './occupied-page-purchase';
+import {
+    decideOccupiedRecurringPurchase,
+    recurringCheckoutUrlOf
+} from './occupied-recurring-purchase';
 import {
     openOneTimePaymentPage,
     PAYMENT_PAGE_OPERATION,
@@ -57,23 +60,7 @@ async function checkoutUrlOf(
 ): Promise<string | undefined> {
     if (!instance.complementSubscriptionId)
         return paymentPageCheckoutUrlOf({ instanceId: instance.id, tx });
-    const [key] = await (tx ?? getDb())
-        .select({ result: idempotencyKeys.result })
-        .from(idempotencyKeys)
-        .where(
-            and(
-                eq(idempotencyKeys.subjectId, instance.complementSubscriptionId),
-                eq(idempotencyKeys.operation, 'PREAPPROVAL_CREATE')
-            )
-        )
-        .limit(1);
-    const value = key?.result;
-    return value &&
-        typeof value === 'object' &&
-        'checkoutUrl' in value &&
-        typeof value.checkoutUrl === 'string'
-        ? value.checkoutUrl
-        : undefined;
+    return recurringCheckoutUrlOf({ complementId: instance.complementSubscriptionId, tx });
 }
 
 function sameIdentity(instance: SelectAddonInstance, input: PurchaseAddonInput): boolean {
@@ -470,6 +457,29 @@ async function purchaseAddonOnce(
                 if (decision === 'ACTIVATED')
                     return { outcome: 'REFUSED', reason: 'ALREADY_ACTIVE' };
                 if (decision === 'RETRY' && options.mayReleaseOccupant)
+                    return purchaseAddonOnce(input, ports, { mayReleaseOccupant: false });
+            }
+            // HOS-2668: a recurring purchase is decided like a plan signup; the retry after a
+            // release never releases again, so the purchase is recreated at most once.
+            if (
+                occupant.status === 'PENDING_AUTHORIZATION' &&
+                !pagePurchase &&
+                options.mayReleaseOccupant
+            ) {
+                const decision = await decideOccupiedRecurringPurchase(
+                    { occupant, payerEmail: request.payerEmail },
+                    ports
+                );
+                if (decision.kind === 'REUSE')
+                    return {
+                        outcome: 'EXISTING',
+                        instanceId: occupant.id,
+                        chargeKind: chargeKindOf(product),
+                        checkoutUrl: decision.checkoutUrl
+                    };
+                if (decision.kind === 'ACTIVATED')
+                    return { outcome: 'REFUSED', reason: 'ALREADY_ACTIVE' };
+                if (decision.kind === 'RETRY')
                     return purchaseAddonOnce(input, ports, { mayReleaseOccupant: false });
             }
             if (occupant.status === 'PENDING_AUTHORIZATION')

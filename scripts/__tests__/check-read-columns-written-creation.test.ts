@@ -45,7 +45,11 @@ const RETURNED_READS = [
     ['TRANS:B:MP1', 'subscription.payment_method'],
     ['TRANS:B:MP2', 'subscription.payment_method'],
     ['TRANS:B:MP3', 'subscription.payment_method'],
-    ['TRANS:B:MP5', 'subscription.payment_method']
+    ['TRANS:B:MP5', 'subscription.payment_method'],
+    // HOS-2668: A8 and A9 read the COMPLEMENTO's class; A8 also reads its checkout window.
+    ['TRANS:B:A8', 'subscription.class'],
+    ['TRANS:B:A8', 'subscription.authorization_window_ends_at'],
+    ['TRANS:B:A9', 'subscription.class']
 ] as const;
 const EXPECTED: Record<(typeof CREATION_WRITES)[number], readonly string[]> = {
     'subscription.user_id': ['TRANS:B:S1 reads unwritten column subscription.user_id'],
@@ -54,7 +58,9 @@ const EXPECTED: Record<(typeof CREATION_WRITES)[number], readonly string[]> = {
         'TRANS:B:S1 reads unwritten column subscription.class',
         'TRANS:B:S13 reads unwritten column subscription.class',
         'TRANS:B:S20 reads unwritten column subscription.class',
-        'TRANS:B:S21 reads unwritten column subscription.class'
+        'TRANS:B:S21 reads unwritten column subscription.class',
+        'TRANS:B:A8 reads unwritten column subscription.class',
+        'TRANS:B:A9 reads unwritten column subscription.class'
     ],
     'subscription.payment_method': [
         'TRANS:B:S1 reads unwritten column subscription.payment_method',
@@ -72,7 +78,8 @@ const EXPECTED: Record<(typeof CREATION_WRITES)[number], readonly string[]> = {
     ],
     'subscription.authorization_window_ends_at': [
         'TRANS:B:S3 reads unwritten column subscription.authorization_window_ends_at',
-        'TRANS:B:S39 reads unwritten column subscription.authorization_window_ends_at'
+        'TRANS:B:S39 reads unwritten column subscription.authorization_window_ends_at',
+        'TRANS:B:A8 reads unwritten column subscription.authorization_window_ends_at'
     ],
     'subscription.authorization_window_deadline_version': [
         'TRANS:B:S3 reads unwritten column subscription.authorization_window_deadline_version'
@@ -130,7 +137,7 @@ describe('TEST:1667:1 AC:1667:1 — S1 creation writes', () => {
 });
 
 describe('TEST:1667:2 AC:1667:2 — restored reads', () => {
-    it('restores the twenty-one retired reads in their catalog order', () => {
+    it('restores the twenty-one retired reads, then the three HOS-2668 adds, in corpus order', () => {
         const corpus = read({ root: ROOT });
         expect(
             corpus.transitions.flatMap((row) =>
@@ -147,7 +154,9 @@ describe('TEST:1667:2 AC:1667:2 — restored reads', () => {
             // 2026-11-17, HOS-1715: 182 (8 payment and addon reads return).
             // 2026-11-18, HOS-2344: 183 (S40 reads subscription.succeeds_id).
             // 2026-11-19, HOS-2351: still 183 (S40 stops writing succeeded_by_id; reads unchanged).
-            output: 'OK GUARD:G-R6: verified 179 read columns.'
+            // 2026-11-27, HOS-2668: 181 (A8 reads addon_instance.status and complement_subscription_id).
+            // 2026-11-27, HOS-2668 final round: 193 (A8 declares all eight reads; A9 adds six).
+            output: 'OK GUARD:G-R6: verified 193 read columns.'
         });
     });
 });

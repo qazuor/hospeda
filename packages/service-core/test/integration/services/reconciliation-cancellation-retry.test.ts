@@ -605,3 +605,56 @@ describe('HOS-1583 TEST:B9a:4 — the sweep retries an S20 decision with its own
             .where(eq(emailOutbox.recipientUserId, row.userId!));
     });
 });
+
+describe('HOS-2668 the retry of an owner-replaced pending add-on purchase (A8)', () => {
+    it('HOS-2668 retries a failed A8 cancel with no owner notice and without waiting for one', async () => {
+        // Arrange
+        const { fake } = newFake();
+        const h = harness(fake, 'NOT_YET_SENT');
+        const replaced = await decided({
+            fake,
+            status: 'ABANDONED',
+            class: 'COMPLEMENTO',
+            transition: 'A8'
+        });
+
+        // Act
+        const { summary } = await runDay(0, fake, h.beforeCancel);
+
+        // Assert
+        expect(BEFORE_CANCEL_KIND_BY_TRANSITION.A8).toBe('RECIPIENTLESS');
+        expect(h.beforeCancel).not.toHaveBeenCalled();
+        expect(calledWith(h.cancel, replaced.providerId)).toBe(1);
+        expect(summary.cancellationRetry).toMatchObject({ noticePending: 0 });
+        expect(await templatesOf(replaced.userId!)).toEqual([]);
+    });
+
+    it('HOS-2668 an A3 window-expiry retry still asks for ADDON_AUTHORIZATION_EXPIRED first', async () => {
+        // Arrange
+        const { fake } = newFake();
+        const h = harness(fake);
+        const expired = await decided({
+            fake,
+            status: 'ABANDONED',
+            class: 'COMPLEMENTO',
+            transition: 'A3'
+        });
+
+        // Act
+        await runDay(0, fake, h.beforeCancel);
+
+        // Assert
+        expect(
+            h.beforeCancel.mock.calls
+                .map(([input]) => input)
+                .filter((input) => input.subscriptionId === expired.id)
+        ).toStrictEqual([
+            {
+                subscriptionId: expired.id,
+                userId: expired.userId,
+                kind: 'ADDON_AUTHORIZATION_EXPIRED'
+            }
+        ]);
+        expect(calledWith(h.cancel, expired.providerId)).toBe(1);
+    });
+});
