@@ -4,7 +4,8 @@ import { afterAll, describe, expect, it, vi } from 'vitest';
 import { readLivePermanentGrantPlan } from '../../../src/services/billing/grant/permanent-grant-live-plan';
 import {
     type StartSubscriptionPorts,
-    startSubscription
+    startSubscription,
+    startTeamCardSubscription
 } from '../../../src/services/billing/subscription/start-subscription.service';
 import { closeServiceTestPool, getServiceTestDb, getServiceTestPool } from './helpers';
 import { namespaceFake } from './support/payment-provider';
@@ -92,7 +93,30 @@ async function grant(input: {
     return anchor;
 }
 
-function ports(fake: FakePaymentProvider): StartSubscriptionPorts {
+/** A newer current version of an existing plan, with its own monthly option. */
+async function seedNewerVersion(planId: string) {
+    const pool = getServiceTestPool();
+    await pool.query('UPDATE plan_version SET current = false WHERE plan_id = $1', [planId]);
+    const planVersionId = (
+        await pool.query<{ id: string }>(
+            `INSERT INTO plan_version (plan_id, vertical, rank, sellable, current, trial_days, allows_pause)
+         VALUES ($1, 'accommodation', $2, true, true, 0, false) RETURNING id`,
+            [planId, nextPlanVersionRank()]
+        )
+    ).rows[0]?.id;
+    if (!planVersionId) throw new Error('No newer version');
+    const billingOptionId = (
+        await pool.query<{ id: string }>(
+            `INSERT INTO billing_option (plan_version_id, cycle, amount, currency)
+         VALUES ($1, 'monthly', 260000, 'ARS') RETURNING id`,
+            [planVersionId]
+        )
+    ).rows[0]?.id;
+    if (!billingOptionId) throw new Error('No newer option');
+    return { planVersionId, billingOptionId };
+}
+
+function ports(fake: FakePaymentProvider, sellable = true): StartSubscriptionPorts {
     return {
         provider: namespaceFake(fake),
         clock,
@@ -100,7 +124,7 @@ function ports(fake: FakePaymentProvider): StartSubscriptionPorts {
             graceDays: 10,
             allowsPause: false,
             current: true,
-            sellable: true
+            sellable
         }),
         beforeCancelNotice: { beforeCancel: async () => 'SENT' },
         touristVipInheritance: noTouristVip
@@ -153,6 +177,52 @@ describe('HOS-2665 S1 refuses the plan already held through a permanent grant', 
 
         const started = await startSubscription(
             { userId, billingOptionId: upgrade.billingOptionId, returnUrl },
+            ports(fake)
+        );
+        expect(started.subscriptionId).toMatch(/^[0-9a-f-]{36}$/);
+        expect(authorize).toHaveBeenCalledOnce();
+    });
+
+    it('rejects the current version of the plan whose older version is the grant floor', async () => {
+        const userId = await seedUser();
+        const granted = await seedPlan('Básico');
+        await grant({ userId, plan: granted });
+        const newer = await seedNewerVersion(granted.planId);
+        const fake = new FakePaymentProvider({ clock, idNamespace: crypto.randomUUID() });
+        const authorize = vi.spyOn(fake, 'authorize');
+
+        await expect(
+            startSubscription(
+                { userId, billingOptionId: newer.billingOptionId, returnUrl },
+                ports(fake)
+            )
+        ).rejects.toMatchObject({ code: 'ALREADY_EXISTS', reason: 'PLAN_ALREADY_GRANTED' });
+        expect(authorize).not.toHaveBeenCalled();
+    });
+
+    it('answers the 422 PLAN_NOT_FOR_SALE before the 409 PLAN_ALREADY_GRANTED', async () => {
+        const userId = await seedUser();
+        const granted = await seedPlan('Básico');
+        await grant({ userId, plan: granted });
+        const fake = new FakePaymentProvider({ clock, idNamespace: crypto.randomUUID() });
+
+        await expect(
+            startSubscription(
+                { userId, billingOptionId: granted.billingOptionId, returnUrl },
+                ports(fake, false)
+            )
+        ).rejects.toMatchObject({ code: 'VALIDATION_ERROR', reason: 'PLAN_NOT_FOR_SALE' });
+    });
+
+    it('leaves the team card subscription (action 6) unchanged for a granted plan', async () => {
+        const userId = await seedUser();
+        const granted = await seedPlan('Básico');
+        await grant({ userId, plan: granted });
+        const fake = new FakePaymentProvider({ clock, idNamespace: crypto.randomUUID() });
+        const authorize = vi.spyOn(fake, 'authorize');
+
+        const started = await startTeamCardSubscription(
+            { userId, billingOptionId: granted.billingOptionId, returnUrl },
             ports(fake)
         );
         expect(started.subscriptionId).toMatch(/^[0-9a-f-]{36}$/);

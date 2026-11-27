@@ -26,6 +26,7 @@ import { buildProviderReason } from '../plan-display-name';
 import { readAnchoredBillingOption } from '../read-anchored-billing-option';
 import type { ArrearsSuspensionNoticeContent } from './arrears-suspension-notice';
 import { assertPlanNotAlreadyGranted } from './assert-plan-not-already-granted';
+import { assertTouristVipPurchaseAllowed } from './assert-tourist-vip-purchase-allowed';
 import { buildAuthorizationReturnUrl } from './authorization-return-url';
 import type { BeforeCancelNoticeKind } from './before-cancel-notice-kinds';
 import type { TouristVipInheritancePort } from './cancel-inherited-tourist-vip.service';
@@ -48,6 +49,8 @@ import {
     resolveLiveCommitmentReuse,
     throttledCreationResult
 } from './resolve-live-commitment';
+
+export { assertTouristVipPurchaseAllowed } from './assert-tourist-vip-purchase-allowed';
 
 const logger = createLogger('subscription-start');
 
@@ -159,25 +162,6 @@ export async function readBillingChoice(input: {
             plan: { slug: choice.planSlug, name: choice.planName }
         })
     };
-}
-
-/** Rejects Tourist VIP purchases already inherited from the current plan. */
-export async function assertTouristVipPurchaseAllowed(input: {
-    readonly vertical: string;
-    readonly userId: string;
-    readonly touristVipInheritance: TouristVipInheritancePort;
-}): Promise<void> {
-    if (
-        input.vertical === 'tourist' &&
-        (await input.touristVipInheritance.inherits({ userId: input.userId }))
-    ) {
-        throw new ServiceError(
-            ServiceErrorCode.ALREADY_EXISTS,
-            'Your current plan already includes Tourist VIP',
-            undefined,
-            'TOURIST_VIP_INHERITED'
-        );
-    }
 }
 
 /** Provider phase, after the durable row/key transaction has committed. */
@@ -328,8 +312,7 @@ export async function startSubscription(
 ): Promise<StartSubscriptionResult> {
     const choice = await readBillingChoice({ billingOptionId: input.billingOptionId });
     assertSelfServiceCardCheckout({ paymentMethods: choice.paymentMethods });
-    await assertPlanNotAlreadyGranted({ userId: input.userId, choice });
-    return startCardSubscription({ input, choice }, ports);
+    return startCardSubscription({ input, choice, refuseGrantedPlan: true }, ports);
 }
 
 /**
@@ -344,19 +327,26 @@ export async function startTeamCardSubscription(
 ): Promise<StartSubscriptionResult> {
     const choice = await readBillingChoice({ billingOptionId: input.billingOptionId });
     assertPlanAcceptsPaymentMethod({ paymentMethods: choice.paymentMethods, method: 'CARD' });
-    return startCardSubscription({ input, choice }, ports);
+    return startCardSubscription({ input, choice, refuseGrantedPlan: false }, ports);
 }
 
 async function startCardSubscription(
-    { input, choice }: { readonly input: StartSubscriptionInput; readonly choice: BillingChoice },
+    args: {
+        readonly input: StartSubscriptionInput;
+        readonly choice: BillingChoice;
+        /** Public S1 only (HOS-2665); the team's card subscription (action 6) passes `false`. */
+        readonly refuseGrantedPlan: boolean;
+    },
     ports: StartSubscriptionPorts
 ): Promise<StartSubscriptionResult> {
+    const { input, choice } = args;
     await assertPlanForSale({ planVersionId: choice.planVersionId, planPolicy: ports.planPolicy });
     await assertTouristVipPurchaseAllowed({
         vertical: choice.vertical,
         userId: input.userId,
         touristVipInheritance: ports.touristVipInheritance
     });
+    if (args.refuseGrantedPlan) await assertPlanNotAlreadyGranted({ userId: input.userId, choice });
 
     // HOS-1749: refuse before declined-attempt cleanup, commitment or provider calls.
     await assertNewPaidSignupsOpen({
