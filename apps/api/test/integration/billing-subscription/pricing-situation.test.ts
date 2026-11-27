@@ -106,6 +106,35 @@ async function commitment(
     return selected;
 }
 
+/** A live permanent grant anchored on a fresh accommodation plan, outside the B9a harness. */
+async function grantTo(userId: string) {
+    const signer = await user();
+    const anchored = await option('accommodation');
+    const [version] = await getDb()
+        .select({ planId: planVersions.planId })
+        .from(planVersions)
+        .where(eq(planVersions.id, anchored.planVersionId));
+    if (!version) throw new Error('Expected anchored version');
+    const [grant] = await getDb()
+        .insert(permanentGrants)
+        .values({
+            beneficiaryUserId: userId,
+            grantedBy: signer,
+            includesAddons: false,
+            reason: 'HOS-2665 pricing situation',
+            affectedSubscriptionIds: []
+        })
+        .returning({ id: permanentGrants.id });
+    if (!grant) throw new Error('Expected grant');
+    await getDb().insert(permanentGrantVerticals).values({
+        permanentGrantId: grant.id,
+        vertical: 'accommodation',
+        planId: version.planId,
+        floorPlanVersionId: anchored.planVersionId
+    });
+    return anchored;
+}
+
 function headers(userId?: string) {
     return {
         'content-type': 'application/json',
@@ -264,38 +293,37 @@ describe('TEST:1621:3 pricing situation is resolved through the protected route'
         const harness = await makeGrantCoverageHarness({ subject: { coverage } });
         const id = harness.newUserId();
         await option('tourist');
-        const { floor } = await harness.arrange.liveGrant(id, VerticalEnum.TOURIST);
-        const result = await read(id, 'tourist');
-        expect(result.response.status).toBe(200);
-        expect(result.body.data).toMatchObject({ situation: 'GRANTED', planVersionId: floor });
-    });
-
-    it('HOS-2665 lets a live subscription win over a permanent grant', async () => {
-        const id = await user();
-        const signer = await user();
-        const anchored = await option('accommodation');
-        const [version] = await getDb()
+        const { floor, since } = await harness.arrange.liveGrant(id, VerticalEnum.TOURIST);
+        const [anchored] = await getDb()
             .select({ planId: planVersions.planId })
             .from(planVersions)
-            .where(eq(planVersions.id, anchored.planVersionId));
-        if (!version) throw new Error('Expected anchored version');
-        const [grant] = await getDb()
-            .insert(permanentGrants)
-            .values({
-                beneficiaryUserId: id,
-                grantedBy: signer,
-                includesAddons: false,
-                reason: 'HOS-2665 subscription wins',
-                affectedSubscriptionIds: []
-            })
-            .returning({ id: permanentGrants.id });
-        if (!grant) throw new Error('Expected grant');
-        await getDb().insert(permanentGrantVerticals).values({
-            permanentGrantId: grant.id,
-            vertical: 'accommodation',
-            planId: version.planId,
-            floorPlanVersionId: anchored.planVersionId
+            .where(eq(planVersions.id, floor));
+        const result = await read(id, 'tourist');
+        expect(result.response.status).toBe(200);
+        expect(result.body.data).toEqual({
+            situation: 'GRANTED',
+            planId: anchored?.planId,
+            planVersionId: floor,
+            planName: 'B9a coverage fixture',
+            since: since.toISOString()
         });
+    });
+
+    it('HOS-2665 reports GRANTED, not TRIAL, when a grant holder also has a running trial', async () => {
+        const id = await user();
+        await createTrial({ userId: id, status: 'TRIAL_ACTIVE' });
+        const anchored = await grantTo(id);
+        const result = await read(id, 'accommodation');
+        expect(result.response.status).toBe(200);
+        expect(result.body.data).toMatchObject({
+            situation: 'GRANTED',
+            planVersionId: anchored.planVersionId
+        });
+    });
+
+    it('HOS-2665 lets a paid live subscription win over a permanent grant', async () => {
+        const id = await user();
+        await grantTo(id);
         const selected = await commitment(id, 'ACTIVE');
         const result = await read(id, 'accommodation');
         expect(result.response.status).toBe(200);
@@ -304,6 +332,18 @@ describe('TEST:1621:3 pricing situation is resolved through the protected route'
             status: 'ACTIVE',
             planVersionId: selected.planVersionId,
             billingOptionId: selected.billingOptionId
+        });
+    });
+
+    it('HOS-2665 keeps GRANTED over an abandoned checkout still PENDING_AUTHORIZATION', async () => {
+        const id = await user();
+        const anchored = await grantTo(id);
+        await commitment(id, 'PENDING_AUTHORIZATION');
+        const result = await read(id, 'accommodation');
+        expect(result.response.status).toBe(200);
+        expect(result.body.data).toMatchObject({
+            situation: 'GRANTED',
+            planVersionId: anchored.planVersionId
         });
     });
 

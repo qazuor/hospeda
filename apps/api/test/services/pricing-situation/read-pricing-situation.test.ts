@@ -118,21 +118,45 @@ describe('HOS-2665 readPricingSituation with a live permanent grant', () => {
         });
     });
 
-    it('lets a live subscription win over a grant (the person is paying)', async () => {
-        const subscription = {
-            status: 'ACTIVE',
-            planVersionId: '00000000-0000-4000-8000-0000000000c1',
-            billingOptionId: '00000000-0000-4000-8000-0000000000d1'
-        };
-        mocks.findLiveCommitment.mockResolvedValue({ subscription });
-        mocks.readLivePermanentGrantPlan.mockResolvedValue({ plan: grant });
+    const subscriptionIn = (status: string) => ({
+        status,
+        planVersionId: '00000000-0000-4000-8000-0000000000c1',
+        billingOptionId: '00000000-0000-4000-8000-0000000000d1'
+    });
 
-        for (const vertical of ['tourist', 'accommodation'] as const) {
-            expect(await readPricingSituation({ userId, vertical })).toEqual({
-                situation: 'SUBSCRIBED',
-                ...subscription
-            });
-        }
-        expect(mocks.readLivePermanentGrantPlan).not.toHaveBeenCalled();
+    for (const status of ['ACTIVE', 'GRACE_PERIOD', 'CANCEL_SCHEDULED'] as const) {
+        it(`lets a paid ${status} subscription win over a grant`, async () => {
+            const subscription = subscriptionIn(status);
+            mocks.findLiveCommitment.mockResolvedValue({ subscription });
+            mocks.readLivePermanentGrantPlan.mockResolvedValue({ plan: grant });
+
+            for (const vertical of ['tourist', 'accommodation'] as const) {
+                expect(await readPricingSituation({ userId, vertical })).toEqual({
+                    situation: 'SUBSCRIBED',
+                    ...subscription
+                });
+            }
+        });
+    }
+
+    for (const status of ['PENDING_AUTHORIZATION', 'PAUSED', 'SUSPENDED'] as const) {
+        it(`keeps GRANTED when the live subscription is ${status} (not paid in force)`, async () => {
+            mocks.findLiveCommitment.mockResolvedValue({ subscription: subscriptionIn(status) });
+            mocks.readLivePermanentGrantPlan.mockResolvedValue({ plan: grant });
+
+            for (const vertical of ['tourist', 'accommodation'] as const) {
+                expect(await readPricingSituation({ userId, vertical })).toEqual(granted);
+            }
+        });
+    }
+
+    it('keeps SUBSCRIBED/PENDING_AUTHORIZATION when there is no grant', async () => {
+        const subscription = subscriptionIn('PENDING_AUTHORIZATION');
+        mocks.findLiveCommitment.mockResolvedValue({ subscription });
+
+        expect(await readPricingSituation({ userId, vertical: 'tourist' })).toEqual({
+            situation: 'SUBSCRIBED',
+            ...subscription
+        });
     });
 });
