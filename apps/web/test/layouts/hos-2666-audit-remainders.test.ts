@@ -71,6 +71,16 @@ describe('HOS-2666 audit remainders', () => {
         }
     });
 
+    it('CARD-038 H-1: the favorites gate is one column and the sign-in icon never shrinks', () => {
+        const auth = read('src/components/auth/AuthRequiredPopover.module.css');
+        expect(auth).toMatch(/\.header\s*\{[^}]*flex-wrap: wrap;/);
+        expect(auth).toMatch(/\.message\s*\{[^}]*flex: 1 1 0;[^}]*min-width: 0;/);
+        expect(auth).toMatch(/\.benefit\s*\{[^}]*flex: 0 0 100%;/);
+        expect(auth).toMatch(/\.signInButton svg\s*\{[^}]*flex-shrink: 0;/);
+        const tsx = read('src/components/auth/AuthRequiredPopover.client.tsx');
+        expect(tsx).toContain('<UserIcon');
+    });
+
     it('CARD-040 H-3: the VIP save toast says "ilimitados" in every locale', () => {
         for (const locale of ['es', 'en', 'pt']) {
             const audit = readI18n(locale, 'ui.json').favorite.audit;
