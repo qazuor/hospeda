@@ -332,7 +332,7 @@ export function UserMenu({
             <a
                 href={buildUrl({ locale, path: 'auth/signin' })}
                 className={cn(
-                    'btn-gradient btn-gradient--primary btn-gradient--sm',
+                    'btn-gradient btn-gradient--primary btn-gradient--flat btn-gradient--sm',
                     styles.signInLink
                 )}
             >

@@ -16,6 +16,13 @@ vi.mock('@/lib/api/endpoints-protected', () => ({
     get hostDashboardApi() {
         return { get: mockHostDashboardGet };
     },
+    // The «Plan» card (HOS-2664) reads the subscription itself; its own suite covers it.
+    get userApi() {
+        return { getStats: vi.fn(() => new Promise(() => {})) };
+    },
+    get publishApi() {
+        return { trialSummary: vi.fn(() => new Promise(() => {})) };
+    },
     // AnalyticsSection also imports from endpoints-protected: stub what it uses.
     get hostAnalyticsApi() {
         const pending = () => new Promise(() => {});

@@ -25,6 +25,14 @@ export type EntityBreadcrumbContext = {
 
 type LabelResult = { type: 'i18n'; key: string } | { type: 'text'; value: string };
 
+/**
+ * TanStack marks every link whose path is a prefix of the current location as
+ * active and sets `aria-current="page"` on it by itself, after any `activeProps`.
+ * Only the last crumb is the current page, so ancestor links match EXACTLY and
+ * never count as active while a deeper page is shown (HOS-2664).
+ */
+const ANCESTOR_LINK_ACTIVE_OPTIONS = { exact: true } as const;
+
 const warnedSegments = new Set<string>();
 
 const getLabelForPath = (path: string, entityContext?: EntityBreadcrumbContext): LabelResult => {
@@ -136,6 +144,7 @@ export const Breadcrumbs = ({ entityContext }: BreadcrumbsProps = {}) => {
                     ) : (
                         <Link
                             to="/dashboard"
+                            activeOptions={ANCESTOR_LINK_ACTIVE_OPTIONS}
                             className="block max-w-[24ch] truncate hover:underline"
                             title={t('ui.navigation.home')}
                         >
@@ -161,6 +170,7 @@ export const Breadcrumbs = ({ entityContext }: BreadcrumbsProps = {}) => {
                             {registered && !isLast ? (
                                 <Link
                                     to={p}
+                                    activeOptions={ANCESTOR_LINK_ACTIVE_OPTIONS}
                                     className="max-w-[24ch] truncate hover:underline"
                                     title={displayText}
                                 >
