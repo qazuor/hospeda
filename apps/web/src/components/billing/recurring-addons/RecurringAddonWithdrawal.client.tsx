@@ -193,6 +193,19 @@ export function RecurringAddonWithdrawal({
                                         t('billing.addonPurchase.recurringAddons.noListing')}
                                 </span>
                             }
+                            // The confirmation text lives in the title column: inside the
+                            // `auto`-width actions column it widened that column until the
+                            // title collapsed to one letter per line (HOS-2668).
+                            extra={
+                                confirmId === item.addonInstanceId ? (
+                                    <p
+                                        className={styles.confirmText}
+                                        data-testid="recurring-addon-withdraw-confirm-text"
+                                    >
+                                        {t('billing.addonPurchase.recurringAddons.confirmText')}
+                                    </p>
+                                ) : undefined
+                            }
                             actions={[
                                 confirmId === item.addonInstanceId ? (
                                     <div
@@ -200,9 +213,6 @@ export function RecurringAddonWithdrawal({
                                         className={styles.confirm}
                                         data-testid="recurring-addon-withdraw-confirm"
                                     >
-                                        <p>
-                                            {t('billing.addonPurchase.recurringAddons.confirmText')}
-                                        </p>
                                         <Button
                                             variant="secondary"
                                             className={styles.withdrawButton}
