@@ -9,7 +9,7 @@
  * - a LockedState naming the catalog plans when the plan lacks the dashboard
  *   entitlement (HOS-2214: never a raw «Entitlement required»).
  *
- * The account plan summary is NOT here: it lives on the general dashboard.
+ * A third «Plan» card shows the current plan and one next step (HOS-2664).
  *
  * @example
  * ```astro
@@ -37,6 +37,7 @@ import {
 import { hostDashboardApi } from '@/lib/api/endpoints-protected';
 import { createT, createTranslations, type SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
+import { HostPlanStatCard } from '../account/dashboard/HostPlanStatCard.client';
 import { AnalyticsSection } from './AnalyticsSection.client';
 
 /** Props of {@link HostDashboard}. */
@@ -45,6 +46,8 @@ export interface HostDashboardProps {
     readonly locale: SupportedLocale;
     /** Catalog names of the plans that grant the dashboard (read on the server). */
     readonly planNames: readonly string[];
+    /** Translated plan names by catalog slug for the «Plan» card (read on the server). */
+    readonly planNamesBySlug?: Readonly<Record<string, string>>;
     /** Where «Ver planes» goes. */
     readonly plansHref: string;
     /** Effective SSR authority to navigate to the owner inbox; counts stay visible without it. */
@@ -63,6 +66,7 @@ type ReadyState = Extract<HostDashboardOutcome, { kind: 'ready' }>;
 export function HostDashboard({
     locale,
     planNames,
+    planNamesBySlug = {},
     plansHref,
     canViewInbox = false
 }: HostDashboardProps): JSX.Element {
@@ -190,6 +194,10 @@ export function HostDashboard({
                               }
                             : undefined
                     }
+                />
+                <HostPlanStatCard
+                    locale={locale}
+                    planNames={planNamesBySlug}
                 />
             </StatGrid>
 

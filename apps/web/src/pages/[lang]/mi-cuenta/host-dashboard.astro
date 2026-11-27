@@ -5,8 +5,8 @@
  *
  * Host data only: the `HostDashboard` island draws the properties and unread
  * OWNER conversations (or the onboarding, or a plan LockedState with catalog
- * names), and a Section of quick actions follows. The account plan summary is
- * on the general dashboard and is not repeated here.
+ * names), and a Section of quick actions follows. A third KPI card shows the
+ * plan (HOS-2664).
  *
  * Auth protection: middleware redirects unauthenticated users; the in-page
  * guard is the safety net. Role gate through the shared `nav-gating`
@@ -24,6 +24,7 @@ import { buildUrl } from '@/lib/urls';
 import { canAccessPublisherArea, guardPublisherArea } from '@/lib/account/publisher-access';
 import { resolveSubscriptionPlansPathForAudience } from '@/lib/account-roles';
 import { fetchPublicPlans, planNamesWithEntitlement } from '@/lib/billing/fetch-plans';
+import { readDashboardPlanNames } from '@/lib/account/dashboard-plan-names';
 import { buildHostQuickActions } from '@/lib/account/host-dashboard';
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import { PageHeader } from '@/components/account/ui';
@@ -57,6 +58,8 @@ const planNames = planNamesWithEntitlement({
     result: await fetchPublicPlans({ vertical: 'accommodation' }),
     entitlement: EntitlementKeyEnum.VIEW_BASIC_STATS
 });
+// Plan names by slug for the «Plan» KPI card (catalog, never hardcoded), same read as the general dashboard.
+const planNamesBySlug = await readDashboardPlanNames({ t });
 const plansHref = buildUrl({ locale, path: resolveSubscriptionPlansPathForAudience({ audience: 'host' }) });
 ---
 
@@ -66,7 +69,7 @@ const plansHref = buildUrl({ locale, path: resolveSubscriptionPlansPathForAudien
             <PageHelpLink slot="help" locale={locale} />
         </PageHeader>
 
-        <HostDashboard client:load locale={locale} planNames={planNames} plansHref={plansHref} canViewInbox={canAccessPublisherArea({ area: 'inbox', permissions: user.permissions })} />
+        <HostDashboard client:load locale={locale} planNames={planNames} planNamesBySlug={planNamesBySlug} plansHref={plansHref} canViewInbox={canAccessPublisherArea({ area: 'inbox', permissions: user.permissions })} />
 
         <DashboardLinksSection
             locale={locale}

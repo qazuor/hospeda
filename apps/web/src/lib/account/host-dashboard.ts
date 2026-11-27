@@ -1,10 +1,9 @@
 /**
  * Pure pieces of the host dashboard (HOS-2474, D19 «tableros separados»).
  *
- * The host dashboard shows HOST data only: properties and unread owner
- * conversations. The account plan summary lives on the general dashboard and
- * is not repeated here (AC-11 compares {@link HOST_DASHBOARD_WIDGETS} with the
- * general dashboard's list).
+ * The host dashboard shows properties, unread owner conversations and the plan
+ * card (HOS-2664, D13). The plan card has its own widget id (`hostPlan`), so AC-11
+ * still tells the two dashboards' widget lists apart ({@link HOST_DASHBOARD_WIDGETS}).
  *
  * @module lib/account/host-dashboard
  */
@@ -13,7 +12,7 @@ import type { DashboardRow } from '@/lib/account/dashboard-rows';
 import { canAccessPublisherArea, type PublisherArea } from '@/lib/account/publisher-access';
 
 /** Stable ids of the host dashboard's widgets (`data-widget`). */
-export const HOST_DASHBOARD_WIDGETS = ['hostProperties', 'hostUnreadMessages'] as const;
+export const HOST_DASHBOARD_WIDGETS = ['hostProperties', 'hostUnreadMessages', 'hostPlan'] as const;
 
 /** Quick actions of the host dashboard, as list rows. */
 export const HOST_QUICK_ACTIONS: readonly (DashboardRow & { readonly area: PublisherArea })[] = [
