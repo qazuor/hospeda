@@ -152,6 +152,24 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4834
+    {
+        id: '2026-11-27-host-dashboard-plan-card',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST'],
+        title: {
+            es: 'Tu tablero muestra tu plan y cuándo es tu próximo cobro',
+            en: 'Your dashboard now shows your plan and your next charge',
+            pt: 'Seu painel agora mostra seu plano e sua próxima cobrança'
+        },
+        body: {
+            es: 'En el tablero de **Mi cuenta** hay una tarjeta **Plan** junto a tus propiedades y mensajes. Te muestra el plan que tenés y el próximo paso, como «Tu próximo cobro es en 4 días», con un link a **Mi suscripción**.',
+            en: 'The **My account** dashboard has a **Plan** card next to your properties and messages. It shows your current plan and the next step, such as «Your next charge is in 4 days», with a link to **My subscription**.',
+            pt: 'O painel de **Minha conta** tem um cartão **Plano** ao lado das suas propriedades e mensagens. Ele mostra o seu plano atual e o próximo passo, como «Sua próxima cobrança é em 4 dias», com um link para **Minha assinatura**.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4830
     {
         id: '2026-11-27-listing-translations-one-model',
