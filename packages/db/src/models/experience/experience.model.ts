@@ -97,7 +97,7 @@ export class ExperienceModel extends BaseModelImpl<Experience> {
     }
 
     /**
-     * Finds a experience by `where`, loading its `faqs` relation when requested.
+     * Finds an experience by `where`, loading its `faqs` relation when requested.
      *
      * The inherited `BaseModelImpl.findWithRelations` is a stub that ignores
      * `relations` and returns the bare row, so before this override `faqs`
