@@ -17,7 +17,7 @@ describe('PricingCardsGrid per-card CTA wiring', () => {
             "ctaMode === 'checkout' && pricingVertical !== null && card.plan.planVersionId && card.plan.billingOptions"
         );
         expect(source).toContain(
-            '<PlanCardCta client:idle locale={locale} vertical={pricingVertical} planVersionId={card.plan.planVersionId} billingOptions={card.plan.billingOptions} planName={card.name} inheritedPlanVersionId={inheritedPlanVersionId} />'
+            '<PlanCardCta client:idle locale={locale} vertical={pricingVertical} planId={card.plan.id} planVersionId={card.plan.planVersionId} billingOptions={card.plan.billingOptions} planName={card.name} inheritedPlanVersionId={inheritedPlanVersionId} />'
         );
         expect(source).toContain("ctaMode === 'link'");
         expect(island).toContain('data-kind={view.kind}');

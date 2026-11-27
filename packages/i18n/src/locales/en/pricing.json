@@ -6,7 +6,8 @@
         "manage": "Manage my plan",
         "upgrade": "Upgrade to {{plan}}",
         "offer": "{{free}} or {{paid}} from {{price}}",
-        "compare": "Compare {{free}} and {{paid}}"
+        "compare": "Compare {{free}} and {{paid}}",
+        "granted": "Granted plan, no expiry"
     },
     "hub": {
         "title": "Hospeda plans",

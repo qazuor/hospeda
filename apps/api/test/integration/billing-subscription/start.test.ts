@@ -3,6 +3,8 @@ import {
     emailOutbox,
     eq,
     getDb,
+    permanentGrants,
+    permanentGrantVerticals,
     plans,
     planVersions,
     providerLinks,
@@ -151,6 +153,53 @@ describe('TEST:B3:2 and TEST:1723:1 protected S1 route rejections', () => {
         expect(response.status).toBe(409);
         expect((await response.json()).error.reason).toBe('PREVIOUS_ATTEMPT_IN_PROGRESS');
         expect(authorize).not.toHaveBeenCalled();
+    });
+
+    it('HOS-2665 answers 409 PLAN_ALREADY_GRANTED for the plan a live permanent grant holds', async () => {
+        const { user, version, option } = await fixture(true);
+        const signer = await fixture(true);
+        const [grant] = await getDb()
+            .insert(permanentGrants)
+            .values({
+                beneficiaryUserId: user.id,
+                grantedBy: signer.user.id,
+                includesAddons: false,
+                reason: 'HOS-2665 same plan checkout',
+                affectedSubscriptionIds: []
+            })
+            .returning({ id: permanentGrants.id });
+        if (!grant) throw new Error('No grant');
+        await getDb().insert(permanentGrantVerticals).values({
+            permanentGrantId: grant.id,
+            vertical: 'accommodation',
+            planId: version.planId,
+            floorPlanVersionId: version.id
+        });
+        const fake = new FakePaymentProvider({ clock, idNamespace: crypto.randomUUID() });
+        const authorize = vi.spyOn(fake, 'authorize');
+        const app = initApp({ clock, paymentProvider: fake });
+        const response = await app.request(path, {
+            method: 'POST',
+            headers: headers(user.id),
+            body: JSON.stringify({ billingOptionId: option.id, payerEmail: user.email })
+        });
+        expect(response.status).toBe(409);
+        const body = await response.json();
+        expect(body.error.code).toBe('ALREADY_EXISTS');
+        expect(body.error.reason).toBe('PLAN_ALREADY_GRANTED');
+        expect(authorize).not.toHaveBeenCalled();
+        expect(
+            await getDb().select().from(subscriptions).where(eq(subscriptions.userId, user.id))
+        ).toEqual([]);
+
+        // A different (higher) plan of the same vertical stays purchasable.
+        const upgrade = await app.request(path, {
+            method: 'POST',
+            headers: headers(user.id),
+            body: JSON.stringify({ billingOptionId: signer.option.id, payerEmail: user.email })
+        });
+        expect(upgrade.status).toBe(201);
+        expect(authorize).toHaveBeenCalledTimes(1);
     });
 
     it('TEST:B3:29 rejects Tourist VIP while an inherited title is active, then admits it after cancellation', async () => {

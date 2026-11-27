@@ -281,6 +281,7 @@
                 "previousAttemptClosing": "Estamos cerrando tu intento anterior; probá de nuevo en unos minutos.",
                 "previousAttemptInProgress": "Todavía estamos preparando tu intento anterior con Mercado Pago. Probá de nuevo en unos minutos.",
                 "touristVipInherited": "Tu plan actual ya incluye los beneficios de Turista VIP",
+                "planAlreadyGranted": "Ya tenés este plan cedido sin vencimiento: no hace falta pagarlo",
                 "commitmentTaken": "Ya tenés una suscripción en curso en esta vertical.",
                 "generic": "No pudimos iniciar tu suscripción. Probá de nuevo en unos minutos.",
                 "providerRejected": "Mercado Pago no aceptó los datos del pago. Revisá que el email sea el de tu cuenta de Mercado Pago y volvé a intentar.",

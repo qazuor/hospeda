@@ -6,7 +6,8 @@
         "manage": "Gestionar mi plan",
         "upgrade": "Pasate a {{plan}}",
         "offer": "{{free}} o {{paid}} desde {{price}}",
-        "compare": "{{free}} vs. {{paid}}"
+        "compare": "{{free}} vs. {{paid}}",
+        "granted": "Plan cedido, sin vencimiento"
     },
     "hub": {
         "title": "Planes de Hospeda",

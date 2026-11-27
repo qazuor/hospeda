@@ -46,6 +46,15 @@ export function useListingChatPlan({
                     const inherited = resolveTouristVipBenefitKeys({ result })?.plan;
                     name = plans.find((candidate) => candidate.slug === inherited?.slug)?.name;
                     quota = inherited?.limits[key];
+                } else if (state?.situation === 'GRANTED') {
+                    // HOS-2665: a plan held through a permanent grant is a VIP title too.
+                    vip = true;
+                    name =
+                        plans.find((candidate) => candidate.id === state.planId)?.name ??
+                        state.planName;
+                    // The grant decides the allowance, so read the effective set.
+                    const effective = await api.effectiveSetApi.get({ vertical: 'tourist' });
+                    quota = effective.ok ? effective.data.limits[key] : undefined;
                 } else if (
                     state?.situation === 'SUBSCRIBED' &&
                     ['ACTIVE', 'GRACE_PERIOD', 'CANCEL_SCHEDULED'].includes(state.status)
