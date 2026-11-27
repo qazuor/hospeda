@@ -152,6 +152,23 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4839
+    {
+        id: '2026-11-27-public-web-visual-polish',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'La web se ve más prolija en preguntas frecuentes, tarjetas y páginas legales',
+            en: 'The site looks tidier in FAQs, cards and legal pages',
+            pt: 'O site está mais caprichado nas perguntas frequentes, nos cartões e nas páginas legais'
+        },
+        body: {
+            es: 'Las preguntas frecuentes muestran un solo ícono por pregunta y el buscador te dice qué escribir. Los precios de las tarjetas entran en una línea, los índices de las páginas legales tienen formato propio y la alerta de precio activa aparece en su propia tarjeta.',
+            en: 'FAQs show a single icon per question, and the search box tells you what to type. Card prices fit on one line, the legal pages have a proper table of contents, and an active price alert sits in its own card.',
+            pt: 'As perguntas frequentes mostram um único ícone por pergunta, e a busca indica o que digitar. Os preços dos cartões cabem em uma linha, as páginas legais têm um índice com formato próprio e o alerta de preço ativo aparece em um cartão próprio.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4834
     {
         id: '2026-11-27-host-dashboard-plan-card',
