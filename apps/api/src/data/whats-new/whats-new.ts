@@ -152,7 +152,7 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
-    // origin: #4845, #4843
+    // origin: #4845, #4843, #4837
     {
         id: '2026-11-27-price-alert-target-price',
         publishedAt: 'on-promotion',
