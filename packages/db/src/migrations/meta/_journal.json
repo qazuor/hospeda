@@ -1779,13 +1779,6 @@
       "when": 1795685632352,
       "tag": "0253_black_robin_chapel",
       "breakpoints": true
-    },
-    {
-      "idx": 254,
-      "version": "7",
-      "when": 1795718892645,
-      "tag": "0254_flimsy_swarm",
-      "breakpoints": true
     }
   ]
 }
