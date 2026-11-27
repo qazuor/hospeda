@@ -8,6 +8,10 @@ const SCRIPT_DOC_EXEMPTIONS = new Map([
     [
         'scripts/bootstrap-linear-feedback.ts',
         'Its docblock points to scripts/linear/bootstrap-feedback.ts, which is absent from the repository; updating that stale command is outside this task.'
+    ],
+    [
+        'scripts/qr-center-logo-sweep-corpus.ts',
+        'Not a runnable script: a module of corpus data and coverage helpers imported by scripts/qr-center-logo-sweep.ts (which documents its tsx invocation) and by the QR centre-logo tests (HOS-2672).'
     ]
 ]);
 const EXEMPT = new Map([

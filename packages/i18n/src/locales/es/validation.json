@@ -15,7 +15,7 @@
             "centerLogo": {
                 "levelRequiredWithLogo": "Al activar el logo central hay que indicar también el nivel de corrección de errores, porque el guardado no se puede ver desde acá",
                 "logoRequiredWithLevel": "Al bajar el nivel de corrección de errores hay que indicar también si el código lleva logo central, porque el guardado no se puede ver desde acá",
-                "requiresErrorCorrection": "Para llevar el logo central, el código necesita un nivel de corrección de errores más alto (Q o H): el logo tapa parte del símbolo y sólo la corrección lo vuelve legible"
+                "requiresErrorCorrection": "Con este nivel de corrección de errores el logo central no entra: tendría que ser tan chico que no se reconocería. Elegí un nivel M, Q o H"
             },
             "color": {
                 "invalid": "El color debe ser hexadecimal, con el formato #rgb, #rrggbb o #rrggbbaa"

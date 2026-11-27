@@ -13,6 +13,7 @@
     "include": [
         "src/**/*",
         "test/**/*",
+        "scripts/qr-center-logo-sweep*.ts",
         "../../packages/notifications/src/**/*",
         "../../packages/email/src/**/*"
     ],

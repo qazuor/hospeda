@@ -37,7 +37,7 @@
         "errorCorrectionLabel": "Corrección de errores",
         "centerLogoLabel": "Logo central",
         "centerLogoHelp": "El logo tapa parte del símbolo: la corrección de errores es lo que lo mantiene legible.",
-        "centerLogoNeedsCorrection": "Con este nivel de corrección de errores el logo central no entra. Subilo a Q o H.",
+        "centerLogoNeedsCorrection": "Con este nivel de corrección de errores el logo central no entra. Subilo a M, Q o H.",
         "marginLabel": "Margen (módulos)",
         "sizeLabel": "Tamaño (píxeles)",
         "sizePlaceholder": "Vacío = escala libre",

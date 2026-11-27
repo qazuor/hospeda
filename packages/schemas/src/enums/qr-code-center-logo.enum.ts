@@ -30,6 +30,15 @@
 export enum QrCodeCenterLogoEnum {
     /** No mark. The symbol is drawn exactly as it always was. */
     NONE = 'NONE',
-    /** The Hospeda mark, served from this repo. */
+    /**
+     * The Hospeda isotipo, in its own brand colours.
+     *
+     * Vector artwork kept in the API (`apps/api/src/utils/qr-hospeda-isotipo.ts`),
+     * nested in the SVG output and rasterised for the PNG output. It sits on a
+     * disc in the QR's background colour; the QR's foreground colour does not
+     * tint it. Changing the artwork never affects codes already issued: the logo
+     * is not encoded data and every image is rendered per download, as long as
+     * the artwork stays inside the disc.
+     */
     HOSPEDA = 'HOSPEDA'
 }

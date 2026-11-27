@@ -37,7 +37,7 @@
         "errorCorrectionLabel": "Error correction",
         "centerLogoLabel": "Centre logo",
         "centerLogoHelp": "The logo covers part of the symbol; error correction is what keeps it readable.",
-        "centerLogoNeedsCorrection": "A centre logo does not fit at this error-correction level. Raise it to Q or H.",
+        "centerLogoNeedsCorrection": "A centre logo does not fit at this error-correction level. Raise it to M, Q or H.",
         "marginLabel": "Margin (modules)",
         "sizeLabel": "Size (pixels)",
         "sizePlaceholder": "Empty = scales freely",
