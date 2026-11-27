@@ -3,6 +3,7 @@ import type { TiptapNode } from '@repo/utils';
 import { z } from 'zod';
 import { ServiceError } from '../../../types/index.js';
 import type { DynamicSourcePort } from './dynamic-source.port.js';
+import type { ResolutionReport } from './resolution.types.js';
 import { resolveBlocks } from './resolve-blocks.js';
 
 const nodeSchema: z.ZodType<TiptapNode> = z.lazy(() =>
@@ -75,7 +76,39 @@ export async function resolveCampaignContent(input: {
     readonly port?: DynamicSourcePort;
     readonly now: Date;
 }): Promise<ResolvedNewsletterContent | null> {
-    if (!hasDynamicBlocks({ doc: input.doc })) return null;
+    return (await resolveCampaignContentWithReport(input)).content;
+}
+
+/** Resolve through the send path while retaining diagnostics for a write-free preview. */
+export async function resolveCampaignContentWithReport(input: {
+    readonly doc: unknown;
+    readonly port?: DynamicSourcePort;
+    readonly now: Date;
+}): Promise<{
+    readonly content: ResolvedNewsletterContent | null;
+    readonly report: ResolutionReport;
+}> {
+    if (!hasDynamicBlocks({ doc: input.doc })) return { content: null, report: { blocks: [] } };
+    try {
+        return await resolveDynamicContent(input);
+    } catch (error) {
+        if (error instanceof z.ZodError || error instanceof SyntaxError) {
+            throw new ServiceError(
+                ServiceErrorCode.VALIDATION_ERROR,
+                'Invalid dynamic block configuration',
+                undefined,
+                'INVALID_DYNAMIC_BLOCK'
+            );
+        }
+        throw error;
+    }
+}
+
+async function resolveDynamicContent(input: {
+    readonly doc: unknown;
+    readonly port?: DynamicSourcePort;
+    readonly now: Date;
+}): Promise<{ readonly content: ResolvedNewsletterContent; readonly report: ResolutionReport }> {
     const doc = NewsletterDocumentSchema.parse(input.doc);
     const blocks = doc.content
         .filter((node) => node.type === 'dynamicBlock')
@@ -127,7 +160,7 @@ export async function resolveCampaignContent(input: {
             'DYNAMIC_BLOCK_BELOW_MIN'
         );
     }
-    return ResolvedNewsletterContentSchema.parse({
+    const content = ResolvedNewsletterContentSchema.parse({
         version: 1,
         doc,
         blocks: result.blocks.map(({ blockKey, hidden, itemIds, cards }) => ({
@@ -137,4 +170,5 @@ export async function resolveCampaignContent(input: {
             cards: Object.fromEntries(cards)
         }))
     });
+    return { content, report: result.report };
 }

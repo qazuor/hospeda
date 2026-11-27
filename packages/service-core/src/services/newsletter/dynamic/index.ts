@@ -8,5 +8,6 @@ export * from './registries.js';
 export * from './render-campaign-content.js';
 export * from './resolution.types.js';
 export * from './resolve-blocks.js';
+export * from './resolve-campaign-preview.js';
 export type { SourceResolver, SourceResolverInput } from './sources/source.types.js';
 export * from './test-email-content.js';
