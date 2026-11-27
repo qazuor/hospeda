@@ -41,6 +41,22 @@ const CoveredSchema = z.object({
     /** The backend publication destination reports coverage without a running trial. */
     situation: z.literal('COVERED')
 });
+/**
+ * A live permanent grant covers the vertical with no subscription (HOS-2665).
+ * Nothing is billed, so it carries no status, billing option or renewal date.
+ */
+const GrantedSchema = z.object({
+    /** The backend grant reader found a live permanent grant anchor in this vertical. */
+    situation: z.literal('GRANTED'),
+    /** The granted plan, stable across catalog versions. */
+    planId: z.string().uuid(),
+    /** The grant's floor version, the same identifier `SUBSCRIBED` carries. */
+    planVersionId: z.string().uuid(),
+    /** The plan's display name as stored in the catalog. */
+    planName: z.string().min(1),
+    /** When the grant anchor for this vertical was created (ISO 8601). */
+    since: z.iso.datetime()
+});
 /** The backend has no sellable plan for this vertical. */
 const NoPlansSchema = z.object({
     /** The backend publication destination or sellable catalog has no plans. */
@@ -59,6 +75,7 @@ export const PricingSituationResponseSchema = z.discriminatedUnion('situation', 
     CheckoutSchema,
     SubscribedSchema,
     CoveredSchema,
+    GrantedSchema,
     NoPlansSchema,
     TouristVipInheritedSchema
 ]);

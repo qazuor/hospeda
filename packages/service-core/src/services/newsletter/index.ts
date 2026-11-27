@@ -6,6 +6,7 @@
  * stable entry point.
  */
 
+export * from './dynamic/index.js';
 export * from './newsletter-attribution.js';
 export * from './newsletter-campaign.permissions.js';
 export * from './newsletter-campaign.service.js';

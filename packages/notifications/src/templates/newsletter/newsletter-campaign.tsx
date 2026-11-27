@@ -12,13 +12,15 @@ export interface NewsletterCampaignProps {
      * Pre-rendered, sanitised HTML body for the campaign.
      *
      * SECURITY: This HTML is injected verbatim into the email DOM. It MUST
-     * have been produced by `renderTiptapEmailContent()` in
+     * have been produced by `renderNewsletterEmail()` or `renderTiptapEmailContent()` in
      * `packages/notifications/src/utils/tiptap-email-renderer.ts` (T-101-15),
      * which strips disallowed tags, applies inline styles, and escapes
      * untrusted content. Do NOT pass arbitrary admin-typed or user-supplied
      * HTML directly to this prop.
      */
-    bodyHtml: string;
+    bodyHtml?: string;
+    /** Trusted fragments from renderNewsletterEmail; when supplied, override bodyHtml. */
+    segments?: readonly string[];
     /**
      * Stable unsubscribe URL with HMAC token. Used for the explicit
      * unsubscribe CTA in the footer (not the EmailLayout placeholder).
@@ -42,7 +44,7 @@ export interface NewsletterCampaignProps {
  * @param props - Campaign payload
  */
 export function NewsletterCampaign(props: NewsletterCampaignProps) {
-    const { subject, bodyHtml, unsubscribeUrl, preheaderText, isTest = false } = props;
+    const { subject, bodyHtml, segments, unsubscribeUrl, preheaderText, isTest = false } = props;
 
     const previewText = preheaderText?.trim()
         ? isTest
@@ -54,9 +56,9 @@ export function NewsletterCampaign(props: NewsletterCampaignProps) {
 
     const displaySubject = isTest ? `[PRUEBA] ${subject}` : subject;
 
-    // SECURITY: bodyHtml is pre-sanitised by tiptap-email-renderer (T-101-15).
+    // SECURITY: text fragments are sanitized; card fragments are rendered from plain data.
     // This is a deliberate injection point for trusted campaign HTML.
-    const sanitisedBody = { __html: bodyHtml };
+    const sanitisedBody = { __html: segments?.join('') ?? bodyHtml ?? '' };
 
     return (
         <EmailLayout

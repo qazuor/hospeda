@@ -6,7 +6,8 @@
         "manage": "Gerenciar meu plano",
         "upgrade": "Mude para {{plan}}",
         "offer": "{{free}} ou {{paid}} a partir de {{price}}",
-        "compare": "{{free}} em comparação com {{paid}}"
+        "compare": "{{free}} em comparação com {{paid}}",
+        "granted": "Plano cedido, sem vencimento"
     },
     "hub": {
         "title": "Planos da Hospeda",

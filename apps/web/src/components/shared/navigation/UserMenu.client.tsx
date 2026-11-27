@@ -331,10 +331,7 @@ export function UserMenu({
         return (
             <a
                 href={buildUrl({ locale, path: 'auth/signin' })}
-                className={cn(
-                    'btn-gradient btn-gradient--primary btn-gradient--flat btn-gradient--sm',
-                    styles.signInLink
-                )}
+                className={styles.signInLink}
             >
                 {texts.signIn}
             </a>

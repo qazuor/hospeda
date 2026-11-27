@@ -70,4 +70,18 @@ describe('newsletter renderers with attribution', () => {
         expect(html).toContain('utm_campaign=otono-aaaaaaaa');
         expect(html).not.toContain('/p/');
     });
+
+    it('forwards dynamic segments to the campaign wrapper before attribution', async () => {
+        const html = await renderAttributedCampaignEmail({
+            subject: 'Dynamic newsletter',
+            bodyHtml: '<p>Legacy fallback must not appear</p>',
+            segments: [`<p>Dynamic card <a href="${SITE_URL}/es/alojamientos/cabin/">View</a></p>`],
+            unsubscribeUrl: `${SITE_URL}/es/newsletter/baja?t=x`,
+            isTest: false,
+            attribution: { medium: 'campaign', campaignSlug: 'dynamic-aaaaaaaa' }
+        });
+        expect(html).toContain('Dynamic card');
+        expect(html).not.toContain('Legacy fallback must not appear');
+        expect(html).toContain('utm_campaign=dynamic-aaaaaaaa');
+    });
 });

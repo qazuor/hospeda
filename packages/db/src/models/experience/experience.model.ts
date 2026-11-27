@@ -6,10 +6,12 @@ import { experiences } from '../../schemas/experience/experiences.dbschema.ts';
 import { rExperienceAmenity } from '../../schemas/experience/r_experience_amenity.dbschema.ts';
 import { rExperienceFeature } from '../../schemas/experience/r_experience_feature.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
-import { safeIlike } from '../../utils/drizzle-helpers.ts';
+import { buildWhereClause, safeIlike } from '../../utils/drizzle-helpers.ts';
 import { DbError } from '../../utils/error.ts';
 import { logError, logQuery } from '../../utils/logger.ts';
+import { warnUnknownRelationKeys } from '../../utils/relations-validator.ts';
 import { withListingBirthColumns } from '../listing/listing-birth.ts';
+import { LISTING_FAQS_RELATION } from '../listing/listing-faqs-relation.ts';
 
 /**
  * Search input for experience listings (basic subset — expand as routes are built).
@@ -92,6 +94,53 @@ export class ExperienceModel extends BaseModelImpl<Experience> {
 
     protected getTableName(): string {
         return 'experiences';
+    }
+
+    /**
+     * Finds an experience by `where`, loading its `faqs` relation when requested.
+     *
+     * The inherited `BaseModelImpl.findWithRelations` is a stub that ignores
+     * `relations` and returns the bare row, so before this override `faqs`
+     * never loaded and the public and admin FAQ reads answered `[]` for every
+     * experience (HOS-2670). This mirrors `AccommodationModel.findWithRelations`
+     * (SPEC-158): `faqs` skips soft-deleted rows and is ordered by
+     * `display_order ASC NULLS LAST, created_at ASC`. Without `faqs` it keeps
+     * the inherited behaviour (bare row; other relation keys are not loaded).
+     *
+     * @param where - Filter object (typically `{ id }`).
+     * @param relations - Relations to include, e.g. `{ faqs: true }`.
+     * @param tx - Optional transaction client.
+     * @returns The experience (with `faqs` when requested) or `null` when not found.
+     */
+    override async findWithRelations(
+        where: Record<string, unknown>,
+        relations: Record<string, boolean | Record<string, unknown>>,
+        tx?: DrizzleClient
+    ): Promise<Experience | null> {
+        if (!relations?.faqs) {
+            return super.findWithRelations(where, relations, tx);
+        }
+        warnUnknownRelationKeys(relations, this.validRelationKeys, this.entityName);
+        try {
+            const result = await this.getClient(tx).query.experiences.findFirst({
+                where: buildWhereClause(where ?? {}, this.table),
+                with: { faqs: LISTING_FAQS_RELATION }
+            });
+            logQuery(this.entityName, 'findWithRelations', { where, relations }, result);
+            // DRIZZLE-LIMITATION: findFirst with relations returns the nested relation
+            // shape; the Experience entity type from @repo/schemas has no `faqs` field.
+            return (result as unknown as Experience | undefined) ?? null;
+        } catch (error) {
+            const err = error instanceof Error ? error : new Error(String(error));
+            logError(this.entityName, 'findWithRelations', { where, relations }, err);
+            throw new DbError(
+                this.entityName,
+                'findWithRelations',
+                { where, relations },
+                err.message,
+                err
+            );
+        }
     }
 
     /**

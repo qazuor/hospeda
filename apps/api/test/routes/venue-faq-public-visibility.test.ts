@@ -27,7 +27,7 @@ vi.mock('@repo/service-core', async () => {
     const actual = await vi.importActual<typeof import('@repo/service-core')>('@repo/service-core');
     return {
         ...actual,
-        listVenueFaqs: mockListFaqs
+        listPublicVenueFaqs: mockListFaqs
     };
 });
 

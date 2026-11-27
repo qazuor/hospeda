@@ -672,6 +672,7 @@ export const handleRouteError = (error: unknown, c: Context) => {
                 statusCode = 403;
                 break;
             case ServiceErrorCode.PROVIDER_REVOKED:
+            case ServiceErrorCode.PRICE_ALERT_NO_PRICE:
                 statusCode = 422;
                 break;
             default:
@@ -912,6 +913,7 @@ export const handleRouteError = (error: unknown, c: Context) => {
                 [ServiceErrorCode.SELF_USAGE_FORBIDDEN]: 403,
                 [ServiceErrorCode.REVIEW_ALREADY_EXISTS]: 409,
                 [ServiceErrorCode.PROVIDER_REVOKED]: 422,
+                [ServiceErrorCode.PRICE_ALERT_NO_PRICE]: 422,
                 [ServiceErrorCode.FAQ_DRAFT_NOT_ELIGIBLE]: 409,
                 // Admin-paused self-service signups (platform_settings['billing.paidSignupsFreeze'], HOS-1749)
                 [ServiceErrorCode.NEW_PAID_SIGNUPS_FROZEN]: 409,

@@ -446,17 +446,18 @@
  * amenities, stars, the numeric rating, or the price block.
  */
 @media (max-width: 767px) {
+    /* HOS-2666 (CARD-011 H-7): compact mobile card, same elements. */
     .acc-card__image-area {
-        height: 160px;
+        height: 120px;
     }
 
     .acc-card__content {
-        gap: 6px;
+        gap: 4px;
         padding-bottom: 12px;
     }
 
     .acc-card__description {
-        -webkit-line-clamp: 2;
+        -webkit-line-clamp: 1;
     }
 
     .acc-card__reviews-count {

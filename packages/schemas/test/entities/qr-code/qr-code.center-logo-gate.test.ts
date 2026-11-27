@@ -24,7 +24,9 @@
 import { describe, expect, it } from 'vitest';
 import {
     QR_CODE_CENTER_LOGO_DAMAGE_BUDGET_SHARE,
+    QR_CODE_CENTER_LOGO_DIAMETER_RATIO,
     QR_CODE_CENTER_LOGO_MAX_COVERAGE,
+    QR_CODE_CENTER_LOGO_MIN_DIAMETER_RATIO,
     QR_CODE_CENTER_LOGO_SIZE_RATIO,
     QR_CODE_ERROR_CORRECTION_DECODE_CEILING,
     QrCodeAdminListResponseSchema,
@@ -57,14 +59,14 @@ const ALL_LEVELS = [
  *
  * Deriving this from `qrCodeCenterLogoFits` would make every assertion below a
  * comparison of the function against itself: the gate could invert entirely and
- * the suite would stay green. These four booleans are the CLAIM — a mark costs
- * more than half of what L and M can tolerate, and less than half of what Q and
- * H can — and the arithmetic test further down is what ties the claim back to
- * the measured ceilings.
+ * the suite would stay green. These four booleans are the CLAIM, since the disc
+ * (HOS-2672): the budgeted disc at L (0.125 of the symbol's side) is smaller than
+ * the 0.15 minimum worth drawing, and at M, Q and H it is not. Before the disc
+ * only Q and H were allowed; this must never shrink below that.
  */
 const EXPECTED_VERDICT: Readonly<Record<QrCodeErrorCorrectionLevelEnum, boolean>> = {
     [QrCodeErrorCorrectionLevelEnum.L]: false,
-    [QrCodeErrorCorrectionLevelEnum.M]: false,
+    [QrCodeErrorCorrectionLevelEnum.M]: true,
     [QrCodeErrorCorrectionLevelEnum.Q]: true,
     [QrCodeErrorCorrectionLevelEnum.H]: true
 };
@@ -82,7 +84,7 @@ describe('qrCodeCenterLogoFits — the gate itself', () => {
         }
     });
 
-    it('refuses L and M and accepts Q and H for the Hospeda mark', () => {
+    it('refuses L and accepts M, Q and H for the Hospeda mark', () => {
         for (const errorCorrectionLevel of ALL_LEVELS) {
             expect(
                 qrCodeCenterLogoFits({
@@ -90,10 +92,25 @@ describe('qrCodeCenterLogoFits — the gate itself', () => {
                     errorCorrectionLevel
                 }),
                 `The gate changed its mind about ${errorCorrectionLevel}. If that was ` +
-                    'deliberate — the mark was resized, or a ceiling was re-measured — update ' +
+                    'deliberate (the mark was resized, or a ceiling was re-measured) update ' +
                     'EXPECTED_VERDICT and say which measurement moved. If it was not, a code is ' +
                     'about to be printed carrying a logo its error correction cannot pay for.'
             ).toBe(EXPECTED_VERDICT[errorCorrectionLevel]);
+        }
+    });
+
+    /** Q and H were allowed before the disc; no previously valid pair may become invalid. */
+    it('still accepts every pair the square-plate gate accepted (Q and H)', () => {
+        for (const errorCorrectionLevel of [
+            QrCodeErrorCorrectionLevelEnum.Q,
+            QrCodeErrorCorrectionLevelEnum.H
+        ] as const) {
+            expect(
+                qrCodeCenterLogoFits({
+                    centerLogo: QrCodeCenterLogoEnum.HOSPEDA,
+                    errorCorrectionLevel
+                })
+            ).toBe(true);
         }
     });
 
@@ -102,53 +119,61 @@ describe('qrCodeCenterLogoFits — the gate itself', () => {
      *
      * Without this, `EXPECTED_VERDICT` is an opinion: somebody could hardcode
      * the four levels inside `qrCodeCenterLogoFits` and every assertion above
-     * would still pass while the mark grew to twice its size.
+     * would still pass while the mark ignored the measurements.
      */
-    it('is the coverage-against-half-the-measured-ceiling comparison, not a level list', () => {
+    it('is the budgeted-ratio-against-the-minimum comparison, not a level list', () => {
         for (const level of ALL_LEVELS) {
-            const affordable =
-                QR_CODE_ERROR_CORRECTION_DECODE_CEILING[level] *
-                QR_CODE_CENTER_LOGO_DAMAGE_BUDGET_SHARE;
-
             expect(
-                QR_CODE_CENTER_LOGO_MAX_COVERAGE <= affordable,
-                `The gate's answer for ${level} no longer follows from the measured ceiling ` +
-                    `(${QR_CODE_ERROR_CORRECTION_DECODE_CEILING[level]}), the budget share ` +
-                    `(${QR_CODE_CENTER_LOGO_DAMAGE_BUDGET_SHARE}) and the mark's coverage ` +
-                    `(${QR_CODE_CENTER_LOGO_MAX_COVERAGE}).`
+                QR_CODE_CENTER_LOGO_DIAMETER_RATIO[level] >= QR_CODE_CENTER_LOGO_MIN_DIAMETER_RATIO,
+                `The gate's answer for ${level} no longer follows from its diameter ratio ` +
+                    `(${QR_CODE_CENTER_LOGO_DIAMETER_RATIO[level]}) and the minimum ` +
+                    `(${QR_CODE_CENTER_LOGO_MIN_DIAMETER_RATIO}).`
             ).toBe(EXPECTED_VERDICT[level]);
         }
     });
 
     /**
-     * The margins on both sides of the line, frozen.
-     *
-     * A gate whose accept and refuse cases sit within a percent of each other is
-     * a coin flip dressed as a rule: any re-measurement flips it. These two
-     * assertions say the nearest ACCEPT (Q) and the nearest REFUSE (M) are each
-     * comfortably clear of the threshold, so the verdict above is a decision and
-     * not a rounding artefact.
+     * The margins on both sides of the line, frozen. A gate whose accept and
+     * refuse cases sit within a percent of each other is a coin flip dressed as a
+     * rule. L is refused by 17% (0.125 against 0.15) and M accepted by a quarter
+     * (0.19), so the verdict is a decision and not a rounding artefact.
      */
-    it('decides Q and M with real margin, not by a hair', () => {
-        const qAllowance =
-            QR_CODE_ERROR_CORRECTION_DECODE_CEILING[QrCodeErrorCorrectionLevelEnum.Q] *
-            QR_CODE_CENTER_LOGO_DAMAGE_BUDGET_SHARE;
-        const mAllowance =
-            QR_CODE_ERROR_CORRECTION_DECODE_CEILING[QrCodeErrorCorrectionLevelEnum.M] *
-            QR_CODE_CENTER_LOGO_DAMAGE_BUDGET_SHARE;
+    it('decides L and M with real margin, not by a hair', () => {
+        const min = QR_CODE_CENTER_LOGO_MIN_DIAMETER_RATIO;
 
-        // Q affords the mark with at least a quarter of its allowance to spare.
-        expect(QR_CODE_CENTER_LOGO_MAX_COVERAGE / qAllowance).toBeLessThan(0.8);
-        // M is short by at least a quarter, not by a rounding error.
-        expect(QR_CODE_CENTER_LOGO_MAX_COVERAGE / mAllowance).toBeGreaterThan(1.25);
+        expect(
+            QR_CODE_CENTER_LOGO_DIAMETER_RATIO[QrCodeErrorCorrectionLevelEnum.L] / min
+        ).toBeLessThan(0.95);
+        expect(
+            QR_CODE_CENTER_LOGO_DIAMETER_RATIO[QrCodeErrorCorrectionLevelEnum.M] / min
+        ).toBeGreaterThan(1.2);
     });
 
-    /** The coverage bound is the ratio squared, which is what makes it decidable here. */
-    it('bounds coverage at the ratio squared, independent of QR version', () => {
-        expect(QR_CODE_CENTER_LOGO_MAX_COVERAGE).toBeCloseTo(
-            QR_CODE_CENTER_LOGO_SIZE_RATIO ** 2,
-            12
-        );
+    it('freezes the minimum at 0.15 and the budget share at one half', () => {
+        expect(QR_CODE_CENTER_LOGO_MIN_DIAMETER_RATIO).toBe(0.15);
+        expect(QR_CODE_CENTER_LOGO_DAMAGE_BUDGET_SHARE).toBe(0.5);
+    });
+
+    it('has a larger ceiling and a larger diameter at every higher level', () => {
+        const ordered = ALL_LEVELS.map((level) => ({
+            ceiling: QR_CODE_ERROR_CORRECTION_DECODE_CEILING[level],
+            ratio: QR_CODE_CENTER_LOGO_DIAMETER_RATIO[level]
+        }));
+
+        for (let index = 1; index < ordered.length; index += 1) {
+            expect(ordered[index]?.ceiling).toBeGreaterThan(ordered[index - 1]?.ceiling as number);
+            expect(ordered[index]?.ratio).toBeGreaterThan(ordered[index - 1]?.ratio as number);
+        }
+    });
+
+    /**
+     * The square-plate exports were kept, deprecated, because the schemas package
+     * is additive-only. Their historical values are pinned so nobody "fixes" them
+     * into meaning something else.
+     */
+    it('keeps the deprecated square-plate exports with their historical values', () => {
+        expect(QR_CODE_CENTER_LOGO_SIZE_RATIO).toBe(0.2);
+        expect(QR_CODE_CENTER_LOGO_MAX_COVERAGE).toBeCloseTo(0.04, 12);
     });
 });
 
@@ -227,11 +252,8 @@ describe('QrCodeRenderOptionsPatchSchema — the gate on a partial patch', () =>
         expect(issue?.path).toEqual(['errorCorrectionLevel']);
     });
 
-    it('REFUSES lowering the level without stating the mark', () => {
-        for (const level of [
-            QrCodeErrorCorrectionLevelEnum.L,
-            QrCodeErrorCorrectionLevelEnum.M
-        ] as const) {
+    it('REFUSES lowering the level to L without stating the mark', () => {
+        for (const level of [QrCodeErrorCorrectionLevelEnum.L] as const) {
             const result = QrCodeRenderOptionsPatchSchema.safeParse({
                 errorCorrectionLevel: level
             });
@@ -249,6 +271,7 @@ describe('QrCodeRenderOptionsPatchSchema — the gate on a partial patch', () =>
 
     it('accepts RAISING the level on its own, because the worst case is safe', () => {
         for (const level of [
+            QrCodeErrorCorrectionLevelEnum.M,
             QrCodeErrorCorrectionLevelEnum.Q,
             QrCodeErrorCorrectionLevelEnum.H
         ] as const) {
@@ -297,7 +320,7 @@ describe('the update schemas carry the gate, both of them', () => {
                 schema.safeParse({
                     renderOptions: {
                         centerLogo: QrCodeCenterLogoEnum.HOSPEDA,
-                        errorCorrectionLevel: QrCodeErrorCorrectionLevelEnum.M
+                        errorCorrectionLevel: QrCodeErrorCorrectionLevelEnum.L
                     }
                 }).success
             ).toBe(false);

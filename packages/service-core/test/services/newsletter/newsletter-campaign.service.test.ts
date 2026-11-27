@@ -129,6 +129,7 @@ vi.mock('../../../src/utils/transaction.js', () => ({
     )
 }));
 
+import { getDb } from '@repo/db';
 import {
     NewsletterCampaignLocaleFilterEnum,
     NewsletterContentTypeEnum,
@@ -136,10 +137,12 @@ import {
     RoleEnum
 } from '@repo/schemas';
 import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
+import type { DynamicSourcePort } from '../../../src/services/newsletter/dynamic/dynamic-source.port.js';
 import type { INewsletterDeliveryService } from '../../../src/services/newsletter/newsletter-campaign.service.js';
 import { NewsletterCampaignService } from '../../../src/services/newsletter/newsletter-campaign.service.js';
 import type { NewsletterSubscriberService } from '../../../src/services/newsletter/newsletter-subscriber.service.js';
 import type { Actor } from '../../../src/types/index.js';
+import { dynamicDocument, dynamicPort, frozenContent } from './dynamic/content.fixtures.js';
 
 // ---------------------------------------------------------------------------
 // Test helpers
@@ -246,6 +249,9 @@ function makeDeliveryService(
         enqueueBatches: vi.fn().mockResolvedValue({ data: { jobsEnqueued: 1 } }),
         bulkSkipPending: vi.fn().mockResolvedValue({ data: 5 }),
         sendTestEmail: vi.fn().mockResolvedValue({ data: { sentTo: 'test@example.com' } }),
+        sendTestEmailFromContent: vi
+            .fn()
+            .mockResolvedValue({ data: { sentTo: 'test@example.com' } }),
         ...overrides
     };
 }
@@ -283,6 +289,7 @@ function makeService(
         deliveryService?: INewsletterDeliveryService;
         subscriberService?: ReturnType<typeof makeSubscriberService>;
         notifyCampaignClosedWithFailuresFn?: Mock;
+        dynamicSourcePort?: DynamicSourcePort;
     } = {}
 ) {
     return new NewsletterCampaignService(
@@ -292,7 +299,8 @@ function makeService(
             softCapDays: 7,
             deliveryService: opts.deliveryService,
             subscriberService: opts.subscriberService as unknown as NewsletterSubscriberService,
-            notifyCampaignClosedWithFailuresFn: opts.notifyCampaignClosedWithFailuresFn
+            notifyCampaignClosedWithFailuresFn: opts.notifyCampaignClosedWithFailuresFn,
+            dynamicSourcePort: opts.dynamicSourcePort
         }
     );
 }
@@ -319,6 +327,161 @@ afterEach(() => {
 // ===========================================================================
 // create
 // ===========================================================================
+
+/**
+ * Campaign UPDATE where() result: awaitable for the final status write and
+ * `.returning()`-able for the atomic draft claim in persistCampaignDispatch.
+ */
+function claimableWhere() {
+    return Object.assign(Promise.resolve([]), {
+        returning: vi.fn(async () => [{ id: CAMPAIGN_ID }])
+    });
+}
+
+describe('dynamic campaign content (HOS-2636)', () => {
+    function arrangeSend() {
+        const values = vi.fn(() => ({
+            onConflictDoNothing: () => ({
+                returning: async () => [{ id: DELIVERY_ID_1 }, { id: DELIVERY_ID_2 }]
+            })
+        }));
+        const set = vi.fn(() => ({ where: vi.fn(() => claimableWhere()) }));
+        txState.insert.mockReturnValue({ values });
+        txState.update.mockReturnValue({ set });
+        const deliveryService = makeDeliveryService();
+        const port = dynamicPort();
+        const fetch = vi.spyOn(port, 'fetchCandidates');
+        const svc = makeService({
+            deliveryService,
+            subscriberService: makeSubscriberService(),
+            dynamicSourcePort: port
+        });
+        return { svc, set, values, deliveryService, fetch };
+    }
+
+    it('AC-F1-8 keeps the draft unchanged and inserts no deliveries below minimum', async () => {
+        const { svc, deliveryService } = arrangeSend();
+        const campaign = {
+            ...makeCampaignRow(),
+            bodyJson: dynamicDocument({ minItems: 3 }),
+            resolvedBodyJson: null,
+            resolvedAt: null
+        };
+        const before = structuredClone(campaign);
+        enqueueQueryResponse([campaign]);
+        const result = await svc.send(makeAdminActor(), { id: CAMPAIGN_ID });
+        expect(result.error?.code).toBe('VALIDATION_ERROR');
+        expect(result.error?.reason).toBe('DYNAMIC_BLOCK_BELOW_MIN');
+        expect(result.error?.details).toEqual({
+            statusCode: 422,
+            report: {
+                blocks: [
+                    {
+                        blockKey: 'newest-block',
+                        candidates: ['item-b', 'item-a'],
+                        dropped: [],
+                        repeatsUsed: 0,
+                        belowMin: true,
+                        action: 'skip_run'
+                    }
+                ]
+            }
+        });
+        expect(campaign).toEqual(before);
+        expect(txState.insert).not.toHaveBeenCalled();
+        expect(txState.update).not.toHaveBeenCalled();
+        expect(getDb().update).not.toHaveBeenCalled();
+        expect(deliveryService.enqueueBatches).not.toHaveBeenCalled();
+    });
+
+    it('persists a complete JSON-safe snapshot in the delivery transaction', async () => {
+        const { svc, set, values } = arrangeSend();
+        enqueueQueryResponse([{ ...makeCampaignRow(), bodyJson: dynamicDocument() }]);
+        const result = await svc.send(makeAdminActor(), { id: CAMPAIGN_ID });
+        expect(result).toEqual({
+            data: {
+                enqueued: 2,
+                softcapped: 2,
+                resolutionReport: {
+                    blocks: [
+                        {
+                            action: 'send',
+                            belowMin: false,
+                            blockKey: 'newest-block',
+                            candidates: ['item-b', 'item-a'],
+                            dropped: [],
+                            repeatsUsed: 0
+                        }
+                    ]
+                }
+            }
+        });
+        expect(values.mock.calls[0]).toEqual([
+            [
+                {
+                    campaignId: CAMPAIGN_ID,
+                    subscriberId: SUBSCRIBER_ID_1,
+                    channel: 'email',
+                    status: 'pending'
+                },
+                {
+                    campaignId: CAMPAIGN_ID,
+                    subscriberId: SUBSCRIBER_ID_2,
+                    channel: 'email',
+                    status: 'pending'
+                }
+            ]
+        ]);
+        // First UPDATE is the atomic draft claim; the snapshot lands in the final one.
+        expect((set.mock.calls as unknown[][])[0]?.[0]).toEqual({ status: 'sending' });
+        const saved = (set.mock.calls as unknown[][]).at(-1)?.[0] as {
+            resolvedBodyJson: unknown;
+            resolvedAt: Date;
+        };
+        expect(saved.resolvedBodyJson).toEqual(frozenContent());
+        expect(JSON.parse(JSON.stringify(saved.resolvedBodyJson))).toEqual(frozenContent());
+        expect(saved.resolvedAt).toBeInstanceOf(Date);
+        expect(getDb().update).not.toHaveBeenCalled();
+    });
+
+    it('does not resolve or persist a snapshot for legacy content', async () => {
+        const { svc, set, fetch } = arrangeSend();
+        enqueueQueryResponse([makeCampaignRow()]);
+        expect((await svc.send(makeAdminActor(), { id: CAMPAIGN_ID })).error).toBeUndefined();
+        expect(fetch).not.toHaveBeenCalled();
+        expect(set).toHaveBeenCalledTimes(2);
+        const saved = (set.mock.calls as unknown[][]).at(-1)?.[0] as Record<string, unknown>;
+        expect(saved.status).toBe('sending');
+        expect(saved.resolvedBodyJson).toBeUndefined();
+        expect(saved.resolvedAt).toBeUndefined();
+    });
+
+    it('AC-F1-13 resolves the current draft for a preview without changing the campaign', async () => {
+        const { svc, deliveryService } = arrangeSend();
+        const campaign = {
+            ...makeCampaignRow(),
+            bodyJson: dynamicDocument(),
+            resolvedBodyJson: null,
+            resolvedAt: null
+        };
+        const before = structuredClone(campaign);
+        enqueueQueryResponse([campaign]);
+        expect(
+            await svc.testSend(makeAdminActor(), { id: CAMPAIGN_ID, toEmail: 'test@example.com' })
+        ).toEqual({ data: { sentTo: 'test@example.com' } });
+        expect(deliveryService.sendTestEmailFromContent).toHaveBeenCalledWith({
+            campaign: before,
+            toEmail: 'test@example.com',
+            locale: 'es',
+            resolvedBodyJson: frozenContent()
+        });
+        expect(campaign).toEqual(before);
+        expect(txState.insert).not.toHaveBeenCalled();
+        expect(txState.update).not.toHaveBeenCalled();
+        expect(getDb().update).not.toHaveBeenCalled();
+        expect(getDb().insert).not.toHaveBeenCalled();
+    });
+});
 
 describe('NewsletterCampaignService.create', () => {
     it('creates a campaign in DRAFT status', async () => {
@@ -487,7 +650,7 @@ describe('NewsletterCampaignService.send', () => {
 
         // tx.update (campaign) → resolves to []
         {
-            const whereMock = Promise.resolve([]);
+            const whereMock = claimableWhere();
             const setMock = { where: vi.fn(() => whereMock) };
             txState.update.mockReturnValue({ set: vi.fn(() => setMock) });
         }
@@ -512,7 +675,7 @@ describe('NewsletterCampaignService.send', () => {
             onConflictDoNothing: vi.fn(() => ({ returning: vi.fn(() => returningMock) }))
         };
         txState.insert.mockReturnValue({ values: vi.fn(() => valuesMock) });
-        const set = vi.fn(() => ({ where: vi.fn(() => Promise.resolve([])) }));
+        const set = vi.fn(() => ({ where: vi.fn(() => claimableWhere()) }));
         txState.update.mockReturnValue({ set });
         return set;
     }
@@ -1127,7 +1290,7 @@ describe('NewsletterCampaignService — contentType segmentation', () => {
         const onConflictMock = { returning: vi.fn(() => returningMock) };
         const valuesMock = { onConflictDoNothing: vi.fn(() => onConflictMock) };
         txState.insert.mockReturnValue({ values: vi.fn(() => valuesMock) });
-        const whereMock = Promise.resolve([]);
+        const whereMock = claimableWhere();
         const setMock = { where: vi.fn(() => whereMock) };
         txState.update.mockReturnValue({ set: vi.fn(() => setMock) });
 
@@ -1161,7 +1324,7 @@ describe('NewsletterCampaignService — contentType segmentation', () => {
         const onConflictMock = { returning: vi.fn(() => returningMock) };
         const valuesMock = { onConflictDoNothing: vi.fn(() => onConflictMock) };
         txState.insert.mockReturnValue({ values: vi.fn(() => valuesMock) });
-        const whereMock = Promise.resolve([]);
+        const whereMock = claimableWhere();
         const setMock = { where: vi.fn(() => whereMock) };
         txState.update.mockReturnValue({ set: vi.fn(() => setMock) });
 

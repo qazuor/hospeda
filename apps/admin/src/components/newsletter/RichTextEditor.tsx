@@ -11,14 +11,20 @@
  * @module RichTextEditor
  */
 
+import { NewsletterDynamicEntityTypeEnum, NewsletterDynamicSourceEnum } from '@repo/schemas';
 import type { TiptapDocument } from '@repo/utils';
 import Image from '@tiptap/extension-image';
 import TextAlign from '@tiptap/extension-text-align';
 import type { Editor, JSONContent } from '@tiptap/react';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
+import { DynamicBlockDialog } from './dynamic-block/DynamicBlockDialog';
+import type { DynamicBlockEditInput } from './dynamic-block/dynamic-block.extension';
+import { DynamicBlock, NewsletterDocument } from './dynamic-block/dynamic-block.extension';
 
 // Re-export so pages can `import { type TiptapDocument } from '@/components/newsletter/RichTextEditor'`
 export type { TiptapDocument };
@@ -32,7 +38,9 @@ export type { TiptapDocument };
  * `openOnClick: false` behavior.
  */
 export const NEWSLETTER_EDITOR_EXTENSIONS = [
-    StarterKit.configure({ link: { openOnClick: false } }),
+    StarterKit.configure({ document: false, link: { openOnClick: false } }),
+    NewsletterDocument,
+    DynamicBlock,
     Image,
     TextAlign.configure({ types: ['heading', 'paragraph'] })
 ];
@@ -123,6 +131,7 @@ interface ToolbarProps {
  * Uses plain-text labels because lucide-react is not installed in apps/admin.
  */
 function Toolbar({ editor, disabled }: ToolbarProps) {
+    const { t } = useTranslations();
     const dis = (can: boolean) => disabled || !can;
 
     const handleLinkClick = useCallback(() => {
@@ -143,6 +152,27 @@ function Toolbar({ editor, disabled }: ToolbarProps) {
             aria-label="Editor toolbar"
             className="flex flex-wrap items-center gap-0.5 border-border border-b bg-muted/30 px-2 py-1"
         >
+            <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                disabled={disabled}
+                onClick={() =>
+                    editor
+                        .chain()
+                        .focus()
+                        .insertDynamicBlock({
+                            config: {
+                                entityType: NewsletterDynamicEntityTypeEnum.ACCOMMODATION,
+                                source: NewsletterDynamicSourceEnum.NEWEST,
+                                count: 4
+                            }
+                        })
+                        .run()
+                }
+            >
+                {t('admin-newsletter.dynamicBlock.insert')}
+            </Button>
             {/* 1. Bold */}
             <ToolbarButton
                 onClick={() => editor.chain().focus().toggleBold().run()}
@@ -304,9 +334,14 @@ export function RichTextEditor({
     className
 }: RichTextEditorProps) {
     const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const [selection, setSelection] = useState<DynamicBlockEditInput | null>(null);
 
     const editor = useEditor({
-        extensions: NEWSLETTER_EDITOR_EXTENSIONS,
+        extensions: NEWSLETTER_EDITOR_EXTENSIONS.map((extension) =>
+            extension.name === 'dynamicBlock'
+                ? DynamicBlock.configure({ onEdit: setSelection })
+                : extension
+        ),
         // Cast is safe: TiptapDocument is structurally compatible with JSONContent
         content: (value as JSONContent) ?? undefined,
         editable: !disabled,
@@ -393,6 +428,14 @@ export function RichTextEditor({
                     disabled && 'cursor-not-allowed opacity-60'
                 )}
             />
+            {editor && selection && !disabled && (
+                <DynamicBlockDialog
+                    key={selection.blockKey}
+                    editor={editor}
+                    selection={selection}
+                    onClose={() => setSelection(null)}
+                />
+            )}
         </div>
     );
 }

@@ -31,6 +31,7 @@ export {
     reorderVenueFaqs,
     updateVenueFaq
 } from './venue.faq';
+export { listPublicVenueFaqs } from './venue.faq-public';
 // Media helpers (HOS-372); the born-featured cover upload is HOS-803
 export {
     addVenueFeaturedMedia,

@@ -152,6 +152,111 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4845, #4843, #4837
+    {
+        id: '2026-11-27-price-alert-target-price',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['USER'],
+        title: {
+            es: 'Elegí cuándo te avisamos si baja un precio',
+            en: 'Choose when we tell you a price drops',
+            pt: 'Escolha quando avisamos que um preço baixou'
+        },
+        body: {
+            es: 'Al crear una alerta de precio podés poner un porcentaje de baja o directamente el precio que querés pagar, y ves al instante a qué precio te vamos a avisar. La alerta activa muestra ese umbral. Además, el aviso para guardar favoritos sin cuenta ahora se lee mejor en el celular.',
+            en: 'When you create a price alert you can set a percentage drop or simply the price you want to pay, and you instantly see the price at which we will notify you. The active alert shows that threshold. Also, the notice about saving favorites without an account is now easier to read on your phone.',
+            pt: 'Ao criar um alerta de preço, você pode definir uma porcentagem de queda ou diretamente o preço que quer pagar, e vê na hora a que preço vamos avisar. O alerta ativo mostra esse limite. Além disso, o aviso para salvar favoritos sem conta agora se lê melhor no celular.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4846
+    {
+        id: '2026-11-27-granted-plan-shown-as-current',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['USER'],
+        title: {
+            es: 'Si te cedieron un plan, lo ves como tu plan actual',
+            en: 'If you were granted a plan, you see it as your current plan',
+            pt: 'Se cederam um plano a você, ele aparece como seu plano atual'
+        },
+        body: {
+            es: 'Si tenés Turista VIP cedido, el menú, las páginas de planes y el chat con IA lo muestran como tu plan actual, sin ofrecerte comprarlo de nuevo.',
+            en: 'If you have a granted Tourist VIP, the menu, the plans pages and the AI chat show it as your current plan, without offering you to buy it again.',
+            pt: 'Se você tem o Turista VIP cedido, o menu, as páginas de planos e o chat com IA o mostram como seu plano atual, sem oferecer a compra novamente.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4844
+    {
+        id: '2026-11-27-price-alert-hidden-without-price',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'La alerta de precio sólo aparece en fichas con precio',
+            en: 'The price alert only appears on listings with a price',
+            pt: 'O alerta de preço só aparece em fichas com preço'
+        },
+        body: {
+            es: 'En las fichas con «Precio a consultar» ya no se ofrece la alerta de precio, que no podía funcionar sin un precio publicado.',
+            en: 'Listings marked "Price on request" no longer offer the price alert, which could not work without a published price.',
+            pt: 'Nas fichas com «Preço a consultar» o alerta de preço não é mais oferecido, pois não podia funcionar sem um preço publicado.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4841
+    {
+        id: '2026-11-27-listing-faqs-visible-again',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'Las preguntas frecuentes de comercios y experiencias vuelven a verse',
+            en: 'Business and experience FAQs show up again',
+            pt: 'As perguntas frequentes de comércios e experiências voltam a aparecer'
+        },
+        body: {
+            es: 'La ficha de un comercio o de una experiencia muestra otra vez sus preguntas frecuentes, en el orden que eligió su dueño. Las preguntas ocultas o borradas siguen sin mostrarse.',
+            en: 'A business or experience page shows its FAQs again, in the order its owner chose. Hidden or deleted questions still stay out of sight.',
+            pt: 'A página de um comércio ou de uma experiência volta a mostrar as perguntas frequentes, na ordem escolhida pelo dono. As perguntas ocultas ou excluídas continuam sem aparecer.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4839
+    {
+        id: '2026-11-27-public-web-visual-polish',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'La web se ve más prolija en preguntas frecuentes, tarjetas y páginas legales',
+            en: 'The site looks tidier in FAQs, cards and legal pages',
+            pt: 'O site está mais caprichado nas perguntas frequentes, nos cartões e nas páginas legais'
+        },
+        body: {
+            es: 'Las preguntas frecuentes muestran un solo ícono por pregunta y el buscador te dice qué escribir. Los precios de las tarjetas entran en una línea, los índices de las páginas legales tienen formato propio y la alerta de precio activa aparece en su propia tarjeta.',
+            en: 'FAQs show a single icon per question, and the search box tells you what to type. Card prices fit on one line, the legal pages have a proper table of contents, and an active price alert sits in its own card.',
+            pt: 'As perguntas frequentes mostram um único ícone por pergunta, e a busca indica o que digitar. Os preços dos cartões cabem em uma linha, as páginas legais têm um índice com formato próprio e o alerta de preço ativo aparece em um cartão próprio.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4834
+    {
+        id: '2026-11-27-host-dashboard-plan-card',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST'],
+        title: {
+            es: 'Tu tablero muestra tu plan y cuándo es tu próximo cobro',
+            en: 'Your dashboard now shows your plan and your next charge',
+            pt: 'Seu painel agora mostra seu plano e sua próxima cobrança'
+        },
+        body: {
+            es: 'En el tablero de **Mi cuenta** hay una tarjeta **Plan** junto a tus propiedades y mensajes. Te muestra el plan que tenés y el próximo paso, como «Tu próximo cobro es en 4 días», con un link a **Mi suscripción**.',
+            en: 'The **My account** dashboard has a **Plan** card next to your properties and messages. It shows your current plan and the next step, such as «Your next charge is in 4 days», with a link to **My subscription**.',
+            pt: 'O painel de **Minha conta** tem um cartão **Plano** ao lado das suas propriedades e mensagens. Ele mostra o seu plano atual e o próximo passo, como «Sua próxima cobrança é em 4 dias», com um link para **Minha assinatura**.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4830
     {
         id: '2026-11-27-listing-translations-one-model',
@@ -167,6 +272,24 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             es: 'Cuando guardás un texto en español, lo traducimos al inglés y al portugués. Si corregís una traducción en la sección **Traducciones**, queda como tuya y no se pisa; si después cambiás el español, te avisamos que puede estar desactualizada y podés volver a generarla con **Traducir con IA**. Funciona igual en alojamientos, comercios y experiencias.',
             en: 'When you save a text in Spanish, we translate it into English and Portuguese. If you correct a translation in the **Translations** section, it stays yours and is never overwritten; if you later change the Spanish, we warn you it may be outdated and you can regenerate it with **Translate with AI**. It works the same for accommodations, venues and experiences.',
             pt: 'Quando você salva um texto em espanhol, nós o traduzimos para o inglês e o português. Se você corrigir uma tradução na seção **Traduções**, ela fica sua e nunca é sobrescrita; se depois você mudar o espanhol, avisamos que pode estar desatualizada e você pode gerá-la de novo com **Traduzir com IA**. Funciona igual para hospedagens, estabelecimentos e experiências.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4821
+    {
+        id: '2026-11-26-listing-photos-one-editor',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
+        title: {
+            es: 'Las fotos de tus fichas se manejan igual en todas las verticales',
+            en: 'The photos of your listings work the same across all verticals',
+            pt: 'As fotos das suas fichas funcionam da mesma forma em todas as verticais'
+        },
+        body: {
+            es: 'Alojamientos, comercios y experiencias usan el mismo editor de fotos: podés subir, reordenar, elegir la portada y escribir el texto alternativo. El editor muestra cuántas fotos te permite tu plan y cuántas suman tus packs de fotos; si tenés más fotos que tu tope, te avisa cuáles no se muestran y podés reordenar para elegirlas.',
+            en: 'Accommodations, venues and experiences use the same photo editor: you can upload, reorder, choose the cover photo and write the alt text. The editor shows how many photos your plan allows and how many your photo packs add; if you have more photos than your limit, it tells you which ones are not shown and you can reorder to choose them.',
+            pt: 'Hospedagens, comércios e experiências usam o mesmo editor de fotos: você pode enviar, reordenar, escolher a capa e escrever o texto alternativo. O editor mostra quantas fotos o seu plano permite e quantas os seus pacotes de fotos somam; se você tiver mais fotos do que o seu limite, ele avisa quais não são exibidas e você pode reordenar para escolhê-las.'
         },
         translations: { en: 'machine', pt: 'machine' }
     },

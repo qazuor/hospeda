@@ -304,6 +304,22 @@ describe('HOS-1908 static guard — every route declares its own gate', () => {
         expect(misrouted).toEqual([]);
     });
 
+    it('mounts dynamic newsletter endpoints with their own campaign permissions', () => {
+        for (const [key, permission] of [
+            [
+                'POST /api/v1/admin/newsletter/campaigns/:id/resolve-preview',
+                'newsletter.campaign.send'
+            ],
+            ['GET /api/v1/admin/newsletter/dynamic-sources', 'newsletter.campaign.view']
+        ]) {
+            const endpoint = endpoints.find((entry) => entry.key === key);
+            expect(endpoint?.servedBy).toBe(key);
+            expect(endpoint?.own).toEqual([
+                { level: 'admin', requiredPermissions: [permission], anyOfPermissions: [] }
+            ]);
+        }
+    });
+
     it("no route runs a gate declared by another route's method or path", () => {
         const leaks = endpoints
             .filter((e) => e.foreign.length > 0)

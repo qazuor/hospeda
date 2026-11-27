@@ -72,9 +72,13 @@ export type PlanCardCtaView =
     | { readonly kind: 'republish'; readonly href: string }
     | { readonly kind: 'planChange'; readonly optionIds: readonly string[] }
     | { readonly kind: 'vipInherited' }
+    /** HOS-2665: the card's plan is held through a permanent grant; nothing to buy or renew. */
+    | { readonly kind: 'granted' }
     | { readonly kind: 'none' };
 
 type Plan = {
+    /** The catalog plan id; a grant anchors a plan, and its floor may be an older version. */
+    readonly planId?: string;
     readonly planVersionId: string;
     readonly billingOptions: { readonly monthly: string; readonly annual: string | null };
 };
@@ -109,6 +113,7 @@ export function resolvePlanCardTrialOffer({
         TRIAL: false,
         SUBSCRIBED: false,
         COVERED: false,
+        GRANTED: false,
         NO_PLANS: false,
         TOURIST_VIP_INHERITED: false
     };
@@ -153,6 +158,12 @@ export function resolvePlanCardCta({
         },
         NO_PLANS: () => none,
         COVERED: () => none,
+        // HOS-2665: the granted plan is the person's current plan, with no purchase or renewal.
+        // Other cards stay as COVERED did: nothing is offered over a grant from this page.
+        GRANTED: () =>
+            parsed.situation === 'GRANTED' && isGrantedPlan({ plan, granted: parsed })
+                ? { kind: 'granted' }
+                : none,
         TOURIST_VIP_INHERITED: () => ({ kind: 'vipInherited' }),
         SUBSCRIBED: () => {
             if (parsed.situation !== 'SUBSCRIBED') return none;
@@ -207,6 +218,22 @@ export function resolvePlanCardCta({
         ];
         return { kind: 'checkout', links };
     }
+}
+
+/**
+ * Whether a catalog card is the plan a permanent grant holds (HOS-2665). The
+ * plan id decides when the card carries it; the version is the fallback.
+ */
+export function isGrantedPlan({
+    plan,
+    granted
+}: {
+    readonly plan: { readonly planId?: string; readonly planVersionId?: string };
+    readonly granted: Extract<PricingSituationResponse, { situation: 'GRANTED' }>;
+}): boolean {
+    return plan.planId
+        ? plan.planId === granted.planId
+        : plan.planVersionId === granted.planVersionId;
 }
 
 const situationPromises = new Map<

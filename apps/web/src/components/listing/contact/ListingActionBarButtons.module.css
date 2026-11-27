@@ -157,3 +157,23 @@
     width: 22px;
     height: 22px;
 }
+
+/* HOS-2667: the favorite's «n/max» quota counter used to stack between the heart
+ * and the «Guardar» label, pushing the label below its neighbours' baseline. It
+ * now sits inside the round button under the heart, the way the compare button
+ * draws its own counter, so every column stays icon + label. */
+.row .island[data-action="favorite"] > div > span[aria-hidden="true"]:not(:first-child) {
+    position: absolute;
+    inset-block-end: var(--space-1);
+    inset-inline: 0;
+    font-size: 0.625rem;
+    line-height: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    pointer-events: none;
+}
+
+.row .island[data-action="favorite"] .favorite:has(+ span[aria-hidden="true"]) {
+    padding-block-end: 0.75rem;
+}

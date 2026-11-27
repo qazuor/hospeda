@@ -569,4 +569,58 @@ describe('PlanCardCta', () => {
         ).toHaveAttribute('href', '/es/mi-cuenta/comercio/');
         expect(listingNotices).toHaveBeenCalledWith(expect.objectContaining({ vertical }));
     });
+
+    describe('HOS-2665 a plan held through a permanent grant', () => {
+        const granted = {
+            ok: true,
+            data: {
+                situation: 'GRANTED',
+                planId: 'plan-vip',
+                planVersionId: 'floor-vip',
+                planName: 'Turista VIP',
+                since: '2026-11-01T10:00:00.000Z'
+            }
+        } as const;
+
+        it('shows the granted card as current with no checkout, management or plan change', async () => {
+            pricingSituation.mockResolvedValue(granted);
+            render(
+                <PlanCardCta
+                    locale="es"
+                    vertical="tourist"
+                    planId="plan-vip"
+                    planVersionId="current-vip"
+                    planName="Turista VIP"
+                    billingOptions={{ monthly: 'm-vip', annual: 'a-vip' }}
+                />
+            );
+
+            const root = screen.getByTestId('pricing-card-cta');
+            await waitFor(() => expect(root).toHaveAttribute('data-kind', 'granted'));
+            expect(screen.getByText('Tu plan actual')).toBeInTheDocument();
+            expect(screen.getByTestId('pricing-plan-granted')).toHaveTextContent(
+                'Plan cedido, sin vencimiento'
+            );
+            expect(root.querySelectorAll('a, button')).toHaveLength(0);
+            expect(listMine).not.toHaveBeenCalled();
+        });
+
+        it('offers nothing on a card of another plan', async () => {
+            pricingSituation.mockResolvedValue(granted);
+            render(
+                <PlanCardCta
+                    locale="es"
+                    vertical="accommodation"
+                    planId="plan-pro"
+                    planVersionId="current-pro"
+                    billingOptions={{ monthly: 'm-pro', annual: null }}
+                />
+            );
+
+            const root = screen.getByTestId('pricing-card-cta');
+            await waitFor(() => expect(root).toHaveAttribute('data-loaded', 'true'));
+            expect(root).toHaveAttribute('data-kind', 'none');
+            expect(root.querySelectorAll('a, button')).toHaveLength(0);
+        });
+    });
 });

@@ -73,7 +73,9 @@ const HOS_376_CODES: ReadonlyArray<readonly [ServiceErrorCode, number]> = [
     [ServiceErrorCode.NO_CONFIRMED_USAGE, 403],
     [ServiceErrorCode.SELF_REVIEW_FORBIDDEN, 403],
     [ServiceErrorCode.REVIEW_ALREADY_EXISTS, 409],
-    [ServiceErrorCode.PROVIDER_REVOKED, 422]
+    [ServiceErrorCode.PROVIDER_REVOKED, 422],
+    // HOS-2671: business-rule refusal, not malformed input
+    [ServiceErrorCode.PRICE_ALERT_NO_PRICE, 422]
 ];
 
 describe('ServiceErrorCode → HTTP mapping', () => {

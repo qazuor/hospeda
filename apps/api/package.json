@@ -55,6 +55,7 @@
         "@repo/service-core": "workspace:*",
         "@repo/utils": "workspace:*",
         "@repo/verticals": "workspace:*",
+        "@resvg/resvg-js": "^2.6.2",
         "@scalar/hono-api-reference": "^0.11.12",
         "@sentry/node": "^11.9.0",
         "@sentry/profiling-node": "^11.9.0",

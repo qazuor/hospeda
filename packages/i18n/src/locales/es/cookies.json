@@ -57,27 +57,27 @@
             "body": "Usamos cookies para funciones como iniciar sesión y recordar tus preferencias de privacidad. El idioma y el tema se recuerdan en el almacenamiento local del navegador. La analítica opcional depende de tu consentimiento. Actualmente no usamos cookies de marketing ni publicidad."
         },
         "sessionRecording": {
-            "title": "Grabaciones de sesión y mapas de calor",
+            "title": "3. Grabaciones de sesión y mapas de calor",
             "body": "Si aceptás las cookies de analítica y la función está activada, Hospeda puede grabar sesiones y mapas de calor de clics y desplazamiento con Umami, una herramienta que alojamos nosotros mismos."
         },
         "cookieList": {
-            "title": "3. Listado de cookies",
+            "title": "4. Listado de cookies",
             "body": "Estas son las cookies propias que usa Hospeda. El asterisco representa un prefijo del nombre que puede variar según el entorno. La caché de sesión puede dividirse en cookies con sufijos numéricos. No utilizamos cookies de rastreo publicitario ni compartimos datos con redes de anuncios."
         },
         "manageCookies": {
-            "title": "4. Cómo gestionar las cookies",
+            "title": "5. Cómo gestionar las cookies",
             "body": "Usá el botón de esta sección para cambiar o retirar tu consentimiento. También podés gestionar o eliminar las cookies desde tu navegador. Si deshabilitás las cookies necesarias, puede verse afectado el acceso a tu cuenta."
         },
         "thirdPartyCookies": {
-            "title": "5. Cookies de terceros",
+            "title": "6. Cookies de terceros",
             "body": "Cuando te dirigís a Mercado Pago para autorizar un pago, ese sitio puede usar sus propias cookies conforme a su política. Hospeda usa Cloudinary para entregar imágenes y Sentry para monitorear errores cuando se habilita el monitoreo con consentimiento. Estos servicios tienen sus propias políticas de privacidad."
         },
         "policyChanges": {
-            "title": "6. Cambios a esta política",
+            "title": "7. Cambios a esta política",
             "body": "Podemos actualizar esta Política de Cookies cuando cambie la tecnología que usamos o la legislación aplicable. Publicaremos los cambios en esta página con la fecha de la última actualización. Te recomendamos revisarla periódicamente."
         },
         "contact": {
-            "title": "7. Contacto",
+            "title": "8. Contacto",
             "body": "Si tenés preguntas sobre el uso de cookies en Hospeda, podés escribirnos a info@hospeda.com.ar o a través de nuestro formulario de contacto."
         }
     }

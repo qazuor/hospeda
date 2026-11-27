@@ -77,8 +77,12 @@ vi.mock('@repo/db', async (importOriginal) => {
     };
 });
 
+import { randomUUID } from 'node:crypto';
+import { getDb } from '@repo/db';
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { RenderNewsletterEmailFn } from '../../../src/services/newsletter/dynamic/render-campaign-content.js';
+import * as resolver from '../../../src/services/newsletter/dynamic/resolve-blocks.js';
 import type {
     BuildCampaignReactElementFn,
     DeliveryBatchPayload,
@@ -89,6 +93,7 @@ import type {
 } from '../../../src/services/newsletter/newsletter-delivery.service.js';
 import { NewsletterDeliveryService } from '../../../src/services/newsletter/newsletter-delivery.service.js';
 import type { Actor } from '../../../src/types/index.js';
+import { dynamicDocument, frozenContent } from './dynamic/content.fixtures.js';
 
 // ---------------------------------------------------------------------------
 // Test constants
@@ -275,6 +280,183 @@ afterEach(() => {
 // ===========================================================================
 // enqueueBatches
 // ===========================================================================
+
+describe('frozen dynamic delivery (HOS-2636)', () => {
+    function queueBatch(campaign: ReturnType<typeof makeCampaignRow>, locale = 'en') {
+        queryBuilderResponses.push(
+            [campaign],
+            [makeDeliveryRow(DELIVERY_ID_1, SUBSCRIBER_ID_1)],
+            [makeSubscriberRow(SUBSCRIBER_ID_1, { locale })]
+        );
+    }
+
+    it('AC-F1-10 renders 250 recipients in three batches without resolving again', async () => {
+        const resolve = vi.spyOn(resolver, 'resolveBlocks');
+        const snapshot = frozenContent();
+        const renderNewsletterEmailFn = vi.fn<RenderNewsletterEmailFn>(async ({ locale }) => ({
+            bodyHtml: `<p>${locale} frozen</p>`,
+            segments: [`<p>${locale} frozen</p>`],
+            unresolvedBlockKeys: []
+        }));
+        const sendBatchFn = vi.fn(async ({ payload }: { payload: DeliveryBatchPayload }) =>
+            makeBatchResult(payload.messageVersions.map(({ to }) => to.email))
+        );
+        const renderCampaignEmailFn = vi.fn(({ bodyHtml }: { bodyHtml: string }) => bodyHtml);
+        const svc = makeService({ renderNewsletterEmailFn, sendBatchFn, renderCampaignEmailFn });
+        const expectedBodies: string[] = [];
+        for (const [index, size] of [100, 100, 50].entries()) {
+            const subscribers = Array.from({ length: size }, (_, i) => {
+                const locale = ['es', 'en', 'pt'][i % 3];
+                expectedBodies.push(`<p>${locale} frozen</p>`);
+                return makeSubscriberRow(randomUUID(), { locale });
+            });
+            const deliveries = subscribers.map(({ id }) => makeDeliveryRow(randomUUID(), id));
+            queryBuilderResponses.push(
+                [
+                    makeCampaignRow({
+                        // A later draft/source edit cannot affect the stored snapshot.
+                        bodyJson: index === 0 ? dynamicDocument() : { type: 'doc', content: [] },
+                        resolvedBodyJson: JSON.parse(JSON.stringify(snapshot))
+                    })
+                ],
+                deliveries,
+                subscribers
+            );
+            expect(
+                (
+                    await svc.processBatch({
+                        campaignId: CAMPAIGN_ID,
+                        deliveryIds: deliveries.map(({ id }) => id)
+                    })
+                ).data
+            ).toEqual({ delivered: size, failed: 0, skipped: 0 });
+        }
+        expect(renderNewsletterEmailFn.mock.calls).toEqual(
+            Array.from({ length: 3 }, () => ['es', 'en', 'pt'])
+                .flat()
+                .map((locale) => [
+                    {
+                        doc: snapshot.doc,
+                        resolvedBlocks: snapshot.blocks,
+                        locale
+                    }
+                ])
+        );
+        expect(sendBatchFn).toHaveBeenCalledTimes(3);
+        expect(renderCampaignEmailFn.mock.calls.map(([input]) => input.bodyHtml)).toEqual(
+            expectedBodies
+        );
+        expect(resolve).not.toHaveBeenCalled();
+    });
+
+    it.each([
+        'missing',
+        'invalid',
+        'diagnostic',
+        'no-renderer'
+    ] as const)('AC-F1-11 fails closed with %s resolution and never calls transport', async (mode) => {
+        const renderNewsletterEmailFn = vi.fn<RenderNewsletterEmailFn>(async () => ({
+            bodyHtml: '',
+            segments: [],
+            unresolvedBlockKeys: ['newest-block']
+        }));
+        const sendBatchFn = vi.fn();
+        const svc = makeService({
+            sendBatchFn,
+            renderNewsletterEmailFn: mode === 'no-renderer' ? undefined : renderNewsletterEmailFn
+        });
+        queueBatch(
+            makeCampaignRow({
+                bodyJson: dynamicDocument(),
+                resolvedBodyJson:
+                    mode === 'missing'
+                        ? null
+                        : mode === 'invalid'
+                          ? { version: 2 }
+                          : frozenContent()
+            })
+        );
+        const result = await svc.processBatch({
+            campaignId: CAMPAIGN_ID,
+            deliveryIds: [DELIVERY_ID_1]
+        });
+        expect(result).toEqual({ data: { delivered: 0, skipped: 0, failed: 1 } });
+        expect(sendBatchFn).not.toHaveBeenCalled();
+        const update = vi.mocked(getDb().update).mock.results[0]?.value as {
+            set: ReturnType<typeof vi.fn>;
+        };
+        expect(update.set.mock.calls).toEqual([
+            [
+                {
+                    status: 'failed',
+                    errorMessage: 'DYNAMIC_BLOCK_UNRESOLVED',
+                    updatedAt: expect.any(Date)
+                }
+            ]
+        ]);
+    });
+
+    it('AC-F1-16 preserves legacy HTML and omits segments on the legacy fallback', async () => {
+        const html = '<p>Original &amp; unchanged</p>';
+        const renderTiptapEmailFn = vi.fn(() => html);
+        const renderCampaignEmailFn = vi.fn(({ bodyHtml }: { bodyHtml: string }) => bodyHtml);
+        const sendBatchFn = vi.fn(async () =>
+            makeBatchResult([`user-${SUBSCRIBER_ID_1.slice(0, 8)}@example.com`])
+        );
+        const svc = makeService({ renderTiptapEmailFn, renderCampaignEmailFn, sendBatchFn });
+        queueBatch(makeCampaignRow({ resolvedBodyJson: null }));
+        await svc.processBatch({ campaignId: CAMPAIGN_ID, deliveryIds: [DELIVERY_ID_1] });
+        expect(renderTiptapEmailFn.mock.calls).toEqual([
+            [{ content: { type: 'doc', content: [] } }]
+        ]);
+        expect(renderCampaignEmailFn.mock.calls[0]?.[0].bodyHtml).toBe(html);
+        expect(renderCampaignEmailFn.mock.calls[0]?.[0]).not.toHaveProperty('segments');
+    });
+
+    it('renders resolved preview segments without database reads or writes', async () => {
+        const renderNewsletterEmailFn = vi.fn<RenderNewsletterEmailFn>(async () => ({
+            bodyHtml: '<table>House</table>',
+            segments: ['<table>House</table>'],
+            unresolvedBlockKeys: []
+        }));
+        const emailTransport = { send: vi.fn(async () => ({ messageId: 'preview' })) };
+        const buildCampaignReactElementFn = vi.fn(({ bodyHtml }: { bodyHtml: string }) => ({
+            props: { bodyHtml }
+        }));
+        const svc = makeService({
+            renderNewsletterEmailFn,
+            emailTransport,
+            buildCampaignReactElementFn
+        });
+        const result = await svc.sendTestEmailFromContent({
+            campaign: makeCampaignRow({ bodyJson: dynamicDocument() }),
+            resolvedBodyJson: frozenContent(),
+            toEmail: 'test@example.com',
+            locale: 'pt'
+        });
+        expect(result).toEqual({ data: { sentTo: 'test@example.com' } });
+        expect(renderNewsletterEmailFn.mock.calls).toEqual([
+            [
+                {
+                    doc: frozenContent().doc,
+                    resolvedBlocks: frozenContent().blocks,
+                    locale: 'pt'
+                }
+            ]
+        ]);
+        expect(buildCampaignReactElementFn.mock.calls[0]?.[0]).toEqual({
+            subject: 'Test Subject',
+            bodyHtml: '<table>House</table>',
+            segments: ['<table>House</table>'],
+            unsubscribeUrl: 'https://hospeda.com.ar/pt/newsletter/unsubscribe/',
+            isTest: true
+        });
+        expect(emailTransport.send).toHaveBeenCalledOnce();
+        expect(getDb().select).not.toHaveBeenCalled();
+        expect(getDb().insert).not.toHaveBeenCalled();
+        expect(getDb().update).not.toHaveBeenCalled();
+    });
+});
 
 describe('enqueueBatches', () => {
     it('should enqueue 1 job when deliveryIds fit in a single batch', async () => {

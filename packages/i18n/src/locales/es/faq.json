@@ -14,6 +14,7 @@
     },
     "search": {
         "label": "Buscar preguntas",
+        "placeholder": "Escribí una palabra o frase",
         "empty": "No encontramos preguntas que coincidan con tu búsqueda.",
         "touristPlans": "Ver planes para turistas",
         "hostPlans": "Ver planes para anfitriones"

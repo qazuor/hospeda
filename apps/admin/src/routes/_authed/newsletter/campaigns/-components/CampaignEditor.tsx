@@ -15,25 +15,13 @@
  */
 
 import { LoaderIcon } from '@repo/icons';
-import type { NewsletterCampaign } from '@repo/schemas';
-import { NewsletterCampaignLocaleFilterEnum, NewsletterContentTypeEnum } from '@repo/schemas';
+import type { NewsletterCampaign, NewsletterCampaignLocaleFilterEnum } from '@repo/schemas';
 import { renderTiptapContent } from '@repo/utils';
-import { useForm } from '@tanstack/react-form';
 import { useNavigate } from '@tanstack/react-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { TiptapDocument } from '@/components/newsletter/RichTextEditor';
-import { RichTextEditor } from '@/components/newsletter/RichTextEditor';
 import { DeleteConfirmDialog } from '@/components/shared/DeleteConfirmDialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue
-} from '@/components/ui/select';
 import {
     useCancelCampaign,
     useCreateCampaign,
@@ -43,7 +31,15 @@ import {
 import { useAuthContext } from '@/hooks/use-auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslations } from '@/hooks/use-translations';
+import { AutosaveIndicator, CampaignEditorFields } from './CampaignEditorFields';
 import { CampaignPreview } from './CampaignPreview';
+import type { AutosaveStatus, CampaignFormValues } from './campaign-editor-form';
+import {
+    buildCampaignBody,
+    buildCampaignDefaults,
+    campaignSnapshot,
+    useCampaignEditorForm
+} from './campaign-editor-form';
 import { SendConfirmDialog } from './SendConfirmDialog';
 import { resolveTestSendRecipient, TestSendDialog } from './TestSendDialog';
 
@@ -61,111 +57,6 @@ export interface CampaignEditorProps {
      * Undefined when mode='create'.
      */
     readonly campaign?: NewsletterCampaign;
-}
-
-// ─── Form state types ─────────────────────────────────────────────────────────
-
-/**
- * Sentinel for the "no segmentation" option in the contentType <Select>.
- * Radix Select does not accept empty-string values, so we use a literal
- * `'all'` token that maps back to `null` when persisting.
- */
-const CONTENT_TYPE_ALL = 'all' as const;
-type ContentTypeOption = NewsletterContentTypeEnum | typeof CONTENT_TYPE_ALL;
-
-/** Internal form value shape (matches TanStack Form defaultValues). */
-interface CampaignFormValues {
-    title: string;
-    subject: string;
-    localeFilter: NewsletterCampaignLocaleFilterEnum;
-    /**
-     * Audience content-type segmentation.
-     * - `null`/`undefined` → no segmentation (legacy behavior).
-     * - One of NewsletterContentTypeEnum → only subscribers opted-in for that type.
-     */
-    contentType: NewsletterContentTypeEnum | null;
-    // Using unknown for bodyJson avoids deep TiptapDocument inference issues with @tanstack/react-form.
-    // The field is typed as TiptapDocument | null in usage but stored as unknown here
-    // to prevent "Type instantiation is excessively deep" TS errors.
-    bodyJson: unknown;
-}
-
-function buildDefaults(campaign?: NewsletterCampaign): CampaignFormValues {
-    return {
-        title: campaign?.title ?? '',
-        subject: campaign?.subject ?? '',
-        localeFilter:
-            (campaign?.localeFilter as NewsletterCampaignLocaleFilterEnum) ??
-            NewsletterCampaignLocaleFilterEnum.ALL,
-        contentType: (campaign?.contentType as NewsletterContentTypeEnum | null) ?? null,
-        bodyJson: campaign?.bodyJson ?? null
-    };
-}
-
-/** Stable string snapshot of the persisted form fields, used to detect real changes. */
-function snapshotOf(v: CampaignFormValues): string {
-    return JSON.stringify([
-        v.title,
-        v.subject,
-        v.localeFilter,
-        v.contentType,
-        buildBodyJson(v.bodyJson)
-    ]);
-}
-
-/**
- * Builds the bodyJson payload for API calls, ensuring a valid TipTap doc structure.
- * Cast to satisfy the Zod-inferred schema type.
- */
-function buildBodyJson(raw: unknown): { type: 'doc'; content?: unknown[] } {
-    if (raw && typeof raw === 'object' && (raw as Record<string, unknown>).type === 'doc') {
-        return raw as { type: 'doc'; content?: unknown[] };
-    }
-    return { type: 'doc', content: [] };
-}
-
-// ─── Character counter ────────────────────────────────────────────────────────
-
-interface CharCounterProps {
-    readonly value: string;
-    readonly max: number;
-}
-
-function CharCounter({ value, max }: CharCounterProps) {
-    const len = value.length;
-    const isOverLimit = len > max;
-    return (
-        <span
-            className={isOverLimit ? 'text-destructive text-xs' : 'text-muted-foreground text-xs'}
-            aria-live="polite"
-        >
-            {len}/{max}
-        </span>
-    );
-}
-
-// ─── Autosave indicator ───────────────────────────────────────────────────────
-
-type AutosaveStatus = 'idle' | 'saving' | 'saved' | 'error';
-
-interface AutosaveIndicatorProps {
-    readonly status: AutosaveStatus;
-}
-
-function AutosaveIndicator({ status }: AutosaveIndicatorProps) {
-    if (status === 'idle') return null;
-
-    const label =
-        status === 'saving' ? 'Guardando...' : status === 'saved' ? 'Guardado' : 'Error al guardar';
-
-    return (
-        <span
-            aria-live="polite"
-            className={`text-xs ${status === 'error' ? 'text-destructive' : 'text-muted-foreground'}`}
-        >
-            {label}
-        </span>
-    );
 }
 
 // ─── CampaignEditor ───────────────────────────────────────────────────────────
@@ -219,19 +110,16 @@ export function CampaignEditor({ mode, campaign }: CampaignEditorProps) {
     // Autosave timer ref (3s debounce)
     const autosaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     // Stores latest form values to avoid stale closure in autosave timer
-    const latestFormValuesRef = useRef<CampaignFormValues>(buildDefaults(campaign));
+    const latestFormValuesRef = useRef<CampaignFormValues>(buildCampaignDefaults({ campaign }));
     // Snapshot of the content last persisted (or loaded); autosave skips when unchanged
-    const lastSavedSnapshotRef = useRef<string>(snapshotOf(buildDefaults(campaign)));
+    const lastSavedSnapshotRef = useRef<string>(
+        campaignSnapshot({ value: buildCampaignDefaults({ campaign }) })
+    );
     // Track if first save has happened (for create mode showing Send button)
     const [savedOnce, setSavedOnce] = useState(!isCreate);
 
     // ── TanStack Form ────────────────────────────────────────────────────────
-    const form = useForm({
-        defaultValues: buildDefaults(campaign),
-        onSubmit: async ({ value }) => {
-            await handleSaveDraft(value);
-        }
-    });
+    const form = useCampaignEditorForm({ campaign, onSubmit: handleSaveDraft });
 
     // ── Preview debounce ─────────────────────────────────────────────────────
     const schedulePreviewUpdate = useCallback((bodyJson: unknown) => {
@@ -276,7 +164,7 @@ export function CampaignEditor({ mode, campaign }: CampaignEditorProps) {
 
                 if (!isValid) return;
 
-                const snapshot = snapshotOf(v);
+                const snapshot = campaignSnapshot({ value: v });
                 if (snapshot === lastSavedSnapshotRef.current) return;
 
                 setAutosaveStatus('saving');
@@ -286,8 +174,7 @@ export function CampaignEditor({ mode, campaign }: CampaignEditorProps) {
                         subject,
                         localeFilter: v.localeFilter as NewsletterCampaignLocaleFilterEnum,
                         contentType: v.contentType,
-                        // biome-ignore lint/suspicious/noExplicitAny: required for Zod schema compatibility
-                        bodyJson: buildBodyJson(v.bodyJson) as any
+                        bodyJson: buildCampaignBody({ raw: v.bodyJson })
                     });
                     lastSavedSnapshotRef.current = snapshot;
                     setAutosaveStatus('saved');
@@ -326,8 +213,7 @@ export function CampaignEditor({ mode, campaign }: CampaignEditorProps) {
         const subject = value.subject as string;
         const localeFilter = value.localeFilter as NewsletterCampaignLocaleFilterEnum;
         const contentType = value.contentType;
-        // biome-ignore lint/suspicious/noExplicitAny: required for Zod schema compatibility
-        const bodyJson = buildBodyJson(value.bodyJson) as any;
+        const bodyJson = buildCampaignBody({ raw: value.bodyJson });
 
         if (isCreate) {
             const created = await createMutation.mutateAsync({
@@ -354,7 +240,7 @@ export function CampaignEditor({ mode, campaign }: CampaignEditorProps) {
                 contentType,
                 bodyJson
             });
-            lastSavedSnapshotRef.current = snapshotOf(value);
+            lastSavedSnapshotRef.current = campaignSnapshot({ value });
             setSavedOnce(true);
             addToast({
                 message: t('admin-newsletter.campaigns.savedDraftToast'),
@@ -414,9 +300,6 @@ export function CampaignEditor({ mode, campaign }: CampaignEditorProps) {
         testSendMutation.isPending ||
         cancelMutation.isPending;
 
-    // ── Current form values for the preview ──────────────────────────────────
-    const currentSubject = form.state.values.subject as string;
-
     // ── Render ────────────────────────────────────────────────────────────────
     return (
         <div className="flex flex-col gap-6">
@@ -462,281 +345,28 @@ export function CampaignEditor({ mode, campaign }: CampaignEditorProps) {
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
                 {/* ── Left column: editor (60% = 3/5) ── */}
                 <div className="flex flex-col gap-5 lg:col-span-3">
-                    <form
-                        onSubmit={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            form.handleSubmit();
-                        }}
-                        className="flex flex-col gap-5"
-                        noValidate
-                    >
-                        {/* Title field */}
-                        <form.Field name="title">
-                            {(field) => (
-                                <div className="flex flex-col gap-1.5">
-                                    <div className="flex items-center justify-between">
-                                        <Label htmlFor="campaign-title">
-                                            {t('admin-newsletter.campaigns.titleField')}
-                                            <span className="ml-1 text-destructive">*</span>
-                                        </Label>
-                                        <CharCounter
-                                            value={field.state.value as string}
-                                            max={120}
-                                        />
-                                    </div>
-                                    <Input
-                                        id="campaign-title"
-                                        data-testid="campaign-title-input"
-                                        value={field.state.value as string}
-                                        onChange={(e) => {
-                                            const next = e.target.value;
-                                            field.handleChange(next);
-                                            scheduleAutosave({
-                                                title: next,
-                                                subject: form.state.values.subject as string,
-                                                localeFilter: form.state.values
-                                                    .localeFilter as NewsletterCampaignLocaleFilterEnum,
-                                                contentType: form.state.values.contentType,
-                                                bodyJson: form.state.values.bodyJson
-                                            });
-                                        }}
-                                        onBlur={field.handleBlur}
-                                        disabled={isReadOnly || isSending}
-                                        maxLength={120}
-                                        placeholder="Nombre interno de la campaña"
-                                        aria-required="true"
-                                    />
-                                    {field.state.meta.errors.length > 0 && (
-                                        <p className="text-destructive text-xs">
-                                            {String(field.state.meta.errors[0])}
-                                        </p>
-                                    )}
-                                </div>
-                            )}
-                        </form.Field>
-
-                        {/* Subject field */}
-                        <form.Field name="subject">
-                            {(field) => (
-                                <div className="flex flex-col gap-1.5">
-                                    <div className="flex items-center justify-between">
-                                        <Label htmlFor="campaign-subject">
-                                            {t('admin-newsletter.campaigns.subjectField')}
-                                            <span className="ml-1 text-destructive">*</span>
-                                        </Label>
-                                        <CharCounter
-                                            value={field.state.value as string}
-                                            max={120}
-                                        />
-                                    </div>
-                                    <Input
-                                        id="campaign-subject"
-                                        data-testid="campaign-subject-input"
-                                        value={field.state.value as string}
-                                        onChange={(e) => {
-                                            const next = e.target.value;
-                                            field.handleChange(next);
-                                            scheduleAutosave({
-                                                title: form.state.values.title as string,
-                                                subject: next,
-                                                localeFilter: form.state.values
-                                                    .localeFilter as NewsletterCampaignLocaleFilterEnum,
-                                                contentType: form.state.values.contentType,
-                                                bodyJson: form.state.values.bodyJson
-                                            });
-                                        }}
-                                        onBlur={field.handleBlur}
-                                        disabled={isReadOnly || isSending}
-                                        maxLength={120}
-                                        placeholder="Asunto que verá el destinatario en su bandeja"
-                                        aria-required="true"
-                                    />
-                                    {field.state.meta.errors.length > 0 && (
-                                        <p className="text-destructive text-xs">
-                                            {String(field.state.meta.errors[0])}
-                                        </p>
-                                    )}
-                                </div>
-                            )}
-                        </form.Field>
-
-                        {/* Locale filter */}
-                        <form.Field name="localeFilter">
-                            {(field) => (
-                                <div className="flex flex-col gap-1.5">
-                                    <Label htmlFor="campaign-locale">
-                                        {t('admin-newsletter.campaigns.localeFilterField')}
-                                    </Label>
-                                    <Select
-                                        value={field.state.value as string}
-                                        onValueChange={(value) => {
-                                            const next =
-                                                value as NewsletterCampaignLocaleFilterEnum;
-                                            field.handleChange(next);
-                                            scheduleAutosave({
-                                                title: form.state.values.title as string,
-                                                subject: form.state.values.subject as string,
-                                                localeFilter: next,
-                                                contentType: form.state.values.contentType,
-                                                bodyJson: form.state.values.bodyJson
-                                            });
-                                        }}
-                                        disabled={isReadOnly || isSending}
-                                    >
-                                        <SelectTrigger id="campaign-locale">
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem
-                                                value={NewsletterCampaignLocaleFilterEnum.ALL}
-                                            >
-                                                Todos los idiomas
-                                            </SelectItem>
-                                            <SelectItem
-                                                value={NewsletterCampaignLocaleFilterEnum.ES}
-                                            >
-                                                Español
-                                            </SelectItem>
-                                            <SelectItem
-                                                value={NewsletterCampaignLocaleFilterEnum.EN}
-                                            >
-                                                English
-                                            </SelectItem>
-                                            <SelectItem
-                                                value={NewsletterCampaignLocaleFilterEnum.PT}
-                                            >
-                                                Português
-                                            </SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                            )}
-                        </form.Field>
-
-                        {/* Content-type segmentation */}
-                        <form.Field name="contentType">
-                            {(field) => {
-                                // Map between the form's `NewsletterContentTypeEnum | null`
-                                // and the Radix Select's required non-empty string value.
-                                const selectValue: ContentTypeOption =
-                                    field.state.value ?? CONTENT_TYPE_ALL;
-
-                                return (
-                                    <div className="flex flex-col gap-1.5">
-                                        <Label htmlFor="campaign-content-type">
-                                            Segmentación por tipo de contenido
-                                        </Label>
-                                        <Select
-                                            value={selectValue}
-                                            onValueChange={(value) => {
-                                                const next: NewsletterContentTypeEnum | null =
-                                                    value === CONTENT_TYPE_ALL
-                                                        ? null
-                                                        : (value as NewsletterContentTypeEnum);
-                                                field.handleChange(next);
-                                                scheduleAutosave({
-                                                    title: form.state.values.title as string,
-                                                    subject: form.state.values.subject as string,
-                                                    localeFilter: form.state.values
-                                                        .localeFilter as NewsletterCampaignLocaleFilterEnum,
-                                                    contentType: next,
-                                                    bodyJson: form.state.values.bodyJson
-                                                });
-                                            }}
-                                            disabled={isReadOnly || isSending}
-                                        >
-                                            <SelectTrigger
-                                                id="campaign-content-type"
-                                                data-testid="campaign-content-type-select"
-                                            >
-                                                <SelectValue />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value={CONTENT_TYPE_ALL}>
-                                                    Todos los suscriptores (sin segmentar)
-                                                </SelectItem>
-                                                <SelectItem
-                                                    value={NewsletterContentTypeEnum.OFFERS}
-                                                >
-                                                    Ofertas
-                                                </SelectItem>
-                                                <SelectItem
-                                                    value={NewsletterContentTypeEnum.EVENTS}
-                                                >
-                                                    Eventos
-                                                </SelectItem>
-                                                <SelectItem
-                                                    value={NewsletterContentTypeEnum.GUIDES}
-                                                >
-                                                    Guías
-                                                </SelectItem>
-                                                <SelectItem
-                                                    value={NewsletterContentTypeEnum.PRODUCT_NEWS}
-                                                >
-                                                    Novedades del producto
-                                                </SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                        <p className="text-muted-foreground text-xs">
-                                            Solo los suscriptores con esta preferencia activa
-                                            recibirán la campaña. Dejar en &quot;sin segmentar&quot;
-                                            envía a toda la audiencia que cumpla el filtro de
-                                            idioma.
-                                        </p>
-                                    </div>
-                                );
-                            }}
-                        </form.Field>
-
-                        {/* Rich text body */}
-                        <form.Field name="bodyJson">
-                            {(field) => (
-                                <div className="flex flex-col gap-1.5">
-                                    <Label>
-                                        {t('admin-newsletter.campaigns.bodyField')}
-                                        <span className="ml-1 text-destructive">*</span>
-                                    </Label>
-                                    <RichTextEditor
-                                        value={field.state.value as TiptapDocument | null}
-                                        onChange={(next) => {
-                                            field.handleChange(next);
-                                            schedulePreviewUpdate(next);
-                                            scheduleAutosave({
-                                                title: form.state.values.title as string,
-                                                subject: form.state.values.subject as string,
-                                                localeFilter: form.state.values
-                                                    .localeFilter as NewsletterCampaignLocaleFilterEnum,
-                                                contentType: form.state.values.contentType,
-                                                bodyJson: next
-                                            });
-                                        }}
-                                        disabled={isReadOnly || isSending}
-                                        ariaLabel="Contenido del email"
-                                        className="min-h-[300px]"
-                                    />
-                                </div>
-                            )}
-                        </form.Field>
-
-                        {/* Hidden submit trigger — visually hidden, not focusable.
-                            aria-label keeps axe happy; sr-only + tabIndex=-1 keep it
-                            invisible/unreachable to mouse + keyboard users. */}
-                        <button
-                            type="submit"
-                            className="sr-only"
-                            tabIndex={-1}
-                            aria-label="Enviar formulario"
-                        />
-                    </form>
+                    <CampaignEditorFields
+                        form={form}
+                        isReadOnly={isReadOnly}
+                        isSending={isSending}
+                        scheduleAutosave={scheduleAutosave}
+                        schedulePreviewUpdate={schedulePreviewUpdate}
+                    />
                 </div>
 
                 {/* ── Right column: preview (40% = 2/5) ── */}
                 <div className={`lg:col-span-2 ${showPreviewMobile ? 'block' : 'hidden'} lg:block`}>
-                    <CampaignPreview
-                        html={previewHtml}
-                        subject={currentSubject}
-                    />
+                    <form.Subscribe selector={(state) => state.values}>
+                        {(values) => (
+                            <CampaignPreview
+                                campaignId={campaign?.id}
+                                bodyJson={values.bodyJson}
+                                revision={campaign?.bodyJson}
+                                html={previewHtml}
+                                subject={values.subject}
+                            />
+                        )}
+                    </form.Subscribe>
                 </div>
             </div>
 

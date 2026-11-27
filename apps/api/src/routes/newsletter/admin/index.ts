@@ -20,10 +20,12 @@ import {
     adminDeleteCampaignRoute,
     adminGetCampaignRoute,
     adminListCampaignsRoute,
+    adminResolvePreviewCampaignRoute,
     adminSendCampaignRoute,
     adminTestSendCampaignRoute,
     adminUpdateCampaignRoute
 } from './campaigns';
+import { adminDynamicSourcesRoute } from './dynamic-sources';
 import { adminListSubscribersRoute, adminSubscribersStatsRoute } from './subscribers';
 import { adminSubscribersByPreferenceRoute } from './subscribers-by-preference';
 
@@ -36,6 +38,8 @@ import { adminSubscribersByPreferenceRoute } from './subscribers-by-preference';
  *    BEFORE `campaigns/{id}` so the action segments are not consumed as an id.
  */
 export const newsletterAdminRoutes = createRouter()
+    .route('/', adminDynamicSourcesRoute)
+    .route('/', adminResolvePreviewCampaignRoute)
     // ── Subscriber routes ──────────────────────────────────────────────────
     // /api/v1/admin/newsletter/subscribers/by-preference (most specific first — SPEC-155 T-007)
     .route('/', adminSubscribersByPreferenceRoute)

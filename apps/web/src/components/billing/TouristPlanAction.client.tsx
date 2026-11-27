@@ -2,18 +2,19 @@ import { useEffect, useState } from 'react';
 import { GradientButton } from '@/components/ui/GradientButtonReact';
 import type { PublicPlanData } from '@/lib/billing/fetch-plans';
 import { resolvePaidBenefit, selectInheritedTouristPlan } from '@/lib/billing/plan-badge';
-import { loadPricingSituation } from '@/lib/billing/pricing-situation';
+import { isGrantedPlan, loadPricingSituation } from '@/lib/billing/pricing-situation';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl, buildUrlWithParams } from '@/lib/urls';
 import styles from './TouristPlanAction.module.css';
 
-type Plan = Pick<
-    PublicPlanData,
-    'name' | 'monthlyPriceArs' | 'planVersionId' | 'sortOrder' | 'billingOptions' | 'isActive'
-> & {
-    readonly entitlements?: readonly string[];
-};
+type Plan = Partial<Pick<PublicPlanData, 'id'>> &
+    Pick<
+        PublicPlanData,
+        'name' | 'monthlyPriceArs' | 'planVersionId' | 'sortOrder' | 'billingOptions' | 'isActive'
+    > & {
+        readonly entitlements?: readonly string[];
+    };
 type Situation = Awaited<ReturnType<typeof loadPricingSituation>>;
 
 /** Resolve presentation from the authenticated situation, never from an SSR session. */
@@ -23,6 +24,7 @@ export function touristPlanState({ result }: { readonly result?: Situation }) {
         case 'SUBSCRIBED':
             return result.data.status === 'PENDING_AUTHORIZATION' ? 'public' : 'paid';
         case 'TOURIST_VIP_INHERITED':
+        case 'GRANTED':
             return 'paid';
         case 'CHECKOUT':
         case 'NO_PLANS':
@@ -71,16 +73,25 @@ export function TouristPlanAction({
         .sort((a, b) => a.monthlyPriceArs - b.monthlyPriceArs)[0];
     const situation = result?.ok ? result.data : undefined;
     const inheritsVip = situation?.situation === 'TOURIST_VIP_INHERITED';
+    // HOS-2665: a plan held through a permanent grant is current, with nothing to manage or renew.
+    const granted = situation?.situation === 'GRANTED' ? situation : undefined;
     const current =
         state === 'free'
             ? free
-            : inheritsVip
-              ? selectInheritedTouristPlan({
-                    sellablePlans: plans.filter((plan) => plan.isActive && plan.billingOptions)
-                })
-              : state === 'paid' && situation?.situation === 'SUBSCRIBED'
-                ? plans.find((plan) => plan.planVersionId === situation.planVersionId)
-                : undefined;
+            : granted
+              ? plans.find((plan) =>
+                    isGrantedPlan({
+                        plan: { planId: plan.id, planVersionId: plan.planVersionId },
+                        granted
+                    })
+                )
+              : inheritsVip
+                ? selectInheritedTouristPlan({
+                      sellablePlans: plans.filter((plan) => plan.isActive && plan.billingOptions)
+                  })
+                : state === 'paid' && situation?.situation === 'SUBSCRIBED'
+                  ? plans.find((plan) => plan.planVersionId === situation.planVersionId)
+                  : undefined;
     const manage = buildUrlWithParams({
         locale,
         path: 'mi-cuenta/suscripcion',
@@ -121,7 +132,9 @@ export function TouristPlanAction({
                 entitlement: key
             })
     );
-    const canManage = state === 'paid' && !inheritsVip && mode !== 'freeCard';
+    const canManage = state === 'paid' && !inheritsVip && !granted && mode !== 'freeCard';
+    // The final CTA's granted version names the plan too: there is no button to show.
+    const grantedName = granted && mode !== 'freeCard' ? (current?.name ?? granted.planName) : null;
     const actionHref = canManage ? manage : href;
     const actionLabel = canManage
         ? t('pricing.planStatus.manage')
@@ -130,8 +143,8 @@ export function TouristPlanAction({
           : label;
 
     return (
-        <div>
-            {current && !inheritsVip && mode !== 'closing' && (
+        <div className={mode === 'compare' ? styles.compare : undefined}>
+            {current && !inheritsVip && !granted && mode !== 'closing' && (
                 <p>
                     <strong>
                         {mode === 'freeCard'
@@ -140,12 +153,22 @@ export function TouristPlanAction({
                     </strong>
                 </p>
             )}
+            {grantedName && (
+                <>
+                    <p>
+                        <strong>
+                            {t('pricing.planStatus.named', undefined, { plan: grantedName })}
+                        </strong>
+                    </p>
+                    <p data-tourist-plan-granted>{t('pricing.planStatus.granted')}</p>
+                </>
+            )}
             {inheritsVip && mode !== 'freeCard' && (
                 <p>{t('publish.subscribe.touristVipInherited')}</p>
             )}
             {copy && state !== 'paid' && <p>{copy}</p>}
             {mode === 'compare' && benefitLinks.length > 0 && (
-                <ul>
+                <ul className={styles.benefits}>
                     {benefitLinks.map(({ key, path }) => (
                         <li key={key}>
                             {state === 'paid' ? (
@@ -159,7 +182,7 @@ export function TouristPlanAction({
                     ))}
                 </ul>
             )}
-            {!inheritsVip && actionHref && actionLabel && (
+            {!inheritsVip && !granted && actionHref && actionLabel && (
                 <GradientButton
                     href={actionHref}
                     label={actionLabel}

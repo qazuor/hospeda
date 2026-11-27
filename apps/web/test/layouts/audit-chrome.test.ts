@@ -42,13 +42,17 @@ describe('public chrome audit', () => {
         expect(source('layouts/AccountShell.module.css')).not.toContain('overflow-y: auto');
     });
 
-    it('keeps Publicar as the flat accent CTA beside a primary sign-in and labels desktop preferences', () => {
+    it('keeps Publicar as the flat accent CTA beside a secondary outline sign-in and labels desktop preferences', () => {
         // HOS-2646 (owner smoke) owns the Publicar treatment: flat accent, not outline.
         expect(source('components/shared/navigation/PublishMenu.client.tsx')).toContain(
             'btn-gradient--accent btn-gradient--flat'
         );
         const userMenu = source('components/shared/navigation/UserMenu.client.tsx');
-        expect(userMenu).toContain('btn-gradient--primary');
+        // HOS-2666: sign-in is the secondary (outline) action, never a filled gradient.
+        expect(userMenu).not.toContain('btn-gradient');
+        expect(source('components/shared/navigation/UserMenu.module.css')).toMatch(
+            /\.signInLink\s*\{[^}]*background-color: transparent/
+        );
         expect(userMenu.match(/className=\{styles.prefsRow\}/g)).toHaveLength(1);
         expect(userMenu).toContain("t('nav.userMenu.preferences')");
         expect(source('components/shared/preferences/ThemeControl.client.tsx')).toContain(

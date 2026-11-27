@@ -13,6 +13,25 @@
     width: 100%;
 }
 
+/* The active alert's description reads as its own card, so it does not float
+   loose between the price card and the cancel button (HOS-2667). */
+.priceAlertStatus {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    background-color: var(--core-card);
+    color: var(--core-foreground);
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+}
+
+.priceAlertStatus p {
+    margin: 0;
+}
+
 /* ─── Shared button base ─────────────────────────────────────────────────── */
 
 .priceAlertButtonCreate,
@@ -61,6 +80,15 @@
     cursor: default;
 }
 
+/* Microcopy under the locked (non-VIP) button: says what unlocks it (HOS-2666 / CARD-023 H-3). */
+.priceAlertLockedHint {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--core-muted-foreground);
+    text-align: center;
+}
+
 /* ─── Active state (already subscribed — cancel action) ──────────────────── */
 
 .priceAlertButtonActive {
@@ -98,4 +126,73 @@
     color: var(--destructive, oklch(0.6 0.22 25));
     margin: 0;
     text-align: center;
+}
+
+/* ─── Create dialog: mode switch and live preview (HOS-2666 / CARD-024) ───── */
+
+.priceAlertCurrent {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--core-muted-foreground);
+}
+
+.priceAlertModes {
+    display: flex;
+    gap: var(--space-1);
+    margin: 0;
+    padding: var(--space-1);
+    border: 1px solid var(--control-border);
+    border-radius: var(--radius-button);
+}
+
+.priceAlertModesLegend {
+    padding: 0 var(--space-1);
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    color: var(--core-muted-foreground);
+}
+
+.priceAlertMode {
+    position: relative;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-button);
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.priceAlertMode input {
+    position: absolute;
+    opacity: 0;
+    inset: 0;
+    cursor: pointer;
+}
+
+.priceAlertMode:has(input:checked) {
+    background-color: var(--muted);
+}
+
+.priceAlertMode:has(input:focus-visible) {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+}
+
+.priceAlertPreview {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    min-height: 1.25rem;
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--core-foreground);
+}
+
+.priceAlertPreview p {
+    margin: 0;
 }

@@ -38,5 +38,9 @@ describe('OpenAPI document generation with preserved strict/passthrough (HOS-106
         // (including the ~25 now-strict request bodies) without erroring.
         expect(doc.openapi).toBeDefined();
         expect(doc.paths && Object.keys(doc.paths).length).toBeGreaterThan(0);
+        expect(
+            doc.paths?.['/api/v1/admin/newsletter/campaigns/{id}/resolve-preview']
+        ).toHaveProperty('post');
+        expect(doc.paths?.['/api/v1/admin/newsletter/dynamic-sources']).toHaveProperty('get');
     });
 });

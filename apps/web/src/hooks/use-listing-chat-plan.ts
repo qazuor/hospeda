@@ -8,6 +8,8 @@ interface ChatPlan {
     readonly viewer: string | null;
     readonly quota: number | undefined;
     readonly name?: string;
+    /** True when the viewer holds a Tourist VIP title (own plan or inherited). */
+    readonly vip?: boolean;
 }
 
 /** Read the tourist plan on open; a catalog allowance is not a remaining balance. */
@@ -33,19 +35,31 @@ export function useListingChatPlan({
             const key = LimitKeyEnum.MAX_AI_CHAT_CONSUMER_PER_MONTH;
             let name: string | undefined;
             let quota: number | undefined;
+            let vip = false;
             if (api) {
                 const situation = await api.billingSubscriptionApi.pricingSituation({
                     vertical: 'tourist'
                 });
                 const state = situation.ok ? situation.data : undefined;
                 if (state?.situation === 'TOURIST_VIP_INHERITED') {
+                    vip = true;
                     const inherited = resolveTouristVipBenefitKeys({ result })?.plan;
                     name = plans.find((candidate) => candidate.slug === inherited?.slug)?.name;
                     quota = inherited?.limits[key];
+                } else if (state?.situation === 'GRANTED') {
+                    // HOS-2665: a plan held through a permanent grant is a VIP title too.
+                    vip = true;
+                    name =
+                        plans.find((candidate) => candidate.id === state.planId)?.name ??
+                        state.planName;
+                    // The grant decides the allowance, so read the effective set.
+                    const effective = await api.effectiveSetApi.get({ vertical: 'tourist' });
+                    quota = effective.ok ? effective.data.limits[key] : undefined;
                 } else if (
                     state?.situation === 'SUBSCRIBED' &&
                     ['ACTIVE', 'GRACE_PERIOD', 'CANCEL_SCHEDULED'].includes(state.status)
                 ) {
+                    vip = true;
                     const mine = await api.billingSubscriptionApi.listMine({});
                     const row = mine.ok
                         ? mine.data.subscriptions.find(
@@ -67,6 +81,7 @@ export function useListingChatPlan({
                 setPlan({
                     viewer,
                     name,
+                    vip,
                     quota: quota && Number.isFinite(quota) && quota > 0 ? quota : undefined
                 });
         }

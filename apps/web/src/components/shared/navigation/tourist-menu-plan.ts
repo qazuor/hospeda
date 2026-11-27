@@ -28,6 +28,11 @@ export async function readMenuPlan(): Promise<MenuPlan | null> {
         const name = resolveTouristVipBenefitKeys({ result })?.badgeName;
         return name ? { name, paid: true, until: null, upgrade: null } : null;
     }
+    if (state.situation === 'GRANTED') {
+        // HOS-2665: a granted plan is paid-for content with nothing billed, so no date.
+        const plan = plans.find((entry) => entry.id === state.planId);
+        return { name: plan?.name ?? state.planName, paid: true, until: null, upgrade: null };
+    }
     if (state.situation === 'SUBSCRIBED') {
         if (!['ACTIVE', 'CANCEL_SCHEDULED', 'GRACE_PERIOD'].includes(state.status)) return null;
         const mine = await billingSubscriptionApi.listMine({});

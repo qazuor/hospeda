@@ -1,4 +1,4 @@
-import { BuildingIcon, ChevronRightIcon, LogoutIcon } from '@repo/icons';
+import { BuildingIcon, ChevronDownIcon, ChevronRightIcon, LogoutIcon } from '@repo/icons';
 import type { MouseEvent } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { PlanBadge } from '@/components/shared/ui/PlanBadge';
@@ -73,7 +73,11 @@ export function MobileMenuAccountSection({
                         aria-hidden="true"
                     />
                     {publishLabel}
-                    <span aria-hidden="true">…</span>
+                    <ChevronDownIcon
+                        size={16}
+                        aria-hidden="true"
+                        className={`${styles.ctaChevron} ${publishOpen ? styles.ctaChevronOpen : ''}`}
+                    />
                 </button>
                 {publishOpen && (
                     <div

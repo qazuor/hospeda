@@ -1,0 +1,522 @@
+{
+    "version": "1.0",
+    "specRef": "HOS-2636",
+    "title": "F1. Bloques dinámicos y resolver",
+    "created": "2026-11-26T18:39:36.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Add NewsletterDynamicSourceEnum and NewsletterIfBelowMinEnum",
+            "phase": "setup",
+            "complexity": 1,
+            "blockedBy": [],
+            "tags": ["schemas"],
+            "description": "New enums in packages/schemas/src/enums/ (newsletter-dynamic-source.enum.ts with most_viewed|newest|top_rated|featured; newsletter-if-below-min.enum.ts with skip_run|hide_block|send_anyway), exported from enums/index.ts. Tests: enum values snapshot in packages/schemas/test/enums/. Check the frozen enum guards (a new enum value trips counts/inventories).",
+            "status": "completed",
+            "blocks": ["T-003"],
+            "subtasks": [],
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-11-26T18:39:36.000Z",
+                "started": "2026-11-26T18:53:30.000Z",
+                "completed": "2026-11-26T18:53:30.000Z"
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Add NewsletterDynamicEntityTypeEnum and ENABLED_DYNAMIC_ENTITY_TYPES",
+            "phase": "setup",
+            "complexity": 2,
+            "blockedBy": [],
+            "tags": ["schemas"],
+            "description": "F1 §4.6. Enum ACCOMMODATION|VENUE|POST|EVENT|EXPERIENCE|PARTNER (subset of EntityTypeEnum, entity-type.enum.ts:40-54) plus constant ENABLED_DYNAMIC_ENTITY_TYPES = ['ACCOMMODATION'] in @repo/schemas. Tests: every value exists in EntityTypeEnum; enabled list is a subset.",
+            "status": "completed",
+            "blocks": ["T-003"],
+            "subtasks": [],
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-11-26T18:39:36.000Z",
+                "started": "2026-11-26T18:53:30.000Z",
+                "completed": "2026-11-26T18:53:30.000Z"
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Create DynamicBlockConfigSchema with superRefine error codes",
+            "phase": "core",
+            "complexity": 3,
+            "blockedBy": ["T-001", "T-002"],
+            "tags": ["schemas"],
+            "description": "packages/schemas/src/entities/newsletter/newsletter-dynamic-block.schema.ts per F1 §4.5: params .strict(), minItems<=count, FEATURED_SOURCE_DISABLED, ENTITY_TYPE_NOT_ENABLED, SOURCE_NOT_SUPPORTED_FOR_ENTITY. Tests in packages/schemas/test/entities/newsletter/newsletter-dynamic-block.schema.test.ts: AC-F1-1, AC-F1-3, boundaries (count 1..12, windowDays 1..90, minReviews 1..100), each error code.",
+            "status": "completed",
+            "blocks": ["T-004", "T-006", "T-020"],
+            "subtasks": [],
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-11-26T18:39:36.000Z",
+                "started": "2026-11-26T18:53:30.000Z",
+                "completed": "2026-11-26T18:53:30.000Z"
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Implement applyDynamicBlockDefaults()",
+            "phase": "core",
+            "complexity": 2,
+            "blockedBy": ["T-003"],
+            "tags": ["schemas"],
+            "description": "Defaults per decisions D-2/D-5: ifBelowMin skip_run when single dynamic block else hide_block (recalculated only if not manually changed); excludeRecentEditions/fillWithRepeats per source (newest 0/false, most_viewed 2/true, top_rated 3/true); minItems 1. Tests: AC-F1-2 and each source default.",
+            "status": "completed",
+            "blocks": ["T-021"],
+            "subtasks": [],
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-11-26T18:39:36.000Z",
+                "started": "2026-11-26T18:53:30.000Z",
+                "completed": "2026-11-26T18:53:30.000Z"
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Add resolved_body_json and resolved_at to newsletter_campaigns",
+            "phase": "setup",
+            "complexity": 2,
+            "blockedBy": [],
+            "tags": ["db", "schemas"],
+            "description": "Columns in packages/db/src/schemas/newsletter/newsletter_campaigns.dbschema.ts (jsonb nullable, timestamptz nullable), run pnpm db:generate (structural migration committed), additive optional fields in newsletter-campaign.schema.ts. Tests: schema accepts/omits fields; drift guard green.",
+            "status": "completed",
+            "blocks": ["T-016"],
+            "subtasks": [],
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-11-26T18:39:36.000Z",
+                "started": "2026-11-26T18:53:30.000Z",
+                "completed": "2026-11-26T18:53:30.000Z"
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Create DynamicSourcePort, eligibleAccommodationPredicate and typed registries",
+            "phase": "core",
+            "complexity": 3,
+            "blockedBy": ["T-003"],
+            "tags": ["service-core"],
+            "description": "packages/service-core/src/services/newsletter/dynamic/: dynamic-source.port.ts (interface F1 §4.5), predicate deleted_at IS NULL AND publication_status='PUBLISHED' (+destinationId), SOURCE_RESOLVERS Record<entityType, Partial<Record<source, SourceResolver>>> and CARD_LOADERS Record<entityType, ...|null> (only ACCOMMODATION filled). Tests: static guard source-predicate.guard.test.ts (every resolver and revalidate use the shared predicate) and registry-completeness guard (every enum value has an entry; every enabled type has a source and a card).",
+            "status": "completed",
+            "blocks": ["T-007", "T-008", "T-009", "T-010", "T-011", "T-013"],
+            "subtasks": [],
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-11-26T18:39:36.000Z",
+                "started": "2026-11-26T19:14:41.000Z",
+                "completed": "2026-11-26T19:14:41.000Z"
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Implement newest accommodation resolver",
+            "phase": "core",
+            "complexity": 2,
+            "blockedBy": ["T-006"],
+            "tags": ["service-core", "db"],
+            "description": "sources/newest.source.ts: created_at desc, id asc, excludeIds, limit. Integration test in packages/service-core/test/integration/services/newsletter-dynamic-sources.integration.test.ts against real Postgres; assert test count > 0 (isDbAvailable skips silently).",
+            "status": "completed",
+            "blocks": [],
+            "subtasks": [],
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-11-26T18:39:36.000Z",
+                "started": "2026-11-26T19:14:41.000Z",
+                "completed": "2026-11-26T19:14:41.000Z"
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Implement most_viewed accommodation resolver",
+            "phase": "core",
+            "complexity": 3,
+            "blockedBy": ["T-006"],
+            "tags": ["service-core", "db"],
+            "description": "sources/most-viewed.source.ts: COUNT(entity_views) with viewed_at >= now()-windowDays, desc, id asc, uses idx_entity_views_entity_time. Integration test AC-F1-4 and AC-F1-5 (tie broken by id asc).",
+            "status": "completed",
+            "blocks": [],
+            "subtasks": [],
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-11-26T18:39:36.000Z",
+                "started": "2026-11-26T19:14:41.000Z",
+                "completed": "2026-11-26T19:14:41.000Z"
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Implement top_rated accommodation resolver",
+            "phase": "core",
+            "complexity": 2,
+            "blockedBy": ["T-006"],
+            "tags": ["service-core", "db"],
+            "description": "sources/top-rated.source.ts: average_rating desc, reviews_count desc, id asc, filter reviews_count >= minReviews. Integration test AC-F1-6.",
+            "status": "completed",
+            "blocks": [],
+            "subtasks": [],
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-11-26T18:39:36.000Z",
+                "started": "2026-11-26T19:14:41.000Z",
+                "completed": "2026-11-26T19:14:41.000Z"
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Implement DrizzleDynamicSource.revalidate",
+            "phase": "core",
+            "complexity": 2,
+            "blockedBy": ["T-006"],
+            "tags": ["service-core", "db"],
+            "description": "drizzle-dynamic-source.ts revalidate(ids) through the shared predicate plus minReviews for top_rated; returns validIds and dropped with reason not_published|deleted|below_min_reviews. Integration test: unpublished item reported as not_published.",
+            "status": "completed",
+            "blocks": [],
+            "subtasks": [],
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-11-26T18:39:36.000Z",
+                "started": "2026-11-26T19:14:41.000Z",
+                "completed": "2026-11-26T19:14:41.000Z"
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Implement resolveBlocks ordering, dedup and fillWithRepeats",
+            "phase": "core",
+            "complexity": 3,
+            "blockedBy": ["T-006"],
+            "tags": ["service-core"],
+            "description": "resolve-blocks.ts (RO-RO, F1 §4.5): deterministic order, exclude history ids (excludeRecentEditions; empty history in manual campaigns), fillWithRepeats least-recently-shown first. Unit tests with fake port in packages/service-core/test/services/newsletter/dynamic/resolve-blocks.test.ts: AC-F1-5, dedup, repeats.",
+            "status": "completed",
+            "blocks": ["T-012"],
+            "subtasks": [],
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-11-26T18:39:36.000Z",
+                "started": "2026-11-26T19:14:41.000Z",
+                "completed": "2026-11-26T19:14:41.000Z"
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Add revalidation and minItems/ifBelowMin to resolveBlocks",
+            "phase": "core",
+            "complexity": 3,
+            "blockedBy": ["T-011"],
+            "tags": ["service-core"],
+            "description": "Phase send revalidates and refills; manuallyEdited only removes invalid. Decision skip_run|send; hide_block hides; send_anyway keeps. Report per block (candidates, dropped, repeatsUsed, belowMin, action). Unit tests AC-F1-7, AC-F1-8, AC-F1-9.",
+            "status": "completed",
+            "blocks": ["T-016"],
+            "subtasks": [],
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-11-26T18:39:36.000Z",
+                "started": "2026-11-26T19:14:41.000Z",
+                "completed": "2026-11-26T19:14:41.000Z"
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Implement accommodation loadCards with i18n fallback",
+            "phase": "core",
+            "complexity": 2,
+            "blockedBy": ["T-006"],
+            "tags": ["service-core", "db"],
+            "description": "name_i18n/summary_i18n with fallback to name/summary (es), cover from accommodation_media.is_featured, URL ${HOSPEDA_SITE_URL}/{locale}/alojamientos/{slug}/, https-only images. Integration test AC-F1-14.",
+            "status": "completed",
+            "blocks": ["T-014"],
+            "subtasks": [],
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-11-26T18:39:36.000Z",
+                "started": "2026-11-26T19:14:41.000Z",
+                "completed": "2026-11-26T19:14:41.000Z"
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Create DynamicBlockCards email component",
+            "phase": "core",
+            "complexity": 2,
+            "blockedBy": ["T-013"],
+            "tags": ["notifications"],
+            "description": "packages/notifications/src/templates/newsletter/dynamic-block-cards.tsx on @repo/email Button + emailPalette, td-inline styles like OptionCard; CTA i18n 'Ver alojamiento' in es/en/pt. Never receives user HTML. Tests in newsletter.templates.test.tsx: renders N cards, escapes text, no image for non-https.",
+            "status": "completed",
+            "blocks": ["T-015"],
+            "subtasks": [],
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-11-26T18:39:36.000Z",
+                "started": null,
+                "completed": "2026-11-27T00:00:12.000Z"
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Implement renderNewsletterEmail by segments",
+            "phase": "core",
+            "complexity": 3,
+            "blockedBy": ["T-014"],
+            "tags": ["notifications"],
+            "description": "packages/notifications/src/utils/render-newsletter-email.ts splits doc at root dynamicBlock nodes; TipTap segments via renderTiptapEmailContent with sanitizeEmailHtml intact; NewsletterCampaign accepts optional segments (backward compatible); TiptapNode.attrs admits boolean in packages/utils. Tests AC-F1-15 (no script/javascript:) and AC-F1-16 (campaign without blocks byte-identical HTML); utils renderer behaviour unchanged.",
+            "status": "completed",
+            "blocks": ["T-016", "T-018"],
+            "subtasks": [],
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-11-26T18:39:36.000Z",
+                "started": null,
+                "completed": "2026-11-27T00:00:12.000Z"
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Resolve and persist blocks in campaign send()",
+            "phase": "integration",
+            "complexity": 3,
+            "blockedBy": ["T-005", "T-012", "T-015"],
+            "tags": ["service-core"],
+            "description": "send() delegates to dynamic/ (do not grow newsletter-campaign.service.ts), resolves with phase send, 422 DYNAMIC_BLOCK_BELOW_MIN keeps draft and inserts no deliveries, writes resolved_body_json/resolved_at inside the same transaction as deliveries. Tests in newsletter-campaign.service.test.ts (AC-F1-8 at service level, persistence).",
+            "status": "completed",
+            "blocks": ["T-017", "T-019"],
+            "subtasks": [],
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-11-26T18:39:36.000Z",
+                "started": null,
+                "completed": "2026-11-27T00:49:51.000Z"
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Render resolved_body_json in processBatch and fail unresolved blocks",
+            "phase": "integration",
+            "complexity": 3,
+            "blockedBy": ["T-016"],
+            "tags": ["service-core"],
+            "description": "newsletter-delivery.service.ts:657 renders resolved_body_json ?? body_json via segments; never resolves; doc with dynamicBlock and null resolved => deliveries failed DYNAMIC_BLOCK_UNRESOLVED, transport not called. Tests AC-F1-10, AC-F1-11, AC-F1-16 in newsletter-delivery.service.test.ts.",
+            "status": "completed",
+            "blocks": ["T-023"],
+            "subtasks": [],
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-11-26T18:39:36.000Z",
+                "started": null,
+                "completed": "2026-11-27T00:49:51.000Z"
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Add sendTestEmailFromContent and make testSend resolve dry",
+            "phase": "integration",
+            "complexity": 2,
+            "blockedBy": ["T-015"],
+            "tags": ["service-core"],
+            "description": "sendTestEmailFromContent next to sendTestEmail (:959); testSend resolves without writes. Test AC-F1-13 (campaign unchanged).",
+            "status": "completed",
+            "blocks": ["T-019"],
+            "subtasks": [],
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-11-26T18:39:36.000Z",
+                "started": null,
+                "completed": "2026-11-27T00:49:51.000Z"
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "Add resolve-preview and dynamic-sources admin routes and wire delivery-factory",
+            "phase": "integration",
+            "complexity": 3,
+            "blockedBy": ["T-016", "T-018"],
+            "tags": ["api"],
+            "description": "apps/api/src/routes/newsletter/admin/campaigns.ts POST /campaigns/{id}/resolve-preview (no writes, AC-F1-12) and 422 mapping; new dynamic-sources.ts GET /dynamic-sources (featured enabled:false, entity types with enabled flags, sources per type); delivery-factory.ts injects real port and segment renderer. Tests in apps/api/test/routes/newsletter/admin-campaign-actions.test.ts asserting service mock.calls, not just status.",
+            "status": "completed",
+            "blocks": ["T-021", "T-022"],
+            "subtasks": [],
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-11-26T18:39:36.000Z",
+                "started": null,
+                "completed": "2026-11-27T00:49:51.000Z"
+            }
+        },
+        {
+            "id": "T-020",
+            "title": "Add TipTap dynamicBlock extension to the admin editor",
+            "phase": "integration",
+            "complexity": 3,
+            "blockedBy": ["T-003"],
+            "tags": ["admin"],
+            "description": "apps/admin/src/components/newsletter/dynamic-block/ extension (root-level atomic node, attrs blockKey + config JSON string) registered in NEWSLETTER_EDITOR_EXTENSIONS. Tests: RichTextEditor.test.tsx and RichTextEditor.v3-roundtrip.test.ts node survives JSON roundtrip.",
+            "status": "completed",
+            "blocks": ["T-021"],
+            "subtasks": [],
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-11-26T18:39:36.000Z",
+                "started": "2026-11-26T19:14:41.000Z",
+                "completed": "2026-11-26T19:14:41.000Z"
+            }
+        },
+        {
+            "id": "T-021",
+            "title": "Build dynamic block config panel",
+            "phase": "integration",
+            "complexity": 3,
+            "blockedBy": ["T-020", "T-019", "T-004"],
+            "tags": ["admin"],
+            "description": "TanStack Form + DynamicBlockConfigSchema.safeParse; entity selector shows 6 types, non-enabled disabled with 'Próximamente'; source list filtered by type; defaults from applyDynamicBlockDefaults. Component test AC-F1-2 and disabled types.",
+            "status": "completed",
+            "blocks": ["T-023"],
+            "subtasks": [],
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-11-26T18:39:36.000Z",
+                "started": null,
+                "completed": "2026-11-27T01:23:06.000Z"
+            }
+        },
+        {
+            "id": "T-022",
+            "title": "Render API preview in sandboxed iframe and show resolution report on send",
+            "phase": "integration",
+            "complexity": 3,
+            "blockedBy": ["T-019"],
+            "tags": ["admin", "i18n"],
+            "description": "CampaignPreview.tsx uses iframe sandbox with HTML from resolve-preview; SendConfirmDialog.tsx shows report and the 422 message; i18n keys es/en/pt. Component tests for both.",
+            "status": "completed",
+            "blocks": ["T-023"],
+            "subtasks": [],
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-11-26T18:39:36.000Z",
+                "started": null,
+                "completed": "2026-11-27T01:23:06.000Z"
+            }
+        },
+        {
+            "id": "T-023",
+            "title": "Run manual mutations and repo guards",
+            "phase": "testing",
+            "complexity": 2,
+            "blockedBy": ["T-017", "T-021", "T-022"],
+            "tags": ["testing"],
+            "description": "Mutations from F1 §7: drop publication_status from predicate (AC-F1-7 must fail), drop id tiebreak (AC-F1-5), resolve inside processBatch (AC-F1-10); revert each. Run pnpm check:guards relevant steps, typecheck and lint of touched packages with CI=true (never full package suites locally).",
+            "status": "completed",
+            "blocks": [],
+            "subtasks": [],
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-11-26T18:39:36.000Z",
+                "started": null,
+                "completed": "2026-11-27T08:33:33.000Z"
+            }
+        }
+    ],
+    "summary": {
+        "total": 23,
+        "pending": 0,
+        "inProgress": 0,
+        "completed": 23,
+        "blocked": 0,
+        "averageComplexity": 2.5
+    }
+}

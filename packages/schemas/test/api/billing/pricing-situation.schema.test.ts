@@ -14,6 +14,13 @@ describe('PricingSituationResponseSchema', () => {
                 billingOptionId: crypto.randomUUID()
             },
             { situation: 'COVERED' },
+            {
+                situation: 'GRANTED',
+                planId: crypto.randomUUID(),
+                planVersionId: crypto.randomUUID(),
+                planName: 'Turista VIP',
+                since: '2026-11-01T10:00:00.000Z'
+            },
             { situation: 'NO_PLANS' },
             { situation: 'TOURIST_VIP_INHERITED' }
         ];
@@ -38,5 +45,23 @@ describe('PricingSituationResponseSchema', () => {
         expect(PricingSituationResponseSchema.safeParse({ situation: 'UNKNOWN' }).success).toBe(
             false
         );
+    });
+
+    it('HOS-2665 rejects a granted situation without plan identity or a valid since', () => {
+        const granted = {
+            situation: 'GRANTED',
+            planId: crypto.randomUUID(),
+            planVersionId: crypto.randomUUID(),
+            planName: 'Turista VIP',
+            since: '2026-11-01T10:00:00.000Z'
+        };
+        expect(PricingSituationResponseSchema.safeParse(granted).success).toBe(true);
+        for (const broken of [
+            { ...granted, planId: 'not-a-uuid' },
+            { ...granted, planVersionId: undefined },
+            { ...granted, planName: '' },
+            { ...granted, since: 'yesterday' }
+        ])
+            expect(PricingSituationResponseSchema.safeParse(broken).success).toBe(false);
     });
 });
