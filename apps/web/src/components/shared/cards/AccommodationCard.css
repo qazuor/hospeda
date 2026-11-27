@@ -446,17 +446,20 @@
  * amenities, stars, the numeric rating, or the price block.
  */
 @media (max-width: 767px) {
+    /* HOS-2666 (CARD-011 H-7): the full-width mobile stack made the listing
+       ~340px longer than before. A 120px photo, a one-line description and a
+       tighter gap give that height back without dropping any card element. */
     .acc-card__image-area {
-        height: 160px;
+        height: 120px;
     }
 
     .acc-card__content {
-        gap: 6px;
+        gap: 4px;
         padding-bottom: 12px;
     }
 
     .acc-card__description {
-        -webkit-line-clamp: 2;
+        -webkit-line-clamp: 1;
     }
 
     .acc-card__reviews-count {

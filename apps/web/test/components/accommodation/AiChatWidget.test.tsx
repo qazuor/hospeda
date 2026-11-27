@@ -57,7 +57,8 @@ vi.mock('@/lib/i18n', () => ({
                     'AI chat is not available for this accommodation',
                 'accommodations.aiChat.consumerLimitReached':
                     'You reached your monthly AI chat limit. Upgrade for more access.',
-                'accommodations.aiChat.consumerLimitUpgradeCta': 'View plans'
+                'accommodations.aiChat.consumerLimitUpgradeCta': 'View plans',
+                'billing.checkout.signup.vertical.tourist': 'Tourist VIP'
             };
             return (map[key] ?? fallback ?? key).replace(/\{\{(\w+)\}\}/g, (_, name) =>
                 String(params?.[name] ?? '')
@@ -432,6 +433,26 @@ describe('AiChatWidget', () => {
         expect(await screen.findByText('Catalog Gold')).toBeInTheDocument();
         expect(screen.getByText('271 monthly questions')).toBeInTheDocument();
         expect(screen.queryByText('17 monthly questions')).not.toBeInTheDocument();
+    });
+
+    it('falls back to the VIP label in the header when a VIP plan name cannot be resolved (CARD-037 H-1)', async () => {
+        mockPricingSituation.mockResolvedValue({
+            ok: true,
+            data: { situation: 'SUBSCRIBED', status: 'ACTIVE' }
+        });
+        mockSubscriptions.mockResolvedValue({
+            ok: true,
+            data: {
+                subscriptions: [
+                    { vertical: 'tourist', status: 'ACTIVE', plan: { slug: 'gone', name: 'Gone' } }
+                ]
+            }
+        });
+        const user = userEvent.setup();
+        render(<AiChatWidget {...defaultProps} />);
+        await user.click(screen.getByRole('button', { name: 'Ask AI about this accommodation' }));
+
+        expect(await screen.findByText('Tourist VIP')).toBeInTheDocument();
     });
 
     it('shows the effective allowance for a grant without inventing a paid plan name', async () => {

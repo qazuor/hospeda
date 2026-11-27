@@ -379,6 +379,9 @@ export function PriceAlertButton({
                     {t('accommodations.detail.priceAlert.locked', 'Avisame si baja el precio')}
                     {entitledBadge}
                 </button>
+                <p className={styles.priceAlertLockedHint}>
+                    {t('accommodations.detail.priceAlert.lockedHint', 'Disponible con Turista VIP')}
+                </p>
                 {vipGateOpen && (
                     <CompareUpsellPopover
                         anchorRef={gateTrigger}

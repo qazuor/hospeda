@@ -174,7 +174,9 @@ export function useFavoriteToggle({
             } else {
                 addToast({
                     type: 'success',
-                    message: t('account.favorites.toast.removed', 'Eliminado de favoritos')
+                    message:
+                        (await usageMessage) ??
+                        t('account.favorites.toast.removed', 'Eliminado de favoritos')
                 });
                 trackEvent(WebEvents.FavoriteToggledRemove, {
                     entity_type: entityType,

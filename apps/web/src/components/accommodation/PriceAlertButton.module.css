@@ -61,6 +61,15 @@
     cursor: default;
 }
 
+/* Microcopy under the locked (non-VIP) button: says what unlocks it (HOS-2666 / CARD-023 H-3). */
+.priceAlertLockedHint {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--core-muted-foreground);
+    text-align: center;
+}
+
 /* ─── Active state (already subscribed — cancel action) ──────────────────── */
 
 .priceAlertButtonActive {

@@ -645,7 +645,7 @@ const headerProps = buildVenueHeader({
         {(hoursBlocks.length > 0 || paymentMethods?.length) && (
             <ListingDetailSlot name="hours">
                 {hoursBlocks.map(({ Component, props }) => <Component {...props} />)}
-                {paymentMethods?.length ? <ListingHouseRules policies={{ paymentMethods }} locale={locale} /> : null}
+                {paymentMethods?.length ? <ListingHouseRules policies={{ paymentMethods }} locale={locale} variant="payments" /> : null}
             </ListingDetailSlot>
         )}
 

@@ -16,6 +16,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { DockPortal } from '@/components/shared/dock/DockPortal';
 import { Spinner } from '@/components/shared/feedback/Spinner';
 import { Dialog, DialogBody, DialogHeader } from '@/components/shared/ui/Dialog.client';
+import { PlanBadge } from '@/components/shared/ui/PlanBadge';
 import { useAccountPermissions } from '@/hooks/use-account-permissions';
 import { useListingChatPlan } from '@/hooks/use-listing-chat-plan';
 import { useAccommodationChat } from '@/hooks/useAccommodationChat';
@@ -194,7 +195,16 @@ export function AiChatWidget({
         setIsOpen(false);
         openListingContactPanel({ origin: 'bar' });
     };
-    const planChip = plan?.name && <span className={chrome.planChip}>{plan.name}</span>;
+    // HOS-2666 (CARD-037 H-1): the VIP viewer's plan shows as the shared PlanBadge
+    // (crown + name). When the catalog name cannot be resolved the VIP label is
+    // the fallback, so a VIP never sees a chip-less header.
+    const planBadgeName =
+        plan?.name ?? (plan?.vip ? t('billing.checkout.signup.vertical.tourist') : null);
+    const planChip = planBadgeName ? (
+        <span className={chrome.planBadgeSlot}>
+            <PlanBadge name={planBadgeName} />
+        </span>
+    ) : null;
     const selectSuggestion = (question: string) => {
         setDraft(question);
         composerTextareaRef.current?.focus();
