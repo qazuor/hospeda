@@ -53,6 +53,56 @@ afterEach(() => {
 });
 
 describe('newsletter RichTextEditor — Tiptap v3 extension compatibility', () => {
+    it('keeps automatic policies correct after undo and redo', () => {
+        editor = createNewsletterEditor({ type: 'doc', content: [{ type: 'paragraph' }] });
+        editor.commands.insertDynamicBlock({ config: dynamicConfig });
+        const firstDocument = editor.getJSON();
+        editor.destroy();
+        editor = createNewsletterEditor(firstDocument);
+        editor.commands.insertDynamicBlock({ config: dynamicConfig });
+        editor.commands.undo();
+        const remaining = editor.getJSON().content?.filter((node) => node.type === 'dynamicBlock');
+        expect(remaining).toHaveLength(1);
+        expect(JSON.parse(remaining?.[0]?.attrs?.config).ifBelowMin).toBe('skip_run');
+        editor.commands.redo();
+        const restored = editor.getJSON().content?.filter((node) => node.type === 'dynamicBlock');
+        expect(restored).toHaveLength(2);
+        expect(restored?.map((node) => JSON.parse(node.attrs?.config).ifBelowMin)).toEqual([
+            'hide_block',
+            'hide_block'
+        ]);
+    });
+    it('recomputes every automatic policy on insert/remove and preserves manual policies', () => {
+        editor = createNewsletterEditor(null);
+        editor.commands.insertDynamicBlock({ config: dynamicConfig });
+        editor.commands.insertDynamicBlock({ config: dynamicConfig });
+        const policies = () =>
+            editor
+                ?.getJSON()
+                .content?.filter((node) => node.type === 'dynamicBlock')
+                .map((node) => JSON.parse(node.attrs?.config).ifBelowMin);
+        expect(policies()).toEqual(['hide_block', 'hide_block']);
+        const first = editor.state.doc.firstChild;
+        if (!first) throw new Error('Expected the inserted block');
+        const config = JSON.parse(first.attrs.config);
+        editor.view.dispatch(
+            editor.state.tr.setNodeMarkup(0, undefined, {
+                ...first.attrs,
+                ifBelowMinManual: true,
+                config: JSON.stringify({ ...config, ifBelowMin: 'send_anyway' })
+            })
+        );
+        let secondPosition = -1;
+        editor.state.doc.forEach((node, position) => {
+            if (node.type.name === 'dynamicBlock' && position > 0) secondPosition = position;
+        });
+        editor.commands.deleteRange({ from: secondPosition, to: secondPosition + 1 });
+        expect(policies()).toEqual(['send_anyway']);
+        editor.commands.insertDynamicBlock({ config: dynamicConfig });
+        expect(policies()).toEqual(['send_anyway', 'hide_block']);
+        editor.commands.deleteRange({ from: 0, to: 1 });
+        expect(policies()).toEqual(['skip_run']);
+    });
     it('inserts an atomic root block with a valid generated key and shared defaults', () => {
         editor = createNewsletterEditor(null);
         expect(editor.commands.insertDynamicBlock({ config: dynamicConfig })).toBe(true);

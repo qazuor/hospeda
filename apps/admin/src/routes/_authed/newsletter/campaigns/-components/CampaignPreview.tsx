@@ -13,6 +13,8 @@
 
 import DOMPurify from 'dompurify';
 import type { ReactNode } from 'react';
+import { ResolvedCampaignPreview } from '@/components/newsletter/dynamic-block/ResolvedCampaignPreview';
+import { hasDynamicBlocks } from '@/hooks/newsletter/use-campaign-resolution';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -20,6 +22,12 @@ import type { ReactNode } from 'react';
  * Props for the CampaignPreview component.
  */
 export interface CampaignPreviewProps {
+    /** Saved campaign required by the write-free dynamic resolver. */
+    readonly campaignId?: string;
+    /** Current editor document determines whether to show the dynamic preview. */
+    readonly bodyJson?: unknown;
+    /** Persisted document revision; unsaved edits must not be sent to this endpoint. */
+    readonly revision?: unknown;
     /** Rendered HTML string produced by `renderTiptapContent`. May be empty. */
     readonly html: string;
     /** Email subject displayed as the visible H1 inside the preview. */
@@ -80,7 +88,20 @@ function EmailChrome({ children }: EmailChromeProps) {
  * <CampaignPreview html={renderedHtml} subject="Novedades de mayo" />
  * ```
  */
-export function CampaignPreview({ html, subject }: CampaignPreviewProps) {
+export function CampaignPreview({
+    html,
+    subject,
+    campaignId,
+    bodyJson,
+    revision
+}: CampaignPreviewProps) {
+    if (hasDynamicBlocks({ bodyJson }))
+        return (
+            <ResolvedCampaignPreview
+                campaignId={campaignId}
+                revision={revision}
+            />
+        );
     const isEmpty = !html.trim();
 
     return (

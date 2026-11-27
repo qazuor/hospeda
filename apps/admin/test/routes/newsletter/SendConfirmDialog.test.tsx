@@ -3,17 +3,27 @@
  * Tests the audience count shown in the send confirmation (HOS-2586).
  */
 import type { NewsletterCampaign } from '@repo/schemas';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ApiError } from '@/lib/errors';
 import { SendConfirmDialog } from '@/routes/_authed/newsletter/campaigns/-components/SendConfirmDialog';
 
 const mockUseAudience = vi.fn();
+const mockSend = vi.fn();
+const mockResolution = vi.fn();
+const mockNavigate = vi.fn();
+const mockToast = vi.fn();
+vi.mock('@tanstack/react-router', () => ({ useNavigate: () => mockNavigate }));
+vi.mock('@/hooks/newsletter/use-campaign-resolution', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@/hooks/newsletter/use-campaign-resolution')>()),
+    useCampaignResolution: (input: unknown) => mockResolution(input)
+}));
 
 vi.mock('@/hooks/newsletter', () => ({
     useCampaignAudienceCount: (args: unknown) => mockUseAudience(args),
-    useSendCampaign: () => ({ mutateAsync: vi.fn(), isPending: false })
+    useSendCampaign: () => ({ mutateAsync: mockSend, isPending: false })
 }));
-vi.mock('@/hooks/use-toast', () => ({ useToast: () => ({ addToast: vi.fn() }) }));
+vi.mock('@/hooks/use-toast', () => ({ useToast: () => ({ addToast: mockToast }) }));
 vi.mock('@/hooks/use-translations', () => ({
     useTranslations: () => ({
         t: (key: string, params?: Record<string, unknown>) =>
@@ -43,7 +53,11 @@ function renderDialog() {
 }
 
 describe('SendConfirmDialog audience', () => {
-    beforeEach(() => mockUseAudience.mockReset());
+    beforeEach(() => {
+        mockUseAudience.mockReset();
+        mockSend.mockReset();
+        mockResolution.mockReturnValue({ data: undefined });
+    });
 
     it('shows an ellipsis (never 0) while the estimate loads', () => {
         mockUseAudience.mockReturnValue({ data: undefined });
@@ -105,5 +119,84 @@ describe('SendConfirmDialog audience', () => {
         expect(
             screen.getByText('admin-newsletter.campaigns.confirmSendCancel')
         ).toBeInTheDocument();
+    });
+});
+
+describe('SendConfirmDialog dynamic resolution', () => {
+    const report = {
+        blocks: [
+            {
+                blockKey: 'block-one',
+                candidates: ['a'],
+                dropped: [],
+                repeatsUsed: 0,
+                belowMin: true,
+                action: 'skip_run'
+            }
+        ]
+    };
+    const dynamicCampaign: NewsletterCampaign = {
+        ...campaign,
+        bodyJson: { type: 'doc', content: [{ type: 'dynamicBlock' }] }
+    };
+    beforeEach(() => {
+        mockUseAudience.mockReturnValue({ data: { eligible: 7 } });
+        mockSend.mockReset();
+    });
+
+    it('shows the report before confirmation', () => {
+        mockResolution.mockReturnValue({ data: { report } });
+        render(
+            <SendConfirmDialog
+                open
+                onOpenChange={vi.fn()}
+                campaign={dynamicCampaign}
+            />
+        );
+        expect(screen.getByText('block-one')).toBeInTheDocument();
+        expect(screen.getByText(/actions.skip_run/)).toBeInTheDocument();
+        expect(mockSend).not.toHaveBeenCalled();
+        expect(mockResolution).toHaveBeenCalledWith(
+            expect.objectContaining({ enabled: true, id: campaign.id })
+        );
+    });
+    it('prevents confirmation before the report is available', () => {
+        mockResolution.mockReturnValue({ isLoading: true });
+        render(
+            <SendConfirmDialog
+                open
+                onOpenChange={vi.fn()}
+                campaign={dynamicCampaign}
+            />
+        );
+        expect(
+            screen.getByRole('button', { name: 'admin-newsletter.campaigns.confirmSendButton' })
+        ).toBeDisabled();
+    });
+    it('keeps the dialog and draft on 422 and identifies affected blocks', async () => {
+        mockResolution.mockReturnValue({ data: { report } });
+        mockSend.mockRejectedValue(
+            new ApiError('Blocked', {
+                status: 422,
+                body: { error: { code: 'DYNAMIC_BLOCK_BELOW_MIN', details: { report } } }
+            })
+        );
+        const onOpenChange = vi.fn();
+        render(
+            <SendConfirmDialog
+                open
+                onOpenChange={onOpenChange}
+                campaign={dynamicCampaign}
+            />
+        );
+        fireEvent.click(
+            screen.getByRole('button', { name: 'admin-newsletter.campaigns.confirmSendButton' })
+        );
+        await waitFor(() =>
+            expect(screen.getByRole('alert')).toHaveTextContent(/sendBlocked.*block-one/)
+        );
+        expect(onOpenChange).not.toHaveBeenCalled();
+        expect(mockNavigate).not.toHaveBeenCalled();
+        expect(mockToast).not.toHaveBeenCalled();
     });
 });

@@ -13,6 +13,7 @@ import { LoaderIcon } from '@repo/icons';
 import type { NewsletterCampaign } from '@repo/schemas';
 import { useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
+import { ResolutionReport } from '@/components/newsletter/dynamic-block/ResolutionReport';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -24,6 +25,12 @@ import {
 } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
 import { useCampaignAudienceCount, useSendCampaign } from '@/hooks/newsletter';
+import type { CampaignResolutionReport } from '@/hooks/newsletter/use-campaign-resolution';
+import {
+    getBelowMinimumReport,
+    hasDynamicBlocks,
+    useCampaignResolution
+} from '@/hooks/newsletter/use-campaign-resolution';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslations } from '@/hooks/use-translations';
 
@@ -60,6 +67,13 @@ export function SendConfirmDialog({ open, onOpenChange, campaign }: SendConfirmD
 
     const [ignoreSoftCap, setIgnoreSoftCap] = useState(false);
     const [inlineError, setInlineError] = useState<string | null>(null);
+    const [failedReport, setFailedReport] = useState<CampaignResolutionReport | null>(null);
+    const dynamic = hasDynamicBlocks({ bodyJson: campaign.bodyJson });
+    const resolution = useCampaignResolution({
+        id: campaign.id,
+        revision: campaign.bodyJson,
+        enabled: open && dynamic
+    });
 
     // Real audience estimate, computed server-side with the exact filter the send
     // uses (language + content segmentation + frequency limit). Only fetched while
@@ -72,6 +86,7 @@ export function SendConfirmDialog({ open, onOpenChange, campaign }: SendConfirmD
     });
 
     const sendMutation = useSendCampaign(campaign.id);
+    const visibleReport = failedReport ?? (dynamic ? resolution.data?.report : undefined);
 
     const audienceCount = audience?.eligible ?? null;
     const softcappedCount = audience?.softCapped ?? 0;
@@ -87,6 +102,7 @@ export function SendConfirmDialog({ open, onOpenChange, campaign }: SendConfirmD
 
     async function handleConfirm() {
         setInlineError(null);
+        setFailedReport(null);
 
         try {
             const result = await sendMutation.mutateAsync(ignoreSoftCap);
@@ -114,6 +130,19 @@ export function SendConfirmDialog({ open, onOpenChange, campaign }: SendConfirmD
                 params: { campaignId: campaign.id }
             });
         } catch (err) {
+            const report = getBelowMinimumReport({ error: err });
+            if (report) {
+                setFailedReport(report);
+                setInlineError(
+                    t('admin-newsletter.dynamicBlock.sendBlocked', {
+                        blocks: report.blocks
+                            .filter((block) => block.belowMin)
+                            .map((block) => block.blockKey)
+                            .join(', ')
+                    })
+                );
+                return;
+            }
             const msg =
                 err instanceof Error
                     ? err.message
@@ -129,6 +158,7 @@ export function SendConfirmDialog({ open, onOpenChange, campaign }: SendConfirmD
     function handleOpenChange(next: boolean) {
         if (!sendMutation.isPending) {
             setInlineError(null);
+            setFailedReport(null);
             setIgnoreSoftCap(false);
             onOpenChange(next);
         }
@@ -139,7 +169,7 @@ export function SendConfirmDialog({ open, onOpenChange, campaign }: SendConfirmD
             open={open}
             onOpenChange={handleOpenChange}
         >
-            <DialogContent className="max-w-md">
+            <DialogContent className="max-h-[85vh] max-w-md overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>{t('admin-newsletter.campaigns.confirmSendTitle')}</DialogTitle>
                     <DialogDescription asChild>
@@ -223,6 +253,21 @@ export function SendConfirmDialog({ open, onOpenChange, campaign }: SendConfirmD
                     </DialogDescription>
                 </DialogHeader>
 
+                {dynamic && resolution.isLoading && (
+                    <p role="status">{t('admin-newsletter.dynamicBlock.loading')}</p>
+                )}
+                {dynamic && resolution.isError && (
+                    <div role="alert">
+                        {t('admin-newsletter.dynamicBlock.previewError')}
+                        <Button
+                            type="button"
+                            onClick={() => void resolution.refetch()}
+                        >
+                            {t('admin-newsletter.dynamicBlock.retry')}
+                        </Button>
+                    </div>
+                )}
+                {visibleReport && <ResolutionReport report={visibleReport} />}
                 <DialogFooter className="mt-2">
                     <Button
                         type="button"
@@ -236,7 +281,11 @@ export function SendConfirmDialog({ open, onOpenChange, campaign }: SendConfirmD
                         type="button"
                         variant="default"
                         onClick={handleConfirm}
-                        disabled={sendMutation.isPending}
+                        disabled={
+                            sendMutation.isPending ||
+                            (dynamic &&
+                                (!resolution.data || resolution.isFetching || resolution.isError))
+                        }
                         className="bg-primary hover:bg-primary/90"
                     >
                         {sendMutation.isPending && (

@@ -1,5 +1,5 @@
 import type { DynamicBlockConfig, DynamicBlockDefaultsConfig } from '@repo/schemas';
-import { applyDynamicBlockDefaults } from '@repo/schemas';
+import { applyDynamicBlockDefaults, DynamicBlockConfigSchema } from '@repo/schemas';
 import { isNodeSelection, mergeAttributes, Node, ReactNodeViewRenderer } from '@tiptap/react';
 import { createElement } from 'react';
 import { DynamicBlockNodeView } from './DynamicBlockNodeView';
@@ -130,5 +130,39 @@ export const DynamicBlock = Node.create<DynamicBlockOptions>({
         return ReactNodeViewRenderer((props) =>
             createElement(DynamicBlockNodeView, { ...props, onEdit })
         );
+    },
+
+    onUpdate({ editor, transaction: sourceTransaction }) {
+        const newState = editor.state;
+        const count = (doc: typeof newState.doc) => {
+            let total = 0;
+            doc.forEach((node) => {
+                if (node.type.name === 'dynamicBlock') total++;
+            });
+            return total;
+        };
+        const dynamicBlockCount = count(newState.doc);
+        if (!dynamicBlockCount || dynamicBlockCount === count(sourceTransaction.before)) return;
+        const transaction = newState.tr;
+        newState.doc.forEach((node, position) => {
+            if (node.type.name !== 'dynamicBlock' || node.attrs.ifBelowMinManual) return;
+            try {
+                const parsed = DynamicBlockConfigSchema.safeParse(JSON.parse(node.attrs.config));
+                if (!parsed.success) return;
+                const config = applyDynamicBlockDefaults({
+                    config: parsed.data,
+                    dynamicBlockCount
+                });
+                if (config.ifBelowMin !== parsed.data.ifBelowMin) {
+                    transaction.setNodeMarkup(position, undefined, {
+                        ...node.attrs,
+                        config: JSON.stringify(config)
+                    });
+                }
+            } catch {
+                /* Invalid imported blocks remain visible for correction. */
+            }
+        });
+        if (transaction.docChanged) editor.view.dispatch(transaction);
     }
 });
