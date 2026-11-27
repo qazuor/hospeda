@@ -180,7 +180,8 @@ export class AccommodationReviewReplyService extends BaseService {
      *
      * An admin decision survives the edit: a reply an admin REJECTED stays
      * REJECTED (the host can delete it and write a new one, which the filter
-     * judges from scratch).
+     * judges from scratch). A reply held for a human because an admin moderated
+     * a previously deleted one stays PENDING whatever the filter says.
      *
      * @param input.reviewId - The review whose reply is edited.
      * @param input.content - The new text.
@@ -210,11 +211,22 @@ export class AccommodationReviewReplyService extends BaseService {
                 const live = await this.requireLiveReply({ reviewId: validated.reviewId, ctx });
                 const filtered = await this.resolveState(validated.content);
                 const adminRejected = live.moderationState === ModerationStatusEnum.REJECTED;
+                // Mirrors respond(): a review whose deleted reply an admin moderated keeps
+                // every later reply held for a human, so an edit cannot relax that hold.
+                const heldForHuman =
+                    !adminRejected &&
+                    (await this.model.hasAdminModeratedDeletedReply(
+                        { reviewId: validated.reviewId },
+                        ctx?.tx
+                    ));
+                let moderationState = filtered;
+                if (adminRejected) moderationState = ModerationStatusEnum.REJECTED;
+                else if (heldForHuman) moderationState = ModerationStatusEnum.PENDING;
                 const updated = await this.model.update(
                     { id: live.id },
                     {
                         content: validated.content,
-                        moderationState: adminRejected ? ModerationStatusEnum.REJECTED : filtered,
+                        moderationState,
                         // A fresh filter verdict is not a human decision: clear the audit
                         // of the previous one unless an admin's rejection is being kept.
                         ...(adminRejected

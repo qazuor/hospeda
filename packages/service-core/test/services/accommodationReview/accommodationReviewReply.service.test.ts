@@ -294,6 +294,41 @@ describe('AccommodationReviewReplyService.editReply', () => {
         expect('moderatedById' in patch).toBe(false);
     });
 
+    it('keeps a reply held for human review when an admin moderated a deleted one (no edit bypass)', async () => {
+        const { service, model } = buildService({
+            liveReply: live({ moderationState: ModerationStatusEnum.PENDING }),
+            adminModeratedDeleted: true
+        });
+
+        const result = await service.editReply(input());
+
+        expect(result.error).toBeUndefined();
+        expect(secondArg(model.update).moderationState).toBe(ModerationStatusEnum.PENDING);
+    });
+
+    it('keeps an admin rejection even when an admin also moderated a deleted reply', async () => {
+        const { service, model } = buildService({
+            liveReply: live({ moderationState: ModerationStatusEnum.REJECTED }),
+            adminModeratedDeleted: true
+        });
+
+        await service.editReply(input());
+
+        expect(secondArg(model.update).moderationState).toBe(ModerationStatusEnum.REJECTED);
+    });
+
+    it('lets an edit clear a filter-only PENDING reply when the new text passes the filter', async () => {
+        const { service, model } = buildService({
+            liveReply: live({ moderationState: ModerationStatusEnum.PENDING }),
+            adminModeratedDeleted: false
+        });
+
+        const result = await service.editReply(input());
+
+        expect(result.error).toBeUndefined();
+        expect(secondArg(model.update).moderationState).toBe(ModerationStatusEnum.APPROVED);
+    });
+
     it('answers NOT_FOUND when there is no live reply', async () => {
         const { service } = buildService({ liveReply: null });
 
