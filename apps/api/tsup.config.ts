@@ -64,7 +64,13 @@ export default defineConfig({
         // "Dynamic require of assert is not supported" at startup. Externalize so
         // Node's CJS interop resolves it at runtime. Declared as a direct dep of
         // apps/api so pnpm installs it at apps/api/node_modules.
-        'undici'
+        'undici',
+        // @resvg/resvg-js (HOS-2672, rasterises the QR centre logo) is a native
+        // addon: its loader picks a prebuilt `.node` binary per platform through
+        // optional dependencies. Bundling would inline the loader and lose the
+        // binary. Declared as a direct dep of apps/api so pnpm deploy ships it
+        // together with the matching musl/glibc binary.
+        '@resvg/resvg-js'
     ],
     noExternal: [
         /@repo\/.*/,

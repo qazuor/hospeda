@@ -1,4 +1,5 @@
 import {
+    QR_CODE_CENTER_LOGO_DIAMETER_RATIO,
     QR_CODE_DEFAULT_BACKGROUND_COLOR,
     QR_CODE_DEFAULT_FOREGROUND_COLOR,
     QR_CODE_DEFAULT_MARGIN,
@@ -26,10 +27,11 @@ import { paintCenterLogoOnPng, renderCenterLogoSvgFragment } from './qr-center-l
  * matching the one in the field.
  *
  * The centre logo (PR 5) is drawn here, and it is the one option that DAMAGES
- * the symbol rather than restyling it: the plate blanks the modules under it
+ * the symbol rather than restyling it: the disc blanks the modules under it
  * and the code survives on Reed-Solomon recovery alone. Two things follow.
  * First, the geometry lives in `./qr-center-logo` so the SVG and the PNG cover
- * the same modules — a mark drawn a module apart in the two formats is two
+ * the same modules (the disc's size comes from the per-level ratio in
+ * `@repo/schemas`): a mark drawn a module apart in the two formats is two
  * different amounts of damage wearing one configuration. Second, whether a mark
  * is affordable AT ALL is decided in `@repo/schemas`
  * (`qrCodeCenterLogoFits`), before anything reaches this file; this engine
@@ -193,8 +195,8 @@ export async function renderQrSvg(input: {
             errorCorrectionLevel: options.errorCorrectionLevel
         }).size,
         margin: options.margin,
-        foregroundColor: options.foregroundColor,
-        backgroundColor: options.backgroundColor
+        backgroundColor: options.backgroundColor,
+        diameterRatio: QR_CODE_CENTER_LOGO_DIAMETER_RATIO[options.errorCorrectionLevel]
     });
 
     // Appended rather than woven in: SVG paints in document order, so the mark
@@ -238,8 +240,8 @@ export async function renderQrPng(input: {
             errorCorrectionLevel: options.errorCorrectionLevel
         }).size,
         margin: options.margin,
-        foregroundColor: options.foregroundColor,
-        backgroundColor: options.backgroundColor
+        backgroundColor: options.backgroundColor,
+        diameterRatio: QR_CODE_CENTER_LOGO_DIAMETER_RATIO[options.errorCorrectionLevel]
     });
 
     return PNG.sync.write(png);

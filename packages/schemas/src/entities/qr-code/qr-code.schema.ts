@@ -12,6 +12,7 @@ import { QrScanDeviceTypeEnumSchema } from '../../enums/qr-scan-device-type.sche
 import { QrScanOsEnumSchema } from '../../enums/qr-scan-os.schema.js';
 import { stripShapeDefaults } from '../../utils/utils.js';
 import { LanguageEnumSchema } from '../user/user.settings.schema.js';
+import { qrCodeCenterLogoFits } from './qr-code.center-logo.js';
 
 export const QR_CODE_SLUG_MIN_LENGTH = 4;
 export const QR_CODE_SLUG_MAX_LENGTH = 64;
@@ -35,134 +36,6 @@ export const QR_CODE_MAX_SIZE = 4096;
 export const QR_CODE_DEFAULT_FOREGROUND_COLOR = '#000000';
 /** Default background (quiet zone) colour. */
 export const QR_CODE_DEFAULT_BACKGROUND_COLOR = '#ffffff';
-
-// ============================================================================
-// CENTRE LOGO — the geometry that decides whether one is affordable
-// ============================================================================
-
-/**
- * Side of the centre mark, as a fraction of the symbol's side (quiet zone
- * excluded).
- *
- * The renderer snaps this DOWN to the largest odd whole number of modules that
- * fits — odd so the plate centres exactly on an odd-sided symbol, down so that
- * the covered area is never larger than `ratio²` at any QR version. That bound
- * is the whole reason the gate below can be evaluated without knowing which
- * version a given URL will produce.
- */
-export const QR_CODE_CENTER_LOGO_SIZE_RATIO = 0.2;
-
-/**
- * Upper bound on the fraction of the symbol the mark can cover, at any version.
- *
- * Equal to {@link QR_CODE_CENTER_LOGO_SIZE_RATIO} squared, and that equality is
- * a consequence of the floor-to-odd snapping described above, not a coincidence
- * — `qr-center-logo.test.ts` re-derives it over all forty QR versions
- * so a change to the snapping rule cannot silently invalidate the gate.
- */
-export const QR_CODE_CENTER_LOGO_MAX_COVERAGE =
-    QR_CODE_CENTER_LOGO_SIZE_RATIO * QR_CODE_CENTER_LOGO_SIZE_RATIO;
-
-/**
- * The largest covered-area fraction at which EVERY sampled render still
- * decoded, per correction level.
- *
- * MEASURED, not quoted. Re-measured on 2026-09-04 over a deliberately wider
- * corpus than the first pass — SEVEN `/q/` and `/qr/` URLs across two hosts, at
- * 256, 384, 512, 768 and 1024 px, so 35 renders per step — with the plate swept
- * by whole odd modules exactly as the renderer emits it, each result fed to a
- * real decoder (`jsqr`). Raw:
- *
- * ```
- * L   3 mod  1.07%  35/35     M   3 mod  1.07%  35/35
- * L   5 mod  2.97%  35/35     M   5 mod  2.97%  35/35
- * L   7 mod  5.83%   0/35     M   7 mod  5.83%  35/35
- *                             M   9 mod  9.63%  10/35   <- partial
- *                             M  11 mod 14.39%   0/35
- * Q   5 mod  2.30%  35/35     H   5 mod  2.30%  35/35
- * Q   7 mod  4.50%  35/35     H   9 mod  7.44%  35/35
- * Q  11 mod 11.11%  35/35     H  13 mod 14.61%  35/35
- * Q  13 mod 15.52%   0/35     H  15 mod 19.50%  10/35   <- partial
- *                             H  17 mod 24.99%   0/35
- * ```
- *
- * ## Two corrections to what the first pass claimed (HOS-981 PR 5 review)
- *
- * 1. **The old L ceiling of `0.03` did not reproduce.** A reviewer sweeping
- *    other URLs got 6/9 at ~3.1% coverage, not 9/9. The wider sweep above puts
- *    the last all-pass step at 2.97%, so the constant was sitting a hair ABOVE
- *    the honest number. Same for H, and by more: the old `0.164` came from a
- *    longer URL landing on a bigger symbol, and 14.61% is what all 35 renders
- *    survive. Both are corrected below.
- * 2. **The transition is NOT a cliff.** The first pass showed adjacent
- *    all-pass/all-fail steps because it happened to sample the two rows that
- *    bracket the whole degradation band. There IS a band — visible above at M
- *    (10/35) and H (10/35), and wider still under a finer, content-varying
- *    sweep — and where it starts depends on the string being encoded, because
- *    the string decides the QR version and therefore how many codewords a given
- *    area destroys. Treat these as "the last step nothing failed at", not as a
- *    threshold with cliff edges. Anyone raising
- *    {@link QR_CODE_CENTER_LOGO_SIZE_RATIO} must re-run the sweep over their
- *    own corpus rather than reading a headroom off these four numbers.
- *
- * ## They are roughly HALF the level's nominal percentage, and that is the point
- *
- * The QR standard's familiar "L≈7%, M≈15%, Q≈25%, H≈30%" describes CODEWORDS a
- * decoder can repair, and repairing a codeword whose position is unknown costs
- * two error-correction codewords, not one. A contiguous blob also destroys
- * whole codewords at its edges that it only partly covers. So reading those
- * percentages as an area budget overstates what a logo can spend by about a
- * factor of two — measured: M's nominal 15% first lost renders at 9.6% of area,
- * H's nominal 30% at 19.5%. Sizing a logo against the nominal numbers is exactly
- * how a code that passes on a screen fails on a wall.
- */
-export const QR_CODE_ERROR_CORRECTION_DECODE_CEILING: Readonly<
-    Record<QrCodeErrorCorrectionLevelEnum, number>
-> = {
-    [QrCodeErrorCorrectionLevelEnum.L]: 0.029,
-    [QrCodeErrorCorrectionLevelEnum.M]: 0.058,
-    [QrCodeErrorCorrectionLevelEnum.Q]: 0.111,
-    [QrCodeErrorCorrectionLevelEnum.H]: 0.146
-} as const;
-
-/**
- * How much of a level's measured tolerance the mark is allowed to consume.
- *
- * A judgment call, stated as one: half. The ceilings above were measured on a
- * PRISTINE render, and error correction does not exist to pay for decoration —
- * it exists to survive a scuffed sticker, a folded brochure, a bad camera and
- * poor light. Spending everything the ceiling allows would leave a symbol that
- * decodes perfectly on the day it is printed and nowhere afterwards, which is
- * the failure this whole entity exists to avoid: a printed code cannot be
- * corrected. Half to the mark, half to the world.
- */
-export const QR_CODE_CENTER_LOGO_DAMAGE_BUDGET_SHARE = 0.5;
-
-/**
- * Whether a centre mark is affordable at a given correction level.
- *
- * The gate. At the shipped ratio of 0.2 it answers `true` for `Q` and `H` and
- * `false` for `L` and `M`, but it is written as the comparison rather than as
- * that list on purpose — enlarging the mark must move the line by itself, not
- * leave a hardcoded set of levels asserting a safety that no longer holds.
- *
- * @param input - Options object (RO-RO).
- * @param input.centerLogo - Which mark, if any, is requested.
- * @param input.errorCorrectionLevel - The level the symbol will be drawn at.
- * @returns `true` when the pair is safe to draw.
- */
-export function qrCodeCenterLogoFits(input: {
-    centerLogo: QrCodeCenterLogoEnum;
-    errorCorrectionLevel: QrCodeErrorCorrectionLevelEnum;
-}): boolean {
-    if (input.centerLogo === QrCodeCenterLogoEnum.NONE) return true;
-
-    const affordable =
-        QR_CODE_ERROR_CORRECTION_DECODE_CEILING[input.errorCorrectionLevel] *
-        QR_CODE_CENTER_LOGO_DAMAGE_BUDGET_SHARE;
-
-    return QR_CODE_CENTER_LOGO_MAX_COVERAGE <= affordable;
-}
 
 /**
  * `#rgb`, `#rrggbb` or `#rrggbbaa`. The alpha form is accepted because the
@@ -272,7 +145,7 @@ export const QrCodeRenderOptionsStoredSchema = z
         /**
          * The mark painted over the middle of the symbol.
          *
-         * This is DAMAGE, not decoration: the plate blanks whatever modules sit
+         * This is DAMAGE, not decoration: the disc blanks whatever modules sit
          * under it, and the code survives only because Reed-Solomon can rebuild
          * them. Which is why {@link QrCodeRenderOptionsSchema} gates it rather
          * than merely offering it.
