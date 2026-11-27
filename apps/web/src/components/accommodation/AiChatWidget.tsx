@@ -428,7 +428,7 @@ export function AiChatWidget({
                     role="dialog"
                     aria-modal="true"
                     aria-label={copy('panelLabel')}
-                    className={`${styles.panel} ${isExpanded ? styles.panelExpanded : ''}`}
+                    className={`${styles.panel} ${isExpanded ? styles.panelExpanded : ''} ${isGuest ? styles.panelGuest : ''}`}
                     data-keyboard-open={isKeyboardOpen ? 'true' : undefined}
                     style={
                         {

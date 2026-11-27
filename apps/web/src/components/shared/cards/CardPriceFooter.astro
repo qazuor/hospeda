@@ -19,8 +19,10 @@ const { t } = createTranslations(locale);
 <footer class="card-price-footer">
     <div class="card-price-footer__price">
         {price && prefix && <small>{prefix}</small>}
-        <strong>{price || t('experience.priceOnRequest')}</strong>
-        {price && unit && <small>{unit}</small>}
+        <span class="card-price-footer__amount">
+            <strong>{price || t('experience.priceOnRequest')}</strong>
+            {price && unit && <small>{unit}</small>}
+        </span>
     </div>
     {href ? (
         <a href={href} class="card-price-footer__link">
@@ -37,12 +39,19 @@ const { t } = createTranslations(locale);
         grid-template-columns: minmax(0, 1fr) auto;
         align-items: center;
         gap: 0.5rem;
+        /* The first row always has room for the two-line price block («Desde» / amount
+           + unit), so a card with a price and one with «Consultar precio» end on the
+           same divider line (HOS-2667). */
+        grid-template-rows: minmax(2.8rem, auto) auto;
         min-block-size: 4.5rem;
         margin-block-start: auto;
         border-block-start: 1px solid var(--brand-primary-a15);
         font-size: var(--text-sm);
     }
-    .card-price-footer__price { display: flex; flex-direction: column; }
+    .card-price-footer__price { display: flex; flex-direction: column; min-inline-size: 0; }
+    /* Amount and unit share one line: stacking them put the price on three lines. */
+    .card-price-footer__amount { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 0.25rem; }
+    .card-price-footer__price strong { font-size: var(--text-body); }
     .card-price-footer__link { text-decoration: none; }
     .card-price-footer__link::after { content: ''; position: absolute; inset: 0; z-index: 1; }
     .card-price-footer__link:focus-visible::after { outline: 2px solid var(--brand-primary); outline-offset: 2px; }

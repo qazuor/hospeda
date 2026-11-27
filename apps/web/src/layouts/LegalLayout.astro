@@ -218,9 +218,31 @@ const updatedLabel = lastUpdated ? new Intl.DateTimeFormat(locale, { dateStyle: 
 	.legal-toc summary::-webkit-details-marker { display: none; }
 	.legal-toc details[open] summary :global(svg) { transform: rotate(180deg); }
 	.legal-toc ul { list-style: none; padding: 0; margin: 0; }
-	.legal-toc a { display: block; padding-block: var(--space-2); color: var(--core-foreground); }
+	.legal-toc a {
+		display: block;
+		padding-block: var(--space-2);
+		color: var(--core-muted-foreground);
+		font-family: var(--font-sans);
+		font-size: var(--text-body-sm);
+		line-height: 1.4;
+		text-decoration: none;
+	}
+	.legal-toc a:hover { color: var(--brand-primary-link); text-decoration: underline; }
+	.legal-toc a:focus-visible { outline: 2px solid var(--brand-primary); outline-offset: 2px; }
 	.legal-article { scroll-margin-top: calc(var(--navbar-height) + var(--space-4)); }
 	.legal-toc-return { font-size: var(--text-body-sm); }
+	/* The shared link style of the article body: without it «Volver al índice» and
+	   the supplementary links render in the browser's default blue (HOS-2667). */
+	.legal-toc-return a,
+	.legal-article > p > a {
+		color: var(--brand-primary-link);
+		font-weight: 600;
+		text-decoration: none;
+	}
+	.legal-toc-return a:hover,
+	.legal-article > p > a:hover { text-decoration: underline; }
+	.legal-toc-return a:focus-visible,
+	.legal-article > p > a:focus-visible { outline: 2px solid var(--brand-primary); outline-offset: 2px; }
 	.legal-prose table { width: 100%; border-collapse: collapse; table-layout: fixed; }
 	.legal-prose :is(th, td) { padding: var(--space-2); text-align: start; vertical-align: top; border: 1px solid var(--border); overflow-wrap: anywhere; }
 	.legal-article ul { list-style: disc; padding-inline-start: var(--space-6); }

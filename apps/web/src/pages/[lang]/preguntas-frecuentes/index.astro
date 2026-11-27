@@ -95,7 +95,7 @@ const stillHeading = splitHeading({ title: t('faq.stillNeedHelp.title') });
     <faq-directory class="faq-container" id="faq-top" tabindex="-1">
         <label class="faq-search" hidden data-faq-search>
             {t('faq.search.label')}
-            <input type="search" autocomplete="off" aria-controls="faq-answers" />
+            <input type="search" autocomplete="off" aria-controls="faq-answers" placeholder={t('faq.search.placeholder')} />
         </label>
         <p class="faq-jump" aria-hidden="true">{t('faq.nav.jumpTo')}</p>
         <ScrollableNav ariaLabel={t('faq.nav.label')} desktopGrid>

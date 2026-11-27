@@ -356,5 +356,8 @@
     .event-card-h__content {
         padding: 0.875rem 1rem 1rem;
         gap: 0.4rem;
+        /* Content hangs from the photo. Centered, the card stretched to its row's
+           height left an empty block between the photo and the content (HOS-2667). */
+        justify-content: flex-start;
     }
 }

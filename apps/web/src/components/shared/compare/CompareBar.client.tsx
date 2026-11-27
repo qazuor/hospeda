@@ -41,15 +41,13 @@ import { useCompareGuard } from '@/hooks/useCompareGuard';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { MIN_TO_COMPARE } from '@/store/compare-limits';
 import { clearCompare, removeFromCompare, useCompareStore } from '@/store/compare-store';
 import { DockPortal } from '../dock/DockPortal';
 import styles from './CompareBar.module.css';
 
 /** `<html>` dataset flag published while the bar is visible. See the file header. */
 const COMPARE_BAR_VISIBLE_ATTR = 'compareBarVisible';
-
-/** Minimum number of selected accommodations required to open the comparison. */
-const MIN_TO_COMPARE = 2;
 
 /** Selection size at which the guidance subtitle nudges the user to add one more. */
 const GUIDANCE_THRESHOLD = 1;

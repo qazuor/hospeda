@@ -121,11 +121,14 @@
     flex: 1;
 }
 
-/* Category + location row */
+/* Category + promo pills + location row. It wraps (HOS-2667): with a «Promo
+ * Turista VIP» pill the locality dropped to its own line instead of the pill
+ * breaking in two and the locality being truncated. */
 .venue-card__category-row {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: 10px;
+    gap: 6px 10px;
     min-width: 0;
 }
 
@@ -173,6 +176,7 @@
 
 .venue-card__location-bar {
     display: flex;
+    flex: 1 1 8rem;
     align-items: center;
     gap: 6px;
     min-width: 0;

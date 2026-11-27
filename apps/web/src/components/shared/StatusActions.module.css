@@ -28,6 +28,9 @@
 }
 
 .statusIcon {
+    /* Centred like the rest of the recovery block: a bare svg sits on the left. */
+    display: block;
+    margin-inline: auto;
     color: var(--brand-primary);
     margin-block-end: var(--space-3);
 }

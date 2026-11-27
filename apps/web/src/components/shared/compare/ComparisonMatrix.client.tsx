@@ -47,13 +47,11 @@ import { formatPrice } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
+import { MIN_TO_COMPARE } from '@/store/compare-limits';
 import { useCompareStore } from '@/store/compare-store';
 import { ComparisonEmpty, type ComparisonSuggestion } from './ComparisonEmpty';
 import styles from './ComparisonMatrix.module.css';
 import { computeBestValue } from './computeBestValue';
-
-/** Minimum number of accommodations required to render a comparison. */
-const MIN_TO_COMPARE = 2;
 
 /** Why a comparison request failed, mapped to user-facing messaging. */
 type CompareErrorReason = 'upsell' | 'limit' | 'generic';

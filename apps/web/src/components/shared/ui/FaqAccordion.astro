@@ -47,6 +47,14 @@ const CategoryHeading = title ? 'h3' : 'h2';
     .faq-group { scroll-margin-top: var(--navbar-height); }
     .faq-group + .faq-group { margin-top: var(--space-5); }
     h2, h3 { margin: 0 0 var(--space-2); font-size: var(--text-h4); }
+    /* The block title is a section h2: it sizes like the other section h2s on the page. */
+    .faq-accordion > h2 {
+        margin-bottom: var(--space-4);
+        font-family: var(--font-heading);
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--core-foreground);
+    }
     details { border-bottom: 1px solid var(--border); }
     summary {
         display: flex;
@@ -60,8 +68,9 @@ const CategoryHeading = title ? 'h3' : 'h2';
     summary::-webkit-details-marker { display: none; }
     summary:focus-visible { outline: 2px solid var(--brand-primary); }
     summary span { flex: none; align-self: start; display: inline-flex; }
-    .faq-minus, details[open] .faq-plus { display: none; }
-    details[open] .faq-minus { display: inline-flex; }
+    /* Prefixed with `summary` so they outrank `summary span` above: otherwise both icons show. */
+    summary .faq-minus, details[open] summary .faq-plus { display: none; }
+    details[open] summary .faq-minus { display: inline-flex; }
     p {
         margin: 0;
         padding: 0 var(--space-2) var(--space-4) var(--space-8);

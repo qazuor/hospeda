@@ -13,6 +13,25 @@
     width: 100%;
 }
 
+/* The active alert's description reads as its own card, so it does not float
+   loose between the price card and the cancel button (HOS-2667). */
+.priceAlertStatus {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    background-color: var(--core-card);
+    color: var(--core-foreground);
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+}
+
+.priceAlertStatus p {
+    margin: 0;
+}
+
 /* ─── Shared button base ─────────────────────────────────────────────────── */
 
 .priceAlertButtonCreate,

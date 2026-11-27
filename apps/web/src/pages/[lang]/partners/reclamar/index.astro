@@ -18,5 +18,21 @@ const description = t('partners.claim.seo.description');
 ---
 
 <ErrorLayout locale={locale} title={title} description={description}>
-    <PartnerClaim client:load locale={locale} />
+    <div class="partner-claim-page">
+        <PartnerClaim client:load locale={locale} />
+    </div>
 </ErrorLayout>
+
+<style>
+    /* ErrorLayout aligns its content to the top; the claim card or recovery block
+       needs the whole area under the header, so it sits in the middle of it
+       instead of hugging the top with a blank screen below (HOS-2667). */
+    .partner-claim-page {
+        display: flex;
+        flex: 1;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        padding: var(--space-6) var(--space-4);
+    }
+</style>
