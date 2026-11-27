@@ -1,6 +1,6 @@
 # HOS-2636: F1. Bloques dinámicos y resolver
 
-## Progress: 22/23 tasks (96%)
+## Progress: 23/23 tasks (100%)
 
 **Average Complexity:** 2.5/10
 **Critical Path:** T-001 -> T-003 -> T-006 -> T-013 -> T-014 -> T-015 -> T-016 -> T-019 -> T-021 -> T-023 (10 steps)
@@ -126,7 +126,7 @@
 
 ### Testing Phase
 
-- [ ] **T-023** (complexity: 2) - Run manual mutations and repo guards
+- [x] **T-023** (complexity: 2) - Run manual mutations and repo guards
   - Mutations from F1 §7: drop publication_status from predicate (AC-F1-7 must fail), drop id tiebreak (
   - Blocked by: T-017, T-021, T-022
   - Blocks: none

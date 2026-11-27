@@ -496,26 +496,26 @@
             "blockedBy": ["T-017", "T-021", "T-022"],
             "tags": ["testing"],
             "description": "Mutations from F1 §7: drop publication_status from predicate (AC-F1-7 must fail), drop id tiebreak (AC-F1-5), resolve inside processBatch (AC-F1-10); revert each. Run pnpm check:guards relevant steps, typecheck and lint of touched packages with CI=true (never full package suites locally).",
-            "status": "pending",
+            "status": "completed",
             "blocks": [],
             "subtasks": [],
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-11-26T18:39:36.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-11-27T08:33:33.000Z"
             }
         }
     ],
     "summary": {
         "total": 23,
-        "pending": 1,
+        "pending": 0,
         "inProgress": 0,
-        "completed": 22,
+        "completed": 23,
         "blocked": 0,
         "averageComplexity": 2.5
     }
