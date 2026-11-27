@@ -132,9 +132,7 @@ export function SendConfirmDialog({ open, onOpenChange, campaign }: SendConfirmD
             );
             if (droppedCount > 0) {
                 addToast({
-                    message: t('admin-newsletter.dynamicBlock.droppedAtSend', {
-                        count: String(droppedCount)
-                    }),
+                    message: tPlural('admin-newsletter.dynamicBlock.droppedAtSend', droppedCount),
                     variant: 'warning'
                 });
             }

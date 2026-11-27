@@ -25,7 +25,8 @@
         "previewError": "Could not resolve the dynamic content.",
         "loading": "Resolving dynamic content…",
         "retry": "Retry",
-        "droppedAtSend": "{{count}} items that were no longer available since the preview were replaced.",
+        "droppedAtSend_one": "{{count}} item that was no longer available since the preview was replaced.",
+        "droppedAtSend_other": "{{count}} items that were no longer available since the preview were replaced.",
         "sendBlocked": "The campaign remains a draft. These blocks are below minimum: {{blocks}}.",
         "entities": {
             "ACCOMMODATION": "Accommodations",

@@ -25,7 +25,8 @@
         "previewError": "Não foi possível resolver o conteúdo dinâmico.",
         "loading": "Resolvendo conteúdo dinâmico…",
         "retry": "Tentar novamente",
-        "droppedAtSend": "{{count}} itens que deixaram de estar disponíveis desde a pré-visualização foram substituídos.",
+        "droppedAtSend_one": "{{count}} item que deixou de estar disponível desde a pré-visualização foi substituído.",
+        "droppedAtSend_other": "{{count}} itens que deixaram de estar disponíveis desde a pré-visualização foram substituídos.",
         "sendBlocked": "A campanha permanece como rascunho. Estes blocos estão abaixo do mínimo: {{blocks}}.",
         "entities": {
             "ACCOMMODATION": "Hospedagens",

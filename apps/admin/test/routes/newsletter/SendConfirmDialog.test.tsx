@@ -268,7 +268,7 @@ describe('SendConfirmDialog dynamic resolution', () => {
         ]);
         await waitFor(() =>
             expect(mockToast.mock.calls.map(([toast]) => toast.message)).toContain(
-                'admin-newsletter.dynamicBlock.droppedAtSend:{"count":"1"}'
+                'admin-newsletter.dynamicBlock.droppedAtSend#1'
             )
         );
     });

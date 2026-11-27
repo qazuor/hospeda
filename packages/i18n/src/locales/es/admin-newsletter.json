@@ -25,7 +25,8 @@
         "previewError": "No se pudo resolver el contenido dinámico.",
         "loading": "Resolviendo contenido dinámico…",
         "retry": "Reintentar",
-        "droppedAtSend": "Se reemplazaron {{count}} elementos que dejaron de estar disponibles desde la vista previa.",
+        "droppedAtSend_one": "Se reemplazó {{count}} elemento que dejó de estar disponible desde la vista previa.",
+        "droppedAtSend_other": "Se reemplazaron {{count}} elementos que dejaron de estar disponibles desde la vista previa.",
         "sendBlocked": "La campaña permanece en borrador. Estos bloques no alcanzan el mínimo: {{blocks}}.",
         "entities": {
             "ACCOMMODATION": "Alojamientos",
