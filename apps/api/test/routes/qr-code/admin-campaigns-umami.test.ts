@@ -189,6 +189,20 @@ describe('GET /admin/qr-codes/campaigns/umami', () => {
         expect(dataOf(res).canCreateSegments).toBe(false);
     });
 
+    it('never lists with the write key: no view key gives unavailable READ_KEY_MISSING', async () => {
+        state.env = { ...UMAMI_ENV, HOSPEDA_UMAMI_API_KEY: undefined };
+
+        const res = await probe(buildApp(viewer), '/codes/campaigns/umami');
+
+        expect(res.status).toBe(200);
+        expect(fetchMock).not.toHaveBeenCalled();
+        const items = dataOf(res).items as Array<{ umami: Record<string, unknown> }>;
+        expect(items[0]?.umami.unavailableReason).toBe('READ_KEY_MISSING');
+        expect(items[0]?.umami.viewUrl).toBe(
+            `https://umami.test/websites/${WEBSITE}?utmCampaign=eq.verano`
+        );
+    });
+
     it('refuses an actor without QR_CODE_VIEW with 403', async () => {
         const res = await probe(buildApp(actorWith([])), '/codes/campaigns/umami');
 
@@ -289,6 +303,63 @@ describe('POST /admin/qr-codes/campaigns/umami-segment', () => {
         });
 
         expect(res.status).toBe(403);
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+    it('answers 403 (not 400) for a viewer sending an invalid body', async () => {
+        const res = await probe(buildApp(viewer), path, {
+            method: 'POST',
+            body: { campaign: '', name: 'x' }
+        });
+
+        expect(res.status).toBe(403);
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('answers 503 UMAMI_UNAVAILABLE when Umami does not answer', async () => {
+        fetchMock.mockRejectedValueOnce(new Error('ECONNREFUSED'));
+
+        const res = await probe(buildApp(updater), path, {
+            method: 'POST',
+            body: { campaign: 'verano' }
+        });
+
+        expect(res.status).toBe(503);
+        expect(errorOf(res)?.code).toBe('SERVICE_UNAVAILABLE');
+        expect(errorOf(res)?.reason).toBe('UMAMI_UNAVAILABLE');
+    });
+
+    it('masks a 503 per R1b: reason kept, no Umami message and no details', async () => {
+        // Arrange: Umami answers 500 with an internal message that must not leak.
+        fetchMock.mockResolvedValueOnce(
+            jsonResponse({ error: 'pg: relation segment is locked' }, 500)
+        );
+
+        // Act
+        const res = await probe(buildApp(updater), path, {
+            method: 'POST',
+            body: { campaign: 'verano' }
+        });
+
+        // Assert
+        expect(res.status).toBe(503);
+        const error = errorOf(res) ?? {};
+        expect(error.reason).toBe('UMAMI_UNAVAILABLE');
+        expect(error.details).toBeUndefined();
+        expect(JSON.stringify(res.body)).not.toContain('locked');
+        expect(JSON.stringify(res.body)).not.toContain('umami.test');
+        expect(String(error.message ?? '')).not.toMatch(/umami|segment/i);
+    });
+
+    it('answers 400 UMAMI_CAMPAIGN_HAS_COMMA for a campaign with a comma, calling nothing', async () => {
+        state.counts = [{ raw: 'a,b', count: 1 }];
+
+        const res = await probe(buildApp(updater), path, {
+            method: 'POST',
+            body: { campaign: 'a,b' }
+        });
+
+        expect(res.status).toBe(400);
+        expect(errorOf(res)?.reason).toBe('UMAMI_CAMPAIGN_HAS_COMMA');
         expect(fetchMock).not.toHaveBeenCalled();
     });
 });

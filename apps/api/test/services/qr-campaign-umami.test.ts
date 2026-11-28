@@ -92,16 +92,72 @@ describe('resolveQrCampaignsUmami', () => {
         expect(result.items[1]?.umami.status).toBe('missing');
     });
 
-    it('lists with the write key when no view key is configured', async () => {
-        const fetchMock = vi.fn(async () => page([]));
+    it('never lists with the write key: no view key means unavailable, link kept, no call', async () => {
+        // Arrange
+        const fetchMock = vi.fn();
 
-        await resolveQrCampaignsUmami({
+        // Act
+        const result = await resolveQrCampaignsUmami({
             campaigns: [{ campaign: 'a', qrCount: 1 }],
             config: { ...FULL, readApiKey: undefined },
             fetchImpl: fetchMock as unknown as typeof fetch
         });
 
-        expect(authOf(fetchMock.mock.calls[0])).toBe(`Bearer ${WRITE_KEY}`);
+        // Assert
+        expect(fetchMock).not.toHaveBeenCalled();
+        expect(result.items[0]?.umami).toStrictEqual({
+            status: 'unavailable',
+            unavailableReason: 'READ_KEY_MISSING',
+            viewUrl: `https://umami.test/websites/${WEBSITE}?utmCampaign=eq.a`
+        });
+        expect(result.canCreateSegments).toBe(true);
+    });
+
+    it('gives a campaign with a comma no link and flags it', async () => {
+        const fetchMock = vi.fn(async () => page([]));
+
+        const result = await resolveQrCampaignsUmami({
+            campaigns: [{ campaign: 'a,b', qrCount: 1 }],
+            config: FULL,
+            fetchImpl: fetchMock as unknown as typeof fetch
+        });
+
+        expect(result.items[0]?.umami).toStrictEqual({
+            status: 'missing',
+            unsupportedReason: 'COMMA_IN_CAMPAIGN',
+            viewUrl: null
+        });
+    });
+
+    it('flags a campaign too long to segment but keeps its link', async () => {
+        const fetchMock = vi.fn(async () => page([]));
+        const campaign = 'x'.repeat(501);
+
+        const result = await resolveQrCampaignsUmami({
+            campaigns: [{ campaign, qrCount: 1 }],
+            config: FULL,
+            fetchImpl: fetchMock as unknown as typeof fetch
+        });
+
+        expect(result.items[0]?.umami.unsupportedReason).toBe('TOO_LONG');
+        expect(result.items[0]?.umami.viewUrl).not.toBeNull();
+    });
+
+    it('takes the FIRST exact match when a race left two segments with the same name', async () => {
+        const fetchMock = vi.fn(async () =>
+            page([
+                ['first', 'QR · a'],
+                ['second', 'QR · a']
+            ])
+        );
+
+        const result = await resolveQrCampaignsUmami({
+            campaigns: [{ campaign: 'a', qrCount: 1 }],
+            config: FULL,
+            fetchImpl: fetchMock as unknown as typeof fetch
+        });
+
+        expect(result.items[0]?.umami.segmentId).toBe('first');
     });
 
     it('answers unavailable (and logs) when Umami errors, keeping the view link', async () => {
@@ -118,6 +174,7 @@ describe('resolveQrCampaignsUmami', () => {
         // Assert
         expect(result.items[0]?.umami).toStrictEqual({
             status: 'unavailable',
+            unavailableReason: 'UMAMI_ERROR',
             viewUrl: `https://umami.test/websites/${WEBSITE}?utmCampaign=eq.a`
         });
         expect(warn).toHaveBeenCalledTimes(1);
@@ -135,7 +192,17 @@ describe('resolveQrCampaignsUmami', () => {
 
         expect(fetchMock).not.toHaveBeenCalled();
         expect(result).toStrictEqual({
-            items: [{ campaign: 'a', qrCount: 1, umami: { status: 'unavailable', viewUrl: null } }],
+            items: [
+                {
+                    campaign: 'a',
+                    qrCount: 1,
+                    umami: {
+                        status: 'unavailable',
+                        unavailableReason: 'NOT_CONFIGURED',
+                        viewUrl: null
+                    }
+                }
+            ],
             canCreateSegments: false
         });
     });
@@ -197,6 +264,77 @@ describe('ensureQrCampaignSegment', () => {
         expect(result.created).toBe(false);
         expect(result.item.umami.segmentId).toBe('s1');
         expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('serialises two concurrent creates of one segment into ONE create', async () => {
+        // Arrange: a stateful fake Umami that answers the list with what was created.
+        const stored: Array<readonly [string, string]> = [];
+        let creates = 0;
+        const fetchMock = vi.fn(async (_url: string, init: RequestInit) => {
+            await new Promise((resolve) => setTimeout(resolve, 5));
+            if (init.method === 'POST') {
+                creates += 1;
+                const body = JSON.parse(init.body as string) as { name: string };
+                stored.push([`seg-${creates}`, body.name]);
+                return jsonResponse({
+                    id: `seg-${creates}`,
+                    type: 'segment',
+                    name: body.name,
+                    parameters: {}
+                });
+            }
+            return page(stored);
+        });
+        const args = {
+            campaign: verano,
+            config: FULL,
+            fetchImpl: fetchMock as unknown as typeof fetch
+        };
+
+        // Act
+        const [one, two] = await Promise.all([
+            ensureQrCampaignSegment(args),
+            ensureQrCampaignSegment(args)
+        ]);
+
+        // Assert
+        expect(creates).toBe(1);
+        expect([one.created, two.created].sort()).toEqual([false, true]);
+        expect(one.item.umami.segmentId).toBe(two.item.umami.segmentId);
+    });
+
+    it('does not let a failed create block the next one', async () => {
+        const fetchMock = vi
+            .fn()
+            .mockResolvedValueOnce(jsonResponse({}, 500))
+            .mockResolvedValueOnce(page([['s1', 'QR · verano']]));
+        const args = {
+            campaign: verano,
+            config: FULL,
+            fetchImpl: fetchMock as unknown as typeof fetch
+        };
+
+        const results = await Promise.allSettled([
+            ensureQrCampaignSegment(args),
+            ensureQrCampaignSegment(args)
+        ]);
+
+        expect(results[0]?.status).toBe('rejected');
+        expect(results[1]?.status).toBe('fulfilled');
+    });
+
+    it('refuses a campaign with a comma with 400 UMAMI_CAMPAIGN_HAS_COMMA, calling nothing', async () => {
+        const fetchMock = vi.fn();
+
+        const error = await ensureQrCampaignSegment({
+            campaign: { campaign: 'a,b', qrCount: 1 },
+            config: FULL,
+            fetchImpl: fetchMock as unknown as typeof fetch
+        }).catch((e: unknown) => e);
+
+        expect((error as ServiceError).code).toBe(ServiceErrorCode.VALIDATION_ERROR);
+        expect((error as ServiceError).reason).toBe(QR_CAMPAIGN_UMAMI_REASONS.commaInCampaign);
+        expect(fetchMock).not.toHaveBeenCalled();
     });
 
     it('refuses with 503 UMAMI_WRITE_NOT_CONFIGURED without the write key, calling nothing', async () => {

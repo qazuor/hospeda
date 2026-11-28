@@ -8,6 +8,7 @@ import {
     buildUmamiCampaignViewUrl,
     buildUmamiSegmentViewUrl,
     createUmamiSegmentsClient,
+    UMAMI_SEGMENTS_MAX_PAGES,
     UMAMI_SEGMENTS_PAGE_SIZE,
     UmamiSegmentsError
 } from '../../src/lib/umami-segments-client';
@@ -81,6 +82,24 @@ describe('listSegments', () => {
         expect(fetchMock).toHaveBeenCalledTimes(2);
         const secondUrl = new URL((fetchMock.mock.calls[1] as [string])[0]);
         expect(secondUrl.searchParams.get('page')).toBe('2');
+    });
+
+    it('stops at exactly 20 calls when the server lies about count', async () => {
+        // Arrange: every page is full and `count` never lets the loop finish.
+        const full = Array.from({ length: UMAMI_SEGMENTS_PAGE_SIZE }, (_, i) =>
+            segment(`s${i}`, `QR · ${i}`)
+        );
+        const fetchMock = vi.fn(async () => jsonResponse({ data: full, count: 1_000_000 }));
+
+        // Act
+        const rows = await clientWith(fetchMock as unknown as typeof fetch).listSegments({
+            search: 'QR · '
+        });
+
+        // Assert
+        expect(fetchMock).toHaveBeenCalledTimes(UMAMI_SEGMENTS_MAX_PAGES);
+        expect(UMAMI_SEGMENTS_MAX_PAGES).toBe(20);
+        expect(rows).toHaveLength(20 * UMAMI_SEGMENTS_PAGE_SIZE);
     });
 
     it('accepts parameters stored as a JSON string', async () => {

@@ -44,8 +44,11 @@
  *    write or admin credential (`HOSPEDA_UMAMI_WRITE_*`, `HOSPEDA_UMAMI_ADMIN_*`
  *    keys, tokens, passwords) other than `HOSPEDA_UMAMI_WRITE_API_KEY`.
  * 4. Only the allowlisted api files name `HOSPEDA_UMAMI_DATABASE_URL`.
- * 5. Only the allowlisted api files name `HOSPEDA_UMAMI_WRITE_API_KEY`, and the
- *    one service that reads it calls no Umami path but the segments endpoint.
+ * 5. Only the allowlisted api files name `HOSPEDA_UMAMI_WRITE_API_KEY`; the
+ *    `writeApiKey` identifier lives only in the service and its tests; the config
+ *    reader is private; the service never calls `fetch`; and the segment client's
+ *    code reaches exactly one endpoint, `/api/websites/:id/segments` (one `/api/`
+ *    literal, every request URL derived from it, one `fetchImpl` call).
  * 6. The registry declares exactly two secret `HOSPEDA_UMAMI_*` variables beside
  *    the view-only `HOSPEDA_UMAMI_API_KEY`: `HOSPEDA_UMAMI_DATABASE_URL` and
  *    `HOSPEDA_UMAMI_WRITE_API_KEY`.
@@ -106,6 +109,72 @@ const FORBIDDEN_IN_API = [
     /\breplayConfig\b/,
     /\brecorderEnabled\b/
 ] as const;
+
+/** The service that reads the write key, and the client it reaches Umami with. */
+const SERVICE_FILE = 'apps/api/src/services/qr-campaign-umami.ts';
+const CLIENT_FILE = 'apps/api/src/lib/umami-segments-client.ts';
+
+/**
+ * Files allowed to spell the `writeApiKey` identifier (HOS-2679 review): the
+ * service, its unit test, and this guard. Anything else reading `.writeApiKey`
+ * would be a way to the key that never names the env var.
+ */
+const WRITE_API_KEY_IDENTIFIER_ALLOWLIST = [
+    SERVICE_FILE,
+    'apps/api/test/services/qr-campaign-umami.test.ts',
+    'apps/api/test/guards/no-umami-write-credential.guard.test.ts'
+] as const;
+
+/**
+ * Drops block comments and whole-line `//` comments, so a docblock that
+ * describes an endpoint is neither required nor counted. A trailing comment is
+ * kept, which can only make the check stricter.
+ */
+function stripComments(source: string): string {
+    return source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+}
+
+/**
+ * Every way the segment client's CODE could reach an endpoint other than
+ * `/api/websites/:id/segments`:
+ *
+ * 1. exactly one `/api/` literal, and it is the `segmentsPath` definition;
+ * 2. every `url:` value (not the `readonly url: string` type) handed to the request helper is `segmentsPath` or the
+ *    `url.toString()` of a `new URL(segmentsPath)`;
+ * 3. every `new URL(...)` is built from `segmentsPath`;
+ * 4. `fetchImpl(` is called exactly once, with `args.url`.
+ *
+ * @returns One message per violation; empty when the client is confined.
+ */
+function segmentClientEndpointViolations(code: string): string[] {
+    const violations: string[] = [];
+    const apiLiterals = code.match(/\/api\b[^`'"\s]*/g) ?? [];
+    const definition =
+        /const segmentsPath = `\$\{base\}\/api\/websites\/\$\{encodeURIComponent\(input\.websiteId\)\}\/segments`;/;
+    if (apiLiterals.length !== 1 || !definition.test(code)) {
+        violations.push(
+            `expected one /api/ literal (segmentsPath), found ${JSON.stringify(apiLiterals)}`
+        );
+    }
+    const urlValues = [...code.matchAll(/(?<!readonly\s)\burl:\s*([^,\n}]+)/g)].map((m) =>
+        (m[1] ?? '').trim()
+    );
+    const badUrls = urlValues.filter(
+        (value) => value !== 'segmentsPath' && value !== 'url.toString()'
+    );
+    if (urlValues.length === 0 || badUrls.length > 0) {
+        violations.push(`request url values ${JSON.stringify(urlValues)}`);
+    }
+    const urlCtorArgs = [...code.matchAll(/new URL\(([^)]*)\)/g)].map((m) => (m[1] ?? '').trim());
+    if (urlCtorArgs.some((arg) => arg !== 'segmentsPath')) {
+        violations.push(`new URL arguments ${JSON.stringify(urlCtorArgs)}`);
+    }
+    const fetchCalls = [...code.matchAll(/\bfetchImpl\(([^,)]*)/g)].map((m) => (m[1] ?? '').trim());
+    if (fetchCalls.length !== 1 || fetchCalls[0] !== 'args.url') {
+        violations.push(`fetchImpl calls ${JSON.stringify(fetchCalls)}`);
+    }
+    return violations;
+}
 
 /** Lists every `.ts` file under `dir`, recursively. */
 function listTsFiles(dir: string): string[] {
@@ -206,23 +275,72 @@ describe('the api holds no write-capable Umami credential (HOS-2347 AC-S6)', () 
         }
     });
 
-    it('the service holding the write key reaches Umami only through the segment client', () => {
+    it('the service holding the write key never calls fetch itself', () => {
+        const service = readFileSync(join(REPO_ROOT, SERVICE_FILE), 'utf8');
+
+        expect(stripComments(service)).not.toMatch(/\bfetch\(/);
+    });
+
+    it('the segment client reaches exactly one Umami endpoint: /api/websites/:id/segments', () => {
         // Arrange
-        const service = readFileSync(
-            join(REPO_ROOT, 'apps/api/src/services/qr-campaign-umami.ts'),
-            'utf8'
-        );
-        const client = readFileSync(
-            join(REPO_ROOT, 'apps/api/src/lib/umami-segments-client.ts'),
-            'utf8'
+        const code = stripComments(readFileSync(join(REPO_ROOT, CLIENT_FILE), 'utf8'));
+
+        // Assert
+        expect(segmentClientEndpointViolations(code)).toEqual([]);
+    });
+
+    it('the endpoint check refuses a bare website call, another API path and a derived URL', () => {
+        // Arrange
+        const code = stripComments(readFileSync(join(REPO_ROOT, CLIENT_FILE), 'utf8'));
+        const mutants = [
+            `${code}\nconst w = \`\${base}/api/websites/\${id}\`;`,
+            `${code}\nconst u = \`\${base}/api/users\`;`,
+            code.replace('url: segmentsPath,', "url: segmentsPath.replace('/segments', ''),"),
+            `${code}\nawait fetchImpl(other, {});`,
+            `${code}\nconst x = new URL(base);`
+        ];
+
+        // Assert: every mutant is caught, and none is identical to the original.
+        for (const mutant of mutants) {
+            expect(mutant).not.toBe(code);
+            expect(segmentClientEndpointViolations(mutant).length).toBeGreaterThan(0);
+        }
+    });
+
+    it('the writeApiKey identifier lives only in the service and its tests', () => {
+        // Arrange
+        const files = [
+            ...listTsFiles(join(REPO_ROOT, 'apps/api/src')),
+            ...listTsFiles(join(REPO_ROOT, 'apps/api/test'))
+        ];
+
+        // Act
+        const namers = files
+            .filter((file) => /\bwriteApiKey\b/.test(readFileSync(file, 'utf8')))
+            .map((file) => relative(REPO_ROOT, file));
+
+        // Assert
+        expect(namers.length).toBeGreaterThan(0);
+        for (const namer of namers) {
+            expect(WRITE_API_KEY_IDENTIFIER_ALLOWLIST).toContain(namer);
+        }
+    });
+
+    it('the config reader that returns the write key is not exported nor imported', () => {
+        // Arrange
+        const service = readFileSync(join(REPO_ROOT, SERVICE_FILE), 'utf8');
+        const others = listTsFiles(join(REPO_ROOT, 'apps/api/src')).filter(
+            (file) => relative(REPO_ROOT, file) !== SERVICE_FILE
         );
 
-        // Assert: no raw fetch in the service, and the client's only API path is /segments.
-        expect(service).not.toMatch(/\bfetch\(/);
-        const apiPaths = [...client.matchAll(/\/api\/websites\/\$\{[^}]+\}\/(\w+)/g)].map(
-            (match) => match[1]
-        );
-        expect(apiPaths).toEqual(['segments']);
+        // Assert
+        expect(service).not.toMatch(/export\s+(async\s+)?function\s+readQrCampaignUmamiConfig/);
+        expect(service).not.toMatch(/export\s*\{[^}]*readQrCampaignUmamiConfig/);
+        expect(
+            others
+                .filter((file) => /\breadQrCampaignUmamiConfig\b/.test(readFileSync(file, 'utf8')))
+                .map((file) => relative(REPO_ROOT, file))
+        ).toEqual([]);
     });
 
     it('HOSPEDA_UMAMI_DATABASE_URL is named only by the allowlisted api files (HOS-2347 exception)', () => {

@@ -8,15 +8,31 @@
  *   Umami URL and web website id are configured);
  * - whether a segment named `QR · <campaign>` exists, read with ONE paginated
  *   list call per request (`search: 'QR · '`), never one call per campaign;
- * - creating that segment on demand, idempotently.
+ * - creating that segment on demand.
+ *
+ * ## Idempotency
+ *
+ * The create lists by name, matches the EXACT name and creates only when nothing
+ * matches. Within one API instance a per-segment lock serialises concurrent
+ * creates, so two clicks make one segment. Across instances two creates can still
+ * race and leave two segments with the same name; that is harmless, because every
+ * read takes the FIRST exact match, and an operator can delete the extra one.
  *
  * ## Credentials
  *
  * Creating a segment needs a key of a user with edit access to the web website:
  * `HOSPEDA_UMAMI_WRITE_API_KEY` (owner decision recorded on HOS-2679). It is the
  * api's only Umami API write credential and this is the only file that reads it
- * (`no-umami-write-credential.guard.test.ts`). Listing prefers the view-only
- * `HOSPEDA_UMAMI_API_KEY` (least privilege) and falls back to the write key.
+ * (`no-umami-write-credential.guard.test.ts`, which also confines the
+ * `writeApiKey` identifier to this file). The config reader is NOT exported: the
+ * handlers read it themselves, and only tests inject a config. Listing uses the
+ * view-only `HOSPEDA_UMAMI_API_KEY` and never falls back to the write key.
+ *
+ * ## Campaigns Umami cannot filter
+ *
+ * Umami 3.5 splits an `eq` value on `,` (URL filter and segment alike), so a
+ * campaign with a comma gets no link and cannot be segmented; one longer than
+ * the create's limit cannot be segmented either (`unsupportedReason`).
  *
  * ## Failure policy
  *
@@ -34,7 +50,9 @@ import {
     type QrCampaignsUmamiResponse,
     type QrCampaignUmamiItem,
     type QrCampaignUmamiSegmentResponse,
+    type QrCampaignUmamiUnavailableReason,
     qrCampaignSegmentName,
+    qrCampaignUmamiUnsupportedReason,
     ServiceErrorCode
 } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
@@ -54,7 +72,7 @@ export interface QrCampaignUmamiConfig {
     readonly websiteId?: string;
     /** View-only key, used to list. */
     readonly readApiKey?: string;
-    /** Edit-access key, used to create (and to list when no view key is set). */
+    /** Edit-access key, used ONLY by the create. */
     readonly writeApiKey?: string;
 }
 
@@ -68,15 +86,17 @@ export interface QrCampaignCount {
 export const QR_CAMPAIGN_UMAMI_REASONS = {
     notConfigured: 'UMAMI_WRITE_NOT_CONFIGURED',
     keyRejected: 'UMAMI_KEY_REJECTED',
-    unavailable: 'UMAMI_UNAVAILABLE'
+    unavailable: 'UMAMI_UNAVAILABLE',
+    commaInCampaign: 'UMAMI_CAMPAIGN_HAS_COMMA'
 } as const;
 
 /**
- * Reads the config from the validated api env.
+ * Reads the config from the validated api env. Private on purpose: exporting it
+ * would hand the write key to any importer without naming the env var.
  *
  * @returns The current Umami settings.
  */
-export function readQrCampaignUmamiConfig(): QrCampaignUmamiConfig {
+function readQrCampaignUmamiConfig(): QrCampaignUmamiConfig {
     return {
         baseUrl: env.HOSPEDA_UMAMI_URL,
         websiteId: env.HOSPEDA_UMAMI_WEBSITE_ID_WEB,
@@ -90,9 +110,10 @@ function canCreate(config: QrCampaignUmamiConfig): boolean {
     return Boolean(config.baseUrl && config.websiteId && config.writeApiKey);
 }
 
-/** The view link of a campaign, or `null` without URL + website. */
+/** The view link of a campaign, or `null` without URL + website or with a comma. */
 function viewUrlOf(config: QrCampaignUmamiConfig, campaign: string): string | null {
     if (!config.baseUrl || !config.websiteId) return null;
+    if (qrCampaignUmamiUnsupportedReason({ campaign }) === 'COMMA_IN_CAMPAIGN') return null;
     return buildUmamiCampaignViewUrl({
         baseUrl: config.baseUrl,
         websiteId: config.websiteId,
@@ -100,25 +121,42 @@ function viewUrlOf(config: QrCampaignUmamiConfig, campaign: string): string | nu
     });
 }
 
-/** Builds one row from what Umami said (or `undefined` when it said nothing). */
+/** What the list read of Umami produced: the segments, or why there are none. */
+type SegmentsRead =
+    | { readonly ok: true; readonly segments: readonly UmamiSegment[] }
+    | { readonly ok: false; readonly reason: QrCampaignUmamiUnavailableReason };
+
+/** The FIRST segment with exactly the campaign's name (a cross-instance race may leave two). */
+function findExact(segments: readonly UmamiSegment[], name: string): UmamiSegment | undefined {
+    return segments.find((segment) => segment.type === 'segment' && segment.name === name);
+}
+
+/** Builds one row from what Umami said. */
 function toItem(input: {
     readonly config: QrCampaignUmamiConfig;
     readonly campaign: QrCampaignCount;
-    readonly segments: readonly UmamiSegment[] | undefined;
+    readonly read: SegmentsRead;
 }): QrCampaignUmamiItem {
-    const { config, campaign, segments } = input;
+    const { config, campaign, read } = input;
     const viewUrl = viewUrlOf(config, campaign.campaign);
+    const unsupportedReason = qrCampaignUmamiUnsupportedReason({ campaign: campaign.campaign });
     const base = { campaign: campaign.campaign, qrCount: campaign.qrCount };
-    if (segments === undefined) return { ...base, umami: { status: 'unavailable', viewUrl } };
-    const name = qrCampaignSegmentName({ campaign: campaign.campaign });
-    const match = segments.find((segment) => segment.type === 'segment' && segment.name === name);
+    const extra = unsupportedReason ? { unsupportedReason } : {};
+    if (!read.ok) {
+        return {
+            ...base,
+            umami: { status: 'unavailable', unavailableReason: read.reason, ...extra, viewUrl }
+        };
+    }
+    const match = findExact(read.segments, qrCampaignSegmentName({ campaign: campaign.campaign }));
     if (!match || !config.baseUrl || !config.websiteId) {
-        return { ...base, umami: { status: 'missing', viewUrl } };
+        return { ...base, umami: { status: 'missing', ...extra, viewUrl } };
     }
     return {
         ...base,
         umami: {
             status: 'segment',
+            ...extra,
             segmentId: match.id,
             viewUrl,
             segmentUrl: buildUmamiSegmentViewUrl({
@@ -140,36 +178,49 @@ function logUmamiFailure(operation: string, error: unknown): void {
     });
 }
 
+/** Reads every `QR · ` segment with the VIEW-ONLY key. Never throws. */
+async function readQrSegments(input: {
+    readonly config: QrCampaignUmamiConfig;
+    readonly fetchImpl?: typeof fetch;
+}): Promise<SegmentsRead> {
+    const { config, fetchImpl } = input;
+    if (!config.baseUrl || !config.websiteId) return { ok: false, reason: 'NOT_CONFIGURED' };
+    if (!config.readApiKey) return { ok: false, reason: 'READ_KEY_MISSING' };
+    try {
+        const segments = await createUmamiSegmentsClient({
+            baseUrl: config.baseUrl,
+            websiteId: config.websiteId,
+            apiKey: config.readApiKey,
+            ...(fetchImpl ? { fetchImpl } : {})
+        }).listSegments({ search: QR_CAMPAIGN_SEGMENT_NAME_PREFIX });
+        return { ok: true, segments };
+    } catch (error) {
+        logUmamiFailure('list', error);
+        return { ok: false, reason: 'UMAMI_ERROR' };
+    }
+}
+
 /**
  * Adds the Umami state to every campaign. Never throws because of Umami.
  *
  * @param input.campaigns - Campaigns with their counts (from the QR service)
- * @param input.config - Umami settings
+ * @param input.config - Test-only override; production reads the env itself
  * @param input.fetchImpl - Fetch override (tests)
  * @returns The panel rows plus whether creating is possible
  */
 export async function resolveQrCampaignsUmami(input: {
     readonly campaigns: readonly QrCampaignCount[];
-    readonly config: QrCampaignUmamiConfig;
+    readonly config?: QrCampaignUmamiConfig;
     readonly fetchImpl?: typeof fetch;
 }): Promise<QrCampaignsUmamiResponse> {
-    const { campaigns, config, fetchImpl } = input;
-    const listKey = config.readApiKey ?? config.writeApiKey;
-    let segments: readonly UmamiSegment[] | undefined;
-    if (campaigns.length > 0 && config.baseUrl && config.websiteId && listKey) {
-        try {
-            segments = await createUmamiSegmentsClient({
-                baseUrl: config.baseUrl,
-                websiteId: config.websiteId,
-                apiKey: listKey,
-                ...(fetchImpl ? { fetchImpl } : {})
-            }).listSegments({ search: QR_CAMPAIGN_SEGMENT_NAME_PREFIX });
-        } catch (error) {
-            logUmamiFailure('list', error);
-        }
-    }
+    const { campaigns, fetchImpl } = input;
+    const config = input.config ?? readQrCampaignUmamiConfig();
+    const read: SegmentsRead =
+        campaigns.length > 0
+            ? await readQrSegments({ config, ...(fetchImpl ? { fetchImpl } : {}) })
+            : { ok: true, segments: [] };
     return {
-        items: campaigns.map((campaign) => toItem({ config, campaign, segments })),
+        items: campaigns.map((campaign) => toItem({ config, campaign, read })),
         canCreateSegments: canCreate(config)
     };
 }
@@ -193,24 +244,60 @@ function toCreateError(error: unknown): ServiceError {
 }
 
 /**
+ * In-flight creates, keyed by website + segment name. Each entry is the tail of
+ * a promise chain: a second create for the same segment waits for the first to
+ * settle, then lists again and finds what the first created.
+ */
+const inFlightCreates = new Map<string, Promise<unknown>>();
+
+/**
+ * Runs `task` after every earlier task with the same key has settled.
+ *
+ * @param key - Lock key
+ * @param task - The work to serialise
+ * @returns What `task` returns
+ */
+async function withSegmentLock<T>(key: string, task: () => Promise<T>): Promise<T> {
+    const previous = inFlightCreates.get(key) ?? Promise.resolve();
+    const run = previous.then(task, task);
+    inFlightCreates.set(key, run);
+    try {
+        return await run;
+    } finally {
+        if (inFlightCreates.get(key) === run) inFlightCreates.delete(key);
+    }
+}
+
+/**
  * Creates the `QR · <campaign>` segment when absent; returns the existing one
- * otherwise. Idempotent: it lists by name, matches the EXACT name (Umami's
- * search is a substring match) and creates only when nothing matches.
+ * otherwise. It lists by name, matches the EXACT name (Umami's search is a
+ * substring match) and creates only when nothing matches. Idempotent within one
+ * API instance (see the module docblock for the cross-instance case).
  *
  * The caller has already checked the campaign exists among the QR campaigns.
  *
  * @param input.campaign - The campaign with its count
- * @param input.config - Umami settings
+ * @param input.config - Test-only override; production reads the env itself
  * @param input.fetchImpl - Fetch override (tests)
  * @returns The row and whether this call created the segment
- * @throws {ServiceError} 503 `SERVICE_UNAVAILABLE` with a {@link QR_CAMPAIGN_UMAMI_REASONS} reason
+ * @throws {ServiceError} 400 `VALIDATION_ERROR` (`UMAMI_CAMPAIGN_HAS_COMMA`) or
+ *   503 `SERVICE_UNAVAILABLE` with a {@link QR_CAMPAIGN_UMAMI_REASONS} reason
  */
 export async function ensureQrCampaignSegment(input: {
     readonly campaign: QrCampaignCount;
-    readonly config: QrCampaignUmamiConfig;
+    readonly config?: QrCampaignUmamiConfig;
     readonly fetchImpl?: typeof fetch;
 }): Promise<QrCampaignUmamiSegmentResponse> {
-    const { campaign, config, fetchImpl } = input;
+    const { campaign, fetchImpl } = input;
+    const config = input.config ?? readQrCampaignUmamiConfig();
+    if (qrCampaignUmamiUnsupportedReason({ campaign: campaign.campaign }) === 'COMMA_IN_CAMPAIGN') {
+        throw new ServiceError(
+            ServiceErrorCode.VALIDATION_ERROR,
+            'Umami splits filter values on commas, so a segment for this campaign would count other campaigns too',
+            { reason: QR_CAMPAIGN_UMAMI_REASONS.commaInCampaign },
+            QR_CAMPAIGN_UMAMI_REASONS.commaInCampaign
+        );
+    }
     if (!config.baseUrl || !config.websiteId || !config.writeApiKey) {
         throw new ServiceError(
             ServiceErrorCode.SERVICE_UNAVAILABLE,
@@ -226,22 +313,30 @@ export async function ensureQrCampaignSegment(input: {
         ...(fetchImpl ? { fetchImpl } : {})
     });
     const name = qrCampaignSegmentName({ campaign: campaign.campaign });
-    try {
-        const existing = await client.listSegments({ search: name });
-        if (existing.some((segment) => segment.type === 'segment' && segment.name === name)) {
-            return { item: toItem({ config, campaign, segments: existing }), created: false };
+    return withSegmentLock(`${config.websiteId}\u0000${name}`, async () => {
+        try {
+            const existing = await client.listSegments({ search: name });
+            if (findExact(existing, name)) {
+                return {
+                    item: toItem({ config, campaign, read: { ok: true, segments: existing } }),
+                    created: false
+                };
+            }
+            const created = await client.createSegment({
+                name,
+                filters: [{ name: 'utmCampaign', operator: 'eq', value: campaign.campaign }]
+            });
+            apiLogger.info({
+                message: 'Created Umami segment for a QR campaign',
+                segmentId: created.id
+            });
+            return {
+                item: toItem({ config, campaign, read: { ok: true, segments: [created] } }),
+                created: true
+            };
+        } catch (error) {
+            logUmamiFailure('create', error);
+            throw toCreateError(error);
         }
-        const created = await client.createSegment({
-            name,
-            filters: [{ name: 'utmCampaign', operator: 'eq', value: campaign.campaign }]
-        });
-        apiLogger.info({
-            message: 'Created Umami segment for a QR campaign',
-            segmentId: created.id
-        });
-        return { item: toItem({ config, campaign, segments: [created] }), created: true };
-    } catch (error) {
-        logUmamiFailure('create', error);
-        throw toCreateError(error);
-    }
+    });
 }
