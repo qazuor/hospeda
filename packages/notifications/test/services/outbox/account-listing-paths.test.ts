@@ -4,6 +4,7 @@
 import { describe, expect, it } from 'vitest';
 import {
     ACCOUNT_LISTINGS_PATH,
+    buildReceiptUrl,
     isListingNoticeVertical,
     resolveAccountListingsUrl,
     SUBSCRIPTION_PATH
@@ -43,5 +44,15 @@ describe('account listing paths', () => {
 
     it('keeps the subscription page path in one place', () => {
         expect(SUBSCRIPTION_PATH).toBe('/es/mi-cuenta/suscripcion/');
+    });
+
+    it('links a receipt to its own page, which opens the PDF directly (HOS-2682)', () => {
+        const receiptId = '33333333-3333-4333-8333-333333333333';
+        expect(buildReceiptUrl({ siteUrl: 'https://hospeda.com.ar/', receiptId })).toBe(
+            `https://hospeda.com.ar/es/mi-cuenta/recibos/${receiptId}/`
+        );
+        expect(buildReceiptUrl({ siteUrl: 'https://hospeda.com.ar', receiptId: 'a/b?c' })).toBe(
+            'https://hospeda.com.ar/es/mi-cuenta/recibos/a%2Fb%3Fc/'
+        );
     });
 });

@@ -24,12 +24,15 @@ export const ACCOUNT_LISTINGS_PATH: Readonly<Record<ListingNoticeVertical, strin
 /** Mi Suscripción, the page every billing notice sends the reader to. */
 export const SUBSCRIPTION_PATH = '/es/mi-cuenta/suscripcion/';
 
+/** Where one receipt opens directly, as a PDF (HOS-2682). The id is appended to it. */
+export const RECEIPT_PATH = '/es/mi-cuenta/recibos/';
+
 /**
- * The link behind a notice's "Ver recibo" button (HOS-2566): Mi Suscripción with the
- * receipt open. The receipt needs the
- * owner's session: the receipt is read through an authenticated API route, and
- * a receipt that is somebody else's answers the same "not found" as one that
- * does not exist.
+ * The link behind a notice's "Ver recibo" button (HOS-2566, direct since
+ * HOS-2682): the receipt's own page, which opens the PDF itself with no account
+ * page around it. The receipt needs the owner's session: without one the reader
+ * signs in and lands back on the receipt, and a receipt that is somebody else's
+ * answers the same "not found" as one that does not exist.
  *
  * @param input.siteUrl - Site origin, with or without a trailing slash
  * @param input.receiptId - The receipt row id
@@ -38,7 +41,7 @@ export function buildReceiptUrl(input: {
     readonly siteUrl: string;
     readonly receiptId: string;
 }): string {
-    return `${input.siteUrl.replace(/\/$/, '')}${SUBSCRIPTION_PATH}?recibo=${encodeURIComponent(input.receiptId)}`;
+    return `${input.siteUrl.replace(/\/$/, '')}${RECEIPT_PATH}${encodeURIComponent(input.receiptId)}/`;
 }
 
 /** The public contact page, where a notice sends a reader with questions. */

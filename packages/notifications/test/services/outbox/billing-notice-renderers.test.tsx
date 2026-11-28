@@ -129,13 +129,11 @@ describe('TEST:1675:1 AC:1675:1 AC:1675:3 the signup-declined, grace-started and
         expect(html).toContain('7 de octubre de 2026');
         for (const id of [paymentId, subscriptionId, addonInstanceId])
             expect(html).not.toContain(id);
-        // HOS-2566: the receipt id travels only inside the authenticated "Ver recibo" link.
-        expect(html.replaceAll(`/es/mi-cuenta/suscripcion/?recibo=${receiptId}`, '')).not.toContain(
-            receiptId
-        );
-        expect(html).toContain(
-            `href="https://hospeda.test/es/mi-cuenta/suscripcion/?recibo=${receiptId}"`
-        );
+        // HOS-2566: the receipt id travels only inside the authenticated "Ver recibo" link,
+        // which opens the receipt's own page directly since HOS-2682.
+        expect(html.replaceAll(`/es/mi-cuenta/recibos/${receiptId}/`, '')).not.toContain(receiptId);
+        expect(html).toContain(`href="https://hospeda.test/es/mi-cuenta/recibos/${receiptId}/"`);
+        expect(html).not.toContain('?recibo=');
         expect(html).toContain('Ver recibo');
     });
 
