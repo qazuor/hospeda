@@ -78,16 +78,14 @@ import {
     shouldHoldForVisitorIdentity,
     waitForVisitorIdentity
 } from '@/lib/analytics/umami-identity-gate';
-import { waitForUmamiTracker } from '@/lib/analytics/umami-tracker';
+import { readUmamiConfig, waitForUmamiTracker } from '@/lib/analytics/umami-tracker';
+import { CONSENT_CHANGED_EVENT, getConsent } from '@/lib/cookie-consent';
 
 /** `name` of the per-page `<meta>` carrying the Umami tag (detail pages only). */
 export const UMAMI_TAG_META_NAME = 'umami-tag';
 
 /** Meta element `<ClientRouter />` renders; its absence means no soft navigation. */
 const CLIENT_ROUTER_META_SELECTOR = 'meta[name="astro-view-transitions-enabled"]';
-
-/** Selector of the tracker element `UmamiScript.astro` renders when configured. */
-const TRACKER_SCRIPT_SELECTOR = 'script[data-website-id]';
 
 /** Umami's tag limit. */
 const UMAMI_TAG_MAX_LENGTH = 50;
@@ -100,6 +98,8 @@ type TrackerPayload = Record<string, unknown>;
 let softNavFromUrl: string | null = null;
 /** URL of the page counted by the last pageview. */
 let lastPageUrl: string | null = null;
+/** URL of the last page this document actually sent a pageview for (consent granted). */
+let lastSentUrl: string | null = null;
 let started = false;
 /** Whether this document already counted its first page. */
 let firstPageCounted = false;
@@ -199,9 +199,17 @@ function countCurrentPage(): void {
     const referrer = softNavFromUrl === null ? undefined : stripOrigin(softNavFromUrl);
     lastPageUrl = url;
 
+    // HOS-2681: no pageview before analytics consent. The page is dropped, not
+    // queued; `onConsentGranted` counts the page then shown. `firstPageCounted`
+    // stays false so that first counted page still waits for the identity.
+    if (!hasAnalyticsConsent()) return;
+    lastSentUrl = url;
+
     const send = (): void => {
         waitForUmamiTracker({
             onReady: (tracker: UmamiTracker) => {
+                // Consent may have been revoked while the send waited.
+                if (!hasAnalyticsConsent()) return;
                 try {
                     tracker.track((defaults) =>
                         buildPageviewPayload({ defaults, url, title, referrer, tag })
@@ -224,6 +232,27 @@ function countCurrentPage(): void {
     }
     firstPageCounted = true;
     holdFirstPageview(send);
+}
+
+function hasAnalyticsConsent(): boolean {
+    return getConsent()?.analytics === true;
+}
+
+/**
+ * The visitor just granted analytics consent: count the page they are on. It
+ * runs in a microtask so every other synchronous consent listener (the
+ * identify flush in `umami-client.ts`) registers its tracker wait first and the
+ * identify still precedes the first pageview.
+ */
+function onConsentChanged(event: Event): void {
+    const detail = (event as CustomEvent<{ analytics?: boolean }>).detail;
+    if (detail?.analytics !== true) return;
+    queueMicrotask(() => {
+        // Re-saving preferences with analytics already on must not recount the page.
+        if (started && lastPageUrl !== null && window.location.href !== lastSentUrl) {
+            countCurrentPage();
+        }
+    });
 }
 
 /** Holds `send` (and any page counted meanwhile) until the identity settles. */
@@ -267,18 +296,21 @@ export interface StartUmamiPageviewsResult {
 export function startUmamiPageviews(): StartUmamiPageviewsResult {
     const noop: StartUmamiPageviewsResult = { stop: () => undefined };
     if (started || typeof window === 'undefined') return noop;
-    if (!document.querySelector(TRACKER_SCRIPT_SELECTOR)) return noop;
+    if (!readUmamiConfig()) return noop;
     started = true;
+    window.addEventListener(CONSENT_CHANGED_EVENT, onConsentChanged);
 
     const stop = (): void => {
         document.removeEventListener('astro:before-swap', rememberPageBeingLeft);
         document.removeEventListener('astro:page-load', countCurrentPage);
+        window.removeEventListener(CONSENT_CHANGED_EVENT, onConsentChanged);
         cancelIdentityWait?.();
         cancelIdentityWait = null;
         heldSends = null;
         firstPageCounted = false;
         softNavFromUrl = null;
         lastPageUrl = null;
+        lastSentUrl = null;
         started = false;
     };
 

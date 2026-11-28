@@ -15,6 +15,7 @@ import {
     type StartUmamiPageviewsResult,
     startUmamiPageviews
 } from '@/lib/analytics/umami-pageview';
+import { saveConsent } from '@/lib/cookie-consent';
 
 const ENTITY_ID = '3f2b8c1e-5d4a-4c7b-9e1f-0a1b2c3d4e5f';
 const SAME_ORIGIN_REFERRER = `${window.location.origin}/es/alojamientos/`;
@@ -60,13 +61,18 @@ let pageviews: StartUmamiPageviewsResult | null = null;
 function startRouterPage(): void {
     document.head.insertAdjacentHTML(
         'beforeend',
-        '<script data-website-id="site-id"></script><meta name="astro-view-transitions-enabled" content="true">'
+        '<meta name="umami-config" data-script-url="https://umami.test/t.js" data-website-id="site-id"><meta name="astro-view-transitions-enabled" content="true">'
     );
     pageviews = startUmamiPageviews();
     document.dispatchEvent(new Event('astro:page-load'));
 }
 
+beforeEach(() => {
+    saveConsent({ crashReporting: false, analytics: true, marketing: false });
+});
+
 afterEach(() => {
+    document.cookie = 'cookie-consent=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
     pageviews?.stop();
     pageviews = null;
     document.head.innerHTML = '';

@@ -72,9 +72,48 @@ describe('trackEvent', () => {
         ).not.toThrow();
     });
 
-    it('should forward a validated event before consent (cookieless)', () => {
+    it('should drop an event fired before consent (HOS-2681)', () => {
         // Arrange
         const umami = installUmami();
+
+        // Act
+        trackEvent('search_performed', { search_type: 'accommodation' });
+
+        // Assert
+        expect(umami.track).not.toHaveBeenCalled();
+    });
+
+    it('should not flush a pre-consent event once consent is granted', () => {
+        // Arrange
+        const umami = installUmami();
+        trackEvent('search_performed', { search_type: 'accommodation' });
+
+        // Act
+        grantConsent();
+
+        // Assert
+        expect(umami.track).not.toHaveBeenCalled();
+    });
+
+    it('should stop sending after consent is revoked', () => {
+        // Arrange
+        const umami = installUmami();
+        grantConsent();
+        trackEvent('search_performed', { search_type: 'accommodation' });
+        expect(umami.track).toHaveBeenCalledTimes(1);
+
+        // Act
+        saveConsent({ crashReporting: false, analytics: false, marketing: false });
+        trackEvent('search_performed', { search_type: 'accommodation' });
+
+        // Assert
+        expect(umami.track).toHaveBeenCalledTimes(1);
+    });
+
+    it('should forward a validated event once analytics consent is granted', () => {
+        // Arrange
+        const umami = installUmami();
+        grantConsent();
 
         // Act
         trackEvent('search_performed', { search_type: 'accommodation' });
@@ -113,9 +152,9 @@ describe('identifyUser (consent-gated, once per document)', () => {
         identifyUser('user-1');
         trackEvent('search_performed', { search_type: 'accommodation' });
 
-        // Assert: the pageview plus the event, and no identify
+        // Assert: nothing at all before consent
         expect(umami.identify).not.toHaveBeenCalled();
-        expect(umami.track).toHaveBeenCalledTimes(2);
+        expect(umami.track).not.toHaveBeenCalled();
     });
 
     it('should identify once with the user id after CONSENT_CHANGED_EVENT', async () => {
@@ -399,6 +438,7 @@ describe('trackTaggedEvent', () => {
     it('should validate, then forward name, data and tag through the function form', () => {
         // Arrange
         const umami = installUmami();
+        grantConsent();
 
         // Act
         trackTaggedEvent({

@@ -83,8 +83,9 @@ describe('UmamiScript — page tag', () => {
         expect(SCRIPT).toMatch(/validTag[\s\S]*:\s*undefined/);
     });
 
-    it('renders a single tracker element', () => {
-        expect(SCRIPT_TEMPLATE.match(/<script\b[^>]*\bsrc=/g)).toHaveLength(1);
+    it('renders a single, inert tracker config and no tracker script (HOS-2681)', () => {
+        expect(SCRIPT_TEMPLATE.match(/<meta name="umami-config"/g)).toHaveLength(1);
+        expect(SCRIPT_TEMPLATE.match(/<script\b[^>]*\bsrc=/g)).toBeNull();
     });
 });
 

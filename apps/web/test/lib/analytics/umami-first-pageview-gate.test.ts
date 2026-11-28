@@ -186,7 +186,7 @@ describe('later pageviews', () => {
 });
 
 describe('pages and visitors that never wait', () => {
-    it('should send at once without analytics consent, and identify nobody (AC-5)', () => {
+    it('should send nothing without analytics consent, and identify nobody (AC-5, HOS-2681)', () => {
         // Arrange: no consent cookie
         const umami = loadBaseLayoutPage();
 
@@ -194,7 +194,7 @@ describe('pages and visitors that never wait', () => {
         identifyUser('user-1');
 
         // Assert
-        expect(umami.track).toHaveBeenCalledTimes(1);
+        expect(umami.track).not.toHaveBeenCalled();
         expect(umami.identify).not.toHaveBeenCalled();
     });
 
@@ -309,15 +309,15 @@ describe('custom events fired during the hold', () => {
         expect(vi.getTimerCount()).toBe(0);
     });
 
-    it('should send events at once without consent', () => {
+    it('should drop events without consent (HOS-2681)', () => {
         // Arrange
         const umami = loadBaseLayoutPage();
 
         // Act
         fireDestinationViewed();
 
-        // Assert: pageview + event, nothing held
-        expect(umami.track).toHaveBeenCalledTimes(2);
+        // Assert: neither the pageview nor the event went out
+        expect(umami.track).not.toHaveBeenCalled();
     });
 
     it('should send events at once once the identity settled', () => {

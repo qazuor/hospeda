@@ -9,8 +9,10 @@
  * Built on `createBrowserAnalytics` so catalog validation, `prepareAnalyticsEvent`
  * and the anti-PII guards stay in force.
  *
- * Consent model (AC-5):
- * - Anonymous `trackEvent` is cookieless and works BEFORE consent.
+ * Consent model (AC-5, tightened by HOS-2681):
+ * - Nothing is sent before analytics consent: the tracker is not even loaded
+ *   (`umami-loader.ts`), and `trackEvent` / `trackTaggedEvent` drop events
+ *   fired before consent or after a revoke (never queued, never flushed later).
  * - `identifyUser` attaches a distinct id to the Umami session, so it only runs
  *   once analytics consent is granted. Within a document it is sent again only
  *   when the person properties change. Before consent, or before the tracker
@@ -106,15 +108,21 @@ const analytics = createBrowserAnalytics({
  * firing order, behind a pageview held earlier.
  */
 function sendAfterIdentityHold(send: () => void): void {
+    // HOS-2681: nothing is sent before analytics consent. Dropped, never queued,
+    // and re-checked when a held send runs (consent may be revoked meanwhile).
+    if (!hasAnalyticsConsent()) return;
+    const guarded = (): void => {
+        if (hasAnalyticsConsent()) send();
+    };
     if (shouldHoldForVisitorIdentity()) {
-        waitForVisitorIdentity({ onSettled: send });
+        waitForVisitorIdentity({ onSettled: guarded });
         return;
     }
-    send();
+    guarded();
 }
 
 /**
- * Capture a catalog event. Cookieless and safe before consent. While the
+ * Capture a catalog event. Dropped until analytics consent is granted. While the
  * document's first pageview waits for the visitor identity, the event waits
  * behind it (see `sendAfterIdentityHold`). No-op on the
  * server and when the Umami tracker is absent (ad blocker, not yet loaded).

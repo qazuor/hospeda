@@ -18,6 +18,7 @@ import {
     type StartUmamiPageviewsResult,
     startUmamiPageviews
 } from '@/lib/analytics/umami-pageview';
+import { saveConsent } from '@/lib/cookie-consent';
 
 const TAG_A = '3f2b8c1e-5d4a-4c7b-9e1f-0a1b2c3d4e5f';
 const TAG_B = '9a8b7c6d-1e2f-4a3b-8c4d-5e6f7a8b9c0d';
@@ -55,7 +56,9 @@ function setPageTag(tag: string | null): void {
 
 /** Renders the head UmamiScript + ClientRouter produce. */
 function renderHead({ clientRouter }: { readonly clientRouter: boolean }): void {
-    addHeadElement('<script data-website-id="site-id" data-auto-pageview="false"></script>');
+    addHeadElement(
+        '<meta name="umami-config" data-script-url="https://umami.test/t.js" data-website-id="site-id">'
+    );
     if (clientRouter) addHeadElement('<meta name="astro-view-transitions-enabled" content="true">');
 }
 
@@ -88,7 +91,12 @@ beforeEach(() => {
     });
 });
 
+beforeEach(() => {
+    saveConsent({ crashReporting: false, analytics: true, marketing: false });
+});
+
 afterEach(() => {
+    document.cookie = 'cookie-consent=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
     handle?.stop();
     handle = null;
     vi.useRealTimers();
