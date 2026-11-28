@@ -4,6 +4,7 @@ import { createBooleanQueryParam } from '../../common/boolean-params.js';
 import { EntityTypeEnumSchema } from '../../enums/entity-type.schema.js';
 import { QrCodePurposeEnumSchema } from '../../enums/qr-code-purpose.schema.js';
 import { QrCodeSourceEnumSchema } from '../../enums/qr-code-source.schema.js';
+import { QR_CODE_TAG_MAX_PER_CODE } from './qr-code-tag.schema.js';
 
 /**
  * Admin list filters for QR codes (HOS-981).
@@ -38,17 +39,22 @@ export const QrCodeAdminSearchSchema = AdminSearchBaseSchema.extend({
      * column: the service turns it into a condition over the parsed query param,
      * so `verano` does not also match `verano-2025`. Meaningful for MANUAL codes;
      * a GENERATED code's campaign is computed at scan and never stored.
+     *
+     * NOT trimmed: the value is compared against the decoded stored campaign
+     * exactly as the dropdown shows it, and a stored `%20verano` decodes to
+     * ` verano`. Trimming here would make that option unmatchable.
      */
     utmCampaign: z
         .string()
-        .trim()
         .min(1, { message: 'zodError.qrCode.utmCampaign.min' })
         .max(200, { message: 'zodError.qrCode.utmCampaign.max' })
+        .refine((value) => value.trim() !== '', { message: 'zodError.qrCode.utmCampaign.min' })
         .optional(),
     /**
      * Codes carrying ANY of these tags (HOS-2679). Accepts a repeated param or a
      * comma-separated list. Not a column either: resolved through
-     * `r_qr_code_qr_code_tag`, live tags only.
+     * `r_qr_code_qr_code_tag`, live tags only. Capped at the per-code maximum:
+     * filtering by more tags than a code can carry is not a real request.
      */
     tagIds: z
         .union([
@@ -63,6 +69,11 @@ export const QrCodeAdminSearchSchema = AdminSearchBaseSchema.extend({
                 )
                 .pipe(z.array(z.string().uuid({ message: 'zodError.common.id.invalidUuid' })))
         ])
+        .pipe(
+            z
+                .array(z.string())
+                .max(QR_CODE_TAG_MAX_PER_CODE, { message: 'zodError.qrCodeTag.tagIds.max' })
+        )
         .optional()
 });
 

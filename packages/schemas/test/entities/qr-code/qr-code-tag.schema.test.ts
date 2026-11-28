@@ -99,7 +99,20 @@ describe('QrCodeAdminSearchSchema — HOS-2679 filters', () => {
         const once = QrCodeAdminSearchSchema.parse({ tagIds: UUID_A, utmCampaign: ' verano ' });
         const twice = QrCodeAdminSearchSchema.parse(once);
         expect(twice.tagIds).toStrictEqual([UUID_A]);
-        expect(twice.utmCampaign).toBe('verano');
+        // Untrimmed on purpose: the dropdown offers decoded values verbatim.
+        expect(twice.utmCampaign).toBe(' verano ');
+    });
+
+    it('caps tagIds at the per-code maximum, in both spellings', () => {
+        const ids = Array.from(
+            { length: 51 },
+            (_, i) => `00000000-0000-4000-8000-${String(i).padStart(12, '0')}`
+        );
+        for (const tagIds of [ids, ids.join(',')]) {
+            const result = QrCodeAdminSearchSchema.safeParse({ tagIds });
+            expect(result.error?.issues[0]?.message).toBe('zodError.qrCodeTag.tagIds.max');
+        }
+        expect(QrCodeAdminSearchSchema.safeParse({ tagIds: ids.slice(0, 50) }).success).toBe(true);
     });
 
     it('rejects a malformed tag id', () => {
