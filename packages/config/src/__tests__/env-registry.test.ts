@@ -352,8 +352,12 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  *
  * HOS-2359 added HOSPEDA_UMAMI_PIXEL_API_KEY (293 + 1 = 294) and HOS-2583 removed
  * it with the campaign pixels (294 - 1 = 293).
+ *
+ * +1 = HOSPEDA_UMAMI_WRITE_API_KEY (monitoring category, api only, secret) - the
+ * edit-access Umami key that creates the QR campaign segments (HOS-2679).
+ * 293 + 1 = 294.
  */
-const EXPECTED_VAR_COUNT = 293;
+const EXPECTED_VAR_COUNT = 294;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;
@@ -834,6 +838,28 @@ describe('ENV_REGISTRY', () => {
             const entry = REGISTRY.find((e) => e.name === 'HOSPEDA_UMAMI_DATABASE_URL');
 
             expect(entry?.howToObtain).not.toContain('HOSPEDA_UMAMI_PIXEL_API_KEY');
+        });
+    });
+
+    describe('HOSPEDA_UMAMI_WRITE_API_KEY (HOS-2679)', () => {
+        it('is registered as an optional api-only secret with bilingual instructions', () => {
+            // Arrange
+            const entry = REGISTRY.find((e) => e.name === 'HOSPEDA_UMAMI_WRITE_API_KEY');
+
+            // Assert
+            expect(entry, 'HOSPEDA_UMAMI_WRITE_API_KEY not found in registry').toBeDefined();
+            expect(entry?.secret).toBe(true);
+            expect(entry?.required).toBe(false);
+            expect(entry?.apps).toStrictEqual(['api']);
+            expect(entry?.category).toBe('monitoring');
+            expect(entry?.howToObtain).toContain('Settings → API keys');
+            expect(entry?.howToObtainEs).toContain('Settings → API keys');
+        });
+
+        it('tells the operator never to reuse the view-only key', () => {
+            const entry = REGISTRY.find((e) => e.name === 'HOSPEDA_UMAMI_WRITE_API_KEY');
+
+            expect(entry?.howToObtain).toContain('Never reuse HOSPEDA_UMAMI_API_KEY');
         });
     });
 

@@ -1432,8 +1432,8 @@
     },
     {
       "name": "HOSPEDA_UMAMI_API_KEY",
-      "description": "Umami API key of a view-only user, sent as `Authorization: Bearer`; used only for reading stats",
-      "descriptionEs": "API key de Umami de un usuario view-only, enviada como `Authorization: Bearer`; se usa solo para leer stats",
+      "description": "Umami API key of a view-only user, sent as `Authorization: Bearer`; used only for reading (stats and the QR campaign segment list)",
+      "descriptionEs": "API key de Umami de un usuario view-only, enviada como `Authorization: Bearer`; se usa solo para leer (stats y la lista de segmentos de campañas QR)",
       "type": "string",
       "required": false,
       "secret": true,
@@ -1443,8 +1443,24 @@
       ],
       "category": "monitoring",
       "helpUrl": "https://umami.is/docs",
-      "howToObtain": "Create a view-only Umami user, then mint an API key for it (format `umami_...`). Never use an admin user key: this key only reads stats. It must NOT be widened to write: the api holds no Umami write credential.",
-      "howToObtainEs": "Creá un usuario view-only en Umami y generá una API key para él (formato `umami_...`). Nunca uses la key de un admin: esta key solo lee stats. NO se amplía para escribir: la api no tiene ninguna credencial de escritura de Umami."
+      "howToObtain": "Create a view-only Umami user, then mint an API key for it (format `umami_...`). Never use an admin user key: this key only reads. It must NOT be widened to write: the single write path is HOSPEDA_UMAMI_WRITE_API_KEY, a separate key.",
+      "howToObtainEs": "Creá un usuario view-only en Umami y generá una API key para él (formato `umami_...`). Nunca uses la key de un admin: esta key solo lee. NO se amplía para escribir: la única escritura va por HOSPEDA_UMAMI_WRITE_API_KEY, una key aparte."
+    },
+    {
+      "name": "HOSPEDA_UMAMI_WRITE_API_KEY",
+      "description": "Umami API key of a user with edit access to the hospeda-web website, sent as `Authorization: Bearer`; used only to create the `QR · <campaign>` segments from the admin QR campaigns panel (HOS-2679). Unset: the panel still lists campaigns and links to Umami, and creating a segment answers 503",
+      "descriptionEs": "API key de Umami de un usuario con permiso de edición sobre el website hospeda-web, enviada como `Authorization: Bearer`; se usa solo para crear los segmentos `QR · <campaña>` desde el panel de campañas QR del admin (HOS-2679). Sin setear: el panel igual lista las campañas y linkea a Umami, y crear un segmento responde 503",
+      "type": "string",
+      "required": false,
+      "secret": true,
+      "exampleValue": "umami_xxx",
+      "apps": [
+        "api"
+      ],
+      "category": "monitoring",
+      "helpUrl": "https://umami.is/docs",
+      "howToObtain": "Umami → Settings → API keys, logged in as a user with EDIT access to the hospeda-web website (a team member or the website owner; a view-only user gets 401 when creating). Create a key (format `umami_...`) and set it here. Never reuse HOSPEDA_UMAMI_API_KEY, which must stay view-only. See docs/runbooks/umami.md.",
+      "howToObtainEs": "Umami → Settings → API keys, con la sesión de un usuario con permiso de EDICIÓN sobre el website hospeda-web (miembro del team o dueño del website; un usuario view-only recibe 401 al crear). Creá una key (formato `umami_...`) y cargala acá. Nunca reutilices HOSPEDA_UMAMI_API_KEY, que tiene que seguir siendo view-only. Ver docs/runbooks/umami.md."
     },
     {
       "name": "HOSPEDA_UMAMI_DATABASE_URL",
