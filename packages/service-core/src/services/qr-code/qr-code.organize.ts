@@ -13,26 +13,25 @@ import type { SQL } from 'drizzle-orm';
  */
 
 /**
- * Every spelling a decoded campaign may be stored under in a target URL.
+ * Decodes one raw stored `utm_campaign` value exactly as `readUtmParams` does
+ * (`+` as a space, percent-escapes of either case, a malformed escape kept raw,
+ * NO trim). The dropdown and the filter both go through here, so they cannot
+ * disagree about what a stored URL carries.
  *
- * The column holds the URL as written, and SQL cannot decode it, so the filter
- * compares against the encoded forms instead: `encodeURIComponent` (what the
- * panel's UTM editor writes), the same with `+` for spaces (what a form or
- * `URLSearchParams` writes), and the raw value (what somebody typed by hand into
- * the URL field — `verano-2026` is all three at once).
- *
- * @param input.value - The decoded campaign, as the operator picked it.
- * @returns De-duplicated encoded spellings.
+ * @param input.raw - A raw value from `findDistinctRawUtmCampaigns` (it never
+ *   contains `&` or `#`: the SQL stops at both).
+ * @returns The decoded value.
  */
-export function encodedCampaignSpellings(input: { readonly value: string }): string[] {
-    const percent = encodeURIComponent(input.value);
-    return [...new Set([percent, percent.replace(/%20/g, '+'), input.value])];
+export function decodeRawCampaign(input: { readonly raw: string }): string {
+    return readUtmParams({ url: `?utm_campaign=${input.raw}` }).utm_campaign ?? '';
 }
 
 /**
- * Turns the raw campaigns the model read into the dropdown's values: decoded the
- * same way `readUtmParams` decodes, blanks dropped, spellings of one campaign
- * folded into one, sorted for display.
+ * Turns the raw campaigns the model read into the dropdown's values: decoded by
+ * {@link decodeRawCampaign}, values that are blank once trimmed dropped (nothing
+ * an operator can pick), spellings of one campaign folded into one, sorted for
+ * display. Values are shown UNtrimmed, so what the dropdown offers is exactly
+ * what the filter matches.
  *
  * @param input.raw - Raw (encoded) values from `findDistinctRawUtmCampaigns`.
  * @returns Sorted, unique, decoded campaigns.
@@ -40,30 +39,41 @@ export function encodedCampaignSpellings(input: { readonly value: string }): str
 export function decodeDistinctCampaigns(input: { readonly raw: readonly string[] }): string[] {
     const decoded = new Set<string>();
     for (const raw of input.raw) {
-        const value = readUtmParams({ url: `?utm_campaign=${raw}` }).utm_campaign?.trim();
-        if (value) decoded.add(value);
+        const value = decodeRawCampaign({ raw });
+        if (value.trim() !== '') decoded.add(value);
     }
     return [...decoded].sort((a, b) => a.localeCompare(b, 'es'));
 }
 
 /**
+ * The raw spellings among `raw` that decode to exactly `value`.
+ *
+ * @param input.value - The decoded campaign picked in the dropdown.
+ * @param input.raw - Every distinct raw value currently stored.
+ * @returns The raw spellings to match in SQL; empty when none decodes to it.
+ */
+export function rawSpellingsForCampaign(input: {
+    readonly value: string;
+    readonly raw: readonly string[];
+}): string[] {
+    return input.raw.filter((raw) => decodeRawCampaign({ raw }) === input.value);
+}
+
+/**
  * The SQL conditions for the two admin filters that are not columns.
  *
- * @param input.utmCampaign - Decoded campaign to match exactly, if any.
+ * @param input.utmCampaignRaws - Raw spellings to match exactly (from
+ *   {@link rawSpellingsForCampaign}); `undefined` is no filter, `[]` matches nothing.
  * @param input.tagIds - Tags to match (any of), if any. An empty list is no filter.
  * @returns Conditions to AND into the admin list query.
  */
 export function buildQrCodeOrganizeConditions(input: {
-    readonly utmCampaign?: string;
+    readonly utmCampaignRaws?: readonly string[];
     readonly tagIds?: readonly string[];
 }): SQL[] {
     const conditions: SQL[] = [];
-    if (input.utmCampaign) {
-        conditions.push(
-            buildQrCodeUtmCampaignCondition({
-                encodedValues: encodedCampaignSpellings({ value: input.utmCampaign })
-            })
-        );
+    if (input.utmCampaignRaws !== undefined) {
+        conditions.push(buildQrCodeUtmCampaignCondition({ rawValues: input.utmCampaignRaws }));
     }
     if (input.tagIds && input.tagIds.length > 0) {
         conditions.push(buildQrCodeTagFilterCondition({ tagIds: [...new Set(input.tagIds)] }));

@@ -77,12 +77,12 @@ describe('r_qr_code_qr_code_tag table', () => {
 });
 
 describe('buildQrCodeUtmCampaignCondition', () => {
-    it('compares the first raw utm_campaign against bound encoded spellings', () => {
+    it('compares the first raw utm_campaign of the QUERY STRING against bound raw spellings', () => {
         const { sql, params } = dialect.sqlToQuery(
-            buildQrCodeUtmCampaignCondition({ encodedValues: ['verano%202026', 'verano+2026'] })
+            buildQrCodeUtmCampaignCondition({ rawValues: ['verano%202026', 'verano+2026'] })
         );
         expect(sql).toBe(
-            `(regexp_match(split_part("qr_codes"."target_url", '#', 1), '[?&]utm_campaign=([^&]*)', 'i'))[1] in ($1, $2)`
+            `(regexp_match(substring(split_part("qr_codes"."target_url", '#', 1) from '\\?(.*)$'), '(?:^|&)utm(?:_|%5f)campaign=([^&]*)', 'i'))[1] in ($1, $2)`
         );
         expect(params).toStrictEqual(['verano%202026', 'verano+2026']);
     });
@@ -90,10 +90,19 @@ describe('buildQrCodeUtmCampaignCondition', () => {
     it('never splices a value into the SQL text', () => {
         const hostile = "x') or 1=1 --";
         const { sql, params } = dialect.sqlToQuery(
-            buildQrCodeUtmCampaignCondition({ encodedValues: [hostile] })
+            buildQrCodeUtmCampaignCondition({ rawValues: [hostile] })
         );
         expect(sql).not.toContain(hostile);
         expect(params).toStrictEqual([hostile]);
+    });
+
+    /** No raw spelling decodes to the value: match nothing, never everything. */
+    it('matches nothing for an empty list', () => {
+        const { sql, params } = dialect.sqlToQuery(
+            buildQrCodeUtmCampaignCondition({ rawValues: [] })
+        );
+        expect(sql).toBe('false');
+        expect(params).toStrictEqual([]);
     });
 });
 

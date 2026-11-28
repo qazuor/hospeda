@@ -11,38 +11,47 @@ import { rQrCodeQrCodeTag } from '../../schemas/qr-code/r_qr_code_qr_code_tag.db
  */
 
 /**
- * The raw (still percent-encoded) value of the FIRST `utm_campaign` param in
- * `qr_codes.target_url`, or `NULL`.
+ * The raw (still percent-encoded) value of the FIRST `utm_campaign` param in the
+ * QUERY STRING of `qr_codes.target_url`, or `NULL`.
  *
- * - `split_part(..., '#', 1)` drops the fragment first, so `#x&utm_campaign=y`
- *   is not mistaken for a query param.
- * - `regexp_match` answers the LEFTMOST match, which is the first occurrence —
- *   the same one `readUtmParams` (and `URLSearchParams.get`) reads.
- * - The `'i'` flag matches the key case-insensitively, as `readUtmParams` does.
+ * Parity with `readUtmParams` (`@repo/analytics`), which is what the panel shows:
+ * - only the query string is searched: the text after the FIRST `?` and before
+ *   the first `#`, so neither a path segment nor the fragment can match;
+ * - the key matches case-insensitively and with its `_` spelled `%5F`/`%5f`;
+ * - the LEFTMOST `key=value` segment wins, which is the first occurrence.
  *
- * The value is NOT decoded here: SQL has no `decodeURIComponent`. Callers compare
- * against the encoded spellings ({@link buildQrCodeUtmCampaignCondition}) or
- * decode in JS ({@link QrCodeModel.findDistinctRawUtmCampaigns}).
+ * Known gaps, deliberately not chased in SQL (each is a URL nobody writes):
+ * a key with OTHER escaped letters (`%75tm_campaign`), and a bare
+ * `utm_campaign` segment with no `=`, which `readUtmParams` reads as `''` and
+ * this expression skips.
+ *
+ * The value is NOT decoded here — SQL has no `decodeURIComponent`, and an inline
+ * decoder would fail the whole query on one malformed escape. Decoding happens
+ * in JS over the distinct raw values ({@link QrCodeModel.findDistinctRawUtmCampaigns}),
+ * and the filter matches the RAW spellings whose decoding equals the value
+ * picked ({@link buildQrCodeUtmCampaignCondition}). Dropdown and filter
+ * therefore decode with the same function and cannot disagree.
  */
 export const QR_CODE_RAW_UTM_CAMPAIGN_SQL: SQL<string | null> = sql<
     string | null
->`(regexp_match(split_part(${qrCodes.targetUrl}, '#', 1), '[?&]utm_campaign=([^&]*)', 'i'))[1]`;
+>`(regexp_match(substring(split_part(${qrCodes.targetUrl}, '#', 1) from '\\?(.*)$'), '(?:^|&)utm(?:_|%5f)campaign=([^&]*)', 'i'))[1]`;
 
 /**
- * Codes whose stored `utm_campaign` is exactly one of `encodedValues`.
+ * Codes whose stored raw `utm_campaign` is exactly one of `rawValues`.
  *
- * Exact on purpose — `verano` must not match `verano-2025` — and over the
- * ENCODED spellings because the column holds the URL as written: the caller
- * passes every spelling a value may be stored under (`verano%202026`,
- * `verano+2026`, ...).
+ * Exact on purpose — `verano` must not match `verano-2025`. The caller passes
+ * the raw spellings (as stored) that decode to the value being filtered; an
+ * empty list matches nothing, so a campaign no code carries answers an empty
+ * page instead of the whole table.
  *
- * @param input.encodedValues - Non-empty list of encoded spellings to accept.
+ * @param input.rawValues - Raw spellings to accept; may be empty.
  * @returns The SQL condition.
  */
 export function buildQrCodeUtmCampaignCondition(input: {
-    readonly encodedValues: readonly string[];
+    readonly rawValues: readonly string[];
 }): SQL {
-    const values = input.encodedValues.map((value) => sql`${value}`);
+    if (input.rawValues.length === 0) return sql`false`;
+    const values = input.rawValues.map((value) => sql`${value}`);
     return sql`${QR_CODE_RAW_UTM_CAMPAIGN_SQL} in (${sql.join(values, sql`, `)})`;
 }
 

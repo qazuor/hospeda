@@ -51,7 +51,11 @@ import type {
 import { ServiceError } from '../../types';
 import { extractPostgresErrorCause } from '../../utils/postgres-error-cause';
 import { normalizeCreateInput, normalizeUpdateInput } from './qr-code.normalizers';
-import { buildQrCodeOrganizeConditions, decodeDistinctCampaigns } from './qr-code.organize';
+import {
+    buildQrCodeOrganizeConditions,
+    decodeDistinctCampaigns,
+    rawSpellingsForCampaign
+} from './qr-code.organize';
 import {
     checkCanCreateQrCode,
     checkCanDeleteQrCode,
@@ -407,6 +411,10 @@ export class QrCodeService extends BaseCrudService<
      * Lifts the two filters that are not columns out of `entityFilters` — the
      * base would hand them to `buildWhereClause`, which rejects an unknown
      * column — and turns them into SQL conditions instead.
+     *
+     * The campaign is matched on the RAW stored spellings that decode to the
+     * picked value (see `qr-code.organize.ts`), so this reads the distinct raw
+     * campaigns first: one extra indexed-size query, only when filtering.
      */
     protected override async _executeAdminSearch(
         params: AdminSearchExecuteParams
@@ -416,9 +424,16 @@ export class QrCodeService extends BaseCrudService<
             tagIds?: string[];
             [key: string]: unknown;
         };
+        const utmCampaignRaws =
+            utmCampaign === undefined
+                ? undefined
+                : rawSpellingsForCampaign({
+                      value: utmCampaign,
+                      raw: await this.model.findDistinctRawUtmCampaigns(params.ctx?.tx)
+                  });
         const extraConditions = [
             ...(params.extraConditions ?? []),
-            ...buildQrCodeOrganizeConditions({ utmCampaign, tagIds })
+            ...buildQrCodeOrganizeConditions({ utmCampaignRaws, tagIds })
         ];
         return super._executeAdminSearch({ ...params, entityFilters, extraConditions });
     }
