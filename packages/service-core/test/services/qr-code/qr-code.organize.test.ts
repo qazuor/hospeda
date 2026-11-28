@@ -5,7 +5,7 @@
 import type { QrCodeModel, QrCodeScanModel, RQrCodeQrCodeTagModel } from '@repo/db';
 import { PermissionEnum, QrCodeSourceEnum, ServiceErrorCode } from '@repo/schemas';
 import { PgDialect } from 'drizzle-orm/pg-core';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import {
     buildQrCodeOrganizeConditions,
     decodeDistinctCampaigns,
@@ -14,6 +14,12 @@ import {
 import { QrCodeService } from '../../../src/services/qr-code/qr-code.service';
 import { createActor } from '../../factories/actorFactory';
 import { createLoggerMock, createModelMock } from '../../utils/modelMockFactory';
+
+/** A model mock whose extra methods are typed as mocks too. */
+type MockedModel = Record<
+    'findAll' | 'getTable' | 'findDistinctRawUtmCampaigns' | 'findTagRefsByQrCodeIds',
+    Mock
+>;
 
 const dialect = new PgDialect();
 const TAG_A = '11111111-1111-4111-8111-111111111111';
@@ -61,8 +67,8 @@ describe('buildQrCodeOrganizeConditions', () => {
 
 describe('QrCodeService — admin list organisation (HOS-2679)', () => {
     let service: QrCodeService;
-    let model: ReturnType<typeof createModelMock>;
-    let linkModel: ReturnType<typeof createModelMock>;
+    let model: MockedModel;
+    let linkModel: MockedModel;
     const admin = createActor({
         permissions: [PermissionEnum.ACCESS_PANEL_ADMIN, PermissionEnum.QR_CODE_VIEW]
     });
@@ -71,10 +77,13 @@ describe('QrCodeService — admin list organisation (HOS-2679)', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
-        model = createModelMock(['findDistinctRawUtmCampaigns']);
+        model = createModelMock(['findDistinctRawUtmCampaigns']) as unknown as MockedModel;
         model.getTable.mockReturnValue({ createdAt: {}, deletedAt: {}, source: {} });
         model.findAll.mockResolvedValue({ items: [row], total: 1 });
-        linkModel = createModelMock(['findTagRefsByQrCodeIds', 'setTagsForQrCode']);
+        linkModel = createModelMock([
+            'findTagRefsByQrCodeIds',
+            'setTagsForQrCode'
+        ]) as unknown as MockedModel;
         linkModel.findTagRefsByQrCodeIds.mockResolvedValue(
             new Map([[QR_ID, [{ id: TAG_A, name: 'Verano', slug: 'verano', color: null }]]])
         );

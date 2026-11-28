@@ -7,8 +7,8 @@
  * idempotent replace).
  */
 import type { QrCodeModel, QrCodeTagModel, RQrCodeQrCodeTagModel } from '@repo/db';
-import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { PermissionEnum, ServiceErrorCode, TagColorEnum } from '@repo/schemas';
+import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import {
     deriveQrCodeTagSlug,
     QrCodeTagService
@@ -40,6 +40,20 @@ const QR_VERBS = [
     PermissionEnum.QR_CODE_DELETE
 ];
 
+/** A model mock whose extra methods are typed as mocks too. */
+type MockedModel = Record<
+    | 'findById'
+    | 'findOne'
+    | 'create'
+    | 'update'
+    | 'softDelete'
+    | 'findLiveBySlug'
+    | 'countLiveByIds'
+    | 'setTagsForQrCode'
+    | 'findTagRefsByQrCodeIds',
+    Mock
+>;
+
 describe('deriveQrCodeTagSlug', () => {
     it('folds case, accents and spacing into one slug', () => {
         expect(deriveQrCodeTagSlug({ name: 'Verano 2026' })).toBe('verano-2026');
@@ -54,17 +68,20 @@ describe('deriveQrCodeTagSlug', () => {
 
 describe('QrCodeTagService', () => {
     let service: QrCodeTagService;
-    let tagModel: ReturnType<typeof createModelMock>;
-    let qrModel: ReturnType<typeof createModelMock>;
-    let linkModel: ReturnType<typeof createModelMock>;
+    let tagModel: MockedModel;
+    let qrModel: MockedModel;
+    let linkModel: MockedModel;
     const operator = createActor({ permissions: QR_VERBS });
     const readOnly = createActor({ permissions: [PermissionEnum.QR_CODE_VIEW] });
 
     beforeEach(() => {
         vi.clearAllMocks();
-        tagModel = createModelMock(['findLiveBySlug', 'countLiveByIds']);
-        qrModel = createModelMock();
-        linkModel = createModelMock(['setTagsForQrCode', 'findTagRefsByQrCodeIds']);
+        tagModel = createModelMock(['findLiveBySlug', 'countLiveByIds']) as unknown as MockedModel;
+        qrModel = createModelMock() as unknown as MockedModel;
+        linkModel = createModelMock([
+            'setTagsForQrCode',
+            'findTagRefsByQrCodeIds'
+        ]) as unknown as MockedModel;
         service = new QrCodeTagService(
             { logger: createLoggerMock() },
             tagModel as unknown as QrCodeTagModel,
@@ -82,7 +99,7 @@ describe('QrCodeTagService', () => {
             // Act
             const result = await service.create(operator, {
                 name: '  Verano 2026 ',
-                color: 'BLUE'
+                color: TagColorEnum.BLUE
             });
 
             // Assert
@@ -168,7 +185,7 @@ describe('QrCodeTagService', () => {
         });
 
         it('does not touch the slug on a colour-only edit', async () => {
-            const result = await service.update(operator, TAG_ID, { color: 'RED' });
+            const result = await service.update(operator, TAG_ID, { color: TagColorEnum.RED });
 
             expect(result.error).toBeUndefined();
             expect(tagModel.findLiveBySlug).not.toHaveBeenCalled();
