@@ -79,7 +79,7 @@ describe('HOS-2666 audit remainders', () => {
         const signIn = section.match(/<a[^>]*?className=([^>]*?)>\s*\{t\('nav\.signIn'\)\}/s);
         expect(signIn?.[1]?.trim()).toBe('{styles.authSignIn}');
         expect(css).toMatch(
-            /\.authSignIn\s*\{[^}]*composes: signInLink from '\.\/UserMenu\.module\.css';/
+            /\.authSignIn\s*\{[^}]*composes: signInLink from ["']\.\/UserMenu\.module\.css["'];/
         );
     });
 
