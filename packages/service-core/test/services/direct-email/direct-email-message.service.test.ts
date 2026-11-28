@@ -8,10 +8,9 @@ import {
     buildDirectEmailFromName,
     DirectEmailMessageService
 } from '../../../src/services/direct-email/direct-email-message.service.js';
-import { verifyDirectEmailOptOutToken } from '../../../src/services/direct-email/direct-email-token.helpers.js';
 import type { Actor } from '../../../src/types/index.js';
 
-const SECRET = 'a'.repeat(32);
+const KEY = '33333333-3333-4333-8333-333333333333';
 const BODY = {
     type: 'doc' as const,
     content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Hola' }] }]
@@ -44,7 +43,8 @@ const buildModels = (suppressed: string[] = []) => {
     const messageModel = {
         create: vi.fn(async (data: Record<string, unknown>) => ({ id: 'msg-1', ...data })),
         findPageWithRecipientCount: vi.fn(),
-        findMessageById: vi.fn()
+        findMessageById: vi.fn(),
+        findByIdempotencyKey: vi.fn(async (): Promise<Record<string, unknown> | null> => null)
     };
     const recipientModel = {
         create: vi.fn(async (data: Record<string, unknown>) => data),
@@ -65,6 +65,7 @@ const buildService = (input: {
     mailer?: DirectEmailMailerPort;
     suppressed?: string[];
     resolveFromEmail?: () => string;
+    now?: () => number;
 }) => {
     const models = buildModels(input.suppressed);
     const service = new DirectEmailMessageService(
@@ -72,7 +73,7 @@ const buildService = (input: {
         {
             ...(input.mailer ? { mailer: input.mailer } : {}),
             resolveFromEmail: input.resolveFromEmail ?? (() => 'contacto@comercial.hospeda.com.ar'),
-            hmacSecret: SECRET,
+            ...(input.now ? { now: input.now } : {}),
             siteUrl: 'https://hospeda.com.ar',
             messageModel: models.messageModel as never,
             recipientModel: models.recipientModel as never,
@@ -97,7 +98,8 @@ describe('DirectEmailMessageService.send', () => {
     const request = {
         subject: 'Propuesta',
         bodyJson: BODY,
-        recipients: ['a@example.com', 'b@example.com', 'c@example.com']
+        recipients: ['a@example.com', 'b@example.com', 'c@example.com'],
+        idempotencyKey: KEY
     };
 
     it('sends one message per recipient with From, Reply-To and a per-recipient opt-out link', async () => {
@@ -123,17 +125,27 @@ describe('DirectEmailMessageService.send', () => {
         expect(first.replyTo).toBe('laura@hospeda.com.ar');
         expect(first.isTest).toBe(false);
         const token = new URL(first.optOutUrl).searchParams.get('token') ?? '';
-        expect(verifyDirectEmailOptOutToken({ token, secret: SECRET }).email).toBe('a@example.com');
+        expect(token).toMatch(/^[A-Za-z0-9_-]{43}$/);
+        expect(first.optOutUrl).not.toContain('example.com');
+        expect(recipientModel.create).toHaveBeenCalledWith(
+            expect.objectContaining({ email: 'a@example.com', optOutToken: token }),
+            undefined
+        );
         expect(messageModel.create).toHaveBeenCalledWith(
             expect.objectContaining({
                 subject: 'Propuesta',
                 sentBy: SENDER.id,
                 fromEmail: 'contacto@comercial.hospeda.com.ar',
-                replyToEmail: 'laura@hospeda.com.ar'
+                replyToEmail: 'laura@hospeda.com.ar',
+                idempotencyKey: KEY
             }),
             undefined
         );
         expect(recipientModel.create).toHaveBeenCalledTimes(3);
+        const tokens = recipientModel.create.mock.calls.map(
+            (call) => (call[0] as { optOutToken: string }).optOutToken
+        );
+        expect(new Set(tokens).size).toBe(3);
     });
 
     it('keeps sending when one recipient fails and records the reason', async () => {
@@ -314,6 +326,155 @@ describe('DirectEmailMessageService.send', () => {
     });
 });
 
+describe('DirectEmailMessageService.send idempotency and batch deadline (HOS-2685)', () => {
+    const request = {
+        subject: 'Propuesta',
+        bodyJson: BODY,
+        recipients: ['a@example.com', 'b@example.com', 'c@example.com'],
+        idempotencyKey: KEY
+    };
+
+    it('replays the stored result and sends nothing when the key was already used', async () => {
+        // Arrange
+        const { mailer, sendFn } = buildMailer(async () => ({ success: true, messageId: 'ok' }));
+        const { service, messageModel, recipientModel } = buildService({ mailer });
+        messageModel.findByIdempotencyKey.mockResolvedValue({ id: 'msg-old', sentBy: SENDER.id });
+        recipientModel.findByMessageId.mockResolvedValue([
+            {
+                email: 'a@example.com',
+                status: 'delivered',
+                providerMessageId: '<a>',
+                errorMessage: null
+            },
+            {
+                email: 'b@example.com',
+                status: 'failed',
+                providerMessageId: null,
+                errorMessage: 'rejected'
+            },
+            {
+                email: 'c@example.com',
+                status: 'suppressed',
+                providerMessageId: null,
+                errorMessage: null
+            }
+        ]);
+
+        // Act
+        const result = await service.send(SENDER, request);
+
+        // Assert
+        expect(sendFn).not.toHaveBeenCalled();
+        expect(messageModel.create).not.toHaveBeenCalled();
+        expect(result.data).toEqual({
+            messageId: 'msg-old',
+            results: [
+                { email: 'a@example.com', status: 'sent', providerMessageId: '<a>', error: null },
+                {
+                    email: 'b@example.com',
+                    status: 'failed',
+                    providerMessageId: null,
+                    error: 'rejected'
+                },
+                {
+                    email: 'c@example.com',
+                    status: 'suppressed',
+                    providerMessageId: null,
+                    error: null
+                }
+            ]
+        });
+    });
+
+    it('refuses a key that another admin used', async () => {
+        const { mailer, sendFn } = buildMailer(async () => ({ success: true }));
+        const { service, messageModel } = buildService({ mailer });
+        messageModel.findByIdempotencyKey.mockResolvedValue({
+            id: 'msg-old',
+            sentBy: 'someone-else'
+        });
+
+        const result = await service.send(SENDER, request);
+
+        expect(result.error?.reason).toBe('DIRECT_EMAIL_IDEMPOTENCY_KEY_CONFLICT');
+        expect(sendFn).not.toHaveBeenCalled();
+    });
+
+    it('replays the winner when two sends with the same key race on the insert', async () => {
+        // Arrange
+        const { mailer, sendFn } = buildMailer(async () => ({ success: true }));
+        const { service, messageModel, recipientModel } = buildService({ mailer });
+        messageModel.findByIdempotencyKey
+            .mockResolvedValueOnce(null)
+            .mockResolvedValueOnce({ id: 'msg-winner', sentBy: SENDER.id });
+        messageModel.create.mockRejectedValueOnce(new Error('duplicate key value'));
+        recipientModel.findByMessageId.mockResolvedValue([]);
+
+        // Act
+        const result = await service.send(SENDER, request);
+
+        // Assert
+        expect(result.data?.messageId).toBe('msg-winner');
+        expect(sendFn).not.toHaveBeenCalled();
+    });
+
+    it('requires an idempotency key', async () => {
+        const { mailer } = buildMailer(async () => ({ success: true }));
+        const { service } = buildService({ mailer });
+        const { idempotencyKey: _key, ...withoutKey } = request;
+
+        const result = await service.send(SENDER, withoutKey as never);
+
+        expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
+    });
+
+    it('stops starting recipients after 75 seconds and reports the rest as failed with timeout', async () => {
+        // Arrange: the clock jumps past the deadline while the first recipient is being sent.
+        let clock = 0;
+        const { mailer, sendFn } = buildMailer(async () => {
+            clock += 80_000;
+            return { success: true, messageId: 'ok' };
+        });
+        const { service, recipientModel } = buildService({ mailer, now: () => clock });
+
+        // Act
+        const result = await service.send(SENDER, request);
+
+        // Assert
+        expect(sendFn).toHaveBeenCalledTimes(1);
+        expect(result.data?.results.map((r) => [r.status, r.error])).toEqual([
+            ['sent', null],
+            ['failed', 'timeout'],
+            ['failed', 'timeout']
+        ]);
+        expect(recipientModel.create).toHaveBeenCalledWith(
+            expect.objectContaining({
+                email: 'c@example.com',
+                status: 'failed',
+                errorMessage: 'timeout'
+            }),
+            undefined
+        );
+    });
+
+    it('still reports suppressed addresses as suppressed after the deadline', async () => {
+        let clock = 0;
+        const { mailer } = buildMailer(async () => {
+            clock += 80_000;
+            return { success: true, messageId: 'ok' };
+        });
+        const { service } = buildService({
+            mailer,
+            suppressed: ['b@example.com'],
+            now: () => clock
+        });
+
+        const result = await service.send(SENDER, request);
+
+        expect(result.data?.results.map((r) => r.status)).toEqual(['sent', 'suppressed', 'failed']);
+    });
+});
+
 describe('DirectEmailMessageService.testSend', () => {
     const body = { subject: 'Hola', bodyJson: BODY };
 
@@ -326,9 +487,14 @@ describe('DirectEmailMessageService.testSend', () => {
         const result = await service.testSend(SENDER, body);
 
         // Assert
-        expect(result.data).toEqual({ sentTo: 'laura@hospeda.com.ar' });
+        expect(result.data).toEqual({
+            sentTo: 'laura@hospeda.com.ar',
+            delivered: true,
+            providerError: null
+        });
         const input = sendFn.mock.calls[0]?.[0] as DirectEmailMailInput;
         expect(input.subject).toBe('[PRUEBA] Hola');
+        expect(new URL(input.optOutUrl).searchParams.get('token')).toBe('test');
         expect(input.isTest).toBe(true);
         expect(messageModel.create).not.toHaveBeenCalled();
         expect(recipientModel.create).not.toHaveBeenCalled();
@@ -360,7 +526,7 @@ describe('DirectEmailMessageService.testSend', () => {
         expect(sendFn).not.toHaveBeenCalled();
     });
 
-    it('surfaces a provider failure', async () => {
+    it('reports a provider failure with its text instead of throwing (a 502 would be masked)', async () => {
         // Arrange
         const { mailer } = buildMailer(async () => ({
             success: false,
@@ -372,8 +538,12 @@ describe('DirectEmailMessageService.testSend', () => {
         const result = await service.testSend(SENDER, body);
 
         // Assert
-        expect(result.error?.code).toBe(ServiceErrorCode.PROVIDER_ERROR);
-        expect(result.error?.message).toContain('sender not verified');
+        expect(result.error).toBeUndefined();
+        expect(result.data).toEqual({
+            sentTo: 'laura@hospeda.com.ar',
+            delivered: false,
+            providerError: 'sender not verified'
+        });
     });
 });
 
@@ -388,6 +558,11 @@ describe('DirectEmailMessageService reads and webhook', () => {
 
         // Assert
         expect(result.data).toEqual({ subject: 'Hola', html: '<html>preview</html>' });
+        expect(
+            new URL(
+                (vi.mocked(mailer.renderHtml).mock.calls[0]?.[0] as { optOutUrl: string }).optOutUrl
+            ).searchParams.get('token')
+        ).toBe('test');
         expect(mailer.renderHtml).toHaveBeenCalledWith(
             expect.objectContaining({ isTest: false, subject: 'Hola' })
         );
@@ -430,7 +605,9 @@ describe('DirectEmailMessageService reads and webhook', () => {
     it('getById returns the message with its recipients', async () => {
         const { service, messageModel, recipientModel } = buildService({});
         messageModel.findMessageById.mockResolvedValue({ id: 'm' });
-        recipientModel.findByMessageId.mockResolvedValue([{ email: 'a@example.com' }]);
+        recipientModel.findByMessageId.mockResolvedValue([
+            { email: 'a@example.com', optOutToken: 'secret-token' }
+        ]);
         const result = await service.getById(SENDER, {
             id: '22222222-2222-4222-8222-222222222222'
         });

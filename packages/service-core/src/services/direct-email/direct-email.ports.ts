@@ -14,7 +14,7 @@ export interface DirectEmailRenderInput {
     readonly subject: string;
     /** TipTap document. The mailer sanitises it. */
     readonly bodyJson: TiptapDocument;
-    /** Signed opt-out URL of the recipient. */
+    /** Opt-out URL of the recipient. */
     readonly optOutUrl: string;
     /** `true` adds the test banner. */
     readonly isTest: boolean;

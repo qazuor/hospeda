@@ -5,12 +5,13 @@
  * (HOS-2685). Addresses on it are never sent to again.
  *
  * - Admin: list (VIEW), add by hand and remove (SEND).
- * - Public opt-out: `previewOptOut` validates a footer-link token and returns the masked
- *   address without writing; `optOut` writes the suppression. Neither takes an actor.
+ * - Public opt-out: `previewOptOut` resolves a footer-link token to its recipient row and
+ *   returns the masked address without writing; `optOut` writes the suppression. Neither
+ *   takes an actor.
  * - System: `addFromHardBounce`, called by the Brevo webhook.
  */
 
-import { DirectEmailSuppressionModel } from '@repo/db';
+import { DirectEmailRecipientModel, DirectEmailSuppressionModel } from '@repo/db';
 import type { DirectEmailSuppression } from '@repo/schemas';
 import {
     CreateDirectEmailSuppressionSchema,
@@ -24,10 +25,17 @@ import type { Actor, ServiceConfig, ServiceContext, ServiceOutput } from '../../
 import { ServiceError } from '../../types/index.js';
 import { checkCanSendDirectEmail, checkCanViewDirectEmail } from './direct-email.permissions.js';
 import {
-    DirectEmailTokenError,
-    maskEmail,
-    verifyDirectEmailOptOutToken
+    DIRECT_EMAIL_NON_FUNCTIONAL_OPT_OUT_TOKEN,
+    maskEmail
 } from './direct-email-token.helpers.js';
+
+/** A token that matches no recipient row. */
+class DirectEmailInvalidTokenError extends Error {
+    constructor() {
+        super('Invalid direct email opt-out token');
+        this.name = 'DirectEmailInvalidTokenError';
+    }
+}
 
 const ListInputSchema = DirectEmailAdminSearchSchema.extend({
     reason: z.nativeEnum(DirectEmailSuppressionReasonEnum).optional()
@@ -37,12 +45,10 @@ const RemoveInputSchema = z.object({ id: z.string().uuid() });
 
 /** Constructor options of {@link DirectEmailSuppressionService}. */
 export interface DirectEmailSuppressionServiceOptions {
-    /** HMAC secret of the opt-out tokens (`HOSPEDA_NEWSLETTER_HMAC_SECRET`). */
-    readonly hmacSecret?: string;
-    /** Previous secret, accepted during a rotation. */
-    readonly hmacSecretPrev?: string;
     /** Model override, for tests. */
     readonly model?: DirectEmailSuppressionModel;
+    /** Recipient model override, for tests. */
+    readonly recipientModel?: DirectEmailRecipientModel;
 }
 
 /** Page of suppressions. */
@@ -56,7 +62,7 @@ export interface DirectEmailSuppressionPage {
  *
  * @example
  * ```ts
- * const svc = new DirectEmailSuppressionService({ logger }, { hmacSecret });
+ * const svc = new DirectEmailSuppressionService({ logger });
  * const result = await svc.optOut({ token });
  * ```
  */
@@ -65,14 +71,12 @@ export class DirectEmailSuppressionService extends BaseService {
     protected override readonly entityName = DirectEmailSuppressionService.ENTITY_NAME;
 
     private readonly model: DirectEmailSuppressionModel;
-    private readonly hmacSecret: string;
-    private readonly hmacSecretPrev: string | undefined;
+    private readonly recipientModel: DirectEmailRecipientModel;
 
     constructor(config: ServiceConfig, options: DirectEmailSuppressionServiceOptions = {}) {
         super(config, DirectEmailSuppressionService.ENTITY_NAME);
         this.model = options.model ?? new DirectEmailSuppressionModel();
-        this.hmacSecret = options.hmacSecret ?? '';
-        this.hmacSecretPrev = options.hmacSecretPrev;
+        this.recipientModel = options.recipientModel ?? new DirectEmailRecipientModel();
     }
 
     /**
@@ -140,7 +144,8 @@ export class DirectEmailSuppressionService extends BaseService {
     }
 
     /**
-     * Removes an address from the list. Requires `DIRECT_EMAIL_SEND`.
+     * Removes an address from the list. Requires `DIRECT_EMAIL_SEND`. Rows with reason
+     * `opt_out` are locked (409 `DIRECT_EMAIL_SUPPRESSION_OPT_OUT_LOCKED`).
      *
      * @param actor - The admin actor
      * @param input - The suppression id
@@ -160,6 +165,16 @@ export class DirectEmailSuppressionService extends BaseService {
             ctx,
             execute: async (validated) => {
                 checkCanSendDirectEmail(actor);
+                const existing = await this.model.findOne({ id: validated.id }, ctx?.tx);
+                if (existing?.reason === DirectEmailSuppressionReasonEnum.OPT_OUT) {
+                    // Owner decision: the person asked not to be written to; nobody lifts that.
+                    throw new ServiceError(
+                        ServiceErrorCode.ALREADY_EXISTS,
+                        'An opt-out suppression cannot be removed.',
+                        undefined,
+                        'DIRECT_EMAIL_SUPPRESSION_OPT_OUT_LOCKED'
+                    );
+                }
                 const deleted = await this.model.hardDelete({ id: validated.id }, ctx?.tx);
                 if (deleted === 0) {
                     throw new ServiceError(
@@ -185,7 +200,7 @@ export class DirectEmailSuppressionService extends BaseService {
         readonly token: string;
     }): Promise<ServiceOutput<{ maskedEmail: string }>> {
         try {
-            const { email } = this.verifyToken(input.token);
+            const { email } = await this.resolveToken(input.token);
             return { data: { maskedEmail: maskEmail(email) } };
         } catch (error) {
             return { error: this.toServiceError(error) };
@@ -203,7 +218,7 @@ export class DirectEmailSuppressionService extends BaseService {
         readonly token: string;
     }): Promise<ServiceOutput<{ maskedEmail: string }>> {
         try {
-            const { email } = this.verifyToken(input.token);
+            const { email } = await this.resolveToken(input.token);
             await this.model.insertIfAbsent({
                 email,
                 reason: DirectEmailSuppressionReasonEnum.OPT_OUT,
@@ -233,27 +248,23 @@ export class DirectEmailSuppressionService extends BaseService {
         return { created };
     }
 
-    /** Verifies a token with the configured secrets. */
-    private verifyToken(token: string): { readonly email: string } {
-        if (!this.hmacSecret) {
-            throw new ServiceError(
-                ServiceErrorCode.SERVICE_UNAVAILABLE,
-                'Direct email opt-out is not configured (HMAC secret missing)',
-                undefined,
-                'DIRECT_EMAIL_OPT_OUT_NOT_CONFIGURED'
-            );
+    /**
+     * Resolves a footer-link token to the address of its recipient row. The fixed test
+     * token and any unknown token are invalid.
+     */
+    private async resolveToken(token: string): Promise<{ readonly email: string }> {
+        if (!token || token === DIRECT_EMAIL_NON_FUNCTIONAL_OPT_OUT_TOKEN) {
+            throw new DirectEmailInvalidTokenError();
         }
-        return verifyDirectEmailOptOutToken({
-            token,
-            secret: this.hmacSecret,
-            ...(this.hmacSecretPrev ? { secretPrev: this.hmacSecretPrev } : {})
-        });
+        const recipient = await this.recipientModel.findByOptOutToken(token);
+        if (!recipient) throw new DirectEmailInvalidTokenError();
+        return { email: recipient.email.trim().toLowerCase() };
     }
 
     /** Maps a thrown value to a {@link ServiceError}. A bad token is a 400-class input error. */
     private toServiceError(error: unknown): ServiceError {
         if (error instanceof ServiceError) return error;
-        if (error instanceof DirectEmailTokenError) {
+        if (error instanceof DirectEmailInvalidTokenError) {
             return new ServiceError(
                 ServiceErrorCode.VALIDATION_ERROR,
                 'The opt-out link is not valid',

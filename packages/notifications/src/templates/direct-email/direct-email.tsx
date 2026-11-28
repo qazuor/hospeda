@@ -17,7 +17,7 @@ export interface DirectEmailProps {
      * user-supplied HTML directly.
      */
     bodyHtml: string;
-    /** Signed URL of the opt-out page for this recipient. */
+    /** URL of the opt-out page for this recipient. */
     optOutUrl: string;
     /** When true, shows the test banner at the top. */
     isTest?: boolean;

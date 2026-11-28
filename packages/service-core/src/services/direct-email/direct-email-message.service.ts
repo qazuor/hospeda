@@ -5,7 +5,8 @@
  * from the admin panel, and keeps their history (HOS-2685).
  *
  * Send is synchronous and sequential: one `mailer.send` per recipient, each recorded as
- * `sent`, `failed` or `suppressed`. A failure on one recipient never stops the others
+ * `sent`, `failed` or `suppressed`. It is idempotent per compose session (`idempotencyKey`)
+ * and stops starting sends once the batch deadline passes. A failure on one recipient never stops the others
  * (AC-2, AC-4). The mailer and the From resolution are injected, so tests send nothing.
  */
 
@@ -25,7 +26,6 @@ import type {
 import {
     CheckDirectEmailRecipientsRequestSchema,
     DirectEmailAdminSearchSchema,
-    DirectEmailRecipientStatusEnum,
     DirectEmailSuppressionReasonEnum,
     PreviewDirectEmailRequestSchema,
     SendDirectEmailRequestSchema,
@@ -39,24 +39,22 @@ import { ServiceError } from '../../types/index.js';
 import { checkCanSendDirectEmail, checkCanViewDirectEmail } from './direct-email.permissions.js';
 import type { DirectEmailMailerPort } from './direct-email.ports.js';
 import {
+    buildDirectEmailFromName,
+    findReplay,
+    recordRecipient,
+    sendRecipientsInOrder
+} from './direct-email-send.helpers.js';
+import {
     buildDirectEmailOptOutUrl,
-    generateDirectEmailOptOutToken
+    DIRECT_EMAIL_NON_FUNCTIONAL_OPT_OUT_TOKEN
 } from './direct-email-token.helpers.js';
+
+export { buildDirectEmailFromName } from './direct-email-send.helpers.js';
 
 const IdInputSchema = z.object({ id: z.string().uuid() });
 
 /** Subject prefix of a test send. */
 const TEST_SUBJECT_PREFIX = '[PRUEBA] ';
-
-/** Address the preview signs its sample opt-out link for. Never a real person. */
-const PREVIEW_SAMPLE_EMAIL = 'destinatario@ejemplo.com';
-
-/** Recipient row status written for each send result. */
-const RECIPIENT_STATUS_BY_RESULT = {
-    sent: DirectEmailRecipientStatusEnum.SENT,
-    failed: DirectEmailRecipientStatusEnum.FAILED,
-    suppressed: DirectEmailRecipientStatusEnum.SUPPRESSED
-} as const;
 
 /** Provider events the webhook maps onto a recipient row. */
 export type DirectEmailWebhookEvent = 'delivered' | 'opened' | 'hard_bounce' | 'soft_bounce';
@@ -70,8 +68,8 @@ export interface DirectEmailMessageServiceOptions {
      * else the current sender (`getEmailSender()`).
      */
     readonly resolveFromEmail?: () => string;
-    /** HMAC secret of the opt-out tokens (`HOSPEDA_NEWSLETTER_HMAC_SECRET`). */
-    readonly hmacSecret?: string;
+    /** Clock in epoch milliseconds. Tests inject it to drive the batch deadline. */
+    readonly now?: () => number;
     /** Web origin the opt-out page lives on. */
     readonly siteUrl?: string;
     readonly messageModel?: DirectEmailMessageModel;
@@ -86,23 +84,11 @@ export interface DirectEmailMessagePage {
 }
 
 /**
- * Display name of the sender: `<first name> de Hospeda`, or `Hospeda` when the admin has
- * no name on file.
- *
- * @param name - The actor's display name
- * @returns The From display name, before any environment marker
- */
-export function buildDirectEmailFromName(name: string | undefined): string {
-    const first = name?.trim().split(/\s+/)[0];
-    return first ? `${first} de Hospeda` : 'Hospeda';
-}
-
-/**
  * Sends and records direct emails.
  *
  * @example
  * ```ts
- * const svc = new DirectEmailMessageService({ logger }, { mailer, resolveFromEmail, hmacSecret, siteUrl });
+ * const svc = new DirectEmailMessageService({ logger }, { mailer, resolveFromEmail, siteUrl });
  * const result = await svc.send(actor, { subject, bodyJson, recipients });
  * ```
  */
@@ -112,7 +98,7 @@ export class DirectEmailMessageService extends BaseService {
 
     private readonly mailer: DirectEmailMailerPort | undefined;
     private readonly resolveFromEmail: () => string;
-    private readonly hmacSecret: string;
+    private readonly now: () => number;
     private readonly siteUrl: string;
     private readonly messageModel: DirectEmailMessageModel;
     private readonly recipientModel: DirectEmailRecipientModel;
@@ -122,7 +108,7 @@ export class DirectEmailMessageService extends BaseService {
         super(config, DirectEmailMessageService.ENTITY_NAME);
         this.mailer = options.mailer;
         this.resolveFromEmail = options.resolveFromEmail ?? (() => 'noreply@hospeda.com.ar');
-        this.hmacSecret = options.hmacSecret ?? '';
+        this.now = options.now ?? Date.now;
         this.siteUrl = options.siteUrl ?? 'https://hospeda.com.ar';
         this.messageModel = options.messageModel ?? new DirectEmailMessageModel();
         this.recipientModel = options.recipientModel ?? new DirectEmailRecipientModel();
@@ -131,10 +117,10 @@ export class DirectEmailMessageService extends BaseService {
 
     /** Returns the mailer or throws SERVICE_UNAVAILABLE. */
     private requireMailer(): DirectEmailMailerPort {
-        if (!this.mailer || !this.hmacSecret) {
+        if (!this.mailer) {
             throw new ServiceError(
                 ServiceErrorCode.SERVICE_UNAVAILABLE,
-                'Direct email delivery is not configured (mailer or HMAC secret missing).',
+                'Direct email delivery is not configured (mailer missing).',
                 undefined,
                 'DIRECT_EMAIL_NOT_CONFIGURED'
             );
@@ -156,9 +142,8 @@ export class DirectEmailMessageService extends BaseService {
         return email;
     }
 
-    /** Signed opt-out URL of one recipient. */
-    private optOutUrlFor(email: string): string {
-        const token = generateDirectEmailOptOutToken({ email, secret: this.hmacSecret });
+    /** Opt-out URL carrying `token`. */
+    private optOutUrlFor(token: string): string {
         return buildDirectEmailOptOutUrl({ siteUrl: this.siteUrl, token });
     }
 
@@ -187,7 +172,7 @@ export class DirectEmailMessageService extends BaseService {
                 const html = await mailer.renderHtml({
                     subject: validated.subject,
                     bodyJson: validated.bodyJson,
-                    optOutUrl: this.optOutUrlFor(PREVIEW_SAMPLE_EMAIL),
+                    optOutUrl: this.optOutUrlFor(DIRECT_EMAIL_NON_FUNCTIONAL_OPT_OUT_TOKEN),
                     isTest: false
                 });
                 return { subject: validated.subject, html };
@@ -228,14 +213,15 @@ export class DirectEmailMessageService extends BaseService {
 
     /**
      * Sends a test email to one address (default: the admin's own), subject prefixed
-     * `[PRUEBA]` and with the warning banner. Creates no history row. The suppression
+     * `[PRUEBA]` and with the warning banner. Creates no history row. Its opt-out link
+     * is non-functional. The suppression
      * list is ignored only for the admin's own address; any other suppressed address is
      * refused. Requires `DIRECT_EMAIL_SEND`.
      *
      * @param actor - The admin actor
      * @param input - Subject, body and optional destination
      * @param ctx - Optional service context
-     * @returns The address the test went to
+     * @returns The address the test went to, and whether the provider accepted it
      */
     public async testSend(
         actor: Actor,
@@ -270,21 +256,22 @@ export class DirectEmailMessageService extends BaseService {
                     to,
                     subject: `${TEST_SUBJECT_PREFIX}${validated.subject}`,
                     bodyJson: validated.bodyJson,
-                    optOutUrl: this.optOutUrlFor(to),
+                    optOutUrl: this.optOutUrlFor(DIRECT_EMAIL_NON_FUNCTIONAL_OPT_OUT_TOKEN),
                     isTest: true,
                     fromEmail: this.resolveFromEmail(),
                     fromName: buildDirectEmailFromName(actor.name),
                     replyTo: senderEmail
                 });
                 if (!outcome.success) {
-                    throw new ServiceError(
-                        ServiceErrorCode.PROVIDER_ERROR,
-                        `Test send failed: ${outcome.error ?? 'unknown provider error'}`,
-                        undefined,
-                        'DIRECT_EMAIL_TEST_SEND_FAILED'
-                    );
+                    // Not thrown: a 502 is masked by the API's 5xx rule and the admin would
+                    // never see the provider text (HOS-2685).
+                    return {
+                        sentTo: to,
+                        delivered: false,
+                        providerError: outcome.error ?? 'Unknown provider error'
+                    };
                 }
-                return { sentTo: to };
+                return { sentTo: to, delivered: true, providerError: null };
             }
         });
     }
@@ -315,6 +302,10 @@ export class DirectEmailMessageService extends BaseService {
                 checkCanSendDirectEmail(actor);
                 const mailer = this.requireMailer();
                 const replyTo = this.requireSenderEmail(actor);
+
+                const replayed = await this.replayFor(actor, validated.idempotencyKey, resolved.tx);
+                if (replayed) return replayed;
+
                 const fromEmail = this.resolveFromEmail();
                 const fromName = buildDirectEmailFromName(actor.name);
                 const suppressed = new Set(
@@ -323,123 +314,72 @@ export class DirectEmailMessageService extends BaseService {
                         resolved.tx
                     )
                 );
-                const message = await this.messageModel.create(
-                    {
-                        subject: validated.subject,
-                        bodyJson: validated.bodyJson,
-                        templateId: validated.templateId ?? null,
-                        sentBy: actor.id,
-                        fromEmail,
-                        replyToEmail: replyTo
-                    },
-                    resolved.tx
-                );
-
-                const results: SendDirectEmailResponse['results'] = [];
-                for (const email of validated.recipients) {
-                    const result = suppressed.has(email)
-                        ? this.suppressedResult(email)
-                        : await this.sendToOne({
-                              mailer,
-                              email,
-                              subject: validated.subject,
-                              bodyJson: validated.bodyJson,
-                              fromEmail,
-                              fromName,
-                              replyTo
-                          });
-                    results.push(result);
-                    await this.recordRecipient({ messageId: message.id, result, ctx: resolved });
+                const startedAt = this.now();
+                let message: { readonly id: string };
+                try {
+                    message = await this.messageModel.create(
+                        {
+                            subject: validated.subject,
+                            bodyJson: validated.bodyJson,
+                            templateId: validated.templateId ?? null,
+                            sentBy: actor.id,
+                            fromEmail,
+                            replyToEmail: replyTo,
+                            idempotencyKey: validated.idempotencyKey
+                        },
+                        resolved.tx
+                    );
+                } catch (error) {
+                    // Two requests with the same key raced: the loser replays the winner.
+                    const raced = await this.replayFor(
+                        actor,
+                        validated.idempotencyKey,
+                        resolved.tx
+                    );
+                    if (raced) return raced;
+                    throw error;
                 }
+
+                const results = await sendRecipientsInOrder({
+                    recipients: validated.recipients,
+                    suppressed,
+                    mailer,
+                    subject: validated.subject,
+                    bodyJson: validated.bodyJson,
+                    fromEmail,
+                    fromName,
+                    replyTo,
+                    optOutUrlFor: (token) => this.optOutUrlFor(token),
+                    now: this.now,
+                    startedAt,
+                    record: ({ result, optOutToken }) =>
+                        recordRecipient({
+                            recipientModel: this.recipientModel,
+                            logger: this.logger,
+                            messageId: message.id,
+                            result,
+                            optOutToken,
+                            tx: resolved.tx
+                        })
+                });
                 return { messageId: message.id, results };
             }
         });
     }
 
-    /** Result of a skipped, suppressed recipient. */
-    private suppressedResult(email: string): SendDirectEmailResponse['results'][number] {
-        return { email, status: 'suppressed', providerMessageId: null, error: null };
-    }
-
-    /** Sends to one recipient; a throwing mailer counts as a failed send. */
-    private async sendToOne(input: {
-        readonly mailer: DirectEmailMailerPort;
-        readonly email: string;
-        readonly subject: string;
-        readonly bodyJson: z.infer<typeof SendDirectEmailRequestSchema>['bodyJson'];
-        readonly fromEmail: string;
-        readonly fromName: string;
-        readonly replyTo: string;
-    }): Promise<SendDirectEmailResponse['results'][number]> {
-        const { mailer, email } = input;
-        try {
-            const outcome = await mailer.send({
-                to: email,
-                subject: input.subject,
-                bodyJson: input.bodyJson,
-                optOutUrl: this.optOutUrlFor(email),
-                isTest: false,
-                fromEmail: input.fromEmail,
-                fromName: input.fromName,
-                replyTo: input.replyTo
-            });
-            if (outcome.success) {
-                return {
-                    email,
-                    status: 'sent',
-                    providerMessageId: outcome.messageId ?? null,
-                    error: null
-                };
-            }
-            return {
-                email,
-                status: 'failed',
-                providerMessageId: null,
-                error: outcome.error ?? 'Unknown provider error'
-            };
-        } catch (error) {
-            return {
-                email,
-                status: 'failed',
-                providerMessageId: null,
-                error: error instanceof Error ? error.message : String(error)
-            };
-        }
-    }
-
-    /**
-     * Writes the recipient row. A failed write is logged, never thrown: the mail already
-     * left (or was skipped) and the remaining recipients must still be processed.
-     */
-    private async recordRecipient(input: {
-        readonly messageId: string;
-        readonly result: SendDirectEmailResponse['results'][number];
-        readonly ctx: ServiceContext;
-    }): Promise<void> {
-        const { messageId, result, ctx } = input;
-        const sent = result.status === 'sent';
-        try {
-            await this.recipientModel.create(
-                {
-                    messageId,
-                    email: result.email,
-                    status: RECIPIENT_STATUS_BY_RESULT[result.status],
-                    providerMessageId: result.providerMessageId,
-                    errorMessage: result.error,
-                    sentAt: sent ? new Date() : null,
-                    deliveredAt: null,
-                    openedAt: null,
-                    bouncedAt: null
-                },
-                ctx.tx
-            );
-        } catch (error) {
-            this.logger.error(
-                `Failed to record direct email recipient (message ${messageId}, status ${result.status}): ${
-                    error instanceof Error ? error.message : String(error)
-                }`
-            );
-        }
+    /** The stored result of a send already made with this key, or `null` for a new key. */
+    private replayFor(
+        actor: Actor,
+        idempotencyKey: string,
+        tx: ServiceContext['tx']
+    ): Promise<SendDirectEmailResponse | null> {
+        return findReplay({
+            messageModel: this.messageModel,
+            recipientModel: this.recipientModel,
+            idempotencyKey,
+            actorId: actor.id,
+            tx
+        });
     }
 
     /**
@@ -507,7 +447,11 @@ export class DirectEmailMessageService extends BaseService {
                     validated.id,
                     resolved.tx
                 );
-                return { ...message, recipients };
+                // The opt-out token is a credential of the recipient's link: never returned.
+                return {
+                    ...message,
+                    recipients: recipients.map(({ optOutToken: _omit, ...rest }) => rest)
+                };
             }
         });
     }

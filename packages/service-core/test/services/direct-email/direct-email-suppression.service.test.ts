@@ -1,11 +1,7 @@
 import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import { describe, expect, it, vi } from 'vitest';
 import { DirectEmailSuppressionService } from '../../../src/services/direct-email/direct-email-suppression.service.js';
-import { generateDirectEmailOptOutToken } from '../../../src/services/direct-email/direct-email-token.helpers.js';
-import { generateUnsubscribeToken } from '../../../src/services/newsletter/newsletter-token.helpers.js';
 import type { Actor } from '../../../src/types/index.js';
-
-const SECRET = 'a'.repeat(32);
 
 const buildActor = (permissions: PermissionEnum[]): Actor => ({
     id: '11111111-1111-4111-8111-111111111111',
@@ -13,38 +9,47 @@ const buildActor = (permissions: PermissionEnum[]): Actor => ({
     permissions
 });
 
-const buildService = (hmacSecret = SECRET) => {
+const TOKEN = 'k3j2h4g5f6d7s8a9p0o1i2u3y4t5r6e7w8q9z0x1c2v';
+
+const buildService = (recipients: Record<string, string> = { [TOKEN]: 'Juan@Example.com' }) => {
     const model = {
         findPage: vi.fn(async () => ({ items: [], total: 0 })),
         insertIfAbsent: vi.fn(async () => ({ suppression: { id: 's' }, created: true })),
+        findOne: vi.fn(async (): Promise<Record<string, unknown> | null> => null),
         hardDelete: vi.fn(async () => 1),
         findSuppressedEmails: vi.fn()
     };
-    const service = new DirectEmailSuppressionService({}, { hmacSecret, model: model as never });
-    return { service, model };
+    const recipientModel = {
+        findByOptOutToken: vi.fn(async (token: string) =>
+            recipients[token] ? { email: recipients[token], optOutToken: token } : null
+        )
+    };
+    const service = new DirectEmailSuppressionService(
+        {},
+        { model: model as never, recipientModel: recipientModel as never }
+    );
+    return { service, model, recipientModel };
 };
 
 describe('DirectEmailSuppressionService opt-out', () => {
-    it('preview validates the token and returns the masked address without writing (AC-5)', async () => {
+    it('preview resolves the token and returns the masked address without writing (AC-5)', async () => {
         // Arrange
         const { service, model } = buildService();
-        const token = generateDirectEmailOptOutToken({ email: 'juan@example.com', secret: SECRET });
 
         // Act
-        const result = await service.previewOptOut({ token });
+        const result = await service.previewOptOut({ token: TOKEN });
 
         // Assert
         expect(result.data).toEqual({ maskedEmail: 'j***@example.com' });
         expect(model.insertIfAbsent).not.toHaveBeenCalled();
     });
 
-    it('optOut writes the suppression with reason opt_out and no admin', async () => {
+    it('optOut suppresses the lowercased address of the token with reason opt_out and no admin', async () => {
         // Arrange
         const { service, model } = buildService();
-        const token = generateDirectEmailOptOutToken({ email: 'Juan@Example.com', secret: SECRET });
 
         // Act
-        const result = await service.optOut({ token });
+        const result = await service.optOut({ token: TOKEN });
 
         // Assert
         expect(result.data).toEqual({ maskedEmail: 'j***@example.com' });
@@ -58,43 +63,38 @@ describe('DirectEmailSuppressionService opt-out', () => {
     it('optOut is idempotent: a second visit succeeds too', async () => {
         const { service, model } = buildService();
         model.insertIfAbsent.mockResolvedValue({ suppression: { id: 's' }, created: false });
-        const token = generateDirectEmailOptOutToken({ email: 'a@b.com', secret: SECRET });
-        const first = await service.optOut({ token });
-        const second = await service.optOut({ token });
+        const first = await service.optOut({ token: TOKEN });
+        const second = await service.optOut({ token: TOKEN });
         expect(first.error).toBeUndefined();
         expect(second.error).toBeUndefined();
     });
 
-    it('rejects a forged token with a 400-class reason and writes nothing', async () => {
-        // Arrange
+    it('rejects an unknown token with a 400-class reason and writes nothing', async () => {
         const { service, model } = buildService();
-        const token = generateDirectEmailOptOutToken({ email: 'a@b.com', secret: 'b'.repeat(32) });
 
-        // Act
-        const result = await service.optOut({ token });
+        const result = await service.optOut({ token: 'x'.repeat(43) });
 
-        // Assert
         expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
         expect(result.error?.reason).toBe('DIRECT_EMAIL_TOKEN_INVALID');
         expect(model.insertIfAbsent).not.toHaveBeenCalled();
     });
 
-    it('rejects a newsletter unsubscribe token', async () => {
-        const { service, model } = buildService();
-        const token = generateUnsubscribeToken({
-            subscriberId: '11111111-1111-1111-1111-111111111111',
-            channel: 'email',
-            secret: SECRET
-        });
-        const result = await service.optOut({ token });
-        expect(result.error?.reason).toBe('DIRECT_EMAIL_TOKEN_INVALID');
+    it('rejects the fixed test-send token even if a row somehow carried it', async () => {
+        const { service, model, recipientModel } = buildService({ test: 'a@b.com' });
+
+        const preview = await service.previewOptOut({ token: 'test' });
+        const optOut = await service.optOut({ token: 'test' });
+
+        expect(preview.error?.reason).toBe('DIRECT_EMAIL_TOKEN_INVALID');
+        expect(optOut.error?.reason).toBe('DIRECT_EMAIL_TOKEN_INVALID');
+        expect(recipientModel.findByOptOutToken).not.toHaveBeenCalled();
         expect(model.insertIfAbsent).not.toHaveBeenCalled();
     });
 
-    it('answers SERVICE_UNAVAILABLE without an HMAC secret', async () => {
-        const { service } = buildService('');
-        const result = await service.previewOptOut({ token: 'a.b' });
-        expect(result.error?.code).toBe(ServiceErrorCode.SERVICE_UNAVAILABLE);
+    it('rejects an empty token', async () => {
+        const { service } = buildService();
+        const result = await service.previewOptOut({ token: '' });
+        expect(result.error?.reason).toBe('DIRECT_EMAIL_TOKEN_INVALID');
     });
 });
 
@@ -154,5 +154,31 @@ describe('DirectEmailSuppressionService admin operations', () => {
             reason: 'hard_bounce',
             createdBy: null
         });
+    });
+});
+
+describe('DirectEmailSuppressionService.remove opt-out lock', () => {
+    const actor = buildActor([PermissionEnum.DIRECT_EMAIL_SEND]);
+    const input = { id: '22222222-2222-4222-8222-222222222222' };
+
+    it('refuses to delete an opt_out row with 409 and the locked reason', async () => {
+        const { service, model } = buildService();
+        model.findOne.mockResolvedValue({ id: input.id, reason: 'opt_out' });
+
+        const result = await service.remove(actor, input);
+
+        expect(result.error?.code).toBe(ServiceErrorCode.ALREADY_EXISTS);
+        expect(result.error?.reason).toBe('DIRECT_EMAIL_SUPPRESSION_OPT_OUT_LOCKED');
+        expect(model.hardDelete).not.toHaveBeenCalled();
+    });
+
+    it.each(['manual', 'hard_bounce'])('deletes a %s row', async (reason) => {
+        const { service, model } = buildService();
+        model.findOne.mockResolvedValue({ id: input.id, reason });
+
+        const result = await service.remove(actor, input);
+
+        expect(result.data).toEqual({ id: input.id });
+        expect(model.hardDelete).toHaveBeenCalledTimes(1);
     });
 });
