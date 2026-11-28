@@ -1,15 +1,17 @@
 /**
  * @file listing-qr-page.test.ts
  * @description HOS-2688: the QR-page path per vertical, and the per-listing
- * claim that keeps the first-publish notice to one showing.
+ * record that keeps the first-publish notice to one showing.
  */
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+    announceListingQrPageOnce,
     buildListingQrPagePath,
-    claimListingQrNotice,
     LISTING_QR_NOTICE_MAX_IDS,
     LISTING_QR_NOTICE_STORAGE_KEY,
-    type NoticeStorage
+    markListingQrNoticeShown,
+    type NoticeStorage,
+    wasListingQrNoticeShown
 } from '@/lib/listing/listing-qr-page';
 
 /** An in-memory storage; `failWrites` makes `setItem` throw like a full quota. */
@@ -41,39 +43,78 @@ describe('buildListingQrPagePath', () => {
     });
 });
 
-describe('claimListingQrNotice', () => {
-    it('answers true once per listing, then false', () => {
-        const { storage } = memoryStorage();
+const NOTICE = {
+    message: 'Tu QR está listo',
+    actionLabel: 'Ver',
+    href: '/es/mi-cuenta/x/codigo-qr/'
+};
+const PENDING_TOAST_KEY = 'hospeda.pendingToast';
 
-        expect(claimListingQrNotice({ listingId: 'a', storage })).toBe(true);
-        expect(claimListingQrNotice({ listingId: 'a', storage })).toBe(false);
-        expect(claimListingQrNotice({ listingId: 'b', storage })).toBe(true);
+describe('announceListingQrPageOnce', () => {
+    beforeEach(() => {
+        window.sessionStorage.clear();
+        vi.restoreAllMocks();
     });
 
-    it('records the claimed ids under its own key', () => {
+    it('queues the toast once per listing, then never again', () => {
+        const { storage } = memoryStorage();
+
+        expect(announceListingQrPageOnce({ listingId: 'a', notice: NOTICE, storage })).toBe(true);
+        expect(
+            JSON.parse(window.sessionStorage.getItem(PENDING_TOAST_KEY) ?? 'null')
+        ).toMatchObject({
+            type: 'success',
+            message: NOTICE.message,
+            action: { label: NOTICE.actionLabel, href: NOTICE.href }
+        });
+        window.sessionStorage.clear();
+
+        expect(announceListingQrPageOnce({ listingId: 'a', notice: NOTICE, storage })).toBe(false);
+        expect(window.sessionStorage.getItem(PENDING_TOAST_KEY)).toBeNull();
+        expect(announceListingQrPageOnce({ listingId: 'b', notice: NOTICE, storage })).toBe(true);
+    });
+
+    it('does NOT spend the claim when the toast could not be queued', () => {
         const { storage, data } = memoryStorage();
-        claimListingQrNotice({ listingId: 'a', storage });
-        claimListingQrNotice({ listingId: 'b', storage });
+        vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+            throw new Error('QuotaExceededError');
+        });
+
+        expect(announceListingQrPageOnce({ listingId: 'a', notice: NOTICE, storage })).toBe(false);
+        expect(data.has(LISTING_QR_NOTICE_STORAGE_KEY)).toBe(false);
+
+        vi.restoreAllMocks();
+        expect(announceListingQrPageOnce({ listingId: 'a', notice: NOTICE, storage })).toBe(true);
+    });
+});
+
+describe('the once-per-listing record', () => {
+    it('records the shown ids under its own key', () => {
+        const { storage, data } = memoryStorage();
+        markListingQrNoticeShown({ listingId: 'a', storage });
+        markListingQrNoticeShown({ listingId: 'b', storage });
+        markListingQrNoticeShown({ listingId: 'a', storage });
 
         expect(JSON.parse(data.get(LISTING_QR_NOTICE_STORAGE_KEY) ?? '')).toEqual(['a', 'b']);
+        expect(wasListingQrNoticeShown({ listingId: 'a', storage })).toBe(true);
+        expect(wasListingQrNoticeShown({ listingId: 'c', storage })).toBe(false);
     });
 
     it('treats a corrupt or foreign record as empty instead of throwing', () => {
-        const { storage } = memoryStorage({
-            [LISTING_QR_NOTICE_STORAGE_KEY]: '{not json'
-        });
-        expect(claimListingQrNotice({ listingId: 'a', storage })).toBe(true);
+        const { storage } = memoryStorage({ [LISTING_QR_NOTICE_STORAGE_KEY]: '{not json' });
+        expect(wasListingQrNoticeShown({ listingId: 'a', storage })).toBe(false);
 
         const { storage: objectRecord } = memoryStorage({
             [LISTING_QR_NOTICE_STORAGE_KEY]: '{"a":true}'
         });
-        expect(claimListingQrNotice({ listingId: 'a', storage: objectRecord })).toBe(true);
+        expect(wasListingQrNoticeShown({ listingId: 'a', storage: objectRecord })).toBe(false);
     });
 
-    it('still shows the notice when storage is missing or refuses writes', () => {
-        expect(claimListingQrNotice({ listingId: 'a', storage: null })).toBe(true);
+    it('never throws when storage is missing or refuses writes', () => {
+        expect(wasListingQrNoticeShown({ listingId: 'a', storage: null })).toBe(false);
+        expect(() => markListingQrNoticeShown({ listingId: 'a', storage: null })).not.toThrow();
         const { storage } = memoryStorage({}, true);
-        expect(claimListingQrNotice({ listingId: 'a', storage })).toBe(true);
+        expect(() => markListingQrNoticeShown({ listingId: 'a', storage })).not.toThrow();
     });
 
     it('caps the record, dropping the oldest ids first', () => {
@@ -82,7 +123,7 @@ describe('claimListingQrNotice', () => {
             [LISTING_QR_NOTICE_STORAGE_KEY]: JSON.stringify(ids)
         });
 
-        claimListingQrNotice({ listingId: 'new', storage });
+        markListingQrNoticeShown({ listingId: 'new', storage });
 
         const kept = JSON.parse(data.get(LISTING_QR_NOTICE_STORAGE_KEY) ?? '[]') as string[];
         expect(kept).toHaveLength(LISTING_QR_NOTICE_MAX_IDS);

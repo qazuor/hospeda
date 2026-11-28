@@ -29,6 +29,7 @@ import {
 import { accommodationEditApi } from '@/lib/api/endpoints-protected';
 import { createTranslations, type SupportedLocale } from '@/lib/i18n';
 import { buildSubscribeToPublishCopy } from '@/lib/listing/listing-notices';
+import { announceListingQrPageOnce, buildListingQrPagePath } from '@/lib/listing/listing-qr-page';
 import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 import { buildUrl } from '@/lib/urls';
 import styles from './PublishReadyDialog.module.css';
@@ -84,6 +85,22 @@ export function PublishReadyDialog({
         const result = await accommodationEditApi.publish({ id: accommodationId });
 
         if (result.ok) {
+            // HOS-2688: the first publish announces the listing's printable QR,
+            // once per listing, on the page the redirect lands on.
+            announceListingQrPageOnce({
+                listingId: accommodationId,
+                notice: {
+                    message: t('listing.owner.qrPage.noticeMessage'),
+                    actionLabel: t('listing.owner.qrPage.noticeAction'),
+                    href: buildUrl({
+                        locale,
+                        path: buildListingQrPagePath({
+                            vertical: 'accommodation',
+                            listingId: accommodationId
+                        })
+                    })
+                }
+            });
             // Straight to the listing hub rather than a reload: the owner just
             // finished the job this editor exists for, and leaving them on a
             // section form implies there is more to do.

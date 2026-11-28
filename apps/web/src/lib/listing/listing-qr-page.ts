@@ -23,12 +23,14 @@
  * - the publish island reloads the page on success, so the notice travels as
  *   a toast queued for the next page (`queueToastForNextPage`, sessionStorage);
  * - "once per listing" is a per-browser record of the listings already
- *   announced ({@link claimListingQrNotice}, localStorage). It is a
+ *   announced ({@link announceListingQrPageOnce}, localStorage). It is a
  *   convenience, not an audit trail: storage that throws or is cleared only
  *   means the notice may show again, never that publishing fails.
  *
  * @module lib/listing/listing-qr-page
  */
+
+import { queueToastForNextPage } from '@/store/toast-store';
 
 /** The three verticals whose listings print a QR sheet. */
 export type ListingQrVertical = 'accommodation' | 'venue' | 'experience';
@@ -96,34 +98,80 @@ function readShownIds(storage: NoticeStorage): readonly string[] {
     }
 }
 
+/** The already-translated notice a first publish queues. */
+export interface ListingQrNotice {
+    readonly message: string;
+    readonly actionLabel: string;
+    readonly href: string;
+}
+
 /**
- * Claims the listing's one-time QR notice.
- *
- * Returns `true` exactly once per listing (per browser) and records the claim;
- * every later call for the same listing returns `false`. Without usable storage
- * it returns `true` and records nothing — showing a notice twice is a smaller
- * failure than never showing it.
+ * Whether this browser already showed the listing's QR notice.
  *
  * @param input - Input parameters.
- * @param input.listingId - The listing that was just published.
- * @param input.storage - Storage to record in. Defaults to `window.localStorage`.
- * @returns Whether the notice should be shown now.
+ * @param input.listingId - The listing.
+ * @param input.storage - Storage to read. Defaults to `window.localStorage`.
+ * @returns `true` once the notice was recorded; `false` without usable storage.
  */
-export function claimListingQrNotice(input: {
+export function wasListingQrNoticeShown(input: {
     readonly listingId: string;
     readonly storage?: NoticeStorage | null;
 }): boolean {
     const storage = input.storage === undefined ? defaultStorage() : input.storage;
-    if (!storage) return true;
+    return storage ? readShownIds(storage).includes(input.listingId) : false;
+}
 
+/**
+ * Records that the listing's QR notice was shown. Oldest ids fall off past
+ * {@link LISTING_QR_NOTICE_MAX_IDS}; a storage that refuses the write is ignored
+ * (the notice may then show again, which is the smaller failure).
+ *
+ * @param input - Input parameters.
+ * @param input.listingId - The listing.
+ * @param input.storage - Storage to record in. Defaults to `window.localStorage`.
+ */
+export function markListingQrNoticeShown(input: {
+    readonly listingId: string;
+    readonly storage?: NoticeStorage | null;
+}): void {
+    const storage = input.storage === undefined ? defaultStorage() : input.storage;
+    if (!storage) return;
     const shown = readShownIds(storage);
-    if (shown.includes(input.listingId)) return false;
-
+    if (shown.includes(input.listingId)) return;
     const next = [...shown, input.listingId].slice(-LISTING_QR_NOTICE_MAX_IDS);
     try {
         storage.setItem(LISTING_QR_NOTICE_STORAGE_KEY, JSON.stringify(next));
     } catch {
-        // Quota or private mode: the notice still shows, it just may show again.
+        // Quota or private mode: the notice may show again.
     }
-    return true;
+}
+
+/**
+ * Queues the listing's one-time QR notice for the next page, once per listing.
+ *
+ * Order matters: the toast is queued FIRST and the listing is recorded only if
+ * that worked, so a sessionStorage failure (private mode, quota) never spends
+ * the one showing on a toast nobody sees.
+ *
+ * @param input - Input parameters.
+ * @param input.listingId - The listing that was just published.
+ * @param input.notice - The translated message, action label and QR-page href.
+ * @param input.storage - Storage for the once-per-listing record. Defaults to
+ *   `window.localStorage`.
+ * @returns Whether a toast was queued.
+ */
+export function announceListingQrPageOnce(input: {
+    readonly listingId: string;
+    readonly notice: ListingQrNotice;
+    readonly storage?: NoticeStorage | null;
+}): boolean {
+    const { listingId, notice, storage } = input;
+    if (wasListingQrNoticeShown({ listingId, storage })) return false;
+    const queued = queueToastForNextPage({
+        type: 'success',
+        message: notice.message,
+        action: { label: notice.actionLabel, href: notice.href }
+    });
+    if (queued) markListingQrNoticeShown({ listingId, storage });
+    return queued;
 }

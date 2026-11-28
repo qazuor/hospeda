@@ -123,4 +123,25 @@ describe('PublishButton — HOS-2688 one-time QR notice', () => {
         expect(pendingToast()).toBeNull();
         expect(window.localStorage.getItem(LISTING_QR_NOTICE_STORAGE_KEY)).toBeNull();
     });
+
+    it('keeps the once-per-listing claim when the toast cannot be queued', async () => {
+        const realSetItem = Storage.prototype.setItem;
+        vi.spyOn(Storage.prototype, 'setItem').mockImplementation(function (
+            this: Storage,
+            key: string,
+            value: string
+        ) {
+            if (this === window.sessionStorage) throw new Error('QuotaExceededError');
+            realSetItem.call(this, key, value);
+        });
+
+        await publish({ qrNotice: QR_NOTICE });
+
+        expect(pendingToast()).toBeNull();
+        expect(window.localStorage.getItem(LISTING_QR_NOTICE_STORAGE_KEY)).toBeNull();
+
+        vi.restoreAllMocks();
+        await publish({ qrNotice: QR_NOTICE });
+        expect(pendingToast()).toMatchObject({ message: QR_NOTICE.message });
+    });
 });

@@ -400,6 +400,10 @@ const PENDING_TOAST_STORAGE_KEY = 'hospeda.pendingToast';
  * the user can see the toast.
  *
  * Drained automatically by `ToastViewport` via {@link drainPendingToast}.
+ *
+ * @returns Whether the toast was stored. `false` when sessionStorage is
+ *   absent or refuses the write, so a caller can avoid spending a one-time
+ *   record on a toast that will never show.
  */
 export function queueToastForNextPage(params: {
     readonly type: ToastType;
@@ -407,14 +411,16 @@ export function queueToastForNextPage(params: {
     readonly duration?: number;
     readonly action?: ToastAction;
     readonly secondaryAction?: ToastAction;
-}): void {
+}): boolean {
     if (typeof sessionStorage === 'undefined') {
-        return;
+        return false;
     }
     try {
         sessionStorage.setItem(PENDING_TOAST_STORAGE_KEY, JSON.stringify(params));
+        return true;
     } catch {
         // sessionStorage may throw in private mode or when full — fail silently.
+        return false;
     }
 }
 
