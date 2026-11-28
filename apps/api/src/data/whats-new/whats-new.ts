@@ -152,6 +152,42 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4859, #4861
+    {
+        id: '2026-11-28-qr-codes-tags-utm-campaigns',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['ADMIN', 'SUPER_ADMIN'],
+        title: {
+            es: 'Los códigos QR se ordenan con etiquetas, filtros y campañas',
+            en: 'QR codes now come with tags, filters and campaigns',
+            pt: 'Os códigos QR agora têm etiquetas, filtros e campanhas'
+        },
+        body: {
+            es: 'En **Códigos QR** ves el destino completo y lo copiás con un clic. En los códigos manuales editás los UTM desde la misma fila, sin tocar el resto del destino. Podés filtrar por origen, tipo de ficha, uso, estado, campaña y etiquetas, y crear tus propias etiquetas. El panel **Campañas** muestra cuántos códigos tiene cada `utm_campaign` y abre Umami ya filtrado por esa campaña.',
+            en: 'In **QR codes** you see the full destination and copy it with one click. On manual codes you edit the UTM parameters right in the row, without touching the rest of the destination. You can filter by origin, listing type, use, status, campaign and tags, and create your own tags. The **Campaigns** panel shows how many codes each `utm_campaign` has and opens Umami already filtered by that campaign.',
+            pt: 'Em **Códigos QR** você vê o destino completo e o copia com um clique. Nos códigos manuais você edita os UTM na própria linha, sem mexer no resto do destino. Dá para filtrar por origem, tipo de anúncio, uso, status, campanha e etiquetas, e criar suas próprias etiquetas. O painel **Campanhas** mostra quantos códigos cada `utm_campaign` tem e abre o Umami já filtrado por essa campanha.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4847
+    {
+        id: '2026-11-27-qr-real-hospeda-isotipo',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['ADMIN', 'SUPER_ADMIN'],
+        title: {
+            es: 'El logo de Hospeda en el centro de los QR es el real',
+            en: 'The Hospeda logo in the centre of QR codes is now the real one',
+            pt: 'O logo da Hospeda no centro dos QR agora é o verdadeiro'
+        },
+        body: {
+            es: 'Al elegir **Logo de Hospeda** como logo central, el código lleva el isotipo de la marca con sus colores, en SVG y en PNG, y sigue escaneando igual. Los QR ya impresos no cambian; una descarga nueva sale con el logo nuevo.',
+            en: 'When you pick **Hospeda logo** as the centre logo, the code carries the brand isotype in its colours, in SVG and PNG, and still scans the same. Codes already printed do not change; a new download comes out with the new logo.',
+            pt: 'Ao escolher **Logo da Hospeda** como logo central, o código leva o isotipo da marca com suas cores, em SVG e PNG, e continua escaneando igual. Os QR já impressos não mudam; um novo download sai com o logo novo.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4851
     {
         id: '2026-11-28-retry-recurring-addon-purchase',
