@@ -1,4 +1,4 @@
-import { readUtmParams, rewriteUtmParams, UTM_PARAM_KEYS, type UtmParamKey } from '@repo/analytics';
+import { applyUtmEdit, toUtmEditDraft, UTM_PARAM_KEYS, type UtmEditDraft } from '@repo/analytics';
 import { EditIcon } from '@repo/icons';
 import { type QrCodeAdminListItem, QrCodeSourceEnum } from '@repo/schemas';
 import { useState } from 'react';
@@ -19,8 +19,13 @@ import { useTranslations } from '@/hooks/use-translations';
  * here can change them, so the cell is read-only.
  *
  * A MANUAL code adds an editor over the UTMs written into its own `targetUrl`.
- * Saving rewrites ONLY those five params ({@link rewriteUtmParams} keeps every
+ * Saving patches ONLY the params the operator changed (`applyUtmEdit` keeps every
  * other byte of the URL) and PATCHes `targetUrl` through the regular update.
+ *
+ * When the stored URL has no UTM but the scan lands with automatic ones, the
+ * editor opens with THOSE values and says so: writing a single UTM switches the
+ * redirect's decoration off, so the first save writes the full set explicitly
+ * (HOS-2679 I1, see `@repo/analytics` `utm-edit`).
  */
 
 /** Props for {@link QrCodeUtmCell}. */
@@ -30,48 +35,6 @@ export type QrCodeUtmCellProps = {
     /** Whether the viewer may edit (QR_CODE_UPDATE). */
     readonly canEdit: boolean;
 };
-
-/** Editable values, one string per UTM key ('' = absent). */
-type UtmDraft = Record<UtmParamKey, string>;
-
-/**
- * Builds the editor's starting values from the stored URL.
- *
- * @param input.url - The stored `targetUrl`.
- * @returns One string per key; absent keys become `''`.
- */
-export function toUtmDraft(input: { readonly url: string }): UtmDraft {
-    const values = readUtmParams({ url: input.url });
-    const draft = {} as UtmDraft;
-    for (const key of UTM_PARAM_KEYS) {
-        draft[key] = values[key] ?? '';
-    }
-    return draft;
-}
-
-/**
- * The new `targetUrl` for an edited draft, or `null` when nothing would change.
- *
- * A blank field REMOVES its key, so clearing every field strips the UTMs and
- * leaves the rest of the URL untouched.
- *
- * @param input.url - The stored `targetUrl`.
- * @param input.draft - The editor's values.
- * @returns The rewritten URL, or `null` for a no-op.
- */
-export function buildUtmTargetUrl(input: {
-    readonly url: string;
-    readonly draft: UtmDraft;
-}): string | null {
-    const before = toUtmDraft({ url: input.url });
-    const changed = UTM_PARAM_KEYS.some((key) => before[key] !== input.draft[key].trim());
-    if (!changed) return null;
-    const patch: Partial<Record<UtmParamKey, string | null>> = {};
-    for (const key of UTM_PARAM_KEYS) {
-        patch[key] = input.draft[key].trim() === '' ? null : input.draft[key];
-    }
-    return rewriteUtmParams({ url: input.url, utm: patch });
-}
 
 /** Read-only list of the landing UTMs. */
 function UtmList({ values }: { readonly values: QrCodeAdminListItem['scanUtm'] }) {
@@ -108,18 +71,24 @@ export function QrCodeUtmCell({ row, canEdit }: QrCodeUtmCellProps) {
     const { addToast } = useToast();
     const updateMutation = useUpdateQrCode();
     const [open, setOpen] = useState(false);
-    const [draft, setDraft] = useState<UtmDraft>(() => toUtmDraft({ url: row.targetUrl }));
+    const openWith = () => toUtmEditDraft({ url: row.targetUrl, landing: row.scanUtm });
+    const [start, setStart] = useState(openWith);
+    const [draft, setDraft] = useState<UtmEditDraft>(start.draft);
 
     const editable = canEdit && row.source === QrCodeSourceEnum.MANUAL;
 
     const handleOpenChange = (next: boolean) => {
         // Re-read on every open: the row may have been retargeted since.
-        if (next) setDraft(toUtmDraft({ url: row.targetUrl }));
+        if (next) {
+            const fresh = openWith();
+            setStart(fresh);
+            setDraft(fresh.draft);
+        }
         setOpen(next);
     };
 
     const handleSave = async () => {
-        const targetUrl = buildUtmTargetUrl({ url: row.targetUrl, draft });
+        const targetUrl = applyUtmEdit({ url: row.targetUrl, initial: start.draft, draft });
         if (targetUrl === null) {
             setOpen(false);
             return;
@@ -167,6 +136,14 @@ export function QrCodeUtmCell({ row, canEdit }: QrCodeUtmCellProps) {
                         <p className="text-muted-foreground text-xs">
                             {t('admin-qr-codes.utm.editHelp')}
                         </p>
+                        {start.seededFromLanding ? (
+                            <p
+                                className="rounded-md bg-muted px-2 py-1.5 text-xs"
+                                data-testid="qr-utm-seeded-hint"
+                            >
+                                {t('admin-qr-codes.utm.seededHint')}
+                            </p>
+                        ) : null}
                         {UTM_PARAM_KEYS.map((key) => (
                             <div
                                 key={key}

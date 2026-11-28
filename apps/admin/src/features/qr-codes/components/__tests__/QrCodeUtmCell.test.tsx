@@ -2,10 +2,8 @@
 /**
  * HOS-2679 — the UTM cell of the admin QR list.
  *
- * The pure helpers are asserted on exact strings: the editor's whole promise is
- * that saving touches ONLY the five UTM params, so a rewrite that reorders,
- * re-encodes or drops any other byte is a bug even if the UTMs come out right.
- * The component tests assert the request that leaves (the PATCH body), not the
+ * The pure edit rules live in `@repo/analytics` (`utm-edit`) and are tested
+ * there; these tests assert the request that leaves (the PATCH body), not the
  * inputs' state.
  */
 
@@ -20,15 +18,7 @@ const addToastMock = vi.hoisted(() => vi.fn());
 vi.mock('@/lib/api/client', () => ({ fetchApi: fetchApiMock }));
 vi.mock('@/hooks/use-toast', () => ({ useToast: () => ({ addToast: addToastMock }) }));
 
-import { buildUtmTargetUrl, QrCodeUtmCell, toUtmDraft } from '../QrCodeUtmCell';
-
-const EMPTY_DRAFT = {
-    utm_source: '',
-    utm_medium: '',
-    utm_campaign: '',
-    utm_content: '',
-    utm_term: ''
-};
+import { QrCodeUtmCell } from '../QrCodeUtmCell';
 
 const NO_UTM = {
     utm_source: null,
@@ -66,35 +56,6 @@ function renderCell(props: { row: QrCodeAdminListItem; canEdit: boolean }) {
 beforeEach(() => {
     fetchApiMock.mockReset();
     addToastMock.mockReset();
-});
-
-describe('toUtmDraft', () => {
-    it('reads each key, blank for the absent ones', () => {
-        expect(
-            toUtmDraft({ url: 'https://x.test/?utm_source=qr&utm_campaign=verano%202026' })
-        ).toStrictEqual({ ...EMPTY_DRAFT, utm_source: 'qr', utm_campaign: 'verano 2026' });
-    });
-});
-
-describe('buildUtmTargetUrl', () => {
-    const url = 'https://hospeda.com.ar/es/?ref=a&utm_source=flyer#mapa';
-
-    it('answers null when nothing changed, whitespace included', () => {
-        const draft = { ...toUtmDraft({ url }), utm_source: '  flyer ' };
-        expect(buildUtmTargetUrl({ url, draft })).toBeNull();
-    });
-
-    it('rewrites in place and appends new keys, keeping every other byte', () => {
-        const draft = { ...toUtmDraft({ url }), utm_source: 'cartel', utm_campaign: 'verano 2026' };
-        expect(buildUtmTargetUrl({ url, draft })).toBe(
-            'https://hospeda.com.ar/es/?ref=a&utm_source=cartel&utm_campaign=verano%202026#mapa'
-        );
-    });
-
-    it('removes a key whose field was cleared', () => {
-        const draft = { ...toUtmDraft({ url }), utm_source: '' };
-        expect(buildUtmTargetUrl({ url, draft })).toBe('https://hospeda.com.ar/es/?ref=a#mapa');
-    });
 });
 
 describe('QrCodeUtmCell', () => {
@@ -152,6 +113,49 @@ describe('QrCodeUtmCell', () => {
                 expect.objectContaining({ variant: 'success' })
             )
         );
+    });
+
+    /** HOS-2679 I1: the first edit must keep the automatic source and medium. */
+    it('opens a UTM-less code with the landing values and writes them all on save', async () => {
+        // Arrange
+        fetchApiMock.mockResolvedValue({ data: { data: {} } });
+        renderCell({
+            row: row({
+                targetUrl: 'https://hospeda.com.ar/es/?ref=a',
+                scanUtm: {
+                    ...NO_UTM,
+                    utm_source: 'qr',
+                    utm_medium: 'print',
+                    utm_campaign: 'manual'
+                }
+            }),
+            canEdit: true
+        });
+
+        // Act
+        fireEvent.click(screen.getByRole('button', { name: /admin-qr-codes\.utm\.edit/ }));
+        expect(screen.getByTestId('qr-utm-seeded-hint')).toHaveTextContent(
+            'admin-qr-codes.utm.seededHint'
+        );
+        expect(screen.getByLabelText('utm_source')).toHaveValue('qr');
+        fireEvent.change(screen.getByLabelText('utm_campaign'), { target: { value: 'verano' } });
+        fireEvent.click(screen.getByRole('button', { name: 'admin-qr-codes.utm.save' }));
+
+        // Assert
+        await waitFor(() => expect(fetchApiMock).toHaveBeenCalledTimes(1));
+        expect(
+            (fetchApiMock.mock.calls[0]?.[0] as { body: { targetUrl: string } }).body.targetUrl
+        ).toBe(
+            'https://hospeda.com.ar/es/?ref=a&utm_source=qr&utm_medium=print&utm_campaign=verano'
+        );
+    });
+
+    it('shows no seeded hint when the code stores its own UTMs', () => {
+        renderCell({ row: row({}), canEdit: true });
+
+        fireEvent.click(screen.getByRole('button', { name: /admin-qr-codes\.utm\.edit/ }));
+
+        expect(screen.queryByTestId('qr-utm-seeded-hint')).toBeNull();
     });
 
     it('sends nothing when the editor is saved unchanged', async () => {
