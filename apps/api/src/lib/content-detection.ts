@@ -142,23 +142,34 @@ export function stripRichDescriptionSyntax(value: string): string {
 
 /** One neutralization pass; see {@link stripRichDescriptionSyntax}. */
 function stripRichDescriptionPass(value: string): string {
-    return value
-        .replace(/<\/?[a-zA-Z][^>]*>/g, '') // HTML tags -> keep inner text (HOS-2209)
-        .replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1') // Images -> alt text
-        .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1') // Markdown links -> link text
-        .replace(/\[([^\]]+)\]\[[^\]]*\]/g, '$1') // Reference links -> link text
-        .replace(/^\s*\[[^\]]+\]:\s+\S.*$/gm, '') // Reference definitions
-        .replace(/\*\*([^*]+)\*\*/g, '$1') // Bold (**text**) -> text
-        .replace(/__([^_]+)__/g, '$1') // Bold (__text__) -> text (HOS-2209)
-        .replace(/~~([^~]+)~~/g, '$1') // Strikethrough (~~text~~) -> text (HOS-2209)
-        .replace(/(^|[^*])\*([^*\s][^*]*)\*/g, '$1$2') // Italic (*text*) -> text
-        .replace(/^#{1,6}\s+/gm, '') // ATX heading markers
-        .replace(/^```.*$/gm, '') // Code fence lines (HOS-2209)
-        .replace(/^\s*([-*_=])(?:\s*\1){2,}\s*$/gm, '') // Rules and setext underlines
-        .replace(/^[-*+]\s+/gm, '') // Unordered list bullet markers
-        .replace(/^\d+[.)]\s+/gm, '') // Ordered list markers (HOS-2209)
-        .replace(/^>\s?/gm, '') // Blockquote markers (HOS-2209)
-        .replace(/`([^`\n]+)`/g, '$1'); // Inline code -> code text
+    return (
+        value
+            .replace(/<\/?[a-zA-Z][^>]*>/g, '') // HTML tags -> keep inner text (HOS-2209)
+            .replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1') // Images -> alt text
+            .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1') // Markdown links -> link text
+            .replace(/\[([^\]]+)\]\[[^\]]*\]/g, '$1') // Reference links -> link text
+            .replace(/^\s*\[[^\]]+\]:\s+\S.*$/gm, '') // Reference definitions
+            .replace(/\*\*([^*]+)\*\*/g, '$1') // Bold (**text**) -> text
+            .replace(/__([^_]+)__/g, '$1') // Bold (__text__) -> text (HOS-2209)
+            // Italic (_text_) -> text (HOS-2678). Follows CommonMark: an underscore only
+            // opens/closes emphasis at a word boundary, so `snake_case`, emails and URL
+            // paths are untouched. The opener is not preceded by a letter, digit or `_`;
+            // the closer is not followed by a letter or digit; neither touches whitespace. Intra-word
+            // underscores inside the span (`_foo_bar_`) stay in it; a blank line ends it.
+            .replace(
+                /(^|[^\p{L}\p{N}_])_(?=[^\s_])((?:[^_\n]|\n(?!\s*\n)|(?<=[\p{L}\p{N}])_(?=[\p{L}\p{N}]))*?)(?<!\s)_(?![\p{L}\p{N}])/gu,
+                '$1$2'
+            )
+            .replace(/~~([^~]+)~~/g, '$1') // Strikethrough (~~text~~) -> text (HOS-2209)
+            .replace(/(^|[^*])\*([^*\s][^*]*)\*/g, '$1$2') // Italic (*text*) -> text
+            .replace(/^#{1,6}\s+/gm, '') // ATX heading markers
+            .replace(/^```.*$/gm, '') // Code fence lines (HOS-2209)
+            .replace(/^\s*([-*_=])(?:\s*\1){2,}\s*$/gm, '') // Rules and setext underlines
+            .replace(/^[-*+]\s+/gm, '') // Unordered list bullet markers
+            .replace(/^\d+[.)]\s+/gm, '') // Ordered list markers (HOS-2209)
+            .replace(/^>\s?/gm, '') // Blockquote markers (HOS-2209)
+            .replace(/`([^`\n]+)`/g, '$1')
+    ); // Inline code -> code text
 }
 
 // ---------------------------------------------------------------------------
