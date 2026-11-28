@@ -58,7 +58,7 @@ describe('email catalog completeness', () => {
         ['auth', 2],
         ['conversation', 6],
         ['alert-digest', 1],
-        ['newsletter', 3],
+        ['newsletter', 4],
         ['outbox', 65]
     ] as const)('has %s entries: %i', (sendPath, count) => {
         expect(EMAIL_CATALOG.filter((entry) => entry.sendPath === sendPath)).toHaveLength(count);

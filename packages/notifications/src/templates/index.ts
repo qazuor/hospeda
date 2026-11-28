@@ -11,6 +11,7 @@ export * from './calendar-sync/index.js';
 export * from './components/index.js';
 export * from './contact/index.js';
 export * from './conversation/index.js';
+export * from './direct-email/index.js';
 export * from './feedback/index.js';
 export * from './host-trade/index.js';
 export * from './listing/index.js';
