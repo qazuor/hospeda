@@ -5,10 +5,14 @@
  * auto-discovery in this app: a screen that is not in `config/ia/sidebars.ts` is
  * a screen nobody finds, and HOS-14 already catalogued five route groups that
  * went orphan exactly that way.
+ *
+ * HOS-2679 made it the place to ORGANISE codes: the full destination and scan
+ * URL with copy buttons, the landing UTMs (editable for MANUAL codes), tags,
+ * and a filter bar whose source defaults to MANUAL.
  */
 
 import { AddIcon } from '@repo/icons';
-import { PermissionEnum, type QrCode } from '@repo/schemas';
+import { PermissionEnum, type QrCodeAdminListItem } from '@repo/schemas';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useState } from 'react';
 import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
@@ -17,9 +21,20 @@ import { DataTable } from '@/components/table/DataTable';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import {
+    DEFAULT_QR_CODE_LIST_FILTERS,
+    type QrCodeListFilterState,
+    QrCodeListFilters,
+    toQrCodeListQueryFilters
+} from '@/features/qr-codes/components/QrCodeListFilters';
+import { QrCodeTagManagerDialog } from '@/features/qr-codes/components/QrCodeTagManagerDialog';
+import { QrCodeTagsCell } from '@/features/qr-codes/components/QrCodeTagsCell';
+import { QrCodeUrlCell } from '@/features/qr-codes/components/QrCodeUrlCell';
+import { QrCodeUtmCell } from '@/features/qr-codes/components/QrCodeUtmCell';
 import { useQrCodesList } from '@/features/qr-codes/hooks/useQrCodes';
 import { useDebounce } from '@/hooks/use-debounce';
 import { useTranslations } from '@/hooks/use-translations';
+import { useHasPermission } from '@/hooks/use-user-permissions';
 
 export const Route = createFileRoute('/_authed/platform/qr-codes/')({
     component: QrCodesListPage
@@ -30,6 +45,10 @@ function QrCodesListPage() {
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(20);
     const [search, setSearch] = useState('');
+    const [filters, setFilters] = useState<QrCodeListFilterState>(DEFAULT_QR_CODE_LIST_FILTERS);
+    const canCreate = useHasPermission(PermissionEnum.QR_CODE_CREATE);
+    const canUpdate = useHasPermission(PermissionEnum.QR_CODE_UPDATE);
+    const canDelete = useHasPermission(PermissionEnum.QR_CODE_DELETE);
 
     /**
      * One request per pause, not one per keystroke. Typing "plaza" untuned fires
@@ -40,10 +59,16 @@ function QrCodesListPage() {
     const { data, isLoading } = useQrCodesList({
         page,
         pageSize,
-        q: debouncedSearch === '' ? undefined : debouncedSearch
+        q: debouncedSearch === '' ? undefined : debouncedSearch,
+        filters: toQrCodeListQueryFilters({ filters })
     });
 
-    const columns: readonly DataTableColumn<QrCode>[] = [
+    // TYPE-WORKAROUND: `createEntityHooks<QrCode>` types the rows as the base
+    // entity; the list endpoint answers `QrCodeAdminListItem` (HOS-2679), which
+    // only ADDS fields, and its response schema is what the API strips against.
+    const rows = (data?.data ?? []) as unknown as readonly QrCodeAdminListItem[];
+
+    const columns: readonly DataTableColumn<QrCodeAdminListItem>[] = [
         {
             id: 'label',
             accessorKey: 'label',
@@ -61,9 +86,31 @@ function QrCodesListPage() {
             accessorKey: 'targetUrl',
             header: t('admin-qr-codes.columns.targetUrl'),
             cell: ({ row }) => (
-                <div className="max-w-md truncate text-muted-foreground text-sm">
-                    {row.targetUrl}
-                </div>
+                <QrCodeUrlCell
+                    targetUrl={row.targetUrl}
+                    scanUrl={row.scanUrl}
+                />
+            )
+        },
+        {
+            id: 'utm',
+            header: t('admin-qr-codes.columns.utm'),
+            cell: ({ row }) => (
+                <QrCodeUtmCell
+                    row={row}
+                    canEdit={canUpdate}
+                />
+            )
+        },
+        {
+            id: 'tags',
+            header: t('admin-qr-codes.columns.tags'),
+            cell: ({ row }) => (
+                <QrCodeTagsCell
+                    qrCodeId={row.id}
+                    tags={row.tags}
+                    canEdit={canUpdate}
+                />
             )
         },
         {
@@ -120,12 +167,19 @@ function QrCodesListPage() {
                         <h1 className="font-bold text-3xl">{t('admin-qr-codes.title')}</h1>
                         <p className="text-muted-foreground">{t('admin-qr-codes.description')}</p>
                     </div>
-                    <Button asChild>
-                        <Link to="/platform/qr-codes/new">
-                            <AddIcon className="mr-2 h-4 w-4" />
-                            {t('admin-qr-codes.create')}
-                        </Link>
-                    </Button>
+                    <div className="flex items-center gap-2">
+                        <QrCodeTagManagerDialog
+                            canCreate={canCreate}
+                            canUpdate={canUpdate}
+                            canDelete={canDelete}
+                        />
+                        <Button asChild>
+                            <Link to="/platform/qr-codes/new">
+                                <AddIcon className="mr-2 h-4 w-4" />
+                                {t('admin-qr-codes.create')}
+                            </Link>
+                        </Button>
+                    </div>
                 </div>
 
                 <div className="mb-4 max-w-md">
@@ -142,9 +196,20 @@ function QrCodesListPage() {
                     />
                 </div>
 
+                <div className="mb-4">
+                    <QrCodeListFilters
+                        value={filters}
+                        onChange={(next) => {
+                            setFilters(next);
+                            // Same reason as the search: a new filter is a new set.
+                            setPage(1);
+                        }}
+                    />
+                </div>
+
                 <DataTable
                     columns={columns}
-                    data={[...(data?.data ?? [])]}
+                    data={[...rows]}
                     total={data?.total ?? 0}
                     rowId={(row) => row.id}
                     loading={isLoading}

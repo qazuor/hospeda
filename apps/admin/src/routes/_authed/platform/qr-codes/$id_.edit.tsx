@@ -13,10 +13,13 @@ import {
     type QrCodeUpdateHttp
 } from '@repo/schemas';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { useState } from 'react';
 import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
 import { useToast } from '@/components/ui/ToastProvider';
 import { QrCodeForm } from '@/features/qr-codes/components/QrCodeForm';
+import { tagSelectionChanged } from '@/features/qr-codes/components/QrCodeTagPicker';
 import { useQrCodeDetail, useUpdateQrCode } from '@/features/qr-codes/hooks/useQrCodes';
+import { useQrCodeTagsOf, useSetQrCodeTags } from '@/features/qr-codes/hooks/useQrCodeTags';
 import { useTranslations } from '@/hooks/use-translations';
 
 export const Route = createFileRoute('/_authed/platform/qr-codes/$id_/edit')({
@@ -27,8 +30,11 @@ function QrCodeEditPage() {
     const { id } = Route.useParams();
     const { t } = useTranslations();
     const { data: qrCode, isLoading } = useQrCodeDetail(id);
+    // HOS-2679: the form opens with the code's current tags, so it waits for
+    // them — opening empty and saving would silently clear every tag.
+    const { data: currentTags, isLoading: tagsLoading } = useQrCodeTagsOf(id);
 
-    if (isLoading) {
+    if (isLoading || tagsLoading) {
         return <div className="p-8 text-muted-foreground">{t('admin-common.states.loading')}</div>;
     }
 
@@ -43,20 +49,34 @@ function QrCodeEditPage() {
             <QrCodeEditForm
                 id={id}
                 qrCode={qrCode}
+                initialTagIds={(currentTags ?? []).map((tag) => tag.id)}
             />
         </RoutePermissionGuard>
     );
 }
 
-function QrCodeEditForm({ id, qrCode }: { readonly id: string; readonly qrCode: QrCode }) {
+function QrCodeEditForm({
+    id,
+    qrCode,
+    initialTagIds
+}: {
+    readonly id: string;
+    readonly qrCode: QrCode;
+    readonly initialTagIds: readonly string[];
+}) {
     const { t } = useTranslations();
     const navigate = useNavigate();
     const { addToast } = useToast();
     const updateMutation = useUpdateQrCode();
+    const setTagsMutation = useSetQrCodeTags();
+    const [tagIds, setTagIds] = useState<readonly string[]>(initialTagIds);
 
     const handleSubmit = async (payload: QrCodeCreateHttp | QrCodeUpdateHttp) => {
         try {
             await updateMutation.mutateAsync({ id, data: payload as QrCodeUpdateHttp });
+            if (tagSelectionChanged({ before: initialTagIds, after: tagIds })) {
+                await setTagsMutation.mutateAsync({ id, tagIds });
+            }
             addToast({ message: t('admin-qr-codes.messages.updated'), variant: 'success' });
             navigate({ to: '/platform/qr-codes/$id', params: { id } });
         } catch (error) {
@@ -73,7 +93,9 @@ function QrCodeEditForm({ id, qrCode }: { readonly id: string; readonly qrCode: 
                 initialData={qrCode}
                 onSubmit={handleSubmit}
                 onCancel={() => navigate({ to: '/platform/qr-codes/$id', params: { id } })}
-                isSaving={updateMutation.isPending}
+                isSaving={updateMutation.isPending || setTagsMutation.isPending}
+                tagIds={tagIds}
+                onTagIdsChange={setTagIds}
             />
         </div>
     );

@@ -4,10 +4,12 @@
 
 import { PermissionEnum, type QrCodeCreateHttp, type QrCodeUpdateHttp } from '@repo/schemas';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { useState } from 'react';
 import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
 import { useToast } from '@/components/ui/ToastProvider';
 import { QrCodeForm } from '@/features/qr-codes/components/QrCodeForm';
 import { useCreateQrCode } from '@/features/qr-codes/hooks/useQrCodes';
+import { useSetQrCodeTags } from '@/features/qr-codes/hooks/useQrCodeTags';
 import { useTranslations } from '@/hooks/use-translations';
 
 export const Route = createFileRoute('/_authed/platform/qr-codes/new')({
@@ -19,11 +21,23 @@ function QrCodeCreatePage() {
     const navigate = useNavigate();
     const { addToast } = useToast();
     const createMutation = useCreateQrCode();
+    const setTagsMutation = useSetQrCodeTags();
+    const [tagIds, setTagIds] = useState<readonly string[]>([]);
 
     const handleSubmit = async (payload: QrCodeCreateHttp | QrCodeUpdateHttp) => {
         try {
             const created = await createMutation.mutateAsync(payload as never);
             addToast({ message: t('admin-qr-codes.messages.created'), variant: 'success' });
+            // HOS-2679: tags are written after the code exists. A failure here
+            // does not undo the code — it is already created and printable — so
+            // it is reported on its own and the page still moves to the detail.
+            if (tagIds.length > 0) {
+                try {
+                    await setTagsMutation.mutateAsync({ id: created.id, tagIds });
+                } catch {
+                    addToast({ message: t('admin-qr-codes.tags.saveError'), variant: 'error' });
+                }
+            }
             navigate({ to: '/platform/qr-codes/$id', params: { id: created.id } });
         } catch (_error) {
             addToast({ message: t('admin-qr-codes.messages.createError'), variant: 'error' });
@@ -41,7 +55,9 @@ function QrCodeCreatePage() {
                     mode="create"
                     onSubmit={handleSubmit}
                     onCancel={() => navigate({ to: '/platform/qr-codes' })}
-                    isSaving={createMutation.isPending}
+                    isSaving={createMutation.isPending || setTagsMutation.isPending}
+                    tagIds={tagIds}
+                    onTagIdsChange={setTagIds}
                 />
             </div>
         </RoutePermissionGuard>
