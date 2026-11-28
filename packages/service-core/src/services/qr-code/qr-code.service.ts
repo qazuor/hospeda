@@ -1,9 +1,10 @@
-import type { QrCodeModel, QrCodeScanModel } from '@repo/db';
+import type { QrCodeModel, QrCodeScanModel, RQrCodeQrCodeTagModel } from '@repo/db';
 import {
     or,
     qrCodes,
     QrCodeModel as RealQrCodeModel,
     QrCodeScanModel as RealQrCodeScanModel,
+    RQrCodeQrCodeTagModel as RealRQrCodeQrCodeTagModel,
     safeIlike
 } from '@repo/db';
 import type {
@@ -14,7 +15,8 @@ import type {
     QrCodeScan,
     QrCodeScanStats,
     QrCodeScanWindow,
-    QrCodeSearchInput
+    QrCodeSearchInput,
+    QrCodeTagRef
 } from '@repo/schemas';
 import {
     EntityTypeEnumSchema,
@@ -40,6 +42,7 @@ import { z } from 'zod';
 import { BaseCrudService } from '../../base';
 import type {
     Actor,
+    AdminSearchExecuteParams,
     PaginatedListOutput,
     ServiceConfig,
     ServiceContext,
@@ -48,6 +51,11 @@ import type {
 import { ServiceError } from '../../types';
 import { extractPostgresErrorCause } from '../../utils/postgres-error-cause';
 import { normalizeCreateInput, normalizeUpdateInput } from './qr-code.normalizers';
+import {
+    buildQrCodeOrganizeConditions,
+    decodeDistinctCampaigns,
+    rawSpellingsForCampaign
+} from './qr-code.organize';
 import {
     checkCanCreateQrCode,
     checkCanDeleteQrCode,
@@ -142,6 +150,9 @@ const SetEntityTargetUrlInputSchema = EntityRefInputSchema.extend({
     targetUrl: z.string().url().max(QR_CODE_TARGET_URL_MAX_LENGTH)
 });
 
+/** A QR code as the admin list returns it: the row plus its live tags (HOS-2679). */
+export type QrCodeWithTags = QrCode & { readonly tags: readonly QrCodeTagRef[] };
+
 /** What {@link QrCodeService.getScanStatsForCode} accepts. */
 const GetScanStatsForCodeInputSchema = z.object({
     qrCodeId: z.string().uuid(),
@@ -178,11 +189,23 @@ export class QrCodeService extends BaseCrudService<
         update: normalizeUpdateInput
     };
 
-    constructor(ctx: ServiceConfig, model?: QrCodeModel, scanModel?: QrCodeScanModel) {
+    /** Which tags each code carries (HOS-2679). */
+    public readonly tagLinkModel: RQrCodeQrCodeTagModel;
+
+    constructor(
+        ctx: ServiceConfig,
+        model?: QrCodeModel,
+        scanModel?: QrCodeScanModel,
+        tagLinkModel?: RQrCodeQrCodeTagModel
+    ) {
         super(ctx, QrCodeService.ENTITY_NAME);
         this.model = model ?? new RealQrCodeModel();
         this.scanModel = scanModel ?? new RealQrCodeScanModel();
-        /** Every admin filter maps to a column, so the default admin search applies. */
+        this.tagLinkModel = tagLinkModel ?? new RealRQrCodeQrCodeTagModel();
+        /**
+         * Every admin filter but `utmCampaign` and `tagIds` maps to a column;
+         * {@link _executeAdminSearch} lifts those two out (HOS-2679).
+         */
         this.adminSearchSchema = QrCodeAdminSearchSchema;
     }
 
@@ -378,6 +401,83 @@ export class QrCodeService extends BaseCrudService<
         }
 
         return conditions;
+    }
+
+    // ------------------------------------------------------------------
+    // Admin list organisation (HOS-2679)
+    // ------------------------------------------------------------------
+
+    /**
+     * Lifts the two filters that are not columns out of `entityFilters` — the
+     * base would hand them to `buildWhereClause`, which rejects an unknown
+     * column — and turns them into SQL conditions instead.
+     *
+     * The campaign is matched on the RAW stored spellings that decode to the
+     * picked value (see `qr-code.organize.ts`), so this reads the distinct raw
+     * campaigns first: one extra indexed-size query, only when filtering.
+     */
+    protected override async _executeAdminSearch(
+        params: AdminSearchExecuteParams
+    ): Promise<PaginatedListOutput<QrCode>> {
+        const { utmCampaign, tagIds, ...entityFilters } = params.entityFilters as {
+            utmCampaign?: string;
+            tagIds?: string[];
+            [key: string]: unknown;
+        };
+        const utmCampaignRaws =
+            utmCampaign === undefined
+                ? undefined
+                : rawSpellingsForCampaign({
+                      value: utmCampaign,
+                      raw: await this.model.findDistinctRawUtmCampaigns(params.ctx?.tx)
+                  });
+        const extraConditions = [
+            ...(params.extraConditions ?? []),
+            ...buildQrCodeOrganizeConditions({ utmCampaignRaws, tagIds })
+        ];
+        return super._executeAdminSearch({ ...params, entityFilters, extraConditions });
+    }
+
+    /** Attaches each row's live tags, in ONE query for the whole page. */
+    protected override async _afterAdminList(
+        result: PaginatedListOutput<QrCode>,
+        _actor: Actor,
+        ctx: ServiceContext
+    ): Promise<PaginatedListOutput<QrCode>> {
+        const tagsByCode = await this.tagLinkModel.findTagRefsByQrCodeIds(
+            result.items.map((item) => item.id),
+            ctx?.tx
+        );
+        const items: QrCodeWithTags[] = result.items.map((item) => ({
+            ...item,
+            tags: tagsByCode.get(item.id) ?? []
+        }));
+        return { ...result, items };
+    }
+
+    /**
+     * Distinct `utm_campaign` values stored on live codes' targets, decoded and
+     * sorted — the campaign filter's dropdown.
+     *
+     * @param input.actor - Needs `QR_CODE_VIEW`.
+     * @returns The campaigns.
+     */
+    public async listUtmCampaigns(input: {
+        actor: Actor;
+        ctx?: ServiceContext;
+    }): Promise<ServiceOutput<{ items: string[] }>> {
+        const { actor, ctx } = input;
+        return this.runWithLoggingAndValidation({
+            methodName: 'listUtmCampaigns',
+            input: { actor },
+            schema: z.object({}),
+            ctx,
+            execute: async (_validated, validActor, execCtx) => {
+                checkCanViewQrCode(validActor);
+                const raw = await this.model.findDistinctRawUtmCampaigns(execCtx.tx);
+                return { items: decodeDistinctCampaigns({ raw }) };
+            }
+        });
     }
 
     // ------------------------------------------------------------------

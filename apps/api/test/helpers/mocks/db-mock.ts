@@ -302,6 +302,26 @@ const qrCodeScansTableStub = {
     scannedAt: 'scanned_at'
 };
 
+/** HOS-2679 — `qr_code_tags` table stub, same shape-only style as `qrCodes`. */
+const qrCodeTagsTableStub = {
+    id: 'id',
+    name: 'name',
+    slug: 'slug',
+    color: 'color',
+    createdAt: 'created_at',
+    updatedAt: 'updated_at',
+    createdById: 'created_by_id',
+    updatedById: 'updated_by_id',
+    deletedAt: 'deleted_at',
+    deletedById: 'deleted_by_id'
+};
+
+/** HOS-2679 — `r_qr_code_qr_code_tag` join stub. */
+const rQrCodeQrCodeTagTableStub = {
+    qrCodeId: 'qr_code_id',
+    qrCodeTagId: 'qr_code_tag_id'
+};
+
 export function createDbMock() {
     return {
         // Database client
@@ -395,6 +415,22 @@ export function createDbMock() {
          */
         qrCodes: qrCodesTableStub,
         qrCodeScans: qrCodeScansTableStub,
+        /** HOS-2679 — tag catalog and join stubs. */
+        qrCodeTags: qrCodeTagsTableStub,
+        rQrCodeQrCodeTag: rQrCodeQrCodeTagTableStub,
+        /**
+         * HOS-2679 — the two non-column filters of the admin QR list. Imported by
+         * `QrCodeService` (through `qr-code.organize`); the stubs answer marker
+         * objects so a route test can assert WHICH filter reached the query.
+         */
+        buildQrCodeUtmCampaignCondition: vi.fn((input: { rawValues: readonly string[] }) => ({
+            __qrFilter: 'utmCampaign',
+            rawValues: [...input.rawValues]
+        })),
+        buildQrCodeTagFilterCondition: vi.fn((input: { tagIds: readonly string[] }) => ({
+            __qrFilter: 'tagIds',
+            tagIds: [...input.tagIds]
+        })),
 
         /**
          * Venue catalog-membership clause builders (HOS-1054).
@@ -849,6 +885,10 @@ export function createDbMock() {
             async count(_filters: unknown) {
                 return 0;
             }
+            /** HOS-2679 — the campaign dropdown's read. */
+            async findDistinctRawUtmCampaigns() {
+                return [];
+            }
             /**
              * Echoes the written row back (HOS-981 PR 4).
              *
@@ -879,6 +919,43 @@ export function createDbMock() {
          * constructor. Append-only, so it carries no soft-delete or audit
          * methods.
          */
+        /**
+         * HOS-2679 — Mock QrCodeTagModel / RQrCodeQrCodeTagModel. Same
+         * construction path as `QrCodeModel`: `QrCodeService` and
+         * `QrCodeTagService` build them in their constructors at import time.
+         */
+        QrCodeTagModel: class MockQrCodeTagModel {
+            getTable() {
+                return qrCodeTagsTableStub;
+            }
+            async findById(_id: string) {
+                return null;
+            }
+            async findOne(_where: unknown) {
+                return null;
+            }
+            async findLiveBySlug(_slug: string) {
+                return null;
+            }
+            async countLiveByIds(_ids: readonly string[]) {
+                return 0;
+            }
+            async findAll(_filters: unknown) {
+                return { items: [], total: 0 };
+            }
+            async count(_filters: unknown) {
+                return 0;
+            }
+        },
+        RQrCodeQrCodeTagModel: class MockRQrCodeQrCodeTagModel {
+            async setTagsForQrCode(_qrCodeId: string, _tagIds: readonly string[]) {
+                return undefined;
+            }
+            async findTagRefsByQrCodeIds(_ids: readonly string[]) {
+                return new Map();
+            }
+        },
+
         QrCodeScanModel: class MockQrCodeScanModel {
             async create(_data: unknown) {
                 return { id: 'qr_code_scan_mock_id', scannedAt: new Date() };

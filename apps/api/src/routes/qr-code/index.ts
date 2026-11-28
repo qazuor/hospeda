@@ -5,4 +5,5 @@
  * admin CRUD the panel drives.
  */
 export { adminQrCodeRoutes } from './admin/index.js';
+export { adminQrCodeTagRoutes } from './admin-tags/index.js';
 export { publicQrCodeRoutes } from './public/index.js';

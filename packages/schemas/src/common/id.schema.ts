@@ -295,3 +295,6 @@ export type AccommodationCalendarSyncIdType = z.infer<typeof AccommodationCalend
 // === Redirectable QR codes (HOS-981) ===
 export const QrCodeIdSchema = BaseIdSchema;
 export type QrCodeIdType = z.infer<typeof QrCodeIdSchema>;
+/** QR-code tag catalog (HOS-2679). */
+export const QrCodeTagIdSchema = BaseIdSchema;
+export type QrCodeTagIdType = z.infer<typeof QrCodeTagIdSchema>;

@@ -42,6 +42,10 @@
         "targetUrl": {
             "invalidUrl": "El destino debe ser una URL válida",
             "max": "El destino no puede superar los {{max}} caracteres"
+        },
+        "utmCampaign": {
+            "min": "La campaña no puede estar vacía",
+            "max": "La campaña no puede superar los {{max}} caracteres"
         }
     },
     "reviewMarkedFields": "Revisá los campos marcados.",
@@ -5377,6 +5381,15 @@
             "max": "El motivo no puede superar los 500 caracteres",
             "min": "El motivo debe tener al menos 10 caracteres",
             "required": "El motivo es obligatorio"
+        }
+    },
+    "qrCodeTag": {
+        "name": {
+            "min": "El nombre de la etiqueta es obligatorio",
+            "max": "El nombre de la etiqueta no puede superar los {{max}} caracteres"
+        },
+        "tagIds": {
+            "max": "Demasiadas etiquetas para un código QR: el máximo es {{max}}"
         }
     }
 }

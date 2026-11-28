@@ -11,6 +11,7 @@ import {
     QrCodeSchema,
     QrCodeSlugSchema
 } from './qr-code.schema.js';
+import { QrCodeTagRefSchema } from './qr-code-tag.schema.js';
 
 /**
  * QrCode HTTP schemas (HOS-981).
@@ -40,6 +41,53 @@ export const QrCodeAdminListResponseSchema = z.object({
 });
 
 export type QrCodeAdminListResponse = z.infer<typeof QrCodeAdminListResponseSchema>;
+
+/**
+ * The five UTM parameters of a URL, `null` where it does not carry one (HOS-2679).
+ *
+ * Keys are the literal query-param names, so what the panel shows is exactly
+ * what Umami reads.
+ */
+export const QrCodeUtmValuesSchema = z.object({
+    utm_source: z.string().nullable(),
+    utm_medium: z.string().nullable(),
+    utm_campaign: z.string().nullable(),
+    utm_content: z.string().nullable(),
+    utm_term: z.string().nullable()
+});
+
+export type QrCodeUtmValues = z.infer<typeof QrCodeUtmValuesSchema>;
+
+/**
+ * One row of the admin QR list (HOS-2679): the code plus what the table needs to
+ * show without a second request per row.
+ *
+ * - `tags` — the live tags the code carries.
+ * - `scanUrl` — the URL the printed symbol encodes (`{site}/qr/{slug}/`), built by
+ *   the same helper the download endpoint uses.
+ * - `scanUtm` — the UTMs a scanner actually lands with: the stored target run
+ *   through the same `buildQrRedirectTarget` the public redirect uses. For a
+ *   GENERATED code that is the only place those values exist, since they are
+ *   computed per scan and never stored; computing them server-side keeps the
+ *   entity→campaign mapping in one place instead of a copy in the panel.
+ */
+export const QrCodeAdminListItemSchema = QrCodeAdminSchema.extend({
+    tags: z.array(QrCodeTagRefSchema),
+    scanUrl: z.string().url(),
+    scanUtm: QrCodeUtmValuesSchema
+});
+
+export type QrCodeAdminListItem = z.infer<typeof QrCodeAdminListItemSchema>;
+
+/**
+ * Distinct `utm_campaign` values stored on QR targets, for the list filter's
+ * dropdown (HOS-2679). Decoded, sorted, de-duplicated.
+ */
+export const QrCodeCampaignsResponseSchema = z.object({
+    items: z.array(z.string())
+});
+
+export type QrCodeCampaignsResponse = z.infer<typeof QrCodeCampaignsResponseSchema>;
 
 export const QrCodeCreateHttpSchema = z
     .object({

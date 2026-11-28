@@ -25,7 +25,24 @@ import { Pool } from 'pg';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const DB_NAME = 'hospeda_integration_test';
+/**
+ * The ephemeral database's name. Fixed by default, which makes two worktrees
+ * running this suite at once drop each other's database mid-run.
+ * `HOSPEDA_TEST_DATABASE_NAME` gives one run a name of its own (HOS-2679); it is
+ * validated as a plain identifier because it is interpolated into DDL.
+ */
+const DB_NAME = resolveDbName(process.env.HOSPEDA_TEST_DATABASE_NAME);
+
+/** Validates the optional override; the default when it is absent. */
+function resolveDbName(override: string | undefined): string {
+    if (override === undefined || override === '') return 'hospeda_integration_test';
+    if (!/^[a-z_][a-z0-9_]{0,62}$/.test(override)) {
+        throw new Error(
+            `[integration-setup] HOSPEDA_TEST_DATABASE_NAME must match /^[a-z_][a-z0-9_]{0,62}$/, got "${override}"`
+        );
+    }
+    return override;
+}
 const CONNECTION_BASE =
     process.env.HOSPEDA_TEST_DATABASE_URL ||
     'postgresql://hospeda_user:hospeda_pass@localhost:5436/postgres';

@@ -1,6 +1,11 @@
 import type { QrCode } from '@repo/schemas';
+import { and, asc, isNotNull, isNull } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { qrCodes } from '../../schemas/qr-code/qr_code.dbschema.ts';
+import type { DrizzleClient } from '../../types.ts';
+import { DbError } from '../../utils/error.ts';
+import { logError, logQuery } from '../../utils/logger.ts';
+import { QR_CODE_RAW_UTM_CAMPAIGN_SQL } from './qrCode.filters.ts';
 
 /**
  * Model for `qr_codes` (HOS-981).
@@ -34,6 +39,44 @@ export class QrCodeModel extends BaseModelImpl<QrCode> {
 
     protected getTableName(): string {
         return 'qrCodes';
+    }
+
+    /**
+     * Every distinct `utm_campaign` stored on a live code's target, RAW — still
+     * percent-encoded, exactly as the URL spells it (HOS-2679).
+     *
+     * Feeds the campaign dropdown of the admin list. Decoding is the caller's job
+     * because SQL has no `decodeURIComponent`; two spellings of one campaign
+     * (`a%20b` and `a+b`) therefore come back as two rows, and the service folds
+     * them after decoding.
+     *
+     * @param tx - Optional transaction client.
+     * @returns Raw campaign values, sorted, without nulls.
+     */
+    async findDistinctRawUtmCampaigns(tx?: DrizzleClient): Promise<string[]> {
+        const db = this.getClient(tx);
+        const logContext = {};
+        try {
+            const rows = await db
+                .selectDistinct({ campaign: QR_CODE_RAW_UTM_CAMPAIGN_SQL })
+                .from(qrCodes)
+                .where(and(isNull(qrCodes.deletedAt), isNotNull(QR_CODE_RAW_UTM_CAMPAIGN_SQL)))
+                .orderBy(asc(QR_CODE_RAW_UTM_CAMPAIGN_SQL));
+            const campaigns = rows.flatMap((row) => (row.campaign ? [row.campaign] : []));
+            logQuery(this.entityName, 'findDistinctRawUtmCampaigns', logContext, {
+                count: campaigns.length
+            });
+            return campaigns;
+        } catch (error) {
+            const err = error instanceof Error ? error : new Error(String(error));
+            logError(this.entityName, 'findDistinctRawUtmCampaigns', logContext, err);
+            throw new DbError(
+                this.entityName,
+                'findDistinctRawUtmCampaigns',
+                logContext,
+                err.message
+            );
+        }
     }
 }
 
