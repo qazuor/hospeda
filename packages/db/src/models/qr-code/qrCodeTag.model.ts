@@ -2,6 +2,7 @@ import type { QrCodeTag, QrCodeTagRef } from '@repo/schemas';
 import { and, asc, eq, inArray, isNull } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { withTransaction } from '../../client.ts';
+import { qrCodes } from '../../schemas/qr-code/qr_code.dbschema.ts';
 import { qrCodeTags } from '../../schemas/qr-code/qr_code_tag.dbschema.ts';
 import { rQrCodeQrCodeTag } from '../../schemas/qr-code/r_qr_code_qr_code_tag.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
@@ -92,9 +93,15 @@ export class RQrCodeQrCodeTagModel extends BaseModelImpl<RQrCodeQrCodeTagRow> {
     }
 
     /**
-     * Replaces the WHOLE tag set of one code, in one transaction: delete every
-     * row for the code, insert the new set. Applying the same set twice leaves
-     * the same rows, so a double-submitted form is harmless.
+     * Replaces the WHOLE tag set of one code, in one transaction: lock the code
+     * row, delete every link for the code, insert the new set.
+     *
+     * Race-safe in two ways. The `FOR UPDATE` on the `qr_codes` row serialises
+     * two concurrent writes for the SAME code, so the second sees the first's
+     * links gone and writes its own set — last writer wins as a whole set,
+     * never a mix. And the insert is `ON CONFLICT DO NOTHING`, so even a writer
+     * that slipped in without the lock cannot turn a duplicate link into a 500.
+     * Applying the same set twice leaves the same rows.
      *
      * @param qrCodeId - The code.
      * @param tagIds - The complete new set; `[]` clears it. De-duplicated here.
@@ -110,12 +117,18 @@ export class RQrCodeQrCodeTagModel extends BaseModelImpl<RQrCodeQrCodeTagRow> {
         try {
             await withTransaction(async (innerTx) => {
                 await innerTx
+                    .select({ id: qrCodes.id })
+                    .from(qrCodes)
+                    .where(eq(qrCodes.id, qrCodeId))
+                    .for('update');
+                await innerTx
                     .delete(rQrCodeQrCodeTag)
                     .where(eq(rQrCodeQrCodeTag.qrCodeId, qrCodeId));
                 if (unique.length === 0) return;
                 await innerTx
                     .insert(rQrCodeQrCodeTag)
-                    .values(unique.map((qrCodeTagId) => ({ qrCodeId, qrCodeTagId })));
+                    .values(unique.map((qrCodeTagId) => ({ qrCodeId, qrCodeTagId })))
+                    .onConflictDoNothing();
             }, tx);
             logQuery(this.entityName, 'setTagsForQrCode', logContext, { count: unique.length });
         } catch (error) {
