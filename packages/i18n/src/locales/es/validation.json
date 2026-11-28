@@ -5389,7 +5389,7 @@
             "max": "El nombre de la etiqueta no puede superar los {{max}} caracteres"
         },
         "tagIds": {
-            "max": "Un código QR no puede tener más de {{max}} etiquetas"
+            "max": "Demasiadas etiquetas para un código QR: el máximo es {{max}}"
         }
     }
 }

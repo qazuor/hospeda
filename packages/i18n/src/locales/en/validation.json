@@ -5389,7 +5389,7 @@
             "max": "The tag name cannot exceed {{max}} characters"
         },
         "tagIds": {
-            "max": "A QR code cannot carry more than {{max}} tags"
+            "max": "Too many tags for one QR code: the limit is {{max}}"
         }
     }
 }
