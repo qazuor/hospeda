@@ -785,8 +785,8 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/admin/feature-flags', adminFeatureFlagRoutes);
 
         // Redirectable QR codes admin (HOS-981): CRUD plus the rendered
-        // download. Gated on SETTINGS_MANAGE — a borrowed gate, kept until a
-        // dedicated QR_CODE_* family is worth the role_permission migration.
+        // download, gated on the QR_CODE_* permission family. The tag catalog
+        // (HOS-2679) reuses those same QR_CODE_* verbs; it has no family of its own.
         app.route('/api/v1/admin/qr-codes', adminQrCodeRoutes);
         app.route('/api/v1/admin/qr-code-tags', adminQrCodeTagRoutes);
 
