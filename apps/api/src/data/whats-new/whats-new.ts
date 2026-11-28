@@ -152,6 +152,132 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4854
+    {
+        id: '2026-11-28-limit-notice-offers-addon',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST'],
+        title: {
+            es: 'Al llegar a un límite te ofrecemos primero el complemento',
+            en: 'When you hit a limit, we offer the add-on first',
+            pt: 'Ao atingir um limite, oferecemos primeiro o complemento'
+        },
+        body: {
+            es: 'Cuando llegás al tope de fotos de tu alojamiento y hay un pack a la venta, el aviso te ofrece ampliarlo primero y el cambio de plan después. Si no hay ningún complemento para ese límite, el aviso sigue ofreciendo solo cambiar de plan.',
+            en: 'When you reach your listing photo limit and a pack is on sale, the notice offers you to extend it first and the plan change second. If there is no add-on for that limit, the notice still offers only a plan change.',
+            pt: 'Quando você atinge o limite de fotos do seu alojamento e há um pacote à venda, o aviso oferece ampliá-lo primeiro e a mudança de plano depois. Se não houver complemento para esse limite, o aviso continua oferecendo apenas a mudança de plano.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4853
+    {
+        id: '2026-11-28-admin-moderate-owner-replies',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['ADMIN', 'SUPER_ADMIN'],
+        title: {
+            es: 'Ya podés moderar las respuestas de los dueños a las reseñas',
+            en: "You can now moderate owners' replies to reviews",
+            pt: 'Agora você pode moderar as respostas dos donos às avaliações'
+        },
+        body: {
+            es: 'En la pestaña **Reseñas** de cada alojamiento del panel hay una sección **Respuestas del propietario**. Ves cada respuesta con su estado, filtrás las pendientes de moderación y las aprobás o rechazás con un motivo opcional. Se quitó la tarjeta «Responder», que ya no correspondía.',
+            en: 'The **Reviews** tab of each accommodation in the panel now has an **Owner replies** section. You see each reply with its status, filter the ones pending moderation, and approve or reject them with an optional reason. The old «Reply» card was removed.',
+            pt: 'Na aba **Avaliações** de cada alojamento do painel há uma seção **Respostas do proprietário**. Você vê cada resposta com seu estado, filtra as pendentes de moderação e as aprova ou rejeita com um motivo opcional. O cartão «Responder» antigo foi removido.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4817
+    {
+        id: '2026-11-26-reply-to-reviews',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST'],
+        title: {
+            es: 'Ahora podés responder las reseñas de tu alojamiento',
+            en: "You can now reply to your accommodation's reviews",
+            pt: 'Agora você pode responder às avaliações do seu alojamento'
+        },
+        body: {
+            es: 'En **Mi cuenta > Reseñas recibidas** ves las reseñas de tus alojamientos y respondés a cada huésped. Podés editar o eliminar tu respuesta, volver a responder y filtrar las reseñas **Sin responder**. Tu respuesta se muestra en la ficha pública. Responder está incluido en los planes de alojamiento que lo ofrecen.',
+            en: "In **My account > Received reviews** you see your accommodations' reviews and reply to each guest. You can edit or delete your reply, reply again, and filter the reviews **Unanswered**. Your reply is shown on the public listing. Replying is included in the accommodation plans that offer it.",
+            pt: 'Em **Minha conta > Avaliações recebidas** você vê as avaliações dos seus alojamentos e responde a cada hóspede. Você pode editar ou excluir sua resposta, responder de novo e filtrar as avaliações **Sem resposta**. Sua resposta aparece na página pública. Responder está incluído nos planos de alojamento que o oferecem.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4813
+    {
+        id: '2026-11-26-rich-description-with-plan',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST'],
+        title: {
+            es: 'La descripción con formato se publica tal cual si tu plan la incluye',
+            en: 'Formatted descriptions are published as written if your plan includes them',
+            pt: 'A descrição com formatação é publicada como você escreveu se o seu plano a inclui'
+        },
+        body: {
+            es: 'Si tu plan incluye la descripción con formato, tu texto con negrita, cursiva y listas se muestra tal cual en la ficha pública de tu alojamiento.',
+            en: "If your plan includes formatted descriptions, your text with bold, italics and lists is shown as written on your accommodation's public listing.",
+            pt: 'Se o seu plano inclui a descrição com formatação, seu texto com negrito, itálico e listas aparece como você escreveu na página pública do seu alojamento.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4820
+    {
+        id: '2026-11-26-venue-experience-pro-premium-featured',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['VENUE_OWNER', 'EXPERIENCE_OWNER'],
+        title: {
+            es: 'Tus planes Profesional y Premium destacan tu ficha',
+            en: 'Your Professional and Premium plans feature your listing',
+            pt: 'Seus planos Profissional e Premium destacam a sua página'
+        },
+        body: {
+            es: 'Los planes Profesional y Premium de **Comer y salir** y de **Experiencias** ahora incluyen el destacado de la ficha, igual que en Alojamiento. No hace falta comprar un complemento para aparecer destacado.',
+            en: 'The Professional and Premium plans of **Eat and drink** and **Experiences** now include listing highlighting, just like Accommodation. You no longer need to buy an add-on to be featured.',
+            pt: 'Os planos Profissional e Premium de **Comer e sair** e de **Experiências** agora incluem o destaque da página, como em Hospedagem. Não é mais preciso comprar um complemento para aparecer em destaque.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4773
+    {
+        id: '2026-11-25-promotion-audience-all-or-vip',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST'],
+        title: {
+            es: 'Al crear una promoción ves qué público ve cada opción',
+            en: 'When you create a promotion you see which audience each option reaches',
+            pt: 'Ao criar uma promoção você vê qual público cada opção alcança'
+        },
+        body: {
+            es: 'El selector **¿Quién ve esta promoción?** explica las dos opciones: **Para todos** llega a todos los turistas, y **Solo VIP** solo la ven los turistas con el plan Turista VIP, que además reciben un aviso por correo.',
+            en: 'The **Who sees this promotion?** selector explains both options: **For everyone** reaches all tourists, and **VIP only** is seen only by tourists on the Tourist VIP plan, who also get an email notice.',
+            pt: 'O seletor **Quem vê esta promoção?** explica as duas opções: **Para todos** alcança todos os turistas, e **Só VIP** só é vista pelos turistas com o plano Turista VIP, que também recebem um aviso por e-mail.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4681
+    {
+        id: '2026-11-22-host-dashboard-real-plan-status',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST'],
+        title: {
+            es: 'Tu panel muestra tu plan real, no «Sin suscripción activa»',
+            en: 'Your dashboard shows your real plan, not «No active subscription»',
+            pt: 'Seu painel mostra o seu plano real, e não «Sem assinatura ativa»'
+        },
+        body: {
+            es: 'La tarjeta **Plan** del panel del anfitrión ahora muestra el plan que tenés, por ejemplo **Básico**, con cuándo es tu próximo cobro. Antes podía decir que no tenías suscripción activa teniéndola.',
+            en: 'The **Plan** card on the host dashboard now shows the plan you have, for example **Basic**, with when your next charge is. Before, it could say you had no active subscription when you did.',
+            pt: 'O cartão **Plano** do painel do anfitrião agora mostra o plano que você tem, por exemplo **Básico**, com a data da sua próxima cobrança. Antes podia dizer que você não tinha assinatura ativa tendo uma.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4845, #4843, #4837
     {
         id: '2026-11-27-price-alert-target-price',
