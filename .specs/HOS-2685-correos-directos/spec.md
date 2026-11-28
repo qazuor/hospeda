@@ -39,7 +39,7 @@ code that only Hospeda can render.
 | # | Decision |
 |---|----------|
 | D1 | **Sender: own subdomain.** The From address comes from a new env var (`HOSPEDA_DIRECT_EMAIL_FROM_EMAIL`), intended to be an address on a dedicated subdomain (for example `contacto@comercial.hospeda.com.ar`) so a cold email marked as spam does not hurt the reputation of transactional and newsletter mail. Until the owner registers the subdomain in Brevo and adds its SPF/DKIM records in Cloudflare, the var is unset and the module falls back to the current sender (`getEmailSender()`). |
-| D2 | **Opt-out: link plus suppression list.** Every direct email carries a footer line "No quiero recibir más correos de Hospeda". The link adds the address to a suppression list, and the admin can no longer send to it (the compose form flags it as soon as it is typed). This satisfies Ley 25.326 art. 27 and helps deliverability. |
+| D2 | **Opt-out: link plus suppression list.** Every direct email carries a footer line "No quiero recibir más correos de Hospeda". The link adds the address to a suppression list, and the admin can no longer send to it (the compose form flags it as soon as it is typed). This satisfies Ley 25.326 art. 27 and helps deliverability. An `opt_out` suppression is permanent: nobody can remove it (only `manual` and `hard_bounce` rows are removable). |
 | D3 | **Who and where replies go.** New permissions `DIRECT_EMAIL_VIEW`, `DIRECT_EMAIL_SEND` and `DIRECT_EMAIL_TEMPLATE_WRITE`, seeded to SUPER_ADMIN and ADMIN only. Reply-To is the sending admin's own email, and the From name is "<admin first name> de Hospeda". |
 
 ## 3. Scope
@@ -81,10 +81,14 @@ code that only Hospeda can render.
 - **AC-4 Suppression blocks the send.** A suppressed address is flagged in the
   compose form, and the API refuses to send to it: it is reported as
   `suppressed` and skipped, while the rest of the recipients are sent.
+  Owner decision: a suppression with reason `opt_out` can never be deleted, by
+  anyone (409 `DIRECT_EMAIL_SUPPRESSION_OPT_OUT_LOCKED`; the admin screen
+  disables the remove action with an explanation). Only `manual` and
+  `hard_bounce` rows are removable.
 - **AC-5 Opt-out link.** The footer link opens a public page that, after one
-  confirmation click, adds the address to the suppression list. The link is
-  signed (HMAC), so it cannot be forged for another address. Visiting it twice
-  is harmless.
+  confirmation click, adds the address to the suppression list. The link
+  carries an opaque random token, stored on the recipient row, so it cannot be
+  guessed for another address and reveals none. Visiting it twice is harmless.
 - **AC-6 Test send.** A test send goes to one address (default: the admin's),
   with `[PRUEBA]` in the subject and the warning banner, creates no history
   row, and ignores the suppression list only for the admin's own address.
@@ -97,6 +101,18 @@ code that only Hospeda can render.
 - **AC-9 Delivery tracking.** Brevo webhook events (`delivered`, `opened`,
   `hard_bounce`, `soft_bounce`) update the matching recipient row by provider
   message id. A hard bounce also adds the address to the suppression list.
+  Events may arrive out of order: each timestamp is filled once whenever its
+  event arrives (an `opened` before the `delivered` still leaves `delivered_at`
+  filled), and the status never moves backwards. A `soft_bounce` is transient:
+  it records `bounced_at` but leaves the status alone, so a later `delivered` or
+  `opened` still applies; only `hard_bounce` sets `bounced`.
+- **AC-13 Safe retry.** The compose screen sends a client UUID
+  (`idempotencyKey`) per compose session, regenerated after each successful
+  send. A send with a key already used does not send again: it answers 201 with
+  the stored per-recipient results. The send also stops starting new recipients
+  after 75 seconds; the rest are recorded and reported as `failed` with error
+  `timeout`. After any send error the admin is told to check the history before
+  retrying.
 - **AC-10 Permissions.** Without `DIRECT_EMAIL_VIEW` the module is hidden and
   its routes answer 403. Sending needs `DIRECT_EMAIL_SEND`; template writes need
   `DIRECT_EMAIL_TEMPLATE_WRITE`. EDITOR has none of them.
@@ -110,14 +126,16 @@ code that only Hospeda can render.
 
 - `direct_email_message`: `id`, `subject`, `body_json` (jsonb, TipTap),
   `template_id` (nullable FK), `sent_by` (FK user), `from_email`,
-  `reply_to_email`, `created_at`, audit columns.
+  `reply_to_email`, `idempotency_key` (uuid, unique), `created_at`, audit
+  columns.
 - `direct_email_recipient`: `id`, `message_id` (FK, cascade), `email`
-  (lowercased), `status` (`sent` | `failed` | `suppressed` | `delivered` |
-  `opened` | `bounced`), `provider_message_id` (nullable, indexed),
+  (lowercased), `opt_out_token` (opaque random 32 bytes, base64url, unique),
+  `status` (`sent` | `failed` | `suppressed` | `delivered` | `opened` |
+  `bounced`), `provider_message_id` (nullable, indexed),
   `error_message`, `sent_at`, `delivered_at`, `opened_at`, `bounced_at`.
 - `direct_email_template`: `id`, `name`, `subject`, `body_json`, `created_by`,
   `updated_by`, timestamps, `deleted_at` (soft delete).
-- `direct_email_suppression`: `id`, `email` (unique, lowercased), `reason`
+- `direct_email_suppression`: `id`, `email` (unique on `lower(email)`), `reason`
   (`opt_out` | `hard_bounce` | `manual`), `created_at`, `created_by`
   (nullable).
 
@@ -149,14 +167,23 @@ same templates over the API instead of copying them.
   `footerLink="none"`, the sanitized body, and the opt-out line under the body.
   `isTest` adds the `[PRUEBA]` banner like `NewsletterCampaign`.
 - Body: `renderTiptapEmailContent`. Attribution: `applyEmailAttribution` with a
-  transactional key `direct-email` (added to the email catalog).
+  transactional key added to the email catalog. The catalog requires keys of
+  the form `<sendPath>.<id>`, so the key is `newsletter.direct-email` and the
+  Brevo tag is `template:newsletter.direct-email` (not the bare `direct-email`
+  first drafted here).
 - Send: one `sendEmail` call per recipient (it sends one shared message when
-  given an array), with `replyTo`, the From from D1 and the Brevo tag
-  `template:direct-email`. Calls run sequentially; 20 recipients stay well
-  under the request budget.
-- Opt-out token: HMAC-SHA256 over `direct-email-opt-out:<email>` with
-  `HOSPEDA_NEWSLETTER_HMAC_SECRET` (domain-separated by the prefix, so a
-  newsletter token is never valid here and no new secret is needed).
+  given an array), with `replyTo` and the From from D1. Calls run
+  sequentially with a 75-second batch deadline (see AC-13); the send is
+  idempotent per `idempotencyKey`.
+- Opt-out token: 32 random bytes in base64url, generated when the recipient
+  row is created and stored in `direct_email_recipient.opt_out_token` (unique).
+  The footer link carries only that token, never the address; the public
+  endpoints look the row up by it. No HMAC or secret is involved, so there is
+  nothing to rotate. Test sends and previews render the fixed token `test`,
+  which no row has, so their link answers the invalid-token response.
+- Test send: a provider refusal answers 200 with `delivered: false` and the
+  provider text in `providerError`. A 502 would be masked by the API's 5xx
+  rule and the admin would never learn why Brevo refused.
 
 ## 8. Admin UI
 
@@ -173,9 +200,11 @@ same templates over the API instead of copying them.
 
 ## 9. Public opt-out page (web)
 
-`/{lang}/correos/baja/?token=...`: shows the address and a "Confirmar baja"
-button (a GET never writes, so link scanners cannot unsubscribe anyone). The
-page stays session-blind.
+`/{lang}/correos/baja/?token=...`: shows the masked address and a "Confirmar
+baja" button (a GET never writes, so link scanners cannot unsubscribe anyone).
+The page stays session-blind. After reading the token the island removes it from
+the address bar (`history.replaceState`) so analytics never records it. A 429
+shows the retryable error state, not the invalid-link one.
 
 ## 10. Env vars
 
