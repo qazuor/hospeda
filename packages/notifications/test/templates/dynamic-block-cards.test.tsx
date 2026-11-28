@@ -3,7 +3,8 @@ import { describe, expect, it } from 'vitest';
 import {
     DynamicBlockCards,
     type NewsletterDynamicCard,
-    type NewsletterResolvedBlock
+    type NewsletterResolvedBlock,
+    truncateSummary
 } from '../../src/templates/newsletter/dynamic-block-cards.js';
 
 const card: NewsletterDynamicCard = {
@@ -29,7 +30,10 @@ describe('DynamicBlockCards', () => {
         );
         expect(html.match(/data-newsletter-card=/g)).toHaveLength(2);
         expect(html.indexOf('Casa &amp; río')).toBeLessThan(html.indexOf('First'));
-        expect(html).toContain('<td style="padding:16px 22px;border:1px solid');
+        expect(html).toContain('border:1px solid');
+        expect(html).toContain('border-radius:8px');
+        expect(html).toContain('class="hd-tint"');
+        expect(html).toContain('width="160"');
         expect(html).toContain('https://example.com/cover.jpg');
         expect(html).not.toMatch(/display:(flex|grid)/);
     });
@@ -101,6 +105,49 @@ describe('DynamicBlockCards', () => {
         expect(html).not.toContain('javascript:');
         expect(html).toContain('&lt;script&gt;');
         expect(html).toContain('&lt;b&gt;Not HTML&lt;/b&gt;');
+    });
+
+    it('renders a compact row: cover cell beside the text, a text link and no button', async () => {
+        const html = await render(
+            <DynamicBlockCards
+                block={{ ...block, itemIds: ['first'] }}
+                locale="es"
+            />
+        );
+        expect(html.indexOf('https://example.com/cover.jpg')).toBeLessThan(html.indexOf('First'));
+        expect(html).toContain('data-utm-content="dynamic-card"');
+        expect(html).toContain('data-utm-content="dynamic-card-image"');
+        expect(html).toContain('Ver alojamiento →');
+        expect(html).not.toContain('hospeda-btn');
+    });
+
+    it('drops the cover cell entirely when there is no safe image', async () => {
+        const html = await render(
+            <DynamicBlockCards
+                block={{
+                    ...block,
+                    itemIds: ['first'],
+                    cards: { first: { es: { ...card, imageUrl: null } } }
+                }}
+                locale="es"
+            />
+        );
+        expect(html).not.toContain('width="160"');
+        expect(html).toContain('Ver alojamiento →');
+    });
+
+    it.each([
+        ['keeps a short summary', 'A quiet stay', 'A quiet stay'],
+        ['collapses whitespace', '  A   quiet\n stay ', 'A quiet stay']
+    ])('truncateSummary %s', (_label, text, expected) => {
+        expect(truncateSummary({ text })).toBe(expected);
+    });
+
+    it('truncateSummary cuts a long summary at a word boundary with an ellipsis', () => {
+        const text = `${'palabra '.repeat(30)}final`;
+        const result = truncateSummary({ text });
+        expect(result.length).toBeLessThanOrEqual(111);
+        expect(result.endsWith('palabra…')).toBe(true);
     });
 
     it('renders nothing for hidden or empty blocks', () => {
