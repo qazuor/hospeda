@@ -52,6 +52,28 @@ describe('ROLE_PERMISSIONS — EDITOR newsletter permissions (SPEC-155 T-016)', 
     });
 });
 
+describe('ROLE_PERMISSIONS — direct email permissions (HOS-2685)', () => {
+    const DIRECT_EMAIL_PERMISSIONS = [
+        'directEmail.view',
+        'directEmail.send',
+        'directEmail.template.write'
+    ] as const;
+    const permsOf = (role: string) =>
+        ROLE_PERMISSIONS[role as unknown as keyof typeof ROLE_PERMISSIONS] as readonly string[];
+
+    it.each(['SUPER_ADMIN', 'ADMIN'])('grants all three to %s', (role) => {
+        for (const permission of DIRECT_EMAIL_PERMISSIONS) {
+            expect(permsOf(role)).toContain(permission);
+        }
+    });
+
+    it('does NOT grant any of them to EDITOR', () => {
+        for (const permission of DIRECT_EMAIL_PERMISSIONS) {
+            expect(permsOf(EDITOR)).not.toContain(permission);
+        }
+    });
+});
+
 // ---------------------------------------------------------------------------
 // SPEC-164 T-003 — Billing surface is SUPER_ADMIN-only
 // ---------------------------------------------------------------------------

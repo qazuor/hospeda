@@ -238,6 +238,11 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.NEWSLETTER_CAMPAIGN_SEND,
         PermissionEnum.NEWSLETTER_SUBSCRIBER_VIEW,
 
+        // DIRECT EMAIL: one-to-one admin emails (HOS-2685). SUPER_ADMIN and ADMIN only.
+        PermissionEnum.DIRECT_EMAIL_VIEW,
+        PermissionEnum.DIRECT_EMAIL_SEND,
+        PermissionEnum.DIRECT_EMAIL_TEMPLATE_WRITE,
+
         PermissionEnum.SEO_MANAGE,
 
         // ACCESS: All permissions
@@ -708,6 +713,11 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.NEWSLETTER_CAMPAIGN_WRITE,
         PermissionEnum.NEWSLETTER_CAMPAIGN_SEND,
         PermissionEnum.NEWSLETTER_SUBSCRIBER_VIEW,
+
+        // DIRECT EMAIL: one-to-one admin emails (HOS-2685). SUPER_ADMIN and ADMIN only.
+        PermissionEnum.DIRECT_EMAIL_VIEW,
+        PermissionEnum.DIRECT_EMAIL_SEND,
+        PermissionEnum.DIRECT_EMAIL_TEMPLATE_WRITE,
 
         PermissionEnum.SEO_MANAGE,
 
