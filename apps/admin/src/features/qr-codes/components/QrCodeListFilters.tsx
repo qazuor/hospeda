@@ -8,6 +8,7 @@ import {
     SelectTrigger,
     SelectValue
 } from '@/components/ui/select';
+import { QrCampaignUmamiFilterLink } from '@/features/qr-codes/components/QrCodeCampaignsDialog';
 import { useQrCodeCampaigns } from '@/features/qr-codes/hooks/useQrCodeTags';
 import { useTranslations } from '@/hooks/use-translations';
 import { QrCodeTagPicker } from './QrCodeTagPicker';
@@ -264,6 +265,9 @@ export function QrCodeListFilters({ value, onChange }: QrCodeListFiltersProps) {
                     )
                 }
             />
+            {value.utmCampaign === null ? null : (
+                <QrCampaignUmamiFilterLink campaign={value.utmCampaign} />
+            )}
             <div className="space-y-1">
                 <span className="block font-medium text-xs">
                     {t('admin-qr-codes.filters.tags')}

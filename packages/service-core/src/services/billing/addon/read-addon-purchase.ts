@@ -17,6 +17,9 @@ async function readRow(input: { readonly ownerId: string; readonly orderRequestI
             instanceId: addonInstances.id,
             status: addonInstances.status,
             chargeKind: addonProducts.chargeKind,
+            productId: addonInstances.productId,
+            targetId: addonInstances.targetId,
+            addonVersionId: addonInstances.addonVersionId,
             paymentPageId: addonInstances.paymentPageId
         })
         .from(addonInstances)
@@ -42,7 +45,9 @@ async function readRow(input: { readonly ownerId: string; readonly orderRequestI
  * @param input.ownerId - The owner asking; another owner's purchase reads as absent
  * @param input.orderRequestId - The purchase identity the screen minted
  * @param ports - A2's ports, to confirm a waiting page purchase before answering
- * @returns The purchase with `processing` while it waits, or null when this owner has none
+ * @returns The purchase with `processing` while it waits and its identity (product, target and
+ *   version, HOS-2680, so the screen can ask for the same add-on again), or null when this owner
+ *   has none
  */
 export async function readAddonPurchase(
     input: { readonly ownerId: string; readonly orderRequestId: string },

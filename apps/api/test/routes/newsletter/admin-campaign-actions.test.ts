@@ -183,6 +183,17 @@ describe('send and cancel', () => {
         });
         expect(mocks.send.mock.calls).toEqual([[actor, { id: campaignId, previewSelection }]]);
     });
+    it('forwards ignoreSoftCap=true from the body to the service', async () => {
+        mocks.send.mockResolvedValue({ data: { enqueued: 10, softcapped: 0 }, error: null });
+        const response = await post({ path: `${base}/send`, body: { ignoreSoftCap: true } });
+        expect(response.status).toBe(202);
+        expect(mocks.send.mock.calls).toEqual([[actor, { id: campaignId, ignoreSoftCap: true }]]);
+    });
+    it('rejects a non-boolean ignoreSoftCap before the service', async () => {
+        const response = await post({ path: `${base}/send`, body: { ignoreSoftCap: 'yes' } });
+        expect(response.status).toBe(400);
+        expect(mocks.send).not.toHaveBeenCalled();
+    });
     it.each([
         ['a non-uuid item id', [{ blockKey: 'b', itemIds: ['not-a-uuid'] }]],
         [

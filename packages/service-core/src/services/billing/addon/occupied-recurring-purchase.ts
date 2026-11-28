@@ -32,7 +32,8 @@ const logger = createLogger('addon-occupied-recurring-purchase');
  *   authorization window is open. The caller answers the stored checkout link; nothing is written.
  * - `{ kind: 'RETRY' }`: the payer email changed, the provider cancelled the preapproval, or the
  *   window ended. The pair was released (or another entry moved it meanwhile); the caller retries
- *   the purchase once with the new request.
+ *   the purchase once with `payerEmail`: the request's, or else the one the released purchase
+ *   declared (HOS-2680, as a plan succession does). It is declared, never a confirmed one.
  * - `{ kind: 'ACTIVATED' }`: the provider reads the preapproval authorized. Nothing is released;
  *   its activation arrives through the notice or the window expiry.
  * - `{ kind: 'UNDECIDED' }`: there is nothing to read yet (no preapproval linked, no stored
@@ -40,7 +41,7 @@ const logger = createLogger('addon-occupied-recurring-purchase');
  */
 export type OccupiedRecurringPurchaseDecision =
     | { readonly kind: 'REUSE'; readonly checkoutUrl: string }
-    | { readonly kind: 'RETRY' }
+    | { readonly kind: 'RETRY'; readonly payerEmail: string | undefined }
     | { readonly kind: 'ACTIVATED' }
     | { readonly kind: 'UNDECIDED' };
 
@@ -209,5 +210,8 @@ export async function decideOccupiedRecurringPurchase(
         },
         ports
     );
-    return { kind: 'RETRY' };
+    return {
+        kind: 'RETRY',
+        payerEmail: input.payerEmail ?? row.complement.declaredPayerEmail ?? undefined
+    };
 }

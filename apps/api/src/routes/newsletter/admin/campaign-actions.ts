@@ -91,11 +91,14 @@ export const adminSendCampaignRoute = createAdminRoute({
     options: { customRateLimit: { requests: 1, windowMs: 60_000 } },
     handler: async (ctx, params, body) => {
         const campaignSvc = await getDefaultCampaignService();
-        const previewSelection = (body as { previewSelection?: PreviewSelection } | undefined)
-            ?.previewSelection;
+        const sendBody = body as
+            | { ignoreSoftCap?: boolean; previewSelection?: PreviewSelection }
+            | undefined;
+        const previewSelection = sendBody?.previewSelection;
         try {
             const result = await campaignSvc.send(getActorFromContext(ctx), {
                 id: params.id as string,
+                ...(sendBody?.ignoreSoftCap === true ? { ignoreSoftCap: true } : {}),
                 ...(previewSelection ? { previewSelection } : {})
             });
             if (result.error)

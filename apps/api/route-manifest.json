@@ -2067,6 +2067,10 @@
         },
         {
             "method": "GET",
+            "path": "/api/v1/admin/qr-codes/campaigns/umami"
+        },
+        {
+            "method": "GET",
             "path": "/api/v1/admin/revalidation/config"
         },
         {

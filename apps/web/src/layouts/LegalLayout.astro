@@ -13,7 +13,14 @@ import SEOHead from '@/components/seo/SEOHead.astro';
 import FAQPageJsonLd from '@/components/seo/FAQPageJsonLd.astro';
 import { ChevronDownIcon } from '@repo/icons';
 
-/** Resolved article copy and optional supplementary paragraphs or links. */
+/**
+ * Resolved article copy and optional supplementary paragraphs or links.
+ *
+ * `heading` carries no number: the layout prefixes `{index + 1}. ` in the `<h2>`
+ * and in the table of contents, so the numbering follows the array order and a
+ * new article never leaves a stale number behind. Cross-references between
+ * articles go by anchor (`id`), never by number.
+ */
 export interface LegalArticle {
     readonly id: string;
     readonly heading: string;
@@ -95,16 +102,16 @@ const updatedLabel = lastUpdated ? new Intl.DateTimeFormat(locale, { dateStyle: 
 					<details>
 						<summary>{t('common.legal.toc')} <ChevronDownIcon size="sm" aria-hidden="true" /></summary>
 						<nav aria-label={t('common.legal.toc')}>
-							<ul>{articles.map(({ id, heading }) => <li><a href={`#${id}`}>{heading}</a></li>)}</ul>
+							<ul>{articles.map(({ id, heading }, index) => <li><a href={`#${id}`}>{index + 1}. {heading}</a></li>)}</ul>
 						</nav>
 					</details>
 				</aside>
 			)}
 			<div class="legal-prose">
 				<slot />
-				{articles.map(({ id, heading, body, bullets, table, links, managePreferences }) => (
+				{articles.map(({ id, heading, body, bullets, table, links, managePreferences }, index) => (
 					<section id={id} class="legal-article">
-						<h2>{heading}</h2>
+						<h2>{index + 1}. {heading}</h2>
 						<p>{body}</p>
 						{bullets && <ul>{bullets.map((bullet) => <li>{bullet}</li>)}</ul>}
 						{table && <table aria-label={heading}>

@@ -965,6 +965,15 @@
         "waitingPaymentMail": "Ainda não temos a confirmação do Mercado Pago. Avisaremos você por e-mail quando for creditado.",
         "active": "Ativo",
         "closed": "A compra terminou sem ativação.",
+        "returnActions": {
+            "retry": "Tentar o pagamento de novo",
+            "useOtherEmail": "Usar outro e-mail",
+            "otherEmailConfirm": "Continuar com este e-mail",
+            "startNew": "Começar uma nova compra",
+            "alreadyPaid": "O Mercado Pago já registrou seu pagamento. Estamos ativando: em alguns minutos você vai vê-lo ativo, não é preciso pagar de novo.",
+            "stillPreparing": "O Mercado Pago ainda está preparando o pagamento. Tente de novo em alguns minutos.",
+            "backToStore": "Voltar à loja"
+        },
         "pageExpired": "A página de pagamento expirou sem um pagamento aprovado. Você pode comprar de novo.",
         "paymentNotConfirmed": "Não conseguimos confirmar o pagamento deste complemento. Se quiser, compre de novo.",
         "paused": {

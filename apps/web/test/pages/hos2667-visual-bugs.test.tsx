@@ -183,12 +183,17 @@ describe('HOS-2667 standalone and legal pages', () => {
         expect(layout).toMatch(/\.legal-toc-return a,[\s\S]*?color: var\(--brand-primary-link\)/);
     });
 
+    // HOS-2681 moved the numbering into LegalLayout (`{index + 1}. {heading}`),
+    // so the cookies sections are numbered in order by construction and their
+    // titles must NOT carry a hand-written number any more.
     it.each(['es', 'en', 'pt'])('numbers every cookies section in order in %s', (locale) => {
         const titles = Object.values(
             i18n(locale, 'cookies').sections as Record<string, { title: string }>
         ).map(({ title }) => title);
-        for (const [index, title] of titles.entries()) {
-            expect(title.startsWith(`${index + 1}. `)).toBe(true);
+        expect(titles.length).toBeGreaterThan(0);
+        for (const title of titles) {
+            expect(title).not.toMatch(/^\d+\.\s/);
         }
+        expect(source('layouts/LegalLayout.astro')).toContain('<h2>{index + 1}. {heading}</h2>');
     });
 });
