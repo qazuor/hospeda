@@ -137,8 +137,18 @@ one and its state in Umami.
   including the `utm_content` table, which a board component cannot do in Umami 3.5.
 - **Created on demand** from the admin («Crear en Umami»), never in bulk. The API lists
   the segments by name and creates one only when no segment has that exact name, so a
-  second click returns the existing one. Umami does not enforce unique names, so do
-  not create a `QR · ...` segment by hand with a name that is already taken.
+  second click returns the existing one. Within one API instance a per-segment lock
+  serialises concurrent clicks into one create. Across instances two creates can still
+  race and leave two segments with the same name (Umami does not enforce unique names).
+  That is harmless: every read takes the first exact match, and the extra one can be
+  deleted by hand. Do not create a `QR · ...` segment by hand with a taken name.
+- **Commas are not supported.** Umami 3.5 splits an `eq` value on `,` into a list
+  (measured on 3.5.0: `utmCampaign=eq.a,b` counted `a`, `b` and `a,b` together, and a
+  segment with value `a,b` did the same). A campaign with a comma gets no «Ver en
+  Umami» link and cannot be segmented; the panel says why. Rename it. A dot is fine:
+  Umami splits the operator on the first dot only.
+- Campaigns longer than 500 characters are listed but cannot be segmented (the
+  create's limit); the button is disabled with the reason.
 - **Not managed by `pnpm umami:setup`.** They are not in `segment-definitions.ts`, so
   the script reports them as unmanaged. That is expected; it never deletes them.
 - «Ver en Umami» needs no segment: it opens the website with the ad-hoc URL filter
@@ -146,6 +156,9 @@ one and its state in Umami.
 - Creating needs `HOSPEDA_UMAMI_WRITE_API_KEY` on the API (see
   [the runbook](../runbooks/umami.md#write-key-for-qr-campaign-segments)). Without it,
   or with Umami down, the panel still lists the campaigns and the button is disabled.
+- Listing uses only the view-only `HOSPEDA_UMAMI_API_KEY`, never the write key.
+  Without it every row is `unavailable` (`READ_KEY_MISSING`); the «Ver en Umami» link
+  still works, because it is a plain URL.
 
 ## Session recorder config
 
