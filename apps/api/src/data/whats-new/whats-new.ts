@@ -152,6 +152,42 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4856
+    {
+        id: '2026-11-28-plain-description-no-italics',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST'],
+        title: {
+            es: 'Sin descripción con formato, tu texto se ve como lo escribiste',
+            en: 'Without formatted descriptions, your text shows as you wrote it',
+            pt: 'Sem descrição com formatação, seu texto aparece como você escreveu'
+        },
+        body: {
+            es: 'Si tu plan no incluye la descripción con formato, la ficha pública muestra tu texto sin cursiva ni otros estilos. Los nombres con guion bajo, los emails y los enlaces se leen completos.',
+            en: 'If your plan does not include formatted descriptions, the public listing shows your text without italics or other styling. Names with underscores, emails and links read in full.',
+            pt: 'Se o seu plano não inclui a descrição com formatação, a página pública mostra seu texto sem itálico nem outros estilos. Nomes com sublinhado, e-mails e links aparecem completos.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4822
+    {
+        id: '2026-11-26-publish-limit-offers-addon',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
+        title: {
+            es: 'Al llegar al tope de publicaciones te ofrecemos ampliarlo',
+            en: 'When you reach your publishing limit we offer to extend it',
+            pt: 'Ao atingir o limite de publicações oferecemos ampliá-lo'
+        },
+        body: {
+            es: 'Cuando no podés publicar otra ficha porque llegaste al tope de tu plan, el aviso te ofrece subir de plan y, si hay un complemento a la venta, ampliar el tope con él. Si no hay ninguno, solo ves el cambio de plan.',
+            en: 'When you cannot publish another listing because you hit your plan limit, the notice offers a plan upgrade and, if an add-on is on sale, extending the limit with it. If there is none, you only see the plan change.',
+            pt: 'Quando você não pode publicar outra página porque atingiu o limite do plano, o aviso oferece mudar de plano e, se houver um complemento à venda, ampliar o limite com ele. Se não houver, você vê apenas a mudança de plano.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4854
     {
         id: '2026-11-28-limit-notice-offers-addon',
