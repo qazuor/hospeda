@@ -124,6 +124,33 @@ describe('ReceivedReviewsPanel', () => {
         expect(screen.getByText('No tenés reseñas sin responder')).toBeInTheDocument();
     });
 
+    it('under the unanswered filter, refetches when the removal empties the page but more remain', async () => {
+        const OTHER = {
+            ...REVIEW,
+            id: '44444444-4444-4444-8444-444444444444',
+            content: 'Otra reseña.'
+        };
+        api.listReceived.mockResolvedValue(page([REVIEW]));
+        api.create.mockResolvedValue({ ok: true, data: REPLY });
+        render(<ReceivedReviewsPanel locale="es" />);
+        await screen.findByText('Muy buen lugar.');
+        api.listReceived.mockResolvedValue({
+            ok: true,
+            data: { items: [REVIEW], total: 2, canRespond: true }
+        });
+        fireEvent.click(screen.getByRole('button', { name: 'Sin responder' }));
+        await screen.findByText('Muy buen lugar.');
+        api.listReceived.mockResolvedValue(page([OTHER]));
+
+        fireEvent.click(screen.getByRole('button', { name: 'Responder' }));
+        fireEvent.change(screen.getByLabelText('Tu respuesta'), { target: { value: 'Gracias' } });
+        fireEvent.click(screen.getByRole('button', { name: 'Publicar respuesta' }));
+
+        expect(await screen.findByText('Otra reseña.')).toBeInTheDocument();
+        expect(screen.getByText('Respuesta publicada')).toBeInTheDocument();
+        expect(screen.queryByText('No tenés reseñas sin responder')).not.toBeInTheDocument();
+    });
+
     it('does not send an empty reply', async () => {
         api.listReceived.mockResolvedValue(page([REVIEW]));
         render(<ReceivedReviewsPanel locale="es" />);

@@ -91,7 +91,6 @@ export function ReceivedReviewsPanel({ locale }: ReceivedReviewsPanelProps) {
 
     const load = useCallback(async () => {
         setState({ status: 'loading' });
-        setPublishedNotice(false);
         const result = await reviewRepliesApi.listReceived({
             page,
             pageSize: PAGE_SIZE,
@@ -116,40 +115,38 @@ export function ReceivedReviewsPanel({ locale }: ReceivedReviewsPanelProps) {
      * Applies a reply change without refetching the page. Under the «Sin responder»
      * filter a newly created reply takes its review out of the list (it no longer
      * belongs there) and the host is told it was published; otherwise the reply is
-     * replaced in place.
+     * replaced in place. When the removal empties the current page but more
+     * unanswered reviews remain, the previous page is loaded (or this one refetched).
      */
-    const setReply = useCallback(
-        (input: { reviewId: string; reply: Reply | null }) => {
-            setState((current) => {
-                if (current.status !== 'ready') return current;
-                const previous = current.data.items.find((item) => item.id === input.reviewId);
-                if (filter === 'unanswered' && input.reply && previous && !previous.reply) {
-                    const items = current.data.items.filter((item) => item.id !== input.reviewId);
-                    return items.length === 0
-                        ? { status: 'empty' }
-                        : {
-                              status: 'ready',
-                              data: {
-                                  ...current.data,
-                                  items,
-                                  total: Math.max(0, current.data.total - 1)
-                              }
-                          };
-                }
-                return {
-                    status: 'ready',
-                    data: {
-                        ...current.data,
-                        items: current.data.items.map((item) =>
-                            item.id === input.reviewId ? { ...item, reply: input.reply } : item
-                        )
-                    }
-                };
-            });
-            if (filter === 'unanswered' && input.reply) setPublishedNotice(true);
-        },
-        [filter]
-    );
+    const setReply = (input: { reviewId: string; reply: Reply | null }) => {
+        if (state.status !== 'ready') return;
+        const { data } = state;
+        const previous = data.items.find((item) => item.id === input.reviewId);
+        if (filter === 'unanswered' && input.reply && previous && !previous.reply) {
+            const items = data.items.filter((item) => item.id !== input.reviewId);
+            const total = Math.max(0, data.total - 1);
+            setPublishedNotice(true);
+            if (items.length > 0) {
+                setState({ status: 'ready', data: { ...data, items, total } });
+            } else if (total === 0) {
+                setState({ status: 'empty' });
+            } else if (page > 1) {
+                setPage(page - 1);
+            } else {
+                void load();
+            }
+            return;
+        }
+        setState({
+            status: 'ready',
+            data: {
+                ...data,
+                items: data.items.map((item) =>
+                    item.id === input.reviewId ? { ...item, reply: input.reply } : item
+                )
+            }
+        });
+    };
 
     return (
         <Section
@@ -169,6 +166,7 @@ export function ReceivedReviewsPanel({ locale }: ReceivedReviewsPanelProps) {
                 onChange={(next) => {
                     setFilter((next as Filter | null) ?? 'all');
                     setPage(1);
+                    setPublishedNotice(false);
                 }}
                 items={[
                     {
@@ -247,7 +245,10 @@ export function ReceivedReviewsPanel({ locale }: ReceivedReviewsPanelProps) {
                                 <Pagination
                                     page={page}
                                     pageCount={pageCount}
-                                    onPageChange={setPage}
+                                    onPageChange={(next) => {
+                                        setPage(next);
+                                        setPublishedNotice(false);
+                                    }}
                                     locale={locale}
                                 />
                             )}
