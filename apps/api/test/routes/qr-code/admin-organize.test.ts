@@ -280,7 +280,7 @@ beforeEach(() => {
             entityType: 'VENUE',
             entityId: '55555555-5555-4555-8555-555555555555',
             purpose: 'MENU',
-            targetUrl: 'https://hospeda.com.ar/es/gastronomia/bar/menu/'
+            targetUrl: 'https://hospeda.com.ar/es/comer-y-salir/bar/menu/'
         })
     );
     db.codes.set(
