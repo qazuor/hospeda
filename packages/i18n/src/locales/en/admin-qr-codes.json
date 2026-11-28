@@ -107,7 +107,8 @@
         "save": "Save UTM",
         "saved": "UTM updated",
         "saveError": "Could not save the UTM",
-        "generatedHint": "Computed from the listing: not editable here."
+        "generatedHint": "Computed from the listing: not editable here.",
+        "seededHint": "These are the UTMs the code adds on its own at scan. Saving a change writes them into the URL, and they replace the automatic ones."
     },
     "filters": {
         "all": "All",
@@ -173,6 +174,7 @@
             "MAGENTA": "Magenta",
             "LIGHT_BLUE": "Light blue",
             "LIGHT_GREEN": "Light green"
-        }
+        },
+        "loadError": "We could not read this code's tags. Reload the page before editing it, so none get lost."
     }
 }

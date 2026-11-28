@@ -24,6 +24,13 @@ import { QrCodeTagPicker } from './QrCodeTagPicker';
 /** The value a Select uses for "no filter". Radix refuses an empty-string item. */
 export const QR_FILTER_ALL = 'ALL';
 
+/**
+ * Campaigns are free text, so a campaign could literally be called `ALL`. The
+ * campaign Select therefore prefixes every campaign value with this, and its
+ * "no filter" item is the only unprefixed value — the two cannot collide.
+ */
+export const QR_CAMPAIGN_VALUE_PREFIX = 'c:';
+
 /** The entity types a QR code is generated for (see `qr-attribution.ts`). */
 export const QR_FILTER_ENTITY_TYPES = [
     EntityTypeEnum.ACCOMMODATION,
@@ -38,7 +45,8 @@ export type QrCodeListFilterState = {
     readonly entityType: EntityTypeEnum | typeof QR_FILTER_ALL;
     readonly purpose: QrCodePurposeEnum | typeof QR_FILTER_ALL;
     readonly isActive: 'true' | 'false' | typeof QR_FILTER_ALL;
-    readonly utmCampaign: string;
+    /** The decoded campaign, verbatim; `null` means "not filtered". */
+    readonly utmCampaign: string | null;
     readonly tagIds: readonly string[];
 };
 
@@ -48,7 +56,7 @@ export const DEFAULT_QR_CODE_LIST_FILTERS: QrCodeListFilterState = {
     entityType: QR_FILTER_ALL,
     purpose: QR_FILTER_ALL,
     isActive: QR_FILTER_ALL,
-    utmCampaign: QR_FILTER_ALL,
+    utmCampaign: null,
     tagIds: []
 };
 
@@ -68,11 +76,42 @@ export function toQrCodeListQueryFilters(input: {
     if (filters.entityType !== QR_FILTER_ALL) out.entityType = filters.entityType;
     if (filters.purpose !== QR_FILTER_ALL) out.purpose = filters.purpose;
     if (filters.isActive !== QR_FILTER_ALL) out.isActive = filters.isActive;
-    if (filters.utmCampaign !== QR_FILTER_ALL && filters.utmCampaign !== '') {
+    if (filters.utmCampaign !== null && filters.utmCampaign.trim() !== '') {
         out.utmCampaign = filters.utmCampaign;
     }
     if (filters.tagIds.length > 0) out.tagIds = filters.tagIds.join(',');
     return out;
+}
+
+/**
+ * Applies one filter change, keeping the combination meaningful.
+ *
+ * Picking a `purpose` while the bar shows only MANUAL codes switches the source
+ * to "all": a purpose is a GENERATED code's identity and a MANUAL code never
+ * carries one, so MANUAL + purpose is always an empty list that looks like "no
+ * such codes". `entityType` does NOT switch it: a hand-made code may point at a
+ * subject too (several can coexist for one), so MANUAL + entityType is a real
+ * question with real answers.
+ *
+ * @param input.current - The bar's state.
+ * @param input.key - The filter being changed.
+ * @param input.next - Its new value.
+ * @returns The next state.
+ */
+export function applyQrCodeFilterChange<K extends keyof QrCodeListFilterState>(input: {
+    readonly current: QrCodeListFilterState;
+    readonly key: K;
+    readonly next: QrCodeListFilterState[K];
+}): QrCodeListFilterState {
+    const updated = { ...input.current, [input.key]: input.next };
+    if (
+        input.key === 'purpose' &&
+        input.next !== QR_FILTER_ALL &&
+        updated.source === QrCodeSourceEnum.MANUAL
+    ) {
+        return { ...updated, source: QR_FILTER_ALL };
+    }
+    return updated;
 }
 
 /** Props for {@link QrCodeListFilters}. */
@@ -142,12 +181,12 @@ export function QrCodeListFilters({ value, onChange }: QrCodeListFiltersProps) {
     // A campaign picked before a retarget may no longer be in the list; keep it
     // selectable so the Select never shows a blank trigger for a live filter.
     const campaignOptions =
-        value.utmCampaign !== QR_FILTER_ALL && !campaigns.includes(value.utmCampaign)
+        value.utmCampaign !== null && !campaigns.includes(value.utmCampaign)
             ? [value.utmCampaign, ...campaigns]
             : campaigns;
 
     const set = <K extends keyof QrCodeListFilterState>(key: K, next: QrCodeListFilterState[K]) =>
-        onChange({ ...value, [key]: next });
+        onChange(applyQrCodeFilterChange({ current: value, key, next }));
 
     return (
         <div className="flex flex-wrap items-end gap-3">
@@ -204,12 +243,26 @@ export function QrCodeListFilters({ value, onChange }: QrCodeListFiltersProps) {
             <FilterSelect
                 id="qr-filter-campaign"
                 label={t('admin-qr-codes.filters.campaign')}
-                value={value.utmCampaign}
+                value={
+                    value.utmCampaign === null
+                        ? QR_FILTER_ALL
+                        : `${QR_CAMPAIGN_VALUE_PREFIX}${value.utmCampaign}`
+                }
                 options={[
                     all,
-                    ...campaignOptions.map((campaign) => ({ value: campaign, label: campaign }))
+                    ...campaignOptions.map((campaign) => ({
+                        value: `${QR_CAMPAIGN_VALUE_PREFIX}${campaign}`,
+                        label: campaign
+                    }))
                 ]}
-                onChange={(next) => set('utmCampaign', next)}
+                onChange={(next) =>
+                    set(
+                        'utmCampaign',
+                        next.startsWith(QR_CAMPAIGN_VALUE_PREFIX)
+                            ? next.slice(QR_CAMPAIGN_VALUE_PREFIX.length)
+                            : null
+                    )
+                }
             />
             <div className="space-y-1">
                 <span className="block font-medium text-xs">

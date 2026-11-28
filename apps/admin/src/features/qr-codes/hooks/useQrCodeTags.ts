@@ -8,6 +8,7 @@ import type {
 } from '@repo/schemas';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchApi } from '@/lib/api/client';
+import { applyTagDiff, diffTagSelection, isEmptyTagDiff } from '../qr-code-tags.diff';
 import { qrCodeQueryKeys, useInvalidateQrCodes } from './useQrCodes';
 
 /**
@@ -28,11 +29,15 @@ const QR_CODE_TAGS_ENDPOINT = '/api/v1/admin/qr-code-tags';
 /** Base path of the QR codes themselves. */
 const QR_CODES_ENDPOINT = '/api/v1/admin/qr-codes';
 
-/**
- * The size of the one catalog page the pickers load. The API caps `pageSize` at
- * 100; a catalog bigger than that is no longer "organising a list".
- */
+/** The page size the catalog is read in; the API caps `pageSize` at 100. */
 export const QR_CODE_TAG_CATALOG_PAGE_SIZE = 100;
+
+/**
+ * Hard stop for the catalog read: 20 pages = 2,000 tags. Past that the pickers
+ * would be unusable anyway; the cap only exists so a server that misreports
+ * `total` cannot loop the panel forever.
+ */
+export const QR_CODE_TAG_CATALOG_MAX_PAGES = 20;
 
 /** Query keys for this module, derived from the QR root. */
 export const qrCodeTagQueryKeys = {
@@ -42,19 +47,37 @@ export const qrCodeTagQueryKeys = {
 };
 
 /**
- * The tag catalog, sorted by name.
+ * Reads the WHOLE catalog, page by page, sorted by name. Never stops silently at
+ * one page: it follows `pagination.total` until every tag is in, bounded by
+ * {@link QR_CODE_TAG_CATALOG_MAX_PAGES}.
+ *
+ * @returns Every live tag.
+ */
+export async function fetchQrCodeTagCatalog(): Promise<readonly QrCodeTag[]> {
+    const items: QrCodeTag[] = [];
+    for (let page = 1; page <= QR_CODE_TAG_CATALOG_MAX_PAGES; page++) {
+        const response = await fetchApi<{
+            data?: { items?: QrCodeTag[]; pagination?: { total?: number } };
+        }>({
+            path: `${QR_CODE_TAGS_ENDPOINT}?page=${page}&pageSize=${QR_CODE_TAG_CATALOG_PAGE_SIZE}`
+        });
+        const batch = response.data?.data?.items ?? [];
+        items.push(...batch);
+        const total = response.data?.data?.pagination?.total ?? items.length;
+        if (batch.length < QR_CODE_TAG_CATALOG_PAGE_SIZE || items.length >= total) break;
+    }
+    return items;
+}
+
+/**
+ * The tag catalog, sorted by name — all of it (see {@link fetchQrCodeTagCatalog}).
  *
  * @returns The query; `data` is the catalog rows.
  */
 export function useQrCodeTagCatalog() {
     return useQuery({
         queryKey: qrCodeTagQueryKeys.catalog(),
-        queryFn: async (): Promise<readonly QrCodeTag[]> => {
-            const response = await fetchApi<{ data?: { items?: QrCodeTag[] } }>({
-                path: `${QR_CODE_TAGS_ENDPOINT}?page=1&pageSize=${QR_CODE_TAG_CATALOG_PAGE_SIZE}`
-            });
-            return response.data?.data?.items ?? [];
-        }
+        queryFn: fetchQrCodeTagCatalog
     });
 }
 
@@ -75,9 +98,21 @@ export function useQrCodeCampaigns() {
     });
 }
 
+/** GETs the tags one code carries right now. */
+async function fetchTagsOf(id: string): Promise<readonly QrCodeTagRef[]> {
+    const response = await fetchApi<{ data?: QrCodeTagsResponse }>({
+        path: `${QR_CODES_ENDPOINT}/${id}/tags`
+    });
+    return response.data?.data?.items ?? [];
+}
+
 /**
  * The tags one code carries. Used by the edit form, which loads one code and so
  * has no list row to read them from.
+ *
+ * Always refetched on mount and never served stale (HOS-2679 I2): the form opens
+ * with this selection, and a five-minute-old copy is exactly what used to get
+ * written back over a newer one. Callers wait for `isFetchedAfterMount`.
  *
  * @param id - The QR code id; the query waits while it is undefined.
  * @returns The query; `data` is the tag refs.
@@ -85,13 +120,10 @@ export function useQrCodeCampaigns() {
 export function useQrCodeTagsOf(id: string | undefined) {
     return useQuery({
         queryKey: qrCodeTagQueryKeys.tagsOf(id ?? ''),
-        queryFn: async (): Promise<readonly QrCodeTagRef[]> => {
-            const response = await fetchApi<{ data?: QrCodeTagsResponse }>({
-                path: `${QR_CODES_ENDPOINT}/${id}/tags`
-            });
-            return response.data?.data?.items ?? [];
-        },
-        enabled: !!id
+        queryFn: () => fetchTagsOf(id ?? ''),
+        enabled: !!id,
+        staleTime: 0,
+        refetchOnMount: 'always'
     });
 }
 
@@ -113,6 +145,39 @@ export function useSetQrCodeTags() {
                 body: { tagIds: [...input.tagIds] }
             });
             return response.data?.data?.items ?? [];
+        },
+        onSuccess: () => {
+            invalidateAll();
+        }
+    });
+}
+
+/**
+ * Saves an operator's tag edit as a DIFF against the set the server holds at
+ * save time (see `qr-code-tags.diff.ts`): reads the code's current tags, applies
+ * what was added and removed, and PUTs only when that changes something.
+ *
+ * @returns The mutation; resolves to the tag ids the code carries afterwards.
+ */
+export function useCommitQrCodeTagEdit() {
+    const invalidateAll = useInvalidateQrCodes();
+    return useMutation({
+        mutationFn: async (input: {
+            readonly id: string;
+            readonly before: readonly string[];
+            readonly after: readonly string[];
+        }): Promise<readonly string[]> => {
+            const diff = diffTagSelection({ before: input.before, after: input.after });
+            if (isEmptyTagDiff(diff)) return input.after;
+            const current = (await fetchTagsOf(input.id)).map((tag) => tag.id);
+            const next = applyTagDiff({ current, diff });
+            if (isEmptyTagDiff(diffTagSelection({ before: current, after: next }))) return next;
+            await fetchApi<{ data?: QrCodeTagsResponse }>({
+                path: `${QR_CODES_ENDPOINT}/${input.id}/tags`,
+                method: 'PUT',
+                body: { tagIds: [...next] }
+            });
+            return next;
         },
         onSuccess: () => {
             invalidateAll();

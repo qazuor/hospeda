@@ -107,7 +107,8 @@
         "save": "Salvar UTM",
         "saved": "UTM atualizados",
         "saveError": "Não foi possível salvar os UTM",
-        "generatedHint": "Calculados a partir da ficha: não se editam aqui."
+        "generatedHint": "Calculados a partir da ficha: não se editam aqui.",
+        "seededHint": "Estes são os UTM que o código adiciona sozinho ao escanear. Ao salvar uma mudança, eles ficam escritos na URL e substituem os automáticos."
     },
     "filters": {
         "all": "Todos",
@@ -173,6 +174,7 @@
             "MAGENTA": "Magenta",
             "LIGHT_BLUE": "Azul-claro",
             "LIGHT_GREEN": "Verde-claro"
-        }
+        },
+        "loadError": "Não conseguimos ler as etiquetas deste código. Recarregue a página antes de editá-lo, para que nenhuma se perca."
     }
 }

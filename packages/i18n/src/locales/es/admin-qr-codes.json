@@ -107,7 +107,8 @@
         "save": "Guardar UTM",
         "saved": "UTM actualizados",
         "saveError": "No se pudieron guardar los UTM",
-        "generatedHint": "Se calculan solos a partir de la ficha: no se editan acá."
+        "generatedHint": "Se calculan solos a partir de la ficha: no se editan acá.",
+        "seededHint": "Estos son los UTM que el código agrega solo al escanear. Si guardás un cambio, quedan escritos en la URL y reemplazan a los automáticos."
     },
     "filters": {
         "all": "Todos",
@@ -173,6 +174,7 @@
             "MAGENTA": "Magenta",
             "LIGHT_BLUE": "Celeste",
             "LIGHT_GREEN": "Verde claro"
-        }
+        },
+        "loadError": "No pudimos leer las etiquetas de este código. Recargá la página antes de editarlo, así no se pierde ninguna."
     }
 }

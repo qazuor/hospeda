@@ -23,6 +23,7 @@ import {
     useDeleteQrCodeTag,
     useQrCodeCampaigns,
     useQrCodeTagCatalog,
+    useQrCodeTagsOf,
     useSetQrCodeTags,
     useUpdateQrCodeTag
 } from '../useQrCodeTags';
@@ -68,6 +69,45 @@ describe('query keys', () => {
 });
 
 describe('reads', () => {
+    /** N6: a catalog over one page is read whole, never truncated at 100. */
+    it('pages through the whole catalog', async () => {
+        const page = (n: number, size: number) =>
+            Array.from({ length: size }, (_, i) => ({ id: `${n}-${i}` }));
+        fetchApiMock.mockImplementation(async ({ path }: { path: string }) => {
+            const n = Number(new URL(path, 'http://x').searchParams.get('page'));
+            return {
+                data: {
+                    data: {
+                        items: n === 1 ? page(1, 100) : page(2, 30),
+                        pagination: { total: 130 }
+                    }
+                }
+            };
+        });
+        const client = buildClient();
+
+        const { result } = renderHook(() => useQrCodeTagCatalog(), { wrapper: wrapperFor(client) });
+
+        await waitFor(() => expect(result.current.isSuccess).toBe(true));
+        expect(fetchApiMock).toHaveBeenCalledTimes(2);
+        expect(result.current.data).toHaveLength(130);
+    });
+
+    /** I2: the edit form must never open with a cached, possibly stale set. */
+    it('refetches the tags of a code on mount even when cached', async () => {
+        const client = buildClient();
+        client.setQueryData(qrCodeTagQueryKeys.tagsOf(QR_ID), [{ id: 'stale' }]);
+        fetchApiMock.mockResolvedValue({ data: { data: { items: [{ id: TAG_ID }] } } });
+
+        const { result } = renderHook(() => useQrCodeTagsOf(QR_ID), {
+            wrapper: wrapperFor(client)
+        });
+
+        expect(result.current.isFetchedAfterMount).toBe(false);
+        await waitFor(() => expect(result.current.isFetchedAfterMount).toBe(true));
+        expect(result.current.data).toStrictEqual([{ id: TAG_ID }]);
+    });
+
     it('loads one catalog page of 100', async () => {
         fetchApiMock.mockResolvedValue({ data: { data: { items: [{ id: TAG_ID }] } } });
         const client = buildClient();

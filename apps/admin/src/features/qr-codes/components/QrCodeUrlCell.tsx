@@ -47,7 +47,7 @@ function CopyUrlButton({ value, label }: CopyUrlButtonProps) {
             type="button"
             variant="ghost"
             size="sm"
-            className="h-6 w-6 shrink-0 p-0"
+            className="h-8 w-8 shrink-0 p-0"
             aria-label={label}
             title={label}
             onClick={handleCopy}
