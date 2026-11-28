@@ -152,6 +152,24 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4851
+    {
+        id: '2026-11-28-retry-recurring-addon-purchase',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
+        title: {
+            es: 'Una compra de complemento sin terminar ya no te deja esperando',
+            en: 'An unfinished add-on purchase no longer leaves you waiting',
+            pt: 'Uma compra de complemento não concluída não deixa mais você esperando'
+        },
+        body: {
+            es: 'Si dejaste el pago de un complemento mensual a medias, al volver a comprarlo retomás el mismo pago en Mercado Pago. Si cambiás el correo del pagador o Mercado Pago rechaza el primer cobro, podés empezar una compra nueva enseguida, sin esperar días.',
+            en: 'If you left a monthly add-on payment halfway, buying it again resumes the same payment in Mercado Pago. If you change the payer email or Mercado Pago rejects the first charge, you can start a new purchase right away, without waiting days.',
+            pt: 'Se você deixou o pagamento de um complemento mensal pela metade, ao comprá-lo de novo retoma o mesmo pagamento no Mercado Pago. Se mudar o e-mail do pagador ou o Mercado Pago recusar a primeira cobrança, você pode começar uma nova compra na hora, sem esperar dias.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4854
     {
         id: '2026-11-28-limit-notice-offers-addon',
