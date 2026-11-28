@@ -152,6 +152,24 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4864
+    {
+        id: '2026-11-28-addon-checkout-return-actions',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
+        title: {
+            es: 'Al volver de Mercado Pago, seguís la compra de tu complemento desde ahí',
+            en: 'Back from Mercado Pago, you can continue your add-on purchase right there',
+            pt: 'Ao voltar do Mercado Pago, você continua a compra do seu complemento ali mesmo'
+        },
+        body: {
+            es: 'Si el pago de un complemento mensual quedó pendiente, la pantalla de vuelta te deja reintentar el pago o usar otro mail de Mercado Pago. Si la compra terminó sin activarse, podés empezar una compra nueva con un toque, sin volver a elegir el complemento.',
+            en: 'If a monthly add-on payment is still pending, the return screen lets you retry the payment or use another Mercado Pago email. If the purchase ended without activating, you can start a new purchase in one tap, without choosing the add-on again.',
+            pt: 'Se o pagamento de um complemento mensal ficou pendente, a tela de retorno permite tentar o pagamento de novo ou usar outro e-mail do Mercado Pago. Se a compra terminou sem ativar, você pode começar uma nova compra com um toque, sem escolher o complemento de novo.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4851
     {
         id: '2026-11-28-retry-recurring-addon-purchase',
