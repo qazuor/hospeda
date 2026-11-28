@@ -129,6 +129,28 @@ describe('utm_campaign extraction and filter (HOS-2679)', () => {
         });
     });
 
+    it('counts live codes per raw campaign spelling (HOS-2679 PR 2)', async () => {
+        await withCleanSlate(async (db) => {
+            // Arrange
+            await insertCode(db, 'https://h.test/a?utm_campaign=verano');
+            await insertCode(db, 'https://h.test/b?utm_campaign=verano&x=1');
+            await insertCode(db, 'https://h.test/c?utm_campaign=verano+2026');
+            await insertCode(db, 'https://h.test/d?ref=none');
+            await insertCode(db, 'https://h.test/e?utm_campaign=verano', {
+                deletedAt: new Date()
+            });
+
+            // Act
+            const counts = await new QrCodeModel().countLiveByRawUtmCampaign();
+
+            // Assert
+            expect(counts).toStrictEqual([
+                { raw: 'verano', count: 2 },
+                { raw: 'verano+2026', count: 1 }
+            ]);
+        });
+    });
+
     it('matches exactly the raw spellings given, %20, + and raw alike', async () => {
         await withCleanSlate(async (db) => {
             // Arrange

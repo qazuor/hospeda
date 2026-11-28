@@ -46,6 +46,28 @@ export function decodeDistinctCampaigns(input: { readonly raw: readonly string[]
 }
 
 /**
+ * Folds per-raw-spelling counts into per-campaign counts (HOS-2679 PR 2), with
+ * the same decoding, blank-dropping and ordering as {@link decodeDistinctCampaigns},
+ * so the campaigns panel lists exactly what the filter dropdown offers.
+ *
+ * @param input.counts - Rows from `countLiveByRawUtmCampaign`.
+ * @returns One entry per decoded campaign, sorted for display.
+ */
+export function foldCampaignCounts(input: {
+    readonly counts: ReadonlyArray<{ readonly raw: string; readonly count: number }>;
+}): Array<{ campaign: string; qrCount: number }> {
+    const totals = new Map<string, number>();
+    for (const row of input.counts) {
+        const value = decodeRawCampaign({ raw: row.raw });
+        if (value.trim() === '') continue;
+        totals.set(value, (totals.get(value) ?? 0) + row.count);
+    }
+    return [...totals.entries()]
+        .sort(([a], [b]) => a.localeCompare(b, 'es'))
+        .map(([campaign, qrCount]) => ({ campaign, qrCount }));
+}
+
+/**
  * The raw spellings among `raw` that decode to exactly `value`.
  *
  * @param input.value - The decoded campaign picked in the dropdown.
