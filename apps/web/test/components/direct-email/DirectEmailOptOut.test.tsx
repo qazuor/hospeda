@@ -163,4 +163,69 @@ describe('DirectEmailOptOut', () => {
         ).toBeInTheDocument();
         expect(screen.queryByRole('button')).not.toBeInTheDocument();
     });
+
+    it('shows the retryable error, not "invalid link", when the read is rate limited (429)', async () => {
+        // Regression: every 4xx used to be read as a rejected token.
+        vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ status: 429, body: {} })));
+
+        render(
+            <DirectEmailOptOut
+                token="tok"
+                locale="es"
+            />
+        );
+
+        expect(
+            await screen.findByText('No pudimos completar la baja. Probá de nuevo en un momento.')
+        ).toBeInTheDocument();
+        expect(screen.queryByText('Este enlace no es válido')).not.toBeInTheDocument();
+    });
+
+    it('keeps the confirm button when the POST is rate limited (429)', async () => {
+        const fetchMock = vi
+            .fn()
+            .mockResolvedValueOnce(
+                jsonResponse({ status: 200, body: { data: { maskedEmail: 'a***@x.com' } } })
+            )
+            .mockResolvedValueOnce(jsonResponse({ status: 429, body: {} }));
+        vi.stubGlobal('fetch', fetchMock);
+        render(
+            <DirectEmailOptOut
+                token="tok"
+                locale="es"
+            />
+        );
+
+        fireEvent.click(await screen.findByRole('button', { name: 'Confirmar baja' }));
+
+        expect(
+            await screen.findByText('No pudimos completar la baja. Probá de nuevo en un momento.')
+        ).toBeInTheDocument();
+        expect(screen.queryByText('Este enlace no es válido')).not.toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Confirmar baja' })).toBeEnabled();
+    });
+
+    it('removes the token from the address bar after reading it', async () => {
+        window.history.replaceState(null, '', '/es/correos/baja/?token=tok&utm=1#top');
+        vi.stubGlobal(
+            'fetch',
+            vi
+                .fn()
+                .mockResolvedValue(
+                    jsonResponse({ status: 200, body: { data: { maskedEmail: 'a***@x.com' } } })
+                )
+        );
+
+        render(
+            <DirectEmailOptOut
+                token="tok"
+                locale="es"
+            />
+        );
+
+        await screen.findByText(/a\*\*\*@x\.com/);
+        expect(window.location.search).toBe('?utm=1');
+        expect(window.location.href).not.toContain('token=');
+        expect(window.location.hash).toBe('#top');
+    });
 });

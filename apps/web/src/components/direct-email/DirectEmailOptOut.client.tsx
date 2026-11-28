@@ -31,7 +31,7 @@ type Phase =
       };
 
 export interface DirectEmailOptOutProps {
-    /** Signed token from the mail link. May be empty on a broken link. */
+    /** Opaque opt-out token from the mail link. May be empty on a broken link. */
     readonly token: string;
     readonly locale: SupportedLocale;
 }
@@ -49,15 +49,42 @@ async function readMaskedEmail(response: Response): Promise<string | null> {
     return typeof masked === 'string' && masked.length > 0 ? masked : null;
 }
 
-/** A rejected token (400) or any other client error that retrying cannot fix. */
+/**
+ * A rejected token (400) or any other client error that retrying cannot fix. A 429 (rate
+ * limit) and a 408 (timeout) are transient: the link is fine, so they stay retryable.
+ */
 function isTokenRejection(status: number): boolean {
-    return status >= 400 && status < 500;
+    return status >= 400 && status < 500 && status !== 429 && status !== 408;
+}
+
+/**
+ * Removes `token` from the address bar so analytics and anything reading
+ * `location.href` after hydration never sees it. The token is already in the
+ * component's props.
+ */
+function stripTokenFromUrl(): void {
+    try {
+        const url = new URL(window.location.href);
+        if (!url.searchParams.has('token')) return;
+        url.searchParams.delete('token');
+        window.history.replaceState(
+            window.history.state,
+            '',
+            `${url.pathname}${url.search}${url.hash}`
+        );
+    } catch {
+        // History API unavailable: the token simply stays in the URL.
+    }
 }
 
 export function DirectEmailOptOut({ token, locale }: DirectEmailOptOutProps) {
     const { t } = createTranslations(locale);
     const liveRegionId = useId();
     const [phase, setPhase] = useState<Phase>(token ? { name: 'verifying' } : { name: 'invalid' });
+
+    useEffect(() => {
+        stripTokenFromUrl();
+    }, []);
 
     useEffect(() => {
         if (!token) return;
