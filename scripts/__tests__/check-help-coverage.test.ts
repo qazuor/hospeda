@@ -33,8 +33,13 @@ import {
  * The number of `pending-content` exemptions left. Phase 5 PRs LOWER it by
  * exactly the entries they remove; raising it is visible in review. The
  * closing PR of HOS-2410 removes the kind entirely (AC-38).
+ *
+ * Raised from 117 to 119 by HOS-2688, which added the two per-listing QR pages
+ * (`propiedades/[id]/codigo-qr`, `comercio/[vertical]/[id]/codigo-qr`). Both
+ * point at the planned `listing-brochure-qr` article, so they leave together
+ * with it.
  */
-const MAX_PENDING_CONTENT = 117;
+const MAX_PENDING_CONTENT = 119;
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 
