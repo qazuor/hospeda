@@ -2014,10 +2014,6 @@
             "path": "/api/v1/admin/qr-codes/campaigns/umami"
         },
         {
-            "method": "POST",
-            "path": "/api/v1/admin/qr-codes/campaigns/umami-segment"
-        },
-        {
             "method": "GET",
             "path": "/api/v1/admin/revalidation/config"
         },

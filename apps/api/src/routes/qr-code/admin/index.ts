@@ -17,10 +17,7 @@
 
 import { createRouter } from '../../../utils/create-app';
 import { adminListQrCodeCampaignsRoute } from './campaigns';
-import {
-    adminCreateQrCampaignSegmentRoute,
-    adminListQrCampaignsUmamiRoute
-} from './campaigns-umami';
+import { adminListQrCampaignsUmamiRoute } from './campaigns-umami';
 import { adminCreateQrCodeRoute } from './create';
 import { adminDeleteQrCodeRoute } from './delete';
 import { adminDownloadQrCodeRoute } from './download';
@@ -38,10 +35,9 @@ adminRouter.route('/', adminListQrCodesRoute);
 // so it goes BEFORE `/{id}`.
 adminRouter.route('/', adminListQrCodeCampaignsRoute);
 
-// GET /campaigns/umami + POST /campaigns/umami-segment — the campaigns panel's
-// Umami state and on-demand segment creation (HOS-2679 PR 2). Literal, before `/{id}`.
+// GET /campaigns/umami — the campaigns panel: counts plus the «Ver en Umami» link
+// (HOS-2679). Literal, before `/{id}`.
 adminRouter.route('/', adminListQrCampaignsUmamiRoute);
-adminRouter.route('/', adminCreateQrCampaignSegmentRoute);
 
 // GET|PUT /{id}/tags — the tag set of one code (HOS-2679). More specific than
 // `/{id}`, so registered first for the same reason as the download.

@@ -1,16 +1,17 @@
 /**
- * HOS-2679 PR 2 — the QR campaigns ↔ Umami admin routes.
+ * HOS-2679 — the QR campaigns panel route.
  *
  * Same harness as `admin-organize.test.ts`: the REAL `@repo/service-core` runs
- * and only the `@repo/db` models are stubbed. Umami is a stubbed global `fetch`;
- * the env is the real one with the Umami variables overridden per test.
+ * and only the `@repo/db` models are stubbed. The api env is the real one with the
+ * Umami variables overridden per test. Umami is never called: `fetch` is a spy
+ * that the tests assert untouched.
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const state = vi.hoisted(() => ({
     counts: [] as Array<{ raw: string; count: number }>,
-    env: {} as Record<string, string | undefined>
+    settings: {} as Record<string, string | undefined>
 }));
 
 vi.mock(
@@ -19,12 +20,13 @@ vi.mock(
 );
 
 vi.mock('../../../src/utils/env', async (importOriginal) => {
-    // `env` is a live `let` binding, assigned when the app validates it: read it lazily.
+    // The validated settings object is a live `let` binding, assigned when the app validates it: read it lazily.
     const actual = await importOriginal<{ env: Record<string, unknown> | undefined }>();
     return {
         ...actual,
         env: new Proxy({} as Record<string, unknown>, {
-            get: (_target, key: string) => (key in state.env ? state.env[key] : actual.env?.[key])
+            get: (_target, key: string) =>
+                key in state.settings ? state.settings[key] : actual.env?.[key]
         })
     };
 });
@@ -57,11 +59,9 @@ import { adminQrCodeRoutes } from '../../../src/routes/qr-code/admin/index.js';
 import type { AppBindings } from '../../../src/types';
 
 const WEBSITE = '0f3c2a5e-1111-4222-8333-444455556666';
-const UMAMI_ENV = {
+const UMAMI_SETTINGS = {
     HOSPEDA_UMAMI_URL: 'https://umami.test',
-    HOSPEDA_UMAMI_WEBSITE_ID_WEB: WEBSITE,
-    HOSPEDA_UMAMI_API_KEY: 'umami_read',
-    HOSPEDA_UMAMI_WRITE_API_KEY: 'umami_write'
+    HOSPEDA_UMAMI_WEBSITE_ID_WEB: WEBSITE
 };
 
 function actorWith(permissions: readonly PermissionEnum[]) {
@@ -73,8 +73,6 @@ function actorWith(permissions: readonly PermissionEnum[]) {
 }
 
 const viewer = actorWith([PermissionEnum.QR_CODE_VIEW]);
-const updater = actorWith([PermissionEnum.QR_CODE_VIEW, PermissionEnum.QR_CODE_UPDATE]);
-const creator = actorWith([PermissionEnum.QR_CODE_VIEW, PermissionEnum.QR_CODE_CREATE]);
 
 type Probe = { readonly status: number; readonly body: Record<string, unknown> };
 
@@ -88,19 +86,8 @@ function buildApp(actor: Record<string, unknown>): Hono<AppBindings> {
     return app;
 }
 
-async function probe(
-    app: Hono<AppBindings>,
-    path: string,
-    init?: { method?: string; body?: unknown }
-): Promise<Probe> {
-    const res = await app.request(path, {
-        method: init?.method ?? 'GET',
-        headers: {
-            'user-agent': 'vitest',
-            ...(init?.body === undefined ? {} : { 'content-type': 'application/json' })
-        },
-        body: init?.body === undefined ? undefined : JSON.stringify(init.body)
-    });
+async function probe(app: Hono<AppBindings>, path: string, method = 'GET'): Promise<Probe> {
+    const res = await app.request(path, { method, headers: { 'user-agent': 'vitest' } });
     const text = await res.text();
     try {
         return { status: res.status, body: text ? JSON.parse(text) : {} };
@@ -109,22 +96,13 @@ async function probe(
     }
 }
 
-function jsonResponse(body: unknown, status = 200): Response {
-    return new Response(JSON.stringify(body), {
-        status,
-        headers: { 'content-type': 'application/json' }
-    });
-}
-
-function segmentsPage(rows: ReadonlyArray<readonly [string, string]>): Response {
-    return jsonResponse({
-        data: rows.map(([id, name]) => ({ id, type: 'segment', name, parameters: {} })),
-        count: rows.length
-    });
-}
-
-const errorOf = (res: Probe) => res.body.error as Record<string, unknown> | undefined;
-const dataOf = (res: Probe) => res.body.data as Record<string, unknown>;
+type Item = {
+    readonly campaign: string;
+    readonly qrCount: number;
+    readonly viewUrl: string | null;
+    readonly unsupportedReason?: string;
+};
+const dataOf = (res: Probe) => res.body.data as { items: Item[] };
 
 const fetchMock = vi.fn();
 
@@ -133,7 +111,7 @@ beforeEach(() => {
         { raw: 'verano', count: 2 },
         { raw: 'verano+2026', count: 1 }
     ];
-    state.env = { ...UMAMI_ENV };
+    state.settings = { ...UMAMI_SETTINGS };
     fetchMock.mockReset();
     vi.stubGlobal('fetch', fetchMock);
 });
@@ -143,223 +121,60 @@ afterEach(() => {
 });
 
 describe('GET /admin/qr-codes/campaigns/umami', () => {
-    it('lists campaigns with counts and Umami state from one list call', async () => {
-        // Arrange
-        fetchMock.mockResolvedValueOnce(segmentsPage([['s1', 'QR · verano']]));
-
+    it('lists campaigns with counts and the Umami link, without calling Umami', async () => {
         // Act
         const res = await probe(buildApp(viewer), '/codes/campaigns/umami');
 
         // Assert
         expect(res.status).toBe(200);
-        expect(fetchMock).toHaveBeenCalledTimes(1);
-        const data = dataOf(res);
-        expect(data.canCreateSegments).toBe(true);
-        const items = data.items as Array<Record<string, unknown>>;
+        expect(fetchMock).not.toHaveBeenCalled();
+        const { items } = dataOf(res);
         expect(items.map((item) => [item.campaign, item.qrCount])).toEqual([
             ['verano', 2],
             ['verano 2026', 1]
         ]);
-        expect((items[0]?.umami as Record<string, unknown>).status).toBe('segment');
-        expect((items[1]?.umami as Record<string, unknown>).status).toBe('missing');
+        expect(items[0]?.viewUrl).toBe(
+            `https://umami.test/websites/${WEBSITE}?utmCampaign=eq.verano`
+        );
+        expect(items[1]?.viewUrl).toBe(
+            `https://umami.test/websites/${WEBSITE}?utmCampaign=eq.verano%202026`
+        );
     });
 
-    it('answers 200 with unavailable rows when Umami is down', async () => {
-        fetchMock.mockRejectedValueOnce(new Error('ECONNREFUSED'));
-
-        const res = await probe(buildApp(viewer), '/codes/campaigns/umami');
-
-        expect(res.status).toBe(200);
-        const items = dataOf(res).items as Array<{ umami: { status: string } }>;
-        expect(items.every((item) => item.umami.status === 'unavailable')).toBe(true);
-    });
-
-    it('answers 200 with unavailable rows and no call when Umami is not configured', async () => {
-        state.env = {
+    it('answers 200 with no links when Umami is not configured', async () => {
+        state.settings = {
             HOSPEDA_UMAMI_URL: undefined,
-            HOSPEDA_UMAMI_WEBSITE_ID_WEB: undefined,
-            HOSPEDA_UMAMI_API_KEY: undefined,
-            HOSPEDA_UMAMI_WRITE_API_KEY: undefined
+            HOSPEDA_UMAMI_WEBSITE_ID_WEB: undefined
         };
 
         const res = await probe(buildApp(viewer), '/codes/campaigns/umami');
 
         expect(res.status).toBe(200);
-        expect(fetchMock).not.toHaveBeenCalled();
-        expect(dataOf(res).canCreateSegments).toBe(false);
+        expect(dataOf(res).items.every((item) => item.viewUrl === null)).toBe(true);
     });
 
-    it('never lists with the write key: no view key gives unavailable READ_KEY_MISSING', async () => {
-        state.env = { ...UMAMI_ENV, HOSPEDA_UMAMI_API_KEY: undefined };
+    it('gives a campaign with a comma no link and says why', async () => {
+        state.counts = [{ raw: 'a,b', count: 3 }];
 
         const res = await probe(buildApp(viewer), '/codes/campaigns/umami');
 
         expect(res.status).toBe(200);
-        expect(fetchMock).not.toHaveBeenCalled();
-        const items = dataOf(res).items as Array<{ umami: Record<string, unknown> }>;
-        expect(items[0]?.umami.unavailableReason).toBe('READ_KEY_MISSING');
-        expect(items[0]?.umami.viewUrl).toBe(
-            `https://umami.test/websites/${WEBSITE}?utmCampaign=eq.verano`
-        );
+        expect(dataOf(res).items).toEqual([
+            { campaign: 'a,b', qrCount: 3, unsupportedReason: 'COMMA_IN_CAMPAIGN', viewUrl: null }
+        ]);
     });
 
     it('refuses an actor without QR_CODE_VIEW with 403', async () => {
         const res = await probe(buildApp(actorWith([])), '/codes/campaigns/umami');
 
         expect(res.status).toBe(403);
-        expect(fetchMock).not.toHaveBeenCalled();
-    });
-});
-
-describe('POST /admin/qr-codes/campaigns/umami-segment', () => {
-    const path = '/codes/campaigns/umami-segment';
-
-    it('creates the segment when missing (QR_CODE_UPDATE)', async () => {
-        // Arrange
-        fetchMock
-            .mockResolvedValueOnce(segmentsPage([['x', 'QR · verano 2026']]))
-            .mockResolvedValueOnce(
-                jsonResponse({ id: 'new', type: 'segment', name: 'QR · verano', parameters: {} })
-            );
-
-        // Act
-        const res = await probe(buildApp(updater), path, {
-            method: 'POST',
-            body: { campaign: 'verano' }
-        });
-
-        // Assert
-        expect(res.status).toBe(201);
-        expect(dataOf(res).created).toBe(true);
-        expect(fetchMock).toHaveBeenCalledTimes(2);
     });
 
-    it('is idempotent: an existing exact match answers created false (QR_CODE_CREATE)', async () => {
-        fetchMock.mockResolvedValueOnce(segmentsPage([['s1', 'QR · verano']]));
+    it('has no create endpoint: POST /campaigns/umami-segment is not a route', async () => {
+        const res = await probe(buildApp(viewer), '/codes/campaigns/umami-segment', 'POST');
 
-        const res = await probe(buildApp(creator), path, {
-            method: 'POST',
-            body: { campaign: 'verano' }
-        });
-
-        expect(res.status).toBe(200);
-        expect(dataOf(res).created).toBe(false);
-        expect(fetchMock).toHaveBeenCalledTimes(1);
-    });
-
-    it('answers 404 for a campaign no QR carries, before calling Umami', async () => {
-        const res = await probe(buildApp(updater), path, {
-            method: 'POST',
-            body: { campaign: 'invierno' }
-        });
-
-        expect(res.status).toBe(404);
-        expect(errorOf(res)?.code).toBe('NOT_FOUND');
-        expect(fetchMock).not.toHaveBeenCalled();
-    });
-
-    it('answers 400 for an unknown body key (strict)', async () => {
-        const res = await probe(buildApp(updater), path, {
-            method: 'POST',
-            body: { campaign: 'verano', name: 'x' }
-        });
-
-        expect(res.status).toBe(400);
-        expect(fetchMock).not.toHaveBeenCalled();
-    });
-
-    it('answers 503 UMAMI_WRITE_NOT_CONFIGURED without the write key', async () => {
-        state.env = { ...UMAMI_ENV, HOSPEDA_UMAMI_WRITE_API_KEY: undefined };
-
-        const res = await probe(buildApp(updater), path, {
-            method: 'POST',
-            body: { campaign: 'verano' }
-        });
-
-        expect(res.status).toBe(503);
-        expect(errorOf(res)?.code).toBe('SERVICE_UNAVAILABLE');
-        expect(errorOf(res)?.reason).toBe('UMAMI_WRITE_NOT_CONFIGURED');
-        expect(fetchMock).not.toHaveBeenCalled();
-    });
-
-    it('answers 503 UMAMI_KEY_REJECTED when Umami refuses the key', async () => {
-        fetchMock
-            .mockResolvedValueOnce(segmentsPage([]))
-            .mockResolvedValueOnce(jsonResponse({ error: 'Unauthorized' }, 401));
-
-        const res = await probe(buildApp(updater), path, {
-            method: 'POST',
-            body: { campaign: 'verano' }
-        });
-
-        expect(res.status).toBe(503);
-        expect(errorOf(res)?.reason).toBe('UMAMI_KEY_REJECTED');
-    });
-
-    it('refuses a viewer without CREATE or UPDATE with 403', async () => {
-        const res = await probe(buildApp(viewer), path, {
-            method: 'POST',
-            body: { campaign: 'verano' }
-        });
-
-        expect(res.status).toBe(403);
-        expect(fetchMock).not.toHaveBeenCalled();
-    });
-    it('answers 403 (not 400) for a viewer sending an invalid body', async () => {
-        const res = await probe(buildApp(viewer), path, {
-            method: 'POST',
-            body: { campaign: '', name: 'x' }
-        });
-
-        expect(res.status).toBe(403);
-        expect(fetchMock).not.toHaveBeenCalled();
-    });
-
-    it('answers 503 UMAMI_UNAVAILABLE when Umami does not answer', async () => {
-        fetchMock.mockRejectedValueOnce(new Error('ECONNREFUSED'));
-
-        const res = await probe(buildApp(updater), path, {
-            method: 'POST',
-            body: { campaign: 'verano' }
-        });
-
-        expect(res.status).toBe(503);
-        expect(errorOf(res)?.code).toBe('SERVICE_UNAVAILABLE');
-        expect(errorOf(res)?.reason).toBe('UMAMI_UNAVAILABLE');
-    });
-
-    it('masks a 503 per R1b: reason kept, no Umami message and no details', async () => {
-        // Arrange: Umami answers 500 with an internal message that must not leak.
-        fetchMock.mockResolvedValueOnce(
-            jsonResponse({ error: 'pg: relation segment is locked' }, 500)
-        );
-
-        // Act
-        const res = await probe(buildApp(updater), path, {
-            method: 'POST',
-            body: { campaign: 'verano' }
-        });
-
-        // Assert
-        expect(res.status).toBe(503);
-        const error = errorOf(res) ?? {};
-        expect(error.reason).toBe('UMAMI_UNAVAILABLE');
-        expect(error.details).toBeUndefined();
-        expect(JSON.stringify(res.body)).not.toContain('locked');
-        expect(JSON.stringify(res.body)).not.toContain('umami.test');
-        expect(String(error.message ?? '')).not.toMatch(/umami|segment/i);
-    });
-
-    it('answers 400 UMAMI_CAMPAIGN_HAS_COMMA for a campaign with a comma, calling nothing', async () => {
-        state.counts = [{ raw: 'a,b', count: 1 }];
-
-        const res = await probe(buildApp(updater), path, {
-            method: 'POST',
-            body: { campaign: 'a,b' }
-        });
-
-        expect(res.status).toBe(400);
-        expect(errorOf(res)?.reason).toBe('UMAMI_CAMPAIGN_HAS_COMMA');
+        expect(res.status).not.toBe(200);
+        expect(res.status).not.toBe(201);
         expect(fetchMock).not.toHaveBeenCalled();
     });
 });

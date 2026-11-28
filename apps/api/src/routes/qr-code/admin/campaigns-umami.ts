@@ -1,44 +1,26 @@
 /**
- * QR campaigns in Umami (HOS-2679 PR 2).
+ * QR campaigns with a «Ver en Umami» link (HOS-2679).
  *
  * ```
- * GET  /api/v1/admin/qr-codes/campaigns/umami
- * POST /api/v1/admin/qr-codes/campaigns/umami-segment   { campaign }
+ * GET /api/v1/admin/qr-codes/campaigns/umami
  * ```
  *
- * GET lists every QR campaign with its live code count and its state in Umami
- * (segment `QR · <campaign>` present, missing, or unknown). It never fails
- * because of Umami: an unconfigured or unreachable Umami turns every row
- * `unavailable` (with an `unavailableReason`) and the page still renders.
+ * Lists every QR campaign with its live code count and a deep link to the web
+ * website filtered by it. The api never calls Umami: the link is built from
+ * `HOSPEDA_UMAMI_URL` and `HOSPEDA_UMAMI_WEBSITE_ID_WEB`. A campaign with a comma
+ * gets no link (Umami splits `eq` values on commas). There is no create endpoint:
+ * Umami 3.5 has no role that can create segments without also being able to reset
+ * or delete the website.
  *
- * POST creates the campaign's segment when absent and returns the existing one
- * otherwise: 201 with `created: true` the first time, 200 with `created: false`
- * on every later call. Idempotent within one API instance (a per-segment lock
- * serialises concurrent creates); across instances a race can leave a harmless
- * duplicate name, since every read takes the first exact match.
- * Refusals, in order: 403 (route permissions) → 400 (strict body) → 404 (not a
- * QR campaign) → 400 `UMAMI_CAMPAIGN_HAS_COMMA` → 503 `SERVICE_UNAVAILABLE` with
- * reason `UMAMI_WRITE_NOT_CONFIGURED`, `UMAMI_KEY_REJECTED` or `UMAMI_UNAVAILABLE`.
- *
- * Both literal paths are registered BEFORE `/{id}`.
+ * The literal path is registered BEFORE `/{id}`.
  *
  * @module routes/qr-code/admin/campaigns-umami
  */
 
-import {
-    PermissionEnum,
-    QrCampaignsUmamiResponseSchema,
-    QrCampaignUmamiSegmentCreateSchema,
-    QrCampaignUmamiSegmentResponseSchema,
-    ServiceErrorCode
-} from '@repo/schemas';
+import { PermissionEnum, QrCampaignsUmamiResponseSchema } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
-import {
-    ensureQrCampaignSegment,
-    type QrCampaignCount,
-    resolveQrCampaignsUmami
-} from '../../../services/qr-campaign-umami';
+import { type QrCampaignCount, resolveQrCampaignsUmami } from '../../../services/qr-campaign-umami';
 import { getActorFromContext } from '../../../utils/actor';
 import { createAdminRoute } from '../../../utils/route-factory';
 import { qrCodeService } from './_singletons';
@@ -57,43 +39,14 @@ async function loadCampaignCounts(ctx: Context): Promise<readonly QrCampaignCoun
 export const adminListQrCampaignsUmamiRoute = createAdminRoute({
     method: 'get',
     path: '/campaigns/umami',
-    summary: 'List QR campaigns with their Umami state (admin)',
+    summary: 'List QR campaigns with their Umami link (admin)',
     description:
-        'Returns every QR campaign with its live code count, a link to the web website filtered by it, and whether the Umami segment "QR · <campaign>" exists. Umami failures answer status "unavailable" with an unavailableReason, never an error. A campaign with a comma gets no link (Umami splits eq values on commas).',
+        'Returns every QR campaign with its live code count and a link to the web website filtered by it. The api never calls Umami. A campaign with a comma gets no link (Umami splits eq values on commas); a missing Umami URL or web website id gives no link either.',
     tags: ['QrCodes'],
     requiredPermissions: [PermissionEnum.QR_CODE_VIEW],
     responseSchema: QrCampaignsUmamiResponseSchema,
     handler: async (ctx: Context) => {
         const campaigns = await loadCampaignCounts(ctx);
         return resolveQrCampaignsUmami({ campaigns });
-    }
-});
-
-/** POST /api/v1/admin/qr-codes/campaigns/umami-segment */
-export const adminCreateQrCampaignSegmentRoute = createAdminRoute({
-    method: 'post',
-    path: '/campaigns/umami-segment',
-    summary: 'Create the Umami segment of a QR campaign (admin)',
-    description:
-        'Creates the Umami segment "QR · <campaign>" (utmCampaign eq <campaign>) when it does not exist and returns the existing one otherwise (201 created, 200 existing). Idempotent within one API instance; a cross-instance race can leave a duplicate name, which is harmless because reads take the first exact match. 404 when the campaign is not a QR campaign; 400 UMAMI_CAMPAIGN_HAS_COMMA for a campaign with a comma; 503 with a reason when Umami is not configured, refuses the key, or does not answer.',
-    tags: ['QrCodes'],
-    requiredPermissions: [PermissionEnum.QR_CODE_VIEW],
-    anyOfPermissions: [[PermissionEnum.QR_CODE_CREATE, PermissionEnum.QR_CODE_UPDATE]],
-    requestBody: QrCampaignUmamiSegmentCreateSchema,
-    responseSchema: QrCampaignUmamiSegmentResponseSchema,
-    // 201 when this call created the segment, 200 when it already existed.
-    successStatusCode: (result) => ((result as { created?: boolean }).created ? 201 : 200),
-    handler: async (
-        ctx: Context,
-        _params: Record<string, unknown>,
-        body: Record<string, unknown>
-    ) => {
-        const wanted = body.campaign as string;
-        const campaigns = await loadCampaignCounts(ctx);
-        const campaign = campaigns.find((item) => item.campaign === wanted);
-        if (!campaign) {
-            throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Not a QR campaign');
-        }
-        return ensureQrCampaignSegment({ campaign });
     }
 });
