@@ -202,6 +202,12 @@ describe('legal copy states what the product does (HOS-2681)', () => {
         expect(PRIVACY_TEXT(locale)).not.toMatch(claim);
     });
 
+    it.each(LOCALES)('publishes no fill-in placeholder on any legal page (%s)', (locale) => {
+        for (const file of ['privacy', 'terms', 'cookies', 'cookieConsent']) {
+            expect(JSON.stringify(catalog(locale, file))).not.toMatch(/\[COMPLETAR/i);
+        }
+    });
+
     it.each([
         ['es', 'solo lectura', 'revoque', 'hasta que las liberes'],
         ['en', 'read-only', 'revoke', 'until you release them'],
