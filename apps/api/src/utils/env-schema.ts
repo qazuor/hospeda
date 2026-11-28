@@ -570,20 +570,13 @@ export const ApiEnvBaseSchema = z.object({
     HOSPEDA_UMAMI_WEBSITE_ID_WEB: blankAsUndefined(z.string().uuid()),
     /** Umami website id (UUID) of `hospeda-admin`; server events about the admin surface. */
     HOSPEDA_UMAMI_WEBSITE_ID_ADMIN: blankAsUndefined(z.string().uuid()),
-    /** Umami API key of a view-only user (`umami_...`), used only to read (secret). */
+    /** Umami API key of a view-only user (`umami_...`), used only to read stats (secret). */
     HOSPEDA_UMAMI_API_KEY: blankAsUndefined(z.string().min(1)),
-    /**
-     * Umami API key of a user with edit access to the `hospeda-web` website (secret,
-     * HOS-2679). Used ONLY to create the `QR · <campaign>` segments from the admin QR
-     * campaigns panel (`services/qr-campaign-umami.ts`). Unset: the panel still lists
-     * campaigns and links to Umami, and creating a segment answers 503.
-     */
-    HOSPEDA_UMAMI_WRITE_API_KEY: blankAsUndefined(z.string().min(1)),
     /**
      * Postgres URL of the Umami database for the restricted retention role
      * (SELECT and DELETE on `session_replay` and `heatmap_event` only; secret, HOS-2347).
-     * Unset disables the recording purge. The only Umami DATABASE write path of the api;
-     * its only Umami API write credential is `HOSPEDA_UMAMI_WRITE_API_KEY` (HOS-2679).
+     * Unset disables the recording purge. The only Umami DATABASE write path of the api
+     * (the api holds no Umami API write credential since HOS-2583).
      */
     HOSPEDA_UMAMI_DATABASE_URL: blankAsUndefined(z.string().min(1)),
     HOSPEDA_SENTRY_RELEASE: z.string().optional(),
