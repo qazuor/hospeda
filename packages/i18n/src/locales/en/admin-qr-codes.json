@@ -176,5 +176,39 @@
             "LIGHT_GREEN": "Light green"
         },
         "loadError": "We could not read this code's tags. Reload the page before editing it, so none get lost."
+    },
+    "campaigns": {
+        "open": "Campaigns",
+        "title": "QR code campaigns",
+        "help": "Each utm_campaign on the codes is a campaign. “View in Umami” opens the site filtered by that campaign. The “QR · campaign” segment filters the whole Umami view, including the utm_content table.",
+        "loading": "Loading campaigns…",
+        "loadError": "We couldn't read the campaigns. Try again in a while.",
+        "empty": "No code has a utm_campaign in its destination yet.",
+        "unavailableNotice": "We couldn't reach Umami, so we don't know which campaigns have a segment. “View in Umami” still works.",
+        "columns": {
+            "campaign": "Campaign",
+            "qrCount": "Codes",
+            "umami": "Umami status",
+            "actions": "Actions"
+        },
+        "status": {
+            "segment": "Has segment",
+            "missing": "No segment",
+            "unavailable": "Unknown"
+        },
+        "viewInUmami": "View in Umami",
+        "openSegment": "Open segment",
+        "createSegment": "Create in Umami",
+        "createDisabledPermission": "You need permission to create or edit QR codes.",
+        "createDisabledNotConfigured": "The API is missing the Umami write key (HOSPEDA_UMAMI_WRITE_API_KEY).",
+        "createDisabledUnavailable": "Umami is not answering: try creating the segment in a while.",
+        "created": "Segment created in Umami",
+        "alreadyExisted": "The segment already existed in Umami: no new one was created.",
+        "createErrors": {
+            "UMAMI_WRITE_NOT_CONFIGURED": "The API is missing the Umami write key (HOSPEDA_UMAMI_WRITE_API_KEY).",
+            "UMAMI_KEY_REJECTED": "Umami refused the write key: it must belong to a user with edit access to the website.",
+            "generic": "The segment couldn't be created in Umami. Try again in a while."
+        },
+        "filterLink": "View this campaign in Umami"
     }
 }

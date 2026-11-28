@@ -176,5 +176,39 @@
             "LIGHT_GREEN": "Verde-claro"
         },
         "loadError": "Não conseguimos ler as etiquetas deste código. Recarregue a página antes de editá-lo, para que nenhuma se perca."
+    },
+    "campaigns": {
+        "open": "Campanhas",
+        "title": "Campanhas dos códigos QR",
+        "help": "Cada utm_campaign dos códigos é uma campanha. “Ver no Umami” abre o site filtrado por essa campanha. O segmento “QR · campanha” filtra toda a visão do Umami, incluindo a tabela de utm_content.",
+        "loading": "Carregando campanhas…",
+        "loadError": "Não conseguimos ler as campanhas. Tente de novo daqui a pouco.",
+        "empty": "Nenhum código tem utm_campaign no destino ainda.",
+        "unavailableNotice": "Não conseguimos consultar o Umami, então não sabemos quais campanhas têm segmento. “Ver no Umami” continua funcionando.",
+        "columns": {
+            "campaign": "Campanha",
+            "qrCount": "Quantidade de códigos",
+            "umami": "Status no Umami",
+            "actions": "Ações"
+        },
+        "status": {
+            "segment": "Com segmento",
+            "missing": "Sem segmento",
+            "unavailable": "Desconhecido"
+        },
+        "viewInUmami": "Ver no Umami",
+        "openSegment": "Abrir o segmento",
+        "createSegment": "Criar no Umami",
+        "createDisabledPermission": "Você precisa de permissão para criar ou editar códigos QR.",
+        "createDisabledNotConfigured": "Falta a chave de escrita do Umami na API (HOSPEDA_UMAMI_WRITE_API_KEY).",
+        "createDisabledUnavailable": "O Umami não responde: tente criar o segmento daqui a pouco.",
+        "created": "Segmento criado no Umami",
+        "alreadyExisted": "O segmento já existia no Umami: nenhum outro foi criado.",
+        "createErrors": {
+            "UMAMI_WRITE_NOT_CONFIGURED": "Falta a chave de escrita do Umami na API (HOSPEDA_UMAMI_WRITE_API_KEY).",
+            "UMAMI_KEY_REJECTED": "O Umami recusou a chave de escrita: ela precisa ser de um usuário com permissão de edição no site.",
+            "generic": "Não foi possível criar o segmento no Umami. Tente de novo daqui a pouco."
+        },
+        "filterLink": "Ver esta campanha no Umami"
     }
 }

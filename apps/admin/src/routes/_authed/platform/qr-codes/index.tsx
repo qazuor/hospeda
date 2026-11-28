@@ -8,7 +8,8 @@
  *
  * HOS-2679 made it the place to ORGANISE codes: the full destination and scan
  * URL with copy buttons, the landing UTMs (editable for MANUAL codes), tags,
- * and a filter bar whose source defaults to MANUAL.
+ * and a filter bar whose source defaults to MANUAL. PR 2 added the campaigns
+ * panel: each utm_campaign with its code count and its Umami segment.
  */
 
 import { AddIcon } from '@repo/icons';
@@ -21,6 +22,7 @@ import { DataTable } from '@/components/table/DataTable';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { QrCodeCampaignsDialog } from '@/features/qr-codes/components/QrCodeCampaignsDialog';
 import {
     DEFAULT_QR_CODE_LIST_FILTERS,
     type QrCodeListFilterState,
@@ -168,6 +170,7 @@ function QrCodesListPage() {
                         <p className="text-muted-foreground">{t('admin-qr-codes.description')}</p>
                     </div>
                     <div className="flex items-center gap-2">
+                        <QrCodeCampaignsDialog canCreate={canCreate || canUpdate} />
                         <QrCodeTagManagerDialog
                             canCreate={canCreate}
                             canUpdate={canUpdate}
