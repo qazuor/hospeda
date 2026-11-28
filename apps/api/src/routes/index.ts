@@ -88,6 +88,12 @@ import {
     protectedDestinationRoutes,
     publicDestinationRoutes
 } from './destination';
+import {
+    directEmailAdminRoutes,
+    directEmailPublicRoutes,
+    directEmailSuppressionAdminRoutes,
+    directEmailTemplateAdminRoutes
+} from './direct-email';
 import { docsIndexRoutes, scalarRoutes, swaggerRoutes } from './docs';
 import { adminEmailPreviewRoutes } from './email-preview/admin/index.js';
 import { adminEventRoutes, protectedEventRoutes, publicEventRoutes } from './event';
@@ -408,6 +414,8 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/public', contactRoutes);
         // SPEC-101 public newsletter — token-gated verify + unsubscribe redirects.
         app.route('/api/v1/public/newsletter', newsletterPublicRoutes);
+        // Direct emails (HOS-2685): token-gated opt-out. GET never writes, POST suppresses.
+        app.route('/api/v1/public/direct-emails', directEmailPublicRoutes);
         app.route('/api/v1/public/feedback', publicFeedbackRoutes);
 
         // Global platform announcements (SPEC-156 T-010): cross-device cache
@@ -588,6 +596,12 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // Note: more-specific action paths (/:id/send, /:id/cancel, etc.) are
         // registered BEFORE /:id in the sub-router, so Hono resolves them correctly.
         app.route('/api/v1/admin/newsletter', newsletterAdminRoutes);
+
+        // Direct emails (HOS-2685): one-to-one admin emails, their templates and the
+        // suppression list. Each route declares its own DIRECT_EMAIL_* permission.
+        app.route('/api/v1/admin/direct-emails', directEmailAdminRoutes);
+        app.route('/api/v1/admin/direct-email-templates', directEmailTemplateAdminRoutes);
+        app.route('/api/v1/admin/direct-email-suppressions', directEmailSuppressionAdminRoutes);
 
         apiLogger.debug('✅ Protected routes registered successfully');
 

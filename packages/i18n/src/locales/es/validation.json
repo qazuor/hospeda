@@ -2273,6 +2273,35 @@
             "token": {
                 "required": "El token es obligatorio"
             }
+        },
+        "directEmail": {
+            "subject": {
+                "min": "El asunto es obligatorio",
+                "max": "El asunto no puede superar los 200 caracteres"
+            },
+            "body": {
+                "empty": "El cuerpo del correo no puede estar vacío"
+            },
+            "email": {
+                "invalid": "La dirección de correo no es válida"
+            },
+            "recipients": {
+                "min": "Indicá al menos un destinatario",
+                "max": "No podés enviar a más de 20 destinatarios a la vez",
+                "duplicate": "Hay destinatarios repetidos"
+            },
+            "token": {
+                "invalid": "El enlace de baja no es válido"
+            }
+        },
+        "directEmailTemplate": {
+            "name": {
+                "min": "El nombre es obligatorio",
+                "max": "El nombre no puede superar los 120 caracteres"
+            },
+            "update": {
+                "empty": "Indicá al menos un campo para actualizar"
+            }
         }
     },
     "entityComment": {
@@ -2644,6 +2673,12 @@
         },
         "amenityAvailability": {
             "invalid": "Elegí si la comodidad está disponible todo el año o por temporada"
+        },
+        "directEmailRecipientStatus": {
+            "invalid": "El estado del destinatario no es válido"
+        },
+        "directEmailSuppressionReason": {
+            "invalid": "El motivo de la supresión no es válido"
         }
     },
     "event": {

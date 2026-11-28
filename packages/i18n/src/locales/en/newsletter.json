@@ -61,5 +61,19 @@
         "descriptionWithEmail": "Te enviamos un email a {email} con un link para confirmar.",
         "spamNote": "Si no lo encontrás en tu bandeja, revisá la carpeta de spam.",
         "title": "Revisá tu email para confirmar la suscripción."
+    },
+    "directEmailOptOut": {
+        "title": "Opt out of Hospeda direct emails",
+        "description": "Confirm that you no longer want to receive direct emails from Hospeda at this address.",
+        "verifying": "Checking the link...",
+        "addressLine": "You will stop receiving emails at {{email}}.",
+        "confirmButton": "Confirm opt-out",
+        "confirming": "Processing...",
+        "successTitle": "Done, you have been removed",
+        "successDescription": "You will no longer receive direct emails from Hospeda at {{email}}.",
+        "invalidTitle": "This link is not valid",
+        "invalidDescription": "The opt-out link is incomplete or was changed. Use the link from the original email.",
+        "networkError": "We could not complete the opt-out. Try again in a moment.",
+        "homeLink": "Go to the home page"
     }
 }

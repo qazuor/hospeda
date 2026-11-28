@@ -191,6 +191,8 @@ export const NON_SITEMAP_STATIC_PAGES: Readonly<Record<string, StaticSitemapExcl
     '/newsletter/desuscripto/': 'noindex',
     '/newsletter/error/': 'noindex',
     '/newsletter/unsubscribe/': 'noindex',
+    // HOS-2685: opt-out of direct emails, reached only from the mail footer link.
+    '/correos/baja/': 'noindex',
 
     // HOS-1486: this page is reachable only through a one-time emailed token.
     '/partners/reclamar/': 'token-gated',

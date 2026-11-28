@@ -1821,6 +1821,13 @@
       "when": 1795852347214,
       "tag": "0259_hos2679_qr_code_tags",
       "breakpoints": true
+    },
+    {
+      "idx": 260,
+      "version": "7",
+      "when": 1795893463128,
+      "tag": "0260_hos2685_direct_email",
+      "breakpoints": true
     }
   ]
 }

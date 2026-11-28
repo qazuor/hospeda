@@ -9,6 +9,7 @@
 import { ALERT_DIGEST_ENTRIES } from './entries/alert-digest.js';
 import { AUTH_ENTRIES } from './entries/auth.js';
 import { CONVERSATION_ENTRIES } from './entries/conversation.js';
+import { DIRECT_EMAIL_ENTRIES } from './entries/direct-email.js';
 import { NEWSLETTER_ENTRIES } from './entries/newsletter.js';
 import { NOTIFICATION_ADMIN_ENTRIES } from './entries/notification-admin.js';
 import { NOTIFICATION_BILLING_ENTRIES } from './entries/notification-billing.js';
@@ -41,6 +42,7 @@ export const EMAIL_CATALOG: readonly EmailCatalogEntry[] = Object.freeze([
     ...CONVERSATION_ENTRIES,
     ...NOTIFICATION_ADMIN_ENTRIES,
     ...NEWSLETTER_ENTRIES,
+    ...DIRECT_EMAIL_ENTRIES,
     ...ALERT_DIGEST_ENTRIES
 ]);
 

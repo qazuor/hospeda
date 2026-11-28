@@ -388,6 +388,7 @@ export type { DestinationHookState } from './destination/destination.types';
 export { computeReviewAverageRating } from './destinationReview/destinationReview.helpers';
 export * from './destinationReview/destinationReview.service';
 export type { DestinationReviewHookState } from './destinationReview/destinationReview.types';
+export * from './direct-email';
 export * from './entityComment/entityComment.service';
 export * from './entityInteraction/index.js';
 export * from './entityView/index.js';

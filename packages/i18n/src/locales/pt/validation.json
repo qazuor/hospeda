@@ -2273,6 +2273,35 @@
             "token": {
                 "required": "O token é obrigatório"
             }
+        },
+        "directEmail": {
+            "subject": {
+                "min": "O assunto é obrigatório",
+                "max": "O assunto não pode ter mais de 200 caracteres"
+            },
+            "body": {
+                "empty": "O corpo do e-mail não pode estar vazio"
+            },
+            "email": {
+                "invalid": "O endereço de e-mail não é válido"
+            },
+            "recipients": {
+                "min": "Informe pelo menos um destinatário",
+                "max": "Você não pode enviar para mais de 20 destinatários de uma vez",
+                "duplicate": "Há destinatários repetidos"
+            },
+            "token": {
+                "invalid": "O link de cancelamento não é válido"
+            }
+        },
+        "directEmailTemplate": {
+            "name": {
+                "min": "O nome é obrigatório",
+                "max": "O nome não pode ter mais de 120 caracteres"
+            },
+            "update": {
+                "empty": "Informe pelo menos um campo para atualizar"
+            }
         }
     },
     "entityComment": {
@@ -2644,6 +2673,12 @@
         },
         "amenityAvailability": {
             "invalid": "Escolha se a comodidade está disponível o ano todo ou por temporada"
+        },
+        "directEmailRecipientStatus": {
+            "invalid": "O status do destinatário não é válido"
+        },
+        "directEmailSuppressionReason": {
+            "invalid": "O motivo da supressão não é válido"
         }
     },
     "event": {

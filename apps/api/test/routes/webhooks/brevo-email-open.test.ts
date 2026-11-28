@@ -35,6 +35,9 @@ vi.mock('../../../src/utils/logger', () => ({
 vi.mock('../../../src/lib/email-open-analytics', () => ({
     captureEmailOpen: mocks.captureEmailOpen
 }));
+vi.mock('../../../src/routes/webhooks/brevo-direct-email', () => ({
+    recordDirectEmailEvent: vi.fn(async () => 'ignored')
+}));
 vi.mock('@repo/db', () => ({ notificationLogModel: {} }));
 vi.mock('@repo/notifications', async (importOriginal) => ({
     ...(await importOriginal<typeof import('@repo/notifications')>()),

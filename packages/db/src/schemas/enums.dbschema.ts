@@ -9,6 +9,8 @@ import {
     ClientTypeEnum,
     ConversationStatusEnum,
     DestinationTypeEnum,
+    DirectEmailRecipientStatusEnum,
+    DirectEmailSuppressionReasonEnum,
     EntityInteractionKindEnum,
     EntityPermissionReasonEnum,
     EntityTypeEnum,
@@ -232,6 +234,16 @@ export const RoleGrantActionPgEnum = pgEnum(
 export const ModerationStatusPgEnum = pgEnum(
     'moderation_status_enum',
     enumToTuple(ModerationStatusEnum)
+);
+
+export const DirectEmailRecipientStatusPgEnum = pgEnum(
+    'direct_email_recipient_status_enum',
+    enumToTuple(DirectEmailRecipientStatusEnum)
+);
+
+export const DirectEmailSuppressionReasonPgEnum = pgEnum(
+    'direct_email_suppression_reason_enum',
+    enumToTuple(DirectEmailSuppressionReasonEnum)
 );
 
 export const NewsletterCampaignLocaleFilterPgEnum = pgEnum(

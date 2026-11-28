@@ -61,5 +61,19 @@
         "descriptionWithEmail": "Te enviamos un email a {email} con un link para confirmar.",
         "spamNote": "Si no lo encontrás en tu bandeja, revisá la carpeta de spam.",
         "title": "Revisá tu email para confirmar la suscripción."
+    },
+    "directEmailOptOut": {
+        "title": "Descadastro de e-mails diretos da Hospeda",
+        "description": "Confirme que não quer mais receber e-mails diretos da Hospeda neste endereço.",
+        "verifying": "Verificando o link...",
+        "addressLine": "Você deixará de receber e-mails em {{email}}.",
+        "confirmButton": "Confirmar descadastro",
+        "confirming": "Processando...",
+        "successTitle": "Pronto, você foi descadastrado",
+        "successDescription": "Você não receberá mais e-mails diretos da Hospeda em {{email}}.",
+        "invalidTitle": "Este link não é válido",
+        "invalidDescription": "O link de descadastro está incompleto ou foi alterado. Use o link do e-mail original.",
+        "networkError": "Não conseguimos concluir o descadastro. Tente novamente em instantes.",
+        "homeLink": "Ir para o início"
     }
 }

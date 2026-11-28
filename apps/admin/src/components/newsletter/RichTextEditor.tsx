@@ -45,6 +45,38 @@ export const NEWSLETTER_EDITOR_EXTENSIONS = [
     TextAlign.configure({ types: ['heading', 'paragraph'] })
 ];
 
+/**
+ * TipTap extension set for editors WITHOUT dynamic blocks (HOS-2685 direct
+ * emails). `NewsletterDocument` declares `dynamicBlock` in its content
+ * expression, so it cannot be used when the node type is absent: the plain
+ * StarterKit document is used instead.
+ */
+export const PLAIN_EDITOR_EXTENSIONS = [
+    StarterKit.configure({ link: { openOnClick: false } }),
+    Image,
+    TextAlign.configure({ types: ['heading', 'paragraph'] })
+];
+
+/**
+ * Resolves the extension set for an editor instance.
+ *
+ * @param input.enableDynamicBlocks - Whether the newsletter dynamic block is available.
+ * @param input.onEdit - Dynamic block edit handler (ignored without dynamic blocks).
+ * @returns The extension list to hand to `useEditor`.
+ */
+export function buildEditorExtensions({
+    enableDynamicBlocks,
+    onEdit
+}: {
+    readonly enableDynamicBlocks: boolean;
+    readonly onEdit: (input: DynamicBlockEditInput) => void;
+}) {
+    if (!enableDynamicBlocks) return PLAIN_EDITOR_EXTENSIONS;
+    return NEWSLETTER_EDITOR_EXTENSIONS.map((extension) =>
+        extension.name === 'dynamicBlock' ? DynamicBlock.configure({ onEdit }) : extension
+    );
+}
+
 // ─── Props ────────────────────────────────────────────────────────────────────
 
 /**
@@ -66,6 +98,12 @@ export interface RichTextEditorProps {
      * apply its own border / spacing tokens.
      */
     readonly className?: string;
+    /**
+     * Whether the newsletter dynamic block (extension, insert button and config
+     * dialog) is available. Defaults to `true` so the newsletter is unchanged;
+     * direct emails pass `false` (HOS-2685).
+     */
+    readonly enableDynamicBlocks?: boolean;
 }
 
 // ─── Toolbar separator ────────────────────────────────────────────────────────
@@ -124,13 +162,14 @@ function ToolbarButton({
 interface ToolbarProps {
     readonly editor: Editor;
     readonly disabled: boolean;
+    readonly enableDynamicBlocks: boolean;
 }
 
 /**
  * Renders the formatting toolbar with all 15 actions defined in UX §5.6.
  * Uses plain-text labels because lucide-react is not installed in apps/admin.
  */
-function Toolbar({ editor, disabled }: ToolbarProps) {
+function Toolbar({ editor, disabled, enableDynamicBlocks }: ToolbarProps) {
     const { t } = useTranslations();
     const dis = (can: boolean) => disabled || !can;
 
@@ -152,27 +191,29 @@ function Toolbar({ editor, disabled }: ToolbarProps) {
             aria-label="Editor toolbar"
             className="flex flex-wrap items-center gap-0.5 border-border border-b bg-muted/30 px-2 py-1"
         >
-            <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                disabled={disabled}
-                onClick={() =>
-                    editor
-                        .chain()
-                        .focus()
-                        .insertDynamicBlock({
-                            config: {
-                                entityType: NewsletterDynamicEntityTypeEnum.ACCOMMODATION,
-                                source: NewsletterDynamicSourceEnum.NEWEST,
-                                count: 4
-                            }
-                        })
-                        .run()
-                }
-            >
-                {t('admin-newsletter.dynamicBlock.insert')}
-            </Button>
+            {enableDynamicBlocks && (
+                <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    disabled={disabled}
+                    onClick={() =>
+                        editor
+                            .chain()
+                            .focus()
+                            .insertDynamicBlock({
+                                config: {
+                                    entityType: NewsletterDynamicEntityTypeEnum.ACCOMMODATION,
+                                    source: NewsletterDynamicSourceEnum.NEWEST,
+                                    count: 4
+                                }
+                            })
+                            .run()
+                    }
+                >
+                    {t('admin-newsletter.dynamicBlock.insert')}
+                </Button>
+            )}
             {/* 1. Bold */}
             <ToolbarButton
                 onClick={() => editor.chain().focus().toggleBold().run()}
@@ -331,17 +372,14 @@ export function RichTextEditor({
     disabled = false,
     id,
     ariaLabel,
-    className
+    className,
+    enableDynamicBlocks = true
 }: RichTextEditorProps) {
     const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const [selection, setSelection] = useState<DynamicBlockEditInput | null>(null);
 
     const editor = useEditor({
-        extensions: NEWSLETTER_EDITOR_EXTENSIONS.map((extension) =>
-            extension.name === 'dynamicBlock'
-                ? DynamicBlock.configure({ onEdit: setSelection })
-                : extension
-        ),
+        extensions: buildEditorExtensions({ enableDynamicBlocks, onEdit: setSelection }),
         // Cast is safe: TiptapDocument is structurally compatible with JSONContent
         content: (value as JSONContent) ?? undefined,
         editable: !disabled,
@@ -404,6 +442,7 @@ export function RichTextEditor({
                 <Toolbar
                     editor={editor}
                     disabled={disabled}
+                    enableDynamicBlocks={enableDynamicBlocks}
                 />
             )}
 
@@ -428,7 +467,7 @@ export function RichTextEditor({
                     disabled && 'cursor-not-allowed opacity-60'
                 )}
             />
-            {editor && selection && !disabled && (
+            {enableDynamicBlocks && editor && selection && !disabled && (
                 <DynamicBlockDialog
                     key={selection.blockKey}
                     editor={editor}

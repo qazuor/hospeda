@@ -1,0 +1,49 @@
+---
+/**
+ * @file [lang]/correos/baja/index.astro
+ * @description Opt-out page of the direct emails (HOS-2685).
+ *
+ * Target of the "No quiero recibir más correos de Hospeda" link in every direct
+ * email (`{siteUrl}/es/correos/baja/?token=...`). Opening it NEVER writes: mail
+ * scanners prefetch links. The DirectEmailOptOut island only reads the token to
+ * show the masked address, and POSTs only when the person clicks "Confirmar baja".
+ *
+ * Session-blind (reads no session, no cookies), noindex.
+ */
+
+import { DirectEmailOptOut } from '@/components/direct-email/DirectEmailOptOut.client';
+import StatusPage from '@/components/shared/StatusPage.astro';
+import DefaultLayout from '@/layouts/DefaultLayout.astro';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { MailIcon } from '@repo/icons';
+
+const lang = (Astro.params.lang ?? 'es') as SupportedLocale;
+const { t } = createTranslations(lang);
+
+const token = (Astro.url.searchParams.get('token') ?? '').trim();
+
+const pageTitle = t('newsletter.directEmailOptOut.title');
+const pageDescription = t('newsletter.directEmailOptOut.description');
+const homeLink = t('newsletter.directEmailOptOut.homeLink');
+---
+
+<DefaultLayout
+    locale={lang}
+    title={pageTitle}
+    description={pageDescription}
+    noindex={true}
+>
+    <StatusPage
+        variant="info"
+        Icon={MailIcon}
+        title={pageTitle}
+        description={pageDescription}
+        hideBlob
+    >
+        <div slot="actions">
+            <DirectEmailOptOut client:load token={token} locale={lang} />
+        </div>
+        <a slot="footer" href={`/${lang}/`}>{homeLink}</a>
+    </StatusPage>
+</DefaultLayout>
