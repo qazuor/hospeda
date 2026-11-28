@@ -105,28 +105,19 @@ describe('the sheet copy (HOS-982)', () => {
         });
     }
 
-    it('prints the headline in the reader’s language, not Spanish everywhere', () => {
-        expect(build('es').headline).toBe('Escaneá el código');
-        expect(build('en').headline).toBe('Scan the code');
-        expect(build('pt').headline).toBe('Escaneie o código');
+    it('prints the pill’s first line in the reader’s language, not Spanish everywhere', () => {
+        expect(build('es').pillHeadline).toBe('Escaneá para conocer');
+        expect(build('en').pillHeadline).toBe('Scan to discover');
+        expect(build('pt').pillHeadline).toBe('Escaneie para conhecer');
     });
 
-    it('carries a real invitation and a real tagline in all three locales', () => {
+    it('never carries a missing-key marker onto paper', () => {
         for (const locale of ['es', 'en', 'pt'] as const) {
-            const content = build(locale);
-            for (const line of [content.invite, content.brandTagline, content.headline]) {
-                expect(line.length).toBeGreaterThan(10);
-                // A locale file miss renders as this marker in the admin and as
-                // the raw dotted key on the web. Neither belongs on paper.
-                expect(line).not.toContain('MISSING');
-                expect(line).not.toContain('common.qrSheet');
-            }
-        }
-    });
-
-    it('leaves the brand untranslated — it is a proper noun', () => {
-        for (const locale of ['es', 'en', 'pt'] as const) {
-            expect(build(locale).brand).toBe('Hospeda');
+            const line = build(locale).pillHeadline;
+            // A locale file miss renders as this marker in the admin and as
+            // the raw dotted key on the web. Neither belongs on paper.
+            expect(line).not.toContain('MISSING');
+            expect(line).not.toContain('common.qrSheet');
         }
     });
 
@@ -186,7 +177,7 @@ describe('the downloader’s language never reaches the minted destination (HOS-
                     vertical: 'accommodation',
                     locale,
                     siteUrl: SITE
-                }).headline
+                }).pillHeadline
         );
         expect(new Set(headlines).size).toBe(3);
     });

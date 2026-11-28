@@ -43,20 +43,17 @@
  *
  * ## A SECOND DOCUMENT DEPENDS ON THIS FILE'S TEXT MECHANICS
  *
- * `wrapText` and `toDrawableText` are exported and used by the printable QR
- * sheet (`services/listing-qr-sheet/`, HOS-982). That is deliberate — both are
- * pure, generic PDF text mechanics rather than brochure policy, and a second
- * copy would drift the first time either page learned something about fitting
- * text — but it makes them SHARED, which is easy to forget from in here.
+ * `toDrawableText` is exported and used by the printable QR sheet
+ * (`services/listing-qr-sheet/`, HOS-982/HOS-2688) to measure and draw the
+ * listing's name in the sticker's pill. That is deliberate — it is pure,
+ * generic PDF text mechanics rather than brochure policy — but it makes it
+ * SHARED, which is easy to forget from in here: a change to it changes how a
+ * business name is set on a sticker stuck to a door, in a pull request that
+ * touches no file under `listing-qr-sheet/`.
  *
- * So a change to either one changes how a business name is set on a sheet taped
- * to a door, in a pull request that touches no file under `listing-qr-sheet/`.
- * Adding a default `maxLines` "for the brochure", or moving where a line
- * breaks, is exactly that kind of change.
- *
- * The sheet carries its own assertions about where its lines break
- * (`test/services/listing-qr-sheet-render.test.ts`, "how the name is set"), so
- * the failure surfaces rather than shipping. Run them before touching these two.
+ * The sheet carries its own assertions about the name it draws
+ * (`test/services/listing-qr-sheet-render.test.ts`), so the failure surfaces
+ * rather than shipping. Run them before touching it.
  *
  * @module services/listing-brochure/brochure-render
  */
