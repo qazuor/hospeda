@@ -260,8 +260,9 @@ describe('HOS-2655 legal pages', () => {
         const layout = source('layouts/LegalLayout.astro');
 
         expect(layout).toMatch(/<details>\s*<summary>/);
-        expect(layout).toContain('<h2>{heading}</h2>');
-        expect(layout).toMatch(/<a href=\{`#\$\{id\}`\}>\{heading\}<\/a>/);
+        // HOS-2681: the layout numbers both, from the same array index.
+        expect(layout).toContain('<h2>{index + 1}. {heading}</h2>');
+        expect(layout).toMatch(/<a href=\{`#\$\{id\}`\}>\{index \+ 1\}\. \{heading\}<\/a>/);
         expect(layout).toContain('href="#legal-toc"');
         expect(layout).toContain('max-width: 95ch;');
         expect(layout).not.toMatch(/counter-(increment|reset):/);
@@ -275,7 +276,12 @@ describe('HOS-2655 legal pages', () => {
         const baseLayout = source('layouts/BaseLayout.astro');
 
         expect(terms).toMatch(/id === 'reservas'[\s\S]*?\/legal\/privacidad\//);
-        expect(terms).toMatch(/id === 'contacto'[\s\S]*?\/legal\/arrepentimiento\//);
+        // HOS-2681 (T7): the withdrawal link hangs from the refunds article itself,
+        // and stays on the contact one.
+        expect(terms).toMatch(
+            /withdrawalLink = \{ href: buildUrl\(\{ locale, path: '\/legal\/arrepentimiento\/' \}\)/
+        );
+        expect(terms).toContain("id === 'cancelaciones' || id === 'contacto' ? [withdrawalLink]");
         expect(cookies).toMatch(/table: key === 'cookieList'/);
         expect(cookies).toMatch(/bullets: key === 'sessionRecording'/);
         expect(cookies).toMatch(/managePreferences: key === 'manageCookies'/);

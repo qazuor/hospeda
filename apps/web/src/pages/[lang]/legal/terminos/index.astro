@@ -11,17 +11,18 @@ const { t } = createTranslations(locale);
 applyCacheHeaders({ locals: Astro.locals, headers: Astro.response.headers, cacheable: true,
     cacheClass: 'static', tags: [CACHE_TAG_SITE_CONFIG] });
 
-const ids = ['aceptacion', 'uso-servicio', 'registro', 'publicacion', 'reservas', 'cancelaciones',
-    'propiedad-intelectual', 'limitacion', 'modificaciones', 'contacto'] as const;
+// Anchor ids are public (external links point at `#reservas`, `#contacto`, ...):
+// never rename one. The layout numbers the articles, so inserting one is safe.
+const ids = ['aceptacion', 'uso-servicio', 'registro', 'publicacion', 'reservas', 'prueba',
+    'cancelaciones', 'propiedad-intelectual', 'limitacion', 'modificaciones', 'contacto'] as const;
+const withdrawalLink = { href: buildUrl({ locale, path: '/legal/arrepentimiento/' }), label: t('terms.withdrawal.title') };
 const articles = ids.map((id) => ({
     id,
     heading: t(`terms.articles.${id}.title`),
     body: t(`terms.articles.${id}.body`),
     links: id === 'reservas' ? [{
         href: buildUrl({ locale, path: '/legal/privacidad/' }), label: t('privacy.title')
-    }] : id === 'contacto' ? [{
-        href: buildUrl({ locale, path: '/legal/arrepentimiento/' }), label: t('terms.withdrawal.title')
-    }] : undefined
+    }] : id === 'cancelaciones' || id === 'contacto' ? [withdrawalLink] : undefined
 }));
 ---
-<LegalLayout locale={locale} title={t('terms.title')} description={t('terms.description')} lastUpdated="2026-11-26" articles={articles} />
+<LegalLayout locale={locale} title={t('terms.title')} description={t('terms.description')} lastUpdated="2026-11-28" articles={articles} />
