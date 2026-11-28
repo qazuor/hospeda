@@ -167,6 +167,35 @@ describe('stripRichDescriptionSyntax', () => {
         expect(result).toBe('Departamento remodelado');
     });
 
+    it('removes _italic_ underscore markers, keeping the text (HOS-2678)', () => {
+        expect(stripRichDescriptionSyntax('Vista _espectacular_ al río')).toBe(
+            'Vista espectacular al río'
+        );
+        expect(stripRichDescriptionSyntax('_x_')).toBe('x');
+        expect(stripRichDescriptionSyntax('_foo_bar_')).toBe('foo_bar');
+        expect(stripRichDescriptionSyntax('_una\nlinea_')).toBe('una\nlinea');
+        expect(stripRichDescriptionSyntax('B _guion bajo cursiva_ C __doble__ D')).toBe(
+            'B guion bajo cursiva C doble D'
+        );
+        expect(stripRichDescriptionSyntax('Hola _mundo_, ¿qué tal? (_ok_)')).toBe(
+            'Hola mundo, ¿qué tal? (ok)'
+        );
+    });
+
+    it.each([
+        'usa snake_case_name en el código',
+        'mail a juan_perez_gomez@example.com ahora',
+        'https://example.com/a_b_c/file_name_v2.pdf',
+        'a _ b _ c con espacios',
+        'dos_ palabras _sueltas',
+        '5_000_000 pesos',
+        '_foo_bar sigue igual',
+        'foo_bar_ baz sigue igual',
+        '_foo\n\nbar_'
+    ])('leaves intra-word and non-emphasis underscores intact: %s', (value) => {
+        expect(stripRichDescriptionSyntax(value)).toBe(value);
+    });
+
     it('removes ~~strikethrough~~ markers, keeping the text', () => {
         // Arrange
         const value = 'Precio ~~viejo~~ vigente';
