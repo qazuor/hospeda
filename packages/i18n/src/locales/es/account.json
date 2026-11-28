@@ -2627,6 +2627,7 @@
         "deleteConfirm": "¿Eliminar tu respuesta? Después vas a poder responder de nuevo.",
         "saving": "Guardando…",
         "deleting": "Eliminando…",
+        "publishedNotice": "Respuesta publicada",
         "upsell": {
             "title": "Responder reseñas no está en tu plan",
             "body": "Mejorá tu plan para responder las reseñas de tus huéspedes.",

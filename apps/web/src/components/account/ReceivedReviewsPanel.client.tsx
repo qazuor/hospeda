@@ -87,9 +87,11 @@ export function ReceivedReviewsPanel({ locale }: ReceivedReviewsPanelProps) {
     const [filter, setFilter] = useState<Filter>('all');
     const [page, setPage] = useState(1);
     const [state, setState] = useState<AsyncResult<ReceivedReviewsPage>>({ status: 'loading' });
+    const [publishedNotice, setPublishedNotice] = useState(false);
 
     const load = useCallback(async () => {
         setState({ status: 'loading' });
+        setPublishedNotice(false);
         const result = await reviewRepliesApi.listReceived({
             page,
             pageSize: PAGE_SIZE,
@@ -110,22 +112,44 @@ export function ReceivedReviewsPanel({ locale }: ReceivedReviewsPanelProps) {
         void load();
     }, [load]);
 
-    /** Replaces one review's reply in place, without refetching the page. */
-    const setReply = useCallback((input: { reviewId: string; reply: Reply | null }) => {
-        setState((current) =>
-            current.status === 'ready'
-                ? {
-                      status: 'ready',
-                      data: {
-                          ...current.data,
-                          items: current.data.items.map((item) =>
-                              item.id === input.reviewId ? { ...item, reply: input.reply } : item
-                          )
-                      }
-                  }
-                : current
-        );
-    }, []);
+    /**
+     * Applies a reply change without refetching the page. Under the «Sin responder»
+     * filter a newly created reply takes its review out of the list (it no longer
+     * belongs there) and the host is told it was published; otherwise the reply is
+     * replaced in place.
+     */
+    const setReply = useCallback(
+        (input: { reviewId: string; reply: Reply | null }) => {
+            setState((current) => {
+                if (current.status !== 'ready') return current;
+                const previous = current.data.items.find((item) => item.id === input.reviewId);
+                if (filter === 'unanswered' && input.reply && previous && !previous.reply) {
+                    const items = current.data.items.filter((item) => item.id !== input.reviewId);
+                    return items.length === 0
+                        ? { status: 'empty' }
+                        : {
+                              status: 'ready',
+                              data: {
+                                  ...current.data,
+                                  items,
+                                  total: Math.max(0, current.data.total - 1)
+                              }
+                          };
+                }
+                return {
+                    status: 'ready',
+                    data: {
+                        ...current.data,
+                        items: current.data.items.map((item) =>
+                            item.id === input.reviewId ? { ...item, reply: input.reply } : item
+                        )
+                    }
+                };
+            });
+            if (filter === 'unanswered' && input.reply) setPublishedNotice(true);
+        },
+        [filter]
+    );
 
     return (
         <Section
@@ -159,6 +183,14 @@ export function ReceivedReviewsPanel({ locale }: ReceivedReviewsPanelProps) {
                     }
                 ]}
             />
+            {publishedNotice ? (
+                <Alert
+                    tone="success"
+                    locale={locale}
+                >
+                    {t('account.receivedReviews.publishedNotice')}
+                </Alert>
+            ) : null}
             <AsyncRegion
                 state={state}
                 loading={() => (
