@@ -41,6 +41,26 @@ pnpm umami:setup --dry-run   # then again without --dry-run
   heatmaps, see [`session-replay-privacy.md`](../analytics/session-replay-privacy.md)).
   Review the `recorder updated` diff of the dry run before applying.
 
+## Write key for QR campaign segments
+
+The admin QR campaigns panel creates `QR · <campaign>` segments on the WEB website
+(see [`umami-dashboards.md`](../analytics/umami-dashboards.md#qr-campaign-segments-hos-2679)).
+The API needs its own key for that, `HOSPEDA_UMAMI_WRITE_API_KEY`:
+
+1. Log in to Umami as a user with **edit** access to the WEB website (a team member
+   or the website owner). A view-only user's key answers 401 when creating.
+2. Umami → Settings → API keys → create a key (format `umami_...`).
+3. Set it on the API app of each environment and redeploy (owner approval needed):
+   `hops env-set api HOSPEDA_UMAMI_WRITE_API_KEY --secret`, then `hops redeploy api`.
+   An `app-restart` does not pick up a new variable.
+
+Never reuse `HOSPEDA_UMAMI_API_KEY` (it must stay view-only) or the
+`UMAMI_SETUP_API_KEY` of `pnpm umami:setup` (script-only). The API uses this key
+only for `POST /api/websites/:id/segments` and the matching list; a guard test
+(`apps/api/test/guards/no-umami-write-credential.guard.test.ts`) keeps it confined to
+one service. If Umami refuses the key, the admin shows «Umami rechazó la clave de
+escritura» (`UMAMI_KEY_REJECTED`): replace it with a key of a user that can edit.
+
 ## Backups
 
 Each Umami database is dumped daily to the R2 bucket `hospeda-umami-backups`,

@@ -126,6 +126,27 @@ Cohorts (visitors that fired the event within the window):
 | `Activaron una suscripción (90 días)` | `billing_subscription_activated` | 90day |
 | `Empezaron un trial (90 días)` | `trial_started` | 90day |
 
+## QR campaign segments (HOS-2679)
+
+Each distinct `utm_campaign` on the QR codes' destinations is a campaign. The admin
+lists them in **Platform → QR codes → Campañas**, with how many live codes carry each
+one and its state in Umami.
+
+- **Name:** `QR · <campaign>`, exactly. One segment per campaign, on the WEB website.
+- **Filter:** `utmCampaign eq <campaign>`. A segment filters the whole website view,
+  including the `utm_content` table, which a board component cannot do in Umami 3.5.
+- **Created on demand** from the admin («Crear en Umami»), never in bulk. The API lists
+  the segments by name and creates one only when no segment has that exact name, so a
+  second click returns the existing one. Umami does not enforce unique names, so do
+  not create a `QR · ...` segment by hand with a name that is already taken.
+- **Not managed by `pnpm umami:setup`.** They are not in `segment-definitions.ts`, so
+  the script reports them as unmanaged. That is expected; it never deletes them.
+- «Ver en Umami» needs no segment: it opens the website with the ad-hoc URL filter
+  `?utmCampaign=eq.<campaign>`. «Abrir segmento» opens `?segment=<id>`.
+- Creating needs `HOSPEDA_UMAMI_WRITE_API_KEY` on the API (see
+  [the runbook](../runbooks/umami.md#write-key-for-qr-campaign-segments)). Without it,
+  or with Umami down, the panel still lists the campaigns and the button is disabled.
+
 ## Session recorder config
 
 `pnpm umami:setup` also manages the recorder config of the WEB website (HOS-2347): replays
