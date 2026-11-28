@@ -12,17 +12,18 @@
  * - injects nothing, so Umami sends and loads nothing, until then. Events
  *   fired meanwhile are dropped by the gates in `umami-client.ts` and
  *   `umami-pageview.ts`, never queued;
- * - on revoke, sets Umami's own `umami.disabled` localStorage flag, which a
- *   loaded tracker checks before every send (including its `data-umami-event`
- *   click handlers), and removes it again on a later grant. The loaded script
- *   cannot be unloaded, so the flag plus the client gates are what stop it.
+ * - on revoke, sets Umami's `umami.disabled` localStorage flag and removes it
+ *   again on a later grant. The flag is only a backstop that the Umami tracker
+ *   is believed to honour (including for its `data-umami-event` click
+ *   handlers); the real enforcement is the consent gates in `umami-client.ts`
+ *   and `umami-pageview.ts`. The loaded script cannot be unloaded.
  *
  * The script carries `data-auto-pageview="false"`: pageviews come from
  * `umami-pageview.ts` (see there for why). It is injected into `<head>` and
- * flagged `data-astro-transition-persist` so the router keeps it.
+ * tracked by a module flag, since the router drops it on the first soft navigation.
  */
 
-import { readUmamiConfig } from '@/lib/analytics/umami-tracker';
+import { readUmamiConfig, setUmamiTrackerLoading } from '@/lib/analytics/umami-tracker';
 import { CONSENT_CHANGED_EVENT, getConsent } from '@/lib/cookie-consent';
 
 /** `id` of the injected tracker script. */
@@ -32,6 +33,13 @@ export const UMAMI_TRACKER_SCRIPT_ID = 'umami-tracker';
 export const UMAMI_DISABLED_STORAGE_KEY = 'umami.disabled';
 
 let started = false;
+/**
+ * Whether this document already injected the tracker. A module flag, never a
+ * DOM lookup: the router drops the injected `<script>` from `<head>` on the
+ * first soft navigation (the server renders only the config meta), while the
+ * loaded tracker keeps running.
+ */
+let injected = false;
 
 function setTrackerDisabled(disabled: boolean): void {
     try {
@@ -44,7 +52,7 @@ function setTrackerDisabled(disabled: boolean): void {
 
 /** Injects the tracker script once. Only called with analytics consent. */
 function injectTracker(): void {
-    if (document.getElementById(UMAMI_TRACKER_SCRIPT_ID)) return;
+    if (injected || document.getElementById(UMAMI_TRACKER_SCRIPT_ID)) return;
     const config = readUmamiConfig();
     if (!config) return;
     const script = document.createElement('script');
@@ -53,7 +61,12 @@ function injectTracker(): void {
     script.defer = true;
     script.setAttribute('data-website-id', config.websiteId);
     script.setAttribute('data-auto-pageview', 'false');
-    script.setAttribute('data-astro-transition-persist', UMAMI_TRACKER_SCRIPT_ID);
+    // While it downloads, waits for the tracker keep going past their usual budget.
+    const settled = (): void => setUmamiTrackerLoading(false);
+    script.addEventListener('load', settled);
+    script.addEventListener('error', settled);
+    setUmamiTrackerLoading(true);
+    injected = true;
     document.head.appendChild(script);
 }
 
@@ -65,7 +78,7 @@ function onConsentChanged(event: Event): void {
         return;
     }
     // Revoked (or declined): only a document that loaded the tracker needs the flag.
-    if (document.getElementById(UMAMI_TRACKER_SCRIPT_ID)) setTrackerDisabled(true);
+    if (injected) setTrackerDisabled(true);
 }
 
 /** Result of {@link startUmamiLoader}. */
@@ -95,6 +108,8 @@ export function startUmamiLoader(): StartUmamiLoaderResult {
         stop: () => {
             window.removeEventListener(CONSENT_CHANGED_EVENT, onConsentChanged);
             started = false;
+            injected = false;
+            setUmamiTrackerLoading(false);
         }
     };
 }

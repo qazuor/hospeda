@@ -13,6 +13,7 @@ import {
     UMAMI_TRACKER_SCRIPT_ID
 } from '@/lib/analytics/umami-loader';
 import { startUmamiPageviews } from '@/lib/analytics/umami-pageview';
+import { waitForUmamiTracker } from '@/lib/analytics/umami-tracker';
 import { saveConsent } from '@/lib/cookie-consent';
 
 const SCRIPT_URL = 'https://umami.test/hospeda.js';
@@ -117,6 +118,54 @@ describe('startUmamiLoader', () => {
         stoppers.push(startUmamiLoader().stop);
 
         expect(trackerScripts()).toHaveLength(0);
+    });
+});
+
+describe('after a ClientRouter swap drops the injected script', () => {
+    it('should not inject twice on a repeated grant, and should still flag a revoke', () => {
+        stoppers.push(startUmamiLoader().stop);
+        setConsent({ analytics: true });
+        // The router drops the head node on the first soft navigation.
+        for (const node of trackerScripts()) node.remove();
+
+        setConsent({ analytics: true });
+        expect(trackerScripts()).toHaveLength(0);
+
+        setConsent({ analytics: false });
+        expect(window.localStorage.getItem(UMAMI_DISABLED_STORAGE_KEY)).toBe('1');
+    });
+});
+
+describe('waiting for a slow tracker download', () => {
+    it('should keep waiting past the usual budget until the script loads', () => {
+        vi.useFakeTimers();
+        stoppers.push(startUmamiLoader().stop);
+        setConsent({ analytics: true });
+        const onReady = vi.fn();
+        const onGiveUp = vi.fn();
+        waitForUmamiTracker({ onReady, onGiveUp });
+
+        // Well past 20 polls x 250 ms, script still downloading.
+        vi.advanceTimersByTime(30_000);
+        expect(onGiveUp).not.toHaveBeenCalled();
+
+        // The script loads and defines the tracker.
+        Reflect.set(window, 'umami', { track: vi.fn(), identify: vi.fn() });
+        vi.advanceTimersByTime(250);
+        expect(onReady).toHaveBeenCalledTimes(1);
+    });
+
+    it('should give up once the script download fails', () => {
+        vi.useFakeTimers();
+        stoppers.push(startUmamiLoader().stop);
+        setConsent({ analytics: true });
+        const onGiveUp = vi.fn();
+        waitForUmamiTracker({ onReady: vi.fn(), onGiveUp });
+
+        trackerScripts()[0]?.dispatchEvent(new Event('error'));
+        vi.advanceTimersByTime(6000);
+
+        expect(onGiveUp).toHaveBeenCalledTimes(1);
     });
 });
 

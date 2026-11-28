@@ -52,6 +52,22 @@ export function readUmamiConfig(): UmamiConfig | null {
 export const UMAMI_POLL_INTERVAL_MS = 250;
 /** Maximum number of checks (about 5 seconds in total). */
 export const UMAMI_MAX_POLL_ATTEMPTS = 20;
+/** Hard cap of checks while the consent-gated loader's script is still downloading (about 60 s). */
+export const UMAMI_MAX_LOADING_POLL_ATTEMPTS = 240;
+
+let trackerScriptLoading = false;
+
+/**
+ * Called by `umami-loader.ts` while the injected tracker script downloads.
+ * Waits do not give up at their normal budget while it is `true`, because the
+ * script is injected only at consent time and may be slow (HOS-2681). Set back
+ * to `false` on the script's `load` or `error`.
+ *
+ * @param loading - Whether the injected tracker script is still downloading.
+ */
+export function setUmamiTrackerLoading(loading: boolean): void {
+    trackerScriptLoading = loading;
+}
 
 function isUmamiTracker(value: unknown): value is UmamiTracker {
     if (typeof value !== 'object' || value === null) return false;
@@ -122,7 +138,10 @@ export function waitForUmamiTracker({
         if (tracker) {
             window.clearInterval(timer);
             onReady(tracker);
-        } else if (attempts >= maxAttempts) {
+        } else if (
+            attempts >= maxAttempts &&
+            (!trackerScriptLoading || attempts >= UMAMI_MAX_LOADING_POLL_ATTEMPTS)
+        ) {
             window.clearInterval(timer);
             onGiveUp?.();
         }
