@@ -7,7 +7,7 @@ import { adminDeleteAccommodationReviewRoute } from './delete';
 import { adminGetAccommodationReviewByIdRoute } from './getById';
 import { adminHardDeleteAccommodationReviewRoute } from './hardDelete';
 import { adminListAccommodationReviewsRoute } from './list';
-import { adminListAccommodationReviewRepliesRoute } from './listReplies';
+import { adminListAccommodationReviewRepliesRoute } from './listReviewReplies';
 import { adminModerateAccommodationReviewRoute } from './moderate';
 import { adminModerateAccommodationReviewReplyRoute } from './moderateReply';
 import { adminRestoreAccommodationReviewRoute } from './restore';

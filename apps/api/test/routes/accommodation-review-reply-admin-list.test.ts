@@ -14,7 +14,10 @@ import { initApp } from '../../src/app.js';
 import type { AppOpenAPI } from '../../src/types.js';
 
 const listRepliesSource = readFileSync(
-    resolve(import.meta.dirname, '../../src/routes/accommodation/reviews/admin/listReplies.ts'),
+    resolve(
+        import.meta.dirname,
+        '../../src/routes/accommodation/reviews/admin/listReviewReplies.ts'
+    ),
     'utf8'
 );
 
