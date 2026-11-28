@@ -12,11 +12,16 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const env = vi.hoisted(() => ({
     internal: undefined as string | undefined,
-    secret: undefined as string | undefined
+    secret: undefined as string | undefined,
+    broken: false
 }));
 vi.mock('@/lib/env', async (importOriginal) => ({
     ...(await importOriginal<typeof import('@/lib/env')>()),
-    getApiUrl: () => 'https://api.hospeda.test',
+    getApiUrl: () => {
+        if (env.broken)
+            throw new Error('[web] Neither PUBLIC_API_URL nor HOSPEDA_API_URL is configured');
+        return 'https://api.hospeda.test';
+    },
     getInternalApiUrl: () => env.internal,
     getInternalRequestSecret: () => env.secret
 }));
@@ -49,6 +54,7 @@ function apiError(status: number): Response {
 beforeEach(() => {
     env.internal = undefined;
     env.secret = undefined;
+    env.broken = false;
 });
 
 describe('openOwnReceiptPdf', () => {
@@ -156,6 +162,17 @@ describe('openOwnReceiptPdf', () => {
                 kind: 'error'
             });
         }
+    });
+});
+
+describe('openOwnReceiptPdf with a broken env', () => {
+    it('turns a missing API URL into the error outcome instead of throwing', async () => {
+        env.broken = true;
+        const fetchImpl = vi.fn(async () => pdfResponse());
+        await expect(
+            openOwnReceiptPdf({ receiptId: RECEIPT, cookieHeader: COOKIE, fetchImpl })
+        ).resolves.toEqual({ kind: 'error' });
+        expect(fetchImpl).not.toHaveBeenCalled();
     });
 });
 

@@ -69,16 +69,17 @@ export async function openOwnReceiptPdf({
     if (!receiptId || !isReceiptId({ value: receiptId })) return { kind: 'notFound' };
     if (!cookieHeader) return { kind: 'signIn' };
 
-    const internal = getInternalApiUrl();
-    const base = internal ?? getApiUrl();
-    const headers: Record<string, string> = { cookie: cookieHeader, Accept: 'application/pdf' };
-    // Same rule as the API client (HOS-103): the shared secret only travels over
-    // the internal network, so it can never leak through the public URL.
-    const secret = internal ? getInternalRequestSecret() : undefined;
-    if (secret) headers['X-Internal-Request'] = secret;
-
     let upstream: Response;
     try {
+        // Resolved inside the `try`: a misconfigured env throws here, and that is an
+        // `error` outcome (fallback viewer), never a 500.
+        const internal = getInternalApiUrl();
+        const base = internal ?? getApiUrl();
+        const headers: Record<string, string> = { cookie: cookieHeader, Accept: 'application/pdf' };
+        // Same rule as the API client (HOS-103): the shared secret only travels over
+        // the internal network, so it can never leak through the public URL.
+        const secret = internal ? getInternalRequestSecret() : undefined;
+        if (secret) headers['X-Internal-Request'] = secret;
         upstream = await fetchImpl(
             `${base}/api/v1/protected/billing-subscription/receipts/${encodeURIComponent(receiptId)}/pdf`,
             { headers, signal: AbortSignal.timeout(RECEIPT_TIMEOUT_MS) }
