@@ -1233,10 +1233,33 @@
             "ratingDistribution": "Rating Distribution",
             "detailedNote": "Detailed review listings will be available in a future update. Currently showing aggregated review statistics only.",
             "detailedNoteLabel": "Note:",
-            "respondTitle": "Respond to Reviews",
-            "respondProPremium": "Responding to reviews is available on Pro and Premium plans",
-            "respondUpgrade": "Upgrade your plan to publicly respond to your guests' reviews.",
-            "respondComingSoon": "The review response feature will be available soon."
+            "replies": {
+                "title": "Owner replies",
+                "help": "Review and moderate the replies owners posted on this accommodation's reviews.",
+                "filterLabel": "Moderation state",
+                "filterAll": "All",
+                "filterPending": "Pending moderation",
+                "filterApproved": "Approved",
+                "filterRejected": "Rejected",
+                "empty": "No owner replies match this filter.",
+                "loadError": "Could not load the owner replies.",
+                "moderateError": "Could not save the moderation decision.",
+                "anonymousReviewer": "Anonymous guest",
+                "noReviewText": "Review without text",
+                "reasonLabel": "Reason",
+                "reasonAria": "Moderation reason (optional)",
+                "reasonPlaceholder": "Optional reason",
+                "approve": "Approve",
+                "reject": "Reject",
+                "statePending": "Pending",
+                "stateApproved": "Approved",
+                "stateRejected": "Rejected",
+                "pagination": {
+                    "previous": "Previous",
+                    "next": "Next",
+                    "status": "Page {{page}} of {{total}}"
+                }
+            }
         },
         "gallery": {
             "noImages": "No images available for this accommodation.",

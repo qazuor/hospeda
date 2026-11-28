@@ -5,12 +5,11 @@
  */
 
 import { formatNumber } from '@repo/i18n';
-import { EntitlementKeyEnum } from '@repo/schemas';
 import { createFileRoute } from '@tanstack/react-router';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { AccommodationReviewRepliesSection } from '@/features/accommodations/components/AccommodationReviewRepliesSection';
 import { AccommodationSubTabLayout } from '@/features/accommodations/components/AccommodationSubTabLayout';
 import { useAccommodationQuery } from '@/features/accommodations/hooks/useAccommodationQuery';
-import { PlanEntitlementGate } from '@/features/billing/PlanEntitlementGate';
 import { useTranslations } from '@/hooks/use-translations';
 
 export const Route = createFileRoute('/_authed/accommodations/$id_/reviews')({
@@ -158,37 +157,8 @@ function AccommodationReviewsPage() {
                             </p>
                         </div>
 
-                        {/* T-G-005: Gate for responding to reviews (placeholder for future implementation) */}
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="text-lg">
-                                    {t('admin-pages.accommodations.reviews.respondTitle')}
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <PlanEntitlementGate
-                                    entitlementKey={EntitlementKeyEnum.RESPOND_REVIEWS}
-                                    fallback={
-                                        <div className="rounded-md border border-warning/30 bg-warning/10 p-4">
-                                            <p className="font-medium text-foreground">
-                                                {t(
-                                                    'admin-pages.accommodations.reviews.respondProPremium'
-                                                )}
-                                            </p>
-                                            <p className="mt-2 text-muted-foreground text-sm">
-                                                {t(
-                                                    'admin-pages.accommodations.reviews.respondUpgrade'
-                                                )}
-                                            </p>
-                                        </div>
-                                    }
-                                >
-                                    <p className="text-muted-foreground text-sm">
-                                        {t('admin-pages.accommodations.reviews.respondComingSoon')}
-                                    </p>
-                                </PlanEntitlementGate>
-                            </CardContent>
-                        </Card>
+                        {/* HOS-2675: owner replies and their moderation controls */}
+                        <AccommodationReviewRepliesSection accommodationId={id} />
                     </div>
                 )}
             </div>

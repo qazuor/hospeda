@@ -1233,10 +1233,33 @@
             "ratingDistribution": "Distribución de Calificaciones",
             "detailedNote": "Los listados detallados de reseñas estarán disponibles en una actualización futura. Actualmente se muestran solo estadísticas agregadas.",
             "detailedNoteLabel": "Nota:",
-            "respondTitle": "Responder a Reseñas",
-            "respondProPremium": "Responder a reseñas está disponible en los planes Pro y Premium",
-            "respondUpgrade": "Mejora tu plan para responder públicamente a las reseñas de tus huéspedes.",
-            "respondComingSoon": "La función de respuesta a reseñas estará disponible pronto."
+            "replies": {
+                "title": "Respuestas del propietario",
+                "help": "Revisa y modera las respuestas que el propietario publicó en las reseñas de este alojamiento.",
+                "filterLabel": "Estado de moderación",
+                "filterAll": "Todas",
+                "filterPending": "Pendientes de moderación",
+                "filterApproved": "Aprobadas",
+                "filterRejected": "Rechazadas",
+                "empty": "No hay respuestas del propietario para este filtro.",
+                "loadError": "No se pudieron cargar las respuestas del propietario.",
+                "moderateError": "No se pudo guardar la decisión de moderación.",
+                "anonymousReviewer": "Huésped anónimo",
+                "noReviewText": "Reseña sin texto",
+                "reasonLabel": "Motivo",
+                "reasonAria": "Motivo de moderación (opcional)",
+                "reasonPlaceholder": "Motivo opcional",
+                "approve": "Aprobar",
+                "reject": "Rechazar",
+                "statePending": "Pendiente",
+                "stateApproved": "Aprobada",
+                "stateRejected": "Rechazada",
+                "pagination": {
+                    "previous": "Anterior",
+                    "next": "Siguiente",
+                    "status": "Página {{page}} de {{total}}"
+                }
+            }
         },
         "gallery": {
             "noImages": "No hay imágenes disponibles para este alojamiento.",

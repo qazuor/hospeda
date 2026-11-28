@@ -1233,10 +1233,33 @@
             "ratingDistribution": "Distribuição de Classificações",
             "detailedNote": "Listagens detalhadas de avaliações estarão disponíveis em uma atualização futura. Atualmente mostrando apenas estatísticas agregadas.",
             "detailedNoteLabel": "Nota:",
-            "respondTitle": "Responder Avaliações",
-            "respondProPremium": "Responder avaliações está disponível nos planos Pro e Premium",
-            "respondUpgrade": "Atualize seu plano para responder publicamente às avaliações dos seus hóspedes.",
-            "respondComingSoon": "O recurso de resposta a avaliações estará disponível em breve."
+            "replies": {
+                "title": "Respostas do proprietário",
+                "help": "Revise e modere as respostas que o proprietário publicou nas avaliações desta acomodação.",
+                "filterLabel": "Estado de moderação",
+                "filterAll": "Todas",
+                "filterPending": "Pendentes de moderação",
+                "filterApproved": "Aprovadas",
+                "filterRejected": "Rejeitadas",
+                "empty": "Nenhuma resposta do proprietário corresponde a este filtro.",
+                "loadError": "Não foi possível carregar as respostas do proprietário.",
+                "moderateError": "Não foi possível salvar a decisão de moderação.",
+                "anonymousReviewer": "Hóspede anônimo",
+                "noReviewText": "Avaliação sem texto",
+                "reasonLabel": "Motivo",
+                "reasonAria": "Motivo da moderação (opcional)",
+                "reasonPlaceholder": "Motivo opcional",
+                "approve": "Aprovar",
+                "reject": "Rejeitar",
+                "statePending": "Pendente",
+                "stateApproved": "Aprovada",
+                "stateRejected": "Rejeitada",
+                "pagination": {
+                    "previous": "Anterior",
+                    "next": "Próxima",
+                    "status": "Página {{page}} de {{total}}"
+                }
+            }
         },
         "gallery": {
             "noImages": "Nenhuma imagem disponível para esta acomodação.",

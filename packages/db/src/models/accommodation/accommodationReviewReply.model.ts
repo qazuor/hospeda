@@ -30,6 +30,23 @@ export interface ReceivedReviewRow {
     readonly replyEditedAt: Date | null;
 }
 
+/** A host reply as the admin moderation queue reads it, joined with its review. */
+export interface AdminReplyRow {
+    readonly id: string;
+    readonly reviewId: string;
+    readonly content: string;
+    readonly moderationState: AccommodationReviewReply['moderationState'];
+    readonly moderationReason: string | null;
+    readonly moderatedAt: Date | null;
+    readonly createdAt: Date;
+    readonly editedAt: Date | null;
+    readonly accommodationId: string;
+    readonly reviewTitle: string | null;
+    readonly reviewContent: string | null;
+    readonly reviewAverageRating: number;
+    readonly reviewerName: string | null;
+}
+
 /**
  * Model for the `accommodation_review_replies` table (HOS-2199).
  *
@@ -135,6 +152,108 @@ export class AccommodationReviewReplyModel extends BaseModelImpl<AccommodationRe
         } catch (error) {
             const err = error instanceof Error ? error : new Error(String(error));
             throw new DbError(this.entityName, 'findReceivedByOwner', input, err.message, err);
+        }
+    }
+
+    /**
+     * Live host replies for the admin moderation queue, newest first.
+     *
+     * Joins each reply to its review, beating accommodation and reviewer so the
+     * moderator sees what the reply answers. Soft-deleted replies never appear.
+     *
+     * @param input.accommodationId - Narrow to one accommodation.
+     * @param input.moderationState - Keep only one moderation state.
+     * @param input.page - 1-based page.
+     * @param input.pageSize - Page size.
+     * @param tx - Optional transaction client.
+     * @returns The page of rows and the total that match.
+     */
+    async findAdminList(
+        input: {
+            readonly accommodationId?: string;
+            readonly moderationState?: AccommodationReviewReply['moderationState'];
+            readonly page: number;
+            readonly pageSize: number;
+        },
+        tx?: DrizzleClient
+    ): Promise<{ items: AdminReplyRow[]; total: number }> {
+        const db = this.getClient(tx);
+        const conditions: SQL[] = [isNull(accommodationReviewReplies.deletedAt)];
+        if (input.accommodationId) {
+            conditions.push(eq(accommodationReviews.accommodationId, input.accommodationId));
+        }
+        if (input.moderationState) {
+            conditions.push(eq(accommodationReviewReplies.moderationState, input.moderationState));
+        }
+        const where = and(...conditions);
+        try {
+            const [rows, totals] = await Promise.all([
+                db
+                    .select({
+                        id: accommodationReviewReplies.id,
+                        reviewId: accommodationReviewReplies.reviewId,
+                        content: accommodationReviewReplies.content,
+                        moderationState: accommodationReviewReplies.moderationState,
+                        moderationReason: accommodationReviewReplies.moderationReason,
+                        moderatedAt: accommodationReviewReplies.moderatedAt,
+                        createdAt: accommodationReviewReplies.createdAt,
+                        editedAt: accommodationReviewReplies.editedAt,
+                        accommodationId: accommodationReviews.accommodationId,
+                        reviewTitle: accommodationReviews.title,
+                        reviewContent: accommodationReviews.content,
+                        reviewAverageRating: accommodationReviews.averageRating,
+                        reviewerDisplayName: users.displayName,
+                        reviewerFirstName: users.firstName,
+                        reviewerLastName: users.lastName
+                    })
+                    .from(accommodationReviewReplies)
+                    .innerJoin(
+                        accommodationReviews,
+                        eq(accommodationReviews.id, accommodationReviewReplies.reviewId)
+                    )
+                    .innerJoin(
+                        accommodations,
+                        eq(accommodations.id, accommodationReviews.accommodationId)
+                    )
+                    .leftJoin(users, eq(users.id, accommodationReviews.userId))
+                    .where(where)
+                    .orderBy(
+                        desc(accommodationReviewReplies.createdAt),
+                        desc(accommodationReviewReplies.id)
+                    )
+                    .limit(input.pageSize)
+                    .offset((input.page - 1) * input.pageSize),
+                db
+                    .select({ value: count() })
+                    .from(accommodationReviewReplies)
+                    .innerJoin(
+                        accommodationReviews,
+                        eq(accommodationReviews.id, accommodationReviewReplies.reviewId)
+                    )
+                    .where(where)
+            ]);
+            const items: AdminReplyRow[] = rows.map((row) => ({
+                id: row.id,
+                reviewId: row.reviewId,
+                content: row.content,
+                moderationState: row.moderationState as AdminReplyRow['moderationState'],
+                moderationReason: row.moderationReason,
+                moderatedAt: row.moderatedAt,
+                createdAt: row.createdAt,
+                editedAt: row.editedAt,
+                accommodationId: row.accommodationId,
+                reviewTitle: row.reviewTitle,
+                reviewContent: row.reviewContent,
+                reviewAverageRating: row.reviewAverageRating,
+                reviewerName:
+                    row.reviewerDisplayName ??
+                    ([row.reviewerFirstName, row.reviewerLastName].filter(Boolean).join(' ') ||
+                        null)
+            }));
+            return { items, total: Number(totals[0]?.value ?? 0) };
+        } catch (error) {
+            const err = error instanceof Error ? error : new Error(String(error));
+            throw new DbError(this.entityName, 'findAdminList', input, err.message, err);
         }
     }
 
