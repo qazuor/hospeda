@@ -163,3 +163,43 @@ export async function sendAppEmail(
         fromName
     });
 }
+
+/**
+ * Sender address of the admin direct emails (HOS-2685, D1): the dedicated subdomain
+ * address when `HOSPEDA_DIRECT_EMAIL_FROM_EMAIL` is set, else the current sender.
+ *
+ * @returns The From address
+ */
+export function resolveDirectEmailFromEmail(): string {
+    return env.HOSPEDA_DIRECT_EMAIL_FROM_EMAIL ?? getEmailSender().fromEmail;
+}
+
+/**
+ * Sends one admin direct email with the deployment marker applied to the From name and
+ * the subject (HOS-2685). Unlike {@link sendAppEmail} the From address and the base From
+ * name come from the caller: the name is `<admin first name> de Hospeda`.
+ *
+ * @param input - Standard send input; `fromEmail` and `fromName` are required here
+ * @returns The provider result, unchanged
+ */
+export async function sendDirectAppEmail(
+    input: Omit<SendEmailInput, 'fromEmail' | 'fromName' | 'attribution'> & {
+        readonly fromEmail: string;
+        /** Base From display name, before the environment marker. */
+        readonly fromName: string;
+        readonly attribution: Extract<SendEmailInput['attribution'], { medium: 'transactional' }>;
+    }
+): Promise<SendEmailResult> {
+    const decoration = buildEmailEnvDecoration({
+        deployEnv: env.HOSPEDA_DEPLOY_ENV,
+        baseFromName: input.fromName
+    });
+
+    return sendEmail({
+        ...input,
+        subject: decoration.subjectPrefix
+            ? `${decoration.subjectPrefix}${input.subject}`
+            : input.subject,
+        fromName: decoration.fromName
+    });
+}

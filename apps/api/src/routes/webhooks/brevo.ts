@@ -38,6 +38,10 @@
  * newsletter forwarding, and its failure answers 503 so Brevo redelivers.
  * A hard_bounce whose fields fail validation is logged and skipped.
  *
+ * Admin direct emails (HOS-2685, AC-9): `delivered`, `opened`, `hard_bounce` and
+ * `soft_bounce` events also update the matching `direct_email_recipient` row by message
+ * id (`brevo-direct-email.ts`); a failed write answers 503 so Brevo redelivers.
+ *
  * Logging policy: a signature mismatch is logged as a WARN (it's almost
  * certainly a misconfiguration or a probe — not an exception). Other
  * processing errors per-event are warns; we still return 200 to Brevo so
@@ -67,6 +71,7 @@ import { createPerRouteRateLimitMiddleware } from '../../middlewares/rate-limit'
 import { createRouter } from '../../utils/create-app';
 import { env } from '../../utils/env';
 import { apiLogger } from '../../utils/logger';
+import { recordDirectEmailEvent } from './brevo-direct-email';
 
 // ---------------------------------------------------------------------------
 // Singleton — lazily constructed so the API can boot without a webhook secret
@@ -392,6 +397,16 @@ async function brevoWebhookHandler(c: Context): Promise<Response> {
             if (outcome === 'write_failed') {
                 return c.json({ error: 'service_unavailable' }, 503);
             }
+        }
+
+        // HOS-2685: admin direct emails are matched by message id; a failed write answers 503.
+        const directOutcome = await recordDirectEmailEvent({
+            eventType,
+            messageId,
+            at: parseEventDate(raw)
+        });
+        if (directOutcome === 'write_failed') {
+            return c.json({ error: 'service_unavailable' }, 503);
         }
 
         try {

@@ -636,6 +636,21 @@
       "howToObtainEs": "Nombre amigable que aparece al lado del email (ej: \"Hospeda\", \"Hospeda Notificaciones\"). Texto libre; elegí lo que quieras que vean los destinatarios."
     },
     {
+      "name": "HOSPEDA_DIRECT_EMAIL_FROM_EMAIL",
+      "description": "Sender email address for admin direct emails (HOS-2685). Intended to live on a dedicated subdomain so cold mail does not hurt the reputation of transactional and newsletter mail. Unset falls back to HOSPEDA_EMAIL_FROM_EMAIL.",
+      "descriptionEs": "Dirección de email del remitente de los correos directos del admin (HOS-2685). Pensada para un subdominio propio, así un correo en frío marcado como spam no daña la reputación del transaccional y el newsletter. Sin setear usa HOSPEDA_EMAIL_FROM_EMAIL.",
+      "type": "string",
+      "required": false,
+      "secret": false,
+      "exampleValue": "contacto@comercial.hospeda.com.ar",
+      "apps": [
+        "api"
+      ],
+      "category": "email",
+      "howToObtain": "An address on a dedicated sending subdomain (e.g. contacto@comercial.hospeda.com.ar). Register the subdomain in Brevo (Senders, Domains & Dedicated IPs) and add its SPF/DKIM records in Cloudflare BEFORE setting this var: Brevo rejects a From on an unverified domain. Leave unset until then.",
+      "howToObtainEs": "Una dirección en un subdominio de envío propio (ej: contacto@comercial.hospeda.com.ar). Registrá el subdominio en Brevo (Senders, Domains & Dedicated IPs) y agregá sus registros SPF/DKIM en Cloudflare ANTES de setear esta var: Brevo rechaza un From en un dominio sin verificar. Dejala sin setear hasta entonces."
+    },
+    {
       "name": "HOSPEDA_ADMIN_NOTIFICATION_EMAILS",
       "description": "Comma-separated admin emails for operational alerts: MercadoPago disputes/webhooks, newsletter campaigns that close with failed deliveries (SPEC-108), AND new acquisition leads from the venue, experience and alliance funnels (H-62 / H-148).",
       "descriptionEs": "Emails de admin separados por comas para alertas operativas: disputas/webhooks de MercadoPago, campañas de newsletter que cierran con entregas fallidas (SPEC-108) Y leads nuevos de los embudos de comercio y aliados (H-62 / H-148).",

@@ -35,6 +35,11 @@ export const NEWSLETTER_EMAIL_KEYS = {
     welcome: 'newsletter.welcome'
 } as const satisfies Readonly<Record<string, EmailCatalogKey>>;
 
+/** Catalog key of the admin direct email (HOS-2685). Its Brevo tag is `template:<key>`. */
+export const DIRECT_EMAIL_KEYS = {
+    message: 'newsletter.direct-email'
+} as const satisfies Readonly<Record<string, EmailCatalogKey>>;
+
 /** Email catalog key of each conversation token reminder, by reminder type. */
 export const TOKEN_REMINDER_TEMPLATE_KEYS = {
     day15: CONVERSATION_EMAIL_KEYS.tokenExpiringDay15,

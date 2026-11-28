@@ -542,6 +542,8 @@ export const ApiEnvBaseSchema = z.object({
     HOSPEDA_EMAIL_API_KEY: z.string().optional(),
     HOSPEDA_EMAIL_FROM_EMAIL: z.string().email().optional(),
     HOSPEDA_EMAIL_FROM_NAME: z.string().optional(),
+    /** Sender of admin direct emails (HOS-2685). Unset falls back to HOSPEDA_EMAIL_FROM_EMAIL. */
+    HOSPEDA_DIRECT_EMAIL_FROM_EMAIL: z.string().email().optional(),
     /** Comma-separated list of admin emails for system notifications */
     HOSPEDA_ADMIN_NOTIFICATION_EMAILS: z.string().optional(),
 

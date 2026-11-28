@@ -56,6 +56,7 @@ const NO_ACCOUNT_KEYS = [
     'conversation.token-expiring-day15',
     'conversation.token-expiring-day25',
     'newsletter.campaign',
+    'newsletter.direct-email',
     'newsletter.verify',
     'newsletter.welcome',
     'notification.alliance_claim_invite',
