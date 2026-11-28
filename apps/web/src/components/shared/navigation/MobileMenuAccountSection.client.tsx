@@ -181,7 +181,7 @@ export function MobileMenuAccountSection({
                         href={buildUrl({ locale, path: '/auth/signin/' })}
                         onClick={onLinkClick}
                         tabIndex={tabIndex}
-                        className="btn-gradient btn-gradient--primary btn-gradient--sm"
+                        className={styles.authSignIn}
                     >
                         {t('nav.signIn')}
                     </a>

@@ -122,6 +122,14 @@
     min-block-size: 2.75rem;
 }
 
+/* HOS-2666 (CARD-001 H-8): «Iniciar sesión» is the SECONDARY action here too,
+   so the accent «Publicar» stays the only filled button. It reuses the desktop
+   outline rule instead of restating its values. */
+.authSignIn {
+    composes: signInLink from "./UserMenu.module.css";
+    justify-content: center;
+}
+
 .authButton {
     display: flex;
     align-items: center;
