@@ -31,7 +31,7 @@ const articles = Object.entries(sections).map(([id, key]) => ({
     id,
     heading: t(`cookies.sections.${key}.title`),
     body: t(`cookies.sections.${key}.body`),
-    bullets: key === 'sessionRecording' ? [t('cookies.recording.association'), t('cookies.recording.masking'), t('cookies.recording.retention')] : undefined,
+    bullets: key === 'sessionRecording' ? [t('cookies.recording.association'), t('cookies.recording.masking'), t('cookies.recording.retention'), t('cookies.recording.sentry')] : undefined,
     table: key === 'cookieList' ? {
         columns: [t('cookies.inventory.name'), t('cookies.inventory.purpose'), t('cookies.inventory.duration')],
         rows: cookies.map(({ name, key }) => [name, t(`cookies.inventory.${key}.purpose`), t(`cookies.inventory.${key}.duration`)])
@@ -39,4 +39,4 @@ const articles = Object.entries(sections).map(([id, key]) => ({
     managePreferences: key === 'manageCookies' ? t('cookies.managePreferences') : undefined
 }));
 ---
-<LegalLayout locale={locale} title={t('cookies.title')} description={t('cookies.description')} lastUpdated="2026-11-26" articles={articles} />
+<LegalLayout locale={locale} title={t('cookies.title')} description={t('cookies.description')} lastUpdated="2026-11-28" articles={articles} />

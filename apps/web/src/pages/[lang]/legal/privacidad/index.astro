@@ -1,7 +1,8 @@
 ---
 /**
  * @file legal/privacidad/index.astro
- * @description Privacy policy page with numbered sections and ToC.
+ * @description Privacy policy page. Every section reads `privacy.sections.*`
+ * from `@repo/i18n`; the layout numbers them and builds the ToC.
  * @route /{lang}/legal/privacidad/
  * @rendering SSR + Cloudflare cache (HOS-74 — see [lang]/index.astro)
  */
@@ -9,6 +10,7 @@
 import LegalLayout from '@/layouts/LegalLayout.astro';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
 
 import { CACHE_TAG_SITE_CONFIG } from '@repo/cache-tags';
 import { applyCacheHeaders } from '@/lib/cache/response-cache';
@@ -31,31 +33,46 @@ applyCacheHeaders({
 	tags: [CACHE_TAG_SITE_CONFIG]
 });
 
-const sections = [
-	{ id: 'recopilacion', titleKey: 'privacy.section1.title', titleFb: 'Recopilación de datos', contentKey: 'privacy.section1.content', contentFb: 'Recopilamos información personal que nos proporcionás voluntariamente al registrarte, completar formularios o interactuar con nuestros servicios. Esto incluye nombre, correo electrónico, teléfono y datos de pago.' },
-	{ id: 'uso', titleKey: 'privacy.section2.title', titleFb: 'Uso de la información', contentKey: 'privacy.section2.content', contentFb: 'Utilizamos tu información para procesar reservas, mejorar nuestros servicios, enviar comunicaciones relevantes y garantizar la seguridad de la plataforma.' },
-	{ id: 'compartir', titleKey: 'privacy.section3.title', titleFb: 'Compartir información', contentKey: 'privacy.section3.content', contentFb: 'No vendemos ni alquilamos tu información personal. Solo la compartimos con proveedores de servicios necesarios para operar la plataforma y cuando la ley lo requiera.' },
-	{ id: 'cookies', titleKey: 'privacy.section4.title', titleFb: 'Cookies y tecnologías', contentKey: 'privacy.section4.content', contentFb: 'Utilizamos cookies y tecnologías similares para mejorar tu experiencia, analizar el uso del sitio y personalizar contenido. Podés gestionar las preferencias de cookies desde tu navegador.' },
-	{ id: 'grabaciones', titleKey: 'privacy.sections.sessionRecording.title', titleFb: 'Grabaciones de sesión y mapas de calor', contentKey: 'privacy.sections.sessionRecording.body', contentFb: 'Si aceptás las cookies de analítica, Hospeda puede grabar sesiones de navegación y mapas de calor de clics y desplazamiento con Umami, una herramienta de analítica que alojamos nosotros mismos. Las grabaciones son seudónimas: si iniciaste sesión, pueden quedar asociadas al identificador de tu cuenta. La grabación solo ocurre si aceptaste las cookies de analítica y únicamente mientras esta función esté activada. Todo el texto y todos los campos de formularios se enmascaran, por lo que lo que escribís no queda registrado. Se graba una muestra de las sesiones, no todas. Las grabaciones se conservan por un período limitado de hasta 60 días y después se eliminan automáticamente.' },
-	{ id: 'email-y-campanas', titleKey: 'privacy.sections.emailAttribution.title', titleFb: 'Emails, enlaces de campaña y códigos QR', contentKey: 'privacy.sections.emailAttribution.body', contentFb: 'Para saber si nuestros emails se abren, Brevo, nuestro proveedor de envío de emails, registra cuándo se abre cada mensaje y nos informa de esa apertura. Nosotros solo contamos las aperturas por tipo de email o campaña, en forma agregada, con Umami, una herramienta de analítica que alojamos nosotros mismos; ese conteo no incluye tu dirección de email. Brevo también mide los clics de los emails del newsletter. Los enlaces de nuestros emails, los enlaces que se comparten desde el sitio, los códigos QR impresos y los enlaces de nuestras presentaciones llevan parámetros de campaña (UTM) que nos dicen por qué canal llegó una visita; también los analizamos con Umami. Las funciones de privacidad de las aplicaciones de correo hacen que el conteo de aperturas sea aproximado. No hay una opción individual para excluirte de este conteo: si bloqueás la carga de imágenes en tu aplicación de correo, la apertura no se registra.' },
-	{ id: 'seguridad', titleKey: 'privacy.section5.title', titleFb: 'Seguridad', contentKey: 'privacy.section5.content', contentFb: 'Implementamos medidas de seguridad técnicas y organizativas para proteger tu información contra accesos no autorizados, pérdida o alteración.' },
-	{ id: 'derechos', titleKey: 'privacy.section6.title', titleFb: 'Tus derechos', contentKey: 'privacy.section6.content', contentFb: 'Tenés derecho a acceder, rectificar, eliminar o limitar el uso de tus datos personales. Para ejercer estos derechos, contactanos a través de nuestro formulario de contacto.' },
-	{ id: 'datos-google', titleKey: 'privacy.section7.title', titleFb: 'Datos de tu cuenta de Google', contentKey: 'privacy.section7.content', contentFb: 'Si conectás tu cuenta de Google para sincronizar la disponibilidad de tu alojamiento, Hospeda accede únicamente a los eventos de tu Google Calendar necesarios para bloquear y desbloquear fechas entre tu calendario y la plataforma. El uso que Hospeda hace de la información recibida de las APIs de Google se ajusta a la Política de Datos de Usuario de los Servicios de las API de Google (Google API Services User Data Policy), incluidos sus requisitos de Uso Limitado (Limited Use). No vendemos ni transferimos estos datos a terceros, no los usamos con fines publicitarios ni para entrenar modelos de inteligencia artificial, y solo los utilizamos para brindar la función de sincronización de calendario que solicitaste. Podés desconectar tu cuenta de Google en cualquier momento desde tu panel; al hacerlo, eliminamos los tokens de acceso y los datos de calendario asociados.' },
-	{ id: 'asistentes-ia', titleKey: 'privacy.sections.aiAssistants.title', titleFb: 'Conectar un asistente de IA', contentKey: 'privacy.sections.aiAssistants.body', contentFb: 'Podés conectar un asistente de IA (por ejemplo ChatGPT, Claude o Gemini) a tu cuenta mediante el servidor MCP de Hospeda. La conexión es voluntaria: iniciás sesión con tu cuenta de Hospeda (OAuth) y aprobás el acceso. El asistente solo puede acceder a los datos de tu propia cuenta y realizar las acciones que tus permisos permiten: tus publicaciones, las consultas de huéspedes y tus respuestas, las estadísticas de tus publicaciones y el estado de tu plan. Las respuestas a huéspedes se envían únicamente con tu confirmación explícita del texto literal. El proveedor del asistente (OpenAI, Anthropic o Google) procesa lo que el asistente lee conforme a su propia política de privacidad y a tu cuenta con ese proveedor: Hospeda no usa inteligencia artificial propia para esto y solo entrega datos a esos proveedores como resultado de una consulta o acción que hace tu asistente. Hospeda conserva un registro de auditoría de cada acción de escritura realizada a través del asistente (cuenta, cliente, herramienta y momento). El texto de las consultas de huéspedes lo escriben terceros y se entrega al asistente como datos. Podés ver y desconectar tus asistentes conectados en cualquier momento desde Mi cuenta → Asistentes de IA (/mi-cuenta/asistentes-ia/); al desconectarlo, el asistente pierde el acceso.' },
-	{ id: 'contacto', titleKey: 'privacy.section8.title', titleFb: 'Contacto', contentKey: 'privacy.section8.content', contentFb: 'Para consultas sobre esta política de privacidad, podés escribirnos a info@hospeda.com.ar o a través de nuestro formulario de contacto.' },
-] as const;
+// Anchor ids are public (external links point at `#datos-google`, `#derechos`, ...):
+// never rename one. The layout numbers the sections, so inserting one is safe.
+// `items` names the `privacy.sections.<key>.items.*` keys rendered as bullets.
+const sections: readonly { readonly id: string; readonly key: string; readonly items?: readonly string[] }[] = [
+	{ id: 'responsable', key: 'controller' },
+	{ id: 'recopilacion', key: 'dataCollected', items: ['account', 'socialLogin', 'content', 'messages', 'ai', 'activity', 'billing', 'technical'] },
+	{ id: 'uso', key: 'dataUse' },
+	{ id: 'compartir', key: 'dataSharing', items: ['providers', 'public', 'processors', 'serverErrors', 'legal'] },
+	{ id: 'ia-hospeda', key: 'hospedaAi' },
+	{ id: 'medicion', key: 'usageMeasurement' },
+	{ id: 'cookies', key: 'cookies' },
+	{ id: 'grabaciones', key: 'sessionRecording' },
+	{ id: 'email-y-campanas', key: 'emailAttribution' },
+	{ id: 'datos-google', key: 'googleData' },
+	{ id: 'asistentes-ia', key: 'aiAssistants' },
+	{ id: 'conservacion', key: 'dataRetention', items: ['aiChat', 'mcpAudit', 'recordings', 'views', 'logs', 'inquiries', 'listings', 'billing'] },
+	{ id: 'transferencias', key: 'internationalTransfers' },
+	{ id: 'derechos', key: 'yourRights' },
+	{ id: 'seguridad', key: 'dataSecurity' },
+	{ id: 'contacto', key: 'contact' }
+];
 
-const articles = sections.map((section) => ({
-	id: section.id,
-	heading: t(section.titleKey, section.titleFb),
-	body: t(section.contentKey, section.contentFb)
+const links: Readonly<Record<string, readonly { readonly href: string; readonly label: string }[]>> = {
+	cookies: [{ href: buildUrl({ locale, path: '/legal/cookies/' }), label: t('privacy.links.cookiePolicy') }],
+	derechos: [{ href: buildUrl({ locale, path: '/contacto/' }), label: t('privacy.links.contact') }]
+};
+
+const articles = sections.map(({ id, key, items }) => ({
+	id,
+	heading: t(`privacy.sections.${key}.title`),
+	body: t(`privacy.sections.${key}.body`),
+	bullets: items?.map((item) => t(`privacy.sections.${key}.items.${item}`)),
+	links: links[id]
 }));
 ---
 
 <LegalLayout
 	locale={locale}
-	title={t('privacy.title', 'Política de privacidad')}
-	description={t('privacy.description', 'Política de privacidad de Hospeda. Cómo recopilamos y usamos tu información.')}
-	lastUpdated="2026-11-26"
+	title={t('privacy.title')}
+	description={t('privacy.description')}
+	lastUpdated="2026-11-28"
 	articles={articles}
 />

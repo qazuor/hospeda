@@ -4,15 +4,15 @@
     "categories": {
         "necessary": {
             "label": "Necesarias",
-            "description": "Cookies indispensables para el funcionamiento del sitio: sesión de usuario, preferencia de idioma y estado de consentimiento. No pueden deshabilitarse."
+            "description": "Cookies indispensables para el funcionamiento del sitio: sesión de usuario, estado de consentimiento y avisos cerrados. No pueden deshabilitarse."
         },
         "crashReporting": {
             "label": "Reporte de errores",
-            "description": "Envía a Sentry los errores que ocurren mientras usás el sitio (sin información personal identificable). Nos permite arreglar bugs que te afectan. Recomendado dejarlo activo."
+            "description": "Envía a Sentry los errores que ocurren mientras usás el sitio y una grabación de una muestra de las sesiones, con todo el texto oculto y sin imágenes. Nos permite arreglar bugs que te afectan. Recomendado dejarlo activo."
         },
         "analytics": {
             "label": "Análisis de uso",
-            "description": "Estadísticas anónimas sobre cómo los visitantes navegan el sitio (páginas más vistas, flujos de búsqueda). Cuando está activo, puede incluir grabaciones de sesión y mapas de calor con todo el texto y los campos ocultos; nunca en el ingreso, tu cuenta, el pago, la publicación ni los formularios de contacto. No incluye monitoreo de errores."
+            "description": "Estadísticas sobre cómo se navega el sitio (páginas más vistas, flujos de búsqueda), con Umami. Si iniciaste sesión, pueden quedar asociadas al identificador interno de tu cuenta, nunca a tu email. Cuando está activo, puede incluir grabaciones de sesión y mapas de calor con todo el texto y los campos ocultos; nunca en el ingreso, tu cuenta, el pago, la publicación de fichas ni la página de contacto. No incluye monitoreo de errores."
         },
         "marketing": {
             "label": "Marketing",

@@ -1,8 +1,6 @@
 {
     "title": "Cookie Policy",
     "description": "Learn how Hospeda uses cookies and similar technologies to improve your experience on the site.",
-    "heading": "Cookie Policy",
-    "lastUpdated": "Last updated: November 18, 2026",
     "managePreferences": "Manage preferences",
     "inventory": {
         "name": "Name",
@@ -16,7 +14,10 @@
             "purpose": "Temporarily cache session data to avoid repeated requests.",
             "duration": "Up to 5 minutes; if you do not stay signed in, the browser deletes it at the end of the session"
         },
-        "consent": { "purpose": "Remember your cookie choices.", "duration": "1 year" },
+        "consent": {
+            "purpose": "Remember your cookie choices.",
+            "duration": "1 year"
+        },
         "dontRemember": {
             "purpose": "Limit sign-in to the current browser session when you choose not to stay signed in.",
             "duration": "Browser session"
@@ -45,39 +46,40 @@
     "recording": {
         "association": "Recordings are pseudonymous and may be associated with your account identifier when you are signed in.",
         "masking": "All text and form inputs are masked. Only a sample of sessions is recorded.",
-        "retention": "Recordings are kept for up to 60 days and then deleted automatically."
+        "retention": "Recordings are kept for up to 60 days and then deleted automatically.",
+        "sentry": "If you accept crash reporting, Sentry may record a sample of sessions and the sessions with errors, with all text masked and no images."
     },
     "sections": {
         "whatAreCookies": {
-            "title": "1. What are cookies",
-            "body": "Cookies are small text files that websites store on your device when you visit them. They are used to remember preferences, keep sessions active, and gather information about how the site is used. Cookies do not contain personal information on their own and cannot run programs or transmit viruses."
+            "title": "What are cookies",
+            "body": "Cookies are small text files that websites store on your device when you visit them. They are used to remember preferences, keep sessions active and understand how the site is used. Some cookies contain identifiers that let us recognise your session or your browser; on their own they do not contain your name or your email. Cookies cannot run programs or transmit viruses."
         },
         "cookiesWeUse": {
-            "title": "2. What cookies we use",
-            "body": "We use cookies for features such as signing in and remembering your privacy preferences. Language and theme are remembered in browser local storage. Optional analytics depend on your consent. We do not currently use marketing or advertising cookies."
+            "title": "What cookies we use",
+            "body": "We use cookies for features such as signing in and remembering your privacy preferences. Language, theme and other interface preferences (for example, the accommodation comparison tool) are stored in your browser’s local storage. Usage analytics with Umami and session recordings depend on your consent. Without that consent, we only measure page performance with Cloudflare Web Analytics, in aggregate and without cookies. We do not currently use marketing or advertising cookies."
         },
         "sessionRecording": {
-            "title": "3. Session recordings and heatmaps",
+            "title": "Session recordings and heatmaps",
             "body": "If you accept analytics cookies and the feature is enabled, Hospeda may record sessions and click and scroll heatmaps with Umami, a tool we host ourselves."
         },
         "cookieList": {
-            "title": "4. Cookie list",
+            "title": "Cookie list",
             "body": "These are the first-party cookies Hospeda uses. The asterisk represents a name prefix that can vary by environment. The session cache may be split across cookies with numbered suffixes. We do not use advertising tracking cookies or share data with ad networks."
         },
         "manageCookies": {
-            "title": "5. How to manage cookies",
+            "title": "How to manage cookies",
             "body": "Use the button in this section to change or withdraw your consent. You can also manage or delete cookies in your browser. Disabling necessary cookies may affect access to your account."
         },
         "thirdPartyCookies": {
-            "title": "6. Third-party cookies",
-            "body": "When you go to Mercado Pago to authorize a payment, that site may use its own cookies under its policy. Hospeda uses Cloudinary to deliver images and Sentry to monitor errors when monitoring is enabled with consent. These services have their own privacy policies."
+            "title": "Third-party cookies and services",
+            "body": "When you use Hospeda, your browser also connects to third-party services that may use their own cookies or receive your IP address: Cloudflare (security, bot verification and performance metrics), Google Fonts (typefaces), OpenStreetMap (maps), Cloudinary (images), Mercado Pago (when you pay), Google and Facebook (if you sign in with them) and YouTube, Vimeo or Dailymotion (videos only load if you play them, although a listing’s photo gallery may request a video thumbnail from YouTube). Sentry receives errors and recordings only if you accepted crash reporting. Each of these services has its own privacy policy."
         },
         "policyChanges": {
-            "title": "7. Changes to this policy",
+            "title": "Changes to this policy",
             "body": "We may update this Cookie Policy when the technology we use or applicable legislation changes. We will publish changes on this page with the date of the last update. We recommend reviewing it periodically."
         },
         "contact": {
-            "title": "8. Contact",
+            "title": "Contact",
             "body": "If you have questions about the use of cookies on Hospeda, you can write to us at info@hospeda.com.ar or through our contact form."
         }
     }
