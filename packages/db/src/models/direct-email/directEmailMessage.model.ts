@@ -98,4 +98,25 @@ export class DirectEmailMessageModel extends BaseModelImpl<DirectEmailMessage> {
         // DRIZZLE-LIMITATION: jsonb column is `unknown`; cast back to the canonical schema type.
         return (rows[0] as unknown as DirectEmailMessage) ?? null;
     }
+
+    /**
+     * Reads the message a compose session already sent.
+     *
+     * @param idempotencyKey - Client UUID of the compose session
+     * @param tx - Optional transaction client
+     * @returns The message, or `null` when that key was never used
+     */
+    async findByIdempotencyKey(
+        idempotencyKey: string,
+        tx?: DrizzleClient
+    ): Promise<DirectEmailMessage | null> {
+        const db = this.getClient(tx);
+        const rows = await db
+            .select()
+            .from(directEmailMessages)
+            .where(eq(directEmailMessages.idempotencyKey, idempotencyKey))
+            .limit(1);
+        // DRIZZLE-LIMITATION: jsonb column is `unknown`; cast back to the canonical schema type.
+        return (rows[0] as unknown as DirectEmailMessage) ?? null;
+    }
 }

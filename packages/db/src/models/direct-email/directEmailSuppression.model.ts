@@ -1,9 +1,12 @@
 import type { DirectEmailSuppression, DirectEmailSuppressionReasonEnum } from '@repo/schemas';
-import { and, count, desc, eq, inArray, type SQL } from 'drizzle-orm';
+import { and, count, desc, eq, inArray, type SQL, sql } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { directEmailSuppressions } from '../../schemas/direct-email/direct_email_suppression.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
 import { safeIlike } from '../../utils/drizzle-helpers.ts';
+
+/** Case-insensitive address, the expression the unique index is built on. */
+const lowerEmail = sql`lower(${directEmailSuppressions.email})`;
 
 /** Input of {@link DirectEmailSuppressionModel.findPage}. */
 export interface DirectEmailSuppressionPageInput {
@@ -47,8 +50,13 @@ export class DirectEmailSuppressionModel extends BaseModelImpl<DirectEmailSuppre
         const rows = await db
             .select({ email: directEmailSuppressions.email })
             .from(directEmailSuppressions)
-            .where(inArray(directEmailSuppressions.email, [...emails]));
-        return rows.map((row) => row.email);
+            .where(
+                inArray(
+                    lowerEmail,
+                    emails.map((email) => email.toLowerCase())
+                )
+            );
+        return rows.map((row) => row.email.toLowerCase());
     }
 
     /**
@@ -67,7 +75,8 @@ export class DirectEmailSuppressionModel extends BaseModelImpl<DirectEmailSuppre
         const [inserted] = await db
             .insert(directEmailSuppressions)
             .values(input)
-            .onConflictDoNothing({ target: directEmailSuppressions.email })
+            // No target: the unique index is on lower(email), an expression.
+            .onConflictDoNothing()
             .returning();
         if (inserted) {
             // DRIZZLE-LIMITATION: select() rows carry the unknown-typed jsonb / branded pgEnum columns; cast to the canonical schema type.
@@ -76,7 +85,7 @@ export class DirectEmailSuppressionModel extends BaseModelImpl<DirectEmailSuppre
         const [existing] = await db
             .select()
             .from(directEmailSuppressions)
-            .where(eq(directEmailSuppressions.email, input.email))
+            .where(sql`${lowerEmail} = ${input.email.toLowerCase()}`)
             .limit(1);
         // DRIZZLE-LIMITATION: select() rows carry the unknown-typed jsonb / branded pgEnum columns; cast to the canonical schema type.
         return { suppression: existing as unknown as DirectEmailSuppression, created: false };

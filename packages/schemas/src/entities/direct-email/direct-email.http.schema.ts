@@ -40,7 +40,12 @@ export const SendDirectEmailRequestSchema = z
         bodyJson: DirectEmailBodySchema,
         recipients: DirectEmailRecipientsSchema,
         /** Template the admin started from, kept for the history only. */
-        templateId: z.string().uuid().nullish()
+        templateId: z.string().uuid().nullish(),
+        /**
+         * Client UUID of the compose session, regenerated after each successful send. A
+         * repeated send with the same key replays the stored result instead of sending again.
+         */
+        idempotencyKey: z.string().uuid()
     })
     .strict();
 
@@ -101,9 +106,17 @@ export const TestSendDirectEmailRequestSchema = z
 /** TypeScript type inferred from {@link TestSendDirectEmailRequestSchema}. */
 export type TestSendDirectEmailRequest = z.infer<typeof TestSendDirectEmailRequestSchema>;
 
-/** Response of `POST /admin/direct-emails/test-send`. */
+/**
+ * Response of `POST /admin/direct-emails/test-send`. A provider failure answers 200 with
+ * `delivered: false` and the provider text: a 502 would be masked by the API's 5xx rule and
+ * the admin would never learn why Brevo refused (unverified sender, bad key).
+ */
 export const TestSendDirectEmailResponseSchema = z.object({
-    sentTo: z.string().email()
+    sentTo: z.string().email(),
+    /** `false` when the provider refused the test email. */
+    delivered: z.boolean(),
+    /** Provider error text when `delivered` is `false`. */
+    providerError: z.string().nullable()
 });
 
 /** TypeScript type inferred from {@link TestSendDirectEmailResponseSchema}. */
@@ -193,8 +206,8 @@ export type CreateDirectEmailSuppression = z.infer<typeof CreateDirectEmailSuppr
 // Public opt-out
 // ----------------------------------------------------------------------------
 
-/** Longest accepted opt-out token. Real ones are under 400 characters. */
-export const DIRECT_EMAIL_OPT_OUT_TOKEN_MAX_LENGTH = 1024;
+/** Longest accepted opt-out token. Real ones are 43 characters. */
+export const DIRECT_EMAIL_OPT_OUT_TOKEN_MAX_LENGTH = 128;
 
 /** Opt-out token as it arrives in a query string or a body. */
 export const DirectEmailOptOutTokenSchema = z

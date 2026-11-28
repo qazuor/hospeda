@@ -1,5 +1,5 @@
 import { relations } from 'drizzle-orm';
-import { index, pgTable, text, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
+import { index, pgTable, text, timestamp, uniqueIndex, uuid, varchar } from 'drizzle-orm/pg-core';
 import { DirectEmailRecipientStatusPgEnum } from '../enums.dbschema.ts';
 import { directEmailMessages } from './direct_email_message.dbschema.ts';
 
@@ -23,6 +23,12 @@ export const directEmailRecipients = pgTable(
         /** Recipient address, lowercased. */
         email: varchar('email', { length: 254 }).notNull(),
 
+        /**
+         * Opaque opt-out token of this recipient's footer link: 32 random bytes,
+         * base64url. It carries no address; the opt-out looks the row up by it.
+         */
+        optOutToken: varchar('opt_out_token', { length: 64 }).notNull(),
+
         status: DirectEmailRecipientStatusPgEnum('status').notNull(),
 
         /** Brevo message id returned by the send. Webhook events match on it. */
@@ -45,7 +51,12 @@ export const directEmailRecipients = pgTable(
         /** Brevo webhook lookup by message id. */
         direct_email_recipient_provider_message_id_idx: index(
             'direct_email_recipient_provider_message_id_idx'
-        ).on(table.providerMessageId)
+        ).on(table.providerMessageId),
+
+        /** Opt-out lookup by token; unique so a token identifies exactly one recipient. */
+        direct_email_recipient_opt_out_token_uidx: uniqueIndex(
+            'direct_email_recipient_opt_out_token_uidx'
+        ).on(table.optOutToken)
     })
 );
 

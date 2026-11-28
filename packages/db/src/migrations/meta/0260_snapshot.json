@@ -1,5 +1,5 @@
 {
-  "id": "aff89be1-0c74-4168-9eb0-767b64a7652f",
+  "id": "cd6d2db0-7340-4ead-a9dc-3fb6b0821ca7",
   "prevId": "a3a831de-2f17-400a-903a-606d08d91eab",
   "version": "7",
   "dialect": "postgresql",
@@ -8460,6 +8460,12 @@
           "primaryKey": false,
           "notNull": true
         },
+        "idempotency_key": {
+          "name": "idempotency_key",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
@@ -8502,6 +8508,21 @@
             }
           ],
           "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "direct_email_message_idempotency_key_uidx": {
+          "name": "direct_email_message_idempotency_key_uidx",
+          "columns": [
+            {
+              "expression": "idempotency_key",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -8561,6 +8582,12 @@
         "email": {
           "name": "email",
           "type": "varchar(254)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "opt_out_token": {
+          "name": "opt_out_token",
+          "type": "varchar(64)",
           "primaryKey": false,
           "notNull": true
         },
@@ -8638,6 +8665,21 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
+        },
+        "direct_email_recipient_opt_out_token_uidx": {
+          "name": "direct_email_recipient_opt_out_token_uidx",
+          "columns": [
+            {
+              "expression": "opt_out_token",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {
@@ -8704,9 +8746,9 @@
           "name": "direct_email_suppression_email_uidx",
           "columns": [
             {
-              "expression": "email",
-              "isExpression": false,
+              "expression": "lower(\"email\")",
               "asc": true,
+              "isExpression": true,
               "nulls": "last"
             }
           ],

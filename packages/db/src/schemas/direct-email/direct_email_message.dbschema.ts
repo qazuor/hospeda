@@ -1,5 +1,14 @@
 import { relations } from 'drizzle-orm';
-import { index, jsonb, pgTable, text, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
+import {
+    index,
+    jsonb,
+    pgTable,
+    text,
+    timestamp,
+    uniqueIndex,
+    uuid,
+    varchar
+} from 'drizzle-orm/pg-core';
 import { users } from '../user/user.dbschema.ts';
 import { directEmailTemplates } from './direct_email_template.dbschema.ts';
 
@@ -37,6 +46,12 @@ export const directEmailMessages = pgTable(
         /** Reply-To address: the sending admin's own email. */
         replyToEmail: text('reply_to_email').notNull(),
 
+        /**
+         * Client-generated UUID of the compose session. A repeated send with the same key
+         * (an admin retrying after a timeout) never sends again: it replays this message.
+         */
+        idempotencyKey: uuid('idempotency_key').notNull(),
+
         createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
         updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull()
     },
@@ -47,7 +62,14 @@ export const directEmailMessages = pgTable(
         ),
 
         /** Audit: messages by sender. */
-        direct_email_message_sent_by_idx: index('direct_email_message_sent_by_idx').on(table.sentBy)
+        direct_email_message_sent_by_idx: index('direct_email_message_sent_by_idx').on(
+            table.sentBy
+        ),
+
+        /** One message per compose session (idempotent send). */
+        direct_email_message_idempotency_key_uidx: uniqueIndex(
+            'direct_email_message_idempotency_key_uidx'
+        ).on(table.idempotencyKey)
     })
 );
 

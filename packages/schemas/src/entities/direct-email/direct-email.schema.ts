@@ -91,6 +91,17 @@ export const DirectEmailRecipientSchema = z.object({
 /** TypeScript type inferred from {@link DirectEmailRecipientSchema}. */
 export type DirectEmailRecipient = z.infer<typeof DirectEmailRecipientSchema>;
 
+/**
+ * Recipient row as stored: the API shape plus the opaque opt-out token, which never
+ * leaves the server (responses use {@link DirectEmailRecipientSchema}).
+ */
+export const DirectEmailRecipientRowSchema = DirectEmailRecipientSchema.extend({
+    optOutToken: z.string()
+});
+
+/** TypeScript type inferred from {@link DirectEmailRecipientRowSchema}. */
+export type DirectEmailRecipientRow = z.infer<typeof DirectEmailRecipientRowSchema>;
+
 /** A sent direct email (history row). */
 export const DirectEmailMessageSchema = z.object({
     id: z.string().uuid(),
@@ -100,6 +111,8 @@ export const DirectEmailMessageSchema = z.object({
     sentBy: z.string().uuid(),
     fromEmail: z.string(),
     replyToEmail: z.string(),
+    /** Client UUID of the compose session that sent it. */
+    idempotencyKey: z.string().uuid(),
     createdAt: z.coerce.date(),
     updatedAt: z.coerce.date()
 });

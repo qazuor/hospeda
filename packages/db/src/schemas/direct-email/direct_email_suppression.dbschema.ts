@@ -1,4 +1,4 @@
-import { relations } from 'drizzle-orm';
+import { relations, sql } from 'drizzle-orm';
 import { pgTable, timestamp, uniqueIndex, uuid, varchar } from 'drizzle-orm/pg-core';
 import { DirectEmailSuppressionReasonPgEnum } from '../enums.dbschema.ts';
 import { users } from '../user/user.dbschema.ts';
@@ -26,9 +26,9 @@ export const directEmailSuppressions = pgTable(
         createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' })
     },
     (table) => ({
-        /** One row per address; also the lookup index for the send. */
+        /** One row per address, case-insensitive; also the lookup index for the send. */
         direct_email_suppression_email_uidx: uniqueIndex('direct_email_suppression_email_uidx').on(
-            table.email
+            sql`lower(${table.email})`
         )
     })
 );

@@ -12,6 +12,7 @@ CREATE TABLE "direct_email_message" (
 	"sent_by" uuid NOT NULL,
 	"from_email" text NOT NULL,
 	"reply_to_email" text NOT NULL,
+	"idempotency_key" uuid NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
@@ -20,6 +21,7 @@ CREATE TABLE "direct_email_recipient" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"message_id" uuid NOT NULL,
 	"email" varchar(254) NOT NULL,
+	"opt_out_token" varchar(64) NOT NULL,
 	"status" "direct_email_recipient_status_enum" NOT NULL,
 	"provider_message_id" varchar(255),
 	"error_message" text,
@@ -57,7 +59,9 @@ ALTER TABLE "direct_email_template" ADD CONSTRAINT "direct_email_template_create
 ALTER TABLE "direct_email_template" ADD CONSTRAINT "direct_email_template_updated_by_users_id_fk" FOREIGN KEY ("updated_by") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "direct_email_message_created_at_idx" ON "direct_email_message" USING btree ("created_at");--> statement-breakpoint
 CREATE INDEX "direct_email_message_sent_by_idx" ON "direct_email_message" USING btree ("sent_by");--> statement-breakpoint
+CREATE UNIQUE INDEX "direct_email_message_idempotency_key_uidx" ON "direct_email_message" USING btree ("idempotency_key");--> statement-breakpoint
 CREATE INDEX "direct_email_recipient_message_idx" ON "direct_email_recipient" USING btree ("message_id");--> statement-breakpoint
 CREATE INDEX "direct_email_recipient_provider_message_id_idx" ON "direct_email_recipient" USING btree ("provider_message_id");--> statement-breakpoint
-CREATE UNIQUE INDEX "direct_email_suppression_email_uidx" ON "direct_email_suppression" USING btree ("email");--> statement-breakpoint
+CREATE UNIQUE INDEX "direct_email_recipient_opt_out_token_uidx" ON "direct_email_recipient" USING btree ("opt_out_token");--> statement-breakpoint
+CREATE UNIQUE INDEX "direct_email_suppression_email_uidx" ON "direct_email_suppression" USING btree (lower("email"));--> statement-breakpoint
 CREATE INDEX "direct_email_template_deleted_at_idx" ON "direct_email_template" USING btree ("deleted_at");
