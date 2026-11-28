@@ -1814,6 +1814,13 @@
       "when": 1795768455470,
       "tag": "0258_hos2636_newsletter_campaign_resolved_body",
       "breakpoints": true
+    },
+    {
+      "idx": 259,
+      "version": "7",
+      "when": 1795852347214,
+      "tag": "0259_hos2679_qr_code_tags",
+      "breakpoints": true
     }
   ]
 }
