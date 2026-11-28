@@ -176,5 +176,23 @@
             "LIGHT_GREEN": "Verde claro"
         },
         "loadError": "No pudimos leer las etiquetas de este código. Recargá la página antes de editarlo, así no se pierde ninguna."
+    },
+    "campaigns": {
+        "open": "Campañas",
+        "title": "Campañas de los códigos QR",
+        "help": "Cada utm_campaign de los códigos es una campaña. «Ver en Umami» abre el sitio filtrado por esa campaña. El panel solo enlaza: no crea nada en Umami.",
+        "loading": "Cargando campañas…",
+        "loadError": "No pudimos leer las campañas. Probá de nuevo en un rato.",
+        "empty": "Todavía ningún código tiene utm_campaign en su destino.",
+        "commaNotice": "Las campañas con coma no tienen enlace a Umami: Umami las leería como varias campañas.",
+        "columns": {
+            "campaign": "Campaña",
+            "qrCount": "Cantidad de códigos",
+            "actions": "Acciones"
+        },
+        "viewInUmami": "Ver en Umami",
+        "noLinkComma": "Sin enlace: la campaña tiene una coma",
+        "noLinkNotConfigured": "Sin enlace: falta configurar Umami en la API",
+        "filterLink": "Ver esta campaña en Umami"
     }
 }

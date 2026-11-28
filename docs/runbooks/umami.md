@@ -41,6 +41,29 @@ pnpm umami:setup --dry-run   # then again without --dry-run
   heatmaps, see [`session-replay-privacy.md`](../analytics/session-replay-privacy.md)).
   Review the `recorder updated` diff of the dry run before applying.
 
+## QR campaigns panel: a link, not a create button
+
+The admin QR campaigns panel (Platform → QR codes → Campañas) only **links** to Umami
+(see [`umami-dashboards.md`](../analytics/umami-dashboards.md#qr-campaigns-panel-hos-2679)).
+The API builds each «Ver en Umami» link from `HOSPEDA_UMAMI_URL` and
+`HOSPEDA_UMAMI_WEBSITE_ID_WEB`, which it already has. It sends no request to Umami and
+needs no API key for this: nothing to set up, nothing to rotate.
+
+**Why there is no «Crear en Umami» button.** Creating a segment needs a key, and
+Umami 3.5 has no role that can create segments without also being able to do much more.
+Measured on local 3.5.0 with real `umami_...` keys on a throwaway website: a
+`team-view-only` key can list segments and nothing else (create, update, reset, delete,
+reports and boards all answer 401). Every role that can create a segment
+(`team-member`, `team-manager`, owner, and a global `view-only` user who is a
+`team-member`) can ALSO rename the website, create reports and boards, **reset its data
+and delete it**. There is no smaller role, so a segment-creating key held by the API
+would be a key able to delete the WEB website. The owner chose not to hold one (HOS-2679):
+the API never writes to Umami's API, and
+`apps/api/test/guards/no-umami-write-credential.guard.test.ts` keeps it that way.
+
+Need a segment for a campaign? Create it by hand in Umami, as a user who is allowed to,
+or run `pnpm umami:setup` for the managed ones.
+
 ## Backups
 
 Each Umami database is dumped daily to the R2 bucket `hospeda-umami-backups`,
