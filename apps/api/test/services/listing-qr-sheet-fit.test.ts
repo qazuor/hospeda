@@ -91,6 +91,28 @@ describe('fitLine', () => {
         expect(fitted.text).toBe(`${'C'.repeat(18)}${ELLIPSIS}`);
     });
 
+    it('cuts by code point, never leaving half an emoji', () => {
+        // Arrange: a metric by UTF-16 units, so a lone surrogate is narrower
+        // than the whole 🍕 and a unit-wise cut would stop right inside it.
+        const perUnit: WidthOf = ({ text, size }) => text.length * size * 0.5;
+        // At 10pt each unit is 5pt; 25pt holds 5 units. 'ABC🍕…' is 6 units,
+        // 'ABC' + half of 🍕 + '…' would be exactly 5.
+        const fitted = fitLine({
+            text: 'ABC🍕🍕🍕🍕',
+            maxWidth: 25,
+            maxSize: 10,
+            minSize: 10,
+            widthOf: perUnit
+        });
+        // Assert
+        expect(fitted.text).toBe(`ABC${ELLIPSIS}`);
+        expect(fitted.truncated).toBe(true);
+        // No lone surrogate left anywhere in the drawn text.
+        expect(
+            [...fitted.text].every((char) => char.length === 2 || !/[\uD800-\uDFFF]/.test(char))
+        ).toBe(true);
+    });
+
     it('trims surrounding whitespace before measuring', () => {
         const fitted = fitLine({
             text: '   ABCDEFGHIJ   ',

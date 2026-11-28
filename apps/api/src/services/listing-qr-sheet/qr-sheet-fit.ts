@@ -45,8 +45,8 @@ export interface FittedLine {
  *
  * 1. The largest size between `maxSize` and `minSize` (stepping down by `step`)
  *    at which the whole text fits wins.
- * 2. If it does not fit even at `minSize`, the text is cut character by
- *    character until it plus {@link ELLIPSIS} fits at `minSize`.
+ * 2. If it does not fit even at `minSize`, the text is cut code point by
+ *    code point (never inside a surrogate pair) until it plus {@link ELLIPSIS} fits at `minSize`.
  *
  * It cuts by characters rather than by words on purpose: the string that needs
  * this is already an outlier, and trimming to the last whole word can throw
@@ -88,9 +88,13 @@ export function fitLine(input: {
         }
     }
 
-    let kept = text;
-    while (kept.length > 0 && widthOf({ text: `${kept}${ELLIPSIS}`, size: minSize }) > maxWidth) {
-        kept = kept.slice(0, -1).trimEnd();
+    // Cut by code point, never by UTF-16 unit: slicing a surrogate pair would
+    // leave half an emoji, which no face can draw.
+    const codePoints = [...text];
+    let keep = codePoints.length;
+    const keptText = (): string => codePoints.slice(0, keep).join('').trimEnd();
+    while (keep > 0 && widthOf({ text: `${keptText()}${ELLIPSIS}`, size: minSize }) > maxWidth) {
+        keep -= 1;
     }
-    return { text: `${kept}${ELLIPSIS}`, size: minSize, truncated: true };
+    return { text: `${keptText()}${ELLIPSIS}`, size: minSize, truncated: true };
 }
