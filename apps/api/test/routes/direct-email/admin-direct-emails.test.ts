@@ -60,6 +60,7 @@ const BODY = {
 const NOW = new Date('2026-11-28T12:00:00Z');
 const USER_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 
+const KEY = '33333333-3333-4333-8333-333333333333';
 const messageFixture = {
     id: ID,
     subject: 'Propuesta',
@@ -68,6 +69,7 @@ const messageFixture = {
     sentBy: USER_ID,
     fromEmail: 'contacto@comercial.hospeda.com.ar',
     replyToEmail: 'laura@hospeda.com.ar',
+    idempotencyKey: KEY,
     createdAt: NOW,
     updatedAt: NOW
 };
@@ -307,13 +309,38 @@ describe('admin direct email messages', () => {
     });
 
     it('test-sends and answers 200', async () => {
-        mocks.message.testSend.mockResolvedValue(ok({ sentTo: 'laura@hospeda.com.ar' }));
+        mocks.message.testSend.mockResolvedValue(
+            ok({ sentTo: 'laura@hospeda.com.ar', delivered: true, providerError: null })
+        );
         const res = await buildApp(actorWith(SEND)).request(
             `${MSG}/test-send`,
             json({ subject: 's', bodyJson: BODY })
         );
         expect(res.status).toBe(200);
-        expect((await res.json()).data).toEqual({ sentTo: 'laura@hospeda.com.ar' });
+        expect((await res.json()).data).toEqual({
+            sentTo: 'laura@hospeda.com.ar',
+            delivered: true,
+            providerError: null
+        });
+    });
+
+    it('test-send answers 200 with the provider text when the provider refuses (a 502 would be masked)', async () => {
+        mocks.message.testSend.mockResolvedValue(
+            ok({
+                sentTo: 'laura@hospeda.com.ar',
+                delivered: false,
+                providerError: 'sender not verified'
+            })
+        );
+        const res = await buildApp(actorWith(SEND)).request(
+            `${MSG}/test-send`,
+            json({ subject: 's', bodyJson: BODY })
+        );
+        expect(res.status).toBe(200);
+        expect((await res.json()).data).toMatchObject({
+            delivered: false,
+            providerError: 'sender not verified'
+        });
     });
 
     it('maps a suppressed test-send target to 409', async () => {
@@ -343,7 +370,12 @@ describe('admin direct email messages', () => {
         // Act
         const res = await buildApp(actorWith(SEND)).request(
             MSG,
-            json({ subject: 's', bodyJson: BODY, recipients: ['a@example.com', 'B@example.com'] })
+            json({
+                subject: 's',
+                bodyJson: BODY,
+                recipients: ['a@example.com', 'B@example.com'],
+                idempotencyKey: KEY
+            })
         );
 
         // Assert
@@ -351,8 +383,43 @@ describe('admin direct email messages', () => {
         expect((await res.json()).data).toEqual({ messageId: ID, results });
         expect(mocks.message.send).toHaveBeenCalledWith(
             expect.objectContaining({ email: 'laura@hospeda.com.ar' }),
-            expect.objectContaining({ recipients: ['a@example.com', 'b@example.com'] })
+            expect.objectContaining({
+                recipients: ['a@example.com', 'b@example.com'],
+                idempotencyKey: KEY
+            })
         );
+    });
+
+    it('answers 400 without a valid idempotency key before reaching the service', async () => {
+        const app = buildApp(actorWith(SEND));
+        const base = { subject: 's', bodyJson: BODY, recipients: ['a@example.com'] };
+
+        const missing = await app.request(MSG, json(base));
+        const malformed = await app.request(MSG, json({ ...base, idempotencyKey: 'not-a-uuid' }));
+
+        expect(missing.status).toBe(400);
+        expect(malformed.status).toBe(400);
+        expect(mocks.message.send).not.toHaveBeenCalled();
+    });
+
+    it('answers 201 with the stored results when the service replays a repeated key', async () => {
+        const results = [
+            { email: 'a@example.com', status: 'sent', providerMessageId: '<1>', error: null }
+        ];
+        mocks.message.send.mockResolvedValue(ok({ messageId: ID, results }));
+
+        const res = await buildApp(actorWith(SEND)).request(
+            MSG,
+            json({
+                subject: 's',
+                bodyJson: BODY,
+                recipients: ['a@example.com'],
+                idempotencyKey: KEY
+            })
+        );
+
+        expect(res.status).toBe(201);
+        expect((await res.json()).data).toEqual({ messageId: ID, results });
     });
 
     it.each([
@@ -367,7 +434,13 @@ describe('admin direct email messages', () => {
     ])('answers 400 for %s before reaching the service (AC-3)', async (_label, override) => {
         const res = await buildApp(actorWith(SEND)).request(
             MSG,
-            json({ subject: 's', bodyJson: BODY, recipients: ['a@example.com'], ...override })
+            json({
+                subject: 's',
+                bodyJson: BODY,
+                recipients: ['a@example.com'],
+                idempotencyKey: KEY,
+                ...override
+            })
         );
         expect(res.status).toBe(400);
         expect(mocks.message.send).not.toHaveBeenCalled();
@@ -457,6 +530,22 @@ describe('admin direct email suppressions', () => {
         expect(add.status).toBe(201);
         expect(mocks.suppression.add).toHaveBeenCalledWith(expect.anything(), { email: 'a@b.com' });
         expect(remove.status).toBe(204);
+    });
+
+    it('answers 409 with the locked reason when removing an opt_out suppression', async () => {
+        mocks.suppression.remove.mockResolvedValue({
+            error: new ServiceError(
+                ServiceErrorCode.ALREADY_EXISTS,
+                'locked',
+                undefined,
+                'DIRECT_EMAIL_SUPPRESSION_OPT_OUT_LOCKED'
+            )
+        });
+        const res = await buildApp(actorWith(VIEW, SEND)).request(`${SUP}/${ID}`, {
+            method: 'DELETE'
+        });
+        expect(res.status).toBe(409);
+        expect((await res.json()).error.reason).toBe('DIRECT_EMAIL_SUPPRESSION_OPT_OUT_LOCKED');
     });
 
     it('answers 400 for an invalid address and an unknown reason', async () => {

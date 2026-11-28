@@ -911,6 +911,62 @@
         },
         {
             "method": "GET",
+            "path": "/api/v1/admin/direct-email-suppressions"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/direct-email-suppressions"
+        },
+        {
+            "method": "DELETE",
+            "path": "/api/v1/admin/direct-email-suppressions/:id"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/admin/direct-email-templates"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/direct-email-templates"
+        },
+        {
+            "method": "DELETE",
+            "path": "/api/v1/admin/direct-email-templates/:id"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/admin/direct-email-templates/:id"
+        },
+        {
+            "method": "PATCH",
+            "path": "/api/v1/admin/direct-email-templates/:id"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/admin/direct-emails"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/direct-emails"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/admin/direct-emails/:id"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/direct-emails/check-recipients"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/direct-emails/preview"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/direct-emails/test-send"
+        },
+        {
+            "method": "GET",
             "path": "/api/v1/admin/email-previews"
         },
         {
@@ -4336,6 +4392,14 @@
         {
             "method": "GET",
             "path": "/api/v1/public/destinations/slug/:slug"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/public/direct-emails/opt-out"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/public/direct-emails/opt-out"
         },
         {
             "method": "GET",

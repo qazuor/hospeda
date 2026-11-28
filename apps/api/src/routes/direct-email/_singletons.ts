@@ -32,7 +32,8 @@ function siteUrl(): string {
 
 /**
  * Process-wide {@link DirectEmailMessageService}: Brevo mailer, direct sender with the
- * `getEmailSender()` fallback, newsletter HMAC secret for the opt-out tokens.
+ * `getEmailSender()` fallback. Opt-out tokens are opaque and stored per recipient, so no
+ * secret is involved.
  *
  * @returns The service
  */
@@ -43,7 +44,6 @@ export function getDirectEmailMessageService(): DirectEmailMessageService {
             {
                 mailer: createDirectEmailMailer(),
                 resolveFromEmail: resolveDirectEmailFromEmail,
-                hmacSecret: env.HOSPEDA_NEWSLETTER_HMAC_SECRET,
                 siteUrl: siteUrl()
             }
         );
@@ -70,13 +70,7 @@ export function getDirectEmailTemplateService(): DirectEmailTemplateService {
  */
 export function getDirectEmailSuppressionService(): DirectEmailSuppressionService {
     if (!cachedSuppressionService) {
-        cachedSuppressionService = new DirectEmailSuppressionService(
-            { logger: apiLogger },
-            {
-                hmacSecret: env.HOSPEDA_NEWSLETTER_HMAC_SECRET,
-                hmacSecretPrev: env.HOSPEDA_NEWSLETTER_HMAC_SECRET_PREV
-            }
-        );
+        cachedSuppressionService = new DirectEmailSuppressionService({ logger: apiLogger });
     }
     return cachedSuppressionService;
 }
