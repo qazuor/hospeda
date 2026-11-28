@@ -4,6 +4,10 @@ export {
     toUtmToken
 } from './email-attribution-slugs.js';
 export { buildOwnWebOrigins, isOwnWebUrl } from './own-origin.js';
+export type { UtmEditDraft, UtmEditStart } from './utm-edit.js';
+export { applyUtmEdit, toUtmEditDraft } from './utm-edit.js';
+export type { UtmParamKey, UtmQueryPatch, UtmQueryValues } from './utm-query.js';
+export { readUtmParams, rewriteUtmParams, UTM_PARAM_KEYS } from './utm-query.js';
 export type {
     DirectOutreachUtmParams,
     EmailUtmParams,

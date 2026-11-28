@@ -1959,6 +1959,22 @@
         },
         {
             "method": "GET",
+            "path": "/api/v1/admin/qr-code-tags"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/qr-code-tags"
+        },
+        {
+            "method": "DELETE",
+            "path": "/api/v1/admin/qr-code-tags/:id"
+        },
+        {
+            "method": "PATCH",
+            "path": "/api/v1/admin/qr-code-tags/:id"
+        },
+        {
+            "method": "GET",
             "path": "/api/v1/admin/qr-codes"
         },
         {
@@ -1980,6 +1996,18 @@
         {
             "method": "GET",
             "path": "/api/v1/admin/qr-codes/:id/download"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/admin/qr-codes/:id/tags"
+        },
+        {
+            "method": "PUT",
+            "path": "/api/v1/admin/qr-codes/:id/tags"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/admin/qr-codes/campaigns"
         },
         {
             "method": "GET",

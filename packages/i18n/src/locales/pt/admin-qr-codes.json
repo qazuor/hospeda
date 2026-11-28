@@ -14,7 +14,9 @@
         "source": "Origem",
         "isActive": "Estado",
         "createdAt": "Criado",
-        "actions": "Ações"
+        "actions": "Ações",
+        "utm": "UTM ao escanear",
+        "tags": "Etiquetas"
     },
     "form": {
         "labelLabel": "Nome",
@@ -90,5 +92,89 @@
         "requiredTargetUrl": "Falta a URL de destino: sem ela o código não leva a lugar nenhum.",
         "invalid": "Reveja os campos marcados: há algo que o servidor não vai aceitar.",
         "fieldInvalid": "Reveja este campo."
+    },
+    "urls": {
+        "scanLabel": "Escaneamento:",
+        "copyTarget": "Copiar URL de destino",
+        "copyScan": "Copiar URL de escaneamento",
+        "copied": "URL copiada",
+        "copyFailed": "Não foi possível copiar. Selecione o texto e copie à mão."
+    },
+    "utm": {
+        "none": "Sem UTM",
+        "edit": "Editar UTM",
+        "editHelp": "Só estes parâmetros são reescritos: o resto da URL fica como está. Deixe um campo vazio para removê-lo.",
+        "save": "Salvar UTM",
+        "saved": "UTM atualizados",
+        "saveError": "Não foi possível salvar os UTM",
+        "generatedHint": "Calculados a partir da ficha: não se editam aqui.",
+        "seededHint": "Estes são os UTM que o código adiciona sozinho ao escanear. Ao salvar uma mudança, eles ficam escritos na URL e substituem os automáticos."
+    },
+    "filters": {
+        "all": "Todos",
+        "source": "Origem",
+        "entityType": "Tipo de anúncio",
+        "purpose": "Finalidade",
+        "isActive": "Status",
+        "campaign": "Campanha (utm_campaign)",
+        "tags": "Etiquetas",
+        "reset": "Limpar filtros",
+        "entityTypes": {
+            "ACCOMMODATION": "Hospedagem",
+            "VENUE": "Comer e sair",
+            "EXPERIENCE": "Experiência",
+            "HOST_TRADE": "Comércio"
+        },
+        "purposes": {
+            "HOST_TRADE_USAGE": "Registro de utilização",
+            "LISTING": "Anúncio público",
+            "MENU": "Cardápio",
+            "CERTIFICATE": "Certificado",
+            "BROCHURE": "Folheto"
+        }
+    },
+    "tags": {
+        "pickerTrigger": "Etiquetas",
+        "editTrigger": "Etiquetar",
+        "emptyCatalog": "Ainda não há etiquetas. Crie a primeira em “Gerenciar etiquetas”.",
+        "save": "Salvar etiquetas",
+        "saved": "Etiquetas atualizadas",
+        "saveError": "Não foi possível salvar as etiquetas",
+        "formLabel": "Etiquetas",
+        "formHelp": "Servem para ordenar e filtrar a lista. Não mudam para onde o código leva.",
+        "manage": "Gerenciar etiquetas",
+        "manageTitle": "Etiquetas de códigos QR",
+        "manageHelp": "Renomear uma etiqueta muda o nome em todos os códigos que a têm. Excluí-la não altera os códigos.",
+        "nameLabel": "Nome da etiqueta",
+        "colorLabel": "Cor",
+        "noColor": "Sem cor",
+        "newPlaceholder": "Nova etiqueta",
+        "add": "Adicionar",
+        "created": "Etiqueta criada",
+        "createError": "Não foi possível criar a etiqueta. Já existe uma com esse nome?",
+        "updated": "Etiqueta atualizada",
+        "updateError": "Não foi possível atualizar a etiqueta. Já existe uma com esse nome?",
+        "delete": "Excluir etiqueta",
+        "deleteTitle": "Excluir a etiqueta?",
+        "deleteConfirm": "“{{name}}” deixa de aparecer em todos os códigos que a têm. Os códigos não são alterados.",
+        "deleted": "Etiqueta excluída",
+        "deleteError": "Não foi possível excluir a etiqueta",
+        "colors": {
+            "RED": "Vermelho",
+            "BLUE": "Azul",
+            "GREEN": "Verde",
+            "YELLOW": "Amarelo",
+            "ORANGE": "Laranja",
+            "PURPLE": "Roxo",
+            "PINK": "Rosa",
+            "BROWN": "Marrom",
+            "GREY": "Cinza",
+            "WHITE": "Branco",
+            "CYAN": "Ciano",
+            "MAGENTA": "Magenta",
+            "LIGHT_BLUE": "Azul-claro",
+            "LIGHT_GREEN": "Verde-claro"
+        },
+        "loadError": "Não conseguimos ler as etiquetas deste código. Recarregue a página antes de editá-lo, para que nenhuma se perca."
     }
 }

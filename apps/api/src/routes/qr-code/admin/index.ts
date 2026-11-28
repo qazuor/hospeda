@@ -16,17 +16,28 @@
  */
 
 import { createRouter } from '../../../utils/create-app';
+import { adminListQrCodeCampaignsRoute } from './campaigns';
 import { adminCreateQrCodeRoute } from './create';
 import { adminDeleteQrCodeRoute } from './delete';
 import { adminDownloadQrCodeRoute } from './download';
 import { adminGetQrCodeByIdRoute } from './getById';
 import { adminListQrCodesRoute } from './list';
+import { adminGetQrCodeTagsRoute, adminSetQrCodeTagsRoute } from './tags';
 import { adminUpdateQrCodeRoute } from './update';
 
 const adminRouter = createRouter();
 
 // GET / — paginated list
 adminRouter.route('/', adminListQrCodesRoute);
+
+// GET /campaigns — distinct utm_campaign values (HOS-2679). A literal segment,
+// so it goes BEFORE `/{id}`.
+adminRouter.route('/', adminListQrCodeCampaignsRoute);
+
+// GET|PUT /{id}/tags — the tag set of one code (HOS-2679). More specific than
+// `/{id}`, so registered first for the same reason as the download.
+adminRouter.route('/', adminGetQrCodeTagsRoute);
+adminRouter.route('/', adminSetQrCodeTagsRoute);
 
 // GET /{id}/download — rendered image. Registered BEFORE `/{id}` so the more
 // specific path is matched first.

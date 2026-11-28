@@ -9,6 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { useTranslations } from '@/hooks/use-translations';
 import { QrCodeRenderFields } from './QrCodeRenderFields';
+import { QrCodeTagPicker } from './QrCodeTagPicker';
 import {
     buildCreatePayload,
     buildUpdatePayload,
@@ -59,6 +60,14 @@ export type QrCodeFormProps = {
     readonly onSubmit: (payload: QrCodeCreateHttp | QrCodeUpdateHttp) => Promise<void>;
     readonly onCancel: () => void;
     readonly isSaving?: boolean;
+    /**
+     * HOS-2679 — the code's tag selection, controlled by the page. Tags are a
+     * relation written through their own endpoint after the save, so they stay
+     * OUT of the payload `onSubmit` receives. Without `onTagIdsChange` the
+     * picker is not rendered.
+     */
+    readonly tagIds?: readonly string[];
+    readonly onTagIdsChange?: (next: readonly string[]) => void;
 };
 
 export function QrCodeForm({
@@ -66,7 +75,9 @@ export function QrCodeForm({
     initialData,
     onSubmit,
     onCancel,
-    isSaving = false
+    isSaving = false,
+    tagIds = [],
+    onTagIdsChange
 }: QrCodeFormProps) {
     const { t } = useTranslations();
     const [submitError, setSubmitError] = useState<QrCodeFormError | null>(null);
@@ -253,6 +264,24 @@ export function QrCodeForm({
                             </div>
                         )}
                     </form.Field>
+
+                    {onTagIdsChange ? (
+                        <div className="space-y-1">
+                            <Label htmlFor="qr-code-form-tags">
+                                {t('admin-qr-codes.tags.formLabel')}
+                            </Label>
+                            <div>
+                                <QrCodeTagPicker
+                                    id="qr-code-form-tags"
+                                    value={tagIds}
+                                    onChange={onTagIdsChange}
+                                />
+                            </div>
+                            <p className="text-muted-foreground text-sm">
+                                {t('admin-qr-codes.tags.formHelp')}
+                            </p>
+                        </div>
+                    ) : null}
                 </CardContent>
             </Card>
 
