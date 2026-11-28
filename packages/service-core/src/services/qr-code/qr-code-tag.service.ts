@@ -287,15 +287,17 @@ export class QrCodeTagService extends BaseCrudService<
     }
 
     protected async _executeSearch(
-        params: QrCodeTagAdminSearch,
+        _params: QrCodeTagAdminSearch,
         _actor: Actor,
         ctx: ServiceContext
     ): Promise<PaginatedListOutput<QrCodeTag>> {
+        // BaseCrudRead.search strips page/pageSize from params and republishes them
+        // on ctx.pagination (SPEC-088); read them from ctx only (HOS-1917 guard).
         return this.model.findAll(
             { deletedAt: null },
             {
-                page: ctx.pagination?.page ?? params.page,
-                pageSize: ctx.pagination?.pageSize ?? params.pageSize,
+                page: ctx.pagination?.page,
+                pageSize: ctx.pagination?.pageSize,
                 sortBy: 'name',
                 sortOrder: 'asc'
             },
