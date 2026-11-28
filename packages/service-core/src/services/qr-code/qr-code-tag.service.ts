@@ -25,6 +25,7 @@ import type {
     ServiceOutput
 } from '../../types';
 import { ServiceError } from '../../types';
+import { extractPostgresErrorCause } from '../../utils/postgres-error-cause';
 import {
     checkCanCreateQrCode,
     checkCanDeleteQrCode,
@@ -34,6 +35,32 @@ import {
 
 /** `hookState` key carrying the id being updated to `_beforeUpdate`. */
 const UPDATE_ID_KEY = 'qrCodeTagUpdateId';
+
+/**
+ * The partial unique index on the live slug (migration 0259). Two creates or
+ * renames racing past {@link QrCodeTagService} `assertFreeSlug` both pass the
+ * read; the index refuses the second, and that refusal must reach the caller as
+ * the same 409 the read answers, never as a 500.
+ */
+export const QR_CODE_TAG_SLUG_CONSTRAINT = 'qrCodeTags_slug_live_unique';
+
+/**
+ * Turns a live-slug unique violation into `ALREADY_EXISTS`; anything else is
+ * returned unchanged.
+ *
+ * @param error - The thrown value (a `DbError` wrapping the driver error, or a
+ *   `ServiceError` whose `details` carry it).
+ * @returns The `ALREADY_EXISTS` error, or `null` when `error` is not that race.
+ */
+export function toSlugConflict(error: unknown): ServiceError | null {
+    const cause = extractPostgresErrorCause(error);
+    if (cause?.code !== '23505' || cause.constraint !== QR_CODE_TAG_SLUG_CONSTRAINT) return null;
+    return new ServiceError(
+        ServiceErrorCode.ALREADY_EXISTS,
+        'A QR tag with that name already exists',
+        { field: 'name', reason: 'SLUG_TAKEN' }
+    );
+}
 
 /** What {@link QrCodeTagService.getTagsForCode} accepts. */
 const GetTagsForCodeInputSchema = z.object({ qrCodeId: z.string().uuid() });
@@ -154,6 +181,19 @@ export class QrCodeTagService extends BaseCrudService<
         checkCanViewQrCode(actor);
     }
 
+    /**
+     * Create, with the slug race mapped to 409 (see {@link toSlugConflict}).
+     * The base re-throws a `DbError` and returns other failures as
+     * `INTERNAL_ERROR` carrying the original on `details`; both are covered.
+     */
+    public override async create(
+        actor: Actor,
+        data: QrCodeTagCreateInput,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<QrCodeTag>> {
+        return this.withSlugConflict(() => super.create(actor, data, ctx), ctx);
+    }
+
     /** Derives the slug and refuses a live duplicate. */
     protected override async _beforeCreate(
         data: QrCodeTagCreateInput,
@@ -174,10 +214,32 @@ export class QrCodeTagService extends BaseCrudService<
         data: QrCodeTagUpdateInput,
         ctx?: ServiceContext
     ): Promise<ServiceOutput<QrCodeTag>> {
-        return super.update(actor, id, data, {
-            ...ctx,
-            hookState: { ...ctx?.hookState, [UPDATE_ID_KEY]: id }
-        });
+        return this.withSlugConflict(
+            () =>
+                super.update(actor, id, data, {
+                    ...ctx,
+                    hookState: { ...ctx?.hookState, [UPDATE_ID_KEY]: id }
+                }),
+            ctx
+        );
+    }
+
+    /** Runs a write and maps the live-slug race to `ALREADY_EXISTS`. */
+    private async withSlugConflict(
+        write: () => Promise<ServiceOutput<QrCodeTag>>,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<QrCodeTag>> {
+        try {
+            const result = await write();
+            const conflict = result.error ? toSlugConflict(result.error) : null;
+            return conflict ? { error: conflict } : result;
+        } catch (error) {
+            const conflict = toSlugConflict(error);
+            if (!conflict) throw error;
+            // Inside an outer transaction the base throws instead of returning.
+            if (ctx?.tx) throw conflict;
+            return { error: conflict };
+        }
     }
 
     /** A rename re-derives the slug; a colour-only edit leaves it alone. */

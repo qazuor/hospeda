@@ -33,6 +33,18 @@ const tagRow = {
     deletedById: null
 };
 
+/** What the model throws when the live-slug index refuses a racing write. */
+function slugRaceError(constraint = 'qrCodeTags_slug_live_unique'): Error {
+    const driver = Object.assign(new Error('duplicate key value violates unique constraint'), {
+        code: '23505',
+        constraint
+    });
+    return Object.assign(new Error('qrCodeTags.create failed'), {
+        name: 'DbError',
+        cause: driver
+    });
+}
+
 const QR_VERBS = [
     PermissionEnum.QR_CODE_VIEW,
     PermissionEnum.QR_CODE_CREATE,
@@ -138,6 +150,26 @@ describe('QrCodeTagService', () => {
             expect(tagModel.create).not.toHaveBeenCalled();
         });
 
+        /** N1: two creates racing past the read both reach the index. */
+        it('answers 409 when the index refuses a racing create, never 500', async () => {
+            tagModel.findLiveBySlug.mockResolvedValue(null);
+            tagModel.create.mockRejectedValue(slugRaceError());
+
+            const result = await service.create(operator, { name: 'Costanera' });
+
+            expect(result.error?.code).toBe(ServiceErrorCode.ALREADY_EXISTS);
+            expect(result.error?.details).toStrictEqual({ field: 'name', reason: 'SLUG_TAKEN' });
+        });
+
+        it('does not dress up another constraint as a slug conflict', async () => {
+            tagModel.findLiveBySlug.mockResolvedValue(null);
+            tagModel.create.mockRejectedValue(slugRaceError('qr_code_tags_pkey'));
+
+            await expect(service.create(operator, { name: 'Costanera' })).rejects.toThrow(
+                'qrCodeTags.create failed'
+            );
+        });
+
         it('refuses a read-only QR operator', async () => {
             const result = await service.create(readOnly, { name: 'Costanera' });
 
@@ -182,6 +214,15 @@ describe('QrCodeTagService', () => {
 
             expect(result.error?.code).toBe(ServiceErrorCode.ALREADY_EXISTS);
             expect(tagModel.update).not.toHaveBeenCalled();
+        });
+
+        it('answers 409 when the index refuses a racing rename, never 500', async () => {
+            tagModel.findLiveBySlug.mockResolvedValue(null);
+            tagModel.update.mockRejectedValue(slugRaceError());
+
+            const result = await service.update(operator, TAG_ID, { name: 'Invierno' });
+
+            expect(result.error?.code).toBe(ServiceErrorCode.ALREADY_EXISTS);
         });
 
         it('does not touch the slug on a colour-only edit', async () => {
