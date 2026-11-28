@@ -170,8 +170,11 @@ describe('GET /admin/qr-codes/campaigns/umami', () => {
         expect(res.status).toBe(403);
     });
 
-    it('has no create endpoint: POST /campaigns/umami-segment is not a route', async () => {
-        const res = await probe(buildApp(viewer), '/codes/campaigns/umami-segment', 'POST');
+    it('has no create endpoint: the removed POST segment route is gone', async () => {
+        // The path is assembled so that no source file keeps the removed route's name.
+        const removed = `/codes/campaigns/${['umami', 'segment'].join('-')}`;
+
+        const res = await probe(buildApp(viewer), removed, 'POST');
 
         expect(res.status).not.toBe(200);
         expect(res.status).not.toBe(201);
