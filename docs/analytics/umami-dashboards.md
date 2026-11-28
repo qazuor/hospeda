@@ -126,39 +126,28 @@ Cohorts (visitors that fired the event within the window):
 | `Activaron una suscripción (90 días)` | `billing_subscription_activated` | 90day |
 | `Empezaron un trial (90 días)` | `trial_started` | 90day |
 
-## QR campaign segments (HOS-2679)
+## QR campaigns panel (HOS-2679)
 
 Each distinct `utm_campaign` on the QR codes' destinations is a campaign. The admin
-lists them in **Platform → QR codes → Campañas**, with how many live codes carry each
-one and its state in Umami.
+lists them in **Platform → QR codes → Campañas**, with how many live codes carry each one.
 
-- **Name:** `QR · <campaign>`, exactly. One segment per campaign, on the WEB website.
-- **Filter:** `utmCampaign eq <campaign>`. A segment filters the whole website view,
-  including the `utm_content` table, which a board component cannot do in Umami 3.5.
-- **Created on demand** from the admin («Crear en Umami»), never in bulk. The API lists
-  the segments by name and creates one only when no segment has that exact name, so a
-  second click returns the existing one. Within one API instance a per-segment lock
-  serialises concurrent clicks into one create. Across instances two creates can still
-  race and leave two segments with the same name (Umami does not enforce unique names).
-  That is harmless: every read takes the first exact match, and the extra one can be
-  deleted by hand. Do not create a `QR · ...` segment by hand with a taken name.
+**The panel only links to Umami.** It creates nothing there and the API never calls
+Umami for it. There is no «Crear en Umami» button, and the reason is the role scope:
+Umami 3.5 has no role that can create segments without also being able to reset or
+delete the website, so the owner chose not to give the API such a key (measured details
+in [the runbook](../runbooks/umami.md#qr-campaigns-panel-a-link-not-a-create-button)).
+
+- **«Ver en Umami»** opens the WEB website with the ad-hoc URL filter
+  `?utmCampaign=eq.<campaign>`. No segment is needed. The link is built by the API from
+  `HOSPEDA_UMAMI_URL` and `HOSPEDA_UMAMI_WEBSITE_ID_WEB`; without either, the row says
+  the link is missing because Umami is not configured on the API.
+- **Counts come from our database** (live codes per `utm_campaign`), not from Umami.
 - **Commas are not supported.** Umami 3.5 splits an `eq` value on `,` into a list
-  (measured on 3.5.0: `utmCampaign=eq.a,b` counted `a`, `b` and `a,b` together, and a
-  segment with value `a,b` did the same). A campaign with a comma gets no «Ver en
-  Umami» link and cannot be segmented; the panel says why. Rename it. A dot is fine:
+  (measured on 3.5.0: `utmCampaign=eq.a,b` counted `a`, `b` and `a,b` together). A
+  campaign with a comma gets no link and the panel says why. Rename it. A dot is fine:
   Umami splits the operator on the first dot only.
-- Campaigns longer than 500 characters are listed but cannot be segmented (the
-  create's limit); the button is disabled with the reason.
-- **Not managed by `pnpm umami:setup`.** They are not in `segment-definitions.ts`, so
-  the script reports them as unmanaged. That is expected; it never deletes them.
-- «Ver en Umami» needs no segment: it opens the website with the ad-hoc URL filter
-  `?utmCampaign=eq.<campaign>`. «Abrir segmento» opens `?segment=<id>`.
-- Creating needs `HOSPEDA_UMAMI_WRITE_API_KEY` on the API (see
-  [the runbook](../runbooks/umami.md#write-key-for-qr-campaign-segments)). Without it,
-  or with Umami down, the panel still lists the campaigns and the button is disabled.
-- Listing uses only the view-only `HOSPEDA_UMAMI_API_KEY`, never the write key.
-  Without it every row is `unavailable` (`READ_KEY_MISSING`); the «Ver en Umami» link
-  still works, because it is a plain URL.
+- **Segments are out of scope for the panel.** To segment a campaign, create the segment
+  in Umami by hand, or add it to `segment-definitions.ts` and run `pnpm umami:setup`.
 
 ## Session recorder config
 

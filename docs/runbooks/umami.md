@@ -41,36 +41,28 @@ pnpm umami:setup --dry-run   # then again without --dry-run
   heatmaps, see [`session-replay-privacy.md`](../analytics/session-replay-privacy.md)).
   Review the `recorder updated` diff of the dry run before applying.
 
-## Write key for QR campaign segments
+## QR campaigns panel: a link, not a create button
 
-The admin QR campaigns panel creates `QR · <campaign>` segments on the WEB website
-(see [`umami-dashboards.md`](../analytics/umami-dashboards.md#qr-campaign-segments-hos-2679)).
-The API needs its own key for that, `HOSPEDA_UMAMI_WRITE_API_KEY`:
+The admin QR campaigns panel (Platform → QR codes → Campañas) only **links** to Umami
+(see [`umami-dashboards.md`](../analytics/umami-dashboards.md#qr-campaigns-panel-hos-2679)).
+The API builds each «Ver en Umami» link from `HOSPEDA_UMAMI_URL` and
+`HOSPEDA_UMAMI_WEBSITE_ID_WEB`, which it already has. It sends no request to Umami and
+needs no API key for this: nothing to set up, nothing to rotate.
 
-1. Log in to Umami as a user with **edit** access to the WEB website (a team member
-   or the website owner). A view-only user's key answers 401 when creating.
+**Why there is no «Crear en Umami» button.** Creating a segment needs a key, and
+Umami 3.5 has no role that can create segments without also being able to do much more.
+Measured on local 3.5.0 with real `umami_...` keys on a throwaway website: a
+`team-view-only` key can list segments and nothing else (create, update, reset, delete,
+reports and boards all answer 401). Every role that can create a segment
+(`team-member`, `team-manager`, owner, and a global `view-only` user who is a
+`team-member`) can ALSO rename the website, create reports and boards, **reset its data
+and delete it**. There is no smaller role, so a segment-creating key held by the API
+would be a key able to delete the WEB website. The owner chose not to hold one (HOS-2679):
+the API never writes to Umami's API, and
+`apps/api/test/guards/no-umami-write-credential.guard.test.ts` keeps it that way.
 
-   **Know what that key can do.** Umami 3.5 has no segment-only permission. Measured
-   on local 3.5.0 with real `umami_...` keys on a throwaway website: a `team-view-only`
-   key can list segments and nothing else (create, update, reset, delete, reports and
-   boards all answer 401). Every role that can create a segment (`team-member`,
-   `team-manager`, owner, and a global `view-only` user who is a `team-member`) can
-   ALSO rename the website, create reports and boards, **reset its data and delete
-   it**. There is no smaller role. The confinement is ours: only one service reads the
-   key and its client can reach only the segments endpoint (guard below). Treat the key
-   as able to delete the WEB website, and keep the API's secret store accordingly.
-2. Umami → Settings → API keys → create a key (format `umami_...`).
-3. Set it on the API app of each environment and redeploy (owner approval needed):
-   `hops env-set api HOSPEDA_UMAMI_WRITE_API_KEY --secret`, then `hops redeploy api`.
-   An `app-restart` does not pick up a new variable.
-
-Never reuse `HOSPEDA_UMAMI_API_KEY` (it must stay view-only) or the
-`UMAMI_SETUP_API_KEY` of `pnpm umami:setup` (script-only). The API uses this key
-only for `POST /api/websites/:id/segments` and the exact-name list just before it; a
-guard test (`apps/api/test/guards/no-umami-write-credential.guard.test.ts`) keeps it
-confined to one service, keeps its config reader private, and fails if the segment
-client builds any URL other than `/api/websites/:id/segments`. If Umami refuses the key, the admin shows «Umami rechazó la clave de
-escritura» (`UMAMI_KEY_REJECTED`): replace it with a key of a user that can edit.
+Need a segment for a campaign? Create it by hand in Umami, as a user who is allowed to,
+or run `pnpm umami:setup` for the managed ones.
 
 ## Backups
 
