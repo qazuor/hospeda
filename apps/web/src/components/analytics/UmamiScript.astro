@@ -3,15 +3,20 @@
  * @file UmamiScript.astro
  * @description Umami analytics tracker tag for the web app (HOS-2119).
  *
- * Renders one external, deferred `<script>` pointing at the self-hosted Umami
- * tracker, an optional `<meta name="umami-tag">` and one bundled pageview
- * script:
- * - No inline body on the tracker tag, so the CSP needs no hash for it.
+ * HOS-2681: nothing loads before the visitor accepts the `analytics` consent
+ * category. This component renders an INERT `<meta name="umami-config">`
+ * (script URL + website id) instead of the tracker `<script>`; the bundled
+ * `umami-loader.ts` injects the real tracker tag client-side once consent is
+ * granted (on load for a returning visitor, on the consent event otherwise).
+ * The injected tag is external with no inline body, so the CSP needs no hash.
+ *
+ * Renders the config meta, an optional `<meta name="umami-tag">` and one
+ * bundled script:
  * - No per-user data, so every page that renders it stays session-blind
  *   (`test/pages/cacheable-pages-are-session-blind.guard.test.ts`).
  * - No explicit host attribute: the tracker derives the collect endpoint from
  *   the origin it was loaded from, which is the Umami host itself.
- * - `data-auto-pageview="false"`: the tracker sends no pageview of its own.
+ * - `data-auto-pageview="false"` (set by the loader): the tracker sends no pageview of its own.
  *   The bundled script below sends exactly one per page load on
  *   `astro:page-load` (initial load and every ClientRouter swap), see
  *   `src/lib/analytics/umami-pageview.ts` for why the tracker cannot (C1).
@@ -79,16 +84,16 @@ const websiteId = import.meta.env.PUBLIC_UMAMI_WEBSITE_ID;
 const shouldRender = Boolean(scriptUrl && websiteId);
 ---
 
-{shouldRender && (
-	<script defer src={scriptUrl} data-website-id={websiteId} data-auto-pageview="false" />
-)}
+{shouldRender && <meta name="umami-config" data-script-url={scriptUrl} data-website-id={websiteId} />}
 {shouldRender && validTag && <meta name="umami-tag" content={validTag} />}
 {shouldRender && awaitIdentity && <meta name="umami-await-identity" content="true" />}
 
 <script>
+	import { startUmamiLoader } from '@/lib/analytics/umami-loader';
 	import { startUmamiPageviews } from '@/lib/analytics/umami-pageview';
 	import { startUmamiRecorder } from '@/lib/analytics/umami-recorder';
 
+	startUmamiLoader();
 	startUmamiPageviews();
 	startUmamiRecorder();
 </script>

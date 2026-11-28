@@ -12,6 +12,42 @@
 
 import type { UmamiTracker } from '@repo/analytics';
 
+/** `name` of the `<meta>` `UmamiScript.astro` renders with the tracker config (HOS-2681). */
+export const UMAMI_CONFIG_META_NAME = 'umami-config';
+
+/** Selector of the config meta. The tracker script itself is injected only after consent. */
+export const UMAMI_CONFIG_SELECTOR = `meta[name="${UMAMI_CONFIG_META_NAME}"]`;
+
+/** Tracker config read from {@link UMAMI_CONFIG_SELECTOR}. */
+export interface UmamiConfig {
+    /** Absolute http(s) URL of the (renamed) tracker script. */
+    readonly scriptUrl: string;
+    /** Umami website id. */
+    readonly websiteId: string;
+}
+
+/**
+ * Reads the tracker config the page renders. The config is inert: it loads and
+ * sends nothing, so it can sit on every page before consent.
+ *
+ * @returns The config, or `null` on the server, on a page without it, or when
+ *   its URL is not http(s).
+ */
+export function readUmamiConfig(): UmamiConfig | null {
+    if (typeof document === 'undefined') return null;
+    const meta = document.querySelector<HTMLMetaElement>(UMAMI_CONFIG_SELECTOR);
+    const scriptUrl = meta?.getAttribute('data-script-url')?.trim();
+    const websiteId = meta?.getAttribute('data-website-id')?.trim();
+    if (!scriptUrl || !websiteId) return null;
+    try {
+        const url = new URL(scriptUrl, window.location.href);
+        if (url.protocol !== 'https:' && url.protocol !== 'http:') return null;
+        return { scriptUrl: url.href, websiteId };
+    } catch {
+        return null;
+    }
+}
+
 /** Interval between checks for `window.umami`. */
 export const UMAMI_POLL_INTERVAL_MS = 250;
 /** Maximum number of checks (about 5 seconds in total). */

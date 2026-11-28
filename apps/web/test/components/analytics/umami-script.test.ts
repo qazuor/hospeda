@@ -43,34 +43,32 @@ const TEMPLATE = COMPONENT_CODE.split(/^---\s*$/m)
     .join('---');
 
 describe('UmamiScript — the tag when configured', () => {
-    it('renders an external script with src from PUBLIC_UMAMI_SCRIPT_URL', () => {
+    it('renders an inert config meta with the URL from PUBLIC_UMAMI_SCRIPT_URL, never the tracker script (HOS-2681)', () => {
         expect(COMPONENT_CODE).toContain('PUBLIC_UMAMI_SCRIPT_URL');
-        expect(TEMPLATE).toMatch(/<script\b[^>]*\bsrc=\{scriptUrl\}/);
+        expect(TEMPLATE).toMatch(/<meta name="umami-config"[^>]*\bdata-script-url=\{scriptUrl\}/);
+        // The tracker tag is injected client-side only after analytics consent.
+        expect(TEMPLATE).not.toMatch(/<script\b[^>]*\bsrc=/);
     });
 
-    it('sets data-website-id from PUBLIC_UMAMI_WEBSITE_ID', () => {
+    it('carries data-website-id from PUBLIC_UMAMI_WEBSITE_ID in the config meta', () => {
         expect(COMPONENT_CODE).toContain('PUBLIC_UMAMI_WEBSITE_ID');
-        expect(TEMPLATE).toMatch(/<script\b[^>]*\bdata-website-id=\{websiteId\}/);
-    });
-
-    it('loads deferred so it never blocks parsing', () => {
-        expect(TEMPLATE).toMatch(/<script\b[^>]*\bdefer\b/);
+        expect(TEMPLATE).toMatch(/<meta name="umami-config"[^>]*\bdata-website-id=\{websiteId\}/);
     });
 
     it('does not set data-host-url (the script origin is the Umami host)', () => {
         expect(COMPONENT_CODE).not.toContain('data-host-url');
     });
 
-    it('turns off the automatic pageview only, never auto-track', () => {
-        expect(TEMPLATE).toMatch(/<script\b[^>]*\bdata-auto-pageview="false"/);
+    it('turns off the automatic pageview only (set by the loader), never auto-track', () => {
+        expect(read('lib/analytics/umami-loader.ts')).toContain("'data-auto-pageview', 'false'");
         // auto-track=false would stop the tracker following pushState, freezing
         // the URL of every custom event at the landing page.
         expect(COMPONENT_CODE).not.toContain('data-auto-track');
     });
 
-    it('starts the per-page-load pageview and the recorder loader from one bundled script', () => {
+    it('starts the consent-gated loader, the pageview and the recorder loader from one bundled script', () => {
         expect(TEMPLATE).toMatch(
-            /<script>\s*import \{ startUmamiPageviews \} from '@\/lib\/analytics\/umami-pageview';\s*import \{ startUmamiRecorder \} from '@\/lib\/analytics\/umami-recorder';\s*startUmamiPageviews\(\);\s*startUmamiRecorder\(\);\s*<\/script>/
+            /<script>\s*import \{ startUmamiLoader \} from '@\/lib\/analytics\/umami-loader';\s*import \{ startUmamiPageviews \} from '@\/lib\/analytics\/umami-pageview';\s*import \{ startUmamiRecorder \} from '@\/lib\/analytics\/umami-recorder';\s*startUmamiLoader\(\);\s*startUmamiPageviews\(\);\s*startUmamiRecorder\(\);\s*<\/script>/
         );
     });
 });
@@ -99,14 +97,12 @@ describe('UmamiScript — the tag when not configured', () => {
         expect(TEMPLATE).toContain('shouldRender &&');
     });
 
-    it('renders the tracker element only behind the gate', () => {
-        const trackerTags = TEMPLATE.match(/<script\b[^>]*\bsrc=/g) ?? [];
-        expect(trackerTags).toHaveLength(1);
-        expect(TEMPLATE).toMatch(/shouldRender && \(\s*<script\b[^>]*\bsrc=\{scriptUrl\}/);
+    it('renders the config meta only behind the gate', () => {
+        expect(TEMPLATE).toMatch(/shouldRender && <meta name="umami-config"/);
     });
 
-    it('renders exactly two script elements: the tracker and the pageview script', () => {
-        expect(TEMPLATE.match(/<script\b/g)).toHaveLength(2);
+    it('renders exactly one script element: the bundled wiring script', () => {
+        expect(TEMPLATE.match(/<script\b/g)).toHaveLength(1);
     });
 });
 
@@ -115,8 +111,10 @@ describe('UmamiScript — no inline body, no per-user data', () => {
         expect(TEMPLATE).not.toMatch(/set:html|define:vars|is:inline/);
     });
 
-    it('renders the tracker tag self-closing, with no inline body', () => {
-        expect(TEMPLATE).toMatch(/<script\b[^>]*\bsrc=\{scriptUrl\}[^>]*\/>/);
+    it('injects the tracker tag from the loader as an external script with no inline body', () => {
+        const loader = read('lib/analytics/umami-loader.ts');
+        expect(loader).toContain('script.src = config.scriptUrl');
+        expect(loader).not.toMatch(/textContent|innerHTML|\.text\s*=/);
     });
 
     it('reads no request, session, cookie or locals data', () => {

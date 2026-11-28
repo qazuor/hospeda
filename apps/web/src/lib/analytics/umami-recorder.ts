@@ -51,7 +51,7 @@ import {
     shouldHoldForVisitorIdentity,
     waitForVisitorIdentity
 } from '@/lib/analytics/umami-identity-gate';
-import { waitForUmamiTracker } from '@/lib/analytics/umami-tracker';
+import { readUmamiConfig, waitForUmamiTracker } from '@/lib/analytics/umami-tracker';
 import { CONSENT_CHANGED_EVENT, getConsent } from '@/lib/cookie-consent';
 import { getApiUrl } from '@/lib/env';
 import { webLogger } from '@/lib/logger';
@@ -65,8 +65,6 @@ export const SESSION_RECORDING_ENDPOINT_PATH = '/api/v1/public/session-recording
 /** Time limit for the switch request; past it, nothing records. */
 export const SESSION_RECORDING_FETCH_TIMEOUT_MS = 3000;
 
-/** The tracker tag rendered by `UmamiScript.astro` (never the recorder itself). */
-const TRACKER_SCRIPT_SELECTOR = `script[data-website-id]:not(#${RECORDER_SCRIPT_ID})`;
 const CLIENT_ROUTER_META_SELECTOR = 'meta[name="astro-view-transitions-enabled"]';
 
 /**
@@ -121,17 +119,9 @@ let reevaluateRequested = false;
 let options: Required<StartUmamiRecorderInput> | null = null;
 
 function findTrackerTarget(): TrackerTarget | null {
-    const tracker = document.querySelector<HTMLScriptElement>(TRACKER_SCRIPT_SELECTOR);
-    const websiteId = tracker?.getAttribute('data-website-id')?.trim();
-    const src = tracker?.getAttribute('src')?.trim();
-    if (!websiteId || !src) return null;
-    try {
-        const url = new URL(src, window.location.href);
-        if (url.protocol !== 'https:' && url.protocol !== 'http:') return null;
-        return { origin: url.origin, websiteId };
-    } catch {
-        return null;
-    }
+    const config = readUmamiConfig();
+    if (!config) return null;
+    return { origin: new URL(config.scriptUrl).origin, websiteId: config.websiteId };
 }
 
 function consentGranted(): boolean {

@@ -116,7 +116,7 @@ export function renderTrackerElement({
 }: PageOptions = {}): void {
     document.head.insertAdjacentHTML(
         'beforeend',
-        '<script data-website-id="site-id" data-auto-pageview="false"></script>'
+        '<meta name="umami-config" data-script-url="https://umami.test/t.js" data-website-id="site-id">'
     );
     if (awaitIdentity) {
         document.head.insertAdjacentHTML(
