@@ -346,6 +346,7 @@
         }
     },
     "limit": {
+        "addonCta": "Ampliar com {{name}} ({{price}})",
         "max_favorites": {
             "title": "Você atingiu o limite de favoritos",
             "message_one": "Você já salvou {{currentCount}} de {{maxAllowed}} favorito no seu plano. Faça um upgrade para salvar mais.",

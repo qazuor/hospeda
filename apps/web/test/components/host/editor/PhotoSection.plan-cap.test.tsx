@@ -31,7 +31,8 @@ const {
     mockUploadEntityImage,
     mockGetAllowance,
     mockFeaturedOverride,
-    mockSubscribeDestination
+    mockSubscribeDestination,
+    mockOffers
 } = vi.hoisted(() => ({
     mockListMedia: vi.fn(),
     mockAddMedia: vi.fn(),
@@ -39,7 +40,8 @@ const {
     mockUploadEntityImage: vi.fn(),
     mockGetAllowance: vi.fn(),
     mockFeaturedOverride: { current: null as null | Record<string, unknown> },
-    mockSubscribeDestination: vi.fn()
+    mockSubscribeDestination: vi.fn(),
+    mockOffers: vi.fn()
 }));
 
 vi.mock('@/lib/api/endpoints-protected', () => ({
@@ -65,6 +67,10 @@ vi.mock('@/lib/api/endpoints-protected', () => ({
         subscribeDestination: mockSubscribeDestination
     },
     protectedMediaApi: { deleteMedia: vi.fn() }
+}));
+
+vi.mock('@/lib/api/endpoints-protected-addons', () => ({
+    billingAddonApi: { offers: mockOffers }
 }));
 
 vi.mock('@/lib/media/upload-entity', () => ({
@@ -547,6 +553,54 @@ describe('HOS-1024 — the selector never accepts more than the PLAN allows', ()
 });
 
 describe('HOS-1024 — sober upsell when the gallery is full at the plan cap', () => {
+    beforeEach(() => {
+        mockOffers.mockResolvedValue({
+            ok: false,
+            error: { status: 500, code: 'X', message: 'x' }
+        });
+    });
+
+    it('HOS-2677: leads the inline upsell with the catalog add-on, plan change second', async () => {
+        mockOffers.mockResolvedValue({
+            ok: true,
+            data: {
+                items: [
+                    {
+                        productId: '11111111-1111-4111-8111-111111111111',
+                        addonVersionId: '22222222-2222-4222-8222-222222222222',
+                        slug: 'photo-pack',
+                        name: 'Pack de fotos',
+                        description: null,
+                        chargeKind: 'PERIODICO',
+                        cycle: 'monthly',
+                        price: 150000,
+                        currency: 'ARS',
+                        compatibleVerticals: ['accommodation'],
+                        grantedKeys: ['max_photos_per_accommodation'],
+                        scopeType: 'LISTING',
+                        validity: 'WHILE_SUBSCRIPTION_ALIVE',
+                        validityDays: null,
+                        freeUnderGrantVerticals: []
+                    }
+                ]
+            }
+        });
+        mockListMedia.mockReturnValue(makeListOk(buildGalleryRows(15)));
+
+        render(<PhotoSection {...defaultProps} />);
+        await waitFor(() => expect(screen.getAllByRole('img')).toHaveLength(15));
+
+        const addonLink = await screen.findByRole('link', { name: /Ampliar con / });
+        expect(addonLink).toHaveAttribute('href', `${PLAN_HREF}#addons-accommodation`);
+        const planLink = screen.getByRole('link', {
+            name: createTranslations('es').t('billing.limit.max_photos_per_accommodation.cta')
+        });
+        expect(planLink).toHaveAttribute('href', PLAN_HREF);
+        expect(
+            addonLink.compareDocumentPosition(planLink) & Node.DOCUMENT_POSITION_FOLLOWING
+        ).toBeTruthy();
+    });
+
     it('shows the cap-reached message plus a one-line plan upsell link', async () => {
         mockListMedia.mockReturnValue(makeListOk(buildGalleryRows(15)));
 
