@@ -4,9 +4,11 @@
 
 import { describe, expect, it } from 'vitest';
 import {
+    QR_CAMPAIGN_SEGMENT_MAX_LENGTH,
     QrCampaignUmamiItemSchema,
     QrCampaignUmamiSegmentCreateSchema,
-    qrCampaignSegmentName
+    qrCampaignSegmentName,
+    qrCampaignUmamiUnsupportedReason
 } from '../../../src/entities/qr-code/qr-code-campaign-umami.schema.js';
 
 describe('qrCampaignSegmentName', () => {
@@ -49,5 +51,31 @@ describe('QrCampaignUmamiItemSchema', () => {
         const row = { campaign: 'x', qrCount: 1, umami: { status: 'other', viewUrl: null } };
 
         expect(QrCampaignUmamiItemSchema.safeParse(row).success).toBe(false);
+    });
+});
+
+describe('qrCampaignUmamiUnsupportedReason', () => {
+    it('flags a comma (Umami splits eq values on it)', () => {
+        expect(qrCampaignUmamiUnsupportedReason({ campaign: 'a,b' })).toBe('COMMA_IN_CAMPAIGN');
+    });
+
+    it('accepts a dot (Umami splits the operator on the FIRST dot only)', () => {
+        expect(qrCampaignUmamiUnsupportedReason({ campaign: 'v1.2' })).toBeUndefined();
+    });
+
+    it('flags a campaign longer than the create accepts, and the limits agree', () => {
+        // Arrange
+        const tooLong = 'x'.repeat(QR_CAMPAIGN_SEGMENT_MAX_LENGTH + 1);
+        const longest = 'x'.repeat(QR_CAMPAIGN_SEGMENT_MAX_LENGTH);
+
+        // Assert
+        expect(qrCampaignUmamiUnsupportedReason({ campaign: tooLong })).toBe('TOO_LONG');
+        expect(qrCampaignUmamiUnsupportedReason({ campaign: longest })).toBeUndefined();
+        expect(QrCampaignUmamiSegmentCreateSchema.safeParse({ campaign: tooLong }).success).toBe(
+            false
+        );
+        expect(QrCampaignUmamiSegmentCreateSchema.safeParse({ campaign: longest }).success).toBe(
+            true
+        );
     });
 });

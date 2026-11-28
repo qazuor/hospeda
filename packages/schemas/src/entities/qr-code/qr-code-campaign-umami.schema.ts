@@ -26,6 +26,60 @@ export function qrCampaignSegmentName(input: { readonly campaign: string }): str
 }
 
 /**
+ * Longest campaign the segment create accepts. A longer one is still listed, but
+ * flagged `TOO_LONG` so the panel disables «Crear» instead of answering a 400.
+ */
+export const QR_CAMPAIGN_SEGMENT_MAX_LENGTH = 500;
+
+/**
+ * Why the state is `unavailable`.
+ *
+ * - `NOT_CONFIGURED` — the Umami URL or the web website id is not set.
+ * - `READ_KEY_MISSING` — the view-only `HOSPEDA_UMAMI_API_KEY` is not set. Listing
+ *   never falls back to the write key.
+ * - `UMAMI_ERROR` — Umami did not answer, or answered something unexpected.
+ */
+export const QrCampaignUmamiUnavailableReasonSchema = z.enum([
+    'NOT_CONFIGURED',
+    'READ_KEY_MISSING',
+    'UMAMI_ERROR'
+]);
+
+/** Why the state is `unavailable`. */
+export type QrCampaignUmamiUnavailableReason = z.infer<
+    typeof QrCampaignUmamiUnavailableReasonSchema
+>;
+
+/**
+ * Why Umami cannot be used for this campaign at all.
+ *
+ * - `COMMA_IN_CAMPAIGN` — Umami 3.5 splits an `eq` value on `,` into a list of
+ *   values (measured: `eq.a,b` counts `a`, `b` AND `a,b`), in the URL filter and in
+ *   a segment alike. No link and no segment would show the right numbers.
+ * - `TOO_LONG` — longer than {@link QR_CAMPAIGN_SEGMENT_MAX_LENGTH}.
+ */
+export const QrCampaignUmamiUnsupportedReasonSchema = z.enum(['COMMA_IN_CAMPAIGN', 'TOO_LONG']);
+
+/** Why Umami cannot be used for this campaign at all. */
+export type QrCampaignUmamiUnsupportedReason = z.infer<
+    typeof QrCampaignUmamiUnsupportedReasonSchema
+>;
+
+/**
+ * Why a campaign cannot be filtered or segmented in Umami, or `undefined`.
+ *
+ * @param input.campaign - The decoded campaign value.
+ * @returns The reason, if any.
+ */
+export function qrCampaignUmamiUnsupportedReason(input: {
+    readonly campaign: string;
+}): QrCampaignUmamiUnsupportedReason | undefined {
+    if (input.campaign.includes(',')) return 'COMMA_IN_CAMPAIGN';
+    if (input.campaign.length > QR_CAMPAIGN_SEGMENT_MAX_LENGTH) return 'TOO_LONG';
+    return undefined;
+}
+
+/**
  * State of a campaign in Umami.
  *
  * - `segment` — a segment with the exact name exists.
@@ -40,11 +94,16 @@ export type QrCampaignUmamiStatus = z.infer<typeof QrCampaignUmamiStatusSchema>;
 /** Umami side of one campaign row. */
 export const QrCampaignUmamiInfoSchema = z.object({
     status: QrCampaignUmamiStatusSchema,
+    /** Set when `status` is `unavailable`. */
+    unavailableReason: QrCampaignUmamiUnavailableReasonSchema.optional(),
+    /** Set when the campaign cannot be filtered or segmented (see the schema). */
+    unsupportedReason: QrCampaignUmamiUnsupportedReasonSchema.optional(),
     /** Id of the matching segment, when `status` is `segment`. */
     segmentId: z.string().optional(),
     /**
      * The web website filtered by `utmCampaign = <campaign>` (no segment needed).
-     * `null` when the Umami URL or website id is not configured.
+     * `null` when the Umami URL or website id is not configured, or when the
+     * campaign carries a comma (`COMMA_IN_CAMPAIGN`).
      */
     viewUrl: z.string().url().nullable(),
     /** The web website with the segment applied, when `status` is `segment`. */
@@ -81,7 +140,7 @@ export type QrCampaignsUmamiResponse = z.infer<typeof QrCampaignsUmamiResponseSc
 /** Body of `POST /api/v1/admin/qr-codes/campaigns/umami-segment`. */
 export const QrCampaignUmamiSegmentCreateSchema = z
     .object({
-        campaign: z.string().min(1).max(500)
+        campaign: z.string().min(1).max(QR_CAMPAIGN_SEGMENT_MAX_LENGTH)
     })
     .strict();
 
