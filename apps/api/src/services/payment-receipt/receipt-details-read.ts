@@ -201,7 +201,8 @@ export function resolveReceiptPeriod(input: {
         const agrees = computed !== null && computed.getTime() === nextPeriodStart.getTime();
         return { periodEnd: nextPeriodStart, cycle: agrees ? cycle : null };
     }
-    return { periodEnd: computed, cycle: computed ? cycle : null };
+    // No later period to contradict it: a trusted cycle is the payment's cycle.
+    return { periodEnd: computed, cycle };
 }
 
 /** The account, plan and cycle a subscription has today. */

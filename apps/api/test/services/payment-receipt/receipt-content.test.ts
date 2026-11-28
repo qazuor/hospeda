@@ -195,6 +195,17 @@ describe('resolveReceiptPeriod', () => {
         ).toEqual({ periodEnd: nextPeriodStart, cycle: null });
     });
 
+    it('keeps a trusted cycle when the payment has no covered period on record', () => {
+        expect(
+            resolveReceiptPeriod({
+                periodStart: null,
+                nextPeriodStart: null,
+                cycle: 'monthly',
+                planTrusted: true
+            })
+        ).toEqual({ periodEnd: null, cycle: 'monthly' });
+    });
+
     it('does not stretch a period over a gap before the next one', () => {
         expect(
             resolveReceiptPeriod({
