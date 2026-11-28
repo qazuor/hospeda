@@ -342,7 +342,6 @@
                 "packages/i18n/src/locales/pt/about.json#page.regionText2": 1,
                 "packages/i18n/src/locales/pt/blog.json#listPage.description": 1,
                 "packages/i18n/src/locales/pt/event.json#categoryPage.categories.WORKSHOP.description": 1,
-                "packages/i18n/src/locales/es/common.json#qrSheet.brandTagline": 1,
                 "packages/i18n/src/locales/es/features.json#gastro.title": 1,
                 "packages/i18n/src/locales/es/features.json#hero.stats.worlds.label": 1,
                 "packages/i18n/src/locales/es/features.json#meta.description": 1,
@@ -351,7 +350,6 @@
                 "packages/i18n/src/locales/es/features.json#subnav.gastro": 1,
                 "packages/i18n/src/locales/es/features.json#vistazo.pillars.descubrir.description": 1,
                 "packages/i18n/src/locales/es/pricing.json#tourist.steps.1.desc": 1,
-                "packages/i18n/src/locales/pt/common.json#qrSheet.brandTagline": 1,
                 "packages/i18n/src/locales/pt/features.json#gastro.title": 1,
                 "packages/i18n/src/locales/pt/features.json#hero.stats.worlds.label": 1,
                 "packages/i18n/src/locales/pt/features.json#meta.description": 1,
@@ -400,5 +398,5 @@
         }
     },
     "historyWordFiles": 14,
-    "ledgerFingerprint": "9546370c041f5d62e82bce7de22f72c9b90d4e08127cc1b823078cc13242cc86"
+    "ledgerFingerprint": "7d883ac239170315cf7ee8e2a149344f25c7c23345babf17ffa7067c02f86291"
 }
