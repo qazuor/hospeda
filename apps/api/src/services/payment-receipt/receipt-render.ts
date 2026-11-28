@@ -4,8 +4,7 @@
  *
  * Structure, taken from the references the owner chose: a header with the logo
  * and a colour band, a big title, two columns (who paid / number and dates), a
- * concepts table with a coloured header row, a totals block with the total on a
- * highlighted band, a payment-details section, and a footer with Hospeda's
+ * concepts table with a coloured header row, the total on a highlighted band, a payment-details section, and a footer with Hospeda's
  * contact data.
  *
  * What the page SAYS comes from {@link buildReceiptContent}; this module only
@@ -173,7 +172,8 @@ function drawHeader(pen: Pen, input: { content: ReceiptContent; logo: PDFImage }
         y: 72,
         size: 24,
         bold: true,
-        color: COLOR.band
+        // Owner decision (HOS-2682): the wordmark is black, the token text colour.
+        color: COLOR.text
     });
     text(pen, { value: RECEIPT_COPY.tagline, x: wordX + 1, y: 88, size: 9.5, color: COLOR.muted });
 
@@ -315,24 +315,11 @@ function drawTable(pen: Pen, input: { content: ReceiptContent; top: number }): n
     return rowTop + rowHeight + 22;
 }
 
-/** Totals: breakdown lines and the total on a highlighted band. */
+/** The paid total on a highlighted band. */
 function drawTotals(pen: Pen, input: { content: ReceiptContent; top: number }): number {
     const width = 270;
     const x = PAGE_WIDTH - MARGIN - width;
-    let y = input.top;
-    for (const field of input.content.breakdown) {
-        text(pen, { value: field.value, x: x + width - 12, y: y + 4, size: 10.5, align: 'right' });
-        for (const label of fitLines(pen, {
-            value: field.label,
-            size: 10,
-            maxWidth: width - 120,
-            maxLines: 2
-        })) {
-            text(pen, { value: label, x: x + 12, y: y + 4, size: 10, color: COLOR.muted });
-            y += 13;
-        }
-        y += 6;
-    }
+    const y = input.top;
     const { total } = input.content;
     box(pen, { x, y, width, height: 34, color: COLOR.band });
     text(pen, {

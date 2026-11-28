@@ -33,9 +33,8 @@ const details: ReceiptDetails = {
     method: 'MERCADOPAGO',
     operationId: '987654321',
     paidAt: new Date('2026-10-07T14:00:00.000Z'),
-    listAmountMinor: 1800000,
-    listCurrency: 'ARS',
-    promoCode: 'LITORAL15'
+    promoCodes: ['LITORAL15'],
+    planTrusted: true
 };
 
 /** Every string the renderer hands to `drawText`, in draw order. */
@@ -67,9 +66,8 @@ describe('renderReceiptPdf', () => {
             'Suscripción · Comer y salir',
             'Plan Pro · Ciclo anual',
             '07/10/2026 al 06/10/2027',
-            '$18.000,00',
-            'Descuento (LITORAL15)',
-            '-$2.700,00',
+            'Promoción aplicada',
+            'LITORAL15',
             'Total pagado',
             '$15.300,00',
             'Mercado Pago',
@@ -121,6 +119,27 @@ describe('renderReceiptPdf', () => {
         const nameLines = texts.filter((text) => text.includes('ombreNombre'));
         expect(nameLines.length).toBe(2);
         expect(nameLines.at(-1)?.endsWith('…')).toBe(true);
+    });
+
+    it('keeps every line above the footer band, even with every block at its longest', async () => {
+        const long = 'Nombre Larguísimo '.repeat(20);
+        const spy = vi.spyOn(PDFPage.prototype, 'drawText');
+        await renderReceiptPdf({
+            receipt: { ...receipt, payerName: long, payerEmail: `${'x'.repeat(200)}@example.com` },
+            details: {
+                ...details,
+                accountName: long,
+                accountEmail: `${'y'.repeat(200)}@example.com`,
+                productName: long,
+                operationId: 'z'.repeat(300),
+                promoCodes: Array.from({ length: 30 }, (_, i) => `PROMO${i}`)
+            }
+        });
+        const ys = spy.mock.calls.map(([, options]) => options?.y ?? 0);
+        // The last two lines are the footer itself (thanks line + contact band).
+        const body = ys.slice(0, -2);
+        // Footer band is 44pt tall and the thanks line sits 18pt above it.
+        expect(Math.min(...body)).toBeGreaterThan(44 + 18 + 12);
     });
 
     it('produces a one-page PDF titled with the receipt number', async () => {

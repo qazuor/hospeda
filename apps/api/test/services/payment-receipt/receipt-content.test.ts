@@ -1,6 +1,6 @@
 /**
- * What the receipt PDF says (HOS-2682): every piece of data that is known, and
- * nothing printed for what is not.
+ * What the receipt PDF says (HOS-2682): every piece of data that is known and
+ * true of the payment, and nothing printed for what is not.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -12,7 +12,9 @@ import {
 import {
     computeReceiptPeriodEnd,
     EMPTY_RECEIPT_DETAILS,
-    type ReceiptDetails
+    type ReceiptDetails,
+    resolveReceiptPaymentMethod,
+    resolveReceiptPeriod
 } from '../../../src/services/payment-receipt/receipt-details-read.js';
 import type { OwnReceipt } from '../../../src/services/payment-receipt/receipt-read.js';
 
@@ -38,13 +40,12 @@ const details: ReceiptDetails = {
     method: 'MERCADOPAGO',
     operationId: '134567890123',
     paidAt: new Date('2026-11-07T14:58:00.000Z'),
-    listAmountMinor: 1800000,
-    listCurrency: 'ARS',
-    promoCode: 'LITORAL15'
+    promoCodes: ['LITORAL15', 'BIENVENIDA'],
+    planTrusted: true
 };
 
 describe('buildReceiptContent', () => {
-    it('words every known field of a Mercado Pago payment with a promo', () => {
+    it('words every known field of a Mercado Pago payment with promos', () => {
         // Arrange / Act
         const content = buildReceiptContent({ receipt, details });
 
@@ -61,16 +62,13 @@ describe('buildReceiptContent', () => {
             title: 'Suscripción · Alojamiento',
             subtitle: 'Plan Pro · Ciclo mensual',
             period: '07/11/2026 al 06/12/2026',
-            amount: '$18.000,00'
+            amount: '$15.300,00'
         });
-        expect(content.breakdown).toEqual([
-            { label: 'Subtotal', value: '$18.000,00' },
-            { label: 'Descuento (LITORAL15)', value: '-$2.700,00' }
-        ]);
         expect(content.total).toEqual({ label: 'Total pagado', value: '$15.300,00' });
         expect(content.payment).toEqual([
             { label: 'Método', value: 'Mercado Pago' },
             { label: 'N.º de operación', value: '134567890123' },
+            { label: 'Promoción aplicada', value: 'LITORAL15, BIENVENIDA' },
             { label: 'Moneda', value: 'Pesos argentinos (ARS)' }
         ]);
         expect(content.contact).toEqual([
@@ -80,43 +78,23 @@ describe('buildReceiptContent', () => {
         ]);
     });
 
+    it('never invents a subtotal or discount amount: nothing stores the price of that day', () => {
+        const content = buildReceiptContent({ receipt, details });
+        expect(JSON.stringify(content)).not.toMatch(/Subtotal|Descuento/);
+    });
+
     it('prints a manual payment with its reference and no amount, which it does not store', () => {
         const content = buildReceiptContent({
             receipt: { ...receipt, amountMinor: null, currency: null },
-            details: {
-                ...details,
-                method: 'MANUAL',
-                operationId: 'manual-ref',
-                listAmountMinor: 1800000,
-                promoCode: null
-            }
+            details: { ...details, method: 'MANUAL', operationId: 'manual-ref', promoCodes: [] }
         });
 
         expect(content.line.amount).toBeNull();
-        expect(content.breakdown).toEqual([]);
         expect(content.total).toEqual({ label: 'Pago registrado por Hospeda', value: '' });
         expect(content.payment).toEqual([
             { label: 'Método', value: 'Pago manual registrado por Hospeda' },
             { label: 'Referencia', value: 'manual-ref' }
         ]);
-    });
-
-    it('shows no discount without a promo, nor when the list price is in another currency or not higher', () => {
-        const noPromo = buildReceiptContent({ receipt, details: { ...details, promoCode: null } });
-        const otherCurrency = buildReceiptContent({
-            receipt,
-            details: { ...details, listCurrency: 'USD' }
-        });
-        const notHigher = buildReceiptContent({
-            receipt,
-            details: { ...details, listAmountMinor: 1530000 }
-        });
-
-        for (const content of [noPromo, otherCurrency, notHigher]) {
-            expect(content.breakdown).toEqual([]);
-            expect(content.line.amount).toBe('$15.300,00');
-            expect(content.total.value).toBe('$15.300,00');
-        }
     });
 
     it('does not repeat the account when it is the payer', () => {
@@ -150,19 +128,77 @@ describe('buildReceiptContent', () => {
         expect(JSON.stringify(content)).not.toMatch(/undefined|NaN|"null"/);
     });
 
-    it('leaves out a vertical or cycle it has no name for', () => {
+    it('leaves out a vertical or cycle it has no name for, falling back to the row name', () => {
         const content = buildReceiptContent({
             receipt,
             details: { ...details, vertical: 'mystery', cycle: 'weekly', productName: null }
         });
         expect(content.line.title).toBe('Suscripción');
-        // The receipt's own concept name is the fallback when no display name was read.
         expect(content.line.subtitle).toBe('Plan owner-pro');
+    });
+
+    it('prints no plan at all when the plan changed after the payment, not even the row name', () => {
+        const content = buildReceiptContent({
+            receipt,
+            details: { ...details, productName: null, cycle: null, planTrusted: false }
+        });
+        expect(content.line.subtitle).toBeNull();
+        expect(JSON.stringify(content)).not.toContain('owner-pro');
     });
 
     it('never calls the document an invoice', () => {
         const content = buildReceiptContent({ receipt, details });
         expect(JSON.stringify(content)).not.toMatch(/factura/i);
+    });
+});
+
+describe('resolveReceiptPaymentMethod', () => {
+    it('recognizes Mercado Pago as the provider stores it', () => {
+        expect(resolveReceiptPaymentMethod({ provider: 'MERCADO_PAGO', isManual: false })).toBe(
+            'MERCADOPAGO'
+        );
+        expect(resolveReceiptPaymentMethod({ provider: 'mercadopago', isManual: false })).toBe(
+            'MERCADOPAGO'
+        );
+        expect(resolveReceiptPaymentMethod({ provider: 'FAKE', isManual: false })).toBe('OTHER');
+        expect(resolveReceiptPaymentMethod({ provider: null, isManual: true })).toBe('MANUAL');
+    });
+});
+
+describe('resolveReceiptPeriod', () => {
+    const periodStart = new Date('2026-11-01T03:00:00.000Z');
+    const nextPeriodStart = new Date('2026-12-01T03:00:00.000Z');
+
+    it('ends a period where the next one starts, printing the cycle only when it agrees', () => {
+        expect(
+            resolveReceiptPeriod({
+                periodStart,
+                nextPeriodStart,
+                cycle: 'monthly',
+                planTrusted: true
+            })
+        ).toEqual({ periodEnd: nextPeriodStart, cycle: 'monthly' });
+        // The subscription went annual later: the history wins, today's cycle is dropped.
+        expect(
+            resolveReceiptPeriod({
+                periodStart,
+                nextPeriodStart,
+                cycle: 'annual',
+                planTrusted: true
+            })
+        ).toEqual({ periodEnd: nextPeriodStart, cycle: null });
+    });
+
+    it("computes the latest period from today's cycle only while the plan is trusted", () => {
+        const latest = { periodStart, nextPeriodStart: null, cycle: 'annual' } as const;
+        expect(resolveReceiptPeriod({ ...latest, planTrusted: true })).toEqual({
+            periodEnd: new Date('2027-11-01T03:00:00.000Z'),
+            cycle: 'annual'
+        });
+        expect(resolveReceiptPeriod({ ...latest, planTrusted: false })).toEqual({
+            periodEnd: null,
+            cycle: null
+        });
     });
 });
 
@@ -192,12 +228,6 @@ describe('formatting helpers', () => {
                 cycle: 'monthly'
             })?.toISOString()
         ).toBe('2026-02-28T12:00:00.000Z');
-        expect(
-            computeReceiptPeriodEnd({
-                periodStart: new Date('2026-11-01T03:00:00.000Z'),
-                cycle: 'quarterly'
-            })?.toISOString()
-        ).toBe('2027-02-01T03:00:00.000Z');
         expect(computeReceiptPeriodEnd({ periodStart: new Date(), cycle: 'weekly' })).toBeNull();
         expect(computeReceiptPeriodEnd({ periodStart: null, cycle: 'monthly' })).toBeNull();
     });

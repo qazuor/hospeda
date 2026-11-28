@@ -4,12 +4,14 @@
  *
  * Pure and synchronous: the layout module only places what this returns, so
  * every rule about WHAT the document says (which fields appear, how a missing
- * one is left out, when a discount is shown) is tested here without opening a
+ * one is left out, how a promo is named) is tested here without opening a
  * PDF.
  *
  * Missing data is left out, never printed as a placeholder: a manual payment
  * has no amount and no provider, an add-on has no vertical, a payment without a
- * promo has no discount line.
+ * promo has no promo line. No subtotal or discount amount is printed: nothing
+ * stores the price in force on the day of the payment, so a promo is named and
+ * the amount is the one paid.
  *
  * @module services/payment-receipt/receipt-content
  */
@@ -48,8 +50,6 @@ export interface ReceiptContent {
         readonly period: string | null;
         readonly amount: string | null;
     };
-    /** Subtotal and discount lines above the total band; empty when no discount applies. */
-    readonly breakdown: readonly ReceiptField[];
     /** The highlighted total band. */
     readonly total: ReceiptField;
     /** "Datos del pago" section. */
@@ -140,7 +140,10 @@ export function buildReceiptContent(input: {
     }
 
     const vertical = details.vertical ? RECEIPT_VERTICAL_LABELS[details.vertical] : undefined;
-    const productName = clean(details.productName) ?? clean(receipt.concept.name);
+    // The receipt row's concept name is today's plan too: only a fallback when the
+    // plan is not known to have changed since the payment.
+    const productName =
+        clean(details.productName) ?? (details.planTrusted ? clean(receipt.concept.name) : null);
     const kindLabel = isAddon ? RECEIPT_COPY.addon : RECEIPT_COPY.subscription;
     const title = [kindLabel, vertical].filter(Boolean).join(' · ');
     const cycle = details.cycle ? RECEIPT_CYCLE_LABELS[details.cycle] : undefined;
@@ -153,31 +156,8 @@ export function buildReceiptContent(input: {
         receipt.amountMinor !== null && receipt.currency !== null
             ? { minor: receipt.amountMinor, currency: receipt.currency }
             : null;
-    // A discount is printed only when a promo is on record AND the catalog price,
-    // in the same currency, is above what was paid. Anything else is not a
-    // discount we can prove, so the line is the amount paid.
-    const discounted =
-        paid !== null &&
-        details.promoCode !== null &&
-        details.listAmountMinor !== null &&
-        details.listCurrency === paid.currency &&
-        details.listAmountMinor > paid.minor
-            ? { list: details.listAmountMinor, off: details.listAmountMinor - paid.minor }
-            : null;
-
     const money = (minor: number): string =>
         formatReceiptAmount({ amountMinor: minor, currency: paid?.currency ?? 'ARS' });
-
-    const breakdown: ReceiptField[] =
-        discounted && details.promoCode
-            ? [
-                  { label: RECEIPT_COPY.subtotal, value: money(discounted.list) },
-                  {
-                      label: `${RECEIPT_COPY.discount} (${details.promoCode})`,
-                      value: `-${money(discounted.off)}`
-                  }
-              ]
-            : [];
 
     const payment: ReceiptField[] = [];
     if (details.method) {
@@ -191,6 +171,9 @@ export function buildReceiptContent(input: {
                     : RECEIPT_COPY.operationId,
             value: details.operationId
         });
+    }
+    if (details.promoCodes.length > 0) {
+        payment.push({ label: RECEIPT_COPY.promo, value: details.promoCodes.join(', ') });
     }
     if (paid) {
         payment.push({
@@ -208,9 +191,8 @@ export function buildReceiptContent(input: {
             title,
             subtitle: subtitleParts.length > 0 ? subtitleParts.join(' · ') : null,
             period: formatReceiptPeriod({ start: details.periodStart, end: details.periodEnd }),
-            amount: paid ? money(discounted ? discounted.list : paid.minor) : null
+            amount: paid ? money(paid.minor) : null
         },
-        breakdown,
         total: {
             label: paid ? RECEIPT_COPY.total : RECEIPT_COPY.manualAmount,
             value: paid ? money(paid.minor) : ''

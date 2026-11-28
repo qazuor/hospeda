@@ -72,9 +72,8 @@ beforeEach(() => {
         method: 'MERCADOPAGO',
         operationId: '123',
         paidAt: new Date('2026-11-01T12:00:00.000Z'),
-        listAmountMinor: null,
-        listCurrency: null,
-        promoCode: null
+        promoCodes: [],
+        planTrusted: true
     });
 });
 
