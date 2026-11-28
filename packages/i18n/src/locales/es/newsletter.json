@@ -61,5 +61,19 @@
         "descriptionWithEmail": "Te enviamos un email a {email} con un link para confirmar.",
         "spamNote": "Si no lo encontrás en tu bandeja, revisá la carpeta de spam.",
         "title": "Revisá tu email para confirmar la suscripción."
+    },
+    "directEmailOptOut": {
+        "title": "Baja de correos directos de Hospeda",
+        "description": "Confirmá que no querés recibir más correos directos de Hospeda en esta dirección.",
+        "verifying": "Verificando el enlace...",
+        "addressLine": "Dejarás de recibir correos en {{email}}.",
+        "confirmButton": "Confirmar baja",
+        "confirming": "Procesando...",
+        "successTitle": "Listo, te dimos de baja",
+        "successDescription": "No vas a recibir más correos directos de Hospeda en {{email}}.",
+        "invalidTitle": "Este enlace no es válido",
+        "invalidDescription": "El enlace de baja está incompleto o fue modificado. Usá el enlace del correo original.",
+        "networkError": "No pudimos completar la baja. Probá de nuevo en un momento.",
+        "homeLink": "Ir al inicio"
     }
 }
