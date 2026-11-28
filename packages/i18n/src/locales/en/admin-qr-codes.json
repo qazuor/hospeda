@@ -180,39 +180,19 @@
     "campaigns": {
         "open": "Campaigns",
         "title": "QR code campaigns",
-        "help": "Each utm_campaign on the codes is a campaign. “View in Umami” opens the site filtered by that campaign. The “QR · campaign” segment filters the whole Umami view, including the utm_content table.",
+        "help": "Each utm_campaign on the codes is a campaign. “View in Umami” opens the website filtered by that campaign. The panel only links: it creates nothing in Umami.",
         "loading": "Loading campaigns…",
         "loadError": "We couldn't read the campaigns. Try again in a while.",
         "empty": "No code has a utm_campaign in its destination yet.",
-        "unavailableNotice": "We couldn't reach Umami, so we don't know which campaigns have a segment. “View in Umami” still works.",
         "commaNotice": "Campaigns with a comma get no Umami link: Umami would read them as several campaigns.",
         "columns": {
             "campaign": "Campaign",
             "qrCount": "Codes",
-            "umami": "Umami status",
             "actions": "Actions"
         },
-        "status": {
-            "segment": "Has segment",
-            "missing": "No segment",
-            "unavailable": "Unknown"
-        },
         "viewInUmami": "View in Umami",
-        "openSegment": "Open segment",
-        "createSegment": "Create in Umami",
-        "createDisabledPermission": "You need permission to create or edit QR codes.",
-        "createDisabledNotConfigured": "The API is missing the Umami write key (HOSPEDA_UMAMI_WRITE_API_KEY).",
-        "createDisabledUnavailable": "Umami is not answering: try creating the segment in a while.",
-        "createDisabledComma": "Umami splits filters on commas: this campaign cannot be filtered or segmented. Rename it without a comma.",
-        "createDisabledTooLong": "The campaign is longer than the 500 characters a segment accepts.",
-        "created": "Segment created in Umami",
-        "alreadyExisted": "The segment already existed in Umami: no new one was created.",
-        "createErrors": {
-            "UMAMI_WRITE_NOT_CONFIGURED": "The API is missing the Umami write key (HOSPEDA_UMAMI_WRITE_API_KEY).",
-            "UMAMI_KEY_REJECTED": "Umami refused the write key: it must belong to a user with edit access to the website.",
-            "generic": "The segment couldn't be created in Umami. Try again in a while.",
-            "UMAMI_CAMPAIGN_HAS_COMMA": "Segment not created: Umami splits values on commas and would count other campaigns."
-        },
+        "noLinkComma": "No link: the campaign contains a comma",
+        "noLinkNotConfigured": "No link: Umami is not configured on the API",
         "filterLink": "View this campaign in Umami"
     }
 }

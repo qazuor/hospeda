@@ -180,39 +180,19 @@
     "campaigns": {
         "open": "Campanhas",
         "title": "Campanhas dos códigos QR",
-        "help": "Cada utm_campaign dos códigos é uma campanha. “Ver no Umami” abre o site filtrado por essa campanha. O segmento “QR · campanha” filtra toda a visão do Umami, incluindo a tabela de utm_content.",
+        "help": "Cada utm_campaign dos códigos é uma campanha. “Ver no Umami” abre o site filtrado por essa campanha. O painel só leva ao Umami: não cria nada lá.",
         "loading": "Carregando campanhas…",
         "loadError": "Não conseguimos ler as campanhas. Tente de novo daqui a pouco.",
         "empty": "Nenhum código tem utm_campaign no destino ainda.",
-        "unavailableNotice": "Não conseguimos consultar o Umami, então não sabemos quais campanhas têm segmento. “Ver no Umami” continua funcionando.",
         "commaNotice": "Campanhas com vírgula não têm link para o Umami: o Umami as leria como várias campanhas.",
         "columns": {
             "campaign": "Campanha",
             "qrCount": "Quantidade de códigos",
-            "umami": "Status no Umami",
             "actions": "Ações"
         },
-        "status": {
-            "segment": "Com segmento",
-            "missing": "Sem segmento",
-            "unavailable": "Desconhecido"
-        },
         "viewInUmami": "Ver no Umami",
-        "openSegment": "Abrir o segmento",
-        "createSegment": "Criar no Umami",
-        "createDisabledPermission": "Você precisa de permissão para criar ou editar códigos QR.",
-        "createDisabledNotConfigured": "Falta a chave de escrita do Umami na API (HOSPEDA_UMAMI_WRITE_API_KEY).",
-        "createDisabledUnavailable": "O Umami não responde: tente criar o segmento daqui a pouco.",
-        "createDisabledComma": "O Umami separa os filtros por vírgulas: esta campanha não pode ser filtrada nem segmentada. Renomeie-a sem vírgula.",
-        "createDisabledTooLong": "A campanha passa dos 500 caracteres que o segmento aceita.",
-        "created": "Segmento criado no Umami",
-        "alreadyExisted": "O segmento já existia no Umami: nenhum outro foi criado.",
-        "createErrors": {
-            "UMAMI_WRITE_NOT_CONFIGURED": "Falta a chave de escrita do Umami na API (HOSPEDA_UMAMI_WRITE_API_KEY).",
-            "UMAMI_KEY_REJECTED": "O Umami recusou a chave de escrita: ela precisa ser de um usuário com permissão de edição no site.",
-            "generic": "Não foi possível criar o segmento no Umami. Tente de novo daqui a pouco.",
-            "UMAMI_CAMPAIGN_HAS_COMMA": "Segmento não criado: o Umami separa os valores por vírgulas e contaria outras campanhas."
-        },
+        "noLinkComma": "Sem link: a campanha contém uma vírgula",
+        "noLinkNotConfigured": "Sem link: o Umami não está configurado na API",
         "filterLink": "Ver esta campanha no Umami"
     }
 }
