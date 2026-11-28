@@ -13,10 +13,16 @@ import {
 } from '../../../src/routes/billing-subscription/receipts';
 import type { AppBindings } from '../../../src/types';
 
-const mocks = vi.hoisted(() => ({ readOwn: vi.fn(), listOwn: vi.fn() }));
+const mocks = vi.hoisted(() => ({ readOwn: vi.fn(), listOwn: vi.fn(), readDetails: vi.fn() }));
 vi.mock('../../../src/services/payment-receipt/receipt-read', () => ({
     readOwnReceipt: mocks.readOwn,
     listOwnReceipts: mocks.listOwn
+}));
+vi.mock('../../../src/services/payment-receipt/receipt-details-read', async (importOriginal) => ({
+    ...(await importOriginal<
+        typeof import('../../../src/services/payment-receipt/receipt-details-read')
+    >()),
+    readReceiptDetails: mocks.readDetails
 }));
 
 const OWNER = '11111111-1111-4111-8111-111111111111';
@@ -55,6 +61,21 @@ beforeEach(() => {
     mocks.listOwn.mockImplementation(async ({ userId }: { userId: string }) =>
         userId === OWNER ? [stored] : []
     );
+    mocks.readDetails.mockResolvedValue({
+        accountName: 'Ana',
+        accountEmail: 'ana@example.com',
+        vertical: 'accommodation',
+        productName: 'Pro',
+        cycle: 'monthly',
+        periodStart: new Date('2026-11-01T03:00:00.000Z'),
+        periodEnd: new Date('2026-12-01T03:00:00.000Z'),
+        method: 'MERCADOPAGO',
+        operationId: '123',
+        paidAt: new Date('2026-11-01T12:00:00.000Z'),
+        listAmountMinor: null,
+        listCurrency: null,
+        promoCode: null
+    });
 });
 
 describe('GET receipts/{id}/pdf', () => {
@@ -69,6 +90,20 @@ describe('GET receipts/{id}/pdf', () => {
         const bytes = new Uint8Array(await response.arrayBuffer());
         expect(new TextDecoder().decode(bytes.slice(0, 5))).toBe('%PDF-');
         expect(mocks.readOwn).toHaveBeenCalledWith({ receiptId: RECEIPT, userId: OWNER });
+        // HOS-2682: the details are read only for the receipt the owner's read returned.
+        expect(mocks.readDetails).toHaveBeenCalledWith({ receipt: stored });
+    });
+
+    it('still serves the receipt when its details cannot be read (HOS-2682)', async () => {
+        mocks.readDetails.mockRejectedValueOnce(new Error('db down'));
+        const response = await app(OWNER, view).request(path);
+        expect(response.status).toBe(200);
+        expect(response.headers.get('Content-Type')).toBe('application/pdf');
+    });
+
+    it("never reads details for a receipt that is not the actor's", async () => {
+        await app(STRANGER, view).request(path);
+        expect(mocks.readDetails).not.toHaveBeenCalled();
     });
 
     it('answers a foreign receipt with the same 404 as a missing one', async () => {

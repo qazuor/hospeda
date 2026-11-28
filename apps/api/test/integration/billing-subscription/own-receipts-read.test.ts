@@ -8,6 +8,7 @@ import { getDb, inArray, receipts } from '@repo/db';
 import { PermissionEnum } from '@repo/schemas';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
+import { readReceiptDetails } from '../../../src/services/payment-receipt/receipt-details-read';
 import {
     listOwnReceipts,
     readOwnReceipt
@@ -16,7 +17,9 @@ import { validateApiEnv } from '../../../src/utils/env';
 import { testDb } from '../../e2e/setup/test-database';
 import {
     actorHeaders,
+    CHARGED_AT,
     NOW,
+    OPTION_AMOUNT,
     retireRevocationRouteRows,
     routeClock,
     routeFake,
@@ -143,5 +146,71 @@ describe('receipt ownership (HOS-2566)', () => {
         const bytes = new Uint8Array(await own.arrayBuffer());
         expect(new TextDecoder().decode(bytes.slice(0, 5))).toBe('%PDF-');
         expect((await as(stranger)).status).toBe(404);
+    });
+});
+
+describe('receipt details for the document (HOS-2682)', () => {
+    it('reads the account, plan, cycle, price and payment of an automatic payment', async () => {
+        const { ownerId, paymentId } = await seedRevocable();
+        const receipt = await readOwnReceipt({
+            receiptId: await issue({ paymentId }),
+            userId: ownerId
+        });
+        if (!receipt) throw new Error('Expected own receipt');
+
+        const details = await readReceiptDetails({ receipt });
+
+        expect(details).toMatchObject({
+            accountName: 'B5.5 owner',
+            vertical: 'accommodation',
+            productName: 'B5.5 route',
+            cycle: 'monthly',
+            method: 'OTHER',
+            paidAt: CHARGED_AT,
+            listAmountMinor: OPTION_AMOUNT,
+            listCurrency: 'ARS',
+            promoCode: null
+        });
+        expect(details.accountEmail).toMatch(/@example\.test$/);
+    });
+
+    it('reads a manual payment as manual, with its own id as reference and its period', async () => {
+        const ownerId = await seedUser('manual-details');
+        const subscriptionId = await seedPrincipal({ ownerId, paymentMethod: 'MANUAL' });
+        const manualPaymentId = await seedManualPayment({ subscriptionId, registeredBy: ownerId });
+        const receipt = await readOwnReceipt({
+            receiptId: await issue({ manualPaymentId }),
+            userId: ownerId
+        });
+        if (!receipt) throw new Error('Expected own receipt');
+
+        const details = await readReceiptDetails({ receipt });
+
+        expect(details.method).toBe('MANUAL');
+        expect(details.operationId).toBe(manualPaymentId);
+        expect(details.paidAt).toEqual(CHARGED_AT);
+        expect(details.periodStart).toEqual(new Date('2026-10-01T03:00:00.000Z'));
+        expect(details.periodEnd).toEqual(new Date('2026-11-01T03:00:00.000Z'));
+    });
+
+    it('reads an add-on payment through its product, with no plan vertical', async () => {
+        const ownerId = await seedUser('addon-details');
+        const principalId = await seedPrincipal({ ownerId });
+        const { paymentId } = await seedOneTimeOrphan({ ownerId, principalId });
+        const receipt = await readOwnReceipt({
+            receiptId: await issue({ paymentId }),
+            userId: ownerId
+        });
+        if (!receipt) throw new Error('Expected own receipt');
+
+        const details = await readReceiptDetails({ receipt });
+
+        expect(details).toMatchObject({
+            accountName: 'B5.5 addon-details',
+            vertical: null,
+            productName: 'B5.6 route',
+            cycle: null,
+            listAmountMinor: 5000
+        });
     });
 });

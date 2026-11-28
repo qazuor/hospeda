@@ -7,6 +7,7 @@
  * @module services/payment-receipt/receipt-response
  */
 
+import type { ReceiptDetails } from './receipt-details-read.js';
 import type { OwnReceipt } from './receipt-read.js';
 import { renderReceiptPdf } from './receipt-render.js';
 
@@ -17,12 +18,14 @@ import { renderReceiptPdf } from './receipt-render.js';
  * file, and the browser's own viewer offers the download.
  *
  * @param input.receipt - The receipt to render.
+ * @param input.details - What else is known about the payment (HOS-2682).
  * @returns A `Response` carrying `application/pdf`.
  */
 export async function buildReceiptResponse(input: {
     readonly receipt: OwnReceipt;
+    readonly details?: ReceiptDetails;
 }): Promise<Response> {
-    const pdf = await renderReceiptPdf({ receipt: input.receipt });
+    const pdf = await renderReceiptPdf({ receipt: input.receipt, details: input.details });
     return new Response(pdf, {
         status: 200,
         headers: {
