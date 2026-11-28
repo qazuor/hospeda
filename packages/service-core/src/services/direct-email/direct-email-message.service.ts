@@ -42,6 +42,7 @@ import {
     buildDirectEmailFromName,
     findReplay,
     recordRecipient,
+    reserveRecipient,
     sendRecipientsInOrder
 } from './direct-email-send.helpers.js';
 import {
@@ -352,13 +353,23 @@ export class DirectEmailMessageService extends BaseService {
                     optOutUrlFor: (token) => this.optOutUrlFor(token),
                     now: this.now,
                     startedAt,
-                    record: ({ result, optOutToken }) =>
+                    reserve: ({ email, optOutToken }) =>
+                        reserveRecipient({
+                            recipientModel: this.recipientModel,
+                            logger: this.logger,
+                            messageId: message.id,
+                            email,
+                            optOutToken,
+                            tx: resolved.tx
+                        }),
+                    record: ({ result, optOutToken, reserved }) =>
                         recordRecipient({
                             recipientModel: this.recipientModel,
                             logger: this.logger,
                             messageId: message.id,
                             result,
                             optOutToken,
+                            reserved,
                             tx: resolved.tx
                         })
                 });

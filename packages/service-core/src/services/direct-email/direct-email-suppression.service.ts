@@ -165,18 +165,19 @@ export class DirectEmailSuppressionService extends BaseService {
             ctx,
             execute: async (validated) => {
                 checkCanSendDirectEmail(actor);
-                const existing = await this.model.findOne({ id: validated.id }, ctx?.tx);
-                if (existing?.reason === DirectEmailSuppressionReasonEnum.OPT_OUT) {
-                    // Owner decision: the person asked not to be written to; nobody lifts that.
-                    throw new ServiceError(
-                        ServiceErrorCode.ALREADY_EXISTS,
-                        'An opt-out suppression cannot be removed.',
-                        undefined,
-                        'DIRECT_EMAIL_SUPPRESSION_OPT_OUT_LOCKED'
-                    );
-                }
-                const deleted = await this.model.hardDelete({ id: validated.id }, ctx?.tx);
+                const deleted = await this.model.deleteUnlessOptOut(validated.id, ctx?.tx);
                 if (deleted === 0) {
+                    // Nothing deleted: unknown id (404) or a locked opt-out (409).
+                    const existing = await this.model.findOne({ id: validated.id }, ctx?.tx);
+                    if (existing?.reason === DirectEmailSuppressionReasonEnum.OPT_OUT) {
+                        // Owner decision: the person asked not to be written to; nobody lifts that.
+                        throw new ServiceError(
+                            ServiceErrorCode.ALREADY_EXISTS,
+                            'An opt-out suppression cannot be removed.',
+                            undefined,
+                            'DIRECT_EMAIL_SUPPRESSION_OPT_OUT_LOCKED'
+                        );
+                    }
                     throw new ServiceError(
                         ServiceErrorCode.NOT_FOUND,
                         `Suppression not found: ${validated.id}`,
@@ -219,11 +220,8 @@ export class DirectEmailSuppressionService extends BaseService {
     }): Promise<ServiceOutput<{ maskedEmail: string }>> {
         try {
             const { email } = await this.resolveToken(input.token);
-            await this.model.insertIfAbsent({
-                email,
-                reason: DirectEmailSuppressionReasonEnum.OPT_OUT,
-                createdBy: null
-            });
+            // Upgrades a manual / hard_bounce row to opt_out so it becomes undeletable.
+            await this.model.upsertOptOut({ email });
             return { data: { maskedEmail: maskEmail(email) } };
         } catch (error) {
             return { error: this.toServiceError(error) };

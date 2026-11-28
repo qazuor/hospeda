@@ -148,11 +148,62 @@ export async function findReplay(input: {
     return { messageId: existing.id, results: replayResultsFromRows(rows) };
 }
 
+/** `error_message` of a recipient row reserved before its send (no `pending` status exists). */
+export const DIRECT_EMAIL_PENDING_MARKER = 'pending';
+
+/** `error` reported for a recipient whose row could not be reserved, so it was never sent. */
+export const DIRECT_EMAIL_RECORD_FAILED_ERROR = 'record_failed';
+
 /**
- * Writes the recipient row. A failed write is logged, never thrown: the mail already
- * left (or was skipped) and the remaining recipients must still be processed.
+ * Reserves the recipient row, with its opt-out token, BEFORE the email is sent. The row
+ * starts as `failed` / `pending` (the enum has no pending status): if the process dies
+ * mid-send the row still says "not confirmed sent" and its link still resolves.
  *
- * @param input - Message id, the send result and the recipient's opt-out token
+ * @param input - Message id, address and the token that goes into the email
+ * @returns `true` when the row exists; `false` when the insert failed (do not send)
+ */
+export async function reserveRecipient(input: {
+    readonly recipientModel: DirectEmailRecipientModel;
+    readonly logger: { error(message: string): void };
+    readonly messageId: string;
+    readonly email: string;
+    readonly optOutToken: string;
+    readonly tx: ServiceContext['tx'];
+}): Promise<boolean> {
+    try {
+        await input.recipientModel.create(
+            {
+                messageId: input.messageId,
+                email: input.email,
+                optOutToken: input.optOutToken,
+                status: DirectEmailRecipientStatusEnum.FAILED,
+                providerMessageId: null,
+                errorMessage: DIRECT_EMAIL_PENDING_MARKER,
+                sentAt: null,
+                deliveredAt: null,
+                openedAt: null,
+                bouncedAt: null
+            },
+            input.tx
+        );
+        return true;
+    } catch (error) {
+        input.logger.error(
+            `Failed to reserve direct email recipient (message ${input.messageId}): ${
+                error instanceof Error ? error.message : String(error)
+            }`
+        );
+        return false;
+    }
+}
+
+/**
+ * Writes the final state of a recipient row: an update of the reserved row, or an insert
+ * for outcomes that never reserved one (suppressed, timeout). A failed write is logged,
+ * never thrown: the mail already left (or was skipped), the remaining recipients must
+ * still be processed, and a reserved row keeps its token so the opt-out link still works.
+ *
+ * @param input - Message id, the send result, the token and whether a row was reserved
  */
 export async function recordRecipient(input: {
     readonly recipientModel: DirectEmailRecipientModel;
@@ -160,25 +211,33 @@ export async function recordRecipient(input: {
     readonly messageId: string;
     readonly result: DirectEmailSendResultRow;
     readonly optOutToken: string;
+    readonly reserved: boolean;
     readonly tx: ServiceContext['tx'];
 }): Promise<void> {
     const { messageId, result, optOutToken } = input;
+    const fields = {
+        status: RECIPIENT_STATUS_BY_RESULT[result.status],
+        providerMessageId: result.providerMessageId,
+        errorMessage: result.error,
+        sentAt: result.status === 'sent' ? new Date() : null
+    };
     try {
-        await input.recipientModel.create(
-            {
-                messageId,
-                email: result.email,
-                optOutToken,
-                status: RECIPIENT_STATUS_BY_RESULT[result.status],
-                providerMessageId: result.providerMessageId,
-                errorMessage: result.error,
-                sentAt: result.status === 'sent' ? new Date() : null,
-                deliveredAt: null,
-                openedAt: null,
-                bouncedAt: null
-            },
-            input.tx
-        );
+        if (input.reserved) {
+            await input.recipientModel.update({ optOutToken }, fields, input.tx);
+        } else {
+            await input.recipientModel.create(
+                {
+                    messageId,
+                    email: result.email,
+                    optOutToken,
+                    ...fields,
+                    deliveredAt: null,
+                    openedAt: null,
+                    bouncedAt: null
+                },
+                input.tx
+            );
+        }
     } catch (error) {
         input.logger.error(
             `Failed to record direct email recipient (message ${messageId}, status ${result.status}): ${
@@ -193,7 +252,8 @@ export async function recordRecipient(input: {
  *
  * Suppressed addresses are skipped and reported. Once `startedAt` is
  * {@link DIRECT_EMAIL_BATCH_DEADLINE_MS} behind the clock no new send starts: the rest are
- * reported `failed` with error `timeout`. Each recipient gets its own opt-out token.
+ * reported `failed` with error `timeout`. Each recipient gets its own opt-out token, and its
+ * row is reserved before the send.
  *
  * @param input - Recipients, content, sender, clock and the recording callback
  * @returns One result per recipient, in request order
@@ -210,15 +270,22 @@ export async function sendRecipientsInOrder(input: {
     readonly optOutUrlFor: (token: string) => string;
     readonly now: () => number;
     readonly startedAt: number;
+    /** Reserves the recipient row before its send; `false` means it could not (do not send). */
+    readonly reserve: (row: {
+        readonly email: string;
+        readonly optOutToken: string;
+    }) => Promise<boolean>;
     readonly record: (row: {
         readonly result: DirectEmailSendResultRow;
         readonly optOutToken: string;
+        readonly reserved: boolean;
     }) => Promise<void>;
 }): Promise<SendDirectEmailResponse['results']> {
     const results: DirectEmailSendResultRow[] = [];
     for (const email of input.recipients) {
         const optOutToken = generateDirectEmailOptOutToken();
         let result: DirectEmailSendResultRow;
+        let reserved = false;
         if (input.suppressed.has(email)) {
             result = { email, status: 'suppressed', providerMessageId: null, error: null };
         } else if (input.now() - input.startedAt >= DIRECT_EMAIL_BATCH_DEADLINE_MS) {
@@ -229,19 +296,28 @@ export async function sendRecipientsInOrder(input: {
                 error: DIRECT_EMAIL_TIMEOUT_ERROR
             };
         } else {
-            result = await sendToOneRecipient({
-                mailer: input.mailer,
-                email,
-                subject: input.subject,
-                bodyJson: input.bodyJson,
-                optOutUrl: input.optOutUrlFor(optOutToken),
-                fromEmail: input.fromEmail,
-                fromName: input.fromName,
-                replyTo: input.replyTo
-            });
+            // No row means no working opt-out link: never send without one.
+            reserved = await input.reserve({ email, optOutToken });
+            result = reserved
+                ? await sendToOneRecipient({
+                      mailer: input.mailer,
+                      email,
+                      subject: input.subject,
+                      bodyJson: input.bodyJson,
+                      optOutUrl: input.optOutUrlFor(optOutToken),
+                      fromEmail: input.fromEmail,
+                      fromName: input.fromName,
+                      replyTo: input.replyTo
+                  })
+                : {
+                      email,
+                      status: 'failed',
+                      providerMessageId: null,
+                      error: DIRECT_EMAIL_RECORD_FAILED_ERROR
+                  };
         }
         results.push(result);
-        await input.record({ result, optOutToken });
+        await input.record({ result, optOutToken, reserved });
     }
     return results;
 }

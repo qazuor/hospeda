@@ -48,6 +48,7 @@ const buildModels = (suppressed: string[] = []) => {
     };
     const recipientModel = {
         create: vi.fn(async (data: Record<string, unknown>) => data),
+        update: vi.fn(async () => null),
         findByMessageId: vi.fn(),
         findOne: vi.fn(),
         applyProviderEvent: vi.fn()
@@ -182,12 +183,12 @@ describe('DirectEmailMessageService.send', () => {
             }
         ]);
         expect(sendFn).toHaveBeenCalledTimes(3);
-        expect(recipientModel.create).toHaveBeenCalledWith(
-            expect.objectContaining({
-                email: 'b@example.com',
-                status: 'failed',
-                errorMessage: 'mailbox rejected'
-            }),
+        const reserved = recipientModel.create.mock.calls.find(
+            (call) => (call[0] as { email: string }).email === 'b@example.com'
+        )?.[0] as { optOutToken: string };
+        expect(recipientModel.update).toHaveBeenCalledWith(
+            { optOutToken: reserved.optOutToken },
+            expect.objectContaining({ status: 'failed', errorMessage: 'mailbox rejected' }),
             undefined
         );
     });
@@ -232,9 +233,33 @@ describe('DirectEmailMessageService.send', () => {
         );
     });
 
-    it('still answers when a history write fails', async () => {
+    it('reserves each recipient row with its token BEFORE sending it', async () => {
         // Arrange
-        const { mailer } = buildMailer(async () => ({ success: true, messageId: 'ok' }));
+        const order: string[] = [];
+        const { mailer } = buildMailer(async (input) => {
+            order.push(`send:${input.to}`);
+            return { success: true, messageId: 'ok' };
+        });
+        const { service, recipientModel } = buildService({ mailer });
+        recipientModel.create.mockImplementation(async (data: Record<string, unknown>) => {
+            order.push(`reserve:${String(data.email)}`);
+            return data;
+        });
+
+        // Act
+        await service.send(SENDER, { ...request, recipients: ['a@example.com'] });
+
+        // Assert
+        expect(order).toEqual(['reserve:a@example.com', 'send:a@example.com']);
+        expect(recipientModel.create).toHaveBeenCalledWith(
+            expect.objectContaining({ status: 'failed', errorMessage: 'pending' }),
+            undefined
+        );
+    });
+
+    it('does not send a recipient whose row could not be reserved and reports record_failed', async () => {
+        // Arrange: without a row the opt-out link in the email would resolve to nothing.
+        const { mailer, sendFn } = buildMailer(async () => ({ success: true, messageId: 'ok' }));
         const { service, recipientModel } = buildService({ mailer });
         recipientModel.create.mockRejectedValueOnce(new Error('db down'));
 
@@ -242,7 +267,36 @@ describe('DirectEmailMessageService.send', () => {
         const result = await service.send(SENDER, request);
 
         // Assert
+        expect(result.data?.results.map((r) => [r.email, r.status, r.error])).toEqual([
+            ['a@example.com', 'failed', 'record_failed'],
+            ['b@example.com', 'sent', null],
+            ['c@example.com', 'sent', null]
+        ]);
+        expect(sendFn.mock.calls.map((call) => (call[0] as DirectEmailMailInput).to)).toEqual([
+            'b@example.com',
+            'c@example.com'
+        ]);
+    });
+
+    it('keeps the reserved row (so the link still resolves) when the post-send update fails', async () => {
+        // Arrange
+        const { mailer } = buildMailer(async () => ({ success: true, messageId: 'ok' }));
+        const { service, recipientModel } = buildService({ mailer });
+        recipientModel.update.mockRejectedValue(new Error('db down'));
+
+        // Act
+        const result = await service.send(SENDER, request);
+
+        // Assert
         expect(result.data?.results.map((r) => r.status)).toEqual(['sent', 'sent', 'sent']);
+        expect(recipientModel.create).toHaveBeenCalledTimes(3);
+        const sentToken = new URL(
+            (mailer.send as ReturnType<typeof vi.fn>).mock.calls[0]?.[0].optOutUrl
+        ).searchParams.get('token');
+        expect(recipientModel.create).toHaveBeenCalledWith(
+            expect.objectContaining({ email: 'a@example.com', optOutToken: sentToken }),
+            undefined
+        );
     });
 
     it.each([

@@ -1,5 +1,6 @@
-import type { DirectEmailSuppression, DirectEmailSuppressionReasonEnum } from '@repo/schemas';
-import { and, count, desc, eq, inArray, type SQL, sql } from 'drizzle-orm';
+import type { DirectEmailSuppression } from '@repo/schemas';
+import { DirectEmailSuppressionReasonEnum } from '@repo/schemas';
+import { and, count, desc, eq, inArray, ne, type SQL, sql } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { directEmailSuppressions } from '../../schemas/direct-email/direct_email_suppression.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
@@ -89,6 +90,60 @@ export class DirectEmailSuppressionModel extends BaseModelImpl<DirectEmailSuppre
             .limit(1);
         // DRIZZLE-LIMITATION: select() rows carry the unknown-typed jsonb / branded pgEnum columns; cast to the canonical schema type.
         return { suppression: existing as unknown as DirectEmailSuppression, created: false };
+    }
+
+    /**
+     * Records a person's opt-out. A new address is inserted as `opt_out`; an address already
+     * suppressed as `manual` or `hard_bounce` is UPGRADED to `opt_out` (the person's own
+     * request must lock the row, whatever came first). An existing `opt_out` is untouched.
+     * One statement on the `lower(email)` unique index: no read-then-write window.
+     *
+     * @param input.email - Address (lowercased here)
+     * @param tx - Optional transaction client
+     * @returns The row as it stands after the upsert
+     */
+    async upsertOptOut(
+        input: { readonly email: string },
+        tx?: DrizzleClient
+    ): Promise<DirectEmailSuppression> {
+        const db = this.getClient(tx);
+        const email = input.email.trim().toLowerCase();
+        // Raw SQL: drizzle's onConflictDoUpdate cannot target an expression index.
+        await db.execute(sql`
+            insert into direct_email_suppression (email, reason, created_by)
+            values (${email}, ${DirectEmailSuppressionReasonEnum.OPT_OUT}::direct_email_suppression_reason_enum, null)
+            on conflict (lower(email)) do update set reason = excluded.reason
+        `);
+        const [row] = await db
+            .select()
+            .from(directEmailSuppressions)
+            .where(sql`${lowerEmail} = ${email}`)
+            .limit(1);
+        // DRIZZLE-LIMITATION: select() rows carry the unknown-typed jsonb / branded pgEnum columns; cast to the canonical schema type.
+        return row as unknown as DirectEmailSuppression;
+    }
+
+    /**
+     * Deletes a suppression unless it is an `opt_out`, in ONE statement
+     * (`DELETE ... WHERE id = $1 AND reason <> 'opt_out'`), so a concurrent upgrade to
+     * `opt_out` can never be undone by a delete that checked the reason earlier.
+     *
+     * @param id - Suppression id
+     * @param tx - Optional transaction client
+     * @returns Rows deleted: 0 when the id is unknown or the row is an opt-out
+     */
+    async deleteUnlessOptOut(id: string, tx?: DrizzleClient): Promise<number> {
+        const db = this.getClient(tx);
+        const deleted = await db
+            .delete(directEmailSuppressions)
+            .where(
+                and(
+                    eq(directEmailSuppressions.id, id),
+                    ne(directEmailSuppressions.reason, DirectEmailSuppressionReasonEnum.OPT_OUT)
+                )
+            )
+            .returning({ id: directEmailSuppressions.id });
+        return deleted.length;
     }
 
     /**
