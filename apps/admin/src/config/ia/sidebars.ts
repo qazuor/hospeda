@@ -1471,6 +1471,51 @@ const marketingSidebar: SidebarInput = {
                     permissions: ['NEWSLETTER_SUBSCRIBER_VIEW']
                 }
             ]
+        },
+        { type: 'separator', id: 'sep-direct-emails-mk' },
+        // ── Direct emails (HOS-2685) ───────────────────────────────────────
+        {
+            type: 'group',
+            id: 'direct-emails',
+            label: { es: 'Correos directos', en: 'Direct emails', pt: 'E-mails diretos' },
+            icon: 'MailIcon',
+            defaultOpen: false,
+            permissions: ['DIRECT_EMAIL_VIEW'],
+            items: [
+                {
+                    type: 'link',
+                    id: 'direct-emails-history',
+                    label: { es: 'Historial', en: 'History', pt: 'Histórico' },
+                    icon: 'ListIcon',
+                    route: '/direct-emails',
+                    exact: true,
+                    permissions: ['DIRECT_EMAIL_VIEW']
+                },
+                {
+                    type: 'link',
+                    id: 'direct-emails-new',
+                    label: { es: 'Nuevo correo', en: 'New email', pt: 'Novo e-mail' },
+                    icon: 'AddIcon',
+                    route: '/direct-emails/new',
+                    permissions: ['DIRECT_EMAIL_SEND']
+                },
+                {
+                    type: 'link',
+                    id: 'direct-emails-templates',
+                    label: { es: 'Plantillas', en: 'Templates', pt: 'Modelos' },
+                    icon: 'FileTextIcon',
+                    route: '/direct-emails/templates',
+                    permissions: ['DIRECT_EMAIL_VIEW']
+                },
+                {
+                    type: 'link',
+                    id: 'direct-emails-suppressions',
+                    label: { es: 'Bajas', en: 'Suppressions', pt: 'Descadastros' },
+                    icon: 'ShieldIcon',
+                    route: '/direct-emails/suppressions',
+                    permissions: ['DIRECT_EMAIL_VIEW']
+                }
+            ]
         }
     ]
 };

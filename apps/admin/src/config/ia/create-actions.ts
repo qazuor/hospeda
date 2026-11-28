@@ -174,6 +174,18 @@ export const createActions: Record<string, CreateAction> = {
     },
 
     /**
+     * Compose a new direct email. Gated by DIRECT_EMAIL_SEND (HOS-2685).
+     * Real route: apps/admin/src/routes/_authed/direct-emails/new.tsx
+     */
+    newDirectEmail: {
+        id: 'newDirectEmail',
+        label: { es: 'Nuevo correo directo', en: 'New direct email', pt: 'Novo e-mail direto' },
+        route: '/direct-emails/new',
+        icon: 'MailIcon',
+        permissions: ['DIRECT_EMAIL_SEND']
+    },
+
+    /**
      * Create a new post tag. Gated by POST_TAG_CREATE.
      * Real route: apps/admin/src/routes/_authed/tags/post-tags/new.tsx
      */

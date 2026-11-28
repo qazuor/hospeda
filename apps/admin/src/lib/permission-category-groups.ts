@@ -152,6 +152,7 @@ export const CATEGORY_GROUP: Record<PermissionCategoryEnum, PermissionCategoryGr
     [PermissionCategoryEnum.FEATURED_ACCOMMODATION]: 'Marketing & Advertising',
     [PermissionCategoryEnum.NEWSLETTER_CAMPAIGN]: 'Marketing & Advertising',
     [PermissionCategoryEnum.NEWSLETTER_SUBSCRIBER]: 'Marketing & Advertising',
+    [PermissionCategoryEnum.DIRECT_EMAIL]: 'Marketing & Advertising',
     [PermissionCategoryEnum.SOCIAL_POST]: 'Marketing & Advertising',
     [PermissionCategoryEnum.SOCIAL_HASHTAG]: 'Marketing & Advertising',
     [PermissionCategoryEnum.SOCIAL_CAMPAIGN]: 'Marketing & Advertising',

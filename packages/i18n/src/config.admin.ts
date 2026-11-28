@@ -29,6 +29,8 @@ export const adminNamespaces = [
     'admin-qr-codes',
     'admin-tables',
     'admin-common',
+    // Direct emails module (HOS-2685). Admin-only.
+    'admin-direct-email',
     'admin-entities',
     'admin-filters',
     'admin-tabs',
@@ -46,6 +48,7 @@ import adminAuthEn from './locales/en/admin-auth.json';
 import adminBillingEn from './locales/en/admin-billing.json';
 import adminCommonEn from './locales/en/admin-common.json';
 import adminDashboardEn from './locales/en/admin-dashboard.json';
+import adminDirectEmailEn from './locales/en/admin-direct-email.json';
 import adminEntitiesEn from './locales/en/admin-entities.json';
 import adminFiltersEn from './locales/en/admin-filters.json';
 import adminMenuEn from './locales/en/admin-menu.json';
@@ -64,6 +67,7 @@ import adminAuthEs from './locales/es/admin-auth.json';
 import adminBillingEs from './locales/es/admin-billing.json';
 import adminCommonEs from './locales/es/admin-common.json';
 import adminDashboardEs from './locales/es/admin-dashboard.json';
+import adminDirectEmailEs from './locales/es/admin-direct-email.json';
 import adminEntitiesEs from './locales/es/admin-entities.json';
 import adminFiltersEs from './locales/es/admin-filters.json';
 import adminMenuEs from './locales/es/admin-menu.json';
@@ -83,6 +87,7 @@ import adminAuthPt from './locales/pt/admin-auth.json';
 import adminBillingPt from './locales/pt/admin-billing.json';
 import adminCommonPt from './locales/pt/admin-common.json';
 import adminDashboardPt from './locales/pt/admin-dashboard.json';
+import adminDirectEmailPt from './locales/pt/admin-direct-email.json';
 import adminEntitiesPt from './locales/pt/admin-entities.json';
 import adminFiltersPt from './locales/pt/admin-filters.json';
 import adminMenuPt from './locales/pt/admin-menu.json';
@@ -106,6 +111,7 @@ const rawAdminTranslations = {
         'admin-newsletter': adminNewsletterEs,
         'admin-nav': adminNavEs,
         'admin-dashboard': adminDashboardEs,
+        'admin-direct-email': adminDirectEmailEs,
         'admin-menu': adminMenuEs,
         'admin-pages': adminPagesEs,
         'admin-qr-codes': adminQrCodesEs,
@@ -123,6 +129,7 @@ const rawAdminTranslations = {
         'admin-newsletter': adminNewsletterEn,
         'admin-nav': adminNavEn,
         'admin-dashboard': adminDashboardEn,
+        'admin-direct-email': adminDirectEmailEn,
         'admin-menu': adminMenuEn,
         'admin-pages': adminPagesEn,
         'admin-qr-codes': adminQrCodesEn,
@@ -140,6 +147,7 @@ const rawAdminTranslations = {
         'admin-newsletter': adminNewsletterPt,
         'admin-nav': adminNavPt,
         'admin-dashboard': adminDashboardPt,
+        'admin-direct-email': adminDirectEmailPt,
         'admin-menu': adminMenuPt,
         'admin-pages': adminPagesPt,
         'admin-qr-codes': adminQrCodesPt,
