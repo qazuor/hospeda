@@ -295,12 +295,14 @@ describe('inline fallback veracity (HOS-331)', () => {
         //
         // HOS-2655 moved the legal pages (cookies, terms, privacy) to the shared
         // legal template, which reads every section from i18n and dropped their
-        // `titleFb`/`contentFb` pairs; ~30 pairs remain. The floor only proves the
-        // pair regex still extracts rows, so it stays well above zero.
+        // `titleFb`/`contentFb` pairs; ~30 pairs remained. HOS-2681 then moved the
+        // last of them (the privacy page) into `privacy.sections.*`, leaving the
+        // 8 `qKey`/`qFb` + `aKey`/`aFb` pairs of `lib/owner-faq.ts`. The floor
+        // only proves the pair regex still extracts rows, so it stays above zero.
         const byShape = (shape: 'call' | 'pair') =>
             ALL_FALLBACKS.filter((fb) => fb.shape === shape).length;
         expect(byShape('call')).toBeGreaterThan(1000);
-        expect(byShape('pair')).toBeGreaterThan(20);
+        expect(byShape('pair')).toBeGreaterThan(5);
         const astroRows = ALL_FALLBACKS.filter((fb) => fb.file.endsWith('.astro')).length;
         const tsxRows = ALL_FALLBACKS.filter((fb) => fb.file.endsWith('.tsx')).length;
         expect(astroRows).toBeGreaterThan(500);
@@ -326,7 +328,15 @@ describe('inline fallback veracity (HOS-331)', () => {
         // pages are outside HOS-616's scope (marketing copy, not legal
         // boilerplate), so this pin is not expected to go stale the same way
         // on the next HOS-616 batch.
-        expect(LIVE_FALLBACKS.some((fb) => fb.key === 'privacy.section1.title')).toBe(true);
+        //
+        // It went stale anyway: HOS-2681 gave the privacy page real keys and
+        // deleted every `titleFb`/`contentFb`, so no LIVE pair is left at all.
+        // The pin's job is to prove the `pair` regex still extracts a row, which
+        // a catalogued key proves just as well — so it now reads ALL_FALLBACKS,
+        // not LIVE_FALLBACKS, and points at `lib/owner-faq.ts`'s `qKey`/`qFb`.
+        expect(ALL_FALLBACKS.some((fb) => fb.shape === 'pair' && fb.key === 'owners.faq.1.q')).toBe(
+            true
+        );
     });
 
     it('finds fallbacks whose key is missing from at least one locale', () => {

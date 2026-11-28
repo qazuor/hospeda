@@ -1,154 +1,49 @@
 {
-    "title": "Termos e Condicoes",
-    "description": "Leia nossos termos e condicoes de uso para entender seus direitos e responsabilidades ao usar a Hospeda.",
-    "heading": "Termos e Condicoes",
-    "lastUpdated": "Ultima atualizacao",
-    "sections": {
-        "acceptance": {
-            "title": "1. Aceitacao dos Termos",
-            "body": "Ao acessar e usar esta plataforma, voce concorda em estar sujeito a estes termos e condicoes de uso. Se nao concordar com algum destes termos, pedimos que nao use nossos servicos. Este acordo constitui um contrato vinculante entre voce e a Hospeda.",
-            "content": "Ao acessar e usar o site da Hospeda, voce concorda em estar sujeito a estes termos e condicoes de uso. Se voce nao concordar com alguma parte destes termos, nao deve usar nosso servico."
-        },
-        "serviceDescription": {
-            "title": "2. Descricao do Servico",
-            "content": "A Hospeda e uma plataforma online que conecta hospedes com anfitrioes que oferecem hospedagens temporarias. Facilitamos as reservas, mas nao somos proprietarios nem operamos as acomodacoes listadas em nossa plataforma."
-        },
-        "accountRegistration": {
-            "title": "3. Cadastro de Conta",
-            "body": "Para acessar determinadas funcionalidades, voce precisara criar uma conta. E sua responsabilidade manter a confidencialidade das suas credenciais e todas as atividades realizadas na sua conta. Voce deve nos notificar imediatamente sobre qualquer uso nao autorizado.",
-            "intro": "Para usar determinados servicos, voce precisa criar uma conta fornecendo informacoes precisas e completas. Voce e responsavel por:",
-            "responsibilities": {
-                "password": "Manter a confidencialidade da sua senha",
-                "activities": "Todas as atividades que ocorrerem na sua conta",
-                "unauthorized": "Notificar imediatamente qualquer uso nao autorizado",
-                "information": "Fornecer informacoes verdadeiras e atualizadas"
-            }
-        },
-        "bookingsPayments": {
-            "title": "4. Reservas e Pagamentos",
-            "intro": "Ao realizar uma reserva pela nossa plataforma:",
-            "conditions": {
-                "fees": "Voce concorda em pagar todas as tarifas aplicaveis",
-                "cancellation": "Voce esta sujeito as politicas de cancelamento do anfitriao",
-                "rules": "Voce deve cumprir as regras da acomodacao",
-                "payments": "Os pagamentos sao processados de forma segura pelos nossos provedores"
-            }
-        },
-        "userResponsibilities": {
-            "title": "5. Responsabilidades do Usuario",
-            "body": "Voce se compromete a usar nossos servicos de forma responsavel e legal. E proibido usar a plataforma para atividades ilegais, fraudulentas ou que violem os direitos de terceiros. Nos reservamos o direito de suspender ou cancelar contas que violem estas regras.",
-            "intro": "Os usuarios se comprometem a:",
-            "commitments": {
-                "legal": "Usar o servico de forma legal e adequada",
-                "rights": "Nao violar os direitos de outros usuarios",
-                "content": "Nao publicar conteudo ofensivo ou ilegal",
-                "property": "Respeitar a propriedade dos anfitrioes",
-                "reviews": "Fornecer avaliacoes honestas e construtivas"
-            }
-        },
-        "cancellationPolicies": {
-            "title": "6. Politicas de Cancelamento",
-            "content": "As politicas de cancelamento variam de acordo com o anfitriao e sao exibidas claramente durante o processo de reserva. A Hospeda pode cobrar taxas de servico nao reembolsaveis conforme especificado no momento da reserva."
-        },
-        "liabilityLimitation": {
-            "title": "7. Limitacao de Responsabilidade",
-            "content": "A Hospeda atua como intermediaria entre hospedes e anfitrioes. Nao nos responsabilizamos pela qualidade, seguranca ou legalidade das acomodacoes listadas, pela veracidade das descricoes, ou pela capacidade dos usuarios de concluir transacoes."
-        },
-        "intellectualProperty": {
-            "title": "8. Propriedade Intelectual",
-            "content": "Todo o conteudo da plataforma Hospeda, incluindo textos, graficos, logotipos, icones, imagens e software, e propriedade da Hospeda ou de seus licenciantes e esta protegido pelas leis de direitos autorais."
-        },
-        "termsModifications": {
-            "title": "9. Modificacoes dos Termos",
-            "content": "Reservamo-nos o direito de modificar estes termos a qualquer momento. As alteracoes entram em vigor imediatamente apos a publicacao no site. O uso continuado do servico constitui a aceitacao dos termos modificados."
-        },
-        "termination": {
-            "title": "10. Encerramento",
-            "content": "Podemos suspender ou encerrar sua conta caso voce viole estes termos ou por qualquer outro motivo, a nosso exclusivo criterio, com ou sem aviso previo."
-        },
-        "applicableLaw": {
-            "title": "11. Lei Aplicavel",
-            "content": "Estes termos sao regidos pelas leis do pais onde a Hospeda tem sua sede principal, sem considerar os principios de conflito de leis."
-        },
-        "usage": {
-            "title": "2. Uso do Servico",
-            "body": "Voce se compromete a usar nossos servicos de forma responsavel e legal. E proibido usar a plataforma para atividades ilegais, fraudulentas ou que violem os direitos de terceiros. Nos reservamos o direito de suspender ou cancelar contas que violem estas regras."
-        },
-        "accounts": {
-            "title": "3. Contas de Usuario",
-            "body": "Para acessar determinadas funcionalidades, voce precisara criar uma conta. E sua responsabilidade manter a confidencialidade das suas credenciais e todas as atividades realizadas na sua conta. Voce deve nos notificar imediatamente sobre qualquer uso nao autorizado."
-        },
-        "content": {
-            "title": "4. Conteudo",
-            "body": "Os usuarios sao responsaveis pelo conteudo que publicam na plataforma. Ao publicar conteudo, voce concede a Hospeda uma licenca nao exclusiva para usar, reproduzir e distribuir esse conteudo. Nos reservamos o direito de remover conteudo que consideremos inadequado."
-        },
-        "liability": {
-            "title": "5. Responsabilidade",
-            "body": "A Hospeda atua como intermediaria entre provedores de hospedagem e usuarios. Nao nos responsabilizamos pela qualidade, seguranca ou legalidade dos servicos oferecidos por terceiros. O uso da plataforma e por sua conta e risco."
-        },
-        "modifications": {
-            "title": "6. Modificacoes",
-            "body": "Reservamo-nos o direito de modificar estes termos e condicoes a qualquer momento. As alteracoes entram em vigor imediatamente apos a publicacao na plataforma. E sua responsabilidade revisar periodicamente estes termos."
-        },
-        "contact": {
-            "title": "12. Contato",
-            "body": "Se tiver duvidas ou preocupacoes sobre estes termos e condicoes, pode entrar em contato conosco pelos canais de comunicacao disponiveis na nossa plataforma. Faremos o nosso melhor para responder suas consultas o mais breve possivel.",
-            "cta": "Ir para a pagina de contato",
-            "intro": "Se voce tiver duvidas sobre estes termos e condicoes, pode entrar em contato conosco em:",
-            "details": {
-                "email": "Email:",
-                "emailValue": "juridico@hospeda.com.ar",
-                "address": "Endereco:",
-                "addressValue": "Rua Principal 123, Cidade, Pais 12345",
-                "phone": "Telefone:",
-                "phoneValue": "+1 (234) 567-890"
-            }
-        }
-    },
-    "lastUpdatedLabel": "Última atualização",
-    "page": {
-        "title": "Termos e Condições",
-        "description": "Termos e condições de uso da plataforma Hospeda"
-    },
+    "title": "Termos e Condições",
+    "description": "Leia nossos termos e condições de uso para entender seus direitos e responsabilidades ao usar a Hospeda.",
     "articles": {
         "aceptacion": {
-            "title": "1. Aceitação dos termos",
-            "body": "Ao acessar e utilizar a plataforma Hospeda (doravante, o Serviço), você aceita estes Termos e Condições. Se não concordar com alguma parte destes termos, não poderá acessar o Serviço."
+            "title": "Aceitação dos termos",
+            "body": "Ao acessar e utilizar a plataforma Hospeda (doravante, «o Serviço»), você aceita estes Termos e Condições. Se não concordar com alguma parte destes termos, não poderá usar o Serviço."
         },
         "uso-servicio": {
-            "title": "2. Uso do serviço",
-            "body": "O Serviço ajuda viajantes a descobrir hospedagens, estabelecimentos gastronômicos, experiências e outros recursos turísticos e a contatar os prestadores. Você se compromete a usar o Serviço apenas para fins legítimos e de acordo com estes Termos. Se usar as ferramentas de inteligência artificial, confirme com o prestador informações que afetem sua viagem, como preços e disponibilidade."
+            "title": "Uso do serviço",
+            "body": "O Serviço ajuda viajantes a descobrir hospedagens, lugares para comer e sair, experiências, eventos e outros recursos turísticos, e a entrar em contato com os prestadores. Você se compromete a usar o Serviço apenas para fins legítimos e de acordo com estes Termos. Se usar as ferramentas de inteligência artificial, confirme com o prestador as informações que afetem sua viagem, como preços e disponibilidade."
         },
         "registro": {
-            "title": "3. Cadastro de conta",
-            "body": "Para usar determinadas funcionalidades do Serviço, você deve criar uma conta com informações precisas, completas e atualizadas. Você é responsável por manter sua senha em sigilo e por todas as atividades realizadas em sua conta."
+            "title": "Cadastro de conta",
+            "body": "Para usar determinadas funcionalidades do Serviço, você deve criar uma conta com informações precisas, completas e atualizadas. Você também pode se cadastrar com sua conta do Google ou do Facebook. Você é responsável por manter sua senha em sigilo e por todas as atividades realizadas em sua conta. Você pode pedir o encerramento da sua conta pelo formulário de contato; antes de encerrá-la, você precisa cancelar seus planos e retirar seus anúncios."
         },
         "publicacion": {
-            "title": "4. Publicação de anúncios",
-            "body": "Os prestadores que anunciarem hospedagens, estabelecimentos gastronômicos ou experiências garantem que as informações fornecidas são verdadeiras, precisas e completas. A Hospeda se reserva o direito de revisar, modificar ou remover anúncios que não estejam de acordo com nossas políticas."
+            "title": "Publicação de anúncios",
+            "body": "Os prestadores que anunciarem hospedagens, lugares para comer e sair, experiências ou outros serviços garantem que as informações fornecidas são verdadeiras, precisas e completas. Para que um anúncio fique publicado, ele precisa estar coberto por um plano vigente ou por um período de teste; se deixar de estar coberto, deixa de ser exibido. Se um anúncio ficar inativo, ele é arquivado e, se continuar arquivado, seu conteúdo é excluído ao fim do prazo de conservação. Avisamos você por e-mail antes de arquivá-lo e antes de excluí-lo. As avaliações, as respostas e as mensagens são revisadas automaticamente para detectar conteúdo proibido. A Hospeda se reserva o direito de revisar, modificar ou remover qualquer anúncio que não esteja de acordo com suas políticas."
         },
         "reservas": {
-            "title": "5. Reservas e pagamentos",
-            "body": "As reservas e seus pagamentos são combinados diretamente entre o viajante e o prestador. A Hospeda facilita o contato e não processa pagamentos de reservas. Os pagamentos das assinaturas da Hospeda são processados pelo Mercado Pago. As condições do plano são apresentadas antes da contratação."
+            "title": "Reservas e pagamentos",
+            "body": "As reservas e seus pagamentos são combinados diretamente entre o viajante e o prestador: a Hospeda facilita o contato e não processa esses pagamentos. A Hospeda cobra por seus próprios planos (para prestadores e o plano VIP para viajantes) e por seus serviços adicionais. As cobranças automáticas são processadas pelo Mercado Pago; em casos pontuais, a administração pode registrar um pagamento feito por outro meio. Os planos mensais e anuais são renovados automaticamente ao fim de cada período até que você os cancele. Quando houver uma promoção vigente, você pode aplicar um código promocional ao contratar. Antes da contratação, mostramos o preço, a periodicidade e o que o plano inclui. Para cada cobrança emitimos um comprovante. Se uma cobrança for recusada, o plano entra em um período de carência; se a cobrança não for regularizada, o plano deixa de cobrir seus anúncios."
+        },
+        "prueba": {
+            "title": "Período de teste",
+            "body": "Alguns planos para prestadores de hospedagens, lugares para comer e sair e experiências incluem um período de teste gratuito concedido pela Hospeda. O teste começa quando você publica seu primeiro anúncio, não exige meio de pagamento e, ao terminar, não gera nenhuma cobrança automática: para continuar publicando, você precisa contratar um plano. A duração do teste é informada antes de ele começar."
         },
         "cancelaciones": {
-            "title": "6. Cancelamentos e reembolsos",
-            "body": "As condições de cancelamento e reembolso de uma reserva dependem do prestador e do que foi acordado na reserva. Para cancelar uma assinatura da Hospeda, use a seção de assinaturas da sua conta. O artigo 10 contém o link para exercer o direito de arrependimento."
+            "title": "Cancelamentos e reembolsos",
+            "body": "As condições de cancelamento e reembolso de uma reserva dependem do prestador e do que foi acordado na reserva. Você pode cancelar seu plano da Hospeda quando quiser na seção Assinatura da sua conta. Ao cancelar, não são geradas novas cobranças e você mantém o serviço até o fim do período já pago. Se o seu plano permitir, você também pode pausá-lo ou trocá-lo por outro. Fazemos reembolsos quando você exerce o direito de arrependimento em até 10 dias corridos a partir da cobrança (nesse caso devolvemos o valor total dessa cobrança e a última cobrança dos serviços adicionais que dependiam desse plano, se ela também tiver sido feita dentro desses 10 dias) e quando detectamos uma cobrança errada, duplicada ou fora do prazo. Todo reembolso é confirmado pela administração e processado pelo mesmo meio de pagamento ou, se não for possível, por transferência. Fora desses casos, o cancelamento de um plano não gera reembolso do período em curso. Para exercer o direito de arrependimento, use o link desta seção."
         },
         "propiedad-intelectual": {
-            "title": "7. Propriedade intelectual",
+            "title": "Propriedade intelectual",
             "body": "Todo o conteúdo da plataforma, incluindo textos, imagens, logotipos, designs e software, pertence à Hospeda ou aos respectivos titulares. A reprodução sem autorização expressa é proibida."
         },
         "limitacion": {
-            "title": "8. Limitação de responsabilidade",
+            "title": "Limitação de responsabilidade",
             "body": "A Hospeda não garante a disponibilidade ininterrupta do Serviço nem a exatidão das informações fornecidas por terceiros. Em nenhuma hipótese seremos responsáveis por danos indiretos, incidentais ou consequentes."
         },
         "modificaciones": {
-            "title": "9. Alterações",
+            "title": "Alterações",
             "body": "Reservamo-nos o direito de alterar estes Termos a qualquer momento. As alterações entram em vigor quando publicadas na plataforma. O uso continuado do Serviço constitui aceitação dos termos alterados."
         },
         "contacto": {
-            "title": "10. Contato",
+            "title": "Contato",
             "body": "Para dúvidas sobre estes Termos e Condições, escreva para info@hospeda.com.ar ou use nosso formulário de contato."
         }
     },

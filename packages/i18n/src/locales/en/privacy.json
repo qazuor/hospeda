@@ -1,125 +1,102 @@
 {
     "title": "Privacy Policy",
-    "description": "Learn how we collect, use, and protect your personal information at Hospeda.",
-    "heading": "Privacy Policy",
-    "lastUpdated": "Last updated: January 1, 2024",
+    "description": "Learn which personal data Hospeda processes, what it uses it for, who it shares it with and how you can exercise your rights.",
+    "links": {
+        "cookiePolicy": "See the Cookie Policy",
+        "contact": "Go to the contact page"
+    },
     "sections": {
-        "informationCollection": {
-            "title": "1. Information We Collect",
-            "body": "We collect personal information you provide to us directly, such as your name, email address, phone number, and address. We also collect usage data automatically when you browse our platform, including IP address, browser type, and pages visited.",
-            "intro": "We collect information you provide to us directly, such as:",
+        "controller": {
+            "title": "Who is responsible for your data",
+            "body": "The controller of the personal data described in this policy is [COMPLETAR: razón social], tax ID (CUIT) [COMPLETAR: CUIT], with its registered address at [COMPLETAR: domicilio legal] (hereinafter, “Hospeda”). This policy explains which data we process when you use the Hospeda site and services, what we use it for, who we share it with, how long we keep it and how you can exercise your rights."
+        },
+        "dataCollected": {
+            "title": "What data we process",
+            "body": "We process the data you give us when you sign up, fill in forms or use the service, and some technical data generated while you browse. Depending on how you use Hospeda, this may include:",
             "items": {
-                "registration": "Registration information (name, email, phone number)",
-                "profile": "Profile information and preferences",
-                "payment": "Payment and billing information",
-                "support": "Communications with our support team",
-                "reviews": "Reviews and comments"
+                "account": "Your account details, such as your name, email address and phone number.",
+                "socialLogin": "If you sign in with Google or Facebook, the name, email and, if there is one, the profile picture that provider gives us. If you already had an account with the same email, we link them.",
+                "content": "The content you publish: listings (text, photos and location) and reviews.",
+                "messages": "The inquiries and messages you exchange with providers. If you send an inquiry without an account, we ask you to verify your email.",
+                "feedback": "The problem reports you send us, with the name and email you include.",
+                "ai": "The questions you ask the AI assistant and the text you process with the AI tools.",
+                "activity": "Your search history, your favorites and collections, your price alerts and your newsletter subscription.",
+                "billing": "If you buy a plan or an add-on, the details of your charges: amount, date, status and the name and email shown on the receipt. You enter your card details directly in Mercado Pago: Hospeda never receives or stores them.",
+                "technical": "Technical usage data: IP address, browser and device, pages visited, views of and interactions with listings, and a technical browser-session identifier."
             }
         },
-        "automaticCollection": {
-            "title": "2. Information Collected Automatically",
-            "intro": "We also collect information automatically when you use our service:",
+        "dataUse": {
+            "title": "What we use your data for",
+            "body": "We use your data to provide the service and manage your account; publish and display your listings; deliver your inquiries and messages to the provider; manage the plans you buy and their charges; answer the questions you ask the AI assistant; send you messages about your account and, if you subscribed, the newsletter; measure how the site is used; and prevent fraud and abuse. Hospeda does not process reservations or their payments: they are arranged directly between the traveler and the provider. We automatically review reviews, replies and messages to detect prohibited content, and that review may be carried out with external providers."
+        },
+        "dataSharing": {
+            "title": "Who we share your data with",
+            "body": "We do not sell or rent your personal data. We only share it in these cases:",
             "items": {
-                "device": "Device and browser information",
-                "ip": "IP address and geographic location",
-                "navigation": "Pages visited and browsing duration",
-                "cookies": "Cookies and similar technologies"
+                "providers": "With the provider you send an inquiry or a message to.",
+                "public": "Publicly, when you publish a review or a listing.",
+                "processors": "With the providers that help us run the service and process data on our behalf: Mercado Pago (payments), Brevo (email delivery), Cloudinary (images), Cloudflare (content delivery, security, bot verification and performance metrics), Sentry (error logging), artificial intelligence providers, Google and Facebook (if you sign in with them), Google Calendar (if you connect it), Linear (problem reports you send us) and OpenStreetMap (maps).",
+                "serverErrors": "Our servers log technical errors in Sentry, linked to the internal identifier and role of the affected account. Only the domain of your email is sent.",
+                "legal": "When a law or a competent authority requires it."
             }
         },
-        "informationUse": {
-            "title": "3. How We Use Your Information",
-            "body": "We use your information to provide and improve our services, process transactions, send important notifications, and personalize your experience. We may also use your data for analytics, marketing, and security purposes.",
-            "intro": "We use the information we collect to:",
-            "purposes": {
-                "services": "Provide and improve our services",
-                "bookings": "Process bookings and payments",
-                "communication": "Communicate with you about your account",
-                "personalization": "Personalize your experience",
-                "marketing": "Send updates and promotions (with your consent)",
-                "security": "Prevent fraud and ensure security"
-            }
+        "hospedaAi": {
+            "title": "Hospeda's AI assistant",
+            "body": "Some Hospeda features use artificial intelligence: the assistant on each listing, conversational search and the tools for writing, improving, translating or importing content. What you type into those features is sent to external artificial intelligence providers to generate the answer. We keep the questions and answers of the listing assistant for 12 months. The listing's provider can read those questions without any data that identifies you. Do not share personal data in the chat."
         },
-        "informationSharing": {
-            "title": "4. Sharing Your Information",
-            "body": "We do not sell your personal information. We share data with service providers who help us operate the platform, always under strict confidentiality agreements. We may also share information when required by law.",
-            "intro": "We may share your information in the following circumstances:",
-            "circumstances": {
-                "hosts": "With hosts to facilitate bookings",
-                "providers": "With trusted service providers",
-                "legal": "To comply with legal obligations",
-                "consent": "With your explicit consent",
-                "business": "In the event of a merger or business acquisition"
-            }
+        "usageMeasurement": {
+            "title": "Usage measurement",
+            "body": "From your browser and without your consent, we only measure page performance with Cloudflare Web Analytics, in aggregate and without cookies. If you accept analytics, we also use Umami, an analytics tool we host ourselves, to count page views and events. If you are signed in, that measurement may be linked to your account's internal identifier, never to your email. In addition, our servers record some actions in Umami, such as creating an account, sending an inquiry, publishing a listing or buying a plan, linked to your account’s internal identifier when you have one. Those records do not depend on your cookie choice."
         },
-        "cookiesTracking": {
-            "title": "5. Cookies and Tracking Technologies",
-            "body": "We use cookies and similar technologies to improve the functionality of our website, analyze traffic, and personalize content. You can configure your browser to reject cookies, although this may affect some platform features.",
-            "content": "We use cookies and similar technologies to improve your experience, remember your preferences, and analyze how our site is used. You can control cookies through your browser settings."
+        "cookies": {
+            "title": "Cookies and similar technologies",
+            "body": "We use cookies and similar technologies to keep you signed in, remember your cookie choice and, if you agree, report errors and measure how the site is used. You can change your choice at any time from “Cookie preferences” at the bottom of every page, and see the details in the Cookie Policy."
         },
         "sessionRecording": {
             "title": "Session recordings and heatmaps",
-            "body": "If you accept analytics cookies, Hospeda may record browsing sessions and click and scroll heatmaps using Umami, an analytics tool that we host ourselves. Recordings are pseudonymous: if you are logged in, they may be associated with your account identifier. Recording only happens if you have accepted analytics cookies, and only while this feature is switched on. All text and all form inputs are masked, so what you type is not recorded. Only a sample of sessions is recorded, not all of them. Recordings are kept for a limited period of up to 60 days and are then deleted automatically."
+            "body": "If you accept analytics cookies, Hospeda may record browsing sessions and click and scroll heatmaps using Umami, an analytics tool that we host ourselves. Recordings are pseudonymous: if you are logged in, they may be associated with your account identifier. Recording only happens if you have accepted analytics cookies, and only while this feature is switched on. All text and all form inputs are masked, so what you type is not recorded. Only a sample of sessions is recorded, not all of them. Recordings are kept for a limited period of up to 60 days and are then deleted automatically. If you accept error reporting, Sentry may also record a sample of sessions and the sessions in which an error occurs, with all text masked and no images, so that we can reproduce the problem."
         },
         "emailAttribution": {
             "title": "Emails, campaign links and QR codes",
             "body": "To know whether our emails are opened, Brevo, our email delivery provider, records when each message is opened and reports that open to us. We only count opens by type of email or campaign, in aggregate, with Umami, an analytics tool we host ourselves; that count does not include your email address. Brevo also measures clicks on newsletter emails. Links in our emails, links shared from the site, printed QR codes and the links to our presentations carry campaign parameters (UTM) that tell us which channel a visit came from; we analyse them with Umami as well. The privacy features of email apps make the open count approximate. There is no individual option to opt out of this count: if you block images in your email app, the open is not recorded."
         },
-        "dataSecurity": {
-            "title": "6. Data Security",
-            "body": "We implement technical and organizational security measures to protect your personal information against unauthorized access, loss, or destruction. However, no internet transmission system is completely secure.",
-            "content": "We implement appropriate technical and organizational security measures to protect your personal information against unauthorized access, alteration, disclosure, or destruction. However, no method of internet transmission is 100% secure."
-        },
-        "yourRights": {
-            "title": "7. Your Rights",
-            "body": "You have the right to access, rectify, delete, or object to the processing of your personal data. You may also request data portability or withdraw your consent at any time. To exercise these rights, contact us through the available channels.",
-            "intro": "You have the right to:",
-            "rights": {
-                "access": "Access your personal information",
-                "correct": "Correct inaccurate information",
-                "delete": "Request deletion of your data",
-                "object": "Object to the processing of your data",
-                "portability": "Data portability",
-                "withdraw": "Withdraw your consent at any time"
-            }
-        },
-        "dataRetention": {
-            "title": "8. Data Retention",
-            "content": "We retain your personal information for as long as necessary to fulfill the purposes described in this policy, unless the law requires or permits a longer retention period."
-        },
-        "internationalTransfers": {
-            "title": "9. International Transfers",
-            "content": "Your information may be transferred to and processed in countries other than your own. We ensure that such transfers comply with applicable data protection laws."
-        },
-        "minors": {
-            "title": "10. Minors",
-            "content": "Our services are not directed at individuals under 18 years of age. We do not knowingly collect personal information from minors without verifiable parental consent."
-        },
-        "policyChanges": {
-            "title": "11. Changes to This Policy",
-            "content": "We may update this privacy policy from time to time. We will notify you of any significant changes by posting the new policy on our website."
-        },
-        "contact": {
-            "title": "12. Contact",
-            "body": "If you have questions or concerns about our privacy policy or the handling of your personal data, you can contact us through the communication channels available on our platform. We will respond to your inquiries as soon as possible.",
-            "intro": "To exercise your rights or if you have questions about this policy, contact us:",
-            "details": {
-                "email": "Email:",
-                "emailValue": "privacy@hospeda.com.ar",
-                "address": "Address:",
-                "addressValue": "123 Main Street, City, Country 12345",
-                "phone": "Phone:",
-                "phoneValue": "+1 (234) 567-890"
-            }
+        "googleData": {
+            "title": "Your Google account data",
+            "body": "If you connect your Google account to sync your accommodation's availability, Hospeda reads, with read-only permission, the events in your Google Calendar to block the busy dates on the platform. It does not create, change or delete events in your calendar. Hospeda's use of information received from Google APIs adheres to the Google API Services User Data Policy, including its Limited Use requirements. We do not sell or transfer this data to third parties, we do not use it for advertising or to train artificial intelligence models, and we only use it to provide the calendar sync feature you requested. You can disconnect your Google account at any time from your dashboard. When you do, we stop syncing and ask Google to revoke the access you gave us. Dates that were already blocked stay in your Hospeda calendar until you release them."
         },
         "aiAssistants": {
             "title": "Connecting an AI assistant",
-            "body": "You can connect an AI assistant (for example ChatGPT, Claude or Gemini) to your account through Hospeda's MCP server. The connection is voluntary: you sign in with your Hospeda account (OAuth) and approve the access. The assistant can only access the data of your own account and perform the actions your permissions allow: your listings, guest inquiries and your replies, your listing statistics and your plan status. Replies to guests are sent only with your explicit confirmation of the literal text. The assistant's provider (OpenAI, Anthropic or Google) processes what the assistant reads under its own privacy policy and your account with that provider: Hospeda does not use its own artificial intelligence for this and only hands data to those providers as the result of a query or action your assistant makes. Hospeda keeps an audit record of every write made through the assistant (account, client, tool and time). The text of guest inquiries is written by third parties and is passed to the assistant as data. You can see and disconnect your connected assistants at any time from My account → AI assistants (/mi-cuenta/asistentes-ia/); once disconnected, the assistant loses access."
+            "body": "You can connect an AI assistant (for example ChatGPT, Claude or Gemini) to your account through Hospeda's MCP server. The connection is voluntary: you sign in with your Hospeda account (OAuth) and approve the access. The assistant can only access the data of your own account and perform the actions your permissions allow: your listings, guest inquiries and your replies, your listing statistics and your plan status. Replies to guests are sent only with your explicit confirmation of the literal text. The assistant's provider (OpenAI, Anthropic or Google) processes what the assistant reads under its own privacy policy and your account with that provider: in this connection Hospeda does not use its own artificial intelligence and only hands data to those providers as the result of a query or action your assistant makes. Hospeda keeps, for 12 months, an audit record of every write made through the assistant (account, client, tool and time). The text of guest inquiries is written by third parties and is passed to the assistant as data. You can see and disconnect your connected assistants at any time from My account → AI assistants (/mi-cuenta/asistentes-ia/); once disconnected, the assistant loses access."
+        },
+        "dataRetention": {
+            "title": "How long we keep your data",
+            "body": "We keep your account data while your account is active. Some data has its own retention period and is deleted automatically when it expires:",
+            "items": {
+                "aiChat": "Questions and answers of the listing AI assistant: 12 months.",
+                "mcpAudit": "Record of the actions taken through a connected AI assistant: 12 months.",
+                "recordings": "Umami session recordings and heatmaps: up to 60 days.",
+                "views": "Views of and interactions with listings: 120 days.",
+                "logs": "Technical logs of application errors and warnings: 30 days.",
+                "inquiries": "Inquiries sent without an account whose email was not verified: 7 days.",
+                "listings": "Archived listings: their content is deleted when the retention period ends, with prior notice by email.",
+                "billing": "Charge records and receipts: for as long as the applicable rules require."
+            }
+        },
+        "internationalTransfers": {
+            "title": "International transfers",
+            "body": "Some of our providers, such as Sentry, Cloudinary, Brevo, Cloudflare, the artificial intelligence providers, Google and Facebook, process data outside Argentina. When that happens, we adopt the safeguards required by the applicable rules."
+        },
+        "yourRights": {
+            "title": "Your rights",
+            "body": "You can request access to, correction of or deletion of your data through the contact form. When you ask us to close your account, we unlink it from your identifying data, end your sessions and delete your credentials. Before closing it you must cancel any active plans and take down your listings. We keep the data a law requires us to keep, such as charge records."
+        },
+        "dataSecurity": {
+            "title": "Security",
+            "body": "We apply technical and organisational security measures to protect your information against unauthorised access, loss or alteration."
+        },
+        "contact": {
+            "title": "Contact and changes to this policy",
+            "body": "For questions about this privacy policy, you can write to us at info@hospeda.com.ar or use our contact form. If we change this policy, we publish the new version on this page with its update date."
         }
-    },
-    "page": {
-        "title": "Privacy Policy",
-        "description": "Privacy policy and data protection for Hospeda",
-        "contactLink": "Go to the contact page",
-        "lastUpdated": "Last updated"
     }
 }
