@@ -10,8 +10,14 @@
  *
  * HOS-723 added a second way out — an add-on offer that led the toast when
  * one was on sale for the limit hit. That offer pointed at the old add-on
- * purchase page and was removed with it (HOS-1637, AC:B13a:20), so the toast
- * carries the plan action only.
+ * purchase page and was removed with it (HOS-1637, AC:B13a:20), so this
+ * synchronous builder carries the plan action only.
+ *
+ * HOS-2677 brought the add-on offer back against the new store: the builders
+ * here stay plan-only and synchronous, and `withLimitAddonOffer`
+ * (`@/lib/billing/limit-addon-offer`) reads the catalog and, when it sells an
+ * add-on for the limit hit, puts that add-on in `action` and the plan change in
+ * `secondaryAction`.
  */
 
 import type { SupportedLocale } from '@/lib/i18n';
@@ -45,13 +51,17 @@ export interface LimitReachedToastAction {
 }
 
 /**
- * Resolved toast payload. `action` maps 1:1 onto `addToast`'s `action`: the
- * plan upgrade, so a limit toast is never a dead end.
+ * Resolved toast payload. `action` and `secondaryAction` map 1:1 onto
+ * `addToast`'s fields of the same name. From the builders here `action` is the
+ * plan upgrade, so a limit toast is never a dead end; once an add-on is on
+ * offer (HOS-2677) it leads in `action` and the plan upgrade follows in
+ * `secondaryAction`.
  */
 export interface LimitReachedToastPayload {
     readonly title: string;
     readonly message: string;
     readonly action: LimitReachedToastAction;
+    readonly secondaryAction?: LimitReachedToastAction;
 }
 
 /**

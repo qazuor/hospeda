@@ -47,6 +47,7 @@ import { WebEvents } from '@/lib/analytics/events';
 import { trackEvent } from '@/lib/analytics/umami-client';
 import { destinationsApi } from '@/lib/api/endpoints';
 import { translateApiError } from '@/lib/api-errors';
+import { withLimitAddonOffer } from '@/lib/billing/limit-addon-offer';
 import { buildLimitReachedPayloadFromDetails } from '@/lib/billing-limit-error';
 import { formatPrice } from '@/lib/format-utils';
 import { useZodForm } from '@/lib/forms/use-zod-form';
@@ -737,14 +738,21 @@ export function CreatePropertyMiniForm({ locale, apiUrl, trialDays }: CreateProp
                 // 403 LIMIT_REACHED: host has hit their accommodation publish limit.
                 // Show a localized toast with an upgrade CTA instead of an inline form error.
                 if (response.status === 403 && parsedErrorBody?.error?.code === 'LIMIT_REACHED') {
-                    const limitPayload = buildLimitReachedPayloadFromDetails({
-                        details: parsedErrorBody.error?.details,
+                    const limitDetails = parsedErrorBody.error?.details;
+                    // HOS-2677: the add-on leads when the catalog sells one for this cap.
+                    const limitPayload = await withLimitAddonOffer({
+                        payload: buildLimitReachedPayloadFromDetails({
+                            details: limitDetails,
+                            locale
+                        }),
+                        details: limitDetails,
                         locale
                     });
                     addToast({
                         type: 'error',
                         message: limitPayload.message,
-                        action: limitPayload.action
+                        action: limitPayload.action,
+                        secondaryAction: limitPayload.secondaryAction
                     });
                     return;
                 }

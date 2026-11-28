@@ -14,6 +14,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { reportEditorAutoSave } from '@/components/account/editor-shell/editor-auto-save-signal';
 import type { AccommodationMediaItem, ApiError } from '@/lib/api/types';
+import { withLimitAddonOffer } from '@/lib/billing/limit-addon-offer';
 import { createTranslations } from '@/lib/i18n';
 import { webLogger } from '@/lib/logger';
 import { compressImageForUpload, isCompressionUnavailable } from '@/lib/media/compress-image';
@@ -130,10 +131,20 @@ export function usePhotoSection({
         (error: ApiError) => {
             const { message, limit } = describeAddMediaError({ error, locale, t });
             setError(message);
-            addToast(
-                limit
-                    ? { type: 'error', message, action: limit.action }
-                    : { type: 'error', message }
+            if (!limit) {
+                addToast({ type: 'error', message });
+                return;
+            }
+            // HOS-2677: the add-on leads when the catalog sells one for the cap hit; the
+            // plan-only toast is what `withLimitAddonOffer` falls back to on any failure.
+            void withLimitAddonOffer({ payload: limit, details: error.details, locale }).then(
+                (led) =>
+                    addToast({
+                        type: 'error',
+                        message,
+                        action: led.action,
+                        secondaryAction: led.secondaryAction
+                    })
             );
         },
         [locale, t]

@@ -28,10 +28,17 @@ import { ToastViewport } from '@/components/ui/ToastViewport.client';
 import { createTranslations } from '@/lib/i18n';
 import { clearToasts } from '@/store/toast-store';
 
-const { mockListMedia, mockAddMedia, mockUploadEntityImage } = vi.hoisted(() => ({
+const { mockListMedia, mockAddMedia, mockUploadEntityImage, mockOffers } = vi.hoisted(() => ({
     mockListMedia: vi.fn(),
     mockAddMedia: vi.fn(),
-    mockUploadEntityImage: vi.fn()
+    mockUploadEntityImage: vi.fn(),
+    mockOffers: vi.fn()
+}));
+
+// HOS-2677: the add-on catalog read. Default: nothing on sale (a failed read), so the
+// pre-existing assertions keep describing the plan-only toast.
+vi.mock('@/lib/api/endpoints-protected-addons', () => ({
+    billingAddonApi: { offers: mockOffers }
 }));
 
 vi.mock('@/lib/api/endpoints-protected', () => ({
@@ -125,6 +132,10 @@ describe('HOS-724 — photo upload refused by the plan cap', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         clearToasts();
+        mockOffers.mockResolvedValue({
+            ok: false,
+            error: { status: 500, code: 'X', message: 'x' }
+        });
         mockListMedia.mockReturnValue(Promise.resolve({ ok: true, data: { media: [] } }));
         mockUploadEntityImage.mockReturnValue(
             Promise.resolve({
@@ -188,10 +199,12 @@ describe('HOS-724 — photo upload refused by the plan cap', () => {
         expect(source).toContain('error.status === 403');
     });
 
-    it('offers the plan upgrade as the only action, and no link to the removed add-on page (HOS-1637)', async () => {
+    it('offers the plan upgrade as the only action when no add-on is on sale, and no link to the removed add-on page (HOS-1637)', async () => {
         // HOS-724 put an add-on offer (`/mi-cuenta/addons/?focus=…`) in the
         // primary slot. That page was removed with the old billing (HOS-1637,
-        // AC:B13a:20), so the plan upgrade is the toast's single action.
+        // AC:B13a:20). HOS-2677 brings the offer back against the new store,
+        // but only when the catalog sells one: with none, the plan upgrade is
+        // the toast's single action, as here.
         mockAddMedia.mockReturnValue(makeLimitReached());
         await uploadOneGalleryPhoto();
 
@@ -202,6 +215,50 @@ describe('HOS-724 — photo upload refused by the plan cap', () => {
         expect(planLink).toHaveAttribute('href', PLAN_HREF);
         expect(planLink.className).toContain('actionPrimary');
         expect(document.body.innerHTML).not.toContain('mi-cuenta/addons');
+    });
+
+    it('leads with the catalog add-on and puts the plan change second (HOS-2677)', async () => {
+        mockOffers.mockResolvedValue({
+            ok: true,
+            data: {
+                items: [
+                    {
+                        productId: '11111111-1111-4111-8111-111111111111',
+                        addonVersionId: '22222222-2222-4222-8222-222222222222',
+                        slug: 'photo-pack',
+                        name: 'Pack de fotos',
+                        description: null,
+                        chargeKind: 'PERIODICO',
+                        cycle: 'monthly',
+                        price: 150000,
+                        currency: 'ARS',
+                        compatibleVerticals: ['accommodation'],
+                        grantedKeys: ['max_photos_per_accommodation'],
+                        scopeType: 'LISTING',
+                        validity: 'WHILE_SUBSCRIPTION_ALIVE',
+                        validityDays: null,
+                        freeUnderGrantVerticals: []
+                    }
+                ]
+            }
+        });
+        mockAddMedia.mockReturnValue(makeLimitReached());
+        await uploadOneGalleryPhoto();
+
+        const planLabel = createTranslations('es').t(
+            'billing.limit.max_photos_per_accommodation.cta'
+        );
+        const planLink = await screen.findByRole('link', { name: planLabel });
+        expect(planLink).toHaveAttribute('href', PLAN_HREF);
+        expect(planLink.className).toContain('actionSecondary');
+
+        const addonLink = await screen.findByRole('link', { name: /Ampliar con .*\(/ });
+        expect(addonLink).toHaveAttribute('href', `${PLAN_HREF}#addons-accommodation`);
+        expect(addonLink.className).toContain('actionPrimary');
+        // Add-on before plan, in DOM order.
+        expect(
+            addonLink.compareDocumentPosition(planLink) & Node.DOCUMENT_POSITION_FOLLOWING
+        ).toBeTruthy();
     });
 
     it('does not add the photo to the gallery', async () => {

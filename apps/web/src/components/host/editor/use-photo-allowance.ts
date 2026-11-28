@@ -13,6 +13,7 @@ import type { ListingPhotoAllowance } from '@repo/schemas';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ListingPhotoApi } from '@/lib/api/listing-photo-api';
 import type { AccommodationMediaItem } from '@/lib/api/types';
+import { withLimitAddonOffer } from '@/lib/billing/limit-addon-offer';
 import type { LimitReachedToastPayload } from '@/lib/billing-limit-error';
 import type { SupportedLocale } from '@/lib/i18n';
 import { webLogger } from '@/lib/logger';
@@ -99,13 +100,54 @@ export function usePhotoAllowance({
     );
 
     // HOS-1024: see `buildCapUpsell` for why this reuses the limit-toast copy.
-    const capUpsell = buildCapUpsell({
+    const planCapUpsell = buildCapUpsell({
         isGalleryFull,
         limitKey: allowance?.limitKey ?? '',
         count: galleryItems.length,
         cap: galleryCap,
         locale
     });
+
+    // HOS-2677: when the catalog sells an add-on for this photo cap, it leads the upsell and
+    // the plan change follows. Keyed by the limit key it was read for, so a stale answer from
+    // another vertical or locale is never shown.
+    const [addonUpsell, setAddonUpsell] = useState<{
+        readonly key: string;
+        readonly payload: LimitReachedToastPayload;
+    } | null>(null);
+    const limitKey = allowance?.limitKey ?? '';
+    const upsellKey = `${limitKey}|${locale}`;
+    const hasPlanUpsell = planCapUpsell !== null;
+    useEffect(() => {
+        if (!hasPlanUpsell || limitKey === '') return;
+        let alive = true;
+        const plan = buildCapUpsell({
+            isGalleryFull: true,
+            limitKey,
+            count: 0,
+            cap: 0,
+            locale
+        });
+        if (!plan) return;
+        void withLimitAddonOffer({ payload: plan, details: { limitKey }, locale }).then(
+            (payload) => {
+                if (alive && payload.secondaryAction) {
+                    setAddonUpsell({ key: upsellKey, payload });
+                }
+            }
+        );
+        return () => {
+            alive = false;
+        };
+    }, [hasPlanUpsell, limitKey, locale, upsellKey]);
+    const capUpsell =
+        planCapUpsell && addonUpsell?.key === upsellKey
+            ? {
+                  ...planCapUpsell,
+                  action: addonUpsell.payload.action,
+                  secondaryAction: addonUpsell.payload.secondaryAction
+              }
+            : planCapUpsell;
 
     return {
         allowance,
