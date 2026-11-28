@@ -14,7 +14,9 @@
         "source": "Source",
         "isActive": "Status",
         "createdAt": "Created",
-        "actions": "Actions"
+        "actions": "Actions",
+        "utm": "UTM on scan",
+        "tags": "Tags"
     },
     "form": {
         "labelLabel": "Name",
@@ -90,5 +92,87 @@
         "requiredTargetUrl": "The destination URL is missing: without it the code leads nowhere.",
         "invalid": "Check the marked fields: something here the server will not accept.",
         "fieldInvalid": "Check this field."
+    },
+    "urls": {
+        "scanLabel": "Scan:",
+        "copyTarget": "Copy destination URL",
+        "copyScan": "Copy scan URL",
+        "copied": "URL copied",
+        "copyFailed": "Could not copy. Select the text and copy it by hand."
+    },
+    "utm": {
+        "none": "No UTM",
+        "edit": "Edit UTM",
+        "editHelp": "Only these parameters are rewritten: the rest of the URL stays as it is. Leave a field empty to remove it.",
+        "save": "Save UTM",
+        "saved": "UTM updated",
+        "saveError": "Could not save the UTM",
+        "generatedHint": "Computed from the listing: not editable here."
+    },
+    "filters": {
+        "all": "All",
+        "source": "Source",
+        "entityType": "Listing type",
+        "purpose": "Purpose",
+        "isActive": "Status",
+        "campaign": "Campaign (utm_campaign)",
+        "tags": "Tags",
+        "reset": "Clear filters",
+        "entityTypes": {
+            "ACCOMMODATION": "Accommodation",
+            "VENUE": "Food and nightlife",
+            "EXPERIENCE": "Experience",
+            "HOST_TRADE": "Business"
+        },
+        "purposes": {
+            "HOST_TRADE_USAGE": "Usage registration",
+            "LISTING": "Public listing",
+            "MENU": "Menu",
+            "CERTIFICATE": "Certificate",
+            "BROCHURE": "Brochure"
+        }
+    },
+    "tags": {
+        "pickerTrigger": "Tags",
+        "editTrigger": "Tag",
+        "emptyCatalog": "No tags yet. Create the first one from “Manage tags”.",
+        "save": "Save tags",
+        "saved": "Tags updated",
+        "saveError": "Could not save the tags",
+        "formLabel": "Tags",
+        "formHelp": "Used to sort and filter the list. They do not change where the code leads.",
+        "manage": "Manage tags",
+        "manageTitle": "QR code tags",
+        "manageHelp": "Renaming a tag changes it on every code that carries it. Deleting it does not touch the codes.",
+        "nameLabel": "Tag name",
+        "colorLabel": "Colour",
+        "noColor": "No colour",
+        "newPlaceholder": "New tag",
+        "add": "Add",
+        "created": "Tag created",
+        "createError": "Could not create the tag. Does one with that name already exist?",
+        "updated": "Tag updated",
+        "updateError": "Could not update the tag. Does one with that name already exist?",
+        "delete": "Delete tag",
+        "deleteTitle": "Delete the tag?",
+        "deleteConfirm": "“{{name}}” stops showing on every code that carries it. The codes are not touched.",
+        "deleted": "Tag deleted",
+        "deleteError": "Could not delete the tag",
+        "colors": {
+            "RED": "Red",
+            "BLUE": "Blue",
+            "GREEN": "Green",
+            "YELLOW": "Yellow",
+            "ORANGE": "Orange",
+            "PURPLE": "Purple",
+            "PINK": "Pink",
+            "BROWN": "Brown",
+            "GREY": "Grey",
+            "WHITE": "White",
+            "CYAN": "Cyan",
+            "MAGENTA": "Magenta",
+            "LIGHT_BLUE": "Light blue",
+            "LIGHT_GREEN": "Light green"
+        }
     }
 }

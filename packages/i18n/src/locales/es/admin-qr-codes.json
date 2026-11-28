@@ -14,7 +14,9 @@
         "source": "Origen",
         "isActive": "Estado",
         "createdAt": "Creado",
-        "actions": "Acciones"
+        "actions": "Acciones",
+        "utm": "UTM al escanear",
+        "tags": "Etiquetas"
     },
     "form": {
         "labelLabel": "Nombre",
@@ -90,5 +92,87 @@
         "requiredTargetUrl": "Falta la URL de destino: sin ella el código no lleva a ninguna parte.",
         "invalid": "Revisá los campos marcados: hay algo que el servidor no va a aceptar.",
         "fieldInvalid": "Revisá este campo."
+    },
+    "urls": {
+        "scanLabel": "Escaneo:",
+        "copyTarget": "Copiar URL de destino",
+        "copyScan": "Copiar URL de escaneo",
+        "copied": "URL copiada",
+        "copyFailed": "No se pudo copiar. Seleccioná el texto y copialo a mano."
+    },
+    "utm": {
+        "none": "Sin UTM",
+        "edit": "Editar UTM",
+        "editHelp": "Solo se reescriben estos parámetros: el resto de la URL queda como está. Dejá un campo vacío para sacarlo.",
+        "save": "Guardar UTM",
+        "saved": "UTM actualizados",
+        "saveError": "No se pudieron guardar los UTM",
+        "generatedHint": "Se calculan solos a partir de la ficha: no se editan acá."
+    },
+    "filters": {
+        "all": "Todos",
+        "source": "Origen",
+        "entityType": "Tipo de ficha",
+        "purpose": "Uso",
+        "isActive": "Estado",
+        "campaign": "Campaña (utm_campaign)",
+        "tags": "Etiquetas",
+        "reset": "Limpiar filtros",
+        "entityTypes": {
+            "ACCOMMODATION": "Alojamiento",
+            "VENUE": "Comer y salir",
+            "EXPERIENCE": "Experiencia",
+            "HOST_TRADE": "Comercio"
+        },
+        "purposes": {
+            "HOST_TRADE_USAGE": "Registro de uso",
+            "LISTING": "Ficha pública",
+            "MENU": "Menú",
+            "CERTIFICATE": "Certificado",
+            "BROCHURE": "Folleto"
+        }
+    },
+    "tags": {
+        "pickerTrigger": "Etiquetas",
+        "editTrigger": "Etiquetar",
+        "emptyCatalog": "Todavía no hay etiquetas. Creá la primera desde «Gestionar etiquetas».",
+        "save": "Guardar etiquetas",
+        "saved": "Etiquetas actualizadas",
+        "saveError": "No se pudieron guardar las etiquetas",
+        "formLabel": "Etiquetas",
+        "formHelp": "Sirven para ordenar y filtrar el listado. No cambian a dónde lleva el código.",
+        "manage": "Gestionar etiquetas",
+        "manageTitle": "Etiquetas de códigos QR",
+        "manageHelp": "Renombrá una etiqueta y cambia en todos los códigos que la tienen. Borrarla no toca los códigos.",
+        "nameLabel": "Nombre de la etiqueta",
+        "colorLabel": "Color",
+        "noColor": "Sin color",
+        "newPlaceholder": "Nueva etiqueta",
+        "add": "Agregar",
+        "created": "Etiqueta creada",
+        "createError": "No se pudo crear la etiqueta. ¿Ya existe una con ese nombre?",
+        "updated": "Etiqueta actualizada",
+        "updateError": "No se pudo actualizar la etiqueta. ¿Ya existe una con ese nombre?",
+        "delete": "Eliminar etiqueta",
+        "deleteTitle": "¿Eliminar la etiqueta?",
+        "deleteConfirm": "«{{name}}» deja de aparecer en todos los códigos que la tienen. Los códigos no se tocan.",
+        "deleted": "Etiqueta eliminada",
+        "deleteError": "No se pudo eliminar la etiqueta",
+        "colors": {
+            "RED": "Rojo",
+            "BLUE": "Azul",
+            "GREEN": "Verde",
+            "YELLOW": "Amarillo",
+            "ORANGE": "Naranja",
+            "PURPLE": "Violeta",
+            "PINK": "Rosa",
+            "BROWN": "Marrón",
+            "GREY": "Gris",
+            "WHITE": "Blanco",
+            "CYAN": "Cian",
+            "MAGENTA": "Magenta",
+            "LIGHT_BLUE": "Celeste",
+            "LIGHT_GREEN": "Verde claro"
+        }
     }
 }
