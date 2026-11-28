@@ -28,10 +28,17 @@ export const AddonPurchaseResponseSchema = z.strictObject({
     checkoutUrl: z.url().optional()
 });
 
-/** Owner-only read of an addon purchase. */
+/**
+ * Owner-only read of an addon purchase. `productId`, `targetId` and `addonVersionId` are the
+ * purchase identity (HOS-2680): the return screen re-sends them with a fresh order id to reopen
+ * the same checkout, or to start a new purchase of the same add-on once this one closed.
+ */
 export const AddonPurchaseReadResponseSchema = z.strictObject({
     instanceId: z.uuid(),
     status: z.enum(['PENDING_AUTHORIZATION', 'ACTIVE', 'ABANDONED', 'EXPIRED', 'CANCELLED']),
     chargeKind: z.enum(['UNA_VEZ', 'PERIODICO']),
-    processing: z.boolean()
+    processing: z.boolean(),
+    productId: z.uuid(),
+    targetId: z.uuid().nullable(),
+    addonVersionId: z.uuid()
 });

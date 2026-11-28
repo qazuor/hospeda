@@ -38,7 +38,11 @@ describe('HOS-2179 §5.3 path 2: the return re-read confirms a page purchase by 
                 instanceId: instance.id,
                 status: 'PENDING_AUTHORIZATION',
                 chargeKind: 'UNA_VEZ',
-                processing: true
+                processing: true,
+                // HOS-2680: the purchase identity, so the screen can ask for it again.
+                productId: s.request.productId,
+                targetId: s.request.targetId,
+                addonVersionId: s.request.expectedAddonVersionId
             });
             expect(search).toHaveBeenCalledTimes(1);
             expect(search.mock.calls[0]?.[0]).toMatchObject({

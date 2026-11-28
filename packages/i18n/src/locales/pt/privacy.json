@@ -1,125 +1,102 @@
 {
-    "title": "Politica de Privacidade",
-    "description": "Saiba como coletamos, usamos e protegemos suas informacoes pessoais na Hospeda.",
-    "heading": "Politica de Privacidade",
-    "lastUpdated": "Ultima atualizacao: 1 de janeiro de 2024",
+    "title": "Política de Privacidade",
+    "description": "Saiba quais dados pessoais a Hospeda trata, para que os usa, com quem os compartilha e como você pode exercer seus direitos.",
+    "links": {
+        "cookiePolicy": "Ver a Política de Cookies",
+        "contact": "Ir para a página de contato"
+    },
     "sections": {
-        "informationCollection": {
-            "title": "1. Informacoes que Coletamos",
-            "body": "Coletamos informacoes pessoais que voce nos fornece diretamente, como nome, email, telefone e endereco. Tambem coletamos dados de uso automaticamente quando voce navega em nossa plataforma, incluindo endereco IP, tipo de navegador e paginas visitadas.",
-            "intro": "Coletamos informacoes que voce nos fornece diretamente, como:",
+        "controller": {
+            "title": "Quem é responsável pelos seus dados",
+            "body": "O responsável pelos dados pessoais descritos nesta política é [COMPLETAR: razón social], CUIT [COMPLETAR: CUIT], com sede em [COMPLETAR: domicilio legal] (doravante, «Hospeda»). Esta política explica quais dados tratamos quando você usa o site e os serviços da Hospeda, para que os usamos, com quem os compartilhamos, por quanto tempo os guardamos e como você pode exercer seus direitos."
+        },
+        "dataCollected": {
+            "title": "Quais dados tratamos",
+            "body": "Tratamos os dados que você nos fornece ao se cadastrar, preencher formulários ou usar o serviço, e alguns dados técnicos gerados durante a navegação. Dependendo de como você usa a Hospeda, podem ser:",
             "items": {
-                "registration": "Informacoes de cadastro (nome, email, telefone)",
-                "profile": "Informacoes de perfil e preferencias",
-                "payment": "Informacoes de pagamento e faturamento",
-                "support": "Comunicacoes com nosso suporte",
-                "reviews": "Avaliacoes e comentarios"
+                "account": "Os dados da sua conta, como seu nome, seu e-mail e seu telefone.",
+                "socialLogin": "Se você entrar com Google ou Facebook, o nome, o e-mail e, se houver, a foto de perfil que esse provedor nos entrega. Se você já tinha uma conta com o mesmo e-mail, nós as vinculamos.",
+                "content": "O conteúdo que você publica: anúncios (textos, fotos e localização) e avaliações.",
+                "messages": "As consultas e as mensagens que você troca com os prestadores. Se você enviar uma consulta sem conta, pedimos que confirme seu e-mail.",
+                "feedback": "Os relatos de problemas que você nos envia, com o nome e o e-mail que você incluir.",
+                "ai": "As perguntas que você faz ao assistente de IA e os textos que você processa com as ferramentas de IA.",
+                "activity": "Seu histórico de buscas, seus favoritos e coleções, seus alertas de preço e sua inscrição na newsletter.",
+                "billing": "Se você contratar um plano ou um serviço adicional, os dados das suas cobranças: valor, data, status e o nome e o e-mail que constam no comprovante. Os dados do seu cartão você informa diretamente no Mercado Pago: a Hospeda não os recebe nem os guarda.",
+                "technical": "Dados técnicos de uso: endereço IP, navegador e dispositivo, páginas visitadas, visualizações e interações com os anúncios e um identificador técnico da sessão do navegador."
             }
         },
-        "automaticCollection": {
-            "title": "2. Informacoes Coletadas Automaticamente",
-            "intro": "Tambem coletamos informacoes automaticamente quando voce usa nosso servico:",
+        "dataUse": {
+            "title": "Para que usamos seus dados",
+            "body": "Usamos seus dados para prestar o serviço e administrar sua conta; publicar e exibir seus anúncios; fazer suas consultas e mensagens chegarem ao prestador; gerenciar os planos que você contratar e suas cobranças; responder às perguntas que você faz ao assistente de IA; enviar comunicações sobre sua conta e, se você se inscreveu, a newsletter; medir o uso do site; e prevenir fraudes e abusos. A Hospeda não processa reservas nem seus pagamentos: eles são combinados diretamente entre o viajante e o prestador. Revisamos automaticamente as avaliações, as respostas e as mensagens para detectar conteúdo proibido, e essa revisão pode ser feita com provedores externos."
+        },
+        "dataSharing": {
+            "title": "Com quem compartilhamos seus dados",
+            "body": "Não vendemos nem alugamos seus dados pessoais. Só os compartilhamos nestes casos:",
             "items": {
-                "device": "Informacoes do dispositivo e navegador",
-                "ip": "Endereco IP e localizacao geografica",
-                "navigation": "Paginas visitadas e tempo de navegacao",
-                "cookies": "Cookies e tecnologias similares"
+                "providers": "Com o prestador a quem você envia uma consulta ou uma mensagem.",
+                "public": "Publicamente, quando você publica uma avaliação ou um anúncio.",
+                "processors": "Com os provedores que nos ajudam a operar o serviço e tratam os dados em nosso nome: Mercado Pago (cobranças), Brevo (envio de e-mails), Cloudinary (imagens), Cloudflare (rede de entrega, segurança, verificação antibots e métricas de desempenho), Sentry (registro de erros), provedores de inteligência artificial, Google e Facebook (se você entrar com eles), Google Calendar (se você o conectar), Linear (relatos de problemas que você nos envia) e OpenStreetMap (mapas).",
+                "serverErrors": "Nossos servidores registram no Sentry os erros técnicos, associados ao identificador interno e à função da conta afetada. Do seu e-mail, só o domínio é enviado.",
+                "legal": "Quando uma norma ou uma autoridade competente o exigir."
             }
         },
-        "informationUse": {
-            "title": "3. Como Usamos Suas Informacoes",
-            "body": "Utilizamos suas informacoes para fornecer e melhorar nossos servicos, processar transacoes, enviar notificacoes importantes e personalizar sua experiencia. Tambem podemos usar seus dados para fins de analise, marketing e seguranca.",
-            "intro": "Utilizamos as informacoes coletadas para:",
-            "purposes": {
-                "services": "Fornecer e melhorar nossos servicos",
-                "bookings": "Processar reservas e pagamentos",
-                "communication": "Comunicar com voce sobre sua conta",
-                "personalization": "Personalizar sua experiencia",
-                "marketing": "Enviar atualizacoes e promocoes (com seu consentimento)",
-                "security": "Prevenir fraudes e garantir a seguranca"
-            }
+        "hospedaAi": {
+            "title": "Assistente de IA da Hospeda",
+            "body": "Algumas funções da Hospeda usam inteligência artificial: o assistente de cada anúncio, a busca conversacional e as ferramentas para redigir, melhorar, traduzir ou importar conteúdo. O que você escreve nessas funções é enviado a provedores externos de inteligência artificial para gerar a resposta. Guardamos as perguntas e respostas do assistente dos anúncios por 12 meses. O prestador do anúncio pode ler essas perguntas sem dados que identifiquem você. Não compartilhe dados pessoais no chat."
         },
-        "informationSharing": {
-            "title": "4. Compartilhamento de Informacoes",
-            "body": "Nao vendemos suas informacoes pessoais. Compartilhamos dados com prestadores de servicos que nos ajudam a operar a plataforma, sempre sob rigorosos acordos de confidencialidade. Tambem podemos compartilhar informacoes quando exigido por lei.",
-            "intro": "Podemos compartilhar suas informacoes nas seguintes circunstancias:",
-            "circumstances": {
-                "hosts": "Com anfitrioes para facilitar reservas",
-                "providers": "Com prestadores de servicos de confianca",
-                "legal": "Para cumprimento de obrigacoes legais",
-                "consent": "Com seu consentimento explicito",
-                "business": "Em caso de fusao ou aquisicao empresarial"
-            }
+        "usageMeasurement": {
+            "title": "Medição de uso",
+            "body": "A partir do seu navegador e sem o seu consentimento, só medimos o desempenho das páginas com o Cloudflare Web Analytics, de forma agregada e sem cookies. Se você aceitar a análise, também usamos o Umami, uma ferramenta de análise que hospedamos nós mesmos, para contar visualizações de página e eventos. Se você estiver logado, essa medição pode ficar associada ao identificador interno da sua conta, nunca ao seu e-mail. Além disso, nossos servidores registram no Umami algumas ações, como criar uma conta, enviar uma consulta, publicar um anúncio ou contratar um plano, associadas ao identificador interno da sua conta quando você tem uma. Esses registros não dependem da sua decisão sobre cookies."
         },
-        "cookiesTracking": {
-            "title": "5. Cookies e Tecnologias de Rastreamento",
-            "body": "Utilizamos cookies e tecnologias similares para melhorar a funcionalidade do nosso site, analisar o trafego e personalizar conteudo. Voce pode configurar seu navegador para rejeitar cookies, embora isso possa afetar algumas funcionalidades da plataforma.",
-            "content": "Utilizamos cookies e tecnologias similares para melhorar sua experiencia, lembrar suas preferencias e analisar o uso do nosso site. Voce pode controlar os cookies por meio das configuracoes do seu navegador."
+        "cookies": {
+            "title": "Cookies e tecnologias semelhantes",
+            "body": "Usamos cookies e tecnologias semelhantes para manter sua sessão, lembrar sua decisão sobre cookies e, se você aceitar, reportar erros e medir o uso do site. Você pode mudar sua decisão a qualquer momento em «Preferências de cookies», no rodapé de cada página, e ver os detalhes na Política de Cookies."
         },
         "sessionRecording": {
             "title": "Gravações de sessão e mapas de calor",
-            "body": "Se você aceitar os cookies de análise, a Hospeda pode gravar sessões de navegação e mapas de calor de cliques e rolagem com o Umami, uma ferramenta de análise que hospedamos por conta própria. As gravações são pseudônimas: se você estiver logado, elas podem ficar associadas ao identificador da sua conta. A gravação só acontece se você aceitou os cookies de análise e apenas enquanto este recurso estiver ativado. Todo o texto e todos os campos de formulário são mascarados, portanto o que você digita não é registrado. Apenas uma amostra das sessões é gravada, não todas. As gravações são mantidas por um período limitado de até 60 dias e depois são excluídas automaticamente."
+            "body": "Se você aceitar os cookies de análise, a Hospeda pode gravar sessões de navegação e mapas de calor de cliques e rolagem com o Umami, uma ferramenta de análise que hospedamos por conta própria. As gravações são pseudônimas: se você estiver logado, elas podem ficar associadas ao identificador da sua conta. A gravação só acontece se você aceitou os cookies de análise e apenas enquanto este recurso estiver ativado. Todo o texto e todos os campos de formulário são mascarados, portanto o que você digita não é registrado. Apenas uma amostra das sessões é gravada, não todas. As gravações são mantidas por um período limitado de até 60 dias e depois são excluídas automaticamente. Se você aceitar o relatório de erros, o Sentry também pode gravar uma amostra das sessões e as sessões em que ocorre um erro, com todo o texto mascarado e sem imagens, para que possamos reproduzir o problema."
         },
         "emailAttribution": {
             "title": "E-mails, links de campanha e códigos QR",
             "body": "Para saber se os nossos e-mails são abertos, a Brevo, nosso provedor de envio de e-mails, registra quando cada mensagem é aberta e nos informa dessa abertura. Nós só contamos as aberturas por tipo de e-mail ou campanha, de forma agregada, com o Umami, uma ferramenta de análise que hospedamos nós mesmos; essa contagem não inclui o seu endereço de e-mail. A Brevo também mede os cliques dos e-mails da newsletter. Os links dos nossos e-mails, os links compartilhados a partir do site, os códigos QR impressos e os links das nossas apresentações levam parâmetros de campanha (UTM) que nos dizem por qual canal chegou uma visita; também os analisamos com o Umami. Os recursos de privacidade dos aplicativos de e-mail tornam a contagem de aberturas aproximada. Não há uma opção individual para excluir você dessa contagem: se você bloquear o carregamento de imagens no seu aplicativo de e-mail, a abertura não é registrada."
         },
-        "dataSecurity": {
-            "title": "6. Seguranca dos Dados",
-            "body": "Implementamos medidas de seguranca tecnicas e organizacionais para proteger suas informacoes pessoais contra acesso nao autorizado, perda ou destruicao. No entanto, nenhum sistema de transmissao pela internet e completamente seguro.",
-            "content": "Implementamos medidas de seguranca tecnicas e organizacionais adequadas para proteger suas informacoes pessoais contra acesso nao autorizado, alteracao, divulgacao ou destruicao. No entanto, nenhum metodo de transmissao pela internet e 100% seguro."
-        },
-        "yourRights": {
-            "title": "7. Seus Direitos",
-            "body": "Voce tem direito de acessar, retificar, excluir ou se opor ao tratamento dos seus dados pessoais. Tambem pode solicitar a portabilidade dos seus dados ou revogar seu consentimento a qualquer momento. Para exercer esses direitos, entre em contato conosco pelos canais disponiveis.",
-            "intro": "Voce tem direito a:",
-            "rights": {
-                "access": "Acessar suas informacoes pessoais",
-                "correct": "Corrigir informacoes imprecisas",
-                "delete": "Solicitar a exclusao dos seus dados",
-                "object": "Se opor ao tratamento dos seus dados",
-                "portability": "Portabilidade de dados",
-                "withdraw": "Revogar seu consentimento a qualquer momento"
-            }
-        },
-        "dataRetention": {
-            "title": "8. Retencao de Dados",
-            "content": "Mantemos suas informacoes pessoais pelo tempo necessario para cumprir os propositos descritos nesta politica, salvo quando a lei exigir ou permitir um periodo de retencao maior."
-        },
-        "internationalTransfers": {
-            "title": "9. Transferencias Internacionais",
-            "content": "Suas informacoes podem ser transferidas e processadas em paises diferentes do seu. Garantimos que essas transferencias estejam em conformidade com as leis de protecao de dados aplicaveis."
-        },
-        "minors": {
-            "title": "10. Menores de Idade",
-            "content": "Nossos servicos nao sao destinados a menores de 18 anos. Nao coletamos intencionalmente informacoes pessoais de menores sem o consentimento verificavel dos responsaveis."
-        },
-        "policyChanges": {
-            "title": "11. Alteracoes nesta Politica",
-            "content": "Podemos atualizar esta politica de privacidade ocasionalmente. Vamos te notificar sobre mudancas significativas publicando a nova politica no nosso site."
-        },
-        "contact": {
-            "title": "12. Contato",
-            "body": "Se tiver duvidas ou preocupacoes sobre nossa politica de privacidade ou o tratamento dos seus dados pessoais, pode entrar em contato conosco pelos canais de comunicacao disponiveis na nossa plataforma. Responderemos suas consultas o mais breve possivel.",
-            "intro": "Para exercer seus direitos ou se tiver duvidas sobre esta politica, entre em contato conosco:",
-            "details": {
-                "email": "Email:",
-                "emailValue": "privacidade@hospeda.com.ar",
-                "address": "Endereco:",
-                "addressValue": "Rua Principal 123, Cidade, Pais 12345",
-                "phone": "Telefone:",
-                "phoneValue": "+1 (234) 567-890"
-            }
+        "googleData": {
+            "title": "Dados da sua conta do Google",
+            "body": "Se você conectar sua conta do Google para sincronizar a disponibilidade da sua hospedagem, a Hospeda lê, com permissão somente de leitura, os eventos do seu Google Calendar para bloquear na plataforma as datas ocupadas. Ela não cria, altera nem exclui eventos no seu calendário. O uso que a Hospeda faz das informações recebidas das APIs do Google segue a Política de Dados do Usuário dos Serviços de API do Google (Google API Services User Data Policy), incluídos seus requisitos de Uso Limitado (Limited Use). Não vendemos nem transferimos esses dados a terceiros, não os usamos para fins publicitários nem para treinar modelos de inteligência artificial, e só os utilizamos para oferecer a função de sincronização de calendário que você solicitou. Você pode desconectar sua conta do Google a qualquer momento no seu painel. Ao fazer isso, paramos de sincronizar e pedimos ao Google que revogue o acesso que você nos deu. As datas que já estavam bloqueadas continuam no seu calendário da Hospeda até que você as libere."
         },
         "aiAssistants": {
             "title": "Conectar um assistente de IA",
-            "body": "Você pode conectar um assistente de IA (por exemplo ChatGPT, Claude ou Gemini) à sua conta por meio do servidor MCP da Hospeda. A conexão é voluntária: você faz login com a sua conta da Hospeda (OAuth) e aprova o acesso. O assistente só pode acessar os dados da sua própria conta e realizar as ações que as suas permissões permitem: suas publicações, as consultas de hóspedes e as suas respostas, as estatísticas das suas publicações e o status do seu plano. As respostas aos hóspedes são enviadas somente com a sua confirmação explícita do texto literal. O provedor do assistente (OpenAI, Anthropic ou Google) processa o que o assistente lê conforme a sua própria política de privacidade e a sua conta nesse provedor: a Hospeda não usa inteligência artificial própria para isso e só entrega dados a esses provedores como resultado de uma consulta ou ação feita pelo seu assistente. A Hospeda mantém um registro de auditoria de cada ação de escrita feita por meio do assistente (conta, cliente, ferramenta e momento). O texto das consultas de hóspedes é escrito por terceiros e é repassado ao assistente como dados. Você pode ver e desconectar os seus assistentes conectados a qualquer momento em Minha conta → Assistentes de IA (/mi-cuenta/asistentes-ia/); depois de desconectado, o assistente perde o acesso."
+            "body": "Você pode conectar um assistente de IA (por exemplo ChatGPT, Claude ou Gemini) à sua conta por meio do servidor MCP da Hospeda. A conexão é voluntária: você faz login com a sua conta da Hospeda (OAuth) e aprova o acesso. O assistente só pode acessar os dados da sua própria conta e realizar as ações que as suas permissões permitem: suas publicações, as consultas de hóspedes e as suas respostas, as estatísticas das suas publicações e o status do seu plano. As respostas aos hóspedes são enviadas somente com a sua confirmação explícita do texto literal. O provedor do assistente (OpenAI, Anthropic ou Google) processa o que o assistente lê conforme a sua própria política de privacidade e a sua conta nesse provedor: nesta conexão a Hospeda não usa inteligência artificial própria e só entrega dados a esses provedores como resultado de uma consulta ou ação feita pelo seu assistente. A Hospeda mantém por 12 meses um registro de auditoria de cada ação de escrita feita por meio do assistente (conta, cliente, ferramenta e momento). O texto das consultas de hóspedes é escrito por terceiros e é repassado ao assistente como dados. Você pode ver e desconectar os seus assistentes conectados a qualquer momento em Minha conta → Assistentes de IA (/mi-cuenta/asistentes-ia/); depois de desconectado, o assistente perde o acesso."
+        },
+        "dataRetention": {
+            "title": "Por quanto tempo guardamos seus dados",
+            "body": "Guardamos os dados da sua conta enquanto ela estiver ativa. Alguns dados têm prazos próprios e, quando vencem, são excluídos automaticamente:",
+            "items": {
+                "aiChat": "Perguntas e respostas do assistente de IA dos anúncios: 12 meses.",
+                "mcpAudit": "Registro das ações feitas por meio de um assistente de IA conectado: 12 meses.",
+                "recordings": "Gravações de sessão e mapas de calor do Umami: até 60 dias.",
+                "views": "Visualizações e interações com os anúncios: 120 dias.",
+                "logs": "Registros técnicos de erros e avisos da aplicação: 30 dias.",
+                "inquiries": "Consultas enviadas sem conta cujo e-mail não foi confirmado: 7 dias.",
+                "listings": "Anúncios arquivados: seu conteúdo é excluído ao fim do prazo de conservação, com aviso prévio por e-mail.",
+                "billing": "Registros de cobranças e comprovantes: pelo prazo que as normas aplicáveis exigirem."
+            }
+        },
+        "internationalTransfers": {
+            "title": "Transferências internacionais",
+            "body": "Alguns dos nossos provedores, como Sentry, Cloudinary, Brevo, Cloudflare, os provedores de inteligência artificial, Google e Facebook, tratam dados fora da Argentina. Quando isso acontece, adotamos as salvaguardas exigidas pela normativa aplicável."
+        },
+        "yourRights": {
+            "title": "Seus direitos",
+            "body": "Você pode pedir o acesso, a retificação ou a exclusão dos seus dados pelo formulário de contato. Quando você pede para encerrar sua conta, nós a desvinculamos dos seus dados de identificação, encerramos suas sessões e excluímos suas credenciais. Antes de encerrá-la, você precisa cancelar os planos ativos e retirar seus anúncios. Guardamos os dados que uma norma nos obrigue a manter, por exemplo os registros de cobranças."
+        },
+        "dataSecurity": {
+            "title": "Segurança",
+            "body": "Aplicamos medidas de segurança técnicas e organizacionais para proteger suas informações contra acessos não autorizados, perda ou alteração."
+        },
+        "contact": {
+            "title": "Contato e mudanças nesta política",
+            "body": "Para dúvidas sobre esta política de privacidade, escreva para info@hospeda.com.ar ou use nosso formulário de contato. Se mudarmos esta política, publicamos a nova versão nesta página com a data de atualização."
         }
-    },
-    "page": {
-        "title": "Política de Privacidade",
-        "description": "Política de privacidade e proteção de dados da Hospeda",
-        "contactLink": "Ir para a pagina de contato",
-        "lastUpdated": "Ultima atualizacao"
     }
 }

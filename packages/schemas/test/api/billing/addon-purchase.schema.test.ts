@@ -76,8 +76,57 @@ describe('Addon purchase API schemas', () => {
                 instanceId: id,
                 status: 'ACTIVE',
                 chargeKind: 'UNA_VEZ',
-                processing: false
+                processing: false,
+                productId: id,
+                targetId: null,
+                addonVersionId: id
             }).success
         ).toBe(true);
+    });
+
+    describe('HOS-2680: the read carries the purchase identity', () => {
+        const read = {
+            instanceId: id,
+            status: 'PENDING_AUTHORIZATION',
+            chargeKind: 'PERIODICO',
+            processing: true,
+            productId: id,
+            targetId: id,
+            addonVersionId: id
+        };
+
+        it('accepts a targeted and an untargeted identity', () => {
+            // Arrange / Act / Assert
+            expect(AddonPurchaseReadResponseSchema.safeParse(read).success).toBe(true);
+            expect(
+                AddonPurchaseReadResponseSchema.safeParse({ ...read, targetId: null }).success
+            ).toBe(true);
+        });
+
+        it.each(['productId', 'targetId', 'addonVersionId'])('requires %s', (field) => {
+            // Arrange
+            const { [field as keyof typeof read]: _omitted, ...rest } = read;
+
+            // Act
+            const parsed = AddonPurchaseReadResponseSchema.safeParse(rest);
+
+            // Assert
+            expect(parsed.success).toBe(false);
+        });
+
+        it.each(['productId', 'targetId', 'addonVersionId'])('rejects a malformed %s', (field) => {
+            expect(
+                AddonPurchaseReadResponseSchema.safeParse({ ...read, [field]: 'bad' }).success
+            ).toBe(false);
+        });
+
+        it('never carries a checkout link', () => {
+            expect(
+                AddonPurchaseReadResponseSchema.safeParse({
+                    ...read,
+                    checkoutUrl: 'https://www.mercadopago.com.ar/subscriptions/checkout?x=1'
+                }).success
+            ).toBe(false);
+        });
     });
 });

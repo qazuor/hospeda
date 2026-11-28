@@ -1,8 +1,6 @@
 {
     "title": "Política de Cookies",
     "description": "Saiba como a Hospeda usa cookies e tecnologias similares para melhorar sua experiência no site.",
-    "heading": "Política de Cookies",
-    "lastUpdated": "Última atualização: 18 de novembro de 2026",
     "managePreferences": "Gerenciar preferências",
     "inventory": {
         "name": "Nome",
@@ -16,7 +14,10 @@
             "purpose": "Armazenar temporariamente dados da sessão para evitar solicitações repetidas.",
             "duration": "Até 5 minutos; se você não permanecer conectado, é apagado ao fechar o navegador"
         },
-        "consent": { "purpose": "Lembrar a sua escolha sobre cookies.", "duration": "1 ano" },
+        "consent": {
+            "purpose": "Lembrar a sua escolha sobre cookies.",
+            "duration": "1 ano"
+        },
         "announcements": {
             "purpose": "Lembrar os avisos do site que você fechou.",
             "duration": "1 ano"
@@ -45,39 +46,40 @@
     "recording": {
         "association": "As gravações são pseudônimas e, se você estiver conectado, podem ser associadas ao identificador da sua conta.",
         "masking": "Todos os textos e campos de formulário são mascarados. Apenas uma amostra das sessões é gravada.",
-        "retention": "As gravações são mantidas por até 60 dias e depois excluídas automaticamente."
+        "retention": "As gravações são mantidas por até 60 dias e depois excluídas automaticamente.",
+        "sentry": "Se você aceitar o relatório de erros, o Sentry pode gravar uma amostra das sessões e as sessões com erros, com todo o texto mascarado e sem imagens."
     },
     "sections": {
         "whatAreCookies": {
-            "title": "1. O que são cookies",
-            "body": "Os cookies são pequenos arquivos de texto que os sites armazenam no seu dispositivo quando você os visita. Eles servem para lembrar preferências, manter sessões ativas e coletar informações sobre como o site é usado. Os cookies não contêm informações pessoais por si só e não podem executar programas nem transmitir vírus."
+            "title": "O que são cookies",
+            "body": "Os cookies são pequenos arquivos de texto que os sites armazenam no seu dispositivo quando você os visita. Eles servem para lembrar preferências, manter sessões ativas e entender como o site é usado. Alguns cookies contêm identificadores que nos permitem reconhecer sua sessão ou seu navegador; por si só, não contêm seu nome nem seu e-mail. Os cookies não podem executar programas nem transmitir vírus."
         },
         "cookiesWeUse": {
-            "title": "2. Quais cookies utilizamos",
-            "body": "Usamos cookies para funções como iniciar sessão e lembrar suas preferências de privacidade. O idioma e o tema são guardados no armazenamento local do navegador. A análise opcional depende do seu consentimento. Atualmente não usamos cookies de marketing ou publicidade."
+            "title": "Quais cookies utilizamos",
+            "body": "Usamos cookies para funções como iniciar sessão e lembrar suas preferências de privacidade. O idioma, o tema e outras preferências da interface (por exemplo, o comparador de hospedagens) são guardados no armazenamento local do seu navegador. A análise de uso com o Umami e as gravações de sessão dependem do seu consentimento. Sem esse consentimento, a partir do seu navegador só medimos o desempenho das páginas com o Cloudflare Web Analytics, de forma agregada e sem cookies. Algumas ações que você realiza na Hospeda também são registradas pelos nossos servidores, independentemente dessa decisão: a Política de Privacidade explica quais. Atualmente não usamos cookies de marketing ou publicidade."
         },
         "sessionRecording": {
-            "title": "3. Gravações de sessão e mapas de calor",
+            "title": "Gravações de sessão e mapas de calor",
             "body": "Se você aceitar os cookies de análise e a função estiver ativa, a Hospeda pode gravar sessões e mapas de calor de cliques e rolagem com o Umami, uma ferramenta que hospedamos."
         },
         "cookieList": {
-            "title": "4. Lista de cookies",
+            "title": "Lista de cookies",
             "body": "Estes são os cookies próprios que a Hospeda usa. O asterisco representa um prefixo do nome que pode variar conforme o ambiente. O cache de sessão pode ser dividido em cookies com sufixos numéricos. Não usamos cookies de rastreamento publicitário nem compartilhamos dados com redes de anúncios."
         },
         "manageCookies": {
-            "title": "5. Como gerenciar os cookies",
+            "title": "Como gerenciar os cookies",
             "body": "Use o botão desta seção para alterar ou retirar seu consentimento. Você também pode gerenciar ou excluir os cookies no navegador. Desabilitar os cookies necessários pode afetar o acesso à sua conta."
         },
         "thirdPartyCookies": {
-            "title": "6. Cookies de terceiros",
-            "body": "Quando você acessa o Mercado Pago para autorizar um pagamento, esse site pode usar seus próprios cookies conforme sua política. A Hospeda usa Cloudinary para entregar imagens e Sentry para monitorar erros quando o monitoramento é ativado com consentimento. Esses serviços têm suas próprias políticas de privacidade."
+            "title": "Cookies e serviços de terceiros",
+            "body": "Ao usar a Hospeda, seu navegador também se conecta a serviços de terceiros que podem usar seus próprios cookies ou receber seu endereço IP: Cloudflare (segurança, verificação antibots e métricas de desempenho), Google Fonts (tipografias), OpenStreetMap (mapas), Cloudinary (imagens), Mercado Pago (ao pagar), Google e Facebook (se você entrar com eles) e YouTube, Vimeo ou Dailymotion (os vídeos só carregam se você os reproduzir, embora a galeria de fotos de um anúncio possa pedir ao YouTube a miniatura de um vídeo). Seu navegador envia erros e gravações ao Sentry somente se você aceitou o relatório de erros; os erros que ocorrem nos nossos servidores são sempre registrados, como explica a Política de Privacidade. Cada um desses serviços tem sua própria política de privacidade."
         },
         "policyChanges": {
-            "title": "7. Alterações nesta política",
+            "title": "Alterações nesta política",
             "body": "Podemos atualizar esta Política de Cookies quando a tecnologia que usamos ou a legislação aplicável mudar. Publicaremos as alterações nesta página com a data da última atualização. Recomendamos revisá-la periodicamente."
         },
         "contact": {
-            "title": "8. Contato",
+            "title": "Contato",
             "body": "Se você tiver dúvidas sobre o uso de cookies na Hospeda, pode nos escrever para info@hospeda.com.ar ou através do nosso formulário de contato."
         }
     }

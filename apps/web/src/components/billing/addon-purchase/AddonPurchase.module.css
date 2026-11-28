@@ -40,6 +40,13 @@
     justify-self: start;
 }
 
+/* HOS-2680: the return actions of a recurring purchase sit side by side, wrapping on phones. */
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+}
+
 .error {
     margin: 0;
     color: var(--destructive-text);
