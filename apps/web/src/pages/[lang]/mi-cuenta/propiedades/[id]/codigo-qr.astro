@@ -1,0 +1,82 @@
+---
+/**
+ * @file mi-cuenta/propiedades/[id]/codigo-qr.astro
+ * @description One accommodation's QR page (HOS-2688): the code on screen, the
+ * printable sticker sheet behind it, and what to do with it. It replaced the QR
+ * block the property card used to carry as its footer; the card's «⋯» menu
+ * links here.
+ *
+ * Gate: signed-out → login with this URL as the return path; no publisher
+ * access → the shared denial; a missing listing or somebody else's → the
+ * in-layout 404, identical for both (`resolveAccommodationQrPage`). An unpublished
+ * listing of the viewer renders the panel's own "publish it first" line, and
+ * the panel never asks the QR endpoints for it.
+ *
+ * @route /{lang}/mi-cuenta/propiedades/{id}/codigo-qr/
+ * @rendering SSR (prerender = false — authenticated, owner-scoped data)
+ */
+
+import AccountLayout from '@/layouts/AccountLayout.astro';
+import { Alert, PageHeader } from '@/components/account/ui';
+import PageHelpLink from '@/components/account/help/PageHelpLink.astro';
+import { ListingQrSheet } from '@/components/shared/qr/ListingQrSheet.client';
+import { buildAccountBreadcrumbs } from '@/lib/account/account-breadcrumbs';
+import { getAccountSectionLabel } from '@/lib/account-nav-model';
+import { createTranslations } from '@/lib/i18n';
+import { resolveAccommodationQrPage } from '@/lib/listing/resolve-listing-qr-page';
+
+import { guardPublisherArea } from '@/lib/account/publisher-access';
+
+export const prerender = false;
+const denied = guardPublisherArea({ astro: Astro, area: 'accommodationEdit' });
+if (denied) return denied;
+
+const resolution = await resolveAccommodationQrPage({ astro: Astro });
+if (resolution.response) return resolution.response;
+
+if (resolution.unavailable) {
+	// A failed read (5xx, network), not a missing listing: answer 503 and an
+	// in-layout error with a retry, never the not-found page.
+	Astro.response.status = 503;
+	Astro.response.headers.set('cache-control', 'no-store');
+}
+const { locale, listing } = resolution;
+const { t } = createTranslations(locale);
+const accountSection = 'propiedades';
+const sectionCrumb = { label: getAccountSectionLabel({ t, section: accountSection }), path: 'mi-cuenta/propiedades' };
+const editorPath = listing ? `mi-cuenta/propiedades/${listing.id}/editar` : null;
+const title = listing
+	? t('listing.owner.qrPage.title', undefined, { name: listing.name })
+	: t('listing.owner.qrPage.errorTitle');
+const description = listing ? t('listing.owner.qrPage.description') : undefined;
+const breadcrumbs = buildAccountBreadcrumbs({
+	t,
+	parents: listing && editorPath
+		? [sectionCrumb, { label: listing.name, path: editorPath }]
+		: [sectionCrumb],
+	current: t('listing.owner.qrPage.breadcrumb'),
+});
+const retryHref = Astro.url.pathname + Astro.url.search;
+---
+
+<AccountLayout locale={locale} title={title} description={description} activeSection={accountSection}>
+	<PageHeader title={title} description={description} breadcrumbs={breadcrumbs} locale={locale}>
+		<PageHelpLink slot="help" locale={locale} />
+	</PageHeader>
+
+	{listing ? (
+		<ListingQrSheet
+			client:load
+			vertical={listing.vertical}
+			listingId={listing.id}
+			slug={listing.slug}
+			locale={locale}
+			isPublished={listing.isPublished}
+		/>
+	) : (
+		<Alert locale={locale} tone="danger" title={t('listing.owner.qrPage.errorTitle')}>
+			<p>{t('listing.owner.qrPage.errorDescription')}</p>
+			<p><a href={retryHref} data-testid="listing-qr-page-retry">{t('listing.owner.qrPage.retry')}</a></p>
+		</Alert>
+	)}
+</AccountLayout>

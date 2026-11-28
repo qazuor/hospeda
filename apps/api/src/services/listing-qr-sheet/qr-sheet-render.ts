@@ -1,70 +1,64 @@
 /**
  * Lays a {@link ListingQrSheetContent} out on A4 and returns the PDF bytes
- * (HOS-982).
+ * (HOS-982, redesigned as a sticker in HOS-2688).
  *
  * ---
  * WHAT THIS PAGE IS FOR
  *
- * It goes on a door, on a counter, or on a table, and it is read by somebody
- * walking past. That single fact decides every constant in this file, so they
- * are written down here rather than left as taste.
+ * It is cut out and stuck on a door, a window or a counter, and it is read by
+ * somebody who walks up to it. The page carries the owner's sticker artwork
+ * («ENCONTRANOS EN HOSPEDA», the mascot, a white box and a blue pill), and the
+ * renderer adds the two things that belong to ONE listing: the real QR, drawn
+ * inside the white box, and the listing's name, set in the pill under
+ * «ESCANEÁ PARA CONOCER».
  *
- * ## The QR's size, and the distance it is meant to work at
+ * ## The page: A4, a 190mm sticker, cut marks
  *
- * A QR is read when its smallest feature — one module — survives the camera's
- * resolution at the reading distance. The working rule of thumb in the printing
- * trade is that a symbol scans reliably at about TEN TIMES its own side: a 30mm
- * code at 30cm, a 100mm code at a metre.
+ * The sticker is {@link STICKER_SIZE_MM}mm square, centred on A4 (owner
+ * decision, HOS-2688). That leaves 10mm each side, enough for a home printer's
+ * dead zone (3-6mm) and the 4mm cut marks at the four corners, set 1.5mm off
+ * the sticker's edge so the cut itself never hits ink.
  *
- * The distance this sheet has to work at is "somebody standing in front of a
- * door, phone in hand" — call it 1.0m to 1.2m. Ten times gives 100-120mm, so
- * {@link QR_SIZE} is 320pt ≈ 113mm, the largest square that leaves room on A4
- * for a name big enough to read from the same distance. That is roughly three
- * and a half times the brochure's 92pt code, which is correct: the brochure is
- * held at arm's length and this is not.
+ * ## The QR's size, and the distance it is meant to work at — stated honestly
  *
- * The second floor is the printer's, not the reader's: a home inkjet or laser
- * cannot hold a feature much under 0.3mm, and a scanner wants a module of at
- * least ~0.5mm to be safe. The redirect this encodes is short (roughly
- * `https://hospeda.com.ar/qr/XXXXXXXX/`, ~35 bytes), which at level Q lands
- * around a 37-module symbol — so 320pt / 37 ≈ 8.6pt ≈ 3mm per module, six times
- * the safe floor. There is no realistic slug length that brings it near it.
+ * The rule of thumb in the printing trade is that a symbol scans reliably at
+ * about TEN TIMES its own side. The white box in the artwork is ~73mm at this
+ * sticker size; the symbol and its four-module quiet zone have to fit inside
+ * it, so the symbol itself comes out at ~58mm for today's redirect (a 33-module
+ * symbol: `https://hospeda.com.ar/qr/XXXXXXXX/` at level Q). That is a code
+ * read from roughly 60cm — somebody standing at the door, not across the
+ * street. The previous plain sheet printed a 113mm code for ~1.1m; the sticker
+ * trades that distance for the design the owner chose, and that trade is the
+ * owner's decision, not an accident of layout.
  *
- * ## Error correction: Q, where the brochure uses M
+ * The printer's floor is still far away: ~58mm / 33 modules ≈ 1.75mm per module,
+ * against the ~0.5mm a scanner wants.
  *
- * {@link QR_ERROR_CORRECTION} is Q (~25% recoverable) rather than the M
- * (~15%) that goes on paper handed to a person. This sheet gets taped up, rained
- * on through a doorway, scuffed by a passing shoulder, and eventually has a
- * corner covered by whatever else gets stuck to the same door. Level Q is what
- * survives a covered corner.
+ * ## Error correction: Q
  *
- * It costs nothing here. A denser symbol only matters when the modules are
- * getting small, and at 320pt they are not: the whole reason M is the sensible
- * default elsewhere is that a 92pt brochure code cannot afford the extra
- * modules.
+ * {@link QR_ERROR_CORRECTION} stays Q (~25% recoverable). A sticker on a door
+ * gets scuffed, rained on and partly covered, and Q is what survives a covered
+ * corner. The extra modules Q costs over M are affordable at this size: the
+ * module stays more than three times the scanner's floor.
  *
- * ## It has to work in black and white
+ * ## Colour
  *
- * Most of these are printed on whatever printer the business has. So there is no
- * colour in this file at all — every ink below is black or a grey — and the
- * design carries its structure through SIZE and WEIGHT rather than through
- * colour. A page that leans on a coloured band goes flat grey on a laser and
- * takes the code's contrast down with it, which is the one failure that makes
- * the sheet useless rather than ugly.
+ * The artwork is a colour raster; everything this file draws as vector is
+ * black or white. The modules are pure black on the artwork's white box (the
+ * highest contrast a printer can give), and the pill's copy is white on the
+ * artwork's blue. A black-and-white printer turns the pill grey and the copy
+ * still reads; the code loses nothing.
  *
  * ## Quiet zone
  *
- * `renderQrMatrix` returns the symbol WITHOUT its quiet zone — that is the
- * caller's problem, because only the caller knows what is behind the code. Here
- * it is four modules of white on every side, reserved in the layout so no
- * headline or invitation can creep into it. A code with no quiet zone is a code
- * many scanners simply refuse.
+ * `renderQrMatrix` returns the symbol WITHOUT its quiet zone. Here it is four
+ * modules of the box's own white on every side, reserved by sizing the symbol
+ * so symbol + quiet zone fit the box. Nothing else is drawn in the box.
  *
  * ## Determinism
  *
  * Same listing, same locale, same bytes. Nothing here reads the clock or a
- * random source, and the document's dates are pinned to the epoch — so a caching
- * layer, an ETag, or a test can compare two runs directly.
+ * random source, and the document's dates are pinned to the epoch.
  *
  * @module services/listing-qr-sheet/qr-sheet-render
  */
@@ -72,27 +66,26 @@
 import { QrCodeErrorCorrectionLevelEnum } from '@repo/schemas';
 import { PageSizes, PDFDocument, type PDFFont, type PDFPage, rgb, StandardFonts } from 'pdf-lib';
 import { type QrModuleMatrix, renderQrMatrix } from '../../utils/qr-render.js';
-// `wrapText` is imported rather than re-implemented: it is generic PDF text
-// mechanics (greedy wrapping with a character-level break for an over-wide
-// token), not brochure policy, and a second copy would drift the first time
-// either page learned something about fitting text.
-import { wrapText } from '../listing-brochure/brochure-render.js';
 import type { ListingQrSheetContent } from './qr-sheet-content.js';
-import {
-    A4_WIDTH,
-    CONTENT_HEIGHT,
-    CONTENT_WIDTH,
-    drawCentredLine,
-    drawRectTopDown,
-    MARGIN,
-    withEllipsis
-} from './qr-sheet-page.js';
+import { type FittedLine, fitLine, type WidthOf } from './qr-sheet-fit.js';
+import { A4_HEIGHT, A4_WIDTH, drawLineTopDown, drawTextTopDown, measure } from './qr-sheet-page.js';
+import { STICKER_ART_JPEG_BASE64, STICKER_ART_UNITS } from './sticker-art.data.js';
 
 /**
- * Side of the printed QR, in points. 320pt ≈ 113mm — see the module docblock
- * for the scan distance this is sized for.
+ * The sticker artwork's JPEG bytes, decoded ONCE at module load. Decoding the
+ * ~320KB base64 string per request was pure repeated work: the bytes never
+ * change, and `embedJpg` only reads them.
  */
-export const QR_SIZE = 320;
+const STICKER_ART_JPEG: Uint8Array = Buffer.from(STICKER_ART_JPEG_BASE64, 'base64');
+
+/** Points per millimetre. */
+const MM = 72 / 25.4;
+
+/** Side of the printed sticker, in millimetres (owner decision, HOS-2688). */
+export const STICKER_SIZE_MM = 190;
+
+/** Side of the printed sticker, in points. */
+export const STICKER_SIZE = STICKER_SIZE_MM * MM;
 
 /** Error correction of the printed QR. See the module docblock for why Q. */
 export const QR_ERROR_CORRECTION = QrCodeErrorCorrectionLevelEnum.Q;
@@ -100,58 +93,56 @@ export const QR_ERROR_CORRECTION = QrCodeErrorCorrectionLevelEnum.Q;
 /** Quiet zone around the symbol, in MODULES. Four is the specification's floor. */
 const QR_QUIET_MODULES = 4;
 
-/** Every ink on this page is black or a grey — see "black and white" above. */
+/** Gap between the sticker's edge and the start of each cut mark, in mm. */
+const CROP_MARK_OFFSET_MM = 1.5;
+
+/** Length of each cut mark, in mm. */
+const CROP_MARK_LENGTH_MM = 4;
+
+/** Stroke of the cut marks, in points. A hairline that still prints. */
+const CROP_MARK_THICKNESS = 0.5;
+
+/** The two vector inks. See "Colour" above. */
 const INK = rgb(0, 0, 0);
-const MUTED_INK = rgb(0.35, 0.35, 0.35);
-const RULE_INK = rgb(0.75, 0.75, 0.75);
-const PAPER = rgb(1, 1, 1);
+const PILL_INK = rgb(1, 1, 1);
 
-/** Type scale, in points. */
-const NAME_SIZE_MAX = 30;
-const NAME_SIZE_MIN = 15;
-const HEADLINE_SIZE = 18;
-const INVITE_SIZE = 12;
-const BRAND_SIZE = 15;
-const TAGLINE_SIZE = 9;
-const DOMAIN_SIZE = 11;
-
-/** Line height as a multiple of font size. */
-const LEADING = 1.35;
-
-/** The name may take two lines and no more; past that it shrinks instead. */
-const NAME_MAX_LINES = 2;
-
-/** The invitation is a sentence, not a paragraph. */
-const INVITE_MAX_LINES = 3;
-
-/** Column the invitation wraps inside — narrower than the page, so it reads as a caption. */
-const INVITE_WIDTH = 380;
-
-/** Gaps between the blocks, in points. */
-const GAP_NAME_TO_HEADLINE = 14;
-const GAP_HEADLINE_TO_QR = 18;
-const GAP_QR_TO_INVITE = 18;
-const GAP_INVITE_TO_RULE = 26;
-const GAP_RULE_TO_BRAND = 14;
-const GAP_BRAND_TO_TAGLINE = 2;
-const GAP_TAGLINE_TO_DOMAIN = 6;
-
-/** Thickness of the hairline above the brand block. */
-const RULE_HEIGHT = 0.8;
+/** A box in the artwork's {@link STICKER_ART_UNITS} space. */
+export interface ArtBox {
+    readonly left: number;
+    readonly top: number;
+    readonly right: number;
+    readonly bottom: number;
+}
 
 /**
- * What the readable line at the foot says when `qrUrl` cannot be parsed.
- *
- * A printed sheet must carry something rather than a blank line, and this is the
- * one string on the page that is true regardless of any row in any table.
+ * The artwork's white rounded box, in art units — measured from the owner's
+ * file (edges where the box's white meets the background).
  */
-const FALLBACK_PRINTED_DOMAIN = 'hospeda.com.ar';
+export const QR_BOX: ArtBox = { left: 641, top: 518, right: 1125, bottom: 994 };
 
-/** The two faces the sheet uses. */
-interface SheetFonts {
-    readonly regular: PDFFont;
-    readonly bold: PDFFont;
-}
+/** The artwork's blue pill, in art units — measured the same way. */
+export const PILL_BOX: ArtBox = { left: 579, top: 1006, right: 1182, bottom: 1132 };
+
+/**
+ * Horizontal padding inside the pill, in art units. Keeps the copy clear of the
+ * pill's rounded ends (corner radius ≈ 25 units).
+ */
+export const PILL_PADDING_UNITS = 40;
+
+/** Type scale of the pill, in points. */
+const PILL_HEADLINE_SIZE_MAX = 14;
+const PILL_HEADLINE_SIZE_MIN = 9;
+export const PILL_NAME_SIZE_MAX = 20;
+export const PILL_NAME_SIZE_MIN = 10;
+
+/** Vertical gap between the two pill lines (baseline of line 1 to cap of line 2), in points. */
+const PILL_LINE_GAP = 5;
+
+/** Cap height of Helvetica-Bold as a fraction of the font size. */
+const CAP_HEIGHT = 0.718;
+
+/** The locale whose casing rules uppercase the pill's copy. */
+const UPPERCASE_LOCALE = 'es-AR';
 
 /** Everything the renderer needs beyond the copy itself. */
 export interface ListingQrSheetRenderInput {
@@ -162,126 +153,61 @@ export interface ListingQrSheetRenderInput {
      *
      * Separate from `content.url`, which is the ficha's real address and is
      * where this redirect LANDS. Nothing on this sheet draws `content.url`:
-     * paper is not correctable, and a deep address printed beside a redirectable
-     * symbol ages differently from it. Resolving this one needs the database, so
-     * it is passed in rather than derived here — the renderer stays a pure
-     * function of its inputs.
+     * paper is not correctable. Resolving this one needs the database, so it is
+     * passed in rather than derived here — the renderer stays a pure function
+     * of its inputs.
      */
     readonly qrUrl: string;
 }
 
-/**
- * The bare domain printed at the foot of the sheet.
- *
- * DELIBERATELY the domain and NOT the ficha's address — the same decision the
- * brochure made (HOS-1129) and for the same reason. The symbol above it is
- * correctable, because it encodes `/qr/{slug}/` and we own the row that resolves
- * it; the ink is not. Printing the deep address makes the two AGE DIFFERENTLY:
- * the day the ficha moves, the code keeps working and the line under it is dead,
- * on the same piece of paper, with nothing to say which half to trust.
- *
- * Printing `/qr/{slug}/` instead would remove that asymmetry and cost the reader
- * who cannot scan — nobody types or remembers an opaque identifier. The bare
- * domain keeps that reader and cannot die, because it points at nothing that can
- * move.
- *
- * Derived from `qrUrl` rather than from `content.url`, so the ficha's real
- * address never travels into the renderer merely to be printed.
- */
-function printedDomain(qrUrl: string): string {
-    try {
-        return new URL(qrUrl).host;
-    } catch {
-        return FALLBACK_PRINTED_DOMAIN;
-    }
+/** Where the sticker sits on the page, top-down, in points. */
+interface StickerFrame {
+    readonly left: number;
+    readonly top: number;
+    /** Points per art unit. */
+    readonly scale: number;
+}
+
+/** The sticker, centred on A4. */
+function stickerFrame(): StickerFrame {
+    return {
+        left: (A4_WIDTH - STICKER_SIZE) / 2,
+        top: (A4_HEIGHT - STICKER_SIZE) / 2,
+        scale: STICKER_SIZE / STICKER_ART_UNITS
+    };
 }
 
 /**
- * The largest size at which the name fits in {@link NAME_MAX_LINES} lines.
- *
- * A business name is owner-typed and can be three words or fifteen. Wrapping it
- * without a floor would push the QR off the page; shrinking it without a floor
- * would print a name nobody can read from the distance the code is sized for. So
- * it shrinks to {@link NAME_SIZE_MIN} and then wraps, which is the failure that
- * still yields a usable sheet.
- *
- * Past that floor the name is CUT, and the cut is marked — see
- * {@link withEllipsis}. Two lines at {@link NAME_SIZE_MIN} hold ~132 characters
- * of Latin script, so a name has to be longer than that to reach it.
+ * Usable width of the pill for one line of copy, in points, at the printed
+ * sticker size.
  */
-function fitNameLines(input: { name: string; font: PDFFont }): {
-    readonly size: number;
-    readonly lines: readonly string[];
-} {
-    for (let size = NAME_SIZE_MAX; size > NAME_SIZE_MIN; size -= 1) {
-        const lines = wrapText({
-            text: input.name,
-            font: input.font,
-            size,
-            maxWidth: CONTENT_WIDTH
-        });
-        if (lines.length <= NAME_MAX_LINES) {
-            return { size, lines };
-        }
-    }
-
-    const wrapped = wrapText({
-        text: input.name,
-        font: input.font,
-        size: NAME_SIZE_MIN,
-        maxWidth: CONTENT_WIDTH
-    });
-    if (wrapped.length <= NAME_MAX_LINES) {
-        return { size: NAME_SIZE_MIN, lines: wrapped };
-    }
-
-    const kept = wrapped.slice(0, NAME_MAX_LINES);
-    kept[NAME_MAX_LINES - 1] = withEllipsis({
-        line: kept[NAME_MAX_LINES - 1] ?? '',
-        font: input.font,
-        size: NAME_SIZE_MIN
-    });
-    return { size: NAME_SIZE_MIN, lines: kept };
-}
+export const PILL_TEXT_WIDTH =
+    (PILL_BOX.right - PILL_BOX.left - PILL_PADDING_UNITS * 2) * (STICKER_SIZE / STICKER_ART_UNITS);
 
 /**
- * Draws the QR as filled rectangles, centred on the page.
+ * Draws the QR as filled rectangles, centred in the artwork's white box.
  *
  * Vector rather than a raster image: a QR is the one graphic where resampling
- * costs scans, and the module grid is cheaper to express as rectangles than as
- * an embedded bitmap. Horizontal runs of dark modules are merged into a single
- * rectangle, which roughly halves the operator count.
+ * costs scans. Horizontal runs of dark modules are merged into one rectangle.
  *
  * The grid comes from `utils/qr-render.ts`, the ONE module in this repo allowed
  * to import the encoder package (HOS-1129, enforced by
  * `scripts/check-qrcode-engine-isolation.sh`). What is drawn is `qrUrl` — the
  * platform's own redirect, never the ficha's final URL.
  *
- * The matrix is PASSED IN rather than encoded here. It used to be encoded
- * twice per download, once by {@link qrBlockHeight} to place the page and once
- * here to draw it: two independent calls, so the symbol on the page and the
- * height the whole layout was built around came from different invocations.
- * Harmless while the encoder is deterministic, and not a property worth relying
- * on when one shared value costs nothing.
+ * The symbol plus its {@link QR_QUIET_MODULES}-module quiet zone fill the
+ * shorter side of the box; the box's own white IS the quiet zone.
  */
-function drawQr(input: { page: PDFPage; qr: QrModuleMatrix; top: number; size: number }): void {
-    const { page, qr, top, size } = input;
+function drawQr(input: { page: PDFPage; qr: QrModuleMatrix; frame: StickerFrame }): void {
+    const { page, qr, frame } = input;
+    const boxSide = Math.min(QR_BOX.right - QR_BOX.left, QR_BOX.bottom - QR_BOX.top) * frame.scale;
     const count = qr.size;
-    const module = size / count;
-    const quiet = module * QR_QUIET_MODULES;
-    const left = (A4_WIDTH - size) / 2;
-
-    // The quiet zone, painted rather than assumed. The page is white today, so
-    // this changes no pixel — it is here so that the day anything is drawn
-    // behind the code, the four modules of silence survive it.
-    drawRectTopDown({
-        page,
-        x: left - quiet,
-        y: top - quiet,
-        width: size + quiet * 2,
-        height: size + quiet * 2,
-        color: PAPER
-    });
+    const module = boxSide / (count + QR_QUIET_MODULES * 2);
+    const size = module * count;
+    const centreX = frame.left + ((QR_BOX.left + QR_BOX.right) / 2) * frame.scale;
+    const centreY = frame.top + ((QR_BOX.top + QR_BOX.bottom) / 2) * frame.scale;
+    const left = centreX - size / 2;
+    const top = centreY - size / 2;
 
     for (let row = 0; row < count; row += 1) {
         let runStart = -1;
@@ -290,13 +216,13 @@ function drawQr(input: { page: PDFPage; qr: QrModuleMatrix; top: number; size: n
             if (dark && runStart === -1) {
                 runStart = col;
             } else if (!dark && runStart !== -1) {
-                drawRectTopDown({
-                    page,
+                page.drawRectangle({
                     x: left + runStart * module,
-                    y: top + row * module,
+                    y: A4_HEIGHT - (top + (row + 1) * module),
                     width: (col - runStart) * module,
                     height: module,
-                    color: INK
+                    color: INK,
+                    borderWidth: 0
                 });
                 runStart = -1;
             }
@@ -305,17 +231,120 @@ function drawQr(input: { page: PDFPage; qr: QrModuleMatrix; top: number; size: n
 }
 
 /**
- * Height the QR block occupies, symbol plus its quiet zone on both sides.
+ * Fits a listing name into the pill: uppercased, shrunk between
+ * {@link PILL_NAME_SIZE_MAX} and {@link PILL_NAME_SIZE_MIN}, cut with «…» past
+ * the floor.
  *
- * Takes the SAME matrix `drawQr` will draw — see there for why it is not
- * re-encoded.
+ * @param input - Input parameters.
+ * @param input.name - The listing's name as typed by its owner.
+ * @param input.widthOf - Width measurement of the pill's face.
+ * @param input.maxWidth - The usable width, in points. Defaults to
+ *   {@link PILL_TEXT_WIDTH}.
+ * @returns The text and size to draw, and whether it was cut.
  */
-function qrBlockHeight(input: { qr: QrModuleMatrix; size: number }): number {
-    return input.size + (input.size / input.qr.size) * QR_QUIET_MODULES * 2;
+export function fitPillName(input: {
+    readonly name: string;
+    readonly widthOf: WidthOf;
+    readonly maxWidth?: number;
+}): FittedLine {
+    return fitLine({
+        text: input.name.replace(/\s+/g, ' ').toLocaleUpperCase(UPPERCASE_LOCALE),
+        maxWidth: input.maxWidth ?? PILL_TEXT_WIDTH,
+        maxSize: PILL_NAME_SIZE_MAX,
+        minSize: PILL_NAME_SIZE_MIN,
+        widthOf: input.widthOf
+    });
 }
 
 /**
- * Renders a listing's printable QR sheet.
+ * Draws the two lines of the pill, centred in it: the fixed invitation on top,
+ * the listing's name under it. Both uppercase, white, bold — the artwork's own
+ * style. The name shrinks to {@link PILL_NAME_SIZE_MIN} and is then cut with
+ * «…» (see `fitLine`), so it never leaves the pill.
+ */
+function drawPill(input: {
+    page: PDFPage;
+    font: PDFFont;
+    frame: StickerFrame;
+    headline: string;
+    name: string;
+}): void {
+    const { page, font, frame } = input;
+    const widthOf: WidthOf = ({ text, size }) => measure({ text, font, size });
+
+    const headline = fitLine({
+        text: input.headline.toLocaleUpperCase(UPPERCASE_LOCALE),
+        maxWidth: PILL_TEXT_WIDTH,
+        maxSize: PILL_HEADLINE_SIZE_MAX,
+        minSize: PILL_HEADLINE_SIZE_MIN,
+        widthOf
+    });
+    const name = fitPillName({ name: input.name, widthOf });
+
+    const blockHeight = headline.size * CAP_HEIGHT + PILL_LINE_GAP + name.size * CAP_HEIGHT;
+    const centreX = frame.left + ((PILL_BOX.left + PILL_BOX.right) / 2) * frame.scale;
+    const centreY = frame.top + ((PILL_BOX.top + PILL_BOX.bottom) / 2) * frame.scale;
+    const headlineBaseline = centreY - blockHeight / 2 + headline.size * CAP_HEIGHT;
+    const nameBaseline = headlineBaseline + PILL_LINE_GAP + name.size * CAP_HEIGHT;
+
+    for (const line of [
+        { fitted: headline, baseline: headlineBaseline },
+        { fitted: name, baseline: nameBaseline }
+    ]) {
+        const width = widthOf({ text: line.fitted.text, size: line.fitted.size });
+        drawTextTopDown({
+            page,
+            text: line.fitted.text,
+            x: centreX - width / 2,
+            y: line.baseline,
+            font,
+            size: line.fitted.size,
+            color: PILL_INK
+        });
+    }
+}
+
+/**
+ * Draws the eight cut marks: two per corner, along the sticker's edges
+ * extended outward, starting {@link CROP_MARK_OFFSET_MM}mm off the corner.
+ */
+function drawCropMarks(input: { page: PDFPage; frame: StickerFrame }): void {
+    const { page, frame } = input;
+    const offset = CROP_MARK_OFFSET_MM * MM;
+    const length = CROP_MARK_LENGTH_MM * MM;
+    const right = frame.left + STICKER_SIZE;
+    const bottom = frame.top + STICKER_SIZE;
+
+    for (const x of [frame.left, right]) {
+        for (const y of [frame.top, bottom]) {
+            const outX = x === frame.left ? -1 : 1;
+            const outY = y === frame.top ? -1 : 1;
+            // Vertical mark, on the extension of the vertical edge.
+            drawLineTopDown({
+                page,
+                x1: x,
+                y1: y + outY * offset,
+                x2: x,
+                y2: y + outY * (offset + length),
+                thickness: CROP_MARK_THICKNESS,
+                color: INK
+            });
+            // Horizontal mark, on the extension of the horizontal edge.
+            drawLineTopDown({
+                page,
+                x1: x + outX * offset,
+                y1: y,
+                x2: x + outX * (offset + length),
+                y2: y,
+                thickness: CROP_MARK_THICKNESS,
+                color: INK
+            });
+        }
+    }
+}
+
+/**
+ * Renders a listing's printable QR sticker sheet.
  *
  * @param input - Input parameters.
  * @param input.content - What to print.
@@ -334,134 +363,28 @@ export async function renderListingQrSheetPdf(
     doc.setCreationDate(new Date(0));
     doc.setModificationDate(new Date(0));
 
-    const fonts: SheetFonts = {
-        regular: await doc.embedFont(StandardFonts.Helvetica),
-        bold: await doc.embedFont(StandardFonts.HelveticaBold)
-    };
+    const bold = await doc.embedFont(StandardFonts.HelveticaBold);
+    const art = await doc.embedJpg(STICKER_ART_JPEG);
     const page = doc.addPage(PageSizes.A4);
+    const frame = stickerFrame();
 
-    const name = fitNameLines({ name: content.listingName, font: fonts.bold });
-    const inviteLines = wrapText({
-        text: content.invite,
-        font: fonts.regular,
-        size: INVITE_SIZE,
-        maxWidth: INVITE_WIDTH
-    }).slice(0, INVITE_MAX_LINES);
+    page.drawImage(art, {
+        x: frame.left,
+        y: A4_HEIGHT - (frame.top + STICKER_SIZE),
+        width: STICKER_SIZE,
+        height: STICKER_SIZE
+    });
 
-    // Encoded ONCE, then used both to size the page and to draw the symbol.
     const qr = renderQrMatrix({ data: qrUrl, errorCorrectionLevel: QR_ERROR_CORRECTION });
-
-    const nameHeight = name.lines.length * name.size * LEADING;
-    const inviteHeight = inviteLines.length * INVITE_SIZE * LEADING;
-    const qrHeight = qrBlockHeight({ qr, size: QR_SIZE });
-
-    const totalHeight =
-        nameHeight +
-        GAP_NAME_TO_HEADLINE +
-        HEADLINE_SIZE * LEADING +
-        GAP_HEADLINE_TO_QR +
-        qrHeight +
-        GAP_QR_TO_INVITE +
-        inviteHeight +
-        GAP_INVITE_TO_RULE +
-        RULE_HEIGHT +
-        GAP_RULE_TO_BRAND +
-        BRAND_SIZE * LEADING +
-        GAP_BRAND_TO_TAGLINE +
-        TAGLINE_SIZE * LEADING +
-        GAP_TAGLINE_TO_DOMAIN +
-        DOMAIN_SIZE * LEADING;
-
-    // Centred in the usable area when it fits, flush to the top margin when it
-    // does not. `max(0, …)` is what keeps a very long name from pushing the
-    // whole stack UP into the printer's dead zone.
-    let y = MARGIN + Math.max(0, (CONTENT_HEIGHT - totalHeight) / 2);
-
-    // ── The business's name ────────────────────────────────────────────────
-    for (const line of name.lines) {
-        drawCentredLine({
-            page,
-            text: line,
-            // `y` is the baseline: sit it at the bottom of the line box.
-            y: y + name.size,
-            font: fonts.bold,
-            size: name.size,
-            color: INK
-        });
-        y += name.size * LEADING;
-    }
-    y += GAP_NAME_TO_HEADLINE;
-
-    // ── The invitation, set large ──────────────────────────────────────────
-    drawCentredLine({
+    drawQr({ page, qr, frame });
+    drawPill({
         page,
-        text: content.headline,
-        y: y + HEADLINE_SIZE,
-        font: fonts.bold,
-        size: HEADLINE_SIZE,
-        color: INK
+        font: bold,
+        frame,
+        headline: content.pillHeadline,
+        name: content.listingName
     });
-    y += HEADLINE_SIZE * LEADING + GAP_HEADLINE_TO_QR;
-
-    // ── The code ───────────────────────────────────────────────────────────
-    const quiet = (qrHeight - QR_SIZE) / 2;
-    drawQr({ page, qr, top: y + quiet, size: QR_SIZE });
-    y += qrHeight + GAP_QR_TO_INVITE;
-
-    // ── What to do with it ─────────────────────────────────────────────────
-    for (const line of inviteLines) {
-        drawCentredLine({
-            page,
-            text: line,
-            y: y + INVITE_SIZE,
-            font: fonts.regular,
-            size: INVITE_SIZE,
-            color: INK
-        });
-        y += INVITE_SIZE * LEADING;
-    }
-    y += GAP_INVITE_TO_RULE;
-
-    // ── The brand ──────────────────────────────────────────────────────────
-    drawRectTopDown({
-        page,
-        x: MARGIN + CONTENT_WIDTH / 4,
-        y,
-        width: CONTENT_WIDTH / 2,
-        height: RULE_HEIGHT,
-        color: RULE_INK
-    });
-    y += RULE_HEIGHT + GAP_RULE_TO_BRAND;
-
-    drawCentredLine({
-        page,
-        text: content.brand,
-        y: y + BRAND_SIZE,
-        font: fonts.bold,
-        size: BRAND_SIZE,
-        color: INK
-    });
-    y += BRAND_SIZE * LEADING + GAP_BRAND_TO_TAGLINE;
-
-    drawCentredLine({
-        page,
-        text: content.brandTagline,
-        y: y + TAGLINE_SIZE,
-        font: fonts.regular,
-        size: TAGLINE_SIZE,
-        color: MUTED_INK
-    });
-    y += TAGLINE_SIZE * LEADING + GAP_TAGLINE_TO_DOMAIN;
-
-    // The bare domain, not the ficha's address — see `printedDomain`.
-    drawCentredLine({
-        page,
-        text: printedDomain(qrUrl),
-        y: y + DOMAIN_SIZE,
-        font: fonts.regular,
-        size: DOMAIN_SIZE,
-        color: INK
-    });
+    drawCropMarks({ page, frame });
 
     // A fresh, `ArrayBuffer`-backed copy: `Response` wants a `BufferSource`, and
     // the generically-backed `Uint8Array` `save()` returns is not assignable.

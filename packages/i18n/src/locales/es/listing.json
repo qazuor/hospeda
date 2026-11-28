@@ -11,9 +11,19 @@
     "owner": {
         "downloads": {
             "label": "Descargar",
-            "forListing": "Descargar archivos de {{name}}",
-            "viewQr": "Ver código QR",
-            "qrTitle": "Código QR: {{name}}"
+            "forListing": "Descargar archivos de {{name}}"
+        },
+        "qrPage": {
+            "menuItem": "Código QR",
+            "menuItemUnpublished": "Código QR · cuando la publiques",
+            "breadcrumb": "Código QR",
+            "title": "Código QR de {{name}}",
+            "description": "Imprimí el calco, recortalo y pegalo en la puerta, la vidriera o el mostrador: quien lo escanee llega a tu ficha.",
+            "noticeMessage": "¡Tu ficha ya está publicada! Ya tenés tu código QR para imprimir.",
+            "noticeAction": "Ver mi código QR",
+            "errorTitle": "No pudimos cargar tu código QR",
+            "errorDescription": "No pudimos leer los datos de tu ficha. Probá de nuevo en unos minutos.",
+            "retry": "Reintentar"
         },
         "nav": "Mi comercio",
         "purgeAddons": {

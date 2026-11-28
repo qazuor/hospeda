@@ -101,48 +101,59 @@ describe('PropertyCard.astro — HOS-637 thumbnail transform', () => {
 });
 
 /**
- * HOS-982 — the printable QR sheet on the accommodation card.
+ * HOS-2688 — the QR left the card. The «⋯» menu carries a «Código QR» entry that
+ * leads to the listing's own QR page, for every vertical.
  *
  * `.astro` files cannot be rendered by vitest in this repo, so these read the
- * SOURCE, the same documented pattern the HOS-637 block above uses. A source
- * check goes vacuous the moment it only asks whether a NAME appears, so each
- * assertion below isolates the ONE expression it is about and asserts its
- * operands — the island's own behaviour (request, states, a11y) is covered for
- * real in `test/components/shared/ListingQrSheet.test.tsx`.
+ * SOURCE, the same documented pattern the HOS-637 block above uses. Each
+ * assertion isolates the ONE expression it is about. The menu item itself is
+ * rendered for real in `test/components/host/PropertyCardMenu.test.tsx`, the
+ * page in `test/pages/listing-qr-page.test.ts`.
  */
-describe('PropertyCard.astro — HOS-982 printable QR sheet', () => {
-    /** The `<ListingQrSheet …/>` element only, so a match cannot come from elsewhere. */
-    const qrElement = /<ListingQrSheet\b[\s\S]*?\/>/.exec(propertyCardSource)?.[0] ?? '';
+describe('OwnerListingCard.astro — HOS-2688 QR entry instead of the QR block', () => {
+    const qrEntry = /const qrCodeEntry = [\s\S]*?: undefined;/.exec(propertyCardSource)?.[0] ?? '';
 
-    it('renders the shared QR-sheet island for the accommodation vertical', () => {
+    it('no longer renders the QR-sheet island or any footer block', () => {
+        expect(propertyCardSource).not.toContain('<ListingQrSheet');
+        expect(propertyCardSource).not.toContain('ListingQrSheet.client');
+        expect(propertyCardSource).not.toContain('slot="footer"');
+    });
+
+    it("builds the entry from the QR-page path of the card's own vertical", () => {
         expect(propertyCardSource).toContain(
-            "import { ListingQrSheet } from '@/components/shared/qr/ListingQrSheet.client'"
+            'const qrPageUrl = buildUrl({ locale, path: buildListingQrPagePath({ vertical, listingId: entity.id }) });'
         );
-        expect(qrElement).not.toBe('');
-        expect(qrElement).toContain('vertical="accommodation"');
-        expect(qrElement).toContain('listingId={property.id}');
-        expect(qrElement).toContain('slug={property.slug}');
+        expect(qrEntry).toContain('actions.qrCodeEntry');
+        expect(qrEntry).toContain('href: qrPageUrl');
     });
 
-    it('hydrates it lazily — one card in a grid, and the panel idles until clicked', () => {
-        expect(qrElement).toContain('client:visible');
-        expect(qrElement).not.toContain('client:load');
-    });
-
-    it('feeds it "published" from the publication state alone (HOS-1641)', () => {
-        // Only a PUBLISHED listing has a public page; anything else would offer
-        // a download that can only answer 404 — the same 404 the route answers
-        // for "not yours". The per-state answer is unit-tested in
-        // `test/lib/host/property-card-actions.test.ts`.
-        expect(qrElement).toContain('isPublished={actions.canPrintQrSheet}');
+    it('disables it with the reason until the listing is PUBLISHED (HOS-1641 rule)', () => {
+        expect(qrEntry).toContain('disabled: !actions.canPrintQrSheet');
+        expect(qrEntry).toMatch(
+            /actions\.canPrintQrSheet\s*\?\s*t\('listing\.owner\.qrPage\.menuItem'\)\s*:\s*t\('listing\.owner\.qrPage\.menuItemUnpublished'\)/
+        );
         expect(propertyCardSource).not.toContain('property.visibility');
         expect(propertyCardSource).not.toContain('VisibilityEnum');
     });
 
-    it('renders the QR block only when the state allows it (never for PURGED)', () => {
-        expect(propertyCardSource).toMatch(
-            /\{property && actions\.qrBlock && \(\s*<ListingQrSheet\s+slot="footer"/
+    it('hands it to the accommodation menu', () => {
+        const menuElement =
+            /<PropertyCardMenu\b[\s\S]*?\/>\s*\)\}/.exec(propertyCardSource)?.[0] ?? '';
+        expect(menuElement).toContain('qrCode={qrCodeEntry}');
+    });
+
+    it('gives venue/experience a menu for it even without the edit entry', () => {
+        expect(propertyCardSource).toContain(
+            "...(qrCodeEntry ? [{ id: 'qr-code', ...qrCodeEntry }] : [])"
         );
+        expect(propertyCardSource).toMatch(
+            /\{listing && listingMenuItems\.length > 0 && \(\s*<Menu[\s\S]*?items=\{listingMenuItems\}/
+        );
+    });
+
+    it('passes the one-time notice to a first publish only, never to a republish', () => {
+        expect(propertyCardSource).toMatch(/const qrNotice = actions\.republish\s*\?\s*undefined/);
+        expect(propertyCardSource).toContain('qrNotice={qrNotice}');
     });
 });
 
@@ -202,7 +213,7 @@ describe('PropertyCard.astro — actions per publication state (HOS-1641)', () =
     });
 
     it('renders each action element exactly once in the whole card', () => {
-        for (const element of ['<PropertyCardMenu', '<PublishButton', '<ListingQrSheet']) {
+        for (const element of ['<PropertyCardMenu', '<PublishButton']) {
             expect(propertyCardSource.split(element).length - 1, element).toBe(1);
         }
     });

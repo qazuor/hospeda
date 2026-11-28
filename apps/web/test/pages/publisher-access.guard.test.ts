@@ -88,9 +88,11 @@ describe('publisher directory direct guards', () => {
             })
         ).toThrow();
     });
-    it('covers exactly 54 real publisher pages', () => {
+    it('covers exactly 56 real publisher pages', () => {
+        // 56 = 54 + the two per-listing QR pages (HOS-2688):
+        // propiedades/[id]/codigo-qr and comercio/[vertical]/[id]/codigo-qr.
         expect(inventory.length).toBeGreaterThan(0);
-        expect(inventory).toHaveLength(54);
+        expect(inventory).toHaveLength(56);
     });
     it.each([...legacyPublicRedirects])('keeps %s public and ungated', (relative) => {
         const source = readFileSync(resolve(root, relative), 'utf8');

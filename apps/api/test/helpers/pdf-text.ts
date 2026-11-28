@@ -49,7 +49,12 @@ export function inflatedStreams(bytes: Uint8Array): Buffer {
         } catch {
             // Not a Flate stream. Not our business here.
         }
-        cursor = end + 1;
+        // Past the WHOLE `endstream` keyword. Resuming at `end + 1` let the
+        // next search find the `stream` inside `endstream` itself, which
+        // misaligned every following stream by one; it went unnoticed while
+        // the page had a single content stream, and broke as soon as an
+        // embedded image (HOS-2688's sticker art) came before it.
+        cursor = end + 'endstream'.length;
     }
     return Buffer.concat(chunks);
 }

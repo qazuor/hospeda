@@ -180,7 +180,7 @@ describe.each(CASES)('GET /protected/$label/:id/qr-sheet (HOS-982)', ({
         expect(bytes.subarray(0, 5).toString('latin1')).toBe('%PDF-');
         // The listing's OWN name reached the page, so this is that
         // listing's sheet rather than an empty template.
-        expect(drawsText(bytes, 'La Parrilla del Puerto')).toBe(true);
+        expect(drawsText(bytes, 'LA PARRILLA DEL PUERTO')).toBe(true);
     });
 
     it('mints ONE code, for this entity and the LISTING purpose', async () => {
@@ -265,7 +265,7 @@ describe.each(CASES)('GET /protected/$label/:id/qr-sheet (HOS-982)', ({
 
         // The paper follows the host who downloaded it...
         const bytes = Buffer.from(await res.arrayBuffer());
-        expect(drawsText(bytes, 'Scan the code')).toBe(true);
+        expect(drawsText(bytes, 'SCAN TO DISCOVER')).toBe(true);
 
         // ...and the destination does NOT. An English `targetUrl` here
         // would send every future passer-by who scans that door to the

@@ -306,10 +306,8 @@
     "deleting": "Deleting...",
     "anonymous": "User",
     "qrSheet": {
-        "headline": "Scan the code",
-        "invite": "Point your phone camera at the code to see the full listing: photos, contact details and directions.",
-        "brandTagline": "Places to stay, eat and explore across the Litoral",
-        "help": "An A4 sheet carrying your listing's code, ready to print and tape to the door or leave on the counter.",
+        "pillHeadline": "Scan to discover",
+        "help": "An A4 sheet with your listing’s sticker (19 cm, with cut marks) to print, cut out and put on your door or counter.",
         "download": "Download the QR sheet (PDF)",
         "working": "Generating the sheet…",
         "ready": "Done, your QR sheet was downloaded.",

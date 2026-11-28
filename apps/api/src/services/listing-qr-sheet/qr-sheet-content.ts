@@ -6,19 +6,18 @@
  *
  * It is NOT the brochure. The brochure (`services/listing-brochure`) is handed
  * to a person: it carries the photo, the description, the opening hours, the
- * contact block — everything somebody would read sitting down. This sheet is
- * TAPED TO A DOOR, left on a counter, or stood on a table. Its whole job is to
- * be scanned from across a room by somebody walking past, so it carries four
- * things and refuses the rest:
+ * contact block — everything somebody would read sitting down. This sheet is a
+ * STICKER (HOS-2688): the owner's artwork, cut out and stuck on a door, a
+ * window or a counter. The artwork already carries the brand and the call to
+ * action; what this module supplies is what belongs to one listing:
  *
- * 1. the business's name, so a passer-by knows whose code this is;
- * 2. a large QR;
- * 3. a sentence telling them to point their camera at it;
- * 4. the brand, so the scan reads as safe rather than as a random sticker.
+ * 1. the business's name, set in the artwork's blue pill;
+ * 2. the line above it in the pill, «Escaneá para conocer», in the reader's
+ *    language;
+ * 3. the address the printed code resolves to.
  *
  * Every field the brochure prints and this one does not is a deliberate
- * omission, not an oversight. A description that has to be read at 40cm defeats
- * a sheet meant to work at 1.2m, and anything printed here ages in ink while the
+ * omission, not an oversight: anything printed here ages in ink while the
  * ficha behind the code stays editable.
  *
  * ## Why one module serves three verticals
@@ -42,14 +41,8 @@ export type ListingQrSheetVertical = 'accommodation' | 'venue' | 'experience';
 export interface ListingQrSheetContent {
     /** The business's name, as its public ficha shows it. */
     readonly listingName: string;
-    /** The large invitation, e.g. `Escaneá el código`. */
-    readonly headline: string;
-    /** The sentence under the code that says what to do with it. */
-    readonly invite: string;
-    /** The platform's name. Not translated — it is a proper noun. */
-    readonly brand: string;
-    /** One line saying what the platform is, for a reader who has never heard of it. */
-    readonly brandTagline: string;
+    /** The pill's first line, above the name, e.g. `Escaneá para conocer`. */
+    readonly pillHeadline: string;
     /**
      * Absolute URL of the public ficha, ALWAYS in {@link MINTED_TARGET_LOCALE}.
      *
@@ -66,9 +59,6 @@ export interface ListingQrSheetContent {
      */
     readonly url: string;
 }
-
-/** The platform's name. A proper noun, so it is a constant and not a key. */
-const BRAND_NAME = 'Hospeda';
 
 /**
  * The locale the MINTED destination is pinned to. The market's default, always.
@@ -91,8 +81,8 @@ const BRAND_NAME = 'Hospeda';
  * reads the site in". A language-neutral symbol pointing at a language-pinned
  * destination reintroduces exactly the choice the neutral path avoided.
  *
- * So the SHEET is still printed in the reader's language — headline, invitation
- * and tagline all follow `locale`, because the person holding the paper is the
+ * So the SHEET is still printed in the reader's language — the pill's first line
+ * follows `locale`, because the person holding the paper is the
  * host — and only the destination is pinned. The two are different audiences.
  *
  * ## This is reversible without reprinting anything
@@ -187,22 +177,10 @@ export function buildListingQrSheetContent(input: {
 
     return {
         listingName: input.listingName.trim(),
-        headline: t({
+        pillHeadline: t({
             locale,
-            key: 'common.qrSheet.headline',
-            fallback: 'Escaneá el código'
-        }),
-        invite: t({
-            locale,
-            key: 'common.qrSheet.invite',
-            fallback:
-                'Apuntá la cámara de tu teléfono al código para ver la ficha completa: fotos, contacto y cómo llegar.'
-        }),
-        brand: BRAND_NAME,
-        brandTagline: t({
-            locale,
-            key: 'common.qrSheet.brandTagline',
-            fallback: 'Alojamientos, gastronomía y experiencias del Litoral'
+            key: 'common.qrSheet.pillHeadline',
+            fallback: 'Escaneá para conocer'
         }),
         // NOT `locale`. The copy is the reader's; the destination is the
         // market's, forever — see MINTED_TARGET_LOCALE.

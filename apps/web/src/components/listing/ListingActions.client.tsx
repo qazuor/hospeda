@@ -5,8 +5,8 @@
  *
  * Renders the listing-card state machine (`resolveListingCardState`): nothing
  * at all for a `PURGED` listing (HOS-1641, Coord-351 F4), the
- * published badge with the public-page link, the brochure and QR downloads
- * (and the certificate for an experience), or, for a draft, the checklist of
+ * published badge with the public-page link, the brochure download (and the
+ * certificate for an experience), or, for a draft, the checklist of
  * what is still missing.
  *
  * A complete DRAFT may mount the shared publish action when the server-derived
@@ -116,13 +116,10 @@ export function ListingActions({
                     {t('listing.owner.list.state.viewPublic', 'Ver ficha pública')}
                 </a>
                 {/*
-                 * HOS-1058. Only in the `published` state, and that is not a
-                 * styling choice: the sheet is a print of the PUBLIC ficha, so
-                 * a draft has nothing to print and its QR would lead to a 404.
-                 * The API enforces the same rule; this just avoids offering a
-                 * button that could only ever answer 404.
-                 * The QR remains ungated by plan, but trusts `hasPublicPage`
-                 * (absent means false), never a legacy `isPublic` fallback.
+                 * HOS-1058. Only in the `published` state: the brochure is a
+                 * print of the PUBLIC ficha, so a draft has nothing to print.
+                 * The QR sheet moved to the listing's own QR page (HOS-2688),
+                 * linked from the card's «⋯» menu.
                  */}
                 <ListingDownloads
                     vertical={listing.vertical}
@@ -130,7 +127,6 @@ export function ListingActions({
                     slug={listing.slug}
                     locale={locale}
                     name={listing.name}
-                    isPublished={listing.hasPublicPage ?? false}
                 />
                 {/*
                  * HOS-1057. Experiences only — a restaurant has nothing to

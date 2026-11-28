@@ -135,6 +135,35 @@ export async function fetchOwnerListingDetail({
     id: string;
     cookieHeader?: string;
 }): Promise<ListingDetail | null> {
+    const outcome = await loadOwnerListingDetail({ vertical, id, cookieHeader });
+    return outcome.status === 'ok' ? outcome.detail : null;
+}
+
+/** The three answers a detail read can give, kept apart (HOS-2688). */
+export type OwnerListingDetailOutcome =
+    | { readonly status: 'ok'; readonly detail: ListingDetail }
+    /** 404/403/410 or an empty body: the listing is not there for this caller. */
+    | { readonly status: 'notFound' }
+    /** Anything else (5xx, network): the read failed, the listing may well exist. */
+    | { readonly status: 'error' };
+
+/**
+ * Reads one owner listing and keeps "not found" apart from "the read failed",
+ * which {@link fetchOwnerListingDetail} folds into one `null`. A page that
+ * answers 404 must not do so for a transient 5xx.
+ *
+ * @param params - Vertical, id and the SSR cookie header.
+ * @returns The listing, `notFound`, or `error`.
+ */
+export async function loadOwnerListingDetail({
+    vertical,
+    id,
+    cookieHeader
+}: {
+    readonly vertical: VenueOrExperience;
+    readonly id: string;
+    readonly cookieHeader?: string;
+}): Promise<OwnerListingDetailOutcome> {
     const path = `${PROTECTED_COLLECTION_PATH[vertical]}/${id}`;
 
     const result = await apiClient.getProtected<ListingDetail | null>({
@@ -142,7 +171,13 @@ export async function fetchOwnerListingDetail({
         cookieHeader
     });
 
-    return result.ok ? (result.data ?? null) : null;
+    if (result.ok) {
+        return result.data ? { status: 'ok', detail: result.data } : { status: 'notFound' };
+    }
+    const status = result.error?.status ?? 0;
+    return status === 404 || status === 403 || status === 410
+        ? { status: 'notFound' }
+        : { status: 'error' };
 }
 
 // ---------------------------------------------------------------------------

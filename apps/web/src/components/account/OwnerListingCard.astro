@@ -8,11 +8,13 @@
  * Originally the property card
  * (HOS-2483): photo, name linked to the editor, a `StatusPill`, location and
  * price, the listing notices, ONE primary action and a `PropertyCardMenu` with
- * the rest, and the QR sheet as the card footer.
+ * the rest. The QR sheet used to be the card footer; since HOS-2688 the menu
+ * carries a «Código QR» entry that leads to the listing's own QR page
+ * (`buildListingQrPagePath`), disabled with the reason until it is published.
  *
  * Primary action: «Publicar» / «Publicar de nuevo» when the card offers it,
  * «Editar» otherwise. Everything else (Editar when it is not primary, Ver en el
- * sitio, Despublicar, Eliminar) lives in the menu; Despublicar and Eliminar
+ * sitio, Código QR, Despublicar, Eliminar) lives in the menu; Despublicar and Eliminar
  * open their unchanged confirmation islands in a dialog.
  *
  * Status badge mapping (HOS-1641: read from `publicationStatus`, one entry per
@@ -39,7 +41,6 @@ import type { Accommodation, ListingNoticesItem } from '@repo/schemas';
 import { PublicationStatusEnum } from '@repo/schemas';
 import { getMediaUrl } from '@repo/media';
 import { LinkButton, ListingCard, StatusPill, type StatusTone } from '@/components/account/ui';
-import { ListingQrSheet } from '@/components/shared/qr/ListingQrSheet.client';
 import ListingNotices from '@/components/listing/ListingNotices.astro';
 import { buildUnpublishConfirmNotes } from '@/lib/listing/listing-notices';
 import {
@@ -54,6 +55,7 @@ import { ListingActions } from '@/components/listing/ListingActions.client';
 import type { OwnerListingSummaryWithState } from '@/lib/listing/owner-listings';
 import { resolveOwnerListingPrimaryAction } from '@/lib/listing/owner-listing-primary-action';
 import { resolveOwnerListingDisplayStatus } from '@/lib/listing/owner-listing-buckets';
+import { buildListingQrPagePath } from '@/lib/listing/listing-qr-page';
 
 /**
  * Props for the PropertyCard component.
@@ -224,8 +226,9 @@ const viewOnSiteUrl = buildUrl({ locale, path: `alojamientos/${entity.slug}` });
  *
  * `actions.canPrintQrSheet` is `publicationStatus === PUBLISHED` (HOS-982): only
  * a published listing has a public page, which is exactly what the API's
- * `qr-sheet` route checks before it will print a code, so the card never offers
- * a download that can only answer 404. It is resolved HERE, from the row the
+ * `qr-sheet` route checks before it will print a code, so the card's «Código QR»
+ * entry (HOS-2688) is a live link only then, and disabled with the reason
+ * otherwise. It is resolved HERE, from the row the
  * page already fetched, and never from a failed request: that route answers one
  * indistinguishable 404 for "not yours", "does not exist" and "not published",
  * by design.
@@ -256,6 +259,34 @@ const choosePlanKeys = {
     venue: 'listing.owner.publish.choosePlan.venue',
     experience: 'listing.owner.publish.choosePlan.experience'
 };
+/**
+ * HOS-2688: the «Código QR» menu entry, for every vertical, and the one-time
+ * notice a FIRST publish queues (a draft's «Publicar», never «Publicar de
+ * nuevo»), both pointing at the listing's QR page.
+ */
+const qrPageUrl = buildUrl({ locale, path: buildListingQrPagePath({ vertical, listingId: entity.id }) });
+const qrCodeEntry = actions.qrCodeEntry
+    ? {
+          href: qrPageUrl,
+          label: actions.canPrintQrSheet
+              ? t('listing.owner.qrPage.menuItem')
+              : t('listing.owner.qrPage.menuItemUnpublished'),
+          disabled: !actions.canPrintQrSheet
+      }
+    : undefined;
+const qrNotice = actions.republish
+    ? undefined
+    : {
+          message: t('listing.owner.qrPage.noticeMessage'),
+          actionLabel: t('listing.owner.qrPage.noticeAction'),
+          href: qrPageUrl
+      };
+const listingMenuItems = listing
+    ? [
+          ...(showPublish ? [{ id: 'edit', label: t('listing.owner.list.edit'), href: editUrl }] : []),
+          ...(qrCodeEntry ? [{ id: 'qr-code', ...qrCodeEntry }] : [])
+      ]
+    : [];
 const publishCopy = actions.republish
     ? {
           label: t('host.properties.card.actions.republish', 'Publicar de nuevo'),
@@ -311,6 +342,7 @@ const publishCopy = actions.republish
             affordance={publishAffordance}
             checkFailedText={t('host.properties.card.publishCheckFailed')}
             choosePlanLabel={t(choosePlanKeys[vertical])}
+            qrNotice={qrNotice}
         />
     ) : actions.edit ? (
         <LinkButton slot="primaryAction" href={editUrl} variant="secondary">
@@ -326,6 +358,7 @@ const publishCopy = actions.republish
             label={t('host.properties.card.moreActions', undefined, { name: property.name })}
             edit={showPublish && actions.edit ? { href: editUrl, label: t('host.properties.card.actions.edit', 'Editar') } : undefined}
             viewOnSite={actions.viewOnSite ? { href: viewOnSiteUrl, label: t('host.properties.card.actions.viewOnSite', 'Ver en el sitio') } : undefined}
+            qrCode={qrCodeEntry}
             unpublish={actions.unpublish ? {
                 accommodationId: property.id,
                 locale,
@@ -352,29 +385,12 @@ const publishCopy = actions.republish
         />
     )}
 
-    {listing && showPublish && (
+    {listing && listingMenuItems.length > 0 && (
         <Menu client:visible locale={locale}
             label={t('listing.owner.list.moreActions', undefined, { name: entity.name })}
-            items={[{ id: 'edit', label: t('listing.owner.list.edit'), href: editUrl }]}
+            items={listingMenuItems}
         />
     )}
     </Fragment>
 
-    <!-- HOS-982: the printable QR sheet, as the card footer. Rendered in every
-         publication state but PURGED on purpose: a draft's owner reads what
-         publishing unlocks instead of finding nothing at all, while a purged
-         listing has nothing to print (HOS-1641). Printable only when PUBLISHED
-         (`canPrintQrSheet`). `client:visible` because the panel fetches its QR
-         image on mount: hydrating eagerly would fire one request per card. -->
-    {property && actions.qrBlock && (
-        <ListingQrSheet
-            slot="footer"
-            client:visible
-            vertical="accommodation"
-            listingId={property.id}
-            slug={property.slug}
-            locale={locale}
-            isPublished={actions.canPrintQrSheet}
-        />
-    )}
 </ListingCard>
