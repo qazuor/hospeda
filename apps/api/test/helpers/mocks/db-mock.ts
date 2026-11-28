@@ -423,9 +423,9 @@ export function createDbMock() {
          * `QrCodeService` (through `qr-code.organize`); the stubs answer marker
          * objects so a route test can assert WHICH filter reached the query.
          */
-        buildQrCodeUtmCampaignCondition: vi.fn((input: { encodedValues: readonly string[] }) => ({
+        buildQrCodeUtmCampaignCondition: vi.fn((input: { rawValues: readonly string[] }) => ({
             __qrFilter: 'utmCampaign',
-            encodedValues: [...input.encodedValues]
+            rawValues: [...input.rawValues]
         })),
         buildQrCodeTagFilterCondition: vi.fn((input: { tagIds: readonly string[] }) => ({
             __qrFilter: 'tagIds',

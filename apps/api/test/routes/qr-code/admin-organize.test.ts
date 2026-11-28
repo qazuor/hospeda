@@ -361,6 +361,9 @@ describe('GET /admin/qr-codes — decorated rows', () => {
 
 describe('GET /admin/qr-codes — HOS-2679 filters', () => {
     it('combines column filters with the campaign and tag conditions', async () => {
+        // Arrange: the stored raw campaigns the filter resolves the value against.
+        db.distinctCampaigns.mockResolvedValue(['verano%202026', 'verano+2026', 'verano-2025']);
+
         // Act
         const res = await probe(
             buildApp(),
@@ -377,7 +380,7 @@ describe('GET /admin/qr-codes — HOS-2679 filters', () => {
         expect(where).toStrictEqual({ source: 'MANUAL', isActive: true, deletedAt: null });
         expect(conditions).toContainEqual({
             __qrFilter: 'utmCampaign',
-            encodedValues: ['verano%202026', 'verano+2026', 'verano 2026']
+            rawValues: ['verano%202026', 'verano+2026']
         });
         expect(conditions).toContainEqual({ __qrFilter: 'tagIds', tagIds: [TAG_ID] });
         // The free-text search still applies on top: three conditions in all.
@@ -396,6 +399,29 @@ describe('GET /admin/qr-codes — HOS-2679 filters', () => {
 
     it('answers 400 for a malformed tag id, without querying', async () => {
         const res = await probe(buildApp(), '/codes?tagIds=nope');
+
+        expect(res.status).toBe(400);
+        expect(db.codeFindAll).not.toHaveBeenCalled();
+    });
+
+    it('matches nothing for a campaign no code carries, instead of everything', async () => {
+        db.distinctCampaigns.mockResolvedValue(['verano']);
+
+        const res = await probe(buildApp(), '/codes?utmCampaign=oto%C3%B1o');
+
+        expect(res.status).toBe(200);
+        expect(db.codeFindAll.mock.calls[0]?.[2]).toStrictEqual([
+            { __qrFilter: 'utmCampaign', rawValues: [] }
+        ]);
+    });
+
+    it('answers 400 for more tag ids than a code can carry', async () => {
+        const ids = Array.from(
+            { length: 51 },
+            (_, i) => `00000000-0000-4000-8000-${String(i).padStart(12, '0')}`
+        );
+
+        const res = await probe(buildApp(), `/codes?tagIds=${ids.join(',')}`);
 
         expect(res.status).toBe(400);
         expect(db.codeFindAll).not.toHaveBeenCalled();
@@ -573,6 +599,12 @@ describe('/admin/qr-code-tags', () => {
         expect(res.status).toBe(200);
         expect(db.tagSoftDelete).toHaveBeenCalledTimes(1);
         expect(res.body.data).toStrictEqual({ success: true });
+    });
+
+    it('refuses includeDeleted on the tag catalog', async () => {
+        const res = await probe(buildApp(), '/tags?includeDeleted=true');
+
+        expect(res.status).toBe(400);
     });
 
     it('lists the catalog for a read-only operator', async () => {

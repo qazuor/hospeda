@@ -1,8 +1,14 @@
 /**
  * GET /api/v1/admin/qr-code-tags — the QR tag catalog (HOS-2679).
  *
- * Live tags by name, `page` + `pageSize` (max 100). The panel loads one page of
- * 100 into its pickers: the catalog is organisation for one team, not content.
+ * Live tags by name, `page` + `pageSize` (max 100). The panel pages through the
+ * whole catalog for its pickers.
+ *
+ * `includeDeleted` is NOT accepted here, although the base admin search offers it
+ * to every admin list: those lists back a trash view, and the tag catalog has
+ * none. A deleted tag is gone for every purpose the panel has (it frees its
+ * slug, stops matching filters and stops showing on codes), so exposing it would
+ * only hand the pickers rows they must never offer.
  *
  * @module routes/qr-code/admin-tags/list
  */
@@ -22,7 +28,11 @@ export const adminListQrCodeTagsRoute = createAdminListRoute({
     description: 'Returns the QR code tag catalog, paginated. `search` matches the tag name.',
     tags: ['QrCodeTags'],
     requiredPermissions: [PermissionEnum.QR_CODE_VIEW],
-    requestQuery: QrCodeTagAdminSearchSchema.omit({ page: true, pageSize: true }).shape,
+    requestQuery: QrCodeTagAdminSearchSchema.omit({
+        page: true,
+        pageSize: true,
+        includeDeleted: true
+    }).shape,
     responseSchema: QrCodeTagSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
