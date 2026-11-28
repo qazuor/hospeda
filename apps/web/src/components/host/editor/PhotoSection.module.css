@@ -271,3 +271,10 @@
     font-size: var(--app-ui-size);
     line-height: 1.3;
 }
+
+/* HOS-2677: the cap upsell can carry two links (add-on, then plan change). */
+.capUpsellActions {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: var(--space-3, 0.75rem);
+}

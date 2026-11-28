@@ -121,18 +121,12 @@ export function usePhotoAllowance({
     useEffect(() => {
         if (!hasPlanUpsell || limitKey === '') return;
         let alive = true;
-        const plan = buildCapUpsell({
-            isGalleryFull: true,
-            limitKey,
-            count: 0,
-            cap: 0,
-            locale
-        });
+        const plan = buildCapUpsell({ isGalleryFull: true, limitKey, count: 0, cap: 0, locale });
         if (!plan) return;
         void withLimitAddonOffer({ payload: plan, details: { limitKey }, locale }).then(
             (payload) => {
-                if (alive && payload.secondaryAction) {
-                    setAddonUpsell({ key: upsellKey, payload });
+                if (alive) {
+                    setAddonUpsell(payload.secondaryAction ? { key: upsellKey, payload } : null);
                 }
             }
         );

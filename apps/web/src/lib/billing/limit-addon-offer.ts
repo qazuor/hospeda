@@ -22,6 +22,9 @@ import { formatPrice } from '@/lib/format-utils';
 import { createT, type SupportedLocale } from '@/lib/i18n';
 import { buildVerticalSubscriptionUrl } from '@/lib/publish/publish-page-paths';
 
+/** How long a limit notice waits for the catalog read before showing the plan change alone. */
+export const OFFERS_READ_BUDGET_MS = 2500;
+
 /** i18n key of the add-on action label on a limit notice (`billing.limit` is client-loaded). */
 export const LIMIT_ADDON_CTA_KEY = 'billing.limit.addonCta';
 
@@ -86,7 +89,12 @@ export async function withLimitAddonOffer(input: {
     const limitKey = (details as Partial<LimitReachedDetails> | null | undefined)?.limitKey;
     if (typeof limitKey !== 'string' || !LIMIT_KEY_VERTICAL[limitKey]) return payload;
     try {
-        const result = await fetchOffers();
+        // The notice must not wait on a slow catalog read: past the budget it goes out plan-only.
+        const result = await Promise.race([
+            fetchOffers(),
+            new Promise<null>((resolve) => setTimeout(() => resolve(null), OFFERS_READ_BUDGET_MS))
+        ]);
+        if (result === null) return payload;
         if (!result.ok) return payload;
         return applyLimitAddonOffer({ payload, limitKey, offers: result.data.items, locale });
     } catch {

@@ -428,7 +428,7 @@ export function PhotoSection({
                             locale={locale}
                             action={
                                 capUpsell ? (
-                                    <>
+                                    <span className={styles.capUpsellActions}>
                                         <TextLink href={capUpsell.action.href}>
                                             {capUpsell.action.label}
                                         </TextLink>
@@ -437,7 +437,7 @@ export function PhotoSection({
                                                 {capUpsell.secondaryAction.label}
                                             </TextLink>
                                         )}
-                                    </>
+                                    </span>
                                 ) : undefined
                             }
                         >

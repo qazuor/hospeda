@@ -9,7 +9,7 @@
  */
 
 import type { AddonOffersResponse } from '@repo/schemas';
-import { LimitKeyEnum } from '@repo/schemas';
+import { LISTING_PHOTO_LIMIT_KEY_BY_VERTICAL, LimitKeyEnum } from '@repo/schemas';
 import { purchasableOffers } from '@/lib/billing/addon-purchase';
 
 /** The verticals reachable from the header's "Publicar" menu. */
@@ -43,14 +43,12 @@ export const PUBLISH_CAP_LIMIT_KEY: Readonly<Record<CapVertical, string>> = {
  * photo caps. Keys, not values: which add-on grants one is still the catalog's call. A limit key
  * absent here has no vertical to buy on, so it is never offered an add-on.
  */
-export const LIMIT_KEY_VERTICAL: Readonly<Record<string, CapVertical>> = {
-    [LimitKeyEnum.MAX_ACCOMMODATIONS]: 'accommodation',
-    [LimitKeyEnum.MAX_VENUES]: 'venue',
-    [LimitKeyEnum.MAX_EXPERIENCES]: 'experience',
-    [LimitKeyEnum.MAX_PHOTOS_PER_ACCOMMODATION]: 'accommodation',
-    [LimitKeyEnum.MAX_PHOTOS_PER_VENUE]: 'venue',
-    [LimitKeyEnum.MAX_PHOTOS_PER_EXPERIENCE]: 'experience'
-};
+export const LIMIT_KEY_VERTICAL: Readonly<Record<string, CapVertical>> = Object.fromEntries(
+    (['accommodation', 'venue', 'experience'] as const).flatMap((vertical) => [
+        [PUBLISH_CAP_LIMIT_KEY[vertical], vertical],
+        [LISTING_PHOTO_LIMIT_KEY_BY_VERTICAL[vertical], vertical]
+    ])
+);
 
 /** A catalog offer the limit hit can be raised with, plus the vertical it is bought on. */
 export interface LimitAddonOffer extends CapAddonOffer {

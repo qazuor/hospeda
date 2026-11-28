@@ -52,6 +52,13 @@ vi.mock('@/lib/api/endpoints-protected', () => ({
     listingPhotoAllowanceApi: { getAllowance: mockGetAllowance },
     publishApi: { subscribeDestination: vi.fn() }
 }));
+vi.mock('@/lib/api/endpoints-protected-addons', () => ({
+    billingAddonApi: {
+        offers: () =>
+            Promise.resolve({ ok: false, error: { status: 500, code: 'X', message: 'x' } })
+    }
+}));
+
 vi.mock('@/lib/media/upload-entity', () => ({ uploadEntityImage: mockUploadEntityImage }));
 vi.mock('@/lib/media/compress-image', () => ({
     compressImageForUpload: async ({ file }: { file: File }) => ({ file, status: 'skipped' }),
