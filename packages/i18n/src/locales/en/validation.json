@@ -42,6 +42,10 @@
         "targetUrl": {
             "invalidUrl": "The destination must be a valid URL",
             "max": "The destination must not exceed {{max}} characters"
+        },
+        "utmCampaign": {
+            "min": "The campaign cannot be empty",
+            "max": "The campaign cannot exceed {{max}} characters"
         }
     },
     "reviewMarkedFields": "Check the highlighted fields.",
@@ -5377,6 +5381,15 @@
             "max": "The reason cannot exceed 500 characters",
             "min": "The reason must be at least 10 characters",
             "required": "The reason is required"
+        }
+    },
+    "qrCodeTag": {
+        "name": {
+            "min": "The tag name is required",
+            "max": "The tag name cannot exceed {{max}} characters"
+        },
+        "tagIds": {
+            "max": "A QR code cannot carry more than {{max}} tags"
         }
     }
 }

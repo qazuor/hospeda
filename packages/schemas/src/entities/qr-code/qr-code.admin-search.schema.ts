@@ -8,8 +8,9 @@ import { QrCodeSourceEnumSchema } from '../../enums/qr-code-source.schema.js';
 /**
  * Admin list filters for QR codes (HOS-981).
  *
- * Every field maps directly to a `qr_codes` column, so the service uses the
- * base class's default `_executeAdminSearch()`. Note that the free-text
+ * Every field but `utmCampaign` and `tagIds` maps directly to a `qr_codes`
+ * column; `QrCodeService._executeAdminSearch()` lifts those two out and turns
+ * them into SQL conditions (HOS-2679). Note that the free-text
  * `search` param is NOT covered by that default: `QrCodeService` overrides
  * `getSearchableColumns()` because the base default names a `name` column this
  * table does not have.
@@ -31,7 +32,38 @@ export const QrCodeAdminSearchSchema = AdminSearchBaseSchema.extend({
      * complement of what the operator asked for: "show me the retired codes"
      * would list the live ones under an "inactive" heading.
      */
-    isActive: createBooleanQueryParam('Filter by active status')
+    isActive: createBooleanQueryParam('Filter by active status'),
+    /**
+     * Exact match on the `utm_campaign` stored in `targetUrl` (HOS-2679). Not a
+     * column: the service turns it into a condition over the parsed query param,
+     * so `verano` does not also match `verano-2025`. Meaningful for MANUAL codes;
+     * a GENERATED code's campaign is computed at scan and never stored.
+     */
+    utmCampaign: z
+        .string()
+        .trim()
+        .min(1, { message: 'zodError.qrCode.utmCampaign.min' })
+        .max(200, { message: 'zodError.qrCode.utmCampaign.max' })
+        .optional(),
+    /**
+     * Codes carrying ANY of these tags (HOS-2679). Accepts a repeated param or a
+     * comma-separated list. Not a column either: resolved through
+     * `r_qr_code_qr_code_tag`, live tags only.
+     */
+    tagIds: z
+        .union([
+            z.array(z.string().uuid({ message: 'zodError.common.id.invalidUuid' })),
+            z
+                .string()
+                .transform((val) =>
+                    val
+                        .split(',')
+                        .map((s) => s.trim())
+                        .filter((s) => s.length > 0)
+                )
+                .pipe(z.array(z.string().uuid({ message: 'zodError.common.id.invalidUuid' })))
+        ])
+        .optional()
 });
 
 export type QrCodeAdminSearch = z.infer<typeof QrCodeAdminSearchSchema>;
