@@ -184,4 +184,49 @@ describe('PropertyCardMenu', () => {
         // Assert
         await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument());
     });
+
+    describe('HOS-2688 — «Código QR»', () => {
+        it('links a published listing to its QR page, in the same tab', () => {
+            render(
+                <PropertyCardMenu
+                    locale="es"
+                    label="Más acciones para Casa"
+                    viewOnSite={{ href: '/es/alojamientos/casa/', label: 'Ver en el sitio' }}
+                    qrCode={{ href: '/es/mi-cuenta/propiedades/p1/codigo-qr/', label: 'Código QR' }}
+                    remove={REMOVE}
+                />
+            );
+
+            openMenu();
+
+            const qr = screen.getByRole('menuitem', { name: 'Código QR' });
+            expect(qr).toHaveAttribute('href', '/es/mi-cuenta/propiedades/p1/codigo-qr/');
+            expect(qr).not.toHaveAttribute('target');
+            expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual([
+                'Ver en el sitio (se abre en otra pestaña)',
+                'Código QR',
+                'Eliminar'
+            ]);
+        });
+
+        it("shows an unpublished listing's entry disabled, its label saying why", () => {
+            render(
+                <PropertyCardMenu
+                    locale="es"
+                    label="Más acciones para Casa"
+                    qrCode={{
+                        href: '/es/mi-cuenta/propiedades/p1/codigo-qr/',
+                        label: 'Código QR · cuando la publiques',
+                        disabled: true
+                    }}
+                />
+            );
+
+            openMenu();
+
+            const qr = screen.getByRole('menuitem', { name: 'Código QR · cuando la publiques' });
+            expect(qr).toHaveAttribute('aria-disabled', 'true');
+            expect(qr).not.toHaveAttribute('href');
+        });
+    });
 });

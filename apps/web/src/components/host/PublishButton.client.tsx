@@ -53,6 +53,7 @@ import { getAddonName } from '@/lib/billing/addon-purchase';
 import { formatPrice } from '@/lib/format-utils';
 import { createTranslations, type SupportedLocale } from '@/lib/i18n';
 import { buildSubscribeToPublishCopy } from '@/lib/listing/listing-notices';
+import { claimListingQrNotice } from '@/lib/listing/listing-qr-page';
 import {
     publishListing,
     resolvePublishEditorPath,
@@ -61,6 +62,7 @@ import {
 import { buildVerticalSubscriptionUrl } from '@/lib/publish/publish-page-paths';
 import { NO_PLANS_AVAILABLE_MESSAGE, type PublishAffordance } from '@/lib/publish/subscribe-button';
 import { buildUrl } from '@/lib/urls';
+import { queueToastForNextPage } from '@/store/toast-store';
 import styles from './PublishButton.module.css';
 
 /** Requirement id → its i18n label key, built once from the shared list. */
@@ -155,6 +157,17 @@ export interface PublishButtonProps {
     readonly confirmTrialNote: string;
     /** Label for the "choose a plan" action shown in place of Publish. */
     readonly choosePlanLabel: string;
+    /**
+     * The one-time "your QR is ready" notice (HOS-2688), already translated.
+     * Pass it ONLY for a first publish (a draft's «Publicar», never «Publicar
+     * de nuevo»). On success it is queued as a toast for the page the reload
+     * lands on, once per listing (`claimListingQrNotice`).
+     */
+    readonly qrNotice?: {
+        readonly message: string;
+        readonly actionLabel: string;
+        readonly href: string;
+    };
 }
 
 // ---------------------------------------------------------------------------
@@ -187,7 +200,8 @@ export function PublishButton({
     affordance,
     checkFailedText,
     confirmTrialNote,
-    choosePlanLabel
+    choosePlanLabel,
+    qrNotice
 }: PublishButtonProps): JSX.Element {
     const [state, setState] = useState<PublishState>('idle');
     const [apiError, setApiError] = useState<string | null>(null);
@@ -309,6 +323,16 @@ export function PublishButton({
             setApiError(errorText);
             setState('error');
             return;
+        }
+
+        // HOS-2688: the first publish announces the listing's printable QR,
+        // once per listing. Queued, because the reload below unmounts this.
+        if (qrNotice && claimListingQrNotice({ listingId })) {
+            queueToastForNextPage({
+                type: 'success',
+                message: qrNotice.message,
+                action: { label: qrNotice.actionLabel, href: qrNotice.href }
+            });
         }
 
         // Reload so the card re-renders with the new ACTIVE status.

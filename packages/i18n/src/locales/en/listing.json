@@ -11,9 +11,16 @@
     "owner": {
         "downloads": {
             "label": "Download",
-            "forListing": "Download files for {{name}}",
-            "viewQr": "View QR code",
-            "qrTitle": "QR code: {{name}}"
+            "forListing": "Download files for {{name}}"
+        },
+        "qrPage": {
+            "menuItem": "QR code",
+            "menuItemUnpublished": "QR code · once you publish it",
+            "breadcrumb": "QR code",
+            "title": "QR code for {{name}}",
+            "description": "Print the sticker, cut it out and put it on your door, window or counter: whoever scans it lands on your listing.",
+            "noticeMessage": "Your listing is live! Your printable QR code is ready.",
+            "noticeAction": "See my QR code"
         },
         "nav": "My business",
         "purgeAddons": {

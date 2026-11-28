@@ -307,7 +307,7 @@
     "anonymous": "User",
     "qrSheet": {
         "pillHeadline": "Scan to discover",
-        "help": "An A4 sheet carrying your listing's code, ready to print and tape to the door or leave on the counter.",
+        "help": "An A4 sheet with your listing’s sticker (19 cm, with cut marks) to print, cut out and put on your door or counter.",
         "download": "Download the QR sheet (PDF)",
         "working": "Generating the sheet…",
         "ready": "Done, your QR sheet was downloaded.",

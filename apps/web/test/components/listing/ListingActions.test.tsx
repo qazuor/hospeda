@@ -116,14 +116,12 @@ describe('ListingActions', () => {
         });
 
         /*
-         * HOS-982. The QR sheet rides in the published branch, next to the
-         * brochure and for the same reason the brochure is there: the sheet
-         * prints a code that resolves to the PUBLIC ficha, so a draft's code
-         * would be a permanent 404 on a piece of paper somebody taped to a door.
-         * The API enforces that rule itself; this pair only proves the card does
-         * not offer a download that could never work.
+         * HOS-2688. The QR sheet used to ride in this menu; it now has a page
+         * of its own, linked from the card's «⋯» menu (OwnerListingCard). The
+         * downloads menu keeps the brochure only, and the published branch
+         * never mounts the QR panel.
          */
-        it('offers the printable QR sheet on a published listing', () => {
+        it('no longer offers the QR in the downloads menu of a published listing', () => {
             render(
                 <ListingActions
                     listing={buildListing({
@@ -139,64 +137,8 @@ describe('ListingActions', () => {
             fireEvent.click(
                 screen.getByRole('button', { name: 'listing.owner.downloads.forListing' })
             );
-            expect(
-                screen.getByRole('menuitem', { name: 'common.qrSheet.download' })
-            ).not.toHaveAttribute('aria-disabled');
-        });
-
-        /*
-         * HOS-982 PR 2. Before HOS-1641 `isPublic` and `hasPublicPage` came from
-         * separate old columns, and a staff PATCH that left one standing
-         * produced this row (since HOS-1641 both are `PUBLISHED`, so the API no
-         * longer produces it, but the card still trusts only `hasPublicPage`).
-         * It renders the published
-         * badge and the public link (both pre-existing, both out of this change's
-         * scope) — but the QR panel must not join them, because every request it
-         * would make answers 404. Before this fix the card carried three
-         * contradictory sentences and no possible action.
-         */
-        it('does NOT offer it when the listing is PUBLIC but not ACTIVE', () => {
-            const fetchMock = vi.fn();
-            vi.stubGlobal('fetch', fetchMock);
-
-            render(
-                <ListingActions
-                    listing={buildListing({
-                        isPublic: true,
-                        hasPublicPage: false,
-                        completeness: null
-                    })}
-                    locale="es"
-                />
-            );
-
-            fireEvent.click(
-                screen.getByRole('button', { name: 'listing.owner.downloads.forListing' })
-            );
-            expect(
-                screen.getByRole('menuitem', { name: 'common.qrSheet.download' })
-            ).toHaveAttribute('aria-disabled', 'true');
-            // And nothing was asked of the API: the panel does not learn this
-            // from a 404, it is told.
-            expect(fetchMock).not.toHaveBeenCalled();
-        });
-
-        it('treats an older answer with no hasPublicPage as NOT published', () => {
-            // Fail closed. Falling back to `isPublic` is precisely the
-            // single-clause bug the field was added to remove.
-            render(
-                <ListingActions
-                    listing={buildListing({ isPublic: true, completeness: null })}
-                    locale="es"
-                />
-            );
-
-            fireEvent.click(
-                screen.getByRole('button', { name: 'listing.owner.downloads.forListing' })
-            );
-            expect(
-                screen.getByRole('menuitem', { name: 'common.qrSheet.download' })
-            ).toHaveAttribute('aria-disabled', 'true');
+            expect(screen.queryByRole('menuitem', { name: 'common.qrSheet.download' })).toBeNull();
+            expect(screen.queryByRole('menuitem', { name: /viewQr/ })).toBeNull();
         });
     });
 

@@ -307,7 +307,7 @@
     "anonymous": "Usuario",
     "qrSheet": {
         "pillHeadline": "Escaneá para conocer",
-        "help": "Una hoja A4 con el código de tu ficha, para imprimir y pegar en la puerta o dejar en el mostrador.",
+        "help": "Una hoja A4 con el calco de tu ficha (19 cm, con marcas de corte), para imprimir, recortar y pegar en la puerta o el mostrador.",
         "download": "Descargar la hoja QR (PDF)",
         "working": "Generando la hoja…",
         "ready": "Listo, descargamos tu hoja QR.",

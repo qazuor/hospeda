@@ -24,7 +24,7 @@ const EXPECTED: Readonly<Record<PublicationStatusEnum, PropertyCardActions>> = {
         republish: false,
         unpublish: false,
         delete: true,
-        qrBlock: true,
+        qrCodeEntry: true,
         canPrintQrSheet: false
     },
     [PublicationStatusEnum.PUBLISHED]: {
@@ -34,7 +34,7 @@ const EXPECTED: Readonly<Record<PublicationStatusEnum, PropertyCardActions>> = {
         republish: false,
         unpublish: true,
         delete: true,
-        qrBlock: true,
+        qrCodeEntry: true,
         canPrintQrSheet: true
     },
     [PublicationStatusEnum.UNPUBLISHED_BY_BILLING]: {
@@ -44,7 +44,7 @@ const EXPECTED: Readonly<Record<PublicationStatusEnum, PropertyCardActions>> = {
         republish: true,
         unpublish: false,
         delete: true,
-        qrBlock: true,
+        qrCodeEntry: true,
         canPrintQrSheet: false
     },
     [PublicationStatusEnum.ARCHIVED]: {
@@ -54,7 +54,7 @@ const EXPECTED: Readonly<Record<PublicationStatusEnum, PropertyCardActions>> = {
         republish: false,
         unpublish: false,
         delete: true,
-        qrBlock: true,
+        qrCodeEntry: true,
         canPrintQrSheet: false
     },
     [PublicationStatusEnum.MODERATED]: {
@@ -64,7 +64,7 @@ const EXPECTED: Readonly<Record<PublicationStatusEnum, PropertyCardActions>> = {
         republish: false,
         unpublish: false,
         delete: true,
-        qrBlock: true,
+        qrCodeEntry: true,
         canPrintQrSheet: false
     },
     [PublicationStatusEnum.PURGED]: {
@@ -74,7 +74,7 @@ const EXPECTED: Readonly<Record<PublicationStatusEnum, PropertyCardActions>> = {
         republish: false,
         unpublish: false,
         delete: false,
-        qrBlock: false,
+        qrCodeEntry: false,
         canPrintQrSheet: false
     }
 };
@@ -114,7 +114,7 @@ describe('resolvePropertyCardActions (HOS-1641, H11)', () => {
         });
 
         expect(hasAnyPropertyCardAction({ actions })).toBe(false);
-        expect(actions.qrBlock).toBe(false);
+        expect(actions.qrCodeEntry).toBe(false);
     });
 
     it.each(

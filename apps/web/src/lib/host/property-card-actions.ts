@@ -15,7 +15,7 @@
 import { PublicationStatusEnum } from '@repo/schemas';
 import type { PublishAffordance } from '@/lib/publish/subscribe-button';
 
-/** The actions (and the QR block) one card renders. */
+/** The actions (and the QR menu entry) one card renders. */
 export interface PropertyCardActions {
     /** Link to the web editor. */
     readonly edit: boolean;
@@ -35,13 +35,15 @@ export interface PropertyCardActions {
     /** The delete island (PB12). */
     readonly delete: boolean;
     /**
-     * Whether the QR-sheet block is rendered at all. A non-published card
-     * still renders it, so its owner reads what publishing unlocks.
+     * Whether the «⋯» menu offers the «Código QR» entry at all (HOS-2688). A
+     * non-published card still offers it, disabled with the reason, so its
+     * owner reads what publishing unlocks.
      */
-    readonly qrBlock: boolean;
+    readonly qrCodeEntry: boolean;
     /**
-     * Whether the QR sheet can actually be printed: only a `PUBLISHED` listing
-     * has a public page, which is what the API's `qr-sheet` route checks too.
+     * Whether that entry is a live link to the listing's QR page: only a
+     * `PUBLISHED` listing has a public page, which is what the API's `qr` and
+     * `qr-sheet` routes check too.
      */
     readonly canPrintQrSheet: boolean;
 }
@@ -53,7 +55,7 @@ const NO_ACTION: PropertyCardActions = {
     republish: false,
     unpublish: false,
     delete: false,
-    qrBlock: false,
+    qrCodeEntry: false,
     canPrintQrSheet: false
 };
 
@@ -62,7 +64,7 @@ const TAKEN_DOWN: PropertyCardActions = {
     ...NO_ACTION,
     edit: true,
     delete: true,
-    qrBlock: true
+    qrCodeEntry: true
 };
 
 const ACTIONS_BY_STATUS: Readonly<Record<PublicationStatusEnum, PropertyCardActions>> = {
@@ -74,7 +76,7 @@ const ACTIONS_BY_STATUS: Readonly<Record<PublicationStatusEnum, PropertyCardActi
         republish: false,
         unpublish: true,
         delete: true,
-        qrBlock: true,
+        qrCodeEntry: true,
         canPrintQrSheet: true
     },
     [PublicationStatusEnum.UNPUBLISHED_BY_BILLING]: { ...TAKEN_DOWN, republish: true },
@@ -106,8 +108,9 @@ export function resolvePropertyCardActions({
 }
 
 /**
- * Whether any action (or the QR block) is rendered, so the card can omit the
- * empty action row entirely.
+ * Whether any action is rendered, so the card can omit the empty action row
+ * entirely. The QR entry alone does not count: it rides in the same menu as
+ * the actions, and a card with nothing else to offer has no menu.
  *
  * @param params.actions - The resolved actions.
  * @returns `true` when at least one action is rendered.

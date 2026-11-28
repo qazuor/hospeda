@@ -1,0 +1,65 @@
+---
+/**
+ * @file mi-cuenta/propiedades/[id]/codigo-qr.astro
+ * @description One accommodation's QR page (HOS-2688): the code on screen, the
+ * printable sticker sheet behind it, and what to do with it. It replaced the QR
+ * block the property card used to carry as its footer; the card's «⋯» menu
+ * links here.
+ *
+ * Gate: signed-out → login with this URL as the return path; no publisher
+ * access → the shared denial; a missing listing or somebody else's → the
+ * in-layout 404, identical for both (`resolveAccommodationQrPage`). An unpublished
+ * listing of the viewer renders the panel's own "publish it first" line, and
+ * the panel never asks the QR endpoints for it.
+ *
+ * @route /{lang}/mi-cuenta/propiedades/{id}/codigo-qr/
+ * @rendering SSR (prerender = false — authenticated, owner-scoped data)
+ */
+
+import AccountLayout from '@/layouts/AccountLayout.astro';
+import { PageHeader } from '@/components/account/ui';
+import PageHelpLink from '@/components/account/help/PageHelpLink.astro';
+import { ListingQrSheet } from '@/components/shared/qr/ListingQrSheet.client';
+import { buildAccountBreadcrumbs } from '@/lib/account/account-breadcrumbs';
+import { getAccountSectionLabel } from '@/lib/account-nav-model';
+import { createTranslations } from '@/lib/i18n';
+import { resolveAccommodationQrPage } from '@/lib/listing/resolve-listing-qr-page';
+
+import { guardPublisherArea } from '@/lib/account/publisher-access';
+
+export const prerender = false;
+const denied = guardPublisherArea({ astro: Astro, area: 'accommodationEdit' });
+if (denied) return denied;
+
+const resolution = await resolveAccommodationQrPage({ astro: Astro });
+if (resolution.response) return resolution.response;
+
+const { locale, listing } = resolution;
+const { t } = createTranslations(locale);
+const accountSection = 'propiedades';
+const title = t('listing.owner.qrPage.title', undefined, { name: listing.name });
+const description = t('listing.owner.qrPage.description');
+const breadcrumbs = buildAccountBreadcrumbs({
+	t,
+	parents: [
+		{ label: getAccountSectionLabel({ t, section: accountSection }), path: 'mi-cuenta/propiedades' },
+		{ label: listing.name, path: `mi-cuenta/propiedades/${listing.id}/editar` },
+	],
+	current: t('listing.owner.qrPage.breadcrumb'),
+});
+---
+
+<AccountLayout locale={locale} title={title} description={description} activeSection={accountSection}>
+	<PageHeader title={title} description={description} breadcrumbs={breadcrumbs} locale={locale}>
+		<PageHelpLink slot="help" locale={locale} />
+	</PageHeader>
+
+	<ListingQrSheet
+		client:load
+		vertical={listing.vertical}
+		listingId={listing.id}
+		slug={listing.slug}
+		locale={locale}
+		isPublished={listing.isPublished}
+	/>
+</AccountLayout>

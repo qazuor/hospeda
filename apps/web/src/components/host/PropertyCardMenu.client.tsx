@@ -3,7 +3,9 @@
  * @description The «Más acciones» menu of a property card (HOS-2483, spec
  * HOS-2414 §6.2): every action of the card except its ONE primary action.
  *
- * Links (Editar, Ver en el sitio) navigate. Despublicar and Eliminar open a kit
+ * Links (Editar, Ver en el sitio, Código QR) navigate. «Código QR» (HOS-2688)
+ * leads to the listing's own QR page; on an unpublished listing it is shown
+ * disabled, its label saying why. Despublicar and Eliminar open a kit
  * `Dialog` that mounts the SAME `UnpublishButton` / `DeleteButton` islands the
  * card used before, straight on their confirmation step: the confirmation copy
  * (trial and recurring add-on lines, the add-ons a delete loses), the endpoints
@@ -30,6 +32,15 @@ export interface PropertyCardMenuProps {
     readonly edit?: { readonly href: string; readonly label: string };
     /** «Ver en el sitio» link (published only); opens in a new tab. */
     readonly viewOnSite?: { readonly href: string; readonly label: string };
+    /**
+     * «Código QR» link to the listing's QR page (HOS-2688). `disabled` while
+     * the listing is not published; the label then carries the reason.
+     */
+    readonly qrCode?: {
+        readonly href: string;
+        readonly label: string;
+        readonly disabled?: boolean;
+    };
     /** Despublicar: the UnpublishButton props (published only). */
     readonly unpublish?: Omit<
         UnpublishButtonProps,
@@ -50,6 +61,7 @@ export function PropertyCardMenu({
     label,
     edit,
     viewOnSite,
+    qrCode,
     unpublish,
     remove
 }: PropertyCardMenuProps): JSX.Element | null {
@@ -66,6 +78,13 @@ export function PropertyCardMenu({
     if (edit) items.push({ id: 'edit', label: edit.label, href: edit.href });
     if (viewOnSite)
         items.push({ id: 'view', label: viewOnSite.label, href: viewOnSite.href, external: true });
+    if (qrCode)
+        items.push({
+            id: 'qr-code',
+            label: qrCode.label,
+            href: qrCode.href,
+            disabled: qrCode.disabled
+        });
     if (unpublish)
         items.push({
             id: 'unpublish',
