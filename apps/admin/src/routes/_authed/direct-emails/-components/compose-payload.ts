@@ -22,6 +22,8 @@ export interface ComposeValues {
     readonly bodyJson: TiptapDocument | null;
     readonly recipients: ReadonlyArray<string>;
     readonly templateId: string | null;
+    /** Client UUID of the compose session; reused on retries, regenerated after a success. */
+    readonly idempotencyKey: string;
 }
 
 /** Validation errors: the first message (an i18n key) per field. */
@@ -72,6 +74,7 @@ export function buildSendPayload({
         subject: values.subject,
         bodyJson: values.bodyJson ?? EMPTY_DOC,
         recipients: [...values.recipients],
+        idempotencyKey: values.idempotencyKey,
         ...(values.templateId ? { templateId: values.templateId } : {})
     });
     if (parsed.success) return { success: true, payload: parsed.data };

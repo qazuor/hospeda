@@ -23,6 +23,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
     getDirectEmailErrorKey,
+    getDirectEmailProviderMessage,
+    getDirectEmailSendErrorKey,
     useDirectEmailTemplates,
     useSendDirectEmail,
     useTestSendDirectEmail
@@ -57,6 +59,9 @@ export function ComposeForm() {
     const [bodyJson, setBodyJson] = useState<TiptapDocument | null>(null);
     const [recipients, setRecipients] = useState<ReadonlyArray<string>>([]);
     const [templateId, setTemplateId] = useState<string | null>(null);
+    // One key per compose session: a retry after an ambiguous failure reuses it, so the API
+    // replays the stored result instead of sending again. Regenerated after a success.
+    const [idempotencyKey, setIdempotencyKey] = useState(() => crypto.randomUUID());
     const [errors, setErrors] = useState<ComposeErrors>({});
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [testOpen, setTestOpen] = useState(false);
@@ -95,7 +100,7 @@ export function ComposeForm() {
 
     function handleOpenConfirm(): void {
         const built = buildSendPayload({
-            values: { subject, bodyJson, recipients, templateId }
+            values: { subject, bodyJson, recipients, templateId, idempotencyKey }
         });
         if (!built.success) {
             setErrors(built.errors);
@@ -111,7 +116,7 @@ export function ComposeForm() {
 
     async function handleSend(): Promise<void> {
         const built = buildSendPayload({
-            values: { subject, bodyJson, recipients, templateId }
+            values: { subject, bodyJson, recipients, templateId, idempotencyKey }
         });
         if (!built.success) {
             setConfirmOpen(false);
@@ -121,10 +126,13 @@ export function ComposeForm() {
         try {
             const response = await sendMutation.mutateAsync(built.payload);
             setConfirmOpen(false);
+            setIdempotencyKey(crypto.randomUUID());
             setResults({ messageId: response.messageId, items: response.results });
         } catch (error) {
+            // The history list is refreshed by the mutation; the message tells the admin to
+            // look there before sending again.
             setConfirmOpen(false);
-            addToast({ message: t(getDirectEmailErrorKey({ error })), variant: 'error' });
+            addToast({ message: t(getDirectEmailSendErrorKey({ error })), variant: 'error' });
         }
     }
 
@@ -140,13 +148,28 @@ export function ComposeForm() {
         try {
             const result = await testSendMutation.mutateAsync(built.payload);
             setTestOpen(false);
+            if (!result.delivered) {
+                addToast({
+                    message: t('admin-direct-email.testSend.failedToast', {
+                        error: result.providerError ?? ''
+                    }),
+                    variant: 'error'
+                });
+                return;
+            }
             addToast({
                 message: t('admin-direct-email.testSend.sentToast', { email: result.sentTo }),
                 variant: 'success'
             });
         } catch (error) {
             setTestOpen(false);
-            addToast({ message: t(getDirectEmailErrorKey({ error })), variant: 'error' });
+            const providerMessage = getDirectEmailProviderMessage({ error });
+            addToast({
+                message: providerMessage
+                    ? t('admin-direct-email.testSend.failedToast', { error: providerMessage })
+                    : t(getDirectEmailErrorKey({ error })),
+                variant: 'error'
+            });
         }
     }
 

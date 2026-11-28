@@ -13,7 +13,11 @@ import { isApiError } from '@/lib/errors';
 const REASON_KEYS: Readonly<Record<string, TranslationKey>> = {
     DIRECT_EMAIL_RECIPIENT_SUPPRESSED: 'admin-direct-email.errors.recipientSuppressed',
     DIRECT_EMAIL_SENDER_EMAIL_MISSING: 'admin-direct-email.errors.senderEmailMissing',
-    DIRECT_EMAIL_NOT_CONFIGURED: 'admin-direct-email.errors.notConfigured'
+    DIRECT_EMAIL_NOT_CONFIGURED: 'admin-direct-email.errors.notConfigured',
+    DIRECT_EMAIL_TEST_SEND_FAILED: 'admin-direct-email.errors.testSendFailed',
+    DIRECT_EMAIL_TEMPLATE_NOT_FOUND: 'admin-direct-email.errors.templateNotFound',
+    DIRECT_EMAIL_PERMISSION_DENIED: 'admin-direct-email.errors.permissionDenied',
+    DIRECT_EMAIL_SUPPRESSION_OPT_OUT_LOCKED: 'admin-direct-email.errors.optOutLocked'
 };
 
 /**
@@ -42,4 +46,40 @@ export function getDirectEmailErrorReason({
 export function getDirectEmailErrorKey({ error }: { readonly error: unknown }): TranslationKey {
     const reason = getDirectEmailErrorReason({ error });
     return (reason && REASON_KEYS[reason]) || 'admin-direct-email.errors.generic';
+}
+
+/**
+ * Reads the provider's own error text out of `error.details`, when the API sent it
+ * (`details.providerError`, or `details.message`). Production masks the details of a 5xx,
+ * so callers must treat it as optional.
+ *
+ * @param input.error - Anything thrown by a `fetchApi` call.
+ * @returns The provider text, or `undefined` when the response carries none.
+ */
+export function getDirectEmailProviderMessage({
+    error
+}: {
+    readonly error: unknown;
+}): string | undefined {
+    if (!isApiError(error)) return undefined;
+    const body = error.body as { error?: { details?: unknown } } | null | undefined;
+    const details = body?.error?.details as
+        | { providerError?: unknown; message?: unknown }
+        | null
+        | undefined;
+    const text = details?.providerError ?? details?.message;
+    return typeof text === 'string' && text.length > 0 ? text : undefined;
+}
+
+/**
+ * Resolves the i18n key to show when a real SEND failed. A known reason (nothing was
+ * sent) keeps its specific message; anything else (timeout, 5xx, network) is ambiguous,
+ * so the admin is told to check the history before retrying.
+ *
+ * @param input.error - Anything thrown by the send call.
+ * @returns A key under `admin-direct-email.errors`.
+ */
+export function getDirectEmailSendErrorKey({ error }: { readonly error: unknown }): TranslationKey {
+    const reason = getDirectEmailErrorReason({ error });
+    return (reason && REASON_KEYS[reason]) || 'admin-direct-email.errors.sendFailedCheckHistory';
 }

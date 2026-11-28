@@ -168,6 +168,11 @@ export function useSendDirectEmail() {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: directEmailQueryKeys.lists() });
+        },
+        // A failed request may still have sent (a proxy timeout cuts the response, not the
+        // batch): refresh the history so the admin can check it before retrying.
+        onError: () => {
+            queryClient.invalidateQueries({ queryKey: directEmailQueryKeys.lists() });
         }
     });
 }

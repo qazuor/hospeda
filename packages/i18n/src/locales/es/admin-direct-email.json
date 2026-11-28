@@ -68,7 +68,8 @@
         "emailInvalid": "Ingresá un email válido.",
         "cancel": "Cancelar",
         "submit": "Enviar prueba",
-        "sentToast": "Prueba enviada a {{email}}."
+        "sentToast": "Prueba enviada a {{email}}.",
+        "failedToast": "La prueba no se pudo enviar: {{error}}"
     },
     "sendConfirm": {
         "title": "¿Enviar este correo?",
@@ -167,12 +168,18 @@
         "removeTitle": "¿Quitar de la lista de bajas?",
         "removeDescription": "Se va a poder volver a enviar a {{email}}. Si pidió la baja, enviarle de nuevo puede ser un problema legal.",
         "removeConfirm": "Quitar",
-        "cancel": "Cancelar"
+        "cancel": "Cancelar",
+        "removeLockedTooltip": "La persona pidió no recibir más correos, por eso esta baja no se puede quitar."
     },
     "errors": {
         "recipientSuppressed": "Esa dirección está en la lista de bajas.",
         "senderEmailMissing": "Tu usuario no tiene un email asociado, así que no se puede enviar.",
         "notConfigured": "El envío de correos directos no está configurado en este entorno.",
-        "generic": "No pudimos completar la acción. Intentá de nuevo."
+        "generic": "No pudimos completar la acción. Intentá de nuevo.",
+        "templateNotFound": "La plantilla ya no existe.",
+        "permissionDenied": "No tenés permiso para hacer esto.",
+        "testSendFailed": "No pudimos enviar la prueba. Revisá la configuración del remitente.",
+        "sendFailedCheckHistory": "No pudimos confirmar el envío. Revisá el historial antes de volver a intentar: puede que algunos correos ya hayan salido.",
+        "optOutLocked": "Esta baja no se puede quitar: la persona pidió no recibir más correos."
     }
 }

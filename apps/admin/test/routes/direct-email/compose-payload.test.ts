@@ -8,6 +8,7 @@ import {
     buildTestSendPayload
 } from '@/routes/_authed/direct-emails/-components/compose-payload';
 
+const KEY = '33333333-3333-4333-8333-333333333333';
 const BODY = {
     type: 'doc',
     content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Hola' }] }]
@@ -20,7 +21,8 @@ describe('buildSendPayload', () => {
                 subject: '  Propuesta ',
                 bodyJson: BODY,
                 recipients: ['a@x.com', 'b@x.com'],
-                templateId: '6f1e0b52-6b0a-4c3f-8d8a-1f2a3b4c5d6e'
+                templateId: '6f1e0b52-6b0a-4c3f-8d8a-1f2a3b4c5d6e',
+                idempotencyKey: KEY
             }
         });
 
@@ -29,14 +31,21 @@ describe('buildSendPayload', () => {
             payload: {
                 subject: 'Propuesta',
                 recipients: ['a@x.com', 'b@x.com'],
-                templateId: '6f1e0b52-6b0a-4c3f-8d8a-1f2a3b4c5d6e'
+                templateId: '6f1e0b52-6b0a-4c3f-8d8a-1f2a3b4c5d6e',
+                idempotencyKey: KEY
             }
         });
     });
 
     it('omits templateId when none is selected', () => {
         const result = buildSendPayload({
-            values: { subject: 'S', bodyJson: BODY, recipients: ['a@x.com'], templateId: null }
+            values: {
+                subject: 'S',
+                bodyJson: BODY,
+                recipients: ['a@x.com'],
+                templateId: null,
+                idempotencyKey: KEY
+            }
         });
 
         expect(result.success && 'templateId' in result.payload).toBe(false);
@@ -44,7 +53,13 @@ describe('buildSendPayload', () => {
 
     it('maps each failure to its field with the zodError i18n key', () => {
         const result = buildSendPayload({
-            values: { subject: '   ', bodyJson: null, recipients: [], templateId: null }
+            values: {
+                subject: '   ',
+                bodyJson: null,
+                recipients: [],
+                templateId: null,
+                idempotencyKey: KEY
+            }
         });
 
         expect(result).toEqual({
@@ -61,7 +76,13 @@ describe('buildSendPayload', () => {
         const recipients = Array.from({ length: 21 }, (_, index) => `u${index}@x.com`);
 
         const result = buildSendPayload({
-            values: { subject: 'S', bodyJson: BODY, recipients, templateId: null }
+            values: {
+                subject: 'S',
+                bodyJson: BODY,
+                recipients,
+                templateId: null,
+                idempotencyKey: KEY
+            }
         });
 
         expect(result.success).toBe(false);

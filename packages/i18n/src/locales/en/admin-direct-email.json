@@ -68,7 +68,8 @@
         "emailInvalid": "Enter a valid email.",
         "cancel": "Cancel",
         "submit": "Send test",
-        "sentToast": "Test sent to {{email}}."
+        "sentToast": "Test sent to {{email}}.",
+        "failedToast": "The test could not be sent: {{error}}"
     },
     "sendConfirm": {
         "title": "Send this email?",
@@ -167,12 +168,18 @@
         "removeTitle": "Remove from the suppression list?",
         "removeDescription": "{{email}} will be sendable again. If they opted out, emailing them again can be a legal problem.",
         "removeConfirm": "Remove",
-        "cancel": "Cancel"
+        "cancel": "Cancel",
+        "removeLockedTooltip": "The person opted out of further emails, so this entry cannot be removed."
     },
     "errors": {
         "recipientSuppressed": "That address is on the suppression list.",
         "senderEmailMissing": "Your user has no email address, so sending is not possible.",
         "notConfigured": "Direct email sending is not configured in this environment.",
-        "generic": "We could not complete the action. Try again."
+        "generic": "We could not complete the action. Try again.",
+        "templateNotFound": "That template no longer exists.",
+        "permissionDenied": "You do not have permission to do this.",
+        "testSendFailed": "We could not send the test. Check the sender configuration.",
+        "sendFailedCheckHistory": "We could not confirm the send. Check the history before trying again: some emails may already have gone out.",
+        "optOutLocked": "This entry cannot be removed: the person opted out of further emails."
     }
 }

@@ -12,6 +12,8 @@ const BODY = {
     content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Hola' }] }]
 };
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 const mocks = vi.hoisted(() => ({
     send: vi.fn(),
     testSend: vi.fn(),
@@ -37,6 +39,8 @@ vi.mock('@/hooks/use-user-permissions', () => ({ useHasPermission: () => mocks.c
 vi.mock('@tanstack/react-router', () => ({ useNavigate: () => mocks.navigate }));
 vi.mock('@/hooks/direct-email', () => ({
     getDirectEmailErrorKey: () => 'admin-direct-email.errors.generic',
+    getDirectEmailSendErrorKey: () => 'admin-direct-email.errors.sendFailedCheckHistory',
+    getDirectEmailProviderMessage: () => undefined,
     useDirectEmailTemplates: () => ({
         data: {
             items: [
@@ -170,7 +174,8 @@ describe('ComposeForm', () => {
             expect(mocks.send).toHaveBeenCalledWith({
                 subject: 'Propuesta',
                 bodyJson: BODY,
-                recipients: ['a@x.com', 'b@x.com']
+                recipients: ['a@x.com', 'b@x.com'],
+                idempotencyKey: expect.stringMatching(UUID)
             })
         );
         expect(await screen.findByText('Brevo rejected it')).toBeInTheDocument();
@@ -183,6 +188,80 @@ describe('ComposeForm', () => {
             to: '/direct-emails/$messageId',
             params: { messageId: 'msg-1' }
         });
+    });
+
+    it('reuses the idempotency key on a retry after a failed send and renews it after a success', async () => {
+        // Arrange
+        mocks.send
+            .mockRejectedValueOnce(new Error('timeout'))
+            .mockResolvedValue({ messageId: 'msg-1', results: [] });
+        render(<ComposeForm />);
+        fillValidForm();
+        const confirmSend = async () => {
+            fireEvent.click(screen.getByText('admin-direct-email.compose.send'));
+            fireEvent.click(await screen.findByText('admin-direct-email.sendConfirm.confirm'));
+        };
+
+        // Act: first attempt fails, the admin retries, then it succeeds
+        await confirmSend();
+        await waitFor(() => expect(mocks.send).toHaveBeenCalledTimes(1));
+        await waitFor(() =>
+            expect(mocks.toast).toHaveBeenCalledWith({
+                message: 'admin-direct-email.errors.sendFailedCheckHistory',
+                variant: 'error'
+            })
+        );
+        await confirmSend();
+        await waitFor(() => expect(mocks.send).toHaveBeenCalledTimes(2));
+
+        // Assert
+        const [first, second] = mocks.send.mock.calls.map(
+            (call) => (call[0] as { idempotencyKey: string }).idempotencyKey
+        );
+        expect(first).toMatch(UUID);
+        expect(second).toBe(first);
+    });
+
+    it('generates a new idempotency key for the next compose after a successful send', async () => {
+        mocks.send.mockResolvedValue({ messageId: 'msg-1', results: [] });
+        render(<ComposeForm />);
+        fillValidForm();
+
+        fireEvent.click(screen.getByText('admin-direct-email.compose.send'));
+        fireEvent.click(await screen.findByText('admin-direct-email.sendConfirm.confirm'));
+        await waitFor(() => expect(mocks.send).toHaveBeenCalledTimes(1));
+        // The results dialog is open; "continue" navigates away, so send again from the form.
+        fireEvent.click(await screen.findByText('admin-direct-email.compose.send'));
+        fireEvent.click(await screen.findByText('admin-direct-email.sendConfirm.confirm'));
+        await waitFor(() => expect(mocks.send).toHaveBeenCalledTimes(2));
+
+        const [first, second] = mocks.send.mock.calls.map(
+            (call) => (call[0] as { idempotencyKey: string }).idempotencyKey
+        );
+        expect(second).not.toBe(first);
+    });
+
+    it('shows the provider text when the test send is refused by the provider', async () => {
+        mocks.testSend.mockResolvedValue({
+            sentTo: 'admin@hospeda.com.ar',
+            delivered: false,
+            providerError: 'sender not verified'
+        });
+        render(<ComposeForm />);
+        fireEvent.change(screen.getByLabelText('admin-direct-email.compose.subjectLabel'), {
+            target: { value: 'Propuesta' }
+        });
+        fireEvent.click(screen.getByTestId('editor'));
+
+        fireEvent.click(screen.getByText('admin-direct-email.compose.testSend'));
+        fireEvent.click(await screen.findByText('admin-direct-email.testSend.submit'));
+
+        await waitFor(() =>
+            expect(mocks.toast).toHaveBeenCalledWith({
+                message: 'admin-direct-email.testSend.failedToast|{"error":"sender not verified"}',
+                variant: 'error'
+            })
+        );
     });
 
     it('applies a template by copying its subject', () => {
@@ -199,7 +278,11 @@ describe('ComposeForm', () => {
     });
 
     it('test send omits toEmail for the admin own address', async () => {
-        mocks.testSend.mockResolvedValue({ sentTo: 'admin@hospeda.com.ar' });
+        mocks.testSend.mockResolvedValue({
+            sentTo: 'admin@hospeda.com.ar',
+            delivered: true,
+            providerError: null
+        });
         render(<ComposeForm />);
         fireEvent.change(screen.getByLabelText('admin-direct-email.compose.subjectLabel'), {
             target: { value: 'Propuesta' }

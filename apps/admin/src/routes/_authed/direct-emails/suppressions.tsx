@@ -237,6 +237,14 @@ function DirectEmailSuppressionsPage() {
                                                 <Button
                                                     variant="ghost"
                                                     size="sm"
+                                                    disabled={item.reason === 'opt_out'}
+                                                    title={
+                                                        item.reason === 'opt_out'
+                                                            ? t(
+                                                                  'admin-direct-email.suppressions.removeLockedTooltip'
+                                                              )
+                                                            : undefined
+                                                    }
                                                     onClick={() => setPendingRemove(item)}
                                                 >
                                                     {t('admin-direct-email.suppressions.remove')}

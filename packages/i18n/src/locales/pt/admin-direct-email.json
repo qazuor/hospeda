@@ -68,7 +68,8 @@
         "emailInvalid": "Informe um e-mail válido.",
         "cancel": "Cancelar",
         "submit": "Enviar teste",
-        "sentToast": "Teste enviado para {{email}}."
+        "sentToast": "Teste enviado para {{email}}.",
+        "failedToast": "Não foi possível enviar o teste: {{error}}"
     },
     "sendConfirm": {
         "title": "Enviar este e-mail?",
@@ -167,12 +168,18 @@
         "removeTitle": "Remover da lista de descadastros?",
         "removeDescription": "{{email}} poderá receber novamente. Se pediu o descadastro, enviar de novo pode ser um problema legal.",
         "removeConfirm": "Remover",
-        "cancel": "Cancelar"
+        "cancel": "Cancelar",
+        "removeLockedTooltip": "A pessoa pediu para não receber mais e-mails, então esta baixa não pode ser removida."
     },
     "errors": {
         "recipientSuppressed": "Esse endereço está na lista de descadastros.",
         "senderEmailMissing": "Seu usuário não tem e-mail associado, então não é possível enviar.",
         "notConfigured": "O envio de e-mails diretos não está configurado neste ambiente.",
-        "generic": "Não conseguimos concluir a ação. Tente novamente."
+        "generic": "Não conseguimos concluir a ação. Tente novamente.",
+        "templateNotFound": "Esse modelo não existe mais.",
+        "permissionDenied": "Você não tem permissão para fazer isso.",
+        "testSendFailed": "Não conseguimos enviar o teste. Verifique a configuração do remetente.",
+        "sendFailedCheckHistory": "Não conseguimos confirmar o envio. Confira o histórico antes de tentar de novo: alguns e-mails podem já ter saído.",
+        "optOutLocked": "Esta baixa não pode ser removida: a pessoa pediu para não receber mais e-mails."
     }
 }

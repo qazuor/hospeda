@@ -4,7 +4,9 @@
 
 export {
     getDirectEmailErrorKey,
-    getDirectEmailErrorReason
+    getDirectEmailErrorReason,
+    getDirectEmailProviderMessage,
+    getDirectEmailSendErrorKey
 } from './direct-email-errors';
 export {
     type DirectEmailSuppressionFilters,
