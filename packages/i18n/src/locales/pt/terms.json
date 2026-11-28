@@ -12,7 +12,7 @@
         },
         "registro": {
             "title": "Cadastro de conta",
-            "body": "Para usar determinadas funcionalidades do Serviço, você deve criar uma conta com informações precisas, completas e atualizadas. Você também pode se cadastrar com sua conta do Google ou do Facebook. Você é responsável por manter sua senha em sigilo e por todas as atividades realizadas em sua conta. Você pode pedir o encerramento da sua conta pelo formulário de contato; para encerrá-la, não pode haver planos ativos nem anúncios publicados."
+            "body": "Para usar determinadas funcionalidades do Serviço, você deve criar uma conta com informações precisas, completas e atualizadas. Você também pode se cadastrar com sua conta do Google ou do Facebook. Você é responsável por manter sua senha em sigilo e por todas as atividades realizadas em sua conta. Você pode pedir o encerramento da sua conta pelo formulário de contato; antes de encerrá-la, você precisa cancelar seus planos e retirar seus anúncios."
         },
         "publicacion": {
             "title": "Publicação de anúncios",
@@ -28,7 +28,7 @@
         },
         "cancelaciones": {
             "title": "Cancelamentos e reembolsos",
-            "body": "As condições de cancelamento e reembolso de uma reserva dependem do prestador e do que foi acordado na reserva. Você pode cancelar seu plano da Hospeda quando quiser na seção Assinatura da sua conta. Ao cancelar, não são geradas novas cobranças e você mantém o serviço até o fim do período já pago. Se o seu plano permitir, você também pode pausá-lo ou trocá-lo por outro. Fazemos reembolsos quando você exerce o direito de arrependimento em até 10 dias corridos a partir da cobrança (nesse caso devolvemos o valor total dessa cobrança e a última cobrança dos serviços adicionais que dependiam desse plano) e quando detectamos uma cobrança errada, duplicada ou fora do prazo. Todo reembolso é confirmado pela administração e processado pelo mesmo meio de pagamento ou, se não for possível, por transferência. Fora desses casos, o cancelamento de um plano não gera reembolso do período em curso. Para exercer o direito de arrependimento, use o link desta seção."
+            "body": "As condições de cancelamento e reembolso de uma reserva dependem do prestador e do que foi acordado na reserva. Você pode cancelar seu plano da Hospeda quando quiser na seção Assinatura da sua conta. Ao cancelar, não são geradas novas cobranças e você mantém o serviço até o fim do período já pago. Se o seu plano permitir, você também pode pausá-lo ou trocá-lo por outro. Fazemos reembolsos quando você exerce o direito de arrependimento em até 10 dias corridos a partir da cobrança (nesse caso devolvemos o valor total dessa cobrança e a última cobrança dos serviços adicionais que dependiam desse plano, se ela também tiver sido feita dentro desses 10 dias) e quando detectamos uma cobrança errada, duplicada ou fora do prazo. Todo reembolso é confirmado pela administração e processado pelo mesmo meio de pagamento ou, se não for possível, por transferência. Fora desses casos, o cancelamento de um plano não gera reembolso do período em curso. Para exercer o direito de arrependimento, use o link desta seção."
         },
         "propiedad-intelectual": {
             "title": "Propriedade intelectual",

@@ -8,7 +8,7 @@
         },
         "crashReporting": {
             "label": "Reporte de errores",
-            "description": "Envía a Sentry los errores que ocurren mientras usás el sitio y una grabación de una muestra de las sesiones, con todo el texto oculto y sin imágenes. Nos permite arreglar bugs que te afectan. Recomendado dejarlo activo."
+            "description": "Envía a Sentry los errores que ocurren mientras usás el sitio y la grabación de una muestra de las sesiones y de las sesiones en las que ocurre un error, con todo el texto oculto y sin imágenes. Nos permite arreglar bugs que te afectan. Recomendado dejarlo activo."
         },
         "analytics": {
             "label": "Análisis de uso",

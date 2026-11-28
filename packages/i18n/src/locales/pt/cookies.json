@@ -56,7 +56,7 @@
         },
         "cookiesWeUse": {
             "title": "Quais cookies utilizamos",
-            "body": "Usamos cookies para funções como iniciar sessão e lembrar suas preferências de privacidade. O idioma, o tema e outras preferências da interface (por exemplo, o comparador de hospedagens) são guardados no armazenamento local do seu navegador. A análise de uso com o Umami e as gravações de sessão dependem do seu consentimento. Sem esse consentimento, só medimos o desempenho das páginas com o Cloudflare Web Analytics, de forma agregada e sem cookies. Atualmente não usamos cookies de marketing ou publicidade."
+            "body": "Usamos cookies para funções como iniciar sessão e lembrar suas preferências de privacidade. O idioma, o tema e outras preferências da interface (por exemplo, o comparador de hospedagens) são guardados no armazenamento local do seu navegador. A análise de uso com o Umami e as gravações de sessão dependem do seu consentimento. Sem esse consentimento, a partir do seu navegador só medimos o desempenho das páginas com o Cloudflare Web Analytics, de forma agregada e sem cookies. Algumas ações que você realiza na Hospeda também são registradas pelos nossos servidores, independentemente dessa decisão: a Política de Privacidade explica quais. Atualmente não usamos cookies de marketing ou publicidade."
         },
         "sessionRecording": {
             "title": "Gravações de sessão e mapas de calor",
@@ -72,7 +72,7 @@
         },
         "thirdPartyCookies": {
             "title": "Cookies e serviços de terceiros",
-            "body": "Ao usar a Hospeda, seu navegador também se conecta a serviços de terceiros que podem usar seus próprios cookies ou receber seu endereço IP: Cloudflare (segurança, verificação antibots e métricas de desempenho), Google Fonts (tipografias), OpenStreetMap (mapas), Cloudinary (imagens), Mercado Pago (ao pagar), Google e Facebook (se você entrar com eles) e YouTube, Vimeo ou Dailymotion (os vídeos só carregam se você os reproduzir, embora a galeria de fotos de um anúncio possa pedir ao YouTube a miniatura de um vídeo). O Sentry recebe erros e gravações somente se você aceitou o relatório de erros. Cada um desses serviços tem sua própria política de privacidade."
+            "body": "Ao usar a Hospeda, seu navegador também se conecta a serviços de terceiros que podem usar seus próprios cookies ou receber seu endereço IP: Cloudflare (segurança, verificação antibots e métricas de desempenho), Google Fonts (tipografias), OpenStreetMap (mapas), Cloudinary (imagens), Mercado Pago (ao pagar), Google e Facebook (se você entrar com eles) e YouTube, Vimeo ou Dailymotion (os vídeos só carregam se você os reproduzir, embora a galeria de fotos de um anúncio possa pedir ao YouTube a miniatura de um vídeo). Seu navegador envia erros e gravações ao Sentry somente se você aceitou o relatório de erros; os erros que ocorrem nos nossos servidores são sempre registrados, como explica a Política de Privacidade. Cada um desses serviços tem sua própria política de privacidade."
         },
         "policyChanges": {
             "title": "Alterações nesta política",

@@ -8,7 +8,7 @@
         },
         "crashReporting": {
             "label": "Crash reporting",
-            "description": "Sends errors that occur while you use the site to Sentry, together with a recording of a sample of sessions, with all text hidden and no images. Lets us fix bugs that affect you. Recommended to keep enabled."
+            "description": "Sends errors that occur while you use the site to Sentry, together with recordings of a sample of sessions and of the sessions in which an error occurs, with all text hidden and no images. Lets us fix bugs that affect you. Recommended to keep enabled."
         },
         "analytics": {
             "label": "Usage analytics",

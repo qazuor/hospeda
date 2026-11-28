@@ -18,6 +18,7 @@
                 "socialLogin": "If you sign in with Google or Facebook, the name, email and, if there is one, the profile picture that provider gives us. If you already had an account with the same email, we link them.",
                 "content": "The content you publish: listings (text, photos and location) and reviews.",
                 "messages": "The inquiries and messages you exchange with providers. If you send an inquiry without an account, we ask you to verify your email.",
+                "feedback": "The problem reports you send us, with the name and email you include.",
                 "ai": "The questions you ask the AI assistant and the text you process with the AI tools.",
                 "activity": "Your search history, your favorites and collections, your price alerts and your newsletter subscription.",
                 "billing": "If you buy a plan or an add-on, the details of your charges: amount, date, status and the name and email shown on the receipt. You enter your card details directly in Mercado Pago: Hospeda never receives or stores them.",
@@ -34,7 +35,7 @@
             "items": {
                 "providers": "With the provider you send an inquiry or a message to.",
                 "public": "Publicly, when you publish a review or a listing.",
-                "processors": "With the providers that help us run the service and process data on our behalf: Mercado Pago (payments), Brevo (email delivery), Cloudinary (images), Cloudflare (content delivery, security, bot verification and performance metrics), Sentry (error logging), artificial intelligence providers, Google and Facebook (if you sign in with them), Google Calendar (if you connect it) and OpenStreetMap (maps).",
+                "processors": "With the providers that help us run the service and process data on our behalf: Mercado Pago (payments), Brevo (email delivery), Cloudinary (images), Cloudflare (content delivery, security, bot verification and performance metrics), Sentry (error logging), artificial intelligence providers, Google and Facebook (if you sign in with them), Google Calendar (if you connect it), Linear (problem reports you send us) and OpenStreetMap (maps).",
                 "serverErrors": "Our servers log technical errors in Sentry, linked to the internal identifier and role of the affected account. Only the domain of your email is sent.",
                 "legal": "When a law or a competent authority requires it."
             }
@@ -45,7 +46,7 @@
         },
         "usageMeasurement": {
             "title": "Usage measurement",
-            "body": "Without your consent, we only measure page performance with Cloudflare Web Analytics, in aggregate and without cookies. If you accept analytics, we also use Umami, an analytics tool we host ourselves, to count page views and events. If you are signed in, that measurement may be linked to your account's internal identifier, never to your email. Some actions you take with your account, such as publishing a listing or buying a plan, are also recorded by our servers, linked to that internal identifier."
+            "body": "From your browser and without your consent, we only measure page performance with Cloudflare Web Analytics, in aggregate and without cookies. If you accept analytics, we also use Umami, an analytics tool we host ourselves, to count page views and events. If you are signed in, that measurement may be linked to your account's internal identifier, never to your email. In addition, our servers record some actions in Umami, such as creating an account, sending an inquiry, publishing a listing or buying a plan, linked to your account’s internal identifier when you have one. Those records do not depend on your cookie choice."
         },
         "cookies": {
             "title": "Cookies and similar technologies",

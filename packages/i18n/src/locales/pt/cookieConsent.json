@@ -8,7 +8,7 @@
         },
         "crashReporting": {
             "label": "Relatório de erros",
-            "description": "Envia para o Sentry os erros que ocorrem enquanto você usa o site e uma gravação de uma amostra das sessões, com todo o texto oculto e sem imagens. Permite-nos corrigir bugs que afetam você. Recomendamos deixar ativo."
+            "description": "Envia para o Sentry os erros que ocorrem enquanto você usa o site e a gravação de uma amostra das sessões e das sessões em que ocorre um erro, com todo o texto oculto e sem imagens. Permite-nos corrigir bugs que afetam você. Recomendamos deixar ativo."
         },
         "analytics": {
             "label": "Análise de uso",

@@ -12,7 +12,7 @@
         },
         "registro": {
             "title": "Account registration",
-            "body": "To use certain features of the Service, you must create an account with accurate, complete and current information. You can also sign up with your Google or Facebook account. You are responsible for keeping your password confidential and for all activity under your account. You can ask us to close your account through the contact form; to close it, there can be no active plans or published listings."
+            "body": "To use certain features of the Service, you must create an account with accurate, complete and current information. You can also sign up with your Google or Facebook account. You are responsible for keeping your password confidential and for all activity under your account. You can ask us to close your account through the contact form; before closing it you must cancel your plans and take down your listings."
         },
         "publicacion": {
             "title": "Publishing listings",
@@ -20,7 +20,7 @@
         },
         "reservas": {
             "title": "Reservations and payments",
-            "body": "Reservations and their payments are arranged directly between the traveler and the provider: Hospeda facilitates contact and does not process those payments. Hospeda charges for its own plans (for providers, and the VIP plan for travelers) and its add-ons. Automatic charges are processed through Mercado Pago; in specific cases, the administration may record a payment made by other means. Monthly and annual plans renew automatically at the end of each period until you cancel them. When a promotion is running, you can apply a promo code when you sign up. Before you buy, we show you the price, the billing period and what the plan includes. We issue a receipt for every charge. If a charge is declined, the plan enters a grace period; if the charge is not settled, the plan stops covering your listings."
+            "body": "Reservations and their payments are arranged directly between the traveler and the provider: Hospeda facilitates contact and does not process those payments. Hospeda charges for its own plans (for providers, and the VIP plan for travelers) and its add-ons. Automatic charges are processed through Mercado Pago; in specific cases, the administration may record a payment made by other means. Monthly and annual plans renew automatically at the end of each period until you cancel them. When a promotion is running, you can apply a promo code when you buy a plan. Before you buy, we show you the price, the billing period and what the plan includes. We issue a receipt for every charge. If a charge is declined, the plan enters a grace period; if the charge is not settled, the plan stops covering your listings."
         },
         "prueba": {
             "title": "Trial period",
@@ -28,7 +28,7 @@
         },
         "cancelaciones": {
             "title": "Cancellations and refunds",
-            "body": "Reservation cancellation and refund terms depend on the provider and what was agreed at booking. You can cancel your Hospeda plan at any time from the Subscription section of your account. Once you cancel, no new charges are made and you keep the service until the end of the period already paid. If your plan allows it, you can also pause it or switch to another plan. We give refunds when you exercise the right of withdrawal within 10 calendar days of the charge (in that case we refund that charge in full, plus the last charge of any add-ons that depended on that plan) and when we detect a wrong, duplicate or late charge. Every refund is confirmed by the administration and is processed through the same payment method or, if that is not possible, by bank transfer. Except in those cases, cancelling a plan does not give a refund for the current period. To exercise the right of withdrawal, use the link in this section."
+            "body": "Reservation cancellation and refund terms depend on the provider and what was agreed at booking. You can cancel your Hospeda plan at any time from the Subscription section of your account. Once you cancel, no new charges are made and you keep the service until the end of the period already paid. If your plan allows it, you can also pause it or switch to another plan. We give refunds when you exercise the right of withdrawal within 10 calendar days of the charge (in that case we refund that charge in full, plus the last charge of any add-ons that depended on that plan, if that charge was also made within those 10 days) and when we detect a wrong, duplicate or late charge. Every refund is confirmed by the administration and is processed through the same payment method or, if that is not possible, by bank transfer. Except in those cases, cancelling a plan does not give a refund for the current period. To exercise the right of withdrawal, use the link in this section."
         },
         "propiedad-intelectual": {
             "title": "Intellectual property",

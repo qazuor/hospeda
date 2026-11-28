@@ -18,6 +18,7 @@
                 "socialLogin": "Si iniciás sesión con Google o Facebook, el nombre, el email y, si existe, la foto de perfil que ese proveedor nos entrega. Si ya tenías una cuenta con el mismo email, la vinculamos.",
                 "content": "El contenido que publicás: fichas (textos, fotos y ubicación) y reseñas.",
                 "messages": "Las consultas y los mensajes que intercambiás con los prestadores. Si mandás una consulta sin cuenta, te pedimos que verifiques tu email.",
+                "feedback": "Los reportes de problemas que nos enviás, con el nombre y el email que incluyas.",
                 "ai": "Las preguntas que le hacés al asistente de IA y los textos que procesás con las herramientas de IA.",
                 "activity": "Tu historial de búsquedas, tus favoritos y colecciones, tus alertas de precio y tu suscripción al newsletter.",
                 "billing": "Si contratás un plan o un servicio adicional, los datos de tus cobros: monto, fecha, estado y el nombre y el correo que figuran en el comprobante. Los datos de tu tarjeta los ingresás directamente en Mercado Pago: Hospeda no los recibe ni los guarda.",
@@ -34,7 +35,7 @@
             "items": {
                 "providers": "Con el prestador al que le mandás una consulta o un mensaje.",
                 "public": "Públicamente, cuando publicás una reseña o una ficha.",
-                "processors": "Con los proveedores que nos ayudan a operar el servicio y tratan los datos por cuenta nuestra: Mercado Pago (cobros), Brevo (envío de emails), Cloudinary (imágenes), Cloudflare (red de entrega, seguridad, verificación anti-bots y métricas de rendimiento), Sentry (registro de errores), proveedores de inteligencia artificial, Google y Facebook (si iniciás sesión con ellos), Google Calendar (si lo conectás) y OpenStreetMap (mapas).",
+                "processors": "Con los proveedores que nos ayudan a operar el servicio y tratan los datos por cuenta nuestra: Mercado Pago (cobros), Brevo (envío de emails), Cloudinary (imágenes), Cloudflare (red de entrega, seguridad, verificación anti-bots y métricas de rendimiento), Sentry (registro de errores), proveedores de inteligencia artificial, Google y Facebook (si iniciás sesión con ellos), Google Calendar (si lo conectás), Linear (reportes de problemas que nos enviás) y OpenStreetMap (mapas).",
                 "serverErrors": "Nuestros servidores registran en Sentry los errores técnicos, asociados al identificador interno y al rol de la cuenta afectada. De tu email solo se envía el dominio.",
                 "legal": "Cuando una norma o una autoridad competente lo exija."
             }
@@ -45,7 +46,7 @@
         },
         "usageMeasurement": {
             "title": "Medición de uso",
-            "body": "Sin tu consentimiento, solo medimos el rendimiento de las páginas con Cloudflare Web Analytics, de forma agregada y sin cookies. Si aceptás la analítica, usamos además Umami, una herramienta de analítica que alojamos nosotros mismos, para contar páginas vistas y eventos. Si iniciaste sesión, esa medición puede quedar asociada al identificador interno de tu cuenta, nunca a tu email. Algunas acciones que hacés con tu cuenta, como publicar una ficha o contratar un plan, se registran también desde nuestros servidores, asociadas a ese identificador interno."
+            "body": "Desde tu navegador y sin tu consentimiento, solo medimos el rendimiento de las páginas con Cloudflare Web Analytics, de forma agregada y sin cookies. Si aceptás la analítica, usamos además Umami, una herramienta de analítica que alojamos nosotros mismos, para contar páginas vistas y eventos. Si iniciaste sesión, esa medición puede quedar asociada al identificador interno de tu cuenta, nunca a tu email. Además, nuestros servidores registran en Umami algunas acciones, como crear una cuenta, enviar una consulta, publicar una ficha o contratar un plan, asociadas al identificador interno de tu cuenta cuando la tenés. Esos registros no dependen de tu decisión sobre cookies."
         },
         "cookies": {
             "title": "Cookies y tecnologías similares",

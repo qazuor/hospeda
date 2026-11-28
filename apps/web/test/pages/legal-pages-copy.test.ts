@@ -253,4 +253,70 @@ describe('legal copy states what the product does (HOS-2681)', () => {
             );
         }
     });
+
+    // revocation-addon-refunds.ts and complement-s21-charge.ts refund an add-on
+    // charge only when that charge is itself inside the 10-day window.
+    it.each([
+        ['es', 'si también se hizo dentro de esos 10 días'],
+        ['en', 'if that charge was also made within those 10 days'],
+        ['pt', 'se ela também tiver sido feita dentro desses 10 dias']
+    ] as const)('conditions the add-on refund on its own 10-day window (%s)', (locale, condition) => {
+        expect(text({ locale, key: 'terms.articles.cancelaciones.body' })).toContain(condition);
+    });
+
+    // close-on-request.ts refuses while the account can be charged or has any
+    // listing outside PURGED: "no published listings" understated it.
+    it.each([
+        ['es', 'tenés que cancelar tus planes y dar de baja tus fichas', /fichas publicadas/],
+        ['en', 'you must cancel your plans and take down your listings', /published listings/],
+        ['pt', 'você precisa cancelar seus planos e retirar seus anúncios', /anúncios publicados/]
+    ] as const)('states the account-closure conditions the code enforces (%s)', (locale, condition, wrong) => {
+        const body = text({ locale, key: 'terms.articles.registro.body' });
+        expect(body).toContain(condition);
+        expect(body).not.toMatch(wrong);
+    });
+
+    // Consent gates the browser only: server-side Umami events and server
+    // Sentry errors never go through it, so every "without consent" sentence
+    // is scoped to the browser and the server records are disclosed.
+    it.each([
+        [
+            'es',
+            'Desde tu navegador y sin tu consentimiento',
+            'nuestros servidores',
+            'desde tu navegador solo medimos',
+            'Tu navegador envía errores'
+        ],
+        [
+            'en',
+            'From your browser and without your consent',
+            'our servers',
+            'from your browser we only measure',
+            'Your browser sends errors'
+        ],
+        [
+            'pt',
+            'A partir do seu navegador e sem o seu consentimento',
+            'nossos servidores',
+            'a partir do seu navegador só medimos',
+            'Seu navegador envia erros'
+        ]
+    ] as const)('scopes consent to the browser and discloses server records (%s)', (locale, privacyScope, servers, cookiesScope, sentryScope) => {
+        const privacy = text({ locale, key: 'privacy.sections.usageMeasurement.body' });
+        expect(privacy).toContain(privacyScope);
+        expect(privacy).toContain(servers);
+        const cookiesWeUse = text({ locale, key: 'cookies.sections.cookiesWeUse.body' });
+        expect(cookiesWeUse).toContain(cookiesScope);
+        expect(cookiesWeUse).toContain(servers);
+        expect(text({ locale, key: 'cookies.sections.thirdPartyCookies.body' })).toContain(
+            sentryScope
+        );
+    });
+
+    it.each(LOCALES)('names Linear as the processor of problem reports (%s)', (locale) => {
+        expect(text({ locale, key: 'privacy.sections.dataSharing.items.processors' })).toContain(
+            'Linear'
+        );
+        expect(text({ locale, key: 'privacy.sections.dataCollected.items.feedback' })).not.toBe('');
+    });
 });
