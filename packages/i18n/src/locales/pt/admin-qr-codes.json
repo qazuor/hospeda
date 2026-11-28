@@ -113,8 +113,8 @@
     "filters": {
         "all": "Todos",
         "source": "Origem",
-        "entityType": "Tipo de ficha",
-        "purpose": "Uso",
+        "entityType": "Tipo de anúncio",
+        "purpose": "Finalidade",
         "isActive": "Status",
         "campaign": "Campanha (utm_campaign)",
         "tags": "Etiquetas",
@@ -126,8 +126,8 @@
             "HOST_TRADE": "Comércio"
         },
         "purposes": {
-            "HOST_TRADE_USAGE": "Registro de uso",
-            "LISTING": "Ficha pública",
+            "HOST_TRADE_USAGE": "Registro de utilização",
+            "LISTING": "Anúncio público",
             "MENU": "Cardápio",
             "CERTIFICATE": "Certificado",
             "BROCHURE": "Folheto"

@@ -137,6 +137,19 @@ const LEGITIMATE_IDENTICAL: Readonly<Record<string, readonly TargetLocale[]>> = 
     // HOS-2565 email previewer audience filter: "Staff" is the owner's term in es and the English word; "Todos" is the same in Brazilian Portuguese.
     Staff: ['en'],
     Todos: ['pt'],
+    // HOS-2679 QR tag catalog and table: same spelling in Brazilian Portuguese
+    // ("Magenta" also in English); "URL" and "UTM" are loanwords in both.
+    Etiquetas: ['pt'],
+    Etiquetar: ['pt'],
+    'Etiquetas de códigos QR': ['pt'],
+    Certificado: ['pt'],
+    Azul: ['pt'],
+    Verde: ['pt'],
+    Rosa: ['pt'],
+    Magenta: ['en', 'pt'],
+    'URL copiada': ['pt'],
+    'Copiar URL de destino': ['pt'],
+    'Editar UTM': ['pt'],
     // Same word in Brazilian Portuguese / English (HOS-2413 Mi Cuenta kit: status words, counter, error prefix).
     'Error:': ['en'],
     Abandonada: ['pt'],
