@@ -1,9 +1,34 @@
 import { accommodationMedia, accommodations, getDb } from '@repo/db';
 import type { Locale } from '@repo/i18n';
+import { getMediaUrl } from '@repo/media';
 import { and, asc, eq, inArray, isNull } from 'drizzle-orm';
 import type { ServiceContext } from '../../../types/index.js';
 import { DynamicResolutionError } from './dynamic-resolution.error.js';
 import type { DynamicCard, LocalizedCard } from './dynamic-source.port.js';
+
+/** Newsletter card cover: 320x240 (the email renders it at 160x120), smart crop. */
+const COVER_TRANSFORM = 'w_320,h_240,c_fill,g_auto,q_auto,f_auto';
+
+/**
+ * Turn a stored media URL into the card cover URL.
+ *
+ * Cloudinary covers get a 4:3 smart crop so every card cover has the same
+ * shape; other HTTPS hosts pass through unchanged. Anything that is not an
+ * HTTPS URL after the transform (invalid input, `http:`, or a local
+ * placeholder) yields `null`, so the card renders without a cover.
+ *
+ * @param input.url - The stored media URL.
+ * @returns The HTTPS cover URL, or `null` when none can be rendered.
+ */
+export function toCardCoverUrl({ url }: { readonly url: string }): string | null {
+    try {
+        if (new URL(url).protocol !== 'https:') return null;
+        const cover = new URL(getMediaUrl(url, { raw: COVER_TRANSFORM }));
+        return cover.protocol === 'https:' ? cover.href : null;
+    } catch {
+        return null;
+    }
+}
 
 /** Card query dependencies, supplied by the application composition root. */
 export interface CardLoaderInput {
@@ -56,14 +81,7 @@ export async function loadAccommodationCards(
     const covers = new Map<string, string | null>();
     for (const row of media) {
         if (covers.has(row.id)) continue;
-        let imageUrl: string | null = null;
-        try {
-            const url = new URL(row.url);
-            if (url.protocol === 'https:') imageUrl = url.href;
-        } catch {
-            /* Invalid media URLs are omitted rather than rendered. */
-        }
-        covers.set(row.id, imageUrl);
+        covers.set(row.id, toCardCoverUrl({ url: row.url }));
     }
     const cards = new Map<string, LocalizedCard>();
     for (const row of rows) {
