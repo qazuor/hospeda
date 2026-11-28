@@ -52,7 +52,6 @@ describe.each([
         expect(panel).toContain('listingId={listing.id}');
         expect(panel).toContain('slug={listing.slug}');
         expect(panel).toContain('isPublished={listing.isPublished}');
-        expect(panel).not.toContain('codeOnly');
     });
 
     it('titles the page with the listing name', () => {

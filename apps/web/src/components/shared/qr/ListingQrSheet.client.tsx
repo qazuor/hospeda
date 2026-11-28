@@ -93,8 +93,6 @@ export interface ListingQrSheetProps {
      * request: see the module docblock.
      */
     readonly isPublished: boolean;
-    /** The card's download menu owns the action when this panel is a dialog preview. */
-    readonly codeOnly?: boolean;
 }
 
 /**
@@ -132,8 +130,7 @@ export function ListingQrSheet({
     listingId,
     slug,
     locale,
-    isPublished,
-    codeOnly = false
+    isPublished
 }: ListingQrSheetProps): JSX.Element {
     const { t } = createTranslations(locale);
     const { state, handleDownload } = useListingQrDownload({ vertical, listingId, slug, locale });
@@ -310,20 +307,18 @@ export function ListingQrSheet({
                 )}
             </p>
 
-            {!codeOnly && (
-                <LoadingButton
-                    className={styles.button}
-                    loading={state.status === 'working'}
-                    loadingLabel={t('common.qrSheet.working', 'Generando la hoja…')}
-                    aria-describedby={helpId}
-                    onClick={() => {
-                        void handleDownload();
-                    }}
-                    data-testid="listing-qr-sheet-download"
-                >
-                    {t('common.qrSheet.download', 'Descargar la hoja QR (PDF)')}
-                </LoadingButton>
-            )}
+            <LoadingButton
+                className={styles.button}
+                loading={state.status === 'working'}
+                loadingLabel={t('common.qrSheet.working', 'Generando la hoja…')}
+                aria-describedby={helpId}
+                onClick={() => {
+                    void handleDownload();
+                }}
+                data-testid="listing-qr-sheet-download"
+            >
+                {t('common.qrSheet.download', 'Descargar la hoja QR (PDF)')}
+            </LoadingButton>
 
             {state.status === 'ready' && (
                 <p
