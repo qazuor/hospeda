@@ -54,6 +54,7 @@ import { normalizeCreateInput, normalizeUpdateInput } from './qr-code.normalizer
 import {
     buildQrCodeOrganizeConditions,
     decodeDistinctCampaigns,
+    foldCampaignCounts,
     rawSpellingsForCampaign
 } from './qr-code.organize';
 import {
@@ -476,6 +477,31 @@ export class QrCodeService extends BaseCrudService<
                 checkCanViewQrCode(validActor);
                 const raw = await this.model.findDistinctRawUtmCampaigns(execCtx.tx);
                 return { items: decodeDistinctCampaigns({ raw }) };
+            }
+        });
+    }
+
+    /**
+     * The same campaigns as {@link listUtmCampaigns}, each with how many live
+     * codes carry it — the campaigns panel (HOS-2679 PR 2).
+     *
+     * @param input.actor - Needs `QR_CODE_VIEW`.
+     * @returns The campaigns with their code counts, sorted for display.
+     */
+    public async listUtmCampaignCounts(input: {
+        actor: Actor;
+        ctx?: ServiceContext;
+    }): Promise<ServiceOutput<{ items: Array<{ campaign: string; qrCount: number }> }>> {
+        const { actor, ctx } = input;
+        return this.runWithLoggingAndValidation({
+            methodName: 'listUtmCampaignCounts',
+            input: { actor },
+            schema: z.object({}),
+            ctx,
+            execute: async (_validated, validActor, execCtx) => {
+                checkCanViewQrCode(validActor);
+                const counts = await this.model.countLiveByRawUtmCampaign(execCtx.tx);
+                return { items: foldCampaignCounts({ counts }) };
             }
         });
     }

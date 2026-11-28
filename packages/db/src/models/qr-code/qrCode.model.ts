@@ -1,5 +1,5 @@
 import type { QrCode } from '@repo/schemas';
-import { and, asc, isNotNull, isNull } from 'drizzle-orm';
+import { and, asc, count, isNotNull, isNull } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { qrCodes } from '../../schemas/qr-code/qr_code.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
@@ -73,6 +73,48 @@ export class QrCodeModel extends BaseModelImpl<QrCode> {
             throw new DbError(
                 this.entityName,
                 'findDistinctRawUtmCampaigns',
+                logContext,
+                err.message
+            );
+        }
+    }
+
+    /**
+     * How many live codes carry each distinct RAW `utm_campaign` (HOS-2679 PR 2).
+     *
+     * Same extraction and same "live, not null" scope as
+     * {@link QrCodeModel.findDistinctRawUtmCampaigns}; the only difference is the
+     * count per raw spelling, which the campaigns panel shows. Two spellings of one
+     * campaign come back as two rows: the service folds them after decoding.
+     *
+     * @param tx - Optional transaction client.
+     * @returns One row per raw spelling, sorted by it.
+     */
+    async countLiveByRawUtmCampaign(
+        tx?: DrizzleClient
+    ): Promise<Array<{ raw: string; count: number }>> {
+        const db = this.getClient(tx);
+        const logContext = {};
+        try {
+            const rows = await db
+                .select({ campaign: QR_CODE_RAW_UTM_CAMPAIGN_SQL, count: count() })
+                .from(qrCodes)
+                .where(and(isNull(qrCodes.deletedAt), isNotNull(QR_CODE_RAW_UTM_CAMPAIGN_SQL)))
+                .groupBy(QR_CODE_RAW_UTM_CAMPAIGN_SQL)
+                .orderBy(asc(QR_CODE_RAW_UTM_CAMPAIGN_SQL));
+            const counts = rows.flatMap((row) =>
+                row.campaign ? [{ raw: row.campaign, count: Number(row.count) }] : []
+            );
+            logQuery(this.entityName, 'countLiveByRawUtmCampaign', logContext, {
+                count: counts.length
+            });
+            return counts;
+        } catch (error) {
+            const err = error instanceof Error ? error : new Error(String(error));
+            logError(this.entityName, 'countLiveByRawUtmCampaign', logContext, err);
+            throw new DbError(
+                this.entityName,
+                'countLiveByRawUtmCampaign',
                 logContext,
                 err.message
             );

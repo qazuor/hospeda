@@ -12,6 +12,7 @@ import {
     buildQrCodeOrganizeConditions,
     decodeDistinctCampaigns,
     decodeRawCampaign,
+    foldCampaignCounts,
     rawSpellingsForCampaign
 } from '../../../src/services/qr-code/qr-code.organize';
 import { QrCodeService } from '../../../src/services/qr-code/qr-code.service';
@@ -20,7 +21,11 @@ import { createLoggerMock, createModelMock } from '../../utils/modelMockFactory'
 
 /** A model mock whose extra methods are typed as mocks too. */
 type MockedModel = Record<
-    'findAll' | 'getTable' | 'findDistinctRawUtmCampaigns' | 'findTagRefsByQrCodeIds',
+    | 'findAll'
+    | 'getTable'
+    | 'findDistinctRawUtmCampaigns'
+    | 'countLiveByRawUtmCampaign'
+    | 'findTagRefsByQrCodeIds',
     Mock
 >;
 
@@ -123,7 +128,10 @@ describe('QrCodeService — admin list organisation (HOS-2679)', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
-        model = createModelMock(['findDistinctRawUtmCampaigns']) as unknown as MockedModel;
+        model = createModelMock([
+            'findDistinctRawUtmCampaigns',
+            'countLiveByRawUtmCampaign'
+        ]) as unknown as MockedModel;
         model.getTable.mockReturnValue({ createdAt: {}, deletedAt: {}, source: {} });
         model.findAll.mockResolvedValue({ items: [row], total: 1 });
         linkModel = createModelMock([
@@ -233,5 +241,57 @@ describe('QrCodeService — admin list organisation (HOS-2679)', () => {
             expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
             expect(model.findDistinctRawUtmCampaigns).not.toHaveBeenCalled();
         });
+    });
+
+    describe('listUtmCampaignCounts (HOS-2679 PR 2)', () => {
+        it('folds the counts of every spelling of one campaign', async () => {
+            // Arrange
+            model.countLiveByRawUtmCampaign.mockResolvedValue([
+                { raw: 'a+b', count: 2 },
+                { raw: 'a%20b', count: 1 },
+                { raw: 'z', count: 4 }
+            ]);
+
+            // Act
+            const result = await service.listUtmCampaignCounts({ actor: admin });
+
+            // Assert
+            expect(result.data).toStrictEqual({
+                items: [
+                    { campaign: 'a b', qrCount: 3 },
+                    { campaign: 'z', qrCount: 4 }
+                ]
+            });
+        });
+
+        it('refuses an actor without QR_CODE_VIEW', async () => {
+            // Act
+            const result = await service.listUtmCampaignCounts({
+                actor: createActor({ permissions: [] })
+            });
+
+            // Assert
+            expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
+            expect(model.countLiveByRawUtmCampaign).not.toHaveBeenCalled();
+        });
+    });
+});
+
+describe('foldCampaignCounts', () => {
+    it('drops blank campaigns and sorts like the dropdown', () => {
+        // Act
+        const folded = foldCampaignCounts({
+            counts: [
+                { raw: 'zeta', count: 1 },
+                { raw: '%20', count: 9 },
+                { raw: 'alfa', count: 2 }
+            ]
+        });
+
+        // Assert
+        expect(folded).toStrictEqual([
+            { campaign: 'alfa', qrCount: 2 },
+            { campaign: 'zeta', qrCount: 1 }
+        ]);
     });
 });

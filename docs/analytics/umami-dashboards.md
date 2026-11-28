@@ -126,6 +126,29 @@ Cohorts (visitors that fired the event within the window):
 | `Activaron una suscripción (90 días)` | `billing_subscription_activated` | 90day |
 | `Empezaron un trial (90 días)` | `trial_started` | 90day |
 
+## QR campaigns panel (HOS-2679)
+
+Each distinct `utm_campaign` on the QR codes' destinations is a campaign. The admin
+lists them in **Platform → QR codes → Campañas**, with how many live codes carry each one.
+
+**The panel only links to Umami.** It creates nothing there and the API never calls
+Umami for it. There is no «Crear en Umami» button, and the reason is the role scope:
+Umami 3.5 has no role that can create segments without also being able to reset or
+delete the website, so the owner chose not to give the API such a key (measured details
+in [the runbook](../runbooks/umami.md#qr-campaigns-panel-a-link-not-a-create-button)).
+
+- **«Ver en Umami»** opens the WEB website with the ad-hoc URL filter
+  `?utmCampaign=eq.<campaign>`. No segment is needed. The link is built by the API from
+  `HOSPEDA_UMAMI_URL` and `HOSPEDA_UMAMI_WEBSITE_ID_WEB`; without either, the row says
+  the link is missing because Umami is not configured on the API.
+- **Counts come from our database** (live codes per `utm_campaign`), not from Umami.
+- **Commas are not supported.** Umami 3.5 splits an `eq` value on `,` into a list
+  (measured on 3.5.0: `utmCampaign=eq.a,b` counted `a`, `b` and `a,b` together). A
+  campaign with a comma gets no link and the panel says why. Rename it. A dot is fine:
+  Umami splits the operator on the first dot only.
+- **Segments are out of scope for the panel.** To segment a campaign, create the segment
+  in Umami by hand, or add it to `segment-definitions.ts` and run `pnpm umami:setup`.
+
 ## Session recorder config
 
 `pnpm umami:setup` also manages the recorder config of the WEB website (HOS-2347): replays
