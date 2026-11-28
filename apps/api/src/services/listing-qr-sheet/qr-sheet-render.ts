@@ -71,6 +71,13 @@ import { type FittedLine, fitLine, type WidthOf } from './qr-sheet-fit.js';
 import { A4_HEIGHT, A4_WIDTH, drawLineTopDown, drawTextTopDown, measure } from './qr-sheet-page.js';
 import { STICKER_ART_JPEG_BASE64, STICKER_ART_UNITS } from './sticker-art.data.js';
 
+/**
+ * The sticker artwork's JPEG bytes, decoded ONCE at module load. Decoding the
+ * ~320KB base64 string per request was pure repeated work: the bytes never
+ * change, and `embedJpg` only reads them.
+ */
+const STICKER_ART_JPEG: Uint8Array = Buffer.from(STICKER_ART_JPEG_BASE64, 'base64');
+
 /** Points per millimetre. */
 const MM = 72 / 25.4;
 
@@ -357,7 +364,7 @@ export async function renderListingQrSheetPdf(
     doc.setModificationDate(new Date(0));
 
     const bold = await doc.embedFont(StandardFonts.HelveticaBold);
-    const art = await doc.embedJpg(Buffer.from(STICKER_ART_JPEG_BASE64, 'base64'));
+    const art = await doc.embedJpg(STICKER_ART_JPEG);
     const page = doc.addPage(PageSizes.A4);
     const frame = stickerFrame();
 
