@@ -185,6 +185,7 @@
         "loadError": "No pudimos leer las campañas. Probá de nuevo en un rato.",
         "empty": "Todavía ningún código tiene utm_campaign en su destino.",
         "unavailableNotice": "No pudimos consultar Umami, así que no sabemos qué campañas tienen segmento. «Ver en Umami» igual funciona.",
+        "commaNotice": "Las campañas con coma no tienen enlace a Umami: Umami las leería como varias campañas.",
         "columns": {
             "campaign": "Campaña",
             "qrCount": "Cantidad de códigos",
@@ -202,12 +203,15 @@
         "createDisabledPermission": "Necesitás permiso para crear o editar códigos QR.",
         "createDisabledNotConfigured": "Falta la clave de escritura de Umami en la API (HOSPEDA_UMAMI_WRITE_API_KEY).",
         "createDisabledUnavailable": "Umami no responde: probá crear el segmento en un rato.",
+        "createDisabledComma": "Umami separa los filtros por comas: esta campaña no se puede filtrar ni segmentar. Renombrala sin coma.",
+        "createDisabledTooLong": "La campaña supera los 500 caracteres que admite el segmento.",
         "created": "Segmento creado en Umami",
         "alreadyExisted": "El segmento ya existía en Umami: no se creó otro.",
         "createErrors": {
             "UMAMI_WRITE_NOT_CONFIGURED": "Falta la clave de escritura de Umami en la API (HOSPEDA_UMAMI_WRITE_API_KEY).",
             "UMAMI_KEY_REJECTED": "Umami rechazó la clave de escritura: tiene que ser de un usuario con permiso de edición sobre el sitio web.",
-            "generic": "No se pudo crear el segmento en Umami. Probá de nuevo en un rato."
+            "generic": "No se pudo crear el segmento en Umami. Probá de nuevo en un rato.",
+            "UMAMI_CAMPAIGN_HAS_COMMA": "No se crea el segmento: Umami separa los valores por comas y contaría otras campañas."
         },
         "filterLink": "Ver esta campaña en Umami"
     }
