@@ -46,7 +46,7 @@ let handle: StartUmamiRecorderResult | null = null;
 function renderTracker(): void {
     document.head.insertAdjacentHTML(
         'beforeend',
-        `<script src="${UMAMI_ORIGIN}/hospeda.js" data-website-id="${WEBSITE_ID}" data-auto-pageview="false"></script>`
+        `<meta name="umami-config" data-script-url="${UMAMI_ORIGIN}/hospeda.js" data-website-id="${WEBSITE_ID}">`
     );
     document.head.insertAdjacentHTML(
         'beforeend',
