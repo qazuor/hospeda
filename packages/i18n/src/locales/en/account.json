@@ -2627,6 +2627,7 @@
         "deleteConfirm": "Delete your reply? You will be able to reply again afterwards.",
         "saving": "Saving…",
         "deleting": "Deleting…",
+        "publishedNotice": "Reply published",
         "upsell": {
             "title": "Replying to reviews is not in your plan",
             "body": "Upgrade your plan to reply to your guests' reviews.",

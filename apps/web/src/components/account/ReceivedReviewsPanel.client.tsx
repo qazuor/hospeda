@@ -87,6 +87,7 @@ export function ReceivedReviewsPanel({ locale }: ReceivedReviewsPanelProps) {
     const [filter, setFilter] = useState<Filter>('all');
     const [page, setPage] = useState(1);
     const [state, setState] = useState<AsyncResult<ReceivedReviewsPage>>({ status: 'loading' });
+    const [publishedNotice, setPublishedNotice] = useState(false);
 
     const load = useCallback(async () => {
         setState({ status: 'loading' });
@@ -110,22 +111,42 @@ export function ReceivedReviewsPanel({ locale }: ReceivedReviewsPanelProps) {
         void load();
     }, [load]);
 
-    /** Replaces one review's reply in place, without refetching the page. */
-    const setReply = useCallback((input: { reviewId: string; reply: Reply | null }) => {
-        setState((current) =>
-            current.status === 'ready'
-                ? {
-                      status: 'ready',
-                      data: {
-                          ...current.data,
-                          items: current.data.items.map((item) =>
-                              item.id === input.reviewId ? { ...item, reply: input.reply } : item
-                          )
-                      }
-                  }
-                : current
-        );
-    }, []);
+    /**
+     * Applies a reply change without refetching the page. Under the «Sin responder»
+     * filter a newly created reply takes its review out of the list (it no longer
+     * belongs there) and the host is told it was published; otherwise the reply is
+     * replaced in place. When the removal empties the current page but more
+     * unanswered reviews remain, the previous page is loaded (or this one refetched).
+     */
+    const setReply = (input: { reviewId: string; reply: Reply | null }) => {
+        if (state.status !== 'ready') return;
+        const { data } = state;
+        const previous = data.items.find((item) => item.id === input.reviewId);
+        if (filter === 'unanswered' && input.reply && previous && !previous.reply) {
+            const items = data.items.filter((item) => item.id !== input.reviewId);
+            const total = Math.max(0, data.total - 1);
+            setPublishedNotice(true);
+            if (items.length > 0) {
+                setState({ status: 'ready', data: { ...data, items, total } });
+            } else if (total === 0) {
+                setState({ status: 'empty' });
+            } else if (page > 1) {
+                setPage(page - 1);
+            } else {
+                void load();
+            }
+            return;
+        }
+        setState({
+            status: 'ready',
+            data: {
+                ...data,
+                items: data.items.map((item) =>
+                    item.id === input.reviewId ? { ...item, reply: input.reply } : item
+                )
+            }
+        });
+    };
 
     return (
         <Section
@@ -145,6 +166,7 @@ export function ReceivedReviewsPanel({ locale }: ReceivedReviewsPanelProps) {
                 onChange={(next) => {
                     setFilter((next as Filter | null) ?? 'all');
                     setPage(1);
+                    setPublishedNotice(false);
                 }}
                 items={[
                     {
@@ -159,6 +181,14 @@ export function ReceivedReviewsPanel({ locale }: ReceivedReviewsPanelProps) {
                     }
                 ]}
             />
+            {publishedNotice ? (
+                <Alert
+                    tone="success"
+                    locale={locale}
+                >
+                    {t('account.receivedReviews.publishedNotice')}
+                </Alert>
+            ) : null}
             <AsyncRegion
                 state={state}
                 loading={() => (
@@ -215,7 +245,10 @@ export function ReceivedReviewsPanel({ locale }: ReceivedReviewsPanelProps) {
                                 <Pagination
                                     page={page}
                                     pageCount={pageCount}
-                                    onPageChange={setPage}
+                                    onPageChange={(next) => {
+                                        setPage(next);
+                                        setPublishedNotice(false);
+                                    }}
                                     locale={locale}
                                 />
                             )}
