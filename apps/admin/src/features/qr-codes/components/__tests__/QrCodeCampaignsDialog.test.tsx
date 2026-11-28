@@ -16,7 +16,10 @@ vi.mock('@/lib/api/client', () => ({ fetchApi: fetchApiMock }));
 vi.mock('@/hooks/use-toast', () => ({ useToast: () => ({ addToast: addToastMock }) }));
 
 import { ApiError } from '@/lib/errors';
-import { readQrCampaignSegmentErrorReason } from '../../hooks/useQrCampaignsUmami';
+import {
+    QR_CAMPAIGNS_UMAMI_STALE_TIME_MS,
+    readQrCampaignSegmentErrorReason
+} from '../../hooks/useQrCampaignsUmami';
 import {
     QrCampaignUmamiFilterLink,
     QrCodeCampaignsDialog,
@@ -128,6 +131,64 @@ describe('QrCodeCampaignsDialog', () => {
         await waitFor(() => expect(fetchApiMock).toHaveBeenCalledTimes(3));
     });
 
+    it('keeps every in-flight row pending, not only the latest click', async () => {
+        // Arrange: two missing campaigns whose creates stay open until released.
+        const otoño: QrCampaignUmamiItem = { ...missing, campaign: 'otoño' };
+        const releases: Array<() => void> = [];
+        fetchApiMock.mockImplementation(async (input: { method?: string; body?: unknown }) => {
+            if (input.method !== 'POST') {
+                return listResponse({ items: [missing, otoño], canCreateSegments: true });
+            }
+            await new Promise<void>((resolve) => releases.push(resolve));
+            return { data: { data: { item: missing, created: true } }, status: 201 };
+        });
+        await openDialog();
+        const buttonFor = (campaign: string) =>
+            screen.getByRole('button', {
+                name: `admin-qr-codes.campaigns.createSegment: ${campaign}`
+            });
+        await screen.findByText('otoño');
+
+        // Act: click both before either answers.
+        fireEvent.click(buttonFor('invierno'));
+        fireEvent.click(buttonFor('otoño'));
+
+        // Assert: both are pending at once.
+        await waitFor(() => expect(releases).toHaveLength(2));
+        expect(buttonFor('invierno')).toBeDisabled();
+        expect(buttonFor('otoño')).toBeDisabled();
+
+        // Act: the FIRST one answers.
+        releases[0]?.();
+
+        // Assert: only the second is still pending, and both toasted in the end.
+        await waitFor(() => expect(buttonFor('invierno')).toBeEnabled());
+        expect(buttonFor('otoño')).toBeDisabled();
+        releases[1]?.();
+        await waitFor(() => expect(buttonFor('otoño')).toBeEnabled());
+        expect(addToastMock).toHaveBeenCalledTimes(2);
+    });
+
+    it('explains why a campaign with a comma has no link nor create', async () => {
+        const comma: QrCampaignUmamiItem = {
+            campaign: 'a,b',
+            qrCount: 1,
+            umami: { status: 'missing', unsupportedReason: 'COMMA_IN_CAMPAIGN', viewUrl: null }
+        };
+        fetchApiMock.mockResolvedValue(listResponse({ items: [comma], canCreateSegments: true }));
+
+        await openDialog();
+
+        expect(await screen.findByText('admin-qr-codes.campaigns.commaNotice')).toBeInTheDocument();
+        expect(screen.queryByRole('link')).not.toBeInTheDocument();
+        const button = screen.getByRole('button', { name: /createSegment: a,b/ });
+        expect(button).toBeDisabled();
+        expect(button.parentElement).toHaveAttribute(
+            'title',
+            'admin-qr-codes.campaigns.createDisabledComma'
+        );
+    });
+
     it('says so when the segment already existed', async () => {
         fetchApiMock
             .mockResolvedValueOnce(listResponse({ items: [missing], canCreateSegments: true }))
@@ -219,6 +280,58 @@ describe('qrCampaignCreateBlocker', () => {
         [true, true, missing, null]
     ])('canCreate=%s canCreateSegments=%s → %s', (canCreate, canCreateSegments, item, expected) => {
         expect(qrCampaignCreateBlocker({ item, canCreate, canCreateSegments })).toBe(expected);
+    });
+});
+
+describe('qrCampaignCreateBlocker: campaigns Umami cannot segment', () => {
+    it('blocks a comma and a campaign longer than the create accepts', () => {
+        const base = { canCreateSegments: true, canCreate: true };
+
+        expect(
+            qrCampaignCreateBlocker({
+                ...base,
+                item: {
+                    ...missing,
+                    umami: { ...missing.umami, unsupportedReason: 'COMMA_IN_CAMPAIGN' }
+                }
+            })
+        ).toBe('admin-qr-codes.campaigns.createDisabledComma');
+        expect(
+            qrCampaignCreateBlocker({
+                ...base,
+                item: { ...missing, umami: { ...missing.umami, unsupportedReason: 'TOO_LONG' } }
+            })
+        ).toBe('admin-qr-codes.campaigns.createDisabledTooLong');
+        expect(qrCampaignCreateBlocker({ ...base, item: missing })).toBeNull();
+    });
+});
+
+describe('useQrCampaignsUmami staleTime', () => {
+    it('serves a second mount within a minute from cache, without a second Umami read', async () => {
+        // Arrange: one client shared by two consumers mounted one after the other.
+        fetchApiMock.mockResolvedValue(
+            listResponse({ items: [withSegment], canCreateSegments: true })
+        );
+        const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+        const first = render(
+            <QueryClientProvider client={client}>
+                <QrCampaignUmamiFilterLink campaign="verano" />
+            </QueryClientProvider>
+        );
+        await screen.findByRole('link');
+        first.unmount();
+
+        // Act
+        render(
+            <QueryClientProvider client={client}>
+                <QrCampaignUmamiFilterLink campaign="verano" />
+            </QueryClientProvider>
+        );
+
+        // Assert
+        expect(await screen.findByRole('link')).toBeInTheDocument();
+        expect(fetchApiMock).toHaveBeenCalledTimes(1);
+        expect(QR_CAMPAIGNS_UMAMI_STALE_TIME_MS).toBe(60_000);
     });
 });
 

@@ -1,6 +1,7 @@
 import type { TranslationKey } from '@repo/i18n';
 import { AnalyticsIcon, ExternalLinkIcon } from '@repo/icons';
 import type { QrCampaignUmamiItem, QrCampaignUmamiStatus } from '@repo/schemas';
+import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -28,6 +29,9 @@ import { useTranslations } from '@/hooks/use-translations';
  * - «Abrir segmento» opens it with the `QR · <campaign>` segment applied, which
  *   filters the whole view, including the `utm_content` table.
  * - «Crear en Umami» creates that segment; the API makes a second click a no-op.
+ *   Each row tracks its own in-flight create, so two rows can run at once.
+ * - A campaign with a comma gets neither link nor create: Umami splits filter
+ *   values on commas, so it would count other campaigns too.
  *
  * The query only runs while the dialog is open: it costs one Umami call.
  */
@@ -47,7 +51,11 @@ const STATUS_VARIANT: Readonly<Record<QrCampaignUmamiStatus, 'success' | 'second
     };
 
 /** Reasons the API sends for a failed create that have their own copy. */
-const KNOWN_ERROR_REASONS = ['UMAMI_WRITE_NOT_CONFIGURED', 'UMAMI_KEY_REJECTED'] as const;
+const KNOWN_ERROR_REASONS = [
+    'UMAMI_WRITE_NOT_CONFIGURED',
+    'UMAMI_KEY_REJECTED',
+    'UMAMI_CAMPAIGN_HAS_COMMA'
+] as const;
 
 /**
  * Why «Crear en Umami» is disabled for a row, or `null` when it is enabled.
@@ -63,6 +71,12 @@ export function qrCampaignCreateBlocker(input: {
     readonly canCreate: boolean;
 }): TranslationKey | null {
     if (!input.canCreate) return 'admin-qr-codes.campaigns.createDisabledPermission';
+    if (input.item.umami.unsupportedReason === 'COMMA_IN_CAMPAIGN') {
+        return 'admin-qr-codes.campaigns.createDisabledComma';
+    }
+    if (input.item.umami.unsupportedReason === 'TOO_LONG') {
+        return 'admin-qr-codes.campaigns.createDisabledTooLong';
+    }
     if (!input.canCreateSegments) return 'admin-qr-codes.campaigns.createDisabledNotConfigured';
     if (input.item.umami.status === 'unavailable') {
         return 'admin-qr-codes.campaigns.createDisabledUnavailable';
@@ -154,35 +168,40 @@ function CampaignsPanel({ canCreate }: QrCodeCampaignsDialogProps) {
     const { addToast } = useToast();
     const { data, isLoading, isError } = useQrCampaignsUmami();
     const create = useCreateQrCampaignSegment();
+    const [inFlight, setInFlight] = useState<ReadonlySet<string>>(() => new Set());
 
-    const onCreate = (campaign: string) => {
-        create.mutate(
-            { campaign },
-            {
-                onSuccess: (result) => {
-                    addToast({
-                        variant: 'success',
-                        message: t(
-                            result.created
-                                ? 'admin-qr-codes.campaigns.created'
-                                : 'admin-qr-codes.campaigns.alreadyExisted'
-                        )
-                    });
-                },
-                onError: (error) => {
-                    const reason = readQrCampaignSegmentErrorReason({ error });
-                    const known = KNOWN_ERROR_REASONS.find((item) => item === reason);
-                    addToast({
-                        variant: 'error',
-                        message: t(
-                            known
-                                ? `admin-qr-codes.campaigns.createErrors.${known}`
-                                : 'admin-qr-codes.campaigns.createErrors.generic'
-                        )
-                    });
-                }
-            }
-        );
+    // `mutateAsync`, not `mutate` with per-call callbacks: TanStack Query fires
+    // those only for the LATEST call, which would strand an earlier row as pending.
+    const onCreate = async (campaign: string) => {
+        setInFlight((current) => new Set(current).add(campaign));
+        try {
+            const result = await create.mutateAsync({ campaign });
+            addToast({
+                variant: 'success',
+                message: t(
+                    result.created
+                        ? 'admin-qr-codes.campaigns.created'
+                        : 'admin-qr-codes.campaigns.alreadyExisted'
+                )
+            });
+        } catch (error) {
+            const reason = readQrCampaignSegmentErrorReason({ error });
+            const known = KNOWN_ERROR_REASONS.find((item) => item === reason);
+            addToast({
+                variant: 'error',
+                message: t(
+                    known
+                        ? `admin-qr-codes.campaigns.createErrors.${known}`
+                        : 'admin-qr-codes.campaigns.createErrors.generic'
+                )
+            });
+        } finally {
+            setInFlight((current) => {
+                const next = new Set(current);
+                next.delete(campaign);
+                return next;
+            });
+        }
     };
 
     if (isLoading) {
@@ -201,6 +220,9 @@ function CampaignsPanel({ canCreate }: QrCodeCampaignsDialogProps) {
         );
     }
     const anyUnavailable = data.items.some((item) => item.umami.status === 'unavailable');
+    const anyComma = data.items.some(
+        (item) => item.umami.unsupportedReason === 'COMMA_IN_CAMPAIGN'
+    );
     return (
         <div className="space-y-3">
             {anyUnavailable ? (
@@ -209,6 +231,11 @@ function CampaignsPanel({ canCreate }: QrCodeCampaignsDialogProps) {
                     className="text-muted-foreground text-sm"
                 >
                     {t('admin-qr-codes.campaigns.unavailableNotice')}
+                </p>
+            ) : null}
+            {anyComma ? (
+                <p className="text-muted-foreground text-sm">
+                    {t('admin-qr-codes.campaigns.commaNotice')}
                 </p>
             ) : null}
             <div className="max-h-[60vh] overflow-auto">
@@ -236,10 +263,8 @@ function CampaignsPanel({ canCreate }: QrCodeCampaignsDialogProps) {
                                 item={item}
                                 canCreateSegments={data.canCreateSegments}
                                 canCreate={canCreate}
-                                pending={
-                                    create.isPending && create.variables?.campaign === item.campaign
-                                }
-                                onCreate={() => onCreate(item.campaign)}
+                                pending={inFlight.has(item.campaign)}
+                                onCreate={() => void onCreate(item.campaign)}
                             />
                         ))}
                     </tbody>

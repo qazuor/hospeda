@@ -32,6 +32,9 @@ const EMPTY: QrCampaignsUmamiResponse = { items: [], canCreateSegments: false };
  * @param input.enabled - Whether to run the query (default true).
  * @returns The query.
  */
+/** How long the campaigns read stays fresh before a remount refetches it. */
+export const QR_CAMPAIGNS_UMAMI_STALE_TIME_MS = 60_000;
+
 export function useQrCampaignsUmami(input: { readonly enabled?: boolean } = {}) {
     return useQuery({
         queryKey: qrCampaignUmamiQueryKeys.list(),
@@ -41,6 +44,8 @@ export function useQrCampaignsUmami(input: { readonly enabled?: boolean } = {}) 
             });
             return response.data?.data ?? EMPTY;
         },
+        // The filter link and the dialog share this read; one Umami call per minute is plenty.
+        staleTime: QR_CAMPAIGNS_UMAMI_STALE_TIME_MS,
         enabled: input.enabled ?? true
     });
 }
