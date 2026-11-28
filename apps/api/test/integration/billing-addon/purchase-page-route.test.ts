@@ -147,7 +147,10 @@ describe('HOS-2179 T-6 one-time purchase through a payment page', () => {
             instanceId,
             status: 'PENDING_AUTHORIZATION',
             chargeKind: 'UNA_VEZ',
-            processing: true
+            processing: true,
+            productId: body.productId,
+            targetId: null,
+            addonVersionId: body.addonVersionId
         });
         fake.payOnPage({ paymentPageId: await purchasePageId(instanceId), outcome: 'rejected' });
         expect(
@@ -172,7 +175,10 @@ describe('HOS-2179 T-6 one-time purchase through a payment page', () => {
             instanceId,
             status: 'ACTIVE',
             chargeKind: 'UNA_VEZ',
-            processing: false
+            processing: false,
+            productId: body.productId,
+            targetId: null,
+            addonVersionId: body.addonVersionId
         });
         expect(readCharge).toHaveBeenCalledWith(
             expect.objectContaining({ chargeId: paid.chargeId })

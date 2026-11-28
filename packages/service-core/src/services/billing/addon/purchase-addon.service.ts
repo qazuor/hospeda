@@ -479,8 +479,11 @@ async function purchaseAddonOnce(
                     };
                 if (decision.kind === 'ACTIVATED')
                     return { outcome: 'REFUSED', reason: 'ALREADY_ACTIVE' };
+                // HOS-2680: the retry keeps the released purchase's payer email if it sends none.
                 if (decision.kind === 'RETRY')
-                    return purchaseAddonOnce(input, ports, { mayReleaseOccupant: false });
+                    return purchaseAddonOnce({ ...input, payerEmail: decision.payerEmail }, ports, {
+                        mayReleaseOccupant: false
+                    });
             }
             if (occupant.status === 'PENDING_AUTHORIZATION')
                 return {

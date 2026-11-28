@@ -965,6 +965,15 @@
         "waitingPaymentMail": "We don't have Mercado Pago's confirmation yet. We will email you once it is credited.",
         "active": "Active",
         "closed": "The purchase ended without activation.",
+        "returnActions": {
+            "retry": "Retry the payment",
+            "useOtherEmail": "Use another email",
+            "otherEmailConfirm": "Continue with this email",
+            "startNew": "Start a new purchase",
+            "alreadyPaid": "Mercado Pago already registered your payment. We are activating it: you will see it active in a few minutes, there is no need to pay again.",
+            "stillPreparing": "Mercado Pago is still preparing the payment. Try again in a few minutes.",
+            "backToStore": "Back to the store"
+        },
         "pageExpired": "The payment page expired without an approved payment. You can buy it again.",
         "paymentNotConfirmed": "We could not confirm the payment for this add-on. You can buy it again if you want.",
         "paused": {
