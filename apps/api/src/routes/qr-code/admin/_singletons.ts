@@ -11,8 +11,14 @@
  * @module routes/qr-code/admin/_singletons
  */
 
-import { QrCodeService } from '@repo/service-core';
+import { QrCodeService, QrCodeTagService } from '@repo/service-core';
 import { apiLogger } from '../../../utils/logger';
 
 /** Process-wide service instance shared by every admin QR handler. */
 export const qrCodeService = new QrCodeService({ logger: apiLogger });
+
+/**
+ * Process-wide tag service (HOS-2679): the tag catalog routes and the per-code
+ * tag set share it.
+ */
+export const qrCodeTagService = new QrCodeTagService({ logger: apiLogger });
