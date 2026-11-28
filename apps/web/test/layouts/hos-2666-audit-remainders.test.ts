@@ -71,6 +71,18 @@ describe('HOS-2666 audit remainders', () => {
         }
     });
 
+    it('CARD-001 H-8: the mobile menu sign-in reuses the desktop secondary rule, not a filled gradient', () => {
+        const section = read(
+            'src/components/shared/navigation/MobileMenuAccountSection.client.tsx'
+        );
+        const css = read('src/components/shared/navigation/MobileMenu.module.css');
+        const signIn = section.match(/<a[^>]*?className=([^>]*?)>\s*\{t\('nav\.signIn'\)\}/s);
+        expect(signIn?.[1]?.trim()).toBe('{styles.authSignIn}');
+        expect(css).toMatch(
+            /\.authSignIn\s*\{[^}]*composes: signInLink from ["']\.\/UserMenu\.module\.css["'];/
+        );
+    });
+
     it('CARD-038 H-1: the favorites gate is one column and the sign-in icon never shrinks', () => {
         const auth = read('src/components/auth/AuthRequiredPopover.module.css');
         expect(auth).toMatch(/\.header\s*\{[^}]*flex-wrap: wrap;/);
