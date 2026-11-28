@@ -26,8 +26,11 @@
  *   - the period end comes from the NEXT covered period of the subscription
  *     when there is one (a historical fact), and the cycle is printed only when
  *     it agrees with that end;
- *   - when a plan migration applied after the payment, the plan and the cycle
- *     are left out rather than printed wrong;
+ *   - when a scheduled change (a plan change or a plan migration, both applied
+ *     by S38, which records `subscription.scheduled_change_applied`) landed
+ *     after the payment, the plan and the cycle are left out rather than
+ *     printed wrong;
+ *   - when the details cannot be read at all, the plan is not trusted either;
  *   - no catalog price is ever read, so no subtotal or discount amount is
  *     invented: the promo codes are named, the amount is the one paid.
  *
@@ -51,13 +54,13 @@ import {
     billingOptions,
     coveredPeriods,
     desc,
+    domainEvent,
     eq,
     getDb,
     gt,
     isNull,
     manualPayments,
     payments,
-    planMigrationSubscriptions,
     plans,
     planVersions,
     promoCodes,
@@ -120,7 +123,8 @@ export const EMPTY_RECEIPT_DETAILS: ReceiptDetails = {
     operationId: null,
     paidAt: null,
     promoCodes: [],
-    planTrusted: true
+    // Nothing read means nothing known: today's plan is not printed as the payment's.
+    planTrusted: false
 };
 
 /**
@@ -191,7 +195,9 @@ export function resolveReceiptPeriod(input: {
     const { periodStart, nextPeriodStart } = input;
     const cycle = input.planTrusted ? input.cycle : null;
     const computed = computeReceiptPeriodEnd({ periodStart, cycle });
-    if (nextPeriodStart) {
+    // A next period further out than one cycle means a gap (a pause, a lapse):
+    // the payment covered one cycle, not the gap.
+    if (nextPeriodStart && (computed === null || nextPeriodStart.getTime() <= computed.getTime())) {
         const agrees = computed !== null && computed.getTime() === nextPeriodStart.getTime();
         return { periodEnd: nextPeriodStart, cycle: agrees ? cycle : null };
     }
@@ -306,7 +312,7 @@ export async function readReceiptDetails(input: {
           : undefined;
     const paidAt = isManual ? (base.manualRegisteredAt ?? null) : (base.factAt ?? null);
 
-    const [facts, covered, promos, laterMigration] = await Promise.all([
+    const [facts, covered, promos, laterChange] = await Promise.all([
         subscriptionId
             ? readSubscriptionFacts(subscriptionId)
             : base.addonInstanceId
@@ -338,14 +344,18 @@ export async function readReceiptDetails(input: {
                   .where(eq(promoRedemptionCharges.paymentId, base.paymentId))
                   .orderBy(asc(promoRedemptions.redeemedAt), asc(promoCodes.code))
             : Promise.resolve([]),
+        // The only writer of a subscription's plan version is S38, and it records
+        // this event every time; a later one means today's plan is not the payment's.
         subscriptionId && paidAt
             ? db
-                  .select({ id: planMigrationSubscriptions.id })
-                  .from(planMigrationSubscriptions)
+                  .select({ id: domainEvent.id })
+                  .from(domainEvent)
                   .where(
                       and(
-                          eq(planMigrationSubscriptions.subscriptionId, subscriptionId),
-                          gt(planMigrationSubscriptions.appliedAt, paidAt)
+                          eq(domainEvent.entityType, 'subscription'),
+                          eq(domainEvent.entityId, subscriptionId),
+                          eq(domainEvent.eventType, 'subscription.scheduled_change_applied'),
+                          gt(domainEvent.occurredAt, paidAt)
                       )
                   )
                   .limit(1)
@@ -368,7 +378,8 @@ export async function readReceiptDetails(input: {
                   .orderBy(asc(coveredPeriods.periodStart))
                   .limit(1)
             : [];
-    const planTrusted = laterMigration.length === 0;
+    // An add-on is anchored to its product at purchase; only a subscription drifts.
+    const planTrusted = facts !== null && laterChange.length === 0;
     const period = resolveReceiptPeriod({
         periodStart,
         nextPeriodStart: next[0]?.periodStart ?? null,

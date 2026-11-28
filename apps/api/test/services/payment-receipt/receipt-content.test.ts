@@ -146,6 +146,12 @@ describe('buildReceiptContent', () => {
         expect(JSON.stringify(content)).not.toContain('owner-pro');
     });
 
+    it('prints no plan from the row when nothing could be read', () => {
+        const content = buildReceiptContent({ receipt, details: EMPTY_RECEIPT_DETAILS });
+        expect(content.line.subtitle).toBeNull();
+        expect(JSON.stringify(content)).not.toContain('owner-pro');
+    });
+
     it('never calls the document an invoice', () => {
         const content = buildReceiptContent({ receipt, details });
         expect(JSON.stringify(content)).not.toMatch(/factura/i);
@@ -187,6 +193,17 @@ describe('resolveReceiptPeriod', () => {
                 planTrusted: true
             })
         ).toEqual({ periodEnd: nextPeriodStart, cycle: null });
+    });
+
+    it('does not stretch a period over a gap before the next one', () => {
+        expect(
+            resolveReceiptPeriod({
+                periodStart,
+                nextPeriodStart: new Date('2027-03-01T03:00:00.000Z'),
+                cycle: 'monthly',
+                planTrusted: true
+            })
+        ).toEqual({ periodEnd: nextPeriodStart, cycle: 'monthly' });
     });
 
     it("computes the latest period from today's cycle only while the plan is trusted", () => {

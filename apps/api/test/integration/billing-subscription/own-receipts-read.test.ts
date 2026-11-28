@@ -4,7 +4,7 @@
  * or add-on instance it was issued for. A stranger's read is the same `null` as a missing id.
  */
 
-import { coveredPeriods, eq, getDb, inArray, payments, receipts } from '@repo/db';
+import { coveredPeriods, domainEvent, eq, getDb, inArray, payments, receipts } from '@repo/db';
 import { PermissionEnum } from '@repo/schemas';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
@@ -256,5 +256,29 @@ describe('receipt details for the document (HOS-2682)', () => {
         expect(details.periodStart).toEqual(new Date('2026-10-01T03:00:00.000Z'));
         expect(details.periodEnd).toEqual(new Date('2026-11-01T03:00:00.000Z'));
         expect(details.cycle).toBe('monthly');
+    });
+
+    it('prints no plan or cycle once a scheduled change applied after the payment', async () => {
+        const { ownerId, subscriptionId, paymentId } = await seedRevocable();
+        // domain_event is append-only: the row stays, scoped to this fresh subscription.
+        await getDb()
+            .insert(domainEvent)
+            .values({
+                eventType: 'subscription.scheduled_change_applied',
+                entityType: 'subscription',
+                entityId: subscriptionId,
+                actorType: 'job',
+                correlationId: subscriptionId,
+                occurredAt: new Date(CHARGED_AT.getTime() + 60_000)
+            });
+        const receipt = await readOwnReceipt({
+            receiptId: await issue({ paymentId }),
+            userId: ownerId
+        });
+        if (!receipt) throw new Error('Expected own receipt');
+
+        const details = await readReceiptDetails({ receipt });
+
+        expect(details).toMatchObject({ planTrusted: false, productName: null, cycle: null });
     });
 });
