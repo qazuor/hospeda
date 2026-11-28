@@ -4,10 +4,11 @@
  * or add-on instance it was issued for. A stranger's read is the same `null` as a missing id.
  */
 
-import { getDb, inArray, receipts } from '@repo/db';
+import { coveredPeriods, domainEvent, eq, getDb, inArray, payments, receipts } from '@repo/db';
 import { PermissionEnum } from '@repo/schemas';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
+import { readReceiptDetails } from '../../../src/services/payment-receipt/receipt-details-read';
 import {
     listOwnReceipts,
     readOwnReceipt
@@ -16,6 +17,7 @@ import { validateApiEnv } from '../../../src/utils/env';
 import { testDb } from '../../e2e/setup/test-database';
 import {
     actorHeaders,
+    CHARGED_AT,
     NOW,
     retireRevocationRouteRows,
     routeClock,
@@ -30,6 +32,7 @@ import {
 const clock = routeClock(NOW);
 const fake = routeFake(clock);
 const issued: string[] = [];
+const periods: string[] = [];
 let app: ReturnType<typeof initApp>;
 
 beforeAll(async () => {
@@ -39,6 +42,12 @@ beforeAll(async () => {
     app = initApp({ clock, paymentProvider: fake });
 });
 afterEach(async () => {
+    // Covered periods reference the payments the shared retire helper deletes.
+    if (periods.length > 0) {
+        await getDb()
+            .delete(coveredPeriods)
+            .where(inArray(coveredPeriods.id, periods.splice(0)));
+    }
     // Receipts reference the payments the shared retire helper deletes.
     if (issued.length > 0) {
         await getDb()
@@ -143,5 +152,133 @@ describe('receipt ownership (HOS-2566)', () => {
         const bytes = new Uint8Array(await own.arrayBuffer());
         expect(new TextDecoder().decode(bytes.slice(0, 5))).toBe('%PDF-');
         expect((await as(stranger)).status).toBe(404);
+    });
+});
+
+describe('receipt details for the document (HOS-2682)', () => {
+    it('reads the account, plan, cycle, price and payment of an automatic payment', async () => {
+        const { ownerId, paymentId } = await seedRevocable();
+        const receipt = await readOwnReceipt({
+            receiptId: await issue({ paymentId }),
+            userId: ownerId
+        });
+        if (!receipt) throw new Error('Expected own receipt');
+
+        const details = await readReceiptDetails({ receipt });
+
+        expect(details).toMatchObject({
+            accountName: 'B5.5 owner',
+            vertical: 'accommodation',
+            productName: 'B5.5 route',
+            cycle: 'monthly',
+            method: 'OTHER',
+            paidAt: CHARGED_AT,
+            promoCodes: [],
+            planTrusted: true
+        });
+        expect(details.accountEmail).toMatch(/@example\.test$/);
+    });
+
+    it('reads a manual payment as manual, with its own id as reference and its period', async () => {
+        const ownerId = await seedUser('manual-details');
+        const subscriptionId = await seedPrincipal({ ownerId, paymentMethod: 'MANUAL' });
+        const manualPaymentId = await seedManualPayment({ subscriptionId, registeredBy: ownerId });
+        const receipt = await readOwnReceipt({
+            receiptId: await issue({ manualPaymentId }),
+            userId: ownerId
+        });
+        if (!receipt) throw new Error('Expected own receipt');
+
+        const details = await readReceiptDetails({ receipt });
+
+        expect(details.method).toBe('MANUAL');
+        expect(details.operationId).toBe(manualPaymentId);
+        expect(details.paidAt).toEqual(CHARGED_AT);
+        expect(details.periodStart).toEqual(new Date('2026-10-01T03:00:00.000Z'));
+        expect(details.periodEnd).toEqual(new Date('2026-11-01T03:00:00.000Z'));
+    });
+
+    it('reads an add-on payment through its product, with no plan vertical', async () => {
+        const ownerId = await seedUser('addon-details');
+        const principalId = await seedPrincipal({ ownerId });
+        const { paymentId } = await seedOneTimeOrphan({ ownerId, principalId });
+        const receipt = await readOwnReceipt({
+            receiptId: await issue({ paymentId }),
+            userId: ownerId
+        });
+        if (!receipt) throw new Error('Expected own receipt');
+
+        const details = await readReceiptDetails({ receipt });
+
+        expect(details).toMatchObject({
+            accountName: 'B5.5 addon-details',
+            vertical: null,
+            productName: 'B5.6 route',
+            cycle: null
+        });
+    });
+
+    it('names a Mercado Pago payment as stored, and prints its open period over a released one', async () => {
+        const { ownerId, subscriptionId, paymentId } = await seedRevocable();
+        await getDb()
+            .update(payments)
+            .set({ provider: 'MERCADO_PAGO' })
+            .where(eq(payments.id, paymentId));
+        const rows = await getDb()
+            .insert(coveredPeriods)
+            .values([
+                {
+                    subscriptionId,
+                    paymentId,
+                    periodStart: new Date('2026-09-01T03:00:00.000Z'),
+                    creditedAt: new Date('2026-09-01T03:00:00.000Z'),
+                    releasedAt: new Date('2026-09-02T03:00:00.000Z')
+                },
+                {
+                    subscriptionId,
+                    paymentId,
+                    periodStart: new Date('2026-10-01T03:00:00.000Z'),
+                    creditedAt: new Date('2026-08-01T03:00:00.000Z')
+                }
+            ])
+            .returning({ id: coveredPeriods.id });
+        periods.push(...rows.map((row) => row.id));
+        const receipt = await readOwnReceipt({
+            receiptId: await issue({ paymentId }),
+            userId: ownerId
+        });
+        if (!receipt) throw new Error('Expected own receipt');
+
+        const details = await readReceiptDetails({ receipt });
+
+        expect(details.method).toBe('MERCADOPAGO');
+        // The open row wins although the released one was credited later.
+        expect(details.periodStart).toEqual(new Date('2026-10-01T03:00:00.000Z'));
+        expect(details.periodEnd).toEqual(new Date('2026-11-01T03:00:00.000Z'));
+        expect(details.cycle).toBe('monthly');
+    });
+
+    it('prints no plan or cycle once a scheduled change applied after the payment', async () => {
+        const { ownerId, subscriptionId, paymentId } = await seedRevocable();
+        // domain_event is append-only: the row stays, scoped to this fresh subscription.
+        await getDb()
+            .insert(domainEvent)
+            .values({
+                eventType: 'subscription.scheduled_change_applied',
+                entityType: 'subscription',
+                entityId: subscriptionId,
+                actorType: 'job',
+                correlationId: subscriptionId,
+                occurredAt: new Date(CHARGED_AT.getTime() + 60_000)
+            });
+        const receipt = await readOwnReceipt({
+            receiptId: await issue({ paymentId }),
+            userId: ownerId
+        });
+        if (!receipt) throw new Error('Expected own receipt');
+
+        const details = await readReceiptDetails({ receipt });
+
+        expect(details).toMatchObject({ planTrusted: false, productName: null, cycle: null });
     });
 });

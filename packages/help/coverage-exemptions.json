@@ -109,6 +109,7 @@
 {"anchor":"page:mi-cuenta/publicaciones","kind":"out-of-scope","reason":"Editorial posts, gated by POST_CREATE (NG-2)."},
 {"anchor":"page:mi-cuenta/publicaciones/[id]/editar","kind":"out-of-scope","reason":"Editorial posts, gated by POST_CREATE (NG-2)."},
 {"anchor":"page:mi-cuenta/publicaciones/nuevo","kind":"out-of-scope","reason":"Editorial posts, gated by POST_CREATE (NG-2)."},
+{"anchor":"page:mi-cuenta/recibos/[receiptId]","kind":"no-user-surface","reason":"HOS-2682: the «Ver recibo» link of the payment email; it answers the receipt PDF itself (or the in-layout not-found), with no page of its own to explain. The receipts list lives on mi-cuenta/suscripcion."},
 {"anchor":"page:mi-cuenta/recomendaciones","kind":"out-of-scope","reason":"Tourist page (NG-1)."},
 {"anchor":"page:mi-cuenta/resenas","kind":"out-of-scope","reason":"Tourist page (NG-1)."},
 {"anchor":"page:mi-cuenta/tablero-experiencias","kind":"pending-content","reason":"HOS-2476 owner dashboard; its help is the planned listing-stats article (HOS-2410 Phase 5, docs/catalog.md).","plannedArticle":"listing-stats"},

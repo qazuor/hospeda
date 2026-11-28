@@ -1,0 +1,70 @@
+---
+/**
+ * @file mi-cuenta/recibos/[receiptId].astro
+ * @description The page behind the «Ver recibo» button of the «Recibimos tu
+ * pago» email (HOS-2682): it OPENS THE RECEIPT PDF DIRECTLY, full page, in the
+ * browser's own viewer (which also offers the download).
+ *
+ * - With the owner's session, the response IS the PDF: the session cookie is
+ *   forwarded to the API's owner-only route and the file is streamed back from
+ *   this origin (`openOwnReceiptPdf`).
+ * - Without a session, the middleware sends the visitor to sign in with this
+ *   URL as the return address, so they land on the receipt afterwards.
+ * - A receipt of somebody else, a missing one and a malformed id all rewrite to
+ *   the same in-layout «not found» (HOS-2434), so nothing confirms an id exists.
+ * - If the API fails, the page falls back to the receipt viewer island inside
+ *   the account layout, which retries from the browser and offers open/download.
+ *
+ * The receipts list on Mi Suscripción keeps its own viewer (HOS-2566).
+ *
+ * @route /{lang}/mi-cuenta/recibos/{receiptId}/
+ * @rendering SSR (on-demand, auth-protected)
+ */
+
+import AccountLayout from '@/layouts/AccountLayout.astro';
+import { PageHeader } from '@/components/account/ui';
+import { buildAccountBreadcrumbs } from '@/lib/account/account-breadcrumbs';
+import { getAccountSectionLabel } from '@/lib/account-nav-model';
+import { ReceiptViewer } from '@/components/account/receipts/ReceiptViewer.client';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+import { buildLoginRedirect } from '@/lib/middleware-helpers';
+import { buildAccountNotFoundTarget } from '@/lib/account-not-found';
+import { openOwnReceiptPdf } from '@/lib/account/receipt-direct';
+
+export const prerender = false;
+
+const locale = Astro.locals.locale as SupportedLocale;
+const { t } = createTranslations(locale);
+const loginRedirect = () =>
+	Astro.redirect(buildLoginRedirect({ locale, currentUrl: Astro.url.pathname + Astro.url.search }));
+
+if (!Astro.locals.user) {
+	return loginRedirect();
+}
+
+const { receiptId } = Astro.params;
+const outcome = await openOwnReceiptPdf({
+	receiptId,
+	cookieHeader: Astro.request.headers.get('cookie') ?? undefined
+});
+
+if (outcome.kind === 'pdf') return outcome.response;
+if (outcome.kind === 'signIn') return loginRedirect();
+if (outcome.kind === 'notFound' || !receiptId) {
+	return Astro.rewrite(buildAccountNotFoundTarget({ locale }));
+}
+
+const title = t('account.subscription.receipts.page.title');
+const backHref = buildUrl({ locale, path: 'mi-cuenta/suscripcion' });
+---
+
+<AccountLayout locale={locale} title={title} activeSection="suscripcion">
+	<PageHeader locale={locale} title={title} breadcrumbs={buildAccountBreadcrumbs({
+		t,
+		parents: [{ label: getAccountSectionLabel({ t, section: 'suscripcion' }), path: 'mi-cuenta/suscripcion' }],
+		current: title
+	})} />
+	<ReceiptViewer client:load locale={locale} receiptId={receiptId} backHref={backHref} />
+</AccountLayout>

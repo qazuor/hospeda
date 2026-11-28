@@ -26,6 +26,7 @@ const nested = [
     'eventos/[id]/editar.astro',
     'publicaciones/nuevo.astro',
     'publicaciones/[id]/editar.astro',
+    'recibos/[receiptId].astro',
     'promociones/nueva.astro',
     'promociones/[id]/editar.astro'
 ] as const;

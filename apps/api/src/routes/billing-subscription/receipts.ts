@@ -20,13 +20,46 @@
  * @module routes/billing-subscription/receipts
  */
 
+import { createLogger } from '@repo/logger';
 import { OwnReceiptsResponseSchema, PermissionEnum } from '@repo/schemas';
 import { entityNotFoundError } from '@repo/service-core';
 import { z } from 'zod';
-import { listOwnReceipts, readOwnReceipt } from '../../services/payment-receipt/receipt-read';
+import {
+    EMPTY_RECEIPT_DETAILS,
+    type ReceiptDetails,
+    readReceiptDetails
+} from '../../services/payment-receipt/receipt-details-read';
+import {
+    listOwnReceipts,
+    type OwnReceipt,
+    readOwnReceipt
+} from '../../services/payment-receipt/receipt-read';
 import { buildReceiptResponse } from '../../services/payment-receipt/receipt-response';
 import { getActorFromContext } from '../../utils/actor';
 import { createProtectedRoute } from '../../utils/route-factory';
+
+const logger = createLogger('own-receipts');
+
+/**
+ * Reads what the document prints beyond the receipt row (HOS-2682). A failure
+ * here degrades the document to the receipt row alone instead of failing the
+ * download: the owner still gets a valid receipt, and the log says why it is
+ * thinner than usual.
+ */
+async function detailsOrEmpty(receipt: OwnReceipt): Promise<ReceiptDetails> {
+    try {
+        return await readReceiptDetails({ receipt });
+    } catch (error) {
+        logger.warn(
+            {
+                receiptId: receipt.id,
+                error: error instanceof Error ? error.message : String(error)
+            },
+            'Receipt details could not be read; rendering the receipt row alone'
+        );
+        return EMPTY_RECEIPT_DETAILS;
+    }
+}
 
 /** List the receipts the authenticated account owns, newest first. */
 export const protectedListOwnReceiptsRoute = createProtectedRoute({
@@ -76,7 +109,7 @@ export const protectedGetOwnReceiptPdfRoute = createProtectedRoute({
             userId: getActorFromContext(ctx).id
         });
         if (!receipt) throw entityNotFoundError({ entityName: 'Receipt' });
-        return buildReceiptResponse({ receipt });
+        return buildReceiptResponse({ receipt, details: await detailsOrEmpty(receipt) });
     },
     options: { customRateLimit: { requests: 30, windowMs: 60_000 } }
 });
