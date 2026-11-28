@@ -41,8 +41,9 @@ describe.each([
         expect(frontmatter).toContain('buildAccountBreadcrumbs({');
         expect(frontmatter).toContain("current: t('listing.owner.qrPage.breadcrumb')");
         expect(frontmatter).toMatch(
-            /\{ label: listing\.name, path: `mi-cuenta\/.*\$\{listing\.id\}\/editar` \}/
+            /const editorPath = listing\s*\?\s*`mi-cuenta\/.*\$\{listing\.id\}\/editar`/
         );
+        expect(frontmatter).toContain('[sectionCrumb, { label: listing.name, path: editorPath }]');
         expect(source).toContain('breadcrumbs={breadcrumbs}');
     });
 
@@ -52,6 +53,15 @@ describe.each([
         expect(panel).toContain('listingId={listing.id}');
         expect(panel).toContain('slug={listing.slug}');
         expect(panel).toContain('isPublished={listing.isPublished}');
+    });
+
+    it('answers a failed read with 503 and an in-layout retry, not the 404 page', () => {
+        const branch = /if \(resolution\.unavailable\) \{[\s\S]*?\n\}/.exec(frontmatter)?.[0] ?? '';
+        expect(branch).toContain('Astro.response.status = 503;');
+        expect(branch).not.toContain('rewrite');
+        expect(source).toMatch(/\) : \(\s*<Alert locale=\{locale\} tone="danger"/);
+        expect(source).toContain("t('listing.owner.qrPage.retry')");
+        expect(source).toContain('href={retryHref}');
     });
 
     it('titles the page with the listing name', () => {

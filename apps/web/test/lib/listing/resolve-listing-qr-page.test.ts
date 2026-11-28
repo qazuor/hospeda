@@ -2,7 +2,7 @@
  * @file resolve-listing-qr-page.test.ts
  * @description HOS-2688: the QR pages' front-door. Signed-out → login with the
  * page as the return path; a missing listing and somebody else's answer the
- * SAME in-layout 404; the owner (or staff with the edit-all permission) gets
+ * SAME in-layout 404; a failed read resolves `unavailable`, never a 404; the owner (or staff with the edit-all permission) gets
  * the listing, published or not.
  *
  * The loaders are mocked, as in `resolve-listing-editor-page.test.ts`, so the
@@ -13,13 +13,13 @@ import type { AstroGlobal } from 'astro';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const loadAccommodationEditorData = vi.fn();
-const fetchOwnerListingDetail = vi.fn();
+const loadOwnerListingDetail = vi.fn();
 
 vi.mock('@/lib/api/accommodation-editor-data', () => ({
     loadAccommodationEditorData: (args: unknown) => loadAccommodationEditorData(args)
 }));
 vi.mock('@/lib/listing/owner-listings', () => ({
-    fetchOwnerListingDetail: (args: unknown) => fetchOwnerListingDetail(args)
+    loadOwnerListingDetail: (args: unknown) => loadOwnerListingDetail(args)
 }));
 
 const { resolveAccommodationQrPage, resolveComercioQrPage } = await import(
@@ -68,17 +68,25 @@ describe('resolveAccommodationQrPage', () => {
         expect(loadAccommodationEditorData).not.toHaveBeenCalled();
     });
 
-    it.each([
-        'redirect',
-        'error'
-    ])('answers the in-layout 404 when the loader says %s', async (status) => {
-        loadAccommodationEditorData.mockResolvedValue({ status });
+    it("answers the in-layout 404 when the listing is missing or not the viewer's", async () => {
+        // `redirect` is the loader's 404/403/410.
+        loadAccommodationEditorData.mockResolvedValue({ status: 'redirect' });
         const { astro, rewrite } = createAstro({ path, params: { id: 'acc-1' } });
 
         const result = await resolveAccommodationQrPage({ astro });
 
         expect(result.response).toBe(NOT_FOUND_RESPONSE);
         expect(rewrite).toHaveBeenCalledWith('/es/mi-cuenta/no-encontrado/?back=properties');
+    });
+
+    it('answers "unavailable", never a 404, when the read itself failed (5xx/network)', async () => {
+        loadAccommodationEditorData.mockResolvedValue({ status: 'error' });
+        const { astro, rewrite } = createAstro({ path, params: { id: 'acc-1' } });
+
+        const result = await resolveAccommodationQrPage({ astro });
+
+        expect(result).toEqual({ unavailable: true, locale: 'es', vertical: 'accommodation' });
+        expect(rewrite).not.toHaveBeenCalled();
     });
 
     it("returns the owner's listing with the cookie forwarded", async () => {
@@ -131,15 +139,18 @@ describe('resolveComercioQrPage', () => {
 
         expect(result.response).toBe(NOT_FOUND_RESPONSE);
         expect(rewrite).toHaveBeenCalledWith('/es/mi-cuenta/no-encontrado/?back=listings');
-        expect(fetchOwnerListingDetail).not.toHaveBeenCalled();
+        expect(loadOwnerListingDetail).not.toHaveBeenCalled();
     });
 
     it("answers the same 404 for a missing listing and for somebody else's", async () => {
-        fetchOwnerListingDetail.mockResolvedValueOnce(null);
+        loadOwnerListingDetail.mockResolvedValueOnce({ status: 'notFound' });
         const missing = createAstro({ path, params: { vertical: 'venue', id: 'v-1' } });
         const missingResult = await resolveComercioQrPage({ astro: missing.astro });
 
-        fetchOwnerListingDetail.mockResolvedValueOnce({ ...detail, ownerId: 'someone-else' });
+        loadOwnerListingDetail.mockResolvedValueOnce({
+            status: 'ok',
+            detail: { ...detail, ownerId: 'someone-else' }
+        });
         const foreign = createAstro({ path, params: { vertical: 'venue', id: 'v-1' } });
         const foreignResult = await resolveComercioQrPage({ astro: foreign.astro });
 
@@ -153,7 +164,10 @@ describe('resolveComercioQrPage', () => {
         ['venue', PermissionEnum.VENUE_EDIT_ALL],
         ['experience', PermissionEnum.EXPERIENCE_EDIT_ALL]
     ] as const)('lets staff holding the %s edit-all permission in', async (vertical, permission) => {
-        fetchOwnerListingDetail.mockResolvedValue({ ...detail, ownerId: 'someone-else' });
+        loadOwnerListingDetail.mockResolvedValue({
+            status: 'ok',
+            detail: { ...detail, ownerId: 'someone-else' }
+        });
         const { astro } = createAstro({
             path,
             params: { vertical, id: 'v-1' },
@@ -165,13 +179,23 @@ describe('resolveComercioQrPage', () => {
         expect(result.listing?.vertical).toBe(vertical);
     });
 
+    it('answers "unavailable", never a 404, when the read itself failed', async () => {
+        loadOwnerListingDetail.mockResolvedValue({ status: 'error' });
+        const { astro, rewrite } = createAstro({ path, params: { vertical: 'venue', id: 'v-1' } });
+
+        const result = await resolveComercioQrPage({ astro });
+
+        expect(result).toEqual({ unavailable: true, locale: 'es', vertical: 'venue' });
+        expect(rewrite).not.toHaveBeenCalled();
+    });
+
     it("returns the owner's published listing", async () => {
-        fetchOwnerListingDetail.mockResolvedValue(detail);
+        loadOwnerListingDetail.mockResolvedValue({ status: 'ok', detail });
         const { astro } = createAstro({ path, params: { vertical: 'venue', id: 'v-1' } });
 
         const result = await resolveComercioQrPage({ astro });
 
-        expect(fetchOwnerListingDetail).toHaveBeenCalledWith({
+        expect(loadOwnerListingDetail).toHaveBeenCalledWith({
             vertical: 'venue',
             id: 'v-1',
             cookieHeader: COOKIE

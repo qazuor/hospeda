@@ -20,7 +20,10 @@
             "title": "QR code for {{name}}",
             "description": "Print the sticker, cut it out and put it on your door, window or counter: whoever scans it lands on your listing.",
             "noticeMessage": "Your listing is live! Your printable QR code is ready.",
-            "noticeAction": "See my QR code"
+            "noticeAction": "See my QR code",
+            "errorTitle": "We couldn’t load your QR code",
+            "errorDescription": "We couldn’t read your listing. Try again in a few minutes.",
+            "retry": "Try again"
         },
         "nav": "My business",
         "purgeAddons": {

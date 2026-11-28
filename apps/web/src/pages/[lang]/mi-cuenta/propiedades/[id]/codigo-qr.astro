@@ -17,7 +17,7 @@
  */
 
 import AccountLayout from '@/layouts/AccountLayout.astro';
-import { PageHeader } from '@/components/account/ui';
+import { Alert, PageHeader } from '@/components/account/ui';
 import PageHelpLink from '@/components/account/help/PageHelpLink.astro';
 import { ListingQrSheet } from '@/components/shared/qr/ListingQrSheet.client';
 import { buildAccountBreadcrumbs } from '@/lib/account/account-breadcrumbs';
@@ -34,19 +34,29 @@ if (denied) return denied;
 const resolution = await resolveAccommodationQrPage({ astro: Astro });
 if (resolution.response) return resolution.response;
 
+if (resolution.unavailable) {
+	// A failed read (5xx, network), not a missing listing: answer 503 and an
+	// in-layout error with a retry, never the not-found page.
+	Astro.response.status = 503;
+	Astro.response.headers.set('cache-control', 'no-store');
+}
 const { locale, listing } = resolution;
 const { t } = createTranslations(locale);
 const accountSection = 'propiedades';
-const title = t('listing.owner.qrPage.title', undefined, { name: listing.name });
-const description = t('listing.owner.qrPage.description');
+const sectionCrumb = { label: getAccountSectionLabel({ t, section: accountSection }), path: 'mi-cuenta/propiedades' };
+const editorPath = listing ? `mi-cuenta/propiedades/${listing.id}/editar` : null;
+const title = listing
+	? t('listing.owner.qrPage.title', undefined, { name: listing.name })
+	: t('listing.owner.qrPage.errorTitle');
+const description = listing ? t('listing.owner.qrPage.description') : undefined;
 const breadcrumbs = buildAccountBreadcrumbs({
 	t,
-	parents: [
-		{ label: getAccountSectionLabel({ t, section: accountSection }), path: 'mi-cuenta/propiedades' },
-		{ label: listing.name, path: `mi-cuenta/propiedades/${listing.id}/editar` },
-	],
+	parents: listing && editorPath
+		? [sectionCrumb, { label: listing.name, path: editorPath }]
+		: [sectionCrumb],
 	current: t('listing.owner.qrPage.breadcrumb'),
 });
+const retryHref = Astro.url.pathname + Astro.url.search;
 ---
 
 <AccountLayout locale={locale} title={title} description={description} activeSection={accountSection}>
@@ -54,12 +64,19 @@ const breadcrumbs = buildAccountBreadcrumbs({
 		<PageHelpLink slot="help" locale={locale} />
 	</PageHeader>
 
-	<ListingQrSheet
-		client:load
-		vertical={listing.vertical}
-		listingId={listing.id}
-		slug={listing.slug}
-		locale={locale}
-		isPublished={listing.isPublished}
-	/>
+	{listing ? (
+		<ListingQrSheet
+			client:load
+			vertical={listing.vertical}
+			listingId={listing.id}
+			slug={listing.slug}
+			locale={locale}
+			isPublished={listing.isPublished}
+		/>
+	) : (
+		<Alert locale={locale} tone="danger" title={t('listing.owner.qrPage.errorTitle')}>
+			<p>{t('listing.owner.qrPage.errorDescription')}</p>
+			<p><a href={retryHref} data-testid="listing-qr-page-retry">{t('listing.owner.qrPage.retry')}</a></p>
+		</Alert>
+	)}
 </AccountLayout>

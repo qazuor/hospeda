@@ -20,7 +20,10 @@
             "title": "Código QR de {{name}}",
             "description": "Imprima o adesivo, recorte e cole na porta, na vitrine ou no balcão: quem escanear chega à sua página.",
             "noticeMessage": "Sua página já está publicada! Seu código QR para imprimir está pronto.",
-            "noticeAction": "Ver meu código QR"
+            "noticeAction": "Ver meu código QR",
+            "errorTitle": "Não conseguimos carregar seu código QR",
+            "errorDescription": "Não conseguimos ler os dados da sua página. Tente novamente em alguns minutos.",
+            "retry": "Tentar novamente"
         },
         "nav": "Meu comércio",
         "purgeAddons": {

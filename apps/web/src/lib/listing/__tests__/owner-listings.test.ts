@@ -11,6 +11,7 @@ import {
     fetchOwnerListingDetail,
     fetchOwnerListings,
     fetchOwnerListingsWithState,
+    loadOwnerListingDetail,
     OwnerListingsUnavailableError
 } from '../owner-listings';
 
@@ -195,5 +196,38 @@ describe('fetchOwnerListingsWithState (HOS-2484)', () => {
         await expect(fetchOwnerListingsWithState({ vertical: 'venue' })).rejects.toBeInstanceOf(
             OwnerListingsUnavailableError
         );
+    });
+});
+
+describe('loadOwnerListingDetail (HOS-2688)', () => {
+    const detail = { id: 'abc', ownerId: 'owner-1', name: 'La Parrilla', slug: 'la-parrilla' };
+
+    it('returns the listing on success', async () => {
+        mockGetProtected.mockResolvedValueOnce({ ok: true, data: detail });
+        await expect(loadOwnerListingDetail({ vertical: 'venue', id: 'abc' })).resolves.toEqual({
+            status: 'ok',
+            detail
+        });
+    });
+
+    it.each([404, 403, 410])('reads %s as notFound', async (status) => {
+        mockGetProtected.mockResolvedValueOnce({ ok: false, error: { status, message: 'x' } });
+        await expect(loadOwnerListingDetail({ vertical: 'venue', id: 'abc' })).resolves.toEqual({
+            status: 'notFound'
+        });
+    });
+
+    it('reads an empty body as notFound', async () => {
+        mockGetProtected.mockResolvedValueOnce({ ok: true, data: null });
+        await expect(loadOwnerListingDetail({ vertical: 'venue', id: 'abc' })).resolves.toEqual({
+            status: 'notFound'
+        });
+    });
+
+    it.each([500, 503, 0])('keeps %s apart as error, never notFound', async (status) => {
+        mockGetProtected.mockResolvedValueOnce({ ok: false, error: { status, message: 'x' } });
+        await expect(loadOwnerListingDetail({ vertical: 'venue', id: 'abc' })).resolves.toEqual({
+            status: 'error'
+        });
     });
 });

@@ -12,9 +12,13 @@
  *
  * - accommodation: `loadAccommodationEditorData`, whose protected read refuses
  *   somebody else's listing (HOS-2556);
- * - venue / experience: `fetchOwnerListingDetail` plus the explicit owner check
+ * - venue / experience: `loadOwnerListingDetail` plus the explicit owner check
  *   `resolveListingEditorPage` makes (that protected read does not enforce
  *   ownership by itself), with the same staff bypass.
+ *
+ * A failed read (5xx, network) is NOT a 404: it resolves `unavailable`, and
+ * the page renders an error state with a retry (status 503), because "this
+ * listing does not exist" would be a lie about a listing that may well exist.
  *
  * A missing listing and somebody else's listing answer the SAME 404: a
  * distinguishable refusal would confirm which ids exist
@@ -35,7 +39,7 @@ import { loadAccommodationEditorData } from '@/lib/api/accommodation-editor-data
 import { isListingEditorVertical } from '@/lib/editor/listing-editor-sections';
 import type { SupportedLocale } from '@/lib/i18n';
 import type { ListingQrVertical } from '@/lib/listing/listing-qr-page';
-import { fetchOwnerListingDetail, type VenueOrExperience } from '@/lib/listing/owner-listings';
+import { loadOwnerListingDetail, type VenueOrExperience } from '@/lib/listing/owner-listings';
 import { buildLoginRedirect } from '@/lib/middleware-helpers';
 
 /** The listing a QR page renders. */
@@ -50,10 +54,27 @@ export interface ListingQrPageListing<TVertical extends ListingQrVertical> {
 
 /** What a QR page gets back: a response to return, or the listing to render. */
 export type ListingQrPageResolution<TVertical extends ListingQrVertical> =
-    | { readonly response: Response; readonly listing?: undefined }
+    | {
+          readonly response: Response;
+          readonly unavailable?: undefined;
+          readonly listing?: undefined;
+      }
+    /**
+     * The read failed (5xx, network) — NOT a 404: the listing may well exist.
+     * The page renders its own error state with a retry.
+     */
     | {
           readonly response?: undefined;
+          readonly unavailable: true;
           readonly locale: SupportedLocale;
+          readonly vertical: TVertical;
+          readonly listing?: undefined;
+      }
+    | {
+          readonly response?: undefined;
+          readonly unavailable?: undefined;
+          readonly locale: SupportedLocale;
+          readonly vertical: TVertical;
           readonly listing: ListingQrPageListing<TVertical>;
       };
 
@@ -118,11 +139,15 @@ export async function resolveAccommodationQrPage(input: {
         accommodationId: admitted.listingId,
         cookieHeader: admitted.cookieHeader
     });
+    if (result.status === 'error') {
+        return { unavailable: true, locale: admitted.locale, vertical: 'accommodation' };
+    }
     if (result.status !== 'ok') return { response: await admitted.notFound() };
 
     const accommodation = result.data.accommodation;
     return {
         locale: admitted.locale,
+        vertical: 'accommodation',
         listing: {
             vertical: 'accommodation',
             id: accommodation.id,
@@ -149,18 +174,26 @@ export async function resolveComercioQrPage(input: {
     const vertical = input.astro.params.vertical;
     if (!isListingEditorVertical(vertical)) return { response: await admitted.notFound() };
 
-    const detail = await fetchOwnerListingDetail({
+    const outcome = await loadOwnerListingDetail({
         vertical,
         id: admitted.listingId,
         cookieHeader: admitted.cookieHeader
     });
+    if (outcome.status === 'error') {
+        return { unavailable: true, locale: admitted.locale, vertical };
+    }
     const isStaff = admitted.user.permissions.includes(EDIT_ALL_PERMISSION[vertical]);
-    if (!detail || (detail.ownerId !== admitted.user.id && !isStaff)) {
+    if (
+        outcome.status === 'notFound' ||
+        (outcome.detail.ownerId !== admitted.user.id && !isStaff)
+    ) {
         return { response: await admitted.notFound() };
     }
+    const detail = outcome.detail;
 
     return {
         locale: admitted.locale,
+        vertical,
         listing: {
             vertical,
             id: detail.id,
