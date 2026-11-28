@@ -111,7 +111,11 @@ describe('HOS-1448 corrida 2b - exhaustive billing transition annotations', () =
         // 2026-11-19, HOS-2351: still 183 (S40 stops writing succeeded_by_id; its succeeds_id read scopes the abandon to the successor's predecessor).
         // 2026-11-20, HOS-2179 T-7: 179 (A7 retired with its two reads; A2 and A3 stop reading
         // addon_instance.provider_order_id, which has no writer left).
-        expect(corpus.transitions.reduce((total, row) => total + row.reads.length, 0)).toBe(179);
+        // 2026-11-27, HOS-2668: 181 (A8, the owner replacing a pending add-on purchase, reads
+        // addon_instance.status and addon_instance.complement_subscription_id).
+        // 2026-11-27, HOS-2668 final round: 193 (A8 declares all eight reads of its decision; A9,
+        // the declined-charge release, adds six).
+        expect(corpus.transitions.reduce((total, row) => total + row.reads.length, 0)).toBe(193);
     });
 });
 

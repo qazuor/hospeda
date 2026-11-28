@@ -1,19 +1,9 @@
-import { randomUUID } from 'node:crypto';
-import {
-    addonInstances,
-    and,
-    domainEventModel,
-    eq,
-    getDb,
-    idempotencyKeys,
-    isNull,
-    subscriptions
-} from '@repo/db';
 import { PaymentProviderError } from '@repo/payments';
 import {
     rejectedCreationResult,
     throttledCreationResult
 } from '../subscription/resolve-live-commitment';
+import { abandonPendingComplementPair } from './release-pending-complement';
 
 /**
  * Whether a provider failure proves nothing exists at the provider for this creation: a 4xx
@@ -32,7 +22,8 @@ export function isCreationRefusedBeforeExisting(error: unknown): error is Paymen
  * HOS-2321: closes a recurring purchase whose preapproval creation the provider refused, so the
  * unique purchase identity is released and the owner's retry reaches a fresh checkout instead of
  * answering PENDING_ELSEWHERE for the whole authorization window. Completes the creation key,
- * then abandons the never-linked COMPLEMENTO and its instance atomically.
+ * then abandons the never-linked COMPLEMENTO and its instance atomically. Nothing exists at the
+ * provider, so no cancellation is decided.
  *
  * @param input.instanceId - The pending addon instance
  * @param input.complementId - Its pending COMPLEMENTO subscription
@@ -48,56 +39,15 @@ export async function abandonRefusedComplement(input: {
     readonly rateLimited: boolean;
     readonly now: Date;
 }): Promise<boolean> {
-    return getDb().transaction(async (tx) => {
-        const [complement] = await tx
-            .update(subscriptions)
-            .set({ status: 'ABANDONED', updatedAt: input.now })
-            .where(
-                and(
-                    eq(subscriptions.id, input.complementId),
-                    eq(subscriptions.class, 'COMPLEMENTO'),
-                    eq(subscriptions.status, 'PENDING_AUTHORIZATION')
-                )
-            )
-            .returning({ id: subscriptions.id });
-        const [instance] = await tx
-            .update(addonInstances)
-            .set({ status: 'ABANDONED', updatedAt: input.now })
-            .where(
-                and(
-                    eq(addonInstances.id, input.instanceId),
-                    eq(addonInstances.complementSubscriptionId, input.complementId),
-                    eq(addonInstances.status, 'PENDING_AUTHORIZATION')
-                )
-            )
-            .returning({ id: addonInstances.id });
-        // Someone else already moved the pair (for example the window expiry): nothing to do.
-        if (!complement || !instance) return false;
-        await tx
-            .update(idempotencyKeys)
-            .set({
-                result: input.rateLimited ? throttledCreationResult() : rejectedCreationResult(),
-                completedAt: input.now
-            })
-            .where(
-                and(
-                    eq(idempotencyKeys.key, input.idempotencyKey),
-                    eq(idempotencyKeys.operation, 'PREAPPROVAL_CREATE'),
-                    eq(idempotencyKeys.subjectId, input.complementId),
-                    isNull(idempotencyKeys.completedAt)
-                )
-            );
-        await domainEventModel.insert({
-            eventType: 'addon_instance.status_changed',
-            entityType: 'addon_instance',
-            entityId: input.instanceId,
-            actorType: 'provider',
-            actorId: null,
-            correlationId: randomUUID(),
-            changes: [{ field: 'status', old: 'PENDING_AUTHORIZATION', new: 'ABANDONED' }],
-            occurredAt: input.now,
-            tx
-        });
-        return true;
+    return abandonPendingComplementPair({
+        complementId: input.complementId,
+        instanceId: input.instanceId,
+        now: input.now,
+        actor: { type: 'provider', id: null },
+        openKey: {
+            key: input.idempotencyKey,
+            result: input.rateLimited ? throttledCreationResult() : rejectedCreationResult()
+        },
+        decidesProviderCancellation: false
     });
 }

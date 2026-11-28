@@ -5635,6 +5635,34 @@ Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:
 
 **`A7` retirada** (HOS-2179 T-7, `.specs/HOS-2179-addons-pago-unico-checkout-pro/spec.md` §6.3): su evento —«la orden vuelve rechazada»— no existe con el pago por página del proveedor, así que la fila sale de esta tabla y de `scripts/guards/transition-tables.json`. `A3` sigue siendo la salida de una compra de única vez sin pago.
 
+<a id="trans-b-a8"></a>
+
+### `TRANS:B:A8` · `A8` — `PENDING_AUTHORIZATION` → `ABANDONED`
+
+- **Pieza dueña** (su AC vive en el archivo de la pieza): HOS-2668 — la compra recurrente del dueño sobre una pendiente (`addon/occupied-recurring-purchase.ts` → `releasePendingComplement` en `addon/release-pending-complement.ts`)
+- **Fuente de la asignación**: HOS-2668, decisión del owner 2026-11-27 (punto 5a: la liberación que pide el dueño no reusa `A3`)
+- **Test mínimo** ([AN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-an)): integración con DB (`addon-purchase-recurring-occupied.test.ts`, `addon-purchase-recurring-occupied-release.test.ts`, `reconciliation-cancellation-retry.test.ts`).
+- **desde** (estado origen): `PENDING_AUTHORIZATION`
+- **evento** (disparador): el dueño reemplaza una compra recurrente pendiente del mismo producto sobre el mismo objetivo —cambió el correo del pagador, el proveedor ya la canceló, o venció su ventana de checkout sin que corriera `A3`—
+- **hacia** (estado destino): `ABANDONED`
+- **nota** (guardas y efectos): **relee el preapproval por id** antes de liberar: si lo ve `authorized`, `A8` no ocurre y la compra contesta *«ya activo»*; uno pendiente con el mismo correo y la ventana abierta tampoco: se reusa su enlace. Libera el par (instancia y complemento → `ABANDONED`) y **cancela el preapproval en el proveedor sin correo antes**: el dueño está en la pantalla reemplazándola. **Si la cancelación falla, la reintenta el barrido por la salvedad 1 de `B/09` §3, también sin correo y sin esperar ninguno** (`RECIPIENTLESS` en `BEFORE_CANCEL_KIND_BY_TRANSITION`). **Un pago acreditado del complemento la frena**, releído dentro de la transacción de la liberación: el aviso del pago puede llegar antes que el de la autorización, y entonces no se libera ni se cancela nada. **La liberación confirmada emite `addon_checkout_abandoned` una sola vez** (`OWNER_WITHDREW`, actor `USER`; owner 2026-11-27). `A3` conserva su sentido: el vencimiento de la ventana por el barrido, con su correo `ADDON_AUTHORIZATION_EXPIRED`
+
+Origen: HOS-2668 (owner 2026-11-27)
+
+<a id="trans-b-a9"></a>
+
+### `TRANS:B:A9` · `A9` — `PENDING_AUTHORIZATION` → `ABANDONED`
+
+- **Pieza dueña** (su AC vive en el archivo de la pieza): HOS-2668 — el registro de un cobro rechazado (`payment/record-charge-fact.service.ts` → `releaseDeclinedPendingComplement` en `addon/declined-pending-complement.ts`)
+- **Fuente de la asignación**: HOS-2668, decisión del owner 2026-11-27 (el rechazo de un complemento pendiente refleja la rama pendiente de `S16`, HOS-1731)
+- **Test mínimo** ([AN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-an)): integración con DB (`addon-first-charge-declined-release.test.ts`).
+- **desde** (estado origen): `PENDING_AUTHORIZATION`
+- **evento** (disparador): se rechaza un cobro del complemento todavía pendiente y la relectura por id de su preapproval ya lo ve `cancelled`
+- **hacia** (estado destino): `ABANDONED`
+- **nota** (guardas y efectos): **sólo con la relectura en `cancelled`**: un preapproval `pending` o `active` deja las dos filas como están (§1.2), porque cancelar un checkout vivo podía destruir un reintento exitoso del pagador; ese par pendiente lo libera la próxima compra del dueño por `A8`. **Un pago acreditado la frena**, mirado antes de la relectura y otra vez dentro de la transacción. **Nunca llama al proveedor**: no cancela nada, no registra una decisión de cancelación y no tiene correo antes ni tipo en `BEFORE_CANCEL_KIND_BY_TRANSITION`. El rechazo se informa como `addon_charge_declined`, y la liberación confirmada emite además `addon_checkout_abandoned` una sola vez (`CLOSED_BY_SYSTEM`, actor `SYSTEM`; owner 2026-11-27)
+
+Origen: HOS-2668 (owner 2026-11-27)
+
 ## Motivos de la marca de conciliación (`B/02` §2.5)
 
 Cada motivo es un valor de la columna **`motivo`** de **`reconciliation_mark`**, *«enumeración cerrada, §2.5»* (`B/02` §2.2, línea 57). El nombre del valor va en el título de cada ítem.

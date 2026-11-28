@@ -5,6 +5,7 @@ import { actStartInstant, assertFreshForAct, type PaymentProvider } from '@repo/
 import { ServiceErrorCode, VerticalEnumSchema } from '@repo/schemas';
 import { ServiceError } from '../../../types';
 import { extractPostgresErrorCause } from '../../../utils/postgres-error-cause';
+import { releaseDeclinedPendingComplement } from '../addon/declined-pending-complement';
 import type { BillingFactSink } from '../facts/billing-fact-sink';
 import { emitBillingFact } from '../facts/billing-fact-sink';
 import {
@@ -416,5 +417,25 @@ export async function recordChargeFact(
             hasRetryWindow: !isRejectedWithoutRetryWindow({ charge }),
             billingFacts: ports.billingFacts
         });
+    // HOS-2668 (A9): a rejected charge of a pending recurring add-on whose preapproval already
+    // reads cancelled releases the pair (S16's pending branch). Best-effort and after the mark, so
+    // a failed read never blocks `addon_charge_declined`. A later read of the charge retries the
+    // release only while the COMPLEMENTO is still PENDING_AUTHORIZATION; a pair no read releases
+    // (its preapproval still reads pending) is released by the owner's next purchase through A8.
+    try {
+        await releaseDeclinedPendingComplement(
+            { subscription: linked.subscription, authorizationId: linked.providerLink.providerId },
+            ports
+        );
+    } catch (error) {
+        logger.error(
+            {
+                paymentId,
+                subscriptionId: linked.subscription.id,
+                error: error instanceof Error ? error.message : String(error)
+            },
+            'HOS-2668: could not release a declined pending addon complement'
+        );
+    }
     return result;
 }

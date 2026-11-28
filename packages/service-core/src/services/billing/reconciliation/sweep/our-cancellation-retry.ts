@@ -71,6 +71,8 @@ export const BEFORE_CANCEL_KIND_BY_TRANSITION: Readonly<
     S31: 'SUCCESSOR_CUT',
     A3: 'ADDON_AUTHORIZATION_EXPIRED',
     A6: 'ADDON_LISTING_PURGED',
+    // A8: the owner replaced the pending purchase on screen; nobody is notified (HOS-2668).
+    A8: 'RECIPIENTLESS',
     S39: 'ATTEMPT_REPLACED',
     S40: 'ATTEMPT_CANCELLED'
 };
@@ -227,7 +229,8 @@ export async function retryOurCancellation(
     const { outcome } = await cancelOurAuthorization(
         {
             subscriptionId: input.subscription.id,
-            userId: input.subscription.userId,
+            // RECIPIENTLESS declares no recipient: a row with an owner is not gated on a notice.
+            userId: declared === 'RECIPIENTLESS' ? null : input.subscription.userId,
             authorizationId: input.providerLink.providerId,
             prior,
             kind: declared === 'RECIPIENTLESS' ? null : declared,

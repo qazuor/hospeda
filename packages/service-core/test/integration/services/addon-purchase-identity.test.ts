@@ -57,8 +57,10 @@ describe('TEST:B10:3 AC:B10:2 addon purchase identity', () => {
     );
 
     // A one-time page purchase resumes its page instead (addon-one-time-page-occupied, HOS-2179).
+    // HOS-2668: the pending recurring checkout is reused, never a dead-end PENDING_ELSEWHERE; the
+    // other branches live in addon-purchase-recurring-occupied.test.ts.
     it.skipIf(skip)(
-        'returns PENDING_ELSEWHERE for a different recurring request on the same identity',
+        'answers the pending checkout for a different recurring request on the same identity',
         async () => {
             const f = await purchaseFixture({ chargeKind: 'PERIODICO' });
             // The paying principal and payment are seeded directly.
@@ -66,9 +68,11 @@ describe('TEST:B10:3 AC:B10:2 addon purchase identity', () => {
             const first = await purchaseAddon(f.input(), f.ports);
             const second = await purchaseAddon(f.input(), f.ports);
             expect(first.outcome).toBe('CREATED');
-            expect(second).toMatchObject({
-                outcome: 'PENDING_ELSEWHERE',
-                instanceId: first.outcome === 'CREATED' ? first.instanceId : ''
+            expect(second).toEqual({
+                outcome: 'EXISTING',
+                instanceId: first.outcome === 'CREATED' ? first.instanceId : '',
+                chargeKind: 'PERIODICO',
+                checkoutUrl: first.outcome === 'CREATED' ? first.checkoutUrl : ''
             });
             expect(await rows(f.ownerId)).toHaveLength(1);
         }

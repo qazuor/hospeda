@@ -179,7 +179,7 @@ test.describe('TEST:B13b:1 AC:B13b:1 AC:B13b:4 moderating a listing with a live 
             await expect(row).toBeVisible();
             await expect(row).toContainText(live.addonName);
             await row.getByTestId(`recurring-addon-withdraw-${live.instanceId}`).click();
-            await expect(row.getByTestId('recurring-addon-withdraw-confirm')).toContainText(
+            await expect(row.getByTestId('recurring-addon-withdraw-confirm-text')).toContainText(
                 esBilling.addonPurchase.recurringAddons.confirmText
             );
             await row

@@ -100,7 +100,7 @@ describe('AC:B10:1 AC:B10:2 protected addon purchase route', () => {
         expect(page).toHaveBeenCalledTimes(0);
     });
 
-    it('creates one recurring checkout, replays it, and reports a second request as processing', async () => {
+    it('creates one recurring checkout, replays it, and resumes it for a second request (HOS-2668)', async () => {
         const fixture = await purchaseCatalog({ chargeKind: 'PERIODICO' });
         const { app, fake } = purchaseApp();
         await makePayingPrincipal({
@@ -135,12 +135,15 @@ describe('AC:B10:1 AC:B10:2 protected addon purchase route', () => {
             instanceId: first.instanceId,
             checkoutUrl: first.checkoutUrl
         });
-        const elsewhere = await post(app, fixture.ownerId, fixture.request(null));
-        expect(elsewhere.status).toBe(200);
-        expect((await elsewhere.json()).data).toMatchObject({
-            outcome: 'PENDING_ELSEWHERE',
+        // A second request for the same pending purchase (same payer, open window)
+        // resumes the stored checkout instead of a dead-end "processing" wait.
+        const resumed = await post(app, fixture.ownerId, fixture.request(null));
+        expect(resumed.status).toBe(200);
+        expect((await resumed.json()).data).toMatchObject({
+            outcome: 'EXISTING',
             instanceId: first.instanceId,
-            processing: true
+            processing: false,
+            checkoutUrl: first.checkoutUrl
         });
         expect(authorize).toHaveBeenCalledTimes(1);
         expect(page).toHaveBeenCalledTimes(0);

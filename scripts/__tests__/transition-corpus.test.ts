@@ -18,7 +18,7 @@ describe('TEST:V4:16/17 TEST:1732:12 TEST:1735:7b AC:1735:7 transition corpus sh
         expect(validateCorpus({ corpus })).toEqual([]);
         expect(checkAnchoring({ corpus, catalog: parseCatalog({ root: ROOT }) })).toEqual([]);
         expect(Object.keys(corpus.machines)).toHaveLength(10);
-        expect(corpus.transitions).toHaveLength(86);
+        expect(corpus.transitions).toHaveLength(88);
         expect(
             Object.fromEntries(
                 Object.keys(corpus.machines).map((machine) => [
@@ -36,7 +36,7 @@ describe('TEST:V4:16/17 TEST:1732:12 TEST:1735:7b AC:1735:7 transition corpus sh
             payment: 9,
             refund: 5,
             manual_payment: 6,
-            addon_instance: 7
+            addon_instance: 9
         });
         for (const [name, machine] of Object.entries(corpus.machines)) {
             if (machine.table === null) continue;

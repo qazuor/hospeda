@@ -41,8 +41,11 @@ export const SALVEDAD_4_TRANSITIONS = [
     'S40'
 ] as const;
 
-/** The cancellations of the complement of a terminal addon instance (exception 1, B11.md:374-377). */
-export const SALVEDAD_1_TRANSITIONS = ['A3', 'A5', 'A6', 'S21'] as const;
+/**
+ * The cancellations of the complement of a terminal addon instance (exception 1, B11.md:374-377).
+ * `A8` (HOS-2668) is the owner replacing a pending add-on purchase.
+ */
+export const SALVEDAD_1_TRANSITIONS = ['A3', 'A5', 'A6', 'A8', 'S21'] as const;
 
 /** The live row a cancellation left behind: `CANCEL_SCHEDULED` by S11 (B11 §3 point 3). */
 export const CANCEL_SCHEDULED_TRANSITIONS = ['S11'] as const;

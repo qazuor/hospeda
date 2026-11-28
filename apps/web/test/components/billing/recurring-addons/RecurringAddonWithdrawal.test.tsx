@@ -47,10 +47,10 @@ describe('TEST:B13b:1 AC:B13b:1 — la baja ofrecida cancela el destaque recurre
         );
         expect(listRecurringAddons).toHaveBeenCalledWith({ listingId });
         fireEvent.click(screen.getByTestId(`recurring-addon-withdraw-${instanceId}`));
-        expect(screen.getByTestId('recurring-addon-withdraw-confirm')).toHaveTextContent(
+        expect(screen.getByTestId('recurring-addon-withdraw-confirm-text')).toHaveTextContent(
             'se corta el cobro'
         );
-        expect(screen.getByTestId('recurring-addon-withdraw-confirm')).toHaveTextContent(
+        expect(screen.getByTestId('recurring-addon-withdraw-confirm-text')).toHaveTextContent(
             'No hay reembolso'
         );
         const confirmButton = screen.getByRole('button', { name: 'Confirmar baja' });
@@ -62,6 +62,31 @@ describe('TEST:B13b:1 AC:B13b:1 — la baja ofrecida cancela el destaque recurre
         );
         expect(screen.getByTestId('recurring-addon-withdrawn')).toHaveTextContent('dado de baja');
         expect(document.activeElement).toBe(screen.getByTestId('recurring-addon-withdrawn'));
+    });
+
+    it('HOS-2668 renders the confirmation text in the title column, not in the auto-width actions column', async () => {
+        // Arrange
+        listRecurringAddons.mockResolvedValue({ ok: true, data: { items: [item] } });
+        render(
+            <RecurringAddonWithdrawal
+                locale="es"
+                listingId={listingId}
+            />
+        );
+        const title = await screen.findByTestId(`recurring-addon-${instanceId}`);
+
+        // Act
+        fireEvent.click(screen.getByTestId(`recurring-addon-withdraw-${instanceId}`));
+
+        // Assert: the long paragraph inside the `auto` actions column widened it
+        // until the `minmax(0, 1fr)` title column collapsed to one letter per line.
+        const text = screen.getByTestId('recurring-addon-withdraw-confirm-text');
+        expect(text).toHaveTextContent('se corta el cobro');
+        const titleBody = title.closest('p')?.parentElement;
+        expect(titleBody?.contains(text)).toBe(true);
+        const actions = screen.getByTestId('recurring-addon-withdraw-confirm');
+        expect(actions).not.toHaveTextContent('se corta el cobro');
+        expect(within(actions).getAllByRole('button')).toHaveLength(2);
     });
 
     it('restores focus to the withdrawal button when cancelling', async () => {
