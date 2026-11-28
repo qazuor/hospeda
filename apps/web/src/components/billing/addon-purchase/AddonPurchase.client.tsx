@@ -32,6 +32,7 @@ import stylesNotice from '../PaidSignupsPausedNotice.module.css';
 import { AddonOfferList } from './AddonOfferList';
 import styles from './AddonPurchase.module.css';
 import { AddonPurchaseOutcome } from './AddonPurchaseOutcome';
+import { AddonPurchaseReturnActions } from './AddonPurchaseReturnActions';
 import { AddonPurchaseSummary } from './AddonPurchaseSummary';
 import { AddonSubscriptionPicker } from './AddonSubscriptionPicker';
 import { type AddonTarget, AddonTargetPicker } from './AddonTargetPicker';
@@ -486,6 +487,14 @@ export function AddonPurchase(input: {
                     t={t}
                 />
             )}
+            <AddonPurchaseReturnActions
+                view={view}
+                read={poll.read}
+                defaultEmail={payerEmail}
+                locale={input.locale}
+                navigateToCheckout={input.navigateToCheckout}
+                t={t}
+            />
         </div>
     );
 }
