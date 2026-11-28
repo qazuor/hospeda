@@ -87,6 +87,42 @@ export const OwnerReceivedReviewsQuerySchema = z.object({
 });
 export type OwnerReceivedReviewsQuery = z.infer<typeof OwnerReceivedReviewsQuerySchema>;
 
+/** Query of the admin moderation queue for host replies. */
+export const AccommodationReviewReplyAdminListQuerySchema = z.object({
+    page: z.coerce.number().int().min(1).default(1),
+    pageSize: z.coerce.number().int().min(1).max(100).default(20),
+    /** Narrow to the replies of one accommodation. */
+    accommodationId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }).optional(),
+    /** Keep only replies in this moderation state. */
+    moderationState: ModerationStatusEnumSchema.optional()
+});
+export type AccommodationReviewReplyAdminListQuery = z.infer<
+    typeof AccommodationReviewReplyAdminListQuerySchema
+>;
+
+/**
+ * One host reply as the admin moderation queue shows it: the reply itself plus
+ * the review context a moderator needs to judge it.
+ */
+export const AccommodationReviewReplyAdminItemSchema = z.object({
+    id: z.string().uuid(),
+    reviewId: z.string().uuid(),
+    content: AccommodationReviewReplyContentSchema,
+    moderationState: ModerationStatusEnumSchema,
+    moderationReason: z.string().nullable(),
+    moderatedAt: z.coerce.date().nullable(),
+    createdAt: z.coerce.date(),
+    editedAt: z.coerce.date().nullable(),
+    accommodationId: z.string().uuid(),
+    reviewTitle: z.string().nullable(),
+    reviewContent: z.string().nullable(),
+    reviewAverageRating: z.number(),
+    reviewerName: z.string().nullable()
+});
+export type AccommodationReviewReplyAdminItem = z.infer<
+    typeof AccommodationReviewReplyAdminItemSchema
+>;
+
 /** One review received on an accommodation the actor owns. */
 export const OwnerReceivedReviewSchema = z.object({
     id: z.string().uuid(),

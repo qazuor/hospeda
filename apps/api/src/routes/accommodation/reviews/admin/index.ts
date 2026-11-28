@@ -7,6 +7,7 @@ import { adminDeleteAccommodationReviewRoute } from './delete';
 import { adminGetAccommodationReviewByIdRoute } from './getById';
 import { adminHardDeleteAccommodationReviewRoute } from './hardDelete';
 import { adminListAccommodationReviewsRoute } from './list';
+import { adminListAccommodationReviewRepliesRoute } from './listReviewReplies';
 import { adminModerateAccommodationReviewRoute } from './moderate';
 import { adminModerateAccommodationReviewReplyRoute } from './moderateReply';
 import { adminRestoreAccommodationReviewRoute } from './restore';
@@ -16,6 +17,11 @@ const app = createRouter();
 
 // GET / - List all reviews
 app.route('/', adminListAccommodationReviewsRoute);
+
+// GET /replies - List host replies pending moderation (HOS-2675)
+// Registered BEFORE /:id so the literal "replies" is not swallowed by the
+// dynamic review-id segment.
+app.route('/', adminListAccommodationReviewRepliesRoute);
 
 // GET /:id - Get review by ID
 app.route('/', adminGetAccommodationReviewByIdRoute);

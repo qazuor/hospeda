@@ -58,6 +58,7 @@ export { computeAccommodationReviewAverage } from './accommodationReview/accommo
 export * from './accommodationReview/accommodationReview.service';
 export type { AccommodationReviewHookState } from './accommodationReview/accommodationReview.types';
 export * from './accommodationReview/accommodationReviewReply.service';
+export * from './accommodationReview/accommodationReviewReplyAdmin.service';
 export * from './aiConnection/index.js';
 export * from './alert';
 export * from './alliance-lead';
