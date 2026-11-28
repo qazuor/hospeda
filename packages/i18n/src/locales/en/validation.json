@@ -2273,6 +2273,35 @@
             "token": {
                 "required": "Token is required"
             }
+        },
+        "directEmail": {
+            "subject": {
+                "min": "The subject is required",
+                "max": "The subject cannot exceed 200 characters"
+            },
+            "body": {
+                "empty": "The email body cannot be empty"
+            },
+            "email": {
+                "invalid": "The email address is not valid"
+            },
+            "recipients": {
+                "min": "Enter at least one recipient",
+                "max": "You cannot send to more than 20 recipients at once",
+                "duplicate": "There are repeated recipients"
+            },
+            "token": {
+                "invalid": "The opt-out link is not valid"
+            }
+        },
+        "directEmailTemplate": {
+            "name": {
+                "min": "The name is required",
+                "max": "The name cannot exceed 120 characters"
+            },
+            "update": {
+                "empty": "Provide at least one field to update"
+            }
         }
     },
     "entityComment": {
@@ -2644,6 +2673,12 @@
         },
         "amenityAvailability": {
             "invalid": "Choose whether the amenity is available year-round or seasonally"
+        },
+        "directEmailRecipientStatus": {
+            "invalid": "The recipient status is not valid"
+        },
+        "directEmailSuppressionReason": {
+            "invalid": "The suppression reason is not valid"
         }
     },
     "event": {

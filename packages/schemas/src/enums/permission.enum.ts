@@ -93,7 +93,9 @@ export enum PermissionCategoryEnum {
      * somebody without granting them settings wholesale, which is the reason
      * the family exists at all.
      */
-    QR_CODE = 'QR_CODE'
+    QR_CODE = 'QR_CODE',
+    /** Direct one-to-one emails sent from the admin panel (HOS-2685). */
+    DIRECT_EMAIL = 'DIRECT_EMAIL'
 }
 
 // PermissionEnum defines all possible built-in permissions for the Hospeda platform.
@@ -1074,5 +1076,10 @@ export enum PermissionEnum {
     SOCIAL_DISPATCH_MANAGE = 'socialDispatch.manage', // Allows manually triggering or resetting dispatch jobs and managing the Make.com integration state.
 
     // INTEGRATION: Third-party integration management (HOS-45 / SPEC-278)
-    INTEGRATION_MERCADOLIBRE_MANAGE = 'integration.mercadolibre.manage' // Allows managing the MercadoLibre OAuth integration (authorize, refresh, revoke).
+    INTEGRATION_MERCADOLIBRE_MANAGE = 'integration.mercadolibre.manage', // Allows managing the MercadoLibre OAuth integration (authorize, refresh, revoke).
+
+    // DIRECT_EMAIL: One-to-one emails composed in the admin panel (HOS-2685)
+    DIRECT_EMAIL_VIEW = 'directEmail.view', // Allows viewing direct email history, previews, recipient checks, templates and the suppression list.
+    DIRECT_EMAIL_SEND = 'directEmail.send', // Allows sending direct emails (test and real) and managing the suppression list.
+    DIRECT_EMAIL_TEMPLATE_WRITE = 'directEmail.template.write' // Allows creating, editing and deleting direct email templates.
 }

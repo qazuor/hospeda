@@ -17,6 +17,7 @@ export * from './conversation/index.js';
 export * from './cronRun/index.js';
 export * from './destination/index.js';
 export * from './destinationReview/index.js';
+export * from './direct-email/index.js';
 export * from './entityComment/index.js';
 export * from './entityInteraction/index.js';
 export * from './entityView/index.js';

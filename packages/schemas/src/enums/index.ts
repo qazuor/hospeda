@@ -31,6 +31,10 @@ export * from './currency.enum.js';
 export * from './currency.schema.js';
 export * from './destination-type.enum.js';
 export * from './destination-type.schema.js';
+export * from './direct-email-recipient-status.enum.js';
+export * from './direct-email-recipient-status.schema.js';
+export * from './direct-email-suppression-reason.enum.js';
+export * from './direct-email-suppression-reason.schema.js';
 // Listing interaction kinds (HOS-2256)
 export * from './entity-interaction-kind.enum.js';
 export * from './entity-interaction-kind.schema.js';
